@@ -8,8 +8,9 @@ Support & Feedback
 
 * Read documentation: http://www.boxbilling.com/docs/
 * Contact us at: http://www.boxbilling.com/en/support/contact
-* Submit ticket at http://www.boxbilling.com/en/support
-* Report bug or request a feature at https://github.com/boxbilling/BoxBilling/issues/new
+* Submit support ticket at http://www.boxbilling.com/en/support
+* Report bug at https://github.com/boxbilling/BoxBilling/issues/new
+* Request a feature http://www.boxbilling.com/en/forum
 * Contact us directly at development@boxbilling.com
 * Follow us on Twitter http://twitter.com/#boxbilling
 * Like us on Facebook https://www.facebook.com/boxbilling
