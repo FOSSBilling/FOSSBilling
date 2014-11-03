@@ -17,7 +17,6 @@
         "ext-curl": "*",
         "ext-zlib": "*",
         "ext-PDO": "*",
-        "ext-gettext": "*",
 
         "pimple/pimple": "v2.0.0",
         "twig/twig": "v1.15.1",
@@ -25,6 +24,9 @@
         "rev42/tfpdf": "dev-master",
         "geoip2/geoip2": "dev-master",
         "dflydev/markdown": "1.0.*@dev"
+    },
+    "suggest": {
+        "ext-gettext": "*"
     },
     "config": {
         "vendor-dir": "bb-vendor"

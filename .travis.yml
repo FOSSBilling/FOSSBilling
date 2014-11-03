@@ -19,7 +19,6 @@ install:
 
 before_script:
   - php -m
-  - sudo apt-get install gettext
   - mysql -e 'create database IF NOT EXISTS boxbilling'
 
 script: ant
