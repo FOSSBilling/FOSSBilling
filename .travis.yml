@@ -17,7 +17,6 @@ install:
   - composer self-update
 
 before_script:
-  - php -m
   - mysql -e 'create database IF NOT EXISTS boxbilling'
 
 script: ant
