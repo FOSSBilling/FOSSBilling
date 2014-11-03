@@ -37,6 +37,10 @@ class Box_LogStream
                 $streamOrUrl = $streamOrUrl['stream'];
             }
 
+            if(!file_exists($streamOrUrl)) {
+                @touch($streamOrUrl);
+            }
+
             if (! $this->_stream = @fopen($streamOrUrl, $mode, false)) {
                 throw new \Box_Exception(":stream cannot be opened with mode :mode", array(':stream'=>$streamOrUrl, ':mode'=>$mode));
             }
