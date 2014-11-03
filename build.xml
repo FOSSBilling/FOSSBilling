@@ -94,6 +94,9 @@
 
     <target name="test-unit">
         <exec executable="src/bb-vendor/bin/phpunit" failonerror="true">
+            <arg line="tests/bb-library/" />
+        </exec>
+        <exec executable="src/bb-vendor/bin/phpunit" failonerror="true">
             <arg line="tests/bb-modules/" />
         </exec>
     </target>
