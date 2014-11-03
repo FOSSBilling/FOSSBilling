@@ -15,7 +15,6 @@ matrix:
 
 install:
   - composer self-update
-  - composer --working-dir=src install --no-interaction --prefer-source --dev
 
 before_script:
   - php -m
