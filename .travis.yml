@@ -15,7 +15,7 @@ matrix:
 
 install:
   - composer self-update
-  - composer install --no-interaction --prefer-source --dev
+  - composer --working-dir=src install --no-interaction --prefer-source --dev
 
 before_script:
   - mysql -e 'create database IF NOT EXISTS boxbilling'
