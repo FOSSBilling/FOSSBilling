@@ -1,5 +1,5 @@
 <?php
-date_default_timezone_set('America/New_York');
+date_default_timezone_set('UTC');
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -389,7 +389,7 @@ final class Box_Installer
         $output .= sprintf($cf, 'More information on this file at http://www.boxbilling.com/docs/');
 
         $output .= sprintf($cf, 'Define timezone');
-        $output .= sprintf("date_default_timezone_set('%s');", 'America/New_York');
+        $output .= sprintf("date_default_timezone_set('%s');", 'UTC');
         
         $output .= sprintf($cf, 'Set default date format');
         $output .= sprintf($f, 'BB_DATE_FORMAT', 'l, d F Y');

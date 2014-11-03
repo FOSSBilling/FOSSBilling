@@ -107,6 +107,8 @@ if(!file_exists($configPath) || 0 == filesize( $configPath )) {
 $config = require_once $configPath;
 require BB_PATH_VENDOR . '/autoload.php';
 
+date_default_timezone_set($config['timezone']);
+
 define('BB_DEBUG',          $config['debug']);
 define('BB_URL',            $config['url']);
 define('BB_SEF_URLS',       $config['sef_urls']);
