@@ -116,7 +116,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
     }
 
     /**
-     * @expectedException Box_Exception
+     * @expectedException \Box_Exception
      */
     public function testAddDisabledPeriod()
     {

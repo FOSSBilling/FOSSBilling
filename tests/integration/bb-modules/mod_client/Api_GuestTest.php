@@ -34,7 +34,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
     }
 
     /**
-     * @expectedException Box_Exception
+     * @expectedException \Box_Exception
      */
     public function testRequiredFields()
     {

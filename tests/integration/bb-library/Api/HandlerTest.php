@@ -29,7 +29,7 @@ class Api_HandlerTest extends BBDbApiTestCase
     }
 
     /**
-     * @expectedException Box_Exception
+     * @expectedException \Box_Exception
      * @expectedExceptionCode 710
      */
     public function testException()
@@ -40,7 +40,7 @@ class Api_HandlerTest extends BBDbApiTestCase
     }
 
     /**
-     * @expectedException Box_Exception
+     * @expectedException \Box_Exception
      * @expectedExceptionCode 714
      */
     public function testInvalidModuleNameException()
@@ -51,7 +51,7 @@ class Api_HandlerTest extends BBDbApiTestCase
     }
 
     /**
-     * @expectedException Box_Exception
+     * @expectedException \Box_Exception
      * @expectedExceptionCode 715
      */
     public function testModuleNotActiveException()

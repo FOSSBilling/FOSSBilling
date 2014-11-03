@@ -5,7 +5,7 @@
 class Box_PeriodTest extends PHPUnit_Framework_TestCase
 {
     /**
-     * @expectedException Box_Exception
+     * @expectedException \Box_Exception
      */
     public function testException()
     {
@@ -13,7 +13,7 @@ class Box_PeriodTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException Box_Exception
+     * @expectedException \Box_Exception
      */
     public function testException2()
     {

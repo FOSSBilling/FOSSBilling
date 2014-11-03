@@ -507,7 +507,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     /**
      *
      * @dataProvider testSendTemplateExceptionProvider
-     * @expectedException Box_Exception
+     * @expectedException \Box_Exception
      */
     public function testSendTemplateException($data)
     {
