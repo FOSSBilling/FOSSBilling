@@ -18,6 +18,8 @@ install:
   - composer --working-dir=src install --no-interaction --prefer-source --dev
 
 before_script:
+  - php -m
+  - sudo apt-get install gettext
   - mysql -e 'create database IF NOT EXISTS boxbilling'
 
 script: ant
