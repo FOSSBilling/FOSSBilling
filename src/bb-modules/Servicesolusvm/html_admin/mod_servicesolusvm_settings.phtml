@@ -1,0 +1,165 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% set active_menu = 'system' %}
+{% block meta_title %}{% trans 'SolusVM' %}{% endblock %}
+{% block breadcrumbs %}
+    <ul>
+        <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+        <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+        <li class="lastB">{% trans 'SolusVM' %}</li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+{% set params = admin.servicesolusvm_cluster_config %}
+
+{% if params.ipaddress %}
+    {% set master_url = 'http://'~params.ipaddress~':'~params.port|default(5353)~'/admincp' %}
+{% endif %}
+
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-start">{% trans 'SolusVM' %}</a></li>
+        <li><a href="#tab-index" id="open-index-tab">{% trans 'API configuration' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        
+        <div class="tab_content nopadding" id="tab-start">
+            <div class="help">
+                <img src="{{ 'bb-modules/servicesolusvm/icon.png'|link }}" alt="solusvm" class="" style="width: 150px; float: right; margin: 0 5px 0 10px;"/>
+                <h5>{% trans 'Getting started with SolusVM' %}</h5>
+                <p>{% trans 'This guide will help you to get started selling SolusVM virtual servers with BoxBilling.' %}</p>
+            </div>
+            
+            <div class="body">    
+                <h2>{% trans '1. Configure your SolusVm server' %}</h2>
+                <p>Make sure that your SolusVM master server is properly configured - has defined nodes, plans, free ip addresses, operating system templates.</p>
+                {% if master_url %}
+                <p><a href="{{master_url}}" class="btnIconLeft mr10 mt10" target="_blank"><span>Open SolusVm admin panel</span></a></p>
+                {% endif %}
+            </div>
+            
+            <div class="body">
+                <h2>{% trans '2. Configure API' %}</h2>
+                <p><a href="" onclick="$('#open-index-tab').click(); return false;">Configure SolusVM API</a> and test if BoxBilling can connect successfully. To create an API user login to SolusVM admin area and click Configuration > API Access from the top menu then select Add API User.</p>
+            </div>
+            
+            <div class="body">    
+                <h2>{% trans '3. Create new product category' %}</h2>
+                <p>Create <a href="{{'product'|alink({'cat_title' : 'VPS', 'cat_description' : 'Virtual private servers'})}}#tab-new-category" target="_blank">new product category</a> for VPS products. Category must contain only solusvm products otherwise order form might not work as expected.</p>
+            </div>
+            
+            <div class="body list arrowBlue">
+                <h2>{% trans '4. Create SolusVM products' %}</h2>
+                <p>Imagine that product on BoxBilling is SolusVM plan.</p>
+                <p><a href="{{'product'|alink({'type' : 'solusvm', 'title' : 'VPS-1'})}}#tab-new" target="_blank">Create products</a> in newly created category by selecting product type <strong>Solusvm</strong>.</p>
+                <p>Define product prices and switch to "Configuration" tab:</p>
+                <ul>
+                    <li>Select virtualization type</li>
+                    <li>Select node on which VPS will be created</li>
+                    <li>Select plan</li>
+                    <li>Define IPs amount for VPS server</li>
+                    <li>Provide information about plan to BoxBilling so it can show these values to your clients. (SolusVM API does not provide this information)</li>
+                    <li>Provide slider information to be displayed on order form</li>
+                </ul>
+                <p><a href="{{ 'order'|link }}" target="_blank">Check order page</a> while creating products to see slider changes</p>
+            </div>
+            
+            <div class="body">
+                <h2>{% trans '5. Import data from SolusVM server' %}</h2>
+                <p>If you already have successfully connected to master server and have existing clients and server then you can import them using these tools:</p>
+                {% if master_url %}
+                    <a href="{{ 'servicesolusvm/import/clients'|alink }}" title="" class="btnIconLeft mr10 mt10"><span>5.1 Import clients</span></a>
+                    <a href="{{ 'servicesolusvm/import/servers'|alink({'node_id' : 1}) }}" title="" class="btnIconLeft mr10 mt10"><span>5.2 Import servers</span></a>
+                {% else %}
+                    <p>Configure API before importing data. Refresh this page if you already confugured API.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="tab_content nopadding" id="tab-index">
+            <div class="help">
+                <h5>{% trans 'Connect to SolusVM master server via API' %}</h5>
+                <p>{% trans 'To create an API user login to SolusVM admin area and click Configuration > API Access from the top menu then select Add API User.' %}</p>
+            </div>
+            
+            <div class="body">
+                <div class="nNote nInformation first">
+                    <p><strong>{% trans 'INFORMATION' %}: </strong>You need to specify IP <strong>{{ admin.system_env.ip }}</strong> in the SolusVM API user.</p>
+                </div>
+            </div>
+            
+            <form method="post" action="{{ 'api/admin/servicesolusvm/cluster_config_update'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Configuration updated' %}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'ID' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="id" value="{{params.id}}" required="required" placeholder="Example: t5kGu4EZqAyRqh0ZlN2O"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Key' %}:</label>
+                        <div class="formRight">
+                            <input type="password" name="key" value="{{params.key}}" required="required" placeholder="Example: XzTftPQTxEwRxHmTARIS"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Master server IP' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="ipaddress" value="{{params.ipaddress}}" required="required" placeholder="Example: 123.123.123.123"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Secure connection' %}:</label>
+                        <div class="formRight">
+                            <input type="radio" name="secure" value="1" {% if params.secure == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
+                            <input type="radio" name="secure" value="0" {% if not params.secure %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Custom port' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="port" value="{{params.port}}" placeholder="{% trans 'Leave blank to use default port 5353 and 5656 for secure connection' %}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <input type="hidden" name="cluster_id" value="1" />
+                    <input type="button" value="2. {% trans 'Test connection' %}" class="greyishBtn submitForm" id="testconnection"/>
+                    <input type="submit" value="1. {% trans 'Update' %}" class="greyishBtn submitForm" />
+                    
+                </fieldset>
+            </form>
+
+            <div class="fix"></div>
+
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{% autoescape true js %}
+<script type="text/javascript">
+$(function() {
+    $('#testconnection').click(function(){
+        bb.post('admin/servicesolusvm/test_connection', null, function(result){
+            bb.msg('Successfully connected to SolusVM server');
+        });
+        return false;
+    });
+});
+</script>
+{% endautoescape %}
+{% endblock %}

@@ -1,0 +1,37 @@
+# http://docs.travis-ci.com/user/build-configuration/
+
+language: php
+
+php:
+  - 5.3
+  - 5.4
+  - 5.5
+  - 5.6
+  - hhvm
+
+matrix:
+  allow_failures:
+    - php: hhvm
+
+install:
+  - composer self-update
+  - composer install --no-interaction --prefer-source --dev
+
+before_script:
+  - mysql -e 'create database IF NOT EXISTS boxbilling'
+
+script: ant
+
+notifications:
+  email: false
+
+deploy:
+  provider: releases
+  api-key:
+    secure: tVzZ+3U0ndBGvoUpFqA6ikg6fDKnPgMoNqK1pvTdEp0xmrFtjMP/fuc8+awObhj89iEC+MyzfsOP57CZbHR/UjmUSHPQew+BvTwxYmTUzgUeyUrYsTEI7WJgB7tsL35aRgrpxk102tlSmlX7EonufUT0svPOAQ1p4NgZRm3GI3A=
+  file: ./build/distribution/BoxBilling.zip
+  skip_cleanup: true
+  on:
+    tags: true
+    all_branches: true
+    php: 5.3

@@ -1,0 +1,27 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{{category.title}}{% endblock %}
+
+{% block content %}
+
+    <div class="h-block">
+        <div class="h-block-header">
+            <div class="icon"><span class="big-light-icon i-kb"></span></div>
+            <h2>{{category.title}}</h2>
+            <p class="meta">{{category.description }}</p>
+        </div>
+        <div class="block">
+            <div class="box">
+                <div class="block kb">
+                    <ul>
+                    {% for i, article in category.articles %}
+                        <li><a href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{article.title}}</a></li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p><a class="bb-button" href="{{ 'kb'|link }}"><span class="dark-icon i-arrow"></span> {% trans 'Back to list' %}</a></p>
+{% endblock %}

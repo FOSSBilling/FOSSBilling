@@ -1,0 +1,81 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Payments history' %}{% endblock %}
+{% set profile = client.client_get %}
+
+{% block content %}
+
+<div class="h-block">
+    <div class="h-block-header">
+        <div class="icon"><span class="big-light-icon i-payment"></span></div>
+        <h2>{% trans 'Payments history'%}</h2>
+        <p>{% trans 'Here you can track your payments you have made and what you have been charged for' %}</p>
+    </div>
+    <div class="block">
+        <table>
+            <thead>
+                <tr>
+                    <th>{% trans 'Amount' %}</th>
+                    <th>{% trans 'Description' %}</th>
+                    <th>{% trans 'Date' %}</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% set transactions = client.client_balance_get_list({"per_page":10, "page":request.page}) %}
+                {% for i, tx in transactions.list %}
+                <tr class="{{ cycle(['odd', 'even'], i) }}">
+                    <td>{{ tx.amount | money(tx.currency) }}</td>
+                    <td>{{tx.description}}</td>
+                    <td>{{tx.created_at|bb_date}}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3">{% trans 'The list is empty' %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+            <tfoot>
+                <tr>
+                    <th><a class="bb-button" href="#" onclick="$('#widget-add-funds').slideToggle(); return false;" ><span class="dark-icon i-payment"></span> {% trans 'Add Funds' %}</a></th>
+                    <th class="currency" colspan="2">{% trans 'Balance' %}: {{ profile.balance | money(profile.currency) }}</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+{% include "partial_pagination.phtml" with {'list': transactions} %}
+
+<div class="grid_6 suffix_6 alpha omega">
+<div class="widget" style="display: none;" id="widget-add-funds">
+    <div class="head">
+        <h2 class="dark-icon i-payment">{% trans 'Add funds in advance'%}</h2>
+    </div>
+    <div class="block">
+        <p>{% trans 'You can add funds to your account if you have active order.' %}</p>
+        <form action="" method="post" class="api_form" data-api-url="client/invoice/funds_invoice" data-api-jsonp="onAfterInvoiceCreated">
+            <fieldset>
+                <legend>{% trans 'Add funds in advance' %}</legend>
+                <p>
+                    <label>{% trans 'Amount' %}: </label>
+                    <input type="text" name="amount" value="" required="required"/>
+                </p>
+                <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Add funds' %}">
+            </fieldset>
+        </form>
+    </div>
+</div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+    function onAfterInvoiceCreated(hash) {
+        var link = '{{ "invoice"|link }}/' + hash;
+        bb.redirect(link);
+    }
+</script>
+{% endblock %}

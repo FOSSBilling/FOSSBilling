@@ -1,0 +1,348 @@
+{% if guest.extension_is_on({"mod":"formbuilder"}) %}
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}{% import "macro_functions.phtml" as mf %}{% block meta_title %}Custom form builder{% endblock %}{% set active_menu = 'system' %}
+
+{% block head %}
+<style type="text/css">
+#background_overlay
+    {
+    display: none;
+    position: fixed;
+    top: 0%;
+    left: 0%;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    z-index:1001;
+    -moz-opacity: 0.7;
+    opacity:.70;
+    filter: alpha(opacity=70);
+    }
+.update-field
+{
+    display: none;
+    position: absolute;
+    top: 20%;
+    left: 20%;
+    margin-left: 0px;
+    margin-top: 0px;
+    padding: 10px;
+    background: url(images/alertOpacityOverlay.png) repeat;
+    border-radius: 10px;
+    --webkit-border-radius: 10px;
+    z-index:1002;
+    overflow:visible;
+}
+#background-loader
+{
+    display: none;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -110px;
+    margin-top: -10px;
+}
+.manage
+{
+    position: relative;
+    background: #ffffff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index" id="open-index-tab">{% trans 'Custom forms' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+
+        <div class="tab_content nopadding" id="tab-index">
+            <table class="tableStatic wide">
+                <thead>
+                <tr>
+                    <th>{% trans 'Form' %}</th>
+                    <th>{% trans 'Orders using this form' %}</th>
+                    <th>{% trans 'Products using this form' %}</th>
+                    <td width="23%">{% trans 'Actions' %}</td>
+                </tr>
+                </thead>
+
+                <tbody>
+                {% for form in admin.formbuilder_get_forms %}
+
+                <tr>
+                    <td>{{ form.name }}</td>
+                    <td>{{ form.order_count }}</td>
+                    <td>{{ form.product_count }}</td>
+                    <td class="actions">
+                        <a class="bb-button btn14" href="{{ 'extension/settings/formbuilder'|alink({'id' : form.id}) }}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                        <a class="bb-button btn14 copy_form" href="#" data-api-reload="1"  title="Copy" data-form-id="{{ form.id }}"><img src="images/icons/dark/baloons.png" alt=""></a>
+                        <a class="btn14 bb-rm-tr api-link" href="{{'api/admin/formbuilder/delete_form'|link({'id' : form.id}) }}" data-api-confirm="Are you sure?" ><img src="images/icons/dark/trash.png" alt=""></a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                <tr>
+                    <td colspan="4">
+                        <input type="button" value="{% trans 'Create new form' %}" class="greyishBtn" id="new-form" style="width: 150px; float: right;"/>
+                    </td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="tab_content" id="tab-import">
+            <form method="post" action="{{ 'api/admin/formbuilder/import'|link }}" class="mainForm api-form save" data-api-reload="1">
+                <fieldset>
+                    <div class="formBottom">
+                        <textarea name="form" cols="5" rows="5" placeholder="Paste new form configuration text."></textarea>
+                    </div>
+                    <div class="fix"></div>
+                    <input type="submit" value="{% trans 'Import' %}" class="greyishBtn submitForm" style="margin: 0"/>
+                </fieldset>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+{% if request.id %}{% set form = admin.formbuilder_get_form({"id":request.id}) %}
+
+<div class="widget" id="form-options-{{ form.id }}">
+    <div class="head">
+        <h5 class="iCog">{% trans 'Form options' %}</h5>
+    </div>
+
+    <div class="mainForm">
+                <form  id="update-form-options">
+                    <div class="rowElem">
+                        <label>
+                            <strong>{% trans 'New form name and options' %}</strong>
+                        </label>
+                        <div class="formRight">
+                            <input type="text" name="form_name"  id="form_name" value="{{form.name}}" style="width:300px;"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <div class="formRight">
+                            <select name="type" id="form_type" style="width:300px;">
+                                <option value="default" {% if form.style.type == 'default' %} selected {% endif %}>{% trans 'Labels on top' %}</option>
+                                <option value="horizontal" {% if form.style.type == 'horizontal' %} selected {% endif %}>{% trans 'Labels on the left' %}</option>
+                            </select>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <div class="formRight">
+                            <select name="show_title" id="show_title" style="width:300px;">
+                                <option value="1" {% if form.style.show_title == '1' %} selected {% endif %}>{% trans 'Show form title' %}</option>
+                                <option value="0" {% if form.style.show_title == '0' %} selected {% endif %}>{% trans 'Do not show form title' %}</option>
+                            </select>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <input type="hidden" name="form_id" value="{{ form.id }}">
+
+                    <div class="rowElem">
+                        <div class="formRight">
+                            <button type="submit" href="#" class="button blueBtn">{% trans 'Update' %}</button>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                </form>
+            <div class="fix"></div>
+    </div>
+</div>
+
+<div class="widget" id="form-{{ form.id }}">
+<div class="head">
+    <h5 class="iCog">{{ form.name }}</h5>
+</div>
+
+<div class="mainForm">
+
+<div class="body" id="fields">
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id' : form.id, 'type' : 'text'}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1" ><img src="images/icons/dark/add.png" alt="" class="icon"><span>{% trans 'Text' %}</span></a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id' : form.id, 'type' : 'select'}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{% trans 'Dropdown' %}</span></a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id' : form.id, 'type' : 'radio'}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{% trans 'Radio' %}</span></a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id' : form.id, 'type' : 'checkbox'}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{% trans 'Checkbox' %}</span></a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id' : form.id, 'type' : 'textarea'}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{% trans 'Textarea' %}</span></a>
+</div>
+
+
+<fieldset>
+{% for i,field in form.fields %}
+    <div class="wrap-field">
+    {% include 'mod_formbuilder_field.phtml' with field %}
+    {% include 'mod_formbuilder_preview.phtml' with field %}
+    </div>
+{% endfor %}
+</fieldset>
+
+
+
+</div>
+<div class="fix"></div>
+</div>{% endif %}
+<div id="background_overlay">
+    <img src="images/loaders/loader7.gif" alt="" id="background-loader">
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+
+    $(function () {
+
+        $("form").submit( function () {
+            $(':checkbox:not(:checked)').removeAttr('checked');
+        });
+
+        $('.new-field').click(function () {
+            var p = $(this).closest('.rowElem').prev();
+            p.clone().insertAfter(p);
+            p.next().find('input').val("");
+            return false;
+        });
+
+        $('#textarea-width, #textarea-height').change(function () {
+            var p = $(this).closest('.rowElem');
+            var width = $('#textarea-width').val();
+            var height = $('#textarea-height').val();
+            p.next().find('textarea').css({"width":width, "height":height});
+            return false;
+        });
+
+        $('#prefix_text, #suffix_text').change(function () {
+            var prefix = $('#prefix_text').val();
+            var suffix = $('#suffix_text').val();
+           $('#prepended_text').text(prefix);
+           $('#appended_text').text(suffix);
+            return false;
+        });
+
+
+        $('.rm').click(function () {
+            var fid = $(this).attr('data-field-id');
+            var rm = $(this);
+            jConfirm('Are you sure?', 'Confirm', function(r) {
+                if(r) {
+                    bb.post('admin/formbuilder/delete_field', {id: fid}, function () {
+                        $(rm).parents('.wrap-field').slideUp("normal", function () {
+                            $(rm).remove();
+                        });
+                    });
+                }
+            });
+            return false;
+        });
+
+        $('.ed').click(function () {
+            var edit_button = $(this);
+
+            var center = function(edit_button){
+                var leftPosition = ($(window).width() / 2) - ((  $(edit_button).parents('.wrap-field').find('.update-field').width() / 2) + 10);
+                var topPosition = ($(document).height() / 2) - ((  $(edit_button).parents('.wrap-field').find('.update-field').height() / 2) + 50);
+
+                $(edit_button).parents('.wrap-field').find('.update-field').css({
+                    'top': topPosition,
+                    'left': leftPosition
+                });
+            };
+
+            center(edit_button);
+
+            $('#background_overlay').fadeIn(function(){
+
+
+                $(window).resize(function() {
+                    center(edit_button);
+                });
+
+                $(edit_button).parents('.wrap-field').find('.update-field').fadeIn(function(){
+                    $('html, body').animate({
+                        scrollTop: $(this).offset().top
+                    }, 500);
+                });
+
+                $('#background_overlay').click(function(){
+                    hide_edit_form();
+                });
+
+                $('body').delegate('.close-field-form','click',function(){
+                    hide_edit_form();
+                    return false;
+                });
+
+                $(document).keyup(function(e) {
+                    if (e.keyCode == 27) {
+                       hide_edit_form();
+                    }
+                });
+
+                var hide_edit_form  = function (){
+                    $('#background_overlay').fadeOut();
+                    $(edit_button).parents('.wrap-field').find('.update-field').fadeOut();
+                };
+            });
+            return false;
+        });
+
+        $('.pr').click(function () {
+            $(this).hide().siblings('.ed').show();
+            $(this).parents('.wrap-field').find('.preview').show();
+            $(this).parents('.wrap-field').find('.manage').hide();
+            return false;
+        });
+
+        $('#update-form-options').bind('submit',function (event) {
+            bb.post('admin/formbuilder/update_form_settings',  $(this).serialize(), function(){
+                bb.msg("{% trans 'Form options were updated' %}")
+            })
+            return false;
+        });
+
+        $('.update-field').bind('submit',function (event) {
+            var field_form = $(this);
+            bb.post('admin/formbuilder/update_field',  $(this).serialize(), function(){
+                $(field_form).fadeOut();
+                $('#background-loader').show();
+                bb.reload();
+            })
+            return false;
+        });
+
+       $('#new-form').click(function () {
+            jPrompt('Give your new form a title', 'My new form', 'Form title', function (title) {
+                if (title) {
+                    bb.post('admin/formbuilder/create_form', {name: title}, function (id) {
+                        bb.redirect("{{ 'extension/settings/formbuilder'|alink({'id' : ''}) }}" + id);
+                    });
+                }
+            });
+            return false;
+        });
+
+        $('.copy_form').click(function () {
+            var fid = $(this).attr('data-form-id');
+            jPrompt('Give your new form a title', 'My new form', 'Form title', function (title) {
+                if (title) {
+                    bb.post('admin/formbuilder/copy_form', {name: title, form_id: fid}, function (id) {
+                        bb.redirect("{{ 'extension/settings/formbuilder'|alink({'id' : ''}) }}" + id);
+                    });
+                }
+            });
+            return false;
+        });
+    });
+
+</script>{% endblock %}
+
+{% endif %}

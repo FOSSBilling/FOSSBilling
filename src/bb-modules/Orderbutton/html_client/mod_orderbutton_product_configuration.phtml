@@ -1,0 +1,53 @@
+{% set product = request.order ? guest.product_get({"id":request.order}) : null %}
+<div class="accordion-group" id="product-configuration">
+    <div class="accordion-heading">
+        <a class="accordion-toggle" href="#order" data-parent="#accordion1" data-toggle="collapse"><span class="awe-cog"></span> {% trans 'Product Configuration' %}</a>
+    </div>
+    {% if product %}
+    <div id="order" class="accordion-body collapse {% if request.order%}in{%endif%}">
+        <div class="accordion-inner">
+            <form method="post" style="background:none;" class="form-{{ product.form_id ? guest.formbuilder_get( {"id":product.form_id}).style.type : 0 }}" action="{{ '/order'|link }}/{{ product.slug }}" id="add-to-cart" onsubmit="return false;">
+
+            {% set product_details %}
+            <div class="well">
+                <strong>{{ product.title }}</strong>
+                {{ product.description | bbmd }}
+
+                {% if product.pricing.type == 'recurrent' %}
+                {% set periods = guest.system_periods %}
+                <select name="period" id="period-selector">
+                    {% for code,prices in product.pricing.recurrent %}
+                    {% if prices.enabled %}
+                    <option value="{{code}}" data-bb-price="{{ prices.price | money_convert }}" name="period">{{ periods[code] }} - {{ prices.price | money_convert }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                {% elseif product.pricing.type == 'free' %}
+                <span class="label label-info">{% trans 'FREE' %}</span>
+                {% else %}
+                <span class="label label-info">{{ product.pricing.once.price | money_convert }}</span>
+                {% endif %}
+            </div>
+            {% endset %}
+
+            {% set tpl = "mod_service"~product.type~"_order_form.phtml" %}
+            {% if guest.system_template_exists({"file":tpl}) %}
+                {% include tpl with product %}
+            {% elseif product.form_id and guest.extension_is_on({"mod":"formbuilder"}) %}
+                {{ product_details }}
+                {% set form = guest.formbuilder_get({"id":product.form_id}) %}
+                {% include 'mod_formbuilder_build.phtml' with product %}
+            {% else %}
+                {{ product_details }}
+            {% endif %}
+
+            {% include 'mod_orderbutton_addons.phtml' with product %}
+
+            <input type="hidden" name="multiple" value="1" />
+            <input type="hidden" name="id" value="{{ product.id }}" />
+               <button type="submit" class="btn btn-primary">{% trans 'Order' %}</button>
+        </div>
+        </form>
+    </div>
+    {% endif %}
+</div>

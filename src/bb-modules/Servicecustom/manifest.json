@@ -1,0 +1,7 @@
+{
+    "id":           "servicecustom",
+	"type":         "mod",
+    "name":         "Custom product type",
+    "description":  "BoxBilling core module",
+    "version":      "1.0.0"
+}

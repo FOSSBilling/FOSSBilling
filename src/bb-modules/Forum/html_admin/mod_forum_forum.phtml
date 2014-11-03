@@ -1,0 +1,62 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% set active_menu = 'support' %}
+{% block meta_title %}Forum{% endblock %}
+
+{% block content %}
+<div class="widget">
+    <div class="head">
+        <h5>{% trans 'Forum details' %}</h5>
+    </div>
+
+    <form method="post" action="{{ 'api/admin/forum/update'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'forum'|alink }}">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{% trans 'Category' %}:</label>
+                <div class="formRight moreFields">
+                    <ul>
+                        <li style="width: 170px"><input type="text" name="category" value="{{forum.category}}" placeholder="" style="width: 150px"/></li>
+                        <li class="sep"></li>
+                        <li style="width: 250px"><input type="checkbox" name="update_categories" value="1" placeholder="" checked="checked"/><label>Update same title categories</label></li>
+                        <li class="sep"></li>
+                    </ul>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Title' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="title" value="{{forum.title}}" required="required" placeholder=""/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Slug' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="slug" value="{{forum.slug}}" required="required" placeholder=""/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Status' %}:</label>
+                <div class="formRight">
+                    <input type="radio" name="status" value="active"{% if forum.status == 'active' %} checked="checked"{% endif %}/><label>{% trans 'Active' %}</label>
+                    <input type="radio" name="status" value="locked"{% if forum.status == 'locked' %} checked="checked"{% endif %}/><label>{% trans 'Locked' %}</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Description' %}</label>
+                <div class="formRight">
+                    <textarea name="description" cols="5" rows="4">{{ forum.description }}</textarea>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+            <input type="hidden" name="id" value="{{ forum.id }}" />
+        </fieldset>
+    </form>
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Redirects' %}{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li class="lastB">{% trans 'Redirects' %}</li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Redirects' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td style="width: 40%">{% trans 'From' %}</td>
+                        <td>{% trans 'To' %}</td>
+                        <td width="13%">&nbsp;</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% set redirects = admin.redirect_get_list({"per_page":100, "page":request.page}|merge(request)) %}
+                {% for r in redirects %}
+                <tr>
+                    <td><a href="{{ r.path | link }}" target="_blank">{{ r.path | link }}</a></td>
+                    <td>{% if '://' in r.target %}<a href="{{ r.target }}" target="_blank">{{ r.target }}</a>{% else %}<a href="{{ r.target | link }}" target="_blank">{{ r.target | link }}</a>{% endif %}</td>
+                    <td class="actions">
+                        <a class="bb-button btn14 bb-rm-tr api-link" href="{{ 'api/admin/redirect/delete'|link({'id' : r.id}) }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/trash.png" alt=""></a>
+                    </td>
+                </tr>
+
+                {% else %}
+                <tr>
+                    <td colspan="3">
+                        {% trans 'The list is empty.' %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+
+                <tfoot>
+                <tr>
+                    <td colspan="3">
+                        &nbsp;
+                    </td>
+                </tr>
+                </tfoot>
+            </table>
+
+            <div class="help">
+                <h3>{% trans 'Create new redirect' %}</h3>
+            </div>
+
+            <form method="post" action="{{ 'api/admin/redirect/create'|link }}" class="mainForm save api-form" data-api-reload="1">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <div class="">
+                            {{ '' | link }}<input type="text" name="path" value="" required="required" placeholder="old-link" style="width: 200px">
+                            &rarr;
+                            <input type="text" name="target" value="" required="required" placeholder="http://www.google.com/ or /order" style="width: 200px">
+                            <input type="submit" value="{% trans 'Add' %}" class="greyishBtn submitForm" />
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                </fieldset>
+            </form>
+
+        </div>
+
+
+        <div class="tab_content nopadding" id="tab-new">
+
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

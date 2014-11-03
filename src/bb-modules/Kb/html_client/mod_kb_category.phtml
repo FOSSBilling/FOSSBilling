@@ -1,0 +1,32 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{{category.title}}{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{{ '/kb'|link }}">{% trans 'Knowledge base' %}</a> <span class="divider">/</span></li>
+<li class="active">{{category.title}}</li>
+{% endblock %}
+
+{% block content %}
+<div class="content-block" role="main">
+    <div class="row">
+        <article class=" span12 data-block">
+            <div class="data-container">
+                <header>
+                    <h1>{{category.title}}</h1>
+                    <p class="meta">{{category.description }}</p>
+                </header>
+                <section>
+                    <ul>
+                        {% for i, article in category.articles %}
+                        <li><a href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{article.title}}</a></li>
+                        <hr/>
+                        {% endfor %}
+                    </ul>
+                    <a class="btn btn-small" href="{{ 'kb'|link }}">{% trans 'Back to list' %}</a>
+                </section>
+            </div>
+        </article>
+    </div>
+</div>
+  {% endblock %}

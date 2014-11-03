@@ -1,0 +1,100 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Forum' %}{% endblock %}
+
+{% block content %}
+    <div class="h-block">
+        <div class="h-block-header">
+            <div class="icon"><span class="big-light-icon i-forum"></span></div>
+            <h2>{% trans 'Forum' %}</h2>
+            <p>{% trans 'Welcome to our forums. If you wish to become a member and post, you have to be registered member.' %}</p>
+        </div>
+        <div class="block">
+
+            {% for cat_name, forums in guest.forum_get_categories %}
+            <table>
+                <caption>{{cat_name}}</caption>
+                <thead>
+                    <tr>
+                        <th>&nbsp;</th>
+                        <th style="width:80%;">{% trans 'Forum' %}</th>
+                        <th>{% trans 'Threads' %}</th>
+                        <th>{% trans 'Posts' %}</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {%  for forum in forums %}
+                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <td>
+                            <span class="forum-status {{forum.status}}"></span>
+                        </td>
+                        <td>
+                            <a href="{{ '/forum'|link }}/{{forum.slug}}">{{forum.title}}</a>
+                            <p>{{forum.description}}</p>
+                        </td>
+                        <td>
+                            {{forum.stats.topics_count|default(0)}}
+                        </td>
+                        <td>{{forum.stats.posts_count|default(0)}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endfor %}
+            
+            {% if client and client.forum_favorites %}
+            <h2>{% trans 'Favorite topics' %}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:5%">&nbsp;</th>
+                        <th style="width:5%">&nbsp;</th>
+                        <th style="width:40%">{% trans 'Thread / Thread Starter' %}</th>
+                        <th>{% trans 'Last post' %}</th>
+                        <th>{% trans 'Replies' %}</th>
+                        <th>{% trans 'Views' %}</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for i, topic in client.forum_favorites %}
+                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <td>
+                            <span class="forum-status {{topic.status}}"></span>
+                        </td>
+                        <td>
+                            <img src="{{ topic.first.author.email|gravatar }}?size=30" alt="{{ topic.first.author.name }}" />
+                        </td>
+                        <td>
+                            <a href="{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}">{{topic.title}}</a>
+                            <p style="font-size: .9em">{{ topic.first.author.name }}</p>
+                        </td>
+                        <td>
+                            {{ topic.last.created_at|bb_date }}
+                            <p style="font-size: .9em">{% trans 'by' %} <a href="{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}#m-{{ topic.last.id }}">{{ topic.last.author.name }} {#<img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"></a>#}</p>
+                        </td>
+                        <td>{{ topic.stats.posts_count }}</td>
+                        <td>{{ topic.stats.views_count }}</td>
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+                        <td colspan="6">{% trans 'The list is empty' %}</td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if not client %}
+    <p><button class="bb-button bb-button-red" type="button" onclick="parent.location='{{ '/login'|link }}'">{% trans 'Register' %}</button></p>
+    {% endif %}
+    
+{% endblock %}

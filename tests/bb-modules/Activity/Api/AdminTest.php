@@ -1,0 +1,182 @@
+<?php
+
+namespace Box\Tests\Mod\Activity\Api;
+
+class AdminTest extends \PHPUnit_Framework_TestCase {
+
+    public function test_log_get_list()
+    {
+        $simpleResultArr = array(
+            'list' => array(
+                array(
+                    'id' => 1,
+                    'staff_id' => 1,
+                    'staff_name' => 'Joe',
+                    'staff_email' => 'example@example.com'
+                ),
+            ),
+        );
+        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock->expects($this->atLeastOnce())
+                    ->method('getSimpleResultSet')
+                    ->will($this->returnValue($simpleResultArr));
+
+        $service = $this->getMockBuilder('\Box\Mod\Activity\Service')->getMock();
+        $service->expects($this->atLeastOnce())
+                ->method('getSearchQuery')
+                ->will($this->returnValue('String'));
+
+        $model = new \Model_ActivitySystem();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+
+        $di = new \Box_Di();
+        $di['pager'] = $paginatorMock;
+        $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
+
+
+        $api = new \Api_Handler(new \Model_Admin());
+        $api->setDi($di);
+        $di['api_admin'] = $api;
+
+        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity->setDi($di);
+        $activity->setService($service);
+        $activity->log_get_list(array());
+    }
+
+    public function test_log_get_list_ItemUserClient()
+    {
+        $simpleResultArr = array(
+            'list' => array(
+                array(
+                    'id' => 1,
+                    'client_id' => 1,
+                    'client_name' => 'Joe',
+                    'client_email' => 'example@example.com'
+                ),
+            ),
+        );
+        $paginatorMock = $this->getMockBuilder('\Box_Pagination')->disableOriginalConstructor()->getMock();
+        $paginatorMock->expects($this->atLeastOnce())
+                    ->method('getSimpleResultSet')
+                    ->will($this->returnValue($simpleResultArr));
+
+        $service = $this->getMockBuilder('\Box\Mod\Activity\Service')->getMock();
+        $service->expects($this->atLeastOnce())
+                ->method('getSearchQuery')
+                ->will($this->returnValue('String'));
+
+        $model = new \Model_ActivitySystem();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+
+        $di = new \Box_Di();
+        $di['pager'] = $paginatorMock;
+        $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
+
+
+        $api = new \Api_Handler(new \Model_Admin());
+        $api->setDi($di);
+        $di['api_admin'] = $api;
+
+        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity->setDi($di);
+        $activity->setService($service);
+        $activity->log_get_list(array());
+    }
+
+    public function testlog()
+    {
+        $databaseMock = $this->getMockBuilder('Box_Database')->getMock();
+        $databaseMock->expects($this->atLeastOnce())->
+            method('dispense')->
+            will($this->returnValue(new \stdClass()));
+
+        $databaseMock->expects($this->atLeastOnce())->
+            method('store')->
+            will($this->returnValue(1));
+
+        $di = new \Box_Di();
+        $di['db'] = $databaseMock;
+        $di['request'] = new \Box_Request($di);
+
+        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity->setDi($di);
+        $result = $activity->log(array('m' => 'hello message'));
+
+        $this->assertEquals(true, $result, 'Log did not returned true');
+    }
+
+    public function testlogEmptyMParam()
+    {
+        $activity = new \Box\Mod\Activity\Api\Admin();
+        $result = $activity->log(array());
+        $this->assertEquals(false, $result, 'Empty array key m');
+    }
+
+    public function testlog_email()
+    {
+        $service = $this->getMockBuilder('\Box\Mod\Activity\Service')->setMethods(array('logEmail'))->getMock();
+        $service->expects($this->atLeastOnce())
+            ->method('logEmail')
+            ->will($this->returnValue(true));
+
+        $adminApi = new \Box\Mod\Activity\Api\Admin();
+        $adminApi->setService($service);
+        $result = $adminApi->log_email(array('subject' => 'Proper subject'));
+
+        $this->assertEquals(true, $result, 'Log_email did not returned true');
+    }
+
+    public function testlog_email_WithoutSubject()
+    {
+        $activity = new \Box\Mod\Activity\Api\Admin();
+        $result = $activity->log_email(array());
+        $this->assertEquals(false, $result);
+    }
+
+    public function testlog_delete()
+    {
+        $di = new \Box_Di();
+
+        $databaseMock = $this->getMockBuilder('Box_Database')->getMock();
+        $databaseMock->expects($this->atLeastOnce())->
+            method('load')->
+            will($this->returnValue(new \Model_ActivitySystem()));
+
+        $databaseMock->expects($this->atLeastOnce())->
+            method('trash');
+
+        $di['db'] = $databaseMock;
+
+        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity->setDi($di);
+
+        $result = $activity->log_delete(array('id' => 1));
+        $this->assertEquals(true, $result);
+    }
+
+    public function testlog_deleteMissingIdException()
+    {
+        $this->setExpectedException('Box_Exception', 'ID is required');
+        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity->log_delete(array());
+    }
+
+    public function testlog_deleteModelException()
+    {
+        $this->setExpectedException('Box_Exception', 'Event not found');
+
+        $databaseMock = $this->getMockBuilder('Box_Database')->getMock();
+        $databaseMock->expects($this->atLeastOnce())->
+            method('load')->
+            will($this->returnValue(new \StdClass()));
+
+        $di['db'] = $databaseMock;
+
+        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity->setDi($di);
+
+        $result = $activity->log_delete(array('id' => 1));
+    }
+}
+ 

@@ -1,0 +1,57 @@
+<?php
+
+namespace Box\Tests\Mod\Example;
+
+class ServiceTest extends \PHPUnit_Framework_TestCase {
+
+    /**
+     * @var \Box\Mod\Example\Service
+     */
+    private $service = null;
+
+    public function setup()
+    {
+        $this->service = new \Box\Mod\Example\Service();
+    }
+
+    public function testEvents()
+    {
+        $result = $this->service->getSearchQuery(array());
+        $this->assertInternalType('array', $result);
+    }
+
+    public function testtoApiArray()
+    {
+        $result = $this->service->toApiArray(array());
+        $this->assertEquals(array(), $result);
+    }
+
+    public function testonAfterClientCalledExampleModule()
+    {
+        $extensionMetaModel = new \Model_ExtensionMeta();
+        $extensionMetaModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('dispense')
+            ->with('extension_meta')
+            ->willReturn($extensionMetaModel);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($extensionMetaModel);
+
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
+
+        $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
+        $eventMock->expects($this->atLeastOnce())
+            ->method('getDi')
+            ->willReturn($di);
+        $eventMock->expects($this->atLeastOnce())
+            ->method('getParameters')
+            ->willReturn(array());
+
+        $this->service->onAfterClientCalledExampleModule($eventMock);
+    }
+}
+ 

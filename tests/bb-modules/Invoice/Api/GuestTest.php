@@ -1,0 +1,240 @@
+<?php
+
+
+namespace Box\Mod\Invoice\Api;
+
+
+class GuestTest extends \PHPUnit_Framework_TestCase {
+    /**
+     * @var \Box\Mod\Invoice\Api\Guest
+     */
+    protected $api = null;
+
+    public function setup()
+    {
+        $this->api = new \Box\Mod\Invoice\Api\Guest();
+    }
+
+    public function testgetDi()
+    {
+        $di = new \Box_Di();
+        $this->api->setDi($di);
+        $getDi = $this->api->getDi();
+        $this->assertEquals($di, $getDi);
+    }
+
+    public function testget()
+    {
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->will($this->returnValue(array()));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $model = new \Model_Invoice();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue($model));
+
+        $di = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+        $this->api->setIdentity(new \Model_Admin());
+
+        $data['hash'] = md5(1);
+        $result = $this->api->get($data);
+        $this->assertInternalType('array', $result);
+    }
+
+    public function testgetInvoiceNotFound()
+    {
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $model = new \Model_Invoice();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue(null));
+
+        $di = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+        $this->api->setIdentity(new \Model_Admin());
+
+        $data['hash'] = md5(1);
+        $this->setExpectedException('\Box_Exception', 'Invoice was not found');
+        $this->api->get($data);
+    }
+
+    public function testupdate()
+    {
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('updateInvoice')
+            ->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $model = new \Model_Invoice();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue($model));
+
+        $di = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+        $this->api->setIdentity(new \Model_Admin());
+
+        $data['hash'] = md5(1);
+        $result = $this->api->update($data);
+        $this->assertInternalType('bool', $result);
+        $this->assertTrue(true);
+    }
+
+    public function testupdateInvoiceNotFound()
+    {
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $model = new \Model_Invoice();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue(null));
+
+        $di = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+        $this->api->setIdentity(new \Model_Admin());
+
+        $data['hash'] = md5(1);
+        $this->setExpectedException('\Box_Exception', 'Invoice was not found');
+        $this->api->update($data);
+    }
+
+    public function testupdateInvoiceIsPaid()
+    {
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $model = new \Model_Invoice();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->status = 'paid';
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue($model));
+
+        $di = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+        $this->api->setIdentity(new \Model_Admin());
+
+        $data['hash'] = md5(1);
+        $this->setExpectedException('\Box_Exception', 'Paid Invoice can not be modified');
+        $this->api->update($data);
+    }
+
+    public function testgateways()
+    {
+        $gatewayServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')->getMock();
+        $gatewayServiceMock->expects($this->atLeastOnce())
+            ->method('getActive')
+            ->will($this->returnValue(array()));
+
+        $di = new \Box_Di();
+        $di['mod_service'] = $di->protect(function () use($gatewayServiceMock) {return $gatewayServiceMock;});
+
+        $this->api->setDi($di);
+
+        $result = $this->api->gateways(array());
+        $this->assertInternalType('array', $result);
+    }
+
+    public function testpayment()
+    {
+        $data = array(
+            'hash' => '',
+            'gateway_id' => '',
+        );
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('processInvoice')
+            ->will($this->returnValue(array()));
+
+        $this->api->setService($serviceMock);
+
+        $result = $this->api->payment($data);
+        $this->assertInternalType('array', $result);
+    }
+
+    public function testpaymentMissingHashParam()
+    {
+        $data = array(
+            'gateway_id' => '',
+        );
+
+        $this->setExpectedException('\Box_Exception', 'Invoice hash not passed. Missing param hash', 810);
+        $this->api->payment($data);
+    }
+
+    public function testpaymentMissingGatewayIdParam()
+    {
+        $data = array(
+            'hash' => '',
+        );
+
+        $this->setExpectedException('\Box_Exception', 'Payment method not found. Missing param gateway_id', 811);
+        $this->api->payment($data);
+    }
+
+    public function testpdf()
+    {
+        $data = array(
+            'hash' => '',
+        );
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('generatePDF');
+
+        $this->api->setService($serviceMock);
+
+        $this->api->pdf($data);
+    }
+
+    public function testpdfMissingHash()
+    {
+        $data = array();
+
+        $this->setExpectedException('\Box_Exception', 'Invoice hash is missing');
+        $this->api->pdf($data);
+    }
+}
+ 

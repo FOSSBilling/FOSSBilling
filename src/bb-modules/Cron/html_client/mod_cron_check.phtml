@@ -1,0 +1,11 @@
+{% if guest.cron_settings.use_web_cron and guest.cron_is_late %}
+<script type="text/javascript">
+    $(function() {
+        $.ajax({
+            type: 'POST',
+            url: bb.restUrl('guest/cron/check'),
+            global: false
+        });
+    });
+</script>
+{% endif %}

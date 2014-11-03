@@ -1,0 +1,20 @@
+{% set bb_editor = admin.wysiwyg_editor %}
+
+{% if bb_editor == 'markitup' %}
+{{ 'markitup/skins/boxbilling/style.css' | mod_asset_url('wysiwyg') | stylesheet_tag }}
+{{ 'markitup/sets/markdown/style.css' | mod_asset_url('wysiwyg') | stylesheet_tag }}
+{{ 'markitup/jquery.markitup.js' | mod_asset_url('wysiwyg') | script_tag }}
+{{ 'markitup/sets/markdown/set.js' | mod_asset_url('wysiwyg') | script_tag }}
+<script type="text/javascript" >
+    $(document).ready(function() {
+        $(".{{class}}").markItUp(mySettings);
+    });
+</script>
+{% endif %}
+
+{% if bb_editor == 'ckeditor' %}
+{{ 'ckeditor/ckeditor.js' | mod_asset_url('wysiwyg') | script_tag }}
+<script type="text/javascript" >
+    CKEDITOR.replaceClass = '{{class}}';
+</script>
+{% endif %}

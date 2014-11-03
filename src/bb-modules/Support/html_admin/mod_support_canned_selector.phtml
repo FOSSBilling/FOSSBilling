@@ -1,0 +1,23 @@
+<div class="canned_response" style="position: relative;">
+    <select name="canned_response" class="canned" style="position: absolute; top: 10px; right: 10px;">
+        <option value="">-- Canned Response --</option>
+        {% for ctitle,cat in admin.support_canned_pairs %}
+            <optgroup label="{{ctitle}}">
+                {% for mid,mtitle in cat %}
+                    <option value="{{ mid }}">{{ mtitle }}</option>
+                {% endfor %}
+            </optgroup>
+        {% endfor %}
+    </select>
+</div>
+
+
+<script type="text/javascript">
+$(function() {
+    $('select.canned').change(function(){
+        var id = $(this).val();
+        if(id) api.get('admin/support/canned_get', {id:id}, function(result){ bb.insertToTextarea('rt', result.content) });
+        return false;
+    });
+});
+</script>

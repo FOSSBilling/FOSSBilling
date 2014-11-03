@@ -1,0 +1,60 @@
+<?php
+/**
+ * @group Core
+ */
+class Api_Admin_ActivityTest extends BBDbApiTestCase
+{
+    protected $_initialSeedFile = 'settings.xml';
+
+    public function testActivity()
+    {
+        $bool = $this->api_admin->activity_log_delete(array('id'=>1));
+        $this->assertTrue($bool);
+        
+        $bool = $this->api_admin->activity_log();
+        $this->assertFalse($bool);
+        
+        $bool = $this->api_admin->activity_log(array('m'=>'this is test message to log'));
+        $this->assertTrue($bool);
+
+        $bool = $this->api_admin->activity_log_email(array('subject' => 'This is an email subject'));
+        $this->assertTrue($bool);
+    }
+
+    public function testLogDeleteIdNotSetException()
+    {
+        $this->setExpectedException('Box_Exception');
+        $this->api_admin->log_delete(array());
+    }
+
+    public function testLogNotFoundException()
+    {
+        $this->setExpectedException('Box_Exception');
+        $this->api_admin->log_delete(array('id' => 100));
+    }
+
+    public function testActivityLogGetList()
+    {
+        $array = $this->api_admin->activity_log_get_list();
+        $this->assertInternalType('array', $array);
+        $this->assertArrayHasKey('list', $array);
+        $this->assertArrayHasKey('pages', $array);
+        $this->assertArrayHasKey('page', $array);
+        $this->assertArrayHasKey('per_page', $array);
+        $this->assertArrayHasKey('total', $array);
+        $this->assertArrayHasKey('list', $array);
+        $list = $array['list'];
+        $this->assertInternalType('array', $list);
+        if (count($list)) {
+            $item = $list[0];
+            $this->assertArrayHasKey('id', $item);
+            $this->assertArrayHasKey('priority', $item);
+            $this->assertArrayHasKey('admin_id', $item);
+            $this->assertArrayHasKey('client_id', $item);
+            $this->assertArrayHasKey('message', $item);
+            $this->assertArrayHasKey('ip', $item);
+            $this->assertArrayHasKey('created_at', $item);
+            $this->assertArrayHasKey('updated_at', $item);
+        }
+    }
+}

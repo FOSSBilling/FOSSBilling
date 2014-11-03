@@ -1,0 +1,90 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% set active_menu = 'support' %}
+{% block meta_title %}{% trans 'News' %}{% endblock %}
+
+{% block content %}
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'News and announcements' %}</a></li>
+        <li><a href="#tab-new">{% trans 'New announcement' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+
+        {{ mf.table_search }}
+        <table class="tableStatic wide">
+            <thead>
+                <tr>
+                    <td colspan="2">{% trans 'Title' %}</td>
+                    <td>{% trans 'Active' %}</td>
+                    <td>{% trans 'Date' %}</td>
+                    <td style="width: 13%">&nbsp;</td>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% set posts = admin.news_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+            {% for i, post in posts.list %}
+            <tr>
+                <td>{{ post.id }}</td>
+                <td>{{ post.title }}</td>
+                <td>{{ mf.status_name(post.status) }}</td>
+                <td>{{ post.created_at|bb_datetime }}</td>
+                <td class="actions">
+                    <a class="bb-button btn14" href="{{ '/news/post'|alink }}/{{post.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                    <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/news/delete'|link({'id' : post.id}) }}" data-api-redirect="{{ 'news'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                </td>
+            </tr>
+
+            {% else %}
+                <tr>
+                    <td colspan="5">
+                        {% trans 'The list is empty' %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% include "partial_pagination.phtml" with {'list': posts, 'url':'news/index'} %}
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new">
+
+            <form method="post" action="{{ 'api/admin/news/create'|link }}" class="mainForm api-form" data-api-redirect="{{ 'news'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Title' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Status' %}:</label>
+                        <div class="formRight">
+                            <input type="radio" name="status" value="draft"checked="checked"/><label>{% trans 'Draft' %}</label>
+                            <input type="radio" name="status" value="active"/><label>{% trans 'Active' %}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Content' %}</label>
+                        <div class="formRight">
+                            <textarea name="content" cols="5" rows="10">{{ request.content }}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

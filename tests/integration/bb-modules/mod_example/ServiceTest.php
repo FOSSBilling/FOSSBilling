@@ -1,0 +1,57 @@
+<?php
+/**
+ * @group Core
+ */
+class Box_Mod_Activity_ServiceTest extends BBDbApiTestCase
+{
+    protected $_initialSeedFile = 'example.xml';
+
+    public function testUninstall(){
+        $service = new Box\Mod\Example\Service();
+        $result = $service->uninstall();
+        $this->assertTrue($result);
+   }
+
+    public function testUpdate(){
+        $service = new Box\Mod\Example\Service();
+        $result = $service->update(array());
+        $this->assertTrue($result);
+   }
+
+    public function testGetSearchQuery()
+    {
+        $service = new Box\Mod\Example\Service();
+        $data = array(
+            'client_id' => 1
+        );
+        list($sql, $params) = $service->getSearchQuery($data);
+        $this->assertInternalType('string', $sql);
+        $this->assertInternalType('array', $params);
+        $this->assertArrayHasKey(':client_id', $params);
+        $this->assertEquals($params[':client_id'], $data['client_id']);
+    }
+
+    public function testEvents()
+    {
+        $service = new Box\Mod\Example\Service();
+        $params = array(
+            'ip' => '123.123.123.123',
+        );
+        $event = new Box_Event(null, 'name', $params, $this->api_admin, $this->api_guest);
+        $event->setDi($this->di);
+
+        $result = $service->onEventClientLoginFailed($event);
+        $this->assertNull($result);
+
+
+        $params = array(
+            'client_id' => 1,
+            'id' => 1
+        );
+        $event = new Box_Event(null, 'name', $params, $this->api_admin, $this->api_guest);
+        $event->setDi($this->di);
+
+        $result = $service->onAfterClientOrderCreate($event);
+        $this->assertNull($result);
+    }
+}

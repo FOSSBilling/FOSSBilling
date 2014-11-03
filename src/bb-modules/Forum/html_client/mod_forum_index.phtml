@@ -1,0 +1,118 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Forum' %}{% endblock %}
+{% block meta_description %}{% trans 'Welcome to our forums.' %}{% endblock %}
+{% block breadcrumb %} <li class="active">{% trans 'Forum' %}</li>{% endblock %}
+
+{% block content %}
+
+{% for cat_name, forums in guest.forum_get_categories %}
+    <div class="row">
+        <article class="span12 data-block" role="main">
+            <div class="data-container">
+                <header>
+                    <h1>{{cat_name}}</h1>
+                    <p>{% trans 'Welcome to our forums. Feel free to join the discussions.' %}</p>
+                </header>
+                <section>
+                <table class="table table-striped table-bordered table-condensed">
+                    <thead>
+                    <tr>
+                        <th>&nbsp;</th>
+                        <th style="width:80%;">{% trans 'Forum' %}</th>
+                        <th>{% trans 'Threads' %}</th>
+                        <th>{% trans 'Posts' %}</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    {%  for forum in forums %}
+                    <tr>
+                        <td>
+                            <span class="awe-comments-alt awe-3x {{forum.status}}" style="padding-right: 0px; padding-left: 5px"></span>
+                        </td>
+                        <td>
+                            <a href="{{ '/forum'|link }}/{{forum.slug}}">{{forum.title}}</a>
+                            <p>{{forum.description}}</p>
+                        </td>
+                        <td>
+                            {{forum.stats.topics_count|default(0)}}
+                        </td>
+                        <td>{{forum.stats.posts_count|default(0)}}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% if not client %}
+                <p><button class="btn btn-primary" type="button" onclick="parent.location='{{ '/login'|link }}'">{% trans 'Register' %}</button></p>
+                {% endif %}
+            </section>
+            </div>
+        </article>
+    </div>
+{% endfor %}
+
+{% if client and client.forum_favorites %}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h2>{% trans 'Favorite topics' %}</h2>
+                <p>{% trans 'You set this topic as favorite. It can be done by opening any topic and clicking on "Add to favorites" button in "Topic information" block.' %}</p>
+            </header>
+            <section>
+                <table class="table table-striped table-bordered table-condensed">
+                    <thead>
+                    <tr>
+                        <th style="width:5%">&nbsp;</th>
+                        <th style="width:5%">&nbsp;</th>
+                        <th style="width:40%">{% trans 'Thread / Thread Starter' %}</th>
+                        <th>{% trans 'Last post' %}</th>
+                        <th>{% trans 'Replies' %}</th>
+                        <th>{% trans 'Views' %}</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    {% for i, topic in client.forum_favorites %}
+                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <td>
+                            <span class="awe-star awe-2x {{topic.status}}" style="padding-right: 0px; padding-left: 5px"></span>
+                        </td>
+                        <td>
+                            <img src="{{ topic.first.author.email|gravatar }}?size=30" alt="{{ topic.first.author.name }}" />
+                        </td>
+                        <td>
+                            <a href="{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}">{{topic.title}}</a>
+                            <p style="font-size: .9em">{{ topic.first.author.name }}</p>
+                        </td>
+                        <td>
+                            {{ topic.last.created_at|bb_date }}
+                            <p style="font-size: .9em">{% trans 'by' %} <a href="{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}#m-{{ topic.last.id }}">{{ topic.last.author.name }} {#<img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"></a>#}</p>
+                        </td>
+                        <td>{{ topic.stats.posts_count }}</td>
+                        <td>{{ topic.stats.views_count }}</td>
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+                        <td colspan="6">{% trans 'The list is empty' %}</td>
+                    </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </section>
+        </div>
+    </article>
+</div>
+{% endif %}
+
+
+
+    
+{% endblock %}

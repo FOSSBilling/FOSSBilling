@@ -1,0 +1,68 @@
+<ul class="nav main">
+    {% if not client %}
+    <li>
+        <a class="dark-icon i-home" href="{{ ''|link }}">{% trans 'Home' %}</a>
+    </li>
+    {% endif %}
+    <li>
+        <a class="dark-icon i-order" href="{{ '/order'|link }}">{% trans 'Order' %}</a>
+    </li>
+
+    {% if guest.extension_is_on({"mod":"news"}) %}
+    <li>
+        <a class="dark-icon i-blog" href="{{ '/news'|link }}">{% trans 'Blog' %}</a>
+    </li>
+    {% endif %}
+    
+    {% if guest.extension_is_on({"mod":"kb"}) %}
+    <li>
+        <a class="dark-icon i-kb" href="{{ '/kb'|link }}">{% trans 'Knowledge Base' %}</a>
+    </li>
+    {% endif %}
+
+    {% if guest.extension_is_on({"mod":"forum"}) %}
+    <li>
+        <a class="dark-icon i-forum" href="{{ '/forum'|link }}">{% trans 'Forum' %}</a>
+    </li>
+    {% endif %}
+    
+    <li>
+        <a class="dark-icon i-contacts" href="{{ '/support/contact-us'|link }}">{% trans 'Contact us' %}</a>
+    </li>
+
+    {% if client %}
+    <li>
+        <a class="dark-icon i-support" href="{{ '/support'|link }}">{% trans 'Support' %}</a>
+    </li>
+    <li>
+        <a class="dark-icon i-services" href="{{ '/order/service'|link }}">{% trans 'Services' %}</a>
+    </li>
+    
+    <li>
+        <a class="dark-icon i-invoice" href="{{ '/invoice'|link }}">{% trans 'Invoices' %}</a>
+    </li>
+    <li>
+        <a class="dark-icon i-email" href="{{ '/email'|link }}">{% trans 'Emails' %}</a>
+    </li>
+
+    <li>
+        <a class="dark-icon i-payment" href="{{ '/client/balance'|link }}">{% trans 'Payment history' %}</a>
+    </li>
+    
+    {#
+    <li>
+        <a class="dark-icon i-profile" href="{{ '/client/me'|link }}">{% trans 'Profile' %}</a>
+    </li>
+
+    <li>
+        <a class="dark-icon i-logout api" href="client/client/logout">{% trans 'Logout' %}</a>
+    </li>
+    #}
+    {% else %}
+    {#
+    <li class="secondary">
+        <a class="dark-icon i-profile" href="{{ '/login'|link }}">{% trans 'Sign in / Register' %}</a>
+    </li>
+    #}
+    {% endif %}
+</ul>

@@ -1,0 +1,33 @@
+                        <ul class="menu_body">
+                            {% if admin.system_is_allowed({"mod":"order"}) %}
+                            <li><a href="{{ 'order#tab-new'|alink }}" title="">{% trans 'Order' %}</a></li>
+                            {% endif %}
+                            
+                            {% if admin.system_is_allowed({"mod":"invoice"}) %}
+                            <li><a href="{{ 'invoice#tab-new'|alink }}" title="">{% trans 'Invoice' %}</a></li>
+                            {% endif %}
+                            
+                            {% if admin.system_is_allowed({"mod":"client"}) %}
+                            <li><a href="{{ 'client#tab-new'|alink }}" title="">{% trans 'Client' %}</a></li>
+                            {% endif %}
+                            
+                            {% if admin.system_is_allowed({"mod":"product"}) %}
+                            <li><a href="{{ 'product#tab-new'|alink }}" title="">{% trans 'Product' %}</a></li>
+                            {% endif %}
+                            
+                            {% if admin.system_is_allowed({"mod":"support"}) %}
+                            <li><a href="{{ 'support#tab-new'|alink }}" title="">{% trans 'Support ticket' %}</a></li>
+                            {% endif %}
+                            
+                            {% if admin.system_is_allowed({"mod":"staff"}) %}
+                            <li><a href="{{ 'extension/settings/staff#tab-new'|alink }}" title="">{% trans 'Staff member' %}</a></li>
+                            {% endif %}
+                            
+                            {% if guest.extension_is_on({"mod":"news"}) and admin.system_is_allowed({"mod":"news"}) %}
+                            <li><a href="{{ 'news#tab-new'|alink }}" title="">{% trans 'Announcement' %}</a></li>
+                            {% endif %}
+                            
+                            {% if guest.extension_is_on({"mod":"forum"}) and admin.system_is_allowed({"mod":"forum"}) %}
+                            <li><a href="{{ 'forum#tab-new'|alink }}" title="">{% trans 'Forum topic' %}</a></li>
+                            {% endif %}
+                        </ul>
