@@ -327,10 +327,10 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
                 array('txn_id' => 'longTxn_id'), array('txn_id' => 'longTxn_id'), 'AND m.txn_id = :txn_id',
             ),
             array(
-                array('date_from' => '2012-12-12'), array('date_from' => 1355263200), 'AND UNIX_TIMESTAMP(m.created_at) >= :date_from',
+                array('date_from' => '2012-12-12'), array('date_from' => 1355270400), 'AND UNIX_TIMESTAMP(m.created_at) >= :date_from',
             ),
             array(
-                array('date_to' => '2012-12-12'), array('date_to' => 1355263200), 'AND UNIX_TIMESTAMP(m.created_at) <= :date_to',
+                array('date_to' => '2012-12-12'), array('date_to' => 1355270400), 'AND UNIX_TIMESTAMP(m.created_at) <= :date_to',
             ),
         );
     }
