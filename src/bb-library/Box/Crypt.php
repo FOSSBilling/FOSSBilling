@@ -63,6 +63,6 @@ class Box_Crypt implements \Box\InjectionAwareInterface
         if (null == $pass) {
             $pass = $this->di['config']['salt'];
         }
-        return pack('H*', hash('sha256', $pass));
+        return pack('H*', hash('md5', $pass));
     }
 }
