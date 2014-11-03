@@ -62,13 +62,13 @@ function handler_exception(Exception $e)
     print sprintf('<p>%s</p>', $e->getMessage());
     print sprintf('<p><a href="http://www.boxbilling.com/docs/search.html?q=%s" target="_blank">Look for detailed error explanation</a></p>', urlencode($e->getMessage()));
 
-    //if(defined('BB_DEBUG') && BB_DEBUG) {
+    if(defined('BB_DEBUG') && BB_DEBUG) {
         print sprintf('<em>%s</em>', 'Set BB_DEBUG to FALSE, to hide the message below');
         print sprintf('<p>Class: "%s"</p>', get_class($e));
         print sprintf('<p>File: "%s"</p>', $e->getFile());
         print sprintf('<p>Line: "%s"</p>', $e->getLine());
         print sprintf('Trace: <pre>%s</pre>', $e->getTraceAsString());
-    //}
+    }
 }
 
 set_exception_handler("handler_exception");
