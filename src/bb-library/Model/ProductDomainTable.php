@@ -39,14 +39,14 @@ class Model_ProductDomainTable extends Model_ProductTable
 
             if($this->isActionNameSet($item, 'register') &&
                 $this->isFreeDomainSet($item) &&
-                $this->domainMatch($item, $config) )
+                $this->registerDomainMatch($item, $config) )
             {
                         return $this->getProductPrice($product, $config);
             }
             
             if($this->isActionNameSet($item, 'transfer') &&
                 $this->isFreeTransferSet($item) &&
-                $this->domainMatch($item, $config) ) {
+                $this->transferDomainMatch($item, $config) ) {
                     return $this->getProductPrice($product, $config);
             }
         }
@@ -64,9 +64,20 @@ class Model_ProductDomainTable extends Model_ProductTable
         return isset($item['config']['free_domain']) && $item['config']['free_domain'];
     }
 
-    private function domainMatch($item, $config)
+    private function registerDomainMatch($item, $config)
     {
+        if (!isset($item['config']['domain']['register_sld'])){
+            return false;
+        }
         return $item['config']['domain']['register_sld'] == $config['register_sld'] && $item['config']['domain']['register_tld'] == $config['register_tld'];
+    }
+
+    private function transferDomainMatch($item, $config)
+    {
+        if (!isset($item['config']['domain']['transfer_sld'])){
+            return false;
+        }
+        return $item['config']['domain']['transfer_sld'] == $config['transfer_sld'] && $item['config']['domain']['transfer_tld'] == $config['transfer_tld'];
     }
 
     private function isFreeTransferSet($item)
