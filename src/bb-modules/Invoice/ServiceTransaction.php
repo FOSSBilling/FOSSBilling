@@ -403,12 +403,12 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         $adapter = $payGatewayService->getPaymentAdapter($gtw);
-        if(!method_exists($adapter, 'process')) {
+        if(!method_exists($adapter, 'processTransaction')) {
             throw new \Box_Exception('Payment adapter :adapter does not support action :action', array(':adapter'=>$gtw->name, ':action'=>'processTransaction'), 705);
         }
 
         $ipn = json_decode($tx->ipn, 1);
-        return $adapter->process($this->di['api_admin'], $id, $ipn, $tx->gateway_id);
+        return $adapter->processTransaction($this->di['api_admin'], $id, $ipn, $tx->gateway_id);
     }
 
     public function getReceived()
@@ -496,7 +496,7 @@ class ServiceTransaction implements InjectionAwareInterface
             return false;
         }
 
-        $res = $this->di['db']->findOne('Transaction', 'status = processed and txn_id = ?', array($tx->txn_id));
+        $res = $this->di['db']->findOne('Transaction', 'status = "processed" and txn_id = ?', array($tx->txn_id));
         return empty($res);
     }
 
@@ -551,6 +551,10 @@ class ServiceTransaction implements InjectionAwareInterface
                 throw new \Box_Exception('Instant payment notification (IPN) did not pass gateway :id validation', array(':id'=>$gtw->gateway), 706);
             }
             $tx->output        = $adapter->getOutput();
+        }
+
+        if(!method_exists($adapter, 'getTransaction')) {
+            throw new \Box_Exception('Payment adapter :adapter does not support action :action', array(':adapter'=>$gtw->name, ':action'=>'getTransaction'), 705);
         }
 
         $response = $adapter->getTransaction($ipn, $mpi);
