@@ -20,6 +20,7 @@
 
     <ul class="tabs">
         <li><a href="#tab-index">{% trans 'General' %}</a></li>
+        <li><a href="#tab-custom-fields">{% trans 'Custom Fields' %}</a></li>
     </ul>
     
     <div class="tabs_container">
@@ -74,20 +75,6 @@
                             <option value="phone" {% if 'phone' in params.required %}selected{% endif %}>{% trans 'Phone' %}</option>
                             </optgroup>
 
-                            {#
-                            <optgroup label="Custom fields">
-                            <option value="custom_1" {% if 'custom_1' in params.required %}selected{% endif %}>{% trans 'Custom_1' %}</option>
-                            <option value="custom_2" {% if 'custom_2' in params.required %}selected{% endif %}>{% trans 'Custom_2' %}</option>
-                            <option value="custom_3" {% if 'custom_3' in params.required %}selected{% endif %}>{% trans 'Custom_3' %}</option>
-                            <option value="custom_4" {% if 'custom_4' in params.required %}selected{% endif %}>{% trans 'Custom_4' %}</option>
-                            <option value="custom_5" {% if 'custom_5' in params.required %}selected{% endif %}>{% trans 'Custom_5' %}</option>
-                            <option value="custom_6" {% if 'custom_6' in params.required %}selected{% endif %}>{% trans 'Custom_6' %}</option>
-                            <option value="custom_7" {% if 'custom_7' in params.required %}selected{% endif %}>{% trans 'Custom_7' %}</option>
-                            <option value="custom_8" {% if 'custom_8' in params.required %}selected{% endif %}>{% trans 'Custom_8' %}</option>
-                            <option value="custom_9" {% if 'custom_9' in params.required %}selected{% endif %}>{% trans 'Custom_9' %}</option>
-                            <option value="custom_10" {% if 'custom_10' in params.required %}selected{% endif %}>{% trans 'Custom_10' %}</option>
-                            </optgroup>
-                            #}
                         </select>
 
                     </div>
@@ -96,6 +83,25 @@
                 <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
             </fieldset>
             
+        </div>
+        <div id="tab-custom-fields" class="tab_content nopadding">
+                <fieldset>
+                    {% for i in 0..10 %}
+                    {% set field_name = 'custom_' ~ i %}
+                    {% set custom_field = attribute(params.custom_fields, field_name) %}
+                    <div class="rowElem noborder">
+                        <label>{% if custom_field.title is not empty %} {{custom_field.title}} ({% trans 'Custom_' %}{{ i }}) {% else %}{% trans 'Custom_' %}{{ i }}{% endif %}</label>
+                        <div class="formRight">
+                            <input type="checkbox" name="custom_fields[{{ field_name }}][active]" value="1"{% if custom_field.active %} checked="checked"{% endif %}/><label>{% trans 'Active' %}</label>
+                            <input type="checkbox" name="custom_fields[{{ field_name }}][required]" value="1"{% if custom_field.required %} checked="checked"{% endif %}/><label>{% trans 'Required' %}</label>
+                            <input type="text" placeholder="Field title" name="custom_fields[{{ field_name }}][title]" value="{{custom_field.title}}" style="width: 300px"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <hr/>
+                    {% endfor %}
+                    <input type="submit" value="{% trans 'Update profile' %}" class="greyishBtn submitForm" />
+                </fieldset>
         </div>
     </div>
 </div>

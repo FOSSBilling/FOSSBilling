@@ -95,6 +95,19 @@ class Guest extends \Api_Abstract
             }
         }
 
+        if (isset($config['custom_fields']) && is_array($config['custom_fields'])) {
+            foreach ($config['custom_fields'] as $cFieldName => $cField) {
+                $active   = isset($cField['active']) && $cField['active'] ? true : false;
+                $required = isset($cField['required']) && $cField['required'] ? true : false;
+                if ($active && $required) {
+                    if (!isset($data[$cFieldName]) || empty($data[$cFieldName])) {
+                        $name = isset($cField['title']) && !empty($cField['title']) ? $cField['title'] : ucwords(str_replace('_', ' ', $cFieldName));;
+                        throw new \Box_Exception('It is required that you provide details for field ":field"', array(':field' => $name));
+                    }
+                }
+            }
+        }
+
         $this->di['validator']->isPasswordStrong($data['password']);
         $this->di['validator']->isEmailValid($data['email']);
 
@@ -277,5 +290,14 @@ class Guest extends \Api_Abstract
     {
         $config = $this->di['mod_config']('client');
         return isset($config['required']) ? $config['required'] : array();
+    }
+
+    /**
+     * Array of custom fields for client registration
+     */
+    public function custom_fields()
+    {
+        $config = $this->di['mod_config']('client');
+        return isset($config['custom_fields']) ? $config['custom_fields'] : array();
     }
 }

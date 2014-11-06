@@ -100,6 +100,19 @@
                                 </select>
                             </p>
                             {% endif %}
+
+                            {% set custom_fields = guest.client_custom_fields %}
+                            {% for field_name, field in custom_fields %}
+                            {% if field.active %}
+                            <div class="control-group">
+                                <label class="control-label" for="{{ field_name }}">{% if field.title is not empty %}{{ field.title }}{% else %} {{ field_name | capitalize }} {% endif %}</label>
+                                <div class="controls">
+                                    <input type="text" name="{{ field_name }}" id="{{ field_name }}" value="{{ attribute(request, field_name) }}" {% if field.required %}required="required"{% endif %}>
+                                    <p class="help-block"></p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
                             
                             <p>
                                 <label>{% trans 'Password' %}: </label>
