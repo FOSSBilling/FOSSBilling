@@ -44,6 +44,9 @@ class Box_Crypt implements \Box\InjectionAwareInterface
 
     public function decrypt($text, $pass = null)
     {
+        if (is_null($text)){
+            return false;
+        }
         $key = $this->_getSalt($pass);
         $mode = MCRYPT_MODE_CBC;
         $ciphertext_dec = base64_decode($text);
