@@ -653,7 +653,7 @@ class xmlapi {
 			
 		}
 		
-		if ( ( $user != null ) && ( strlen( $user ) < 9 ) ) {
+		if ( $user != null ) {
 			$this->user = $user;
 		}
 		
