@@ -44,7 +44,7 @@ var bb = {
         });
     },
     restUrl: function(url) {
-        if(url.indexOf('http://') > -1) {
+        if(url.indexOf('http://') > -1 || url.indexOf('https://') > -1) {
             return url;
         }
         return $('meta[property="bb:url"]').attr("content") + 'index.php?_url=/api/' + url;
