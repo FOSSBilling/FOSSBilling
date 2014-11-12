@@ -42,6 +42,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
+        $orderConfig = $this->di['mod']('order')->getConfig();
+        $data['hide_addons'] = (isset($orderConfig['show_addons']) && $orderConfig['show_addons']) ? 0 : 1;
         list($sql, $params) = $this->getService()->getSearchQuery($data);
         $paginator = $this->di['pager'];
         $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();

@@ -130,7 +130,7 @@
             </thead>
 
             <tbody>
-                {% set orders = admin.order_get_list({"per_page":30, "page":request.page, "hide_addons":1}|merge(request)) %}
+                {% set orders = admin.order_get_list({"per_page":30, "page":request.page}|merge(request)) %}
                 {% for i, order in orders.list %}
                 <tr>
                     <td>{{order.id}}</td>

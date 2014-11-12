@@ -368,7 +368,7 @@ class Service implements InjectionAwareInterface
                 LEFT JOIN client_order_meta meta ON meta.client_order_id = co.id";
 
         $search      = isset($data['search']) ? $data['search'] : FALSE;
-        $hide_addons = isset($data['hide_addons']);
+        $hide_addons = isset($data['hide_addons']) ? $data['hide_addons'] : NULL;
         $id          = isset($data['id']) ? $data['id'] : NULL;
         $product_id  = isset($data['product_id']) ? $data['product_id'] : NULL;
         $status      = isset($data['status']) ? $data['status'] : NULL;
