@@ -58,8 +58,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             ->method('getAdvancedResultSet')
             ->will($this->returnValue(array('list' => array())));
 
+        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock->expects($this->atLeastOnce())
+            ->method('getConfig')
+            ->will($this->returnValue(array('show_addons' => 0)));
+
         $di          = new \Box_Di();
         $di['pager'] = $paginatorMock;
+        $di['mod'] = $di->protect(function() use ($modMock) {return $modMock;});;
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
