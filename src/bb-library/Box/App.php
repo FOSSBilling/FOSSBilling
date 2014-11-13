@@ -61,6 +61,7 @@ class Box_App {
         $mod = filter_var($mod, FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
 
         $this->mod = $mod;
+        $this->uri = $requestUri;
     }
 
     protected function init(){}
