@@ -38,7 +38,6 @@ class Api_Admin_ProfileTest extends BBDbApiTestCase
         $array = $this->api_admin->profile_get();
         $password = $this->di['db']->getCell('Select pass from admin where id = ?', array($array['id']));
 
-        $expected = sha1($data['password']);
-        $this->assertEquals($expected, $password);
+        $this->assertTrue($this->di['password']->verify($data['password'], $password));
     }
 }
