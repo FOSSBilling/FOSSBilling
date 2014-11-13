@@ -46,11 +46,18 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('set')
             ->will($this->returnValue(null));
 
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->expects($this->atLeastOnce())
+            ->method('authorizeUser')
+            ->with($admin, $password)
+            ->willReturn($admin);
+
         $di = new \Box_Di();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
+        $di['auth'] = $authMock;
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
@@ -1025,6 +1032,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('adminLink')
             ->willReturn('');
 
+
+        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock->expects($this->atLeastOnce())
+            ->method('hashIt')
+            ->with($data['password']);
+
         $di = new \Box_Di();
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
@@ -1037,6 +1050,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             }
         });
         $di['url'] = $urlMock;
+        $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
