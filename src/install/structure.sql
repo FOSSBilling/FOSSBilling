@@ -906,6 +906,7 @@ CREATE TABLE `promo` (
   `active` tinyint(1) DEFAULT '0',
   `products` text,
   `periods` text,
+  `client_groups` text,
   `start_at` datetime DEFAULT NULL,
   `end_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,

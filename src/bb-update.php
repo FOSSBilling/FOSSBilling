@@ -18,6 +18,18 @@
  */
 
 /**
+ * Version 4.12
+ */
+class BBPatch_18 extends BBPatchAbstract
+{
+    public function patch()
+    {
+        $q="ALTER TABLE `promo` ADD  `client_groups` TEXT NULL AFTER  `products`;";
+        $this->execSql($q);
+
+    }
+
+}/**
  * Version X.XX.X
  */
 class BBPatch_17 extends BBPatchAbstract
