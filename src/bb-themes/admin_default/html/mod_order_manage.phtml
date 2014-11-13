@@ -65,6 +65,18 @@
                         <td>{{ mf.currency_format( order.total, order.currency) }} {% if order.period %}{{mf.period_name(order.period)}}{% endif %} {% if order.quantity > 1 %}({{ order.quantity }} x {{ mf.currency_format( order.price, order.currency) }}){% endif %}</td>
                     </tr>
 
+                    {% if order.discount and order.discount > 0%}
+                    <tr>
+                        <td><label>{% trans 'Order discount' %}</label></td>
+                        <td>-{{ mf.currency_format( order.discount, order.currency) }} </td>
+                    </tr>
+
+                    <tr>
+                        <td><label>{% trans 'Payment amount after discount' %}</label></td>
+                        <td>{{ mf.currency_format( order.total - order.discount, order.currency) }} </td>
+                    </tr>
+                    {% endif %}
+
                     <tr>
                         <td><label>{% trans 'Order status' %}</label></td>
                         <td>{{mf.status_name(order.status)}}</td>
