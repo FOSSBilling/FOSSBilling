@@ -43,7 +43,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminLogin', 'params'=>$event_params));
 
-        $model = $this->di['db']->findOne('Admin', "email = ? AND pass = SHA1(?) AND status = ?", array( $email, $password, 'active' ));
+        $model = $this->authorizeAdmin($email, $password);
         if(!$model instanceof \Model_Admin ) {
             $this->di['events_manager']->fire(array('event'=>'onEventAdminLoginFailed', 'params'=>$event_params));
             throw new \Box_Exception('Check your login details', null, 403);
@@ -495,7 +495,7 @@ class Service implements InjectionAwareInterface
         $admin->admin_group_id = 1;
         $admin->name = 'Administrator';
         $admin->email = $data['email'];
-        $admin->pass = sha1($data['password']);
+        $admin->pass = $this->di['password']->hashIt($data['password']);
         $admin->protected = 1;
         $admin->status = 'active';
         $admin->created_at = date('c');
