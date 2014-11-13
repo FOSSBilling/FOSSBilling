@@ -564,7 +564,7 @@ class Service implements InjectionAwareInterface
         return array($sql, $params);
     }
 
-    public function createPromo($code, $type, $value, $products = array(), $periods = array(), $data)
+    public function createPromo($code, $type, $value, $products = array(), $periods = array(), $clientGroups = array(), $data)
     {
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Promo', 2);
@@ -583,6 +583,7 @@ class Service implements InjectionAwareInterface
 
         $model->products = json_encode($products);
         $model->periods = json_encode($periods);
+        $model->client_groups = json_encode($clientGroups);
 
         $model->updated_at = date('c');
         $model->created_at = date('c');
@@ -597,10 +598,15 @@ class Service implements InjectionAwareInterface
         $products = json_decode($model->products, 1);
         $products = $this->getProductTitlesByIds($products);
 
+        $clientGroups = json_decode($model->client_groups, 1);
+        $clientGroups = $this->di['tools']->getPairsForTableByIds('client_group',$clientGroups);
+
         $result = $this->di['db']->toArray($model);
         $result['applies_to'] = $products;
+        $result['cgroups'] = $clientGroups;
         $result['products'] = json_decode($model->products, 1);
         $result['periods'] = json_decode($model->periods, 1);
+        $result['client_groups'] = json_decode($model->client_groups, 1);
         return $result;
     }
 

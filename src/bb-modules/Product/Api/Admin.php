@@ -466,8 +466,13 @@ class Admin extends \Api_Abstract
         if(isset($data['periods']) && is_array($data['periods'])) {
             $periods = $data['periods'];
         }
+
+        $clientGroups = array();
+        if(isset($data['client_groups']) && is_array($data['client_groups'])) {
+            $clientGroups = $data['client_groups'];
+        }
         $service = $this->getService();
-        return (int) $service->createPromo($data['code'], $data['type'], $data['value'], $products, $periods, $data);
+        return (int) $service->createPromo($data['code'], $data['type'], $data['value'], $products, $periods, $clientGroups, $data);
     }
     
     /**
