@@ -672,6 +672,14 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        if(isset($data['client_groups'])) {
+            if(empty($data['client_groups'])) {
+                $model->client_groups = NULL;
+            } else {
+                $model->client_groups = json_encode($data['client_groups']);
+            }
+        }
+
         if(isset($data['periods']) && is_array($data['periods'])) {
             $model->periods = json_encode($data['periods']);
         }

@@ -131,6 +131,18 @@
                 </div>
                 <div class="fix"></div>
             </div>
+            <div class="rowElem">
+                <label>{% trans 'Periods (Select none to apply to all client groups)' %}</label>
+                <div class="formRight">
+                    {% set client_groups = admin.client_group_get_pairs %}
+                    <select name="client_groups[]" multiple="multiple" class="multiple" size="{{groups|length}}">
+                        {% for id, client_group in client_groups %}
+                        <option value="{{id}}" {% if id in promo.client_groups %}selected="selected"{% endif %}>{{ client_group }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fix"></div>
+            </div>
             <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
             <input type="hidden" name="id" value="{{ promo.id }}" />
         </fieldset>
