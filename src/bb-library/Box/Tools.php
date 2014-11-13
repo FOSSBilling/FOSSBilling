@@ -467,4 +467,22 @@ class Box_Tools
         return new $class();
     }
 
+    public function getPairsForTableByIds($table, $ids)
+    {
+        if (empty ($ids)) {
+            return array();
+        }
+
+        $slots = (count($ids)) ? implode(',', array_fill(0, count($ids), '?')) : ''; //same as RedBean genSlots() method
+
+        $rows = $this->di['db']->getAll('SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')', $ids);
+
+        $result = array();
+        foreach ($rows as $record) {
+            $result[$record['id']] = $record['title'];
+        }
+
+        return $result;
+    }
+
 }
