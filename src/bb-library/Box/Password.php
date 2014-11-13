@@ -20,9 +20,19 @@ class Box_Password {
         $this->algo = $algo;
     }
 
+    public function getAlgo()
+    {
+        return $this->algo;
+    }
+
     public function setOptions($options = array())
     {
         $this->options = $options;
+    }
+
+    public function getOptions()
+    {
+        return $this->options;
     }
 
     public function hashIt($password)
