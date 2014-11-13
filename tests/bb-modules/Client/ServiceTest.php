@@ -970,5 +970,58 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $this->setExpectedException('\Box_Exception', 'Can not remove group with clients');
         $service->deleteGroup($model);
     }
+
+    public function testauthorizeClient_DidntFoundEmail()
+    {
+        $email = 'example@boxbilling.vm';
+        $password = '123456';
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->with('Client')
+            ->willReturn(null);
+
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
+
+        $service = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+
+        $result = $service->authorizeClient($email, $password);
+        $this->assertNull($result);
+    }
+
+    public function testauthorizeClient()
+    {
+        $email = 'example@boxbilling.vm';
+        $password = '123456';
+
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->with('Client')
+            ->willReturn($clientModel);
+
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->expects($this->atLeastOnce())
+            ->method('authorizeUser')
+            ->with($clientModel,$password)
+            ->willReturn($clientModel);
+
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
+        $di['auth'] = $authMock;
+
+        $service = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+
+        $result = $service->authorizeClient($email, $password);
+        $this->assertInstanceOf('\Model_Client', $result);
+    }
+
 }
  

@@ -32,4 +32,17 @@ class Box_Authorization
         return (bool)($this->session->get('admin'));
     }
 
+    public function authorizeUser($user, $plainTextPassword)
+    {
+        if ($this->di['password']->verify($plainTextPassword, $user->pass)){
+            if ($this->di['password']->needsRehash($user->pass)){
+                $newHash = $this->di['password']->hashIt($plainTextPassword);
+                $user->pass = $newHash;
+                $this->di['db']->store($user);
+            }
+            return $user;
+        }
+        return null;
+    }
+
 }
