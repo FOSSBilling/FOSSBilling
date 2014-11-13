@@ -675,4 +675,14 @@ class Service implements InjectionAwareInterface
         $emailService->sendMail($admin_email, $from, $subject, $content);
     }
 
+    public function authorizeAdmin($email, $plainTextPassword)
+    {
+        $model = $this->di['db']->findOne('Admin', 'email = ? AND status', array($email, \Model_Admin::STATUS_ACTIVE));
+        if ($model == null){
+            return null;
+        }
+
+        return $this->di['auth']->authorizeUser($model, $plainTextPassword);
+    }
+
 }
