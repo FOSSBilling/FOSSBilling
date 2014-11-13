@@ -1414,7 +1414,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->with('Admin', 'email = ? AND status')
+            ->with('Admin', 'email = ? AND status = ?')
             ->willReturn(null);
 
         $di = new \Box_Di();
@@ -1438,7 +1438,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->with('Admin', 'email = ? AND status')
+            ->with('Admin', 'email = ? AND status = ?')
             ->willReturn($model);
 
         $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
