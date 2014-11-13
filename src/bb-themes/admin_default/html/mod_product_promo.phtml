@@ -123,6 +123,7 @@
                 <label>{% trans 'Periods (Select none to apply to all periods)' %}</label>
                 <div class="formRight">
                     {% set periods = guest.system_periods %}
+                    <input type="hidden" name="periods" value="">
                     <select name="periods[]" multiple="multiple" class="multiple" size="{{periods|length}}">
                         {% for id,period in periods %}
                         <option value="{{id}}" {% if id in promo.periods %}selected="selected"{% endif %}>{{ period }}</option>
@@ -135,6 +136,7 @@
                 <label>{% trans 'Periods (Select none to apply to all client groups)' %}</label>
                 <div class="formRight">
                     {% set client_groups = admin.client_group_get_pairs %}
+                    <input type="hidden" name="client_groups" value="">
                     <select name="client_groups[]" multiple="multiple" class="multiple" size="{{groups|length}}">
                         {% for id, client_group in client_groups %}
                         <option value="{{id}}" {% if id in promo.client_groups %}selected="selected"{% endif %}>{{ client_group }}</option>
