@@ -56,7 +56,7 @@ class Client implements \Box\InjectionAwareInterface
     public function do_redirect(\Box_App $app)
     {
         $service = $this->di['mod_service']('redirect');
-        $target = $service->getRedirectByPath($app->url);
+        $target = $service->getRedirectByPath($app->uri);
         Header( "HTTP/1.1 301 Moved Permanently" ); 
         Header( "Location: ".$target );
         exit;
