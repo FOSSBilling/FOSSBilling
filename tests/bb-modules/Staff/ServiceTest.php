@@ -46,11 +46,18 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('set')
             ->will($this->returnValue(null));
 
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->expects($this->atLeastOnce())
+            ->method('authorizeUser')
+            ->with($admin, $password)
+            ->willReturn($admin);
+
         $di = new \Box_Di();
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
+        $di['auth'] = $authMock;
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
@@ -1025,6 +1032,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('adminLink')
             ->willReturn('');
 
+
+        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock->expects($this->atLeastOnce())
+            ->method('hashIt')
+            ->with($data['password']);
+
         $di = new \Box_Di();
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
@@ -1037,6 +1050,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             }
         });
         $di['url'] = $urlMock;
+        $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
@@ -1389,6 +1403,59 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $result = $service->getPermissions($member_id);
         $this->assertInternalType('array', $result);
         $this->assertEquals($expected, $result);
+    }
+
+
+    public function testauthorizeAdmin_DidntFoundEmail()
+    {
+        $email = 'example@boxbilling.vm';
+        $password = '123456';
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->with('Admin', 'email = ? AND status = ?')
+            ->willReturn(null);
+
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
+
+        $service = new \Box\Mod\Staff\Service();
+        $service->setDi($di);
+
+        $result = $service->authorizeAdmin($email, $password);
+        $this->assertNull($result);
+    }
+
+    public function testauthorizeAdmin()
+    {
+        $email = 'example@boxbilling.vm';
+        $password = '123456';
+
+        $model = new \Model_Admin();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->with('Admin', 'email = ? AND status = ?')
+            ->willReturn($model);
+
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->expects($this->atLeastOnce())
+            ->method('authorizeUser')
+            ->with($model,$password)
+            ->willReturn($model);
+
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
+        $di['auth'] = $authMock;
+
+        $service = new \Box\Mod\Staff\Service();
+        $service->setDi($di);
+
+        $result = $service->authorizeAdmin($email, $password);
+        $this->assertInstanceOf('\Model_Admin', $result);
     }
 }
  

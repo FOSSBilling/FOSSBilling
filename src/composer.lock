@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "ff854a93680db846b1446c44e0808b35",
+    "hash": "1b3f4cc887a878cc4c932c8e6e03b91a",
     "packages": [
         {
             "name": "dflydev/markdown",
@@ -208,6 +208,45 @@
                 "web service"
             ],
             "time": "2014-08-11 04:32:36"
+        },
+        {
+            "name": "ircmaxell/password-compat",
+            "version": "1.0.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ircmaxell/password_compat.git",
+                "reference": "1fc1521b5e9794ea77e4eca30717be9635f1d4f4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ircmaxell/password_compat/zipball/1fc1521b5e9794ea77e4eca30717be9635f1d4f4",
+                "reference": "1fc1521b5e9794ea77e4eca30717be9635f1d4f4",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "lib/password.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Anthony Ferrara",
+                    "email": "ircmaxell@ircmaxell.com",
+                    "homepage": "http://blog.ircmaxell.com"
+                }
+            ],
+            "description": "A compatibility library for the proposed simplified password hashing algorithm: https://wiki.php.net/rfc/password_hash",
+            "homepage": "https://github.com/ircmaxell/password_compat",
+            "keywords": [
+                "hashing",
+                "password"
+            ],
+            "time": "2013-04-30 19:58:08"
         },
         {
             "name": "maxmind-db/reader",

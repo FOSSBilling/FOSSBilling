@@ -259,7 +259,7 @@ class Client extends \Api_Abstract
         $this->di['validator']->isPasswordStrong($data['password']);
 
         $client = $this->getIdentity();
-        $client->pass = sha1($data['password']);
+        $client->pass = $this->di['password']->hashIt($data['password']);
         $this->di['db']->store($client);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterClientProfilePasswordChange', 'params'=>array('id'=>$client->id)));

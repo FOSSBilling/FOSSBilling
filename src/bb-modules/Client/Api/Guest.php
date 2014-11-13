@@ -154,7 +154,7 @@ class Guest extends \Api_Abstract
         $this->di['events_manager']->fire(array('event'=>'onBeforeClientLogin', 'params'=>$event_params));
 
         $service = $this->getService();
-        $client = $service->getByLoginDetails($data['email'], sha1($data['password']));
+        $client = $service->authorizeClient($data['email'], $data['password']);
         if(!$client instanceof \Model_Client ) {
             
             $this->di['events_manager']->fire(array('event'=>'onEventClientLoginFailed', 'params'=>$event_params));
@@ -164,9 +164,8 @@ class Guest extends \Api_Abstract
         
         if(isset($data['remember'])) {
             $email = $data['email'];
-            $pass = $data['password'];
             $cookie_time = (3600 * 24 * 30); // 30 days
-            $this->di['cookie']->set('BOXCLR', 'e='.base64_encode($email).'&p='.base64_encode(sha1($pass)), time() + $cookie_time, '/');
+            $this->di['cookie']->set('BOXCLR', 'e='.base64_encode($email).'&p='.base64_encode($client->pass), time() + $cookie_time, '/');
         }
         
         $this->di['events_manager']->fire(array('event'=>'onAfterClientLogin', 'params'=>array('id'=>$client->id, 'ip'=>$this->ip)));

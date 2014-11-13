@@ -490,10 +490,16 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
+        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock->expects($this->atLeastOnce())
+            ->method('hashIt')
+            ->with($data['password']);
+
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
+        $di['password'] = $passwordMock;
 
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();

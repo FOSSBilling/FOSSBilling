@@ -35,7 +35,7 @@ class Service implements InjectionAwareInterface
         $event_params['id']       = $admin->id;
         $this->di['events_manager']->fire(array('event' => 'onBeforeAdminStaffProfilePasswordChange', 'params' => $event_params));
 
-        $admin->pass       = sha1($new_password);
+        $admin->pass       = $this->di['password']->hashIt($new_password);
         $admin->updated_at = date('c');
         $this->di['db']->store($admin);
 

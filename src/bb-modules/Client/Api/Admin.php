@@ -441,7 +441,7 @@ class Admin extends \Api_Abstract
 
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminClientPasswordChange', 'params'=>$data));
 
-        $client->pass = sha1($data['password']);
+        $client->pass = $this->di['password']->hashIt($data['password']);
         $client->updated_at = date('c');
         $this->di['db']->store($client);
         
