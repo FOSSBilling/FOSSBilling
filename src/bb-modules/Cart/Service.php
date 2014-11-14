@@ -362,6 +362,31 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    public function isPromoAvailableForClientGroup(\Model_Promo $promo)
+    {
+        $clientGroups = $this->di['tools']->decodeJ($promo->client_groups);
+
+        if (empty($clientGroups)) {
+            return true;
+        }
+
+        try {
+            $client = $this->di['loggedin_client'];
+        } catch (\Exception $e) {
+            $client = null;
+        }
+
+        if (is_null($client)){
+            return false;
+        }
+
+        if (!$client->client_group_id) {
+            return false;
+        }
+
+        return in_array($client->client_group_id, $clientGroups);
+    }
+
     protected function clientHadUsedPromo(\Model_Client $client, \Model_Promo $promo)
     {
         $sql     = "SELECT id FROM client_order WHERE promo_id = :promo AND client_id = :cid LIMIT 1";

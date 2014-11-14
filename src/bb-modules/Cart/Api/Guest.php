@@ -104,6 +104,10 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('Promo code is expired or does not exist');
         }
 
+        if (!$this->getService()->isPromoAvailableForClientGroup($promo)){
+            throw new \Box_Exception('Promo can not be applied to your account');
+        }
+
         if (!$this->getService()->promoCanBeApplied($promo)) {
             throw new \Box_Exception('Promo code is expired or does not exist');
         }
