@@ -663,9 +663,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
             ->will($this->returnValue(array()));
-
+        
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $di['tools'] = $this->getMockBuilder('\Box_Tools')->getMock();;
 
         $this->service->setDi($di);
 

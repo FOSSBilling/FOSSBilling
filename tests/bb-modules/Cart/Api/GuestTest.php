@@ -212,7 +212,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied'))->getMock();
+            ->setMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSessionCart')
             ->will($this->returnValue($cart));
         $serviceMock->expects($this->atLeastOnce())->method('applyPromo')
@@ -220,6 +220,8 @@ class GuestTest extends \PHPUnit_Framework_TestCase
         $serviceMock->expects($this->atLeastOnce())->method('findActivePromoByCode')
             ->will($this->returnValue(new \Model_Promo()));
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
+            ->will($this->returnValue(true));
+        $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
             ->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -260,6 +262,8 @@ class GuestTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(null));
         $serviceMock->expects($this->never())->method('promoCanBeApplied')
             ->will($this->returnValue(true));
+        $serviceMock->expects($this->never())->method('isPromoAvailableForClientGroup')
+            ->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -290,14 +294,55 @@ class GuestTest extends \PHPUnit_Framework_TestCase
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied'))->getMock();
+            ->setMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'))->getMock();
         $serviceMock->expects($this->never())->method('getSessionCart')
             ->will($this->returnValue($cart));
         $serviceMock->expects($this->never())->method('applyPromo')
             ->will($this->returnValue(true));
         $serviceMock->expects($this->atLeastOnce())->method('findActivePromoByCode')
             ->will($this->returnValue(new \Model_Promo()));
+        $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
+            ->will($this->returnValue(true));
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
+            ->will($this->returnValue(false));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $this->guestApi->setDi($di);
+
+        $this->guestApi->setService($serviceMock);
+
+        $data   = array(
+            'promocode' => 'CODE'
+        );
+        $result = $this->guestApi->apply_promo($data);
+
+        $this->assertTrue($result);
+    }
+
+    /**
+     * @expectedException \Box_Exception
+     */
+    public function testApply_promoCanNotBeAppliedForUser()
+    {
+        $cart = new \Model_Cart();
+        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->currency_id = rand(1, 100);
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
+            ->setMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'isPromoAvailableForClientGroup'))->getMock();
+        $serviceMock->expects($this->never())->method('getSessionCart')
+            ->will($this->returnValue($cart));
+        $serviceMock->expects($this->never())->method('applyPromo')
+            ->will($this->returnValue(true));
+        $serviceMock->expects($this->atLeastOnce())->method('findActivePromoByCode')
+            ->will($this->returnValue(new \Model_Promo()));
+        $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
             ->will($this->returnValue(false));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
