@@ -431,4 +431,61 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertEquals(1, $res['total'], 'Generated more than one invoice');
     }
 
+
+    public function testApplyPromoForClientProvider()
+    {
+        $ids = array(1, 2);
+
+        return array(
+            array(50, 5, $ids, true), //should throw exception because client group does not match ones set in Promo
+            array(50, 2, $ids, false),//Client group ID is same as set for Promo, su discount must be applied
+            array(50, 5, array(), false),//Promo does not have any client group set, so it is valid for any client and should apply discount
+            array(50, null, array(), false),//Client group ID is not set and there are no group IDs in Promo, should apply discount
+            array(50, null, $ids, true),//Client group ID is not set however there are group IDs in Promo, should throw an exception
+        );
+    }
+
+    /**
+     * @dataProvider testApplyPromoForClientProvider
+     */
+    public function testApplyPromoForClient($discount, $clientGroupId, $ids, $shouldThrowException)
+    {
+        if ($shouldThrowException) {
+            $this->setExpectedException('Box_Exception');
+        }
+        $this->api_guest->cart_reset();
+
+        $data = array(
+            'code'          => '50OFF',
+            'type'          => 'percentage',
+            'value'         => $discount,
+            'active'        => 1,
+            'client_groups' => $ids
+        );
+        $id   = $this->api_admin->product_promo_create($data);
+        $this->assertTrue(is_numeric($id));
+
+        $client                  = $this->di['loggedin_client'];
+        $client->client_group_id = $clientGroupId;
+
+        $data = array(
+            'id'       => 1,
+            'type'     => 'custom',
+            'period'   => '1M',
+            'quantity' => 1,
+        );
+
+        $bool = $this->api_guest->cart_add_item($data);
+        $this->assertTrue($bool);
+
+        $cart_before_promo = $this->api_guest->cart_get();
+        $data              = array('promocode' => '50OFF');
+        $bool              = $this->api_guest->cart_apply_promo($data);
+        $this->assertTrue($bool);
+
+        $cart_after_promo = $this->api_guest->cart_get();
+        $this->assertTrue($cart_before_promo['total'] - ($cart_before_promo['total'] * $discount / 100) == $cart_after_promo['total'], 'Could not apply promo to cart');
+
+    }
+
 }
