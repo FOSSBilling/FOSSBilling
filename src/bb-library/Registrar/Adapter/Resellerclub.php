@@ -814,7 +814,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         if($tld == '.es') {
-            if(!isset($client['passport']) || empty($client['passport'])) {
+            if(strlen(trim($client->getDocumentNr())) == 0 ) {
                 throw new Exception('Valid contact Passport information is required while registering ES domain name');
             }
 
@@ -825,7 +825,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $contact['attr-name2']  = 'es_tipo_identificacion';
             $contact['attr-value2'] = '0';
             $contact['attr-name3']  = 'es_identificacion';
-            $contact['attr-value3'] = $client['passport'];
+            $contact['attr-value3'] = $client->getDocumentNr();
 
         }
 
@@ -834,7 +834,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         if($tld == '.asia') {
-            if(!isset($client['passport']) || empty($client['passport'])) {
+            if(strlen(trim($client->getDocumentNr())) == 0 ) {
                 throw new Exception('Valid contact Passport information is required while registering ASIA domain name');
             }
 
@@ -854,15 +854,15 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $contact['attr-value5'] =  'passport'; // {Mention Identity form. Mandatory if identform chosen as 'other'}
 
             $contact['attr-name6'] =   'identnumber';
-            $contact['attr-value6'] =  $client['passport']; // {Mention Identification Number}]
+            $contact['attr-value6'] =  $client->getDocumentNr(); // {Mention Identification Number}]
         }
 
         if($tld == '.ru' || $tld == '.com.ru' || $tld == '.org.ru' || $tld == '.net.ru') {
-            if(!isset($client['birth_date']) || empty($client['birth_date'])) {
+            if(strlen(trim($client->getBirthday())) == 0 || strtotime($client->getBirthday()) == false) {
                 throw new Exception('Valid contact Birth Date is required while registering RU domain name');
             }
 
-            if(!isset($client['passport']) || empty($client['passport'])) {
+            if(strlen(trim($client->getDocumentNr())) == 0 ) {
                 throw new Exception('Valid contact Passport information is required while registering RU domain name');
             }
 
@@ -874,40 +874,37 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $contact['attr-name1']  = 'contract-type';
             $contact['attr-value1'] = 'PRS';
             $contact['attr-name2']  = 'birth-date';
-            $contact['attr-value2'] = $client['birth_date'];
+            $contact['attr-value2'] = date('d.m.Y', strtotime($client->getBirthday()));
             $contact['attr-name3']  = 'person-r';
-            $contact['attr-value3'] = $client['first_name'] . ' ' . $client['last_name'];
+            $contact['attr-value3'] = $client->getFirstName(). ' ' . $client->getLastName();
             $contact['attr-name4']  = 'address-r';
-            $contact['attr-value4'] = $client['address_1'];
+            $contact['attr-value4'] = $client->getAddress1();
             $contact['attr-name5']  = 'passport';
-            $contact['attr-value5'] = $client['passport'];
+            $contact['attr-value5'] = $client->getDocumentNr();
         }
-        if (isset($client['idn_language_code']) || !empty($client['idn_language_code'])){
-            if($tld == '.ca') {
-                $client['idn_language_code'] = 'fr';
+
+        if($tld == '.ca') {
+            $client->setIdnLanguageCode('fr');
+        }
+        if($tld == '.de') {
+            $client->setIdnLanguageCode('de');
+        }
+        if($tld == '.es') {
+            $client->setIdnLanguageCode('es');
+        }
+        if($tld == '.eu') {
+            $client->setIdnLanguageCode('latin');
+        }
+
+        $param_exists = TRUE;
+        $attr_number = 1;
+        while ($param_exists){
+            if (!array_key_exists("attr-name".$attr_number, $contact)){
+                $contact['attr-name'.$attr_number] = 'idnLanguageCode';
+                $contact['attr-value'.$attr_number] = strtolower($client->getIdnLanguageCode());
+                $param_exists = FALSE;
             }
-            if($tld == '.de') {
-                $client['idn_language_code'] = 'de';
-            }
-            if($tld == '.es') {
-                $client['idn_language_code'] = 'es';
-            }
-            if($tld == '.eu') {
-                $client['idn_language_code'] = 'latin';
-            }
-            if(!isset($client['idn_language_code']) || empty($client['idn_language_code'])) {
-                throw new Exception('In order to register IDN domain name you need to set language code.');
-            }
-            $param_exists = TRUE;
-            $attr_number = 1;
-            while ($param_exists){
-                if (!array_key_exists("attr-name".$attr_number, $contact)){
-                    $contact['attr-name'.$attr_number] = 'idnLanguageCode';
-                    $contact['attr-value'.$attr_number] = strtolower($client['idn_language_code']);
-                    $param_exists = FALSE;
-                }
-                $attr_number++;
-            }
+            $attr_number++;
         }
 
         $special_contact_id = null;

@@ -24,6 +24,23 @@ class Registrar_Domain_Contact
     private $document_nr;
     private $job_title;
     private $birthday = '';
+    private $idn_language_code = '';
+
+    /**
+     * @return string
+     */
+    public function getIdnLanguageCode()
+    {
+        return $this->idn_language_code;
+    }
+
+    /**
+     * @param string $idn_language_code
+     */
+    public function setIdnLanguageCode($idn_language_code)
+    {
+        $this->idn_language_code = $idn_language_code;
+    }
 
     /**
      * @return string
