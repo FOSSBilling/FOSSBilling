@@ -425,7 +425,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     {
         $c = $domain->getContactRegistrar();
         $company = $c->getCompany();
-        if (!$company){
+        if (!isset($company) || strlen(trim($company)) == 0 ){
             $company = $c->getFirstName() . ' ' . $c->getLastName();
         }
         $phoneNum = $c->getTel();
