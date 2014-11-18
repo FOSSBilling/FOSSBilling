@@ -424,11 +424,15 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     private function _createCustomer(Registrar_Domain $domain)
     {
         $c = $domain->getContactRegistrar();
+        $company = $c->getCompany();
+        if (!$company){
+            $company = $c->getFirstName() . ' ' . $c->getLastName();
+        }
         $params = array(
             'username'                       =>  $c->getEmail(),
             'passwd'                         =>  $c->getPassword(),
             'name'                           =>  $c->getName(),
-            'company'                        =>  $c->getCompany(),
+            'company'                        =>  $company,
             'address-line-1'                 =>  $c->getAddress1(),
             'address-line-2'                 =>  $c->getAddress2(),
             'city'                           =>  $c->getCity(),
