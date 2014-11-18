@@ -23,7 +23,24 @@ class Registrar_Domain_Contact
     private $document_type;
     private $document_nr;
     private $job_title;
-    
+    private $birthday = '';
+
+    /**
+     * @return string
+     */
+    public function getBirthday()
+    {
+        return $this->birthday;
+    }
+
+    /**
+     * @param string $birthday
+     */
+    public function setBirthday($birthday)
+    {
+        $this->birthday = $birthday;
+    }
+
     public function setId($param)
     {
         $this->id = $param;
