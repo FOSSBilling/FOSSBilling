@@ -204,6 +204,11 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'protect-privacy'   =>  false,
         );
 
+        if($domain->getTld() == '.asia') {
+            $required_params['attr-name1'] = 'cedcontactid';
+            $required_params['attr-value1'] = "default";
+        }
+
         return $this->_makeRequest('domains/transfer', $required_params, 'POST');
     }
 
