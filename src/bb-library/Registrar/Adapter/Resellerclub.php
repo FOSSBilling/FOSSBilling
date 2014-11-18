@@ -428,6 +428,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         if (!$company){
             $company = $c->getFirstName() . ' ' . $c->getLastName();
         }
+        $phoneNum = $c->getTel();
+        $phoneNum = substr($phoneNum, 0, 12);
         $params = array(
             'username'                       =>  $c->getEmail(),
             'passwd'                         =>  $c->getPassword(),
@@ -440,7 +442,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'country'                        =>  $c->getCountry(),
             'zipcode'                        =>  $c->getZip(),
             'phone-cc'                       =>  $c->getTelCc(),
-            'phone'                          =>  $c->getTel(),
+            'phone'                          =>  $phoneNum,
             'lang-pref'                      =>  'en',
             'sales-contact-id'               =>  '',
             'accounting-currency-symbol'     =>  'USD',
