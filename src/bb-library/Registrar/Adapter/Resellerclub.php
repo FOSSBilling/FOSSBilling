@@ -74,17 +74,21 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     public function getTlds()
     {
         return array(
-            '.com', '.net', '.org', '.name', '.biz',
-            '.in', '.us', '.co.uk', '.org.uk', '.me.uk',
-            '.eu', '.cn.com', '.info', '.co.nz', '.net.nz',
-            '.org.nz', '.me', '.co.in', '.net.in', '.org.in',
-            '.gen.in', '.firm.in', '.ind.in', '.asia', '.mobi',
-            '.tel', '.tv', '.cc', '.ws', '.bz',
-            '.mn', '.eu.com', '.gb.com', '.ae.org', '.kr.com',
-            '.us.com', '.qc.com', '.de.com', '.gb.net', '.no.com',
-            '.hu.com', '.jpn.com', '.uy.com', '.za.com', '.br.com',
-            '.sa.com', '.se.com', '.uk.com', '.uk.net', '.ru.com',
-            '.cn', '.com.cn', '.net.cn', '.org.cn',
+            '.com', '.net', '.biz', '.org', '.info', '.name', '.co',
+            '.asia', '.ru', '.com.ru', '.net.ru', '.org.ru',
+            '.de', '.es', '.us', '.xxx', '.ca', '.com.au',
+            '.net.au', '.co.uk', '.org.uk', '.me.uk',
+            '.eu', '.in', '.co.in', '.net.in', '.org.in',
+            '.gen.in', '.firm.in', '.ind.in', '.cn.com',
+            '.com.co', '.net.co', '.nom.co', '.me', '.mobi',
+            '.tel', '.tv', '.cc', '.ws', '.bz', '.mn', '.co.nz',
+            '.net.nz', '.org.nz', '.eu.com', '.gb.com', '.ae.org',
+            '.kr.com', '.us.com', '.qc.com', '.gr.com',
+            '.de.com', '.gb.net', '.no.com', '.hu.com',
+            '.jpn.com', '.uy.com', '.za.com', '.br.com',
+            '.sa.com', '.se.com', '.se.net', '.uk.com',
+            '.uk.net', '.ru.com', '.com.cn', '.net.cn',
+            '.org.cn', '.nl', '.co', '.com.co', '.pw',
         );
     }
 
