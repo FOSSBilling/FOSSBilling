@@ -640,7 +640,7 @@ class Service
             "TN" => "Tunisia",
             "TR" => "Turkey",
             "TM" => "Turkmenistan",
-            //          "TC" => "Turks And Caicos Islands",
+            "TC" => "Turks And Caicos Islands",
             "TV" => "Tuvalu",
             "UG" => "Uganda",
             "UA" => "Ukraine",
