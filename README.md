@@ -1,4 +1,4 @@
-BoxBilling
+BoxBilling [![Download Latest](http://i.imgur.com/djy4ExU.png)](https://github.com/boxbilling/boxbilling/releases/latest)
 ================================================================================
 
 [![Build Status](https://travis-ci.org/boxbilling/boxbilling.svg)](https://travis-ci.org/boxbilling/boxbilling)
