@@ -64,6 +64,14 @@
                        </div>
 
                        <div class="control-group">
+                           <label class="control-label" for="input">{% trans 'Birth date' %}</label>
+                           <div class="controls">
+                                <input type="date" name="birthday" value="{{ profile.birthday }}" >
+                               <p class="help-block"></p>
+                           </div>
+                       </div>
+
+                       <div class="control-group">
                            <label class="control-label" for="input">{% trans 'Company Name' %}</label>
                            <div class="controls">
                                 <input type="text" name="company" value="{{ profile.company }}">

@@ -312,6 +312,9 @@ class Admin extends \Api_Abstract
             $client->gender = $gender;
         }
         if(!is_null($birthday)) {
+            if (strtotime($data['birthday']) == false) {
+                throw new \Box_Exception('Invalid birth date value');
+            }
             $client->birthday = $birthday;
         }
         if(!is_null($phone_cc)) {
