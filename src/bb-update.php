@@ -18,6 +18,18 @@
  */
 
 /**
+ * Version X.XX.X
+ */
+class BBPatch_19 extends BBPatchAbstract
+{
+    public function patch()
+    {
+        $q="ALTER TABLE `client` MODIFY  `birthday` date;";
+        $this->execSql($q);
+
+    }
+
+}/**
  * Version 4.12
  */
 class BBPatch_18 extends BBPatchAbstract
@@ -29,7 +41,8 @@ class BBPatch_18 extends BBPatchAbstract
 
     }
 
-}/**
+}
+/**
  * Version X.XX.X
  */
 class BBPatch_17 extends BBPatchAbstract

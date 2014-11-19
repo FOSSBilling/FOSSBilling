@@ -207,7 +207,7 @@ CREATE TABLE `client` (
   `first_name` varchar(100) DEFAULT NULL,
   `last_name` varchar(100) DEFAULT NULL,
   `gender` varchar(20) DEFAULT NULL,
-  `birthday` varchar(100) DEFAULT NULL,
+  `birthday` date DEFAULT NULL,
   `phone_cc` varchar(10) DEFAULT NULL,
   `phone` varchar(100) DEFAULT NULL,
   `company` varchar(100) DEFAULT NULL,
