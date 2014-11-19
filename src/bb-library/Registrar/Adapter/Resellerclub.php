@@ -815,7 +815,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if($tld == '.es') {
             if(strlen(trim($client->getDocumentNr())) == 0 ) {
-                throw new Exception('Valid contact Passport information is required while registering ES domain name');
+                throw new Registrar_Exception('Valid contact Passport information is required while registering ES domain name');
             }
 
             //@see http://manage.directi.com/kb/answer/790
@@ -835,7 +835,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if($tld == '.asia') {
             if(strlen(trim($client->getDocumentNr())) == 0 ) {
-                throw new Exception('Valid contact Passport information is required while registering ASIA domain name');
+                throw new Registrar_Exception('Valid contact Passport information is required while registering ASIA domain name');
             }
 
             $contact['attr-name1'] =   'locality';
@@ -859,11 +859,11 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if($tld == '.ru' || $tld == '.com.ru' || $tld == '.org.ru' || $tld == '.net.ru') {
             if(strlen(trim($client->getBirthday())) == 0 || strtotime($client->getBirthday()) == false) {
-                throw new Exception('Valid contact Birth Date is required while registering RU domain name');
+                throw new Registrar_Exception('Valid contact Birth Date is required while registering RU domain name');
             }
 
             if(strlen(trim($client->getDocumentNr())) == 0 ) {
-                throw new Exception('Valid contact Passport information is required while registering RU domain name');
+                throw new Registrar_Exception('Valid contact Passport information is required while registering RU domain name');
             }
 
             if(str_word_count($contact['company']) < 2) {
@@ -950,11 +950,11 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             );
             $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json', true);
             if($result['recsonpage'] < 1) {
-                throw new Exception('Contact not found');
+                throw new Registrar_Exception('Contact not found');
             }
             $existing_contact_id = $result['result'][0]['entity.entityid'];
             $this->_makeRequest('contacts/delete', array('contact-id'=>$existing_contact_id), 'POST');
-        } catch(Exception $e) {
+        } catch(Registrar_Exception $e) {
             $this->getLog()->info($e->getMessage());
         }
 
