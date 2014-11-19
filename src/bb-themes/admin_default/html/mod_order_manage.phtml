@@ -28,6 +28,7 @@
     <ul class="tabs">
         <li><a href="#tab-info">{% trans 'Details' %}</a></li>
         <li><a href="#tab-manage">{% trans 'Edit order' %}</a></li>
+        <li><a href="#tab-config">{% trans 'Edit order config' %}</a></li>
         {% if admin.system_template_exists({"file":service_partial}) %}<li><a href="#tab-service">{% trans 'Service management' %}</a></li>{% endif %}
         <li><a href="#tab-invoices">{% trans 'Invoices' %}</a></li>
         {% if addons|length > 0 %}<li><a href="#tab-addons">{% trans 'Addons' %}</a></li>{% endif %}
@@ -329,6 +330,29 @@
                 </fieldset>
             </form>
             {% endif #}
+        </div>
+
+        <div class="tab_content nopadding" id="tab-config">
+            <div class="help">
+                <h2>{% trans 'Order config management' %}</h2>
+                <h6>{% trans 'Please be cautious and make sure you know what you are doing when editing order config! BoxBilling relies on these parameters and you might get unexpected results if you change some of them' %}</h6>
+            </div>
+            <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="mainForm api-form" data-api-reload="1">
+                <fieldset>
+                    {% for key, config in order.config %}
+                    <div class="rowElem noborder">
+                        <label>{{ key }}</label>
+                        <div class="formRight noborder">
+                            <input type="text" name="config[{{key}}]" value="{{ config }}" {% if config is null %} placeholder="null" {% endif %}/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    {% endfor %}
+
+                     <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                </fieldset>
+                <input type="hidden" name="id" value="{{ order.id }}">
+            </form>
         </div>
 
         <div class="tab_content nopadding" id="tab-addons">
