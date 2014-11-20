@@ -253,7 +253,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function getTotalWithTax(\Model_InvoiceItem $item)
     {
-        return $this->getTotal($item) + $this->getTax($item);
+        return $this->getTotal($item) + $this->getTax($item) * $item->quantity;
     }
 
     public function getOrderId(\Model_InvoiceItem $item)
