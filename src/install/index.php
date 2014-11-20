@@ -352,6 +352,8 @@ final class Box_Installer
             'path_data'    => BB_PATH_ROOT . '/bb-data',
             'path_logs'    => BB_PATH_ROOT . '/bb-data/log/application.log',
 
+            'log_to_db'  => true,
+
             'db'    => array(
                 'type'  =>  'mysql',
                 'host'  =>  $ns->get('db_host'),
