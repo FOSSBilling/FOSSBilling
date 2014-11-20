@@ -58,11 +58,14 @@ class Box_Log
                     throw new \Box_Exception('Missing log message');
                 case 1:
                     $message = array_shift($params);
-                    $extras = null;
+                    $extras  = null;
                     break;
                 default:
                     $message = array_shift($params);
                     $message = vsprintf($message, array_values($params));
+                    if (!$message) {
+                        throw new LogicException('Number of placeholders does not match number of variables');
+                    }
                     break;
             }
             $this->log($message, $priority);
