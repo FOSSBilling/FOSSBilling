@@ -62,10 +62,10 @@ class Box_Log
                     break;
                 default:
                     $message = array_shift($params);
-                    $extras  = array_shift($params);
+                    $message = vsprintf($message, array_values($params));
                     break;
             }
-            $this->log($message, $priority, $extras);
+            $this->log($message, $priority);
         } else {
             throw new \Box_Exception('Bad log priority');
         }
