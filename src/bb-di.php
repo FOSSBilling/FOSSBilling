@@ -16,11 +16,29 @@ $di['config'] = function() {
     $array = include BB_PATH_ROOT . '/bb-config.php';
     return new Box_Config($array);
 };
-$di['logger'] = function () use($di) {
+$di['logger'] = function () use ($di) {
     $logFile = $di['config']['path_logs'];
-    $writer = new Box_LogStream($logFile);
-    $log = new Box_Log();
+    $writer  = new Box_LogStream($logFile);
+    $log     = new Box_Log();
     $log->addWriter($writer);
+
+    $log_to_db = isset($di['config']['log_to_db']) && $di['config']['log_to_db'];
+    if ($log_to_db) {
+        $activity_service = $di['mod_service']('activity');
+        $writer2          = new Box_LogDb($activity_service);
+        try {
+            $admin = $di['loggedin_admin'];
+            $log->setEventItem('admin_id', $admin->id);
+        } catch (Exception $e) {
+            try {
+                $client = $di['loggedin_client'];
+                $log->setEventItem('client_id', $client->id);
+            } catch (Exception $e) {
+            }
+        }
+        $log->addWriter($writer2);
+    }
+
     return $log;
 };
 $di['crypt'] = function() use ($di) {

@@ -112,7 +112,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di = new \Box_Di();
         $db = $this->getMockBuilder('Box_Database')->getMock();
 
-        $model = new \Model_ActivityClientEmail();
+        $model = new \Model_ActivitySystem();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $db->expects($this->atLeastOnce())
             ->method('dispense')
@@ -121,6 +121,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue(array()));
 
+        $di['request'] = $this->getMockBuilder('Box_Request')->getMock();;
         $di['db'] = $db;
         $service->setDi($di);
 

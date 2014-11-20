@@ -29,15 +29,14 @@ class Service implements InjectionAwareInterface
 
     public function logEvent($data)
     {
-        $entry = $this->di['db']->dispense('ActivityClientEmail');
+        $entry = $this->di['db']->dispense('ActivitySystem');
         $entry->client_id       = isset($data['client_id']) ? $data['client_id'] : NULL;
-        $entry->sender          = isset($data['sender']) ? $data['sender'] : NULL;
-        $entry->recipients      = isset($data['recipients']) ? $data['recipients'] : NULL;
-        $entry->subject         = isset($data['subject']) ? $data['subject'] : NULL;
-        $entry->content_html    = isset($data['content_html']) ? $data['content_html'] : NULL;
-        $entry->content_text    = isset($data['content_text']) ? $data['content_text'] : NULL;
-        $entry->created_at      = isset($data['timestamp']) ? $data['timestamp'] : NULL;
-        $entry->updated_at      = isset($data['timestamp']) ? $data['timestamp'] : NULL;
+        $entry->admin_id        = isset($data['admin_id']) ? $data['admin_id'] : NULL;
+        $entry->priority        = isset($data['priority']) ? $data['priority'] : NULL;
+        $entry->message         = $data['message'];
+        $entry->created_at      = date('c');
+        $entry->updated_at      = date('c');
+        $entry->ip              = $this->di['request']->getClientAddress();
         $this->di['db']->store($entry);
     }
 
