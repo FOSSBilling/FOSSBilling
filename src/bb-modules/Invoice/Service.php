@@ -195,7 +195,7 @@ class Service implements InjectionAwareInterface
             $order_id = ($item->type == \Model_InvoiceItem::TYPE_ORDER) ? $item->rel_id : null;
             $line_total = $item->price * $item->quantity;
             $total += $line_total;
-            $line_tax = $invoiceItemService->getTax($item);
+            $line_tax = $invoiceItemService->getTax($item) * $item->quantity;
             $tax_total += $line_tax;
             $line = array(
                 'id'        =>  $item->id,
