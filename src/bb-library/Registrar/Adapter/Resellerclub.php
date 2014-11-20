@@ -320,8 +320,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         );
 
         if($tld == '.asia') {
-            $required_params['attr-name1'] = 'cedcontactid';
-            $required_params['attr-value1'] = "default";
+            $params['attr-name1'] = 'cedcontactid';
+            $params['attr-value1'] = "default";
         }
 
         if($tld == '.de') {
