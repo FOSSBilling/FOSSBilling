@@ -66,6 +66,8 @@ return array(
 
     'path_logs'  => dirname(__FILE__) . '/bb-data/log/application.log',
 
+    'log_to_db'  => true,
+
     'db'    =>  array(
         /**
          * Database type. Don't change this if in doubt.
