@@ -149,6 +149,14 @@
                           </div>
                       </div>
 
+                      <div class="control-group">
+                          <label class="control-label" for="input">{% trans 'Passport number' %}</label>
+                          <div class="controls">
+                                <input type="text" name="document_nr" value="{{ profile.document_nr}}" >
+                              <p class="help-block"></p>
+                          </div>
+                      </div>
+
                     <div class="form-actions">
                         <button class="btn btn-alt btn-large btn-primary" type="submit">{% trans 'Update profile' %}</button>
                     </div>

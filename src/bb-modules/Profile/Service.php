@@ -211,6 +211,9 @@ class Service implements InjectionAwareInterface
 
         if (isset($data['document_nr'])) {
             $client->document_nr = $data['document_nr'];
+            if (!isset($data['document_type'])){
+                $client->document_type = 'passport';
+            }
         }
 
         if (isset($data['lang'])) {
