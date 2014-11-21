@@ -327,6 +327,22 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         if($tld == '.de') {
             $params['ns'] = array('dns1.directi.com', 'dns2.directi.com', 'dns3.directi.com', 'dns4.directi.com');
         }
+
+        if ($tld == '.au'){
+            $contact = $domain->getContactRegistrar();
+
+            if(strlen(trim($contact->getCompanyNumber())) == 0 ) {
+                throw new Registrar_Exception('Valid contact company number is required while registering AU domain name');
+            }
+            $params['attr-name1'] = 'id-type';
+            $params['attr-value1'] = 'ACN';
+            $params['attr-name2'] = 'id';
+            $params['attr-value2'] = $contact->getCompanyNumber();
+            $params['attr-name3'] = 'policyReason';
+            $params['attr-value3'] = '1';
+            $params['attr-name4'] = 'isAUWarranty';
+            $params['attr-value4'] = '1';
+        }
         
         $result = $this->_makeRequest('domains/register', $params, 'POST');
         return ($result['status'] == 'Success');
