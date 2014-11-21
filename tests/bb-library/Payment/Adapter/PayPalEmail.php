@@ -28,4 +28,26 @@ class Payment_Adapter_PayPalEmailTest extends BBDbApiTestCase
         $refund_ipn = json_decode('{"get":{"bb_gateway_id":"1","bb_invoice_id":"1"},"post":{"transaction_subject":"Subscription for BoxBilling Pro License","payment_date":"17:42:05 Mar 13, 2012 PDT","subscr_id":"S-9X268688JL8514304","last_name":"Doe","residence_country":"GB","item_name":"Subscription for BoxBilling Pro License","payment_gross":"-5.95","mc_currency":"USD","business":"clients@boxbilling.com","payment_type":"instant","protection_eligibility":"Ineligible","verify_sign":"ArFZ5DF1pEd4euI2jpvbEwe5Q4BiAB46zG6F4TMlFNMtpDC7L5z6VPsB","payer_email":"mitcheyDoe@gmail.com","txn_id":"33R88456DU653693H","receiver_email":"clients@boxbilling.com","first_name":"John","parent_txn_id":"6SR99524AP993094V","payer_id":"9W3LMGTFS5RTY","receiver_id":"79PMKLAHPL5YH","reason_code":"refund","item_number":"BOX05697","payment_status":"Refunded","payment_fee":"-0.17","mc_fee":"-0.17","mc_gross":"-5.95","charset":"windows-1252","notify_version":"3.4","ipn_track_id":"71f325984a82e"},"http_raw_post_data":"transaction_subject=Subscription+for+BoxBilling+Pro+License&payment_date=17%3A42%3A05+Mar+13%2C+2012+PDT&subscr_id=S-9X268688JL8514304&last_name=Doe&residence_country=GB&item_name=Subscription+for+BoxBilling+Pro+License&payment_gross=-5.95&mc_currency=USD&business=clients%40boxbilling.com&payment_type=instant&protection_eligibility=Ineligible&verify_sign=ArFZ5DF1pEd6dfI2jpvbEwe5Q4BiAB46zG6F4TMlFNMtpDC7L5z6VPsB&payer_email=mitcheyDoe%40gmail.com&txn_id=33R88456DU653693H&receiver_email=clients%40boxbilling.com&first_name=John&parent_txn_id=6SR99524AP993094V&payer_id=9W3MDRHPS5RTY&receiver_id=79PMKLAHYN3HN&reason_code=refund&item_number=BOX05697&payment_status=Refunded&payment_fee=-0.17&mc_fee=-0.17&mc_gross=-5.95&charset=windows-1252&notify_version=3.4&ipn_track_id=71f784354a82e"}', 1);
         $adapter->processTransaction($this->api_admin, 1, $refund_ipn);
     }
+
+    public function testGatewayProductionUrl()
+    {
+        $config = array();
+        $config['email'] = 'example@gmail.com';
+        $config['test_mode'] = false;
+        
+        $adapter = new Payment_Adapter_PayPalEmail($config);
+        $form = $adapter->getHtml($this->api_admin, 1);
+        $this->assertRegExp('/action="https:\/\/www\.paypal\.com\/cgi-bin\/webscr"/', $form);
+    }
+
+    public function testGatewayTestmodeUrl()
+    {
+        $config = array();
+        $config['email'] = 'example@gmail.com';
+        $config['test_mode'] = true;
+        
+        $adapter = new Payment_Adapter_PayPalEmail($config);
+        $form = $adapter->getHtml($this->api_admin, 1);
+        $this->assertRegExp('/action="https:\/\/www.sandbox.paypal.com\/cgi-bin\/webscr"/', $form);
+    }
 }
