@@ -427,6 +427,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $company = $c->getFirstName() . ' ' . $c->getLastName();
         }
         $phoneNum = $c->getTel();
+        $phoneNum = preg_replace( "/[^0-9]/", "", $phoneNum);
         $phoneNum = substr($phoneNum, 0, 12);
         $params = array(
             'username'                       =>  $c->getEmail(),
