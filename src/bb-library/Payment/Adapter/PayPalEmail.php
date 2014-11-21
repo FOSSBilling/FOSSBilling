@@ -134,7 +134,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
             $data['notify_url']         = $this->config['notify_url'];
             $data['business']           = $this->config['email'];
             $data['cmd']                = '_xclick';
-            $data['amount']             = $this->moneyFormat($invoice['total'], $invoice['currency']);
+            $data['amount']             = $this->moneyFormat($invoice['subtotal'], $invoice['currency']);
             $data['tax']                = $this->moneyFormat($invoice['tax'], $invoice['currency']);
             $data['bn']                 = "PP-BuyNowBF";
             $data['charset']            = "utf-8";
