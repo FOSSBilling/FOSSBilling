@@ -338,10 +338,12 @@ class ServiceInvoiceItemTest extends \PHPUnit_Framework_TestCase
 
     public function testgetTotalWithTax()
     {
-        $total            = 5;
-        $tax              = 0.5;
+        $total    = 5;
+        $tax      = 0.5;
+        $quantity = 3;
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->quantity = $quantity;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
             ->setMethods(array('getTotal', 'getTax'))
@@ -355,7 +357,7 @@ class ServiceInvoiceItemTest extends \PHPUnit_Framework_TestCase
 
         $result = $serviceMock->getTotalWithTax($invoiceItemModel);
         $this->assertInternalType('float', $result);
-        $expected = $total + $tax;
+        $expected = $total + $tax * $quantity;
         $this->assertEquals($expected, $result);
     }
 
