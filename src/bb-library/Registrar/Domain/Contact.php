@@ -15,6 +15,7 @@ class Registrar_Domain_Contact
     private $fax;
     private $fax_cc;
     private $company;
+    private $company_number = '';
     private $address_1;
     private $address_2;
     private $address_3;
@@ -25,6 +26,23 @@ class Registrar_Domain_Contact
     private $job_title;
     private $birthday = '';
     private $idn_language_code = '';
+
+    /**
+     * @return string
+     */
+    public function getCompanyNumber()
+    {
+        return $this->company_number;
+    }
+
+    /**
+     * @param string $company_number
+     */
+    public function setCompanyNumber($company_number)
+    {
+        $this->company_number = $company_number;
+    }
+
 
     /**
      * @return string
