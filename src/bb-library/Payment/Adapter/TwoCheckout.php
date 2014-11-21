@@ -319,7 +319,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
             $data['li_'.$i.'_name']         = $item['title'];
             $data['li_'.$i.'_product_id']   = $item['id'];
             $data['li_'.$i.'_price']        = $item['price'];
-            $data['li_'.$i.'_quantity']     = 1;
+            $data['li_'.$i.'_quantity']     = $item['quantity'];
         }
         
         $data['card_holder_name']   = $b['first_name'].' '.$b['last_name'];
@@ -369,7 +369,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         	$data['li_' . $i . '_id']			= $invoice['id'];
         	$data['li_' . $i . '_type']			= 'product';
         	$data['li_' . $i . '_name'] 		= $item['title'];
-        	$data['li_' . $i . '_quantity']		= 1;
+        	$data['li_' . $i . '_quantity']		= $item['quantity'];
         	$data['li_' . $i . '_tangible']		= 'N';
         	$data['li_' . $i . '_description']	= '';
         	$data['li_' . $i . '_recurrence']	= $subs['cycle'] . ' ' . $unit;
