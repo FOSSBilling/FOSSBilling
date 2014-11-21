@@ -48,6 +48,6 @@ class Payment_Adapter_PayPalEmailTest extends BBDbApiTestCase
         
         $adapter = new Payment_Adapter_PayPalEmail($config);
         $form = $adapter->getHtml($this->api_admin, 1);
-        $this->assertRegExp('/action="https:\/\/www.sandbox.paypal.com\/cgi-bin\/webscr"/', $form);
+        $this->assertRegExp('/action="https:\/\/www\.sandbox\.paypal\.com\/cgi-bin\/webscr"/', $form);
     }
 }
