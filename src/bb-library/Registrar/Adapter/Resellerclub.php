@@ -440,7 +440,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         $c = $domain->getContactRegistrar();
         $company = $c->getCompany();
         if (!isset($company) || strlen(trim($company)) == 0 ){
-            $company = $c->getFirstName() . ' ' . $c->getLastName();
+            $company = 'N/A';
         }
         $phoneNum = $c->getTel();
         $phoneNum = preg_replace( "/[^0-9]/", "", $phoneNum);
