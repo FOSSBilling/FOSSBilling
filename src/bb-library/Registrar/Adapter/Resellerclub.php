@@ -104,7 +104,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         if(!isset($result[$domain->getName()])) {
             return true;
         }
-        
+
         $check = $result[$domain->getName()];
         if($check && $check['status'] == 'available') {
             return true;
@@ -144,7 +144,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     public function modifyContact(Registrar_Domain $domain)
     {
-        $cdetails = $this->_getDefaultContactDetails($domain);
+        $customer = $this->_getCustomerDetails($domain);
+        $cdetails = $this->_getDefaultContactDetails($domain, $customer['customerid']);
         $contact_id = $cdetails['Contact']['registrant'];
 
         $c = $domain->getContactRegistrar();
@@ -178,7 +179,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     public function transferDomain(Registrar_Domain $domain)
     {
         $customer = $this->_getCustomerDetails($domain);
-        $contacts = $this->_getDefaultContactDetails($domain);
+        $contacts = $this->_getDefaultContactDetails($domain, $customer['customerid']);
         $contact_id = $contacts['Contact']['registrant'];
 
         $ns = array();
@@ -595,11 +596,10 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $result;
     }
 
-    private function _getDefaultContactDetails(Registrar_Domain $domain)
+    private function _getDefaultContactDetails(Registrar_Domain $domain, $customerid)
     {
-        $customer = $this->_getCustomerDetails($domain);
         $params = array(
-            'customer-id'   =>  $customer['customerid'],
+            'customer-id'   =>  $customerid,
             'type'          =>  'Contact',
         );
 
@@ -657,7 +657,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      * @return mixed
      * @throws Registrar_Exception
      */
-    private function _makeRequest($url ,$params = array(), $method = 'GET', $type = 'json')
+    protected function _makeRequest($url ,$params = array(), $method = 'GET', $type = 'json')
     {
         $params = array_merge(array(
             'auth-userid'   =>  $this->config['userid'],
