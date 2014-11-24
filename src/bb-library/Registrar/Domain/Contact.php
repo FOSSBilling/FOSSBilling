@@ -41,6 +41,7 @@ class Registrar_Domain_Contact
     public function setCompanyNumber($company_number)
     {
         $this->company_number = $company_number;
+        return $this;
     }
 
 
@@ -58,6 +59,7 @@ class Registrar_Domain_Contact
     public function setIdnLanguageCode($idn_language_code)
     {
         $this->idn_language_code = $idn_language_code;
+        return $this;
     }
 
     /**
@@ -74,6 +76,7 @@ class Registrar_Domain_Contact
     public function setBirthday($birthday)
     {
         $this->birthday = $birthday;
+        return $this;
     }
 
     public function setId($param)

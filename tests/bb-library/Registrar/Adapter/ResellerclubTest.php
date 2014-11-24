@@ -222,7 +222,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
                 1,
                 array('currentstatus' => ''),
                 array('customerid' => 1),
-                array('recsonpage' => 1, 'result' => array('entity.entityid' => 2)),
+                array('recsonpage' => 1, 'result' => array(array('entity.entityid' => 2))),
                 array(),
                 2,
                 $requestResult

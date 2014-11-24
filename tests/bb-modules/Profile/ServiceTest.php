@@ -174,7 +174,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             'first_name'     => 'string',
             'last_name'      => 'string',
             'gender'         => 'string',
-            'birthday'       => 'string',
+            'birthday'       => '1981-01-01',
             'company'        => 'string',
             'company_vat'    => 'string',
             'company_number' => 'string',

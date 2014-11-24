@@ -698,7 +698,7 @@ class Service implements \Box\InjectionAwareInterface
         $address1   = empty($model->contact_address1) ? $client->address_1 : $model->contact_address1;
         $address2   = empty($model->contact_address2) ? $client->address_2 : $model->contact_address2;
         $birthday   = !empty($client->birthday) ? $client->birthday: '';
-        $company_number = !empty($client->$company_number) ? $client->$company_number : '';
+        $company_number = !empty($client->company_number) ? $client->company_number : '';
 
         $contact = new \Registrar_Domain_Contact();
         $contact
