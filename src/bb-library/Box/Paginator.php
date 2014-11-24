@@ -82,19 +82,17 @@ class Box_Paginator {
 
     private function calculateRange()
     {
-        $startRange = $this->currentPage - floor($this->midRange/2);
-        $endRange = $this->currentPage + floor($this->midRange/2);
+        $startRange = $this->currentPage - floor($this->midRange / 2);
+        $endRange   = $this->currentPage + floor($this->midRange / 2);
 
-        if($startRange <= 0)
-        {
-            $endRange += abs($startRange)+1;
+        if ($startRange <= 0) {
+            $endRange += abs($startRange) + 1;
             $startRange = 1;
         }
 
-        if($endRange > $this->numPages)
-        {
-            $startRange -= $endRange-$this->numPages;
-            $endRange = $this->numPages;
+        if ($endRange > $this->numPages) {
+            $endRange   = $this->numPages;
+            $startRange = $endRange - $this->numPages + 1;
         }
 
         $this->range = range($startRange, $endRange);
