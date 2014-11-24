@@ -157,7 +157,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['db'] = $db;
         $service->setDi($di);
 
-        $result = $service->logEmail($data['client_id'], $data['sender'], $data['recipients'], $data['subject'], $data['content_html'], $data['content_text']);
+        $result = $service->logEmail($data['subject'], $data['client_id'], $data['sender'], $data['recipients'], $data['content_html'], $data['content_text']);
         $this->assertTrue($result);
     }
 
