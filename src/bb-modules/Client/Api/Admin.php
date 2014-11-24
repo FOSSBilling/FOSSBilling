@@ -312,7 +312,7 @@ class Admin extends \Api_Abstract
             $client->gender = $gender;
         }
         if(!is_null($birthday)) {
-            if (strtotime($data['birthday']) == false) {
+            if (strlen(trim($data['birthday'])) > 0 && strtotime($data['birthday']) == false) {
                 throw new \Box_Exception('Invalid birth date value');
             }
             $client->birthday = $birthday;

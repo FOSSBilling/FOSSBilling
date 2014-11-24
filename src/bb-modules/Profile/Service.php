@@ -151,7 +151,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($data['birthday'])) {
-            if (strtotime($data['birthday']) == false) {
+            if (strlen(trim($data['birthday'])) > 0 && strtotime($data['birthday']) == false) {
                 throw new \Box_Exception('Invalid birth date value');
             }
             $client->birthday = $data['birthday'];
