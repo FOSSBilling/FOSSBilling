@@ -15,7 +15,7 @@ class Payment_Adapter_CustomTest extends BBDbApiTestCase
         $adapter = new Payment_Adapter_Custom($config);
         $adapter->setDi($this->di);
         $adapter->getConfig();
-        $adapter->getHtml($this->api_admin, 1);
+        $adapter->getHtml($this->api_admin, 1, true);
         $adapter->process();
     }
 }
