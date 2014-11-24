@@ -13,6 +13,8 @@
 class Payment_Adapter_WebMoney
 {
     private $config = array();
+
+	public $testMode = false;
     
 	const USD = 'Z';
 	const RUB = 'R';
@@ -56,7 +58,7 @@ class Payment_Adapter_WebMoney
 		$data['LMI_PAYEE_PURSE']    =	$this->config['purse'];
 		$data['LMI_PAYMENT_AMOUNT']	=	$invoice['total'];
 		$data['LMI_PAYMENT_NO']		=	$invoice['id'];
-		$data['LMI_PAYMENT_DESC']	=	$invoice['title'];
+		$data['LMI_PAYMENT_DESC']	=	$invoice['serie_nr'];
 		$data['LMI_RESULT_URL']		=	$this->config['notify_url'];
 		$data['LMI_SUCCESS_URL']	=	$this->config['success_url'];
 		$data['LMI_SUCCESS_METHOD']	=	1;											//The field may have values 0, 1 or 2 equal to values of the ‘Method of requesting Success URL’ – ‘GET’, ‘POST’ or ‘LINK’.
