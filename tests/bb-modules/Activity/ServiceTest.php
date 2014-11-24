@@ -107,7 +107,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     public function testLogEvent()
     {
         $service = new \Box\Mod\Activity\Service();
-        $data    = array();
+        $data    = array(
+            'message' => 'Logging test message'
+        );
 
         $di = new \Box_Di();
         $db = $this->getMockBuilder('Box_Database')->getMock();
