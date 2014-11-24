@@ -366,6 +366,7 @@ class Service implements InjectionAwareInterface
             'currency'    =>  $model->currency,
             'notes'    =>  $model->notes,
             'created_at'    =>  $model->created_at,
+            'document_nr' => $model->document_nr,
         );
 
         if($deep) {

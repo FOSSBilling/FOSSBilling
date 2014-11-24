@@ -64,6 +64,14 @@
                        </div>
 
                        <div class="control-group">
+                           <label class="control-label" for="input">{% trans 'Birth date' %}</label>
+                           <div class="controls">
+                                <input type="date" name="birthday" value="{{ profile.birthday }}" >
+                               <p class="help-block"></p>
+                           </div>
+                       </div>
+
+                       <div class="control-group">
                            <label class="control-label" for="input">{% trans 'Company Name' %}</label>
                            <div class="controls">
                                 <input type="text" name="company" value="{{ profile.company }}">
@@ -137,6 +145,14 @@
                           <label class="control-label" for="input">{% trans 'Zip/Postal Code' %}</label>
                           <div class="controls">
                                 <input type="text" name="postcode" value="{{ profile.postcode }}" required="required">
+                              <p class="help-block"></p>
+                          </div>
+                      </div>
+
+                      <div class="control-group">
+                          <label class="control-label" for="input">{% trans 'Passport number' %}</label>
+                          <div class="controls">
+                                <input type="text" name="document_nr" value="{{ profile.document_nr}}" >
                               <p class="help-block"></p>
                           </div>
                       </div>

@@ -647,7 +647,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
-        $result = $this->service->createPromo('code', 'percentage', 50, array(), array(), array());
+        $result = $this->service->createPromo('code', 'percentage', 50, array(), array(), array(), array());
         $this->assertInternalType('int', $result);
         $this->assertEquals($newPromoId, $result);
     }

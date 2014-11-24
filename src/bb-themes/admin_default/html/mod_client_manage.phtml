@@ -148,6 +148,13 @@
                         </div> 
                         <div class="fix"></div>
                     </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Date of birth' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="birthday" value="{{client.birthday}}" />
+                        </div>
+                        <div class="fix"></div>
+                    </div>
                     <div class="rowElem" id="company-details">
                         <label>{% trans 'Company details' %}:</label>
                         <div class="formRight moreFields">
@@ -221,6 +228,13 @@
                             </ul>  
                         </div> 
                         <div class="fix"></div>   
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Passport number' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="document_nr" value="{{client.document_nr}}" />
+                        </div>
+                        <div class="fix"></div>
                     </div>
                     <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
                 </fieldset>

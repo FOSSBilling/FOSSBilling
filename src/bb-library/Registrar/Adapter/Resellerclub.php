@@ -74,17 +74,21 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     public function getTlds()
     {
         return array(
-            '.com', '.net', '.org', '.name', '.biz',
-            '.in', '.us', '.co.uk', '.org.uk', '.me.uk',
-            '.eu', '.cn.com', '.info', '.co.nz', '.net.nz',
-            '.org.nz', '.me', '.co.in', '.net.in', '.org.in',
-            '.gen.in', '.firm.in', '.ind.in', '.asia', '.mobi',
-            '.tel', '.tv', '.cc', '.ws', '.bz',
-            '.mn', '.eu.com', '.gb.com', '.ae.org', '.kr.com',
-            '.us.com', '.qc.com', '.de.com', '.gb.net', '.no.com',
-            '.hu.com', '.jpn.com', '.uy.com', '.za.com', '.br.com',
-            '.sa.com', '.se.com', '.uk.com', '.uk.net', '.ru.com',
-            '.cn', '.com.cn', '.net.cn', '.org.cn',
+            '.com', '.net', '.biz', '.org', '.info', '.name', '.co',
+            '.asia', '.ru', '.com.ru', '.net.ru', '.org.ru',
+            '.de', '.es', '.us', '.xxx', '.ca', '.com.au',
+            '.net.au', '.co.uk', '.org.uk', '.me.uk',
+            '.eu', '.in', '.co.in', '.net.in', '.org.in',
+            '.gen.in', '.firm.in', '.ind.in', '.cn.com',
+            '.com.co', '.net.co', '.nom.co', '.me', '.mobi',
+            '.tel', '.tv', '.cc', '.ws', '.bz', '.mn', '.co.nz',
+            '.net.nz', '.org.nz', '.eu.com', '.gb.com', '.ae.org',
+            '.kr.com', '.us.com', '.qc.com', '.gr.com',
+            '.de.com', '.gb.net', '.no.com', '.hu.com',
+            '.jpn.com', '.uy.com', '.za.com', '.br.com',
+            '.sa.com', '.se.com', '.se.net', '.uk.com',
+            '.uk.net', '.ru.com', '.com.cn', '.net.cn',
+            '.org.cn', '.nl', '.co', '.com.co', '.pw',
         );
     }
 
@@ -100,7 +104,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         if(!isset($result[$domain->getName()])) {
             return true;
         }
-        
+
         $check = $result[$domain->getName()];
         if($check && $check['status'] == 'available') {
             return true;
@@ -140,7 +144,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     public function modifyContact(Registrar_Domain $domain)
     {
-        $cdetails = $this->_getDefaultContactDetails($domain);
+        $customer = $this->_getCustomerDetails($domain);
+        $cdetails = $this->_getDefaultContactDetails($domain, $customer['customerid']);
         $contact_id = $cdetails['Contact']['registrant'];
 
         $c = $domain->getContactRegistrar();
@@ -174,7 +179,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     public function transferDomain(Registrar_Domain $domain)
     {
         $customer = $this->_getCustomerDetails($domain);
-        $contacts = $this->_getDefaultContactDetails($domain);
+        $contacts = $this->_getDefaultContactDetails($domain, $customer['customerid']);
         $contact_id = $contacts['Contact']['registrant'];
 
         $ns = array();
@@ -199,6 +204,11 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'invoice-option'    =>  'NoInvoice',
             'protect-privacy'   =>  false,
         );
+
+        if($domain->getTld() == '.asia') {
+            $required_params['attr-name1'] = 'cedcontactid';
+            $required_params['attr-value1'] = "default";
+        }
 
         return $this->_makeRequest('domains/transfer', $required_params, 'POST');
     }
@@ -284,7 +294,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         $tld = $domain->getTld();
         $customer = $this->_getCustomerDetails($domain);
         $customer_id = $customer['customerid'];
-        $contact_id = $this->getContactIdForDomain($domain);
         
         $ns = array();
         $ns[] = $domain->getNs1();
@@ -296,29 +305,44 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $ns[] = $domain->getNs4();
         }
 
+        list($reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id) = $this->_getAllContacts($tld, $customer_id, $domain->getContactRegistrar());
+
         $params = array(
             'domain-name'       =>  $domain->getName(),
             'years'             =>  $domain->getRegistrationPeriod(),
             'ns'                =>  $ns,
             'customer-id'       =>  $customer_id,
-            'reg-contact-id'    =>  $contact_id,
-            'admin-contact-id'  =>  $contact_id,
-            'tech-contact-id'   =>  $contact_id,
-            'billing-contact-id'=>  $contact_id,
+            'reg-contact-id'    =>  $reg_contact_id,
+            'admin-contact-id'  =>  $admin_contact_id,
+            'tech-contact-id'   =>  $tech_contact_id,
+            'billing-contact-id'=>  $billing_contact_id,
             'invoice-option'    =>  'NoInvoice',
             'protect-privacy'   =>  false, //$domain->getPrivacyEnabled(),
         );
-        
-        if(in_array($tld, array('.eu', '.uk', '.nz', '.ru'))) {
-            $params['admin-contact-id'] = -1;
+
+        if($tld == '.asia') {
+            $params['attr-name1'] = 'cedcontactid';
+            $params['attr-value1'] = "default";
         }
-        
-        if(in_array($tld, array('.eu', '.uk', '.nz', '.ru'))) {
-            $params['tech-contact-id'] = -1;
+
+        if($tld == '.de') {
+            $params['ns'] = array('dns1.directi.com', 'dns2.directi.com', 'dns3.directi.com', 'dns4.directi.com');
         }
-        
-        if(in_array($tld, array('.eu', '.uk', '.nz', '.ru', '.ca'))) {
-            $params['billing-contact-id'] = -1;
+
+        if ($tld == '.au'){
+            $contact = $domain->getContactRegistrar();
+
+            if(strlen(trim($contact->getCompanyNumber())) == 0 ) {
+                throw new Registrar_Exception('Valid contact company number is required while registering AU domain name');
+            }
+            $params['attr-name1'] = 'id-type';
+            $params['attr-value1'] = 'ACN';
+            $params['attr-name2'] = 'id';
+            $params['attr-value2'] = $contact->getCompanyNumber();
+            $params['attr-name3'] = 'policyReason';
+            $params['attr-value3'] = '1';
+            $params['attr-name4'] = 'isAUWarranty';
+            $params['attr-value4'] = '1';
         }
         
         $result = $this->_makeRequest('domains/register', $params, 'POST');
@@ -415,11 +439,18 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     private function _createCustomer(Registrar_Domain $domain)
     {
         $c = $domain->getContactRegistrar();
+        $company = $c->getCompany();
+        if (!isset($company) || strlen(trim($company)) == 0 ){
+            $company = 'N/A';
+        }
+        $phoneNum = $c->getTel();
+        $phoneNum = preg_replace( "/[^0-9]/", "", $phoneNum);
+        $phoneNum = substr($phoneNum, 0, 12);
         $params = array(
             'username'                       =>  $c->getEmail(),
             'passwd'                         =>  $c->getPassword(),
             'name'                           =>  $c->getName(),
-            'company'                        =>  $c->getCompany(),
+            'company'                        =>  $company,
             'address-line-1'                 =>  $c->getAddress1(),
             'address-line-2'                 =>  $c->getAddress2(),
             'city'                           =>  $c->getCity(),
@@ -427,7 +458,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'country'                        =>  $c->getCountry(),
             'zipcode'                        =>  $c->getZip(),
             'phone-cc'                       =>  $c->getTelCc(),
-            'phone'                          =>  $c->getTel(),
+            'phone'                          =>  $phoneNum,
             'lang-pref'                      =>  'en',
             'sales-contact-id'               =>  '',
             'accounting-currency-symbol'     =>  'USD',
@@ -565,11 +596,10 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $result;
     }
 
-    private function _getDefaultContactDetails(Registrar_Domain $domain)
+    private function _getDefaultContactDetails(Registrar_Domain $domain, $customerid)
     {
-        $customer = $this->_getCustomerDetails($domain);
         $params = array(
-            'customer-id'   =>  $customer['customerid'],
+            'customer-id'   =>  $customerid,
             'type'          =>  'Contact',
         );
 
@@ -627,7 +657,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      * @return mixed
      * @throws Registrar_Exception
      */
-    private function _makeRequest($url ,$params = array(), $method = 'GET', $type = 'json')
+    protected function _makeRequest($url ,$params = array(), $method = 'GET', $type = 'json')
     {
         $params = array_merge(array(
             'auth-userid'   =>  $this->config['userid'],
@@ -725,5 +755,232 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         return $params;
+    }
+
+    private function _getAllContacts($tld, $customer_id, \Registrar_Domain_Contact $client)
+    {
+        if ($tld[0] != "."){
+            $tld = "." . $tld; //$tld must start with a dot(.)
+        }
+
+        $company = $client->getCompany();
+        if (!isset($company) || strlen(trim($company)) == 0 ){
+            $company = $client->getFirstName() . ' ' . $client->getLastName();
+        }
+
+        $contact = array(
+            'customer-id'                    =>  $customer_id,
+            'type'                           =>  'Contact',
+            'email'                          =>  $client->getEmail(),
+            'name'                           =>  $client->getFirstName() . ' ' . $client->getLastName(),
+            'company'                        =>  $company,
+            'address-line-1'                 =>  $client->getAddress1(),
+            'city'                           =>  $client->getCity(),
+            'state'                          =>  $client->getState(),
+            'country'                        =>  $client->getCountry(),
+            'zipcode'                        =>  $client->getZip(),
+            'phone-cc'                       =>  $client->getTelCc(),
+            'phone'                          =>  substr($client->getTel(), 0, 12),//phone must be 4-12 digits
+        );
+
+        //@see http://manage.resellerclub.com/kb/answer/790 for us contact details
+        if($tld == '.us') {
+            $contact['attr-name1'] =   'purpose';
+            $contact['attr-value1'] =  'P3';
+
+            $contact['attr-name2'] =   'category';
+            $contact['attr-value2'] =  'C12';
+        }
+
+        // create general contact id
+        $reg_contact_id = $this->_getContact($contact, $customer_id, $contact['type']);
+
+        if($tld == '.nl') {
+            $contact['type'] =   'NlContact';
+            $contact['attr-name1'] = 'legalForm';
+            $contact['attr-value1'] = 'PERSOON';
+        }
+
+        if($tld == '.uk' || $tld == '.co.uk' || $tld == '.org.uk') {
+            $contact['type'] =   'UkContact';
+        }
+
+        if($tld == '.eu') {
+            $contact['type'] =   'EuContact';
+        }
+
+        if($tld == '.cn') {
+            $contact['type'] =   'CnContact';
+        }
+
+        if($tld == '.ca') {
+            $contact['type'] =   'CaContact';
+
+            $contact['attr-name1'] = 'CPR';
+            $contact['attr-value1'] = 'LGR';
+
+            $contact['attr-name2'] = 'AgreementVersion';
+            $contact['attr-value2'] = $this->getCARegistrantAgreementVersion();
+
+            $contact['attr-name3'] = 'AgreementValue';
+            $contact['attr-value3'] = 'y';
+        }
+
+        if($tld == '.de') {
+            $contact['type'] =   'DeContact';
+        }
+
+        if($tld == '.es') {
+            if(strlen(trim($client->getDocumentNr())) == 0 ) {
+                throw new Registrar_Exception('Valid contact Passport information is required while registering ES domain name');
+            }
+
+            //@see http://manage.directi.com/kb/answer/790
+            $contact['type'] =   'EsContact';
+            $contact['attr-name1']  = 'es_form_juridica';
+            $contact['attr-value1'] = '1';
+            $contact['attr-name2']  = 'es_tipo_identificacion';
+            $contact['attr-value2'] = '0';
+            $contact['attr-name3']  = 'es_identificacion';
+            $contact['attr-value3'] = $client->getDocumentNr();
+
+        }
+
+        if ($tld == '.co' || substr($tld, -3) == '.co'){
+            $contact['type'] = 'CoContact';
+        }
+
+        if($tld == '.asia') {
+            if(strlen(trim($client->getDocumentNr())) == 0 ) {
+                throw new Registrar_Exception('Valid contact Passport information is required while registering ASIA domain name');
+            }
+
+            $contact['attr-name1'] =   'locality';
+            $contact['attr-value1'] =  'TH'; // {Two-lettered Country code}
+
+            $contact['attr-name2'] =   'legalentitytype';
+            $contact['attr-value2'] =  'naturalPerson'; // {naturalPerson | corporation | cooperative | partnership | government | politicalParty | society | institution | other}
+
+            $contact['attr-name3'] =   'otherlegalentitytype';
+            $contact['attr-value3'] =  'naturalPerson'; // {Mention legal entity type. Mandatory if legalentitytype chosen as 'other'}
+
+            $contact['attr-name4'] =   'identform';
+            $contact['attr-value4'] =  'passport'; // {passport | certificate | legislation | societyRegistry | politicalPartyRegistry | other}
+
+            $contact['attr-name5'] =   'otheridentform';
+            $contact['attr-value5'] =  'passport'; // {Mention Identity form. Mandatory if identform chosen as 'other'}
+
+            $contact['attr-name6'] =   'identnumber';
+            $contact['attr-value6'] =  $client->getDocumentNr(); // {Mention Identification Number}]
+        }
+
+        if($tld == '.ru' || $tld == '.com.ru' || $tld == '.org.ru' || $tld == '.net.ru') {
+            if(strlen(trim($client->getBirthday())) == 0 || strtotime($client->getBirthday()) == false) {
+                throw new Registrar_Exception('Valid contact Birth Date is required while registering RU domain name');
+            }
+
+            if(strlen(trim($client->getDocumentNr())) == 0 ) {
+                throw new Registrar_Exception('Valid contact Passport information is required while registering RU domain name');
+            }
+
+            if(str_word_count($contact['company']) < 2) {
+                $contact['company'] .= ' Inc';
+            }
+
+            $contact['type'] =   'RuContact';
+            $contact['attr-name1']  = 'contract-type';
+            $contact['attr-value1'] = 'PRS';
+            $contact['attr-name2']  = 'birth-date';
+            $contact['attr-value2'] = date('d.m.Y', strtotime($client->getBirthday()));
+            $contact['attr-name3']  = 'person-r';
+            $contact['attr-value3'] = $client->getFirstName(). ' ' . $client->getLastName();
+            $contact['attr-name4']  = 'address-r';
+            $contact['attr-value4'] = $client->getAddress1();
+            $contact['attr-name5']  = 'passport';
+            $contact['attr-value5'] = $client->getDocumentNr();
+        }
+
+        if($tld == '.ca') {
+            $client->setIdnLanguageCode('fr');
+        }
+        if($tld == '.de') {
+            $client->setIdnLanguageCode('de');
+        }
+        if($tld == '.es') {
+            $client->setIdnLanguageCode('es');
+        }
+        if($tld == '.eu') {
+            $client->setIdnLanguageCode('latin');
+        }
+
+        $param_exists = TRUE;
+        $attr_number = 1;
+        while ($param_exists){
+            if (!array_key_exists("attr-name".$attr_number, $contact)){
+                $contact['attr-name'.$attr_number] = 'idnLanguageCode';
+                $contact['attr-value'.$attr_number] = strtolower($client->getIdnLanguageCode());
+                $param_exists = FALSE;
+            }
+            $attr_number++;
+        }
+
+        $special_contact_id = null;
+        if($contact['type'] != 'Contact') {
+            $special_contact_id = $this->_getContact($contact, $customer_id, $contact['type']);
+        }
+
+        // by default special contact is also admin, tech and billing contact, but not always
+        $admin_contact_id = isset($special_contact_id) ? $special_contact_id : $reg_contact_id;
+        $tech_contact_id = isset($special_contact_id) ? $special_contact_id : $reg_contact_id;
+        $billing_contact_id = isset($special_contact_id) ? $special_contact_id : $reg_contact_id;
+
+        // override some parameters
+        if(in_array($tld, array('.uk', '.co.uk', '.org.uk', '.nz', '.ru', '.com.ru', '.org.ru', '.net.ru', '.eu'))) {
+            $admin_contact_id = -1;
+        }
+
+        if(in_array($tld, array('.uk', '.co.uk','.org.uk', '.nz', '.ru', '.com.ru', '.org.ru', '.net.ru', '.eu'))) {
+            $tech_contact_id = -1;
+        }
+
+        if(in_array($tld, array('.uk', '.co.uk', '.org.uk', '.nz', '.ru', '.com.ru', '.org.ru', '.net.ru', '.eu', '.ca', '.nl'))) {
+            $billing_contact_id = -1;
+        }
+
+        //general contact is special contact for these TLD'S
+        if(in_array($tld, array('.de', '.nl', '.ru', '.es', '.uk', '.co.uk', '.org.uk', '.eu', '.com.ru', '.net.ru', '.org.ru', '.co'))) {
+            $reg_contact_id = $special_contact_id;
+        }
+
+        return array($reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id);
+    }
+
+    private function _getContact($contact, $customer_id, $type = 'Contact')
+    {
+        try {
+            $params = array(
+                'customer-id'   => $customer_id,
+                'no-of-records' => 20,
+                'page-no'       => 1,
+                'status'        => 'Active',
+                'type'          => $type,
+            );
+            $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json', true);
+            if($result['recsonpage'] < 1) {
+                throw new Registrar_Exception('Contact not found');
+            }
+            $existing_contact_id = $result['result'][0]['entity.entityid'];
+            $this->_makeRequest('contacts/delete', array('contact-id'=>$existing_contact_id), 'POST');
+        } catch(Registrar_Exception $e) {
+            $this->getLog()->info($e->getMessage());
+        }
+
+        return $this->_makeRequest('contacts/add', $contact, 'POST');
+    }
+
+    private function getCARegistrantAgreementVersion()
+    {
+        $agreement = $this->_makeRequest('contacts/dotca/registrantagreement', array(), 'GET', 'json', true);
+        return $agreement['version'];
     }
 }
