@@ -329,7 +329,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $params['ns'] = array('dns1.directi.com', 'dns2.directi.com', 'dns3.directi.com', 'dns4.directi.com');
         }
 
-        if ($tld == '.au' || $tld == '.net.au' || $tld == '.com..au'){
+        if ($tld == '.au' || $tld == '.net.au' || $tld == '.com.au'){
             $contact = $domain->getContactRegistrar();
 
             if(strlen(trim($contact->getCompanyNumber())) == 0 ) {
