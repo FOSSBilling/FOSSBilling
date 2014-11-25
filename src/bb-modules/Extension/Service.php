@@ -585,7 +585,7 @@ class Service implements InjectionAwareInterface
         );
         $this->di['db']->exec($sql, $params);
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminExtensionConfigSave', 'params'=>$data));
-        $this->di['logger']->info('Updated extension "%s" configuration', $data);
+        $this->di['logger']->info('Updated extension "%s" configuration', $data['ext']);
 
         return true;
     }
