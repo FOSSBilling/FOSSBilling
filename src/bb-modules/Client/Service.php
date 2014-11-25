@@ -213,20 +213,20 @@ class Service implements InjectionAwareInterface
 
     public function canChangeCurrency(\Model_Client $model, $currency = null)
     {
-        if(!$model->currency) {
+        if (!$model->currency) {
             return true;
         }
 
-        if($model->currency == $currency) {
+        if ($model->currency == $currency) {
             return false;
         }
 
-        $invoice = $this->di['db']->findOne('Invoice', 'client_id = ?', $model->id);
-        if($invoice instanceof \Model_Invoice) {
+        $invoice = $this->di['db']->findOne('Invoice', 'client_id = :client_id', array(':client_id' => $model->id));
+        if ($invoice instanceof \Model_Invoice) {
             throw new \Box_Exception('Currency can not be changed. Client already have invoices issued.');
         }
 
-        $order = $this->di['db']->findOne('ClientOrder', 'client_id = ?', $model->id);
+        $order = $this->di['db']->findOne('ClientOrder', 'client_id = :client_id', array(':client_id' => $model->id));
         if ($order instanceof \Model_ClientOrder) {
             throw new \Box_Exception('Currency can not be changed. Client already have orders.');
         }
