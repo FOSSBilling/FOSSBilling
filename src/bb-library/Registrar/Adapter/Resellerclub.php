@@ -76,7 +76,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return array(
             '.com', '.net', '.biz', '.org', '.info', '.name', '.co',
             '.asia', '.ru', '.com.ru', '.net.ru', '.org.ru',
-            '.de', '.es', '.us', '.xxx', '.ca', , '.au', '.com.au',
+            '.de', '.es', '.us', '.xxx', '.ca', '.au', '.com.au',
             '.net.au', '.co.uk', '.org.uk', '.me.uk',
             '.eu', '.in', '.co.in', '.net.in', '.org.in',
             '.gen.in', '.firm.in', '.ind.in', '.cn.com',
