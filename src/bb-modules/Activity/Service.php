@@ -134,7 +134,7 @@ class Service implements InjectionAwareInterface
         return array($sql, $params);
     }
 
-    public function logEmail($subject, $clientId = null, $sender = null, $recipients = null, $subject = null, $content_html = null, $content_text = null)
+    public function logEmail($subject, $clientId = null, $sender = null, $recipients = null, $content_html = null, $content_text = null)
     {
         $entry = $this->di['db']->dispense('ActivityClientEmail');
 

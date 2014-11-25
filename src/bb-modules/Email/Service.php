@@ -582,7 +582,7 @@ class Service implements \Box\InjectionAwareInterface
 
         if (isset($settings['log_enabled']) && $settings['log_enabled']) {
             $activityService =  $this->di['mod_service']('activity');
-            $activityService->logEmail($queue->subject, $queue->client_id, $queue->from, $queue->to, $queue->subject, $queue->content);
+            $activityService->logEmail($queue->subject, $queue->client_id, $queue->from, $queue->to, $queue->content);
         }
 
         $transport = isset($settings['mailer']) ? $settings['mailer'] : 'sendmail';

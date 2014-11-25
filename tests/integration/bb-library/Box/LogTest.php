@@ -57,7 +57,7 @@ class Box_LogIntegrationTest extends BBDbApiTestCase
 
     public function testLogMultipleVariables()
     {
-        $msg = '%sMultiple params in message, one param passed%s';
+        $msg  = '%sMultiple params in message, one param passed%s';
         $rand = rand(1, 100);
         $this->di['logger']->info($msg, $rand, $rand);
         $array   = $this->api_admin->activity_log_get_list();
@@ -66,14 +66,5 @@ class Box_LogIntegrationTest extends BBDbApiTestCase
 
         $this->assertEquals(sprintf($msg, $rand, $rand), $message);
     }
-
-    /**
-     * @expectedException LogicException
-     */
-    public function testLogVariablesDoesNotMatchPlaceholdersException()
-    {
-        $msg = 'Multiple params in message, one param passed %s %s %s %s %s %s';
-        $this->di['logger']->info($msg, rand(1, 100));
-    }
-
+    
 }
