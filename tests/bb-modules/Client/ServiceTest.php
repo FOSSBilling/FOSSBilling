@@ -354,15 +354,15 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     public function testcanChangeCurrency()
     {
         $currency = 'EUR';
-        $model = new \Model_Client();
+        $model    = new \Model_Client();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $model->currency = 'USD';
 
         $database = $this->getMockBuilder('\Box_Database')->getMock();
-        $database->expects($this->atLeastOnce())->method('load')
-            ->will($this->returnValue(array()));
+        $database->expects($this->atLeastOnce())->method('findOne')
+            ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -375,8 +375,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     public function testcanChangeCurrencyModelCurrencyNotSet()
     {
         $currency = 'EUR';
-        $model = new \Model_Client();
+        $model    = new \Model_Client();
         $model->loadBean(new \RedBeanPHP\OODBBean());
+
+        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database->expects($this->never())->method('findOne');
 
         $clientService = new \Box\Mod\Client\Service();
 
@@ -385,12 +388,15 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $this->assertTrue($result);
     }
 
-    public function testcanChangeCurrencyIdeanticalCurrencies()
+    public function testcanChangeCurrencyIdenticalCurrencies()
     {
         $currency = 'EUR';
-        $model = new \Model_Client();
+        $model    = new \Model_Client();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $model->currency = $currency;
+
+        $database = $this->getMockBuilder('\Box_Database')->getMock();
+        $database->expects($this->never())->method('findOne');
 
         $clientService = new \Box\Mod\Client\Service();
 
@@ -402,18 +408,19 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     public function testcanChangeCurrencyHasInvoice()
     {
         $currency = 'EUR';
-        $model = new \Model_Client();
+        $model    = new \Model_Client();
         $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->id       = rand(1, 100);
         $model->currency = 'USD';
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $database = $this->getMockBuilder('\Box_Database')->getMock();
-        $database->expects($this->atLeastOnce())->method('load')
+        $database->expects($this->at(0))->method('findOne')
             ->will($this->returnValue($invoiceModel));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -426,18 +433,21 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     public function testcanChangeCurrencyHasOrder()
     {
         $currency = 'EUR';
-        $model = new \Model_Client();
+        $model    = new \Model_Client();
         $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->id       = rand(1, 100);
         $model->currency = 'USD';
 
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $database = $this->getMockBuilder('\Box_Database')->getMock();
-        $database->expects($this->atLeastOnce())->method('load')
-            ->will($this->onConsecutiveCalls(array(), $clientOrderModel));
+        $database->expects($this->at(0))->method('findOne')
+            ->will($this->returnValue(null));
+        $database->expects($this->at(1))->method('findOne')
+            ->will($this->returnValue($clientOrderModel));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $database;
 
         $clientService = new \Box\Mod\Client\Service();

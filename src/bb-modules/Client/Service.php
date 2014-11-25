@@ -221,13 +221,13 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $invoice = $this->di['db']->load('Invoice', 'client_id = ?', $model->client_id);
-        if($invoice) {
+        $invoice = $this->di['db']->findOne('Invoice', 'client_id = ?', $model->id);
+        if($invoice instanceof \Model_Invoice) {
             throw new \Box_Exception('Currency can not be changed. Client already have invoices issued.');
         }
 
-        $order = $this->di['db']->load('ClientOrder', 'client_id = ?', $model->client_id);
-        if($order) {
+        $order = $this->di['db']->findOne('ClientOrder', 'client_id = ?', $model->id);
+        if ($order instanceof \Model_ClientOrder) {
             throw new \Box_Exception('Currency can not be changed. Client already have orders.');
         }
 
