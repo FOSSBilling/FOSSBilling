@@ -385,7 +385,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         );
 
         $result = $this->_makeRequest('domains/modify-privacy-protection', $params, 'POST');
-        return (strtolower($result['status']) == 'success');
+        return (strtolower($result['actionstatus']) == 'success');
     }
 
     public function getEpp(Registrar_Domain $domain)
