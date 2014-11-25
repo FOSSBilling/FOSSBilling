@@ -76,7 +76,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return array(
             '.com', '.net', '.biz', '.org', '.info', '.name', '.co',
             '.asia', '.ru', '.com.ru', '.net.ru', '.org.ru',
-            '.de', '.es', '.us', '.xxx', '.ca', '.com.au',
+            '.de', '.es', '.us', '.xxx', '.ca', , '.au', '.com.au',
             '.net.au', '.co.uk', '.org.uk', '.me.uk',
             '.eu', '.in', '.co.in', '.net.in', '.org.in',
             '.gen.in', '.firm.in', '.ind.in', '.cn.com',
@@ -329,7 +329,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $params['ns'] = array('dns1.directi.com', 'dns2.directi.com', 'dns3.directi.com', 'dns4.directi.com');
         }
 
-        if ($tld == '.au'){
+        if ($tld == '.au' || $tld == '.net.au' || $tld == '.com..au'){
             $contact = $domain->getContactRegistrar();
 
             if(strlen(trim($contact->getCompanyNumber())) == 0 ) {
