@@ -118,7 +118,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'domain-name'       =>  $domain->getName(),
         );
         $result = $this->_makeRequest('domains/validate-transfer', $params, 'GET');
-        return (strtolower($result['status']) == 'success');
+        return (strtolower($result) == 'true');
     }
 
     public function modifyNs(Registrar_Domain $domain)

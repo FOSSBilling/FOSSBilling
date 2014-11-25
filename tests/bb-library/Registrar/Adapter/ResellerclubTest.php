@@ -126,7 +126,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
         $registrarDomain = new Registrar_Domain();
         $registrarDomain->setSld('example')->setTld('.com');
 
-        $requestResult = array('status' => 'success');
+        $requestResult = 'true';
         $adapterMock->expects($this->atLeastOnce())
             ->method('_makeRequest')
             ->with('domains/validate-transfer')
