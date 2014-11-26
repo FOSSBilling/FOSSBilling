@@ -470,7 +470,7 @@ class Service implements InjectionAwareInterface
         $model->email               = $data['email'];
         $model->pass                = $this->di['password']->hashIt($data['password']);
         $model->name                = $data['name'];
-        $model->status              = \Model_Admin::STATUS_ACTIVE;
+        $model->status              = $model->getStatus($data['status']);
         $model->signature           = $signature;
         $model->created_at          = date('c');
         $model->updated_at          = date('c');
