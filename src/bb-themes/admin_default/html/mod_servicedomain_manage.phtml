@@ -16,42 +16,42 @@
         
         <tr>
             <td>{% trans 'Nameserver 1' %}</td>
-            <td><div id="editable-ns1" class="editable">{{ service.ns1 }}</div></td>
+            <td>{{ service.ns1 }}</td>
         </tr>
         
         <tr>
             <td>{% trans 'Nameserver 2' %}</td>
-            <td><div id="editable-ns2" class="editable">{{ service.ns2 }}</div></td>
+            <td>{{ service.ns2 }}</td>
         </tr>
         
         <tr>
             <td>{% trans 'Nameserver 3' %}</td>
-            <td><div id="editable-ns3" class="editable">{{ service.ns3 }}</div></td>
+            <td>{{ service.ns3 }}</td>
         </tr>
         
         <tr>
             <td>{% trans 'Nameserver 4' %}</td>
-            <td><div id="editable-ns4" class="editable">{{ service.ns4 }}</div></td>
+            <td>{{ service.ns4 }}</td>
         </tr>
         
         <tr>
             <td>{% trans 'Transfer code' %}</td>
-            <td><div id="editable-transfer-code" class="editable">{{ service.transfer_code }}</div></td>
+            <td>{{ service.transfer_code }}</td>
         </tr>
         
         <tr>
             <td>{% trans 'Privacy protected' %}</td>
-            <td><div id="editable-privacy" class="editable">{{ service.privacy }}</div></td>
+            <td>{{ service.privacy }}</td>
         </tr>
         
         <tr>
             <td>{% trans 'Locked' %}</td>
-            <td><div id="editable-locked" class="editable">{{ service.locked }}</div></td>
+            <td>{{ service.locked }}</td>
         </tr>
         
         <tr>
             <td>{% trans 'Registration/Renewal years' %}</td>
-            <td><div id="editable-period" class="editable">{{ service.period }}</div></td>
+            <td>{{ service.period }}</td>
         </tr>
         
         <tr>
@@ -73,7 +73,7 @@
                 <div class="aligncenter">
                     {{ order_actions }}
                     {% if order.status == 'active' %}
-                    <a class="btn55 mr10" href="admin/servicedomain/get_transfer_code?order_id={{order.id}}" id="get-epp"><img src="images/icons/middlenav/key.png" alt=""><span>Get EPP</span></a>
+                    <a class="btn55 mr10" type="button" id="get-epp"><img src="images/icons/middlenav/key.png" alt=""><span>Get EPP</span></a>
                     <a class="btn55 mr10" type="button" id="domain-unlock" {% if service.locked == 0 %}style="display:none;"{% endif %}><img src="images/icons/middlenav/locked2.png" alt=""><span>{% trans 'Unlock' %}</span></a>
                     <a class="btn55 mr10" type="button" id="domain-lock" {% if service.locked == 1 %}style="display:none;"{% endif %}><img src="images/icons/middlenav/unlocked.png" alt=""><span>{% trans 'Lock' %}</span></a>
                     <a class="btn55 mr10" type="button" id="domain-disable-pp" {% if service.privacy == 1 %}style="display:none;"{% endif %}><img src="images/icons/middlenav/umbrella.png" alt=""><span>{% trans 'Disable privacy protection' %}</span></a>
@@ -130,9 +130,38 @@
     </fieldset>
 </form>
 
+<div class="help">
+    <h2>{% trans 'Domain data' %}</h2>
+</div>
+<form method="post" action="{{ 'api/admin/servicedomain/update'|link }}" class="mainForm api-form" data-api-msg="Domain data updated">
+    <fieldset>
+        <div class="rowElem">
+            <label>{% trans 'Transfer code (EPP)' %}: </label>
+            <div class="formRight">
+                <input type="text" name="transfer_code" value="{{ request.transfer_code|default(service.transfer_code) }}" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Period' %}: </label>
+            <div class="formRight">
+                <input type="text" name="period" value="{{ request.period|default(service.period) }}">
+            </div>
+            <div class="fix"></div>
+        </div>
+
+
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <input class="greyishBtn submitForm" type="submit" value="{% trans 'Update' %}">
+    </fieldset>
+</form>
+
+<div class="help">
+    <h2>{% trans 'Update domain contact details' %}</h2>
+</div>
 <form method="post" action="{{ 'api/admin/servicedomain/update_contacts'|link }}" class="mainForm api-form" data-api-msg="Domain contact details updated">
     <fieldset>
-        <legend>{% trans 'Update domain contact details' %}</legend>
         <div class="rowElem">
             <label>{% trans 'First Name' %}: </label>
             <div class="formRight">
@@ -241,74 +270,6 @@
 
 <script type="text/javascript">
 $(function() {
-    $('#editable-privacy').editable(function(value, settings) {
-        bb.post(
-            'admin/servicedomain/update',
-            {order_id:{{order.id}}, privacy: value},
-            function(){
-            bb.msg('Privacy protection updated');
-         });
-    });
-    
-    $('#editable-locked').editable(function(value, settings) {
-        bb.post(
-            'admin/servicedomain/update',
-            {order_id:{{order.id}}, locked: value},
-            function(){
-            bb.msg('Domain locked status updated');
-         });
-    });
-    
-    $('#editable-transfer-code').editable(function(value, settings) {
-        bb.post(
-            'admin/servicedomain/update',
-            {order_id:{{order.id}}, transfer_code: value},
-            function(){
-            bb.msg('Transfer code updated');
-         });
-    });
-    
-    $('#editable-period').editable(function(value, settings) {
-        bb.post(
-            'admin/servicedomain/update',
-            {order_id:{{order.id}}, period: value},
-            function(){
-            bb.msg('Registration years updated');
-         });
-    });
-    
-    $('#editable-ns1').editable(function(value, settings) {
-        bb.post(
-            'admin/servicedomain/update',
-            {order_id:{{order.id}}, ns1: value},
-            function(){
-            bb.msg('Namserver 1 updated');
-         });
-    });
-    $('#editable-ns2').editable(function(value, settings) {
-        bb.post(
-            'admin/servicedomain/update',
-            {order_id:{{order.id}}, ns2: value},
-            function(){
-            bb.msg('Namserver 2 updated');
-         });
-    });
-    $('#editable-ns3').editable(function(value, settings) {
-        bb.post(
-            'admin/servicedomain/update',
-            {order_id:{{order.id}}, ns3: value},
-            function(){
-            bb.msg('Namserver 3 updated');
-         });
-    });
-    $('#editable-ns4').editable(function(value, settings) {
-        bb.post(
-            'admin/servicedomain/update',
-            {order_id:{{order.id}}, ns4: value},
-            function(){
-            bb.msg('Namserver 4 updated');
-         });
-    });
     
     $('#domain-lock').bind('click',function(event){
         bb.post(
