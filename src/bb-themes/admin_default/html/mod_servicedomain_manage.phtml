@@ -73,7 +73,7 @@
                 <div class="aligncenter">
                     {{ order_actions }}
                     {% if order.status == 'active' %}
-                    <a class="btn55 mr10" href="admin/servicedomain/get_transfer_code?order_id={{order.id}}" id="get-epp"><img src="images/icons/middlenav/key.png" alt=""><span>Get EPP</span></a>
+                    <a class="btn55 mr10" type="button" id="get-epp"><img src="images/icons/middlenav/key.png" alt=""><span>Get EPP</span></a>
                     <a class="btn55 mr10" type="button" id="domain-unlock" {% if service.locked == 0 %}style="display:none;"{% endif %}><img src="images/icons/middlenav/locked2.png" alt=""><span>{% trans 'Unlock' %}</span></a>
                     <a class="btn55 mr10" type="button" id="domain-lock" {% if service.locked == 1 %}style="display:none;"{% endif %}><img src="images/icons/middlenav/unlocked.png" alt=""><span>{% trans 'Lock' %}</span></a>
                     <a class="btn55 mr10" type="button" id="domain-disable-pp" {% if service.privacy == 1 %}style="display:none;"{% endif %}><img src="images/icons/middlenav/umbrella.png" alt=""><span>{% trans 'Disable privacy protection' %}</span></a>
