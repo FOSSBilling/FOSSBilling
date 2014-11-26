@@ -175,7 +175,13 @@ class Admin extends \Api_Abstract
         if (!isset($data['tld'])) {
             throw new \Box_Exception('TLD is missing');
         }
-        $model = $this->getService()->tldFindOneByTld($data['tld']);
+
+        $tld = $data['tld'];
+        if ($tld[0] != '.') {
+            $tld = '.' . $tld;
+        }
+
+        $model = $this->getService()->tldFindOneByTld($tld);
         if (!$model instanceof \Model_Tld) {
             throw new \Box_Exception('TLD not found');
         }
