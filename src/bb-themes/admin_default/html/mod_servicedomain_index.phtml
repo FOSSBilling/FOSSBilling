@@ -50,7 +50,7 @@
             </td>
             <td><a class="" href="{{ 'servicedomain/registrar'|alink }}/{{ tld.registrar.id }}">{{ tld.registrar.title }}</a></td>
             <td class="actions">
-                <a class="btn14 mr5" href="{{ 'servicedomain/tld'|alink }}/{{ tld.tld }}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                <a class="btn14 mr5" href="{{ 'servicedomain/tld'|alink }}/{{ tld.tld|slice(1) }}"><img src="images/icons/dark/pencil.png" alt=""></a>
                 <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" data-api-reload="1" href="{{ 'api/admin/servicedomain/tld_delete'|link({'tld' : tld.tld}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
             </td>
         </tr>
