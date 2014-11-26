@@ -343,7 +343,13 @@
                     <div class="rowElem noborder">
                         <label>{{ key }}</label>
                         <div class="formRight noborder">
-                            <input type="text" name="config[{{key}}]" value="{{ config }}" {% if config is null %} placeholder="null" {% endif %}/>
+                            {% if config is iterable %}
+                                {% for key2, config2 in config %}
+                                    <input type="text" name="config[{{key}}][{{key2}}]" value="{{ config2 }}" {% if config2 is null %} placeholder="null" {% endif %}/>
+                                {% endfor %}
+                            {% else %}
+                                <input type="text" name="config[{{key}}]" value="{{ config }}" {% if config is null %} placeholder="null" {% endif %}/>
+                            {% endif %}
                         </div>
                         <div class="fix"></div>
                     </div>
