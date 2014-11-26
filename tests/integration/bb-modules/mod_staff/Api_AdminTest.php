@@ -21,6 +21,9 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $id = $this->api_admin->staff_create($data);
         $this->assertInternalType('int', $id);
 
+        $staffModel = $this->di['db']->load('Admin', $id);
+        $this->assertNotEquals($data['password'], $staffModel->pass);
+
         $data['id'] = $id;
         $array = $this->api_admin->staff_get($data);
         $this->assertInternalType('array', $array);
@@ -34,9 +37,15 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $data['password_confirm'] = 'new123123';
         $bool = $this->api_admin->staff_change_password($data);
         $this->assertTrue($bool);
+
+        $staffModel = $this->di['db']->load('Admin', $id);
+        $this->assertNotEquals($data['password'], $staffModel->pass);
         
         $bool = $this->api_admin->staff_delete($data);
         $this->assertTrue($bool);
+
+        $staffModel = $this->di['db']->load('Admin', $id);
+        $this->isNull($staffModel);
     }
 
     public function testChangePasswordException(){

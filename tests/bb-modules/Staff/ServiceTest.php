@@ -872,6 +872,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
     public function testchangePassword()
     {
+        $plainTextPassword = 'password';
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \RedBeanPHP\OODBBean());
 
@@ -885,15 +886,21 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
+        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock->expects($this->atLeastOnce())
+            ->method('hashIt')
+            ->with($plainTextPassword);
+
         $di = new \Box_Di();
         $di['events_manager'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
+        $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
 
-        $result = $service->changePassword($adminModel, 'password');
+        $result = $service->changePassword($adminModel, $plainTextPassword);
         $this->assertTrue($result);
     }
 
@@ -930,11 +937,17 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
+        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock->expects($this->atLeastOnce())
+            ->method('hashIt')
+            ->with($data['password']);
+
         $di = new \Box_Di();
         $di['events_manager'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use($systemServiceMock){ return $systemServiceMock; });
+        $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
@@ -978,11 +991,17 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
+        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock->expects($this->atLeastOnce())
+            ->method('hashIt')
+            ->with($data['password']);
+
         $di = new \Box_Di();
         $di['events_manager'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use($systemServiceMock){ return $systemServiceMock; });
+        $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);

@@ -445,7 +445,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminStaffPasswordChange', 'params'=>array('id'=>$model->id)));
 
-        $model->pass = $password;
+        $model->pass = $this->di['password']->hashIt($password);
         $model->updated_at = date('c');
         $this->di['db']->store($model);
 
@@ -468,7 +468,7 @@ class Service implements InjectionAwareInterface
         $model->role                = \Model_Admin::ROLE_STAFF;
         $model->admin_group_id      = $data['admin_group_id'];
         $model->email               = $data['email'];
-        $model->pass                = $data['password'];
+        $model->pass                = $this->di['password']->hashIt($data['password']);
         $model->name                = $data['name'];
         $model->status              = \Model_Admin::STATUS_ACTIVE;
         $model->signature           = $signature;
