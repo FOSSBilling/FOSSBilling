@@ -92,7 +92,7 @@ class Box_Mail
         return $this;
     }
 
-    private function _sendSmtpMail($options)
+    protected function _sendSmtpMail($options)
     {
         if(!isset($options['smtp_host'])) {
             throw new \Box_Exception('SMTP host not configured');
@@ -137,7 +137,7 @@ class Box_Mail
         $mail->send();
     }
 
-    private function _sendMail()
+    protected function _sendMail()
     {
         try {
             $mail = new PHPMailer(true);
