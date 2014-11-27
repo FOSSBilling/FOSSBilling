@@ -4,37 +4,96 @@
  */
 class Box_MailTest extends PHPUnit_Framework_TestCase
 {
-    public function testMail()
+
+    public function testsend_TransportSendMail()
     {
-        try {
-            $mail = new Box_Mail();
-            $mail->setFrom('me@gmail.com');
-            $mail->setReplyTo('info@boxbilling.com');
-            $mail->addTo('example@gmail.com');
-            $mail->setSubject('PHPUnit');
-            $mail->setBodyHtml('testing email <b>html</b>');
-            $mail->send();
-        } catch (Exception $e) {
-            print $e->getMessage();
-        }
+        $transport = 'sendmail';
+
+        $mailMock = $this->getMockBuilder('Box_Mail')
+            ->setMethods(array('_sendMail'))
+            ->getMock();
+
+        $mailMock->expects($this->once())
+            ->method('_sendMail')
+            ->with(array());
+
+        $mailMock->send($transport);
     }
 
-    /*
-    public function testSmtp()
+    public function testsend_TransportSmtp()
     {
-        $options = array(
-            'smtp_security' =>  'tls',
-            'smtp_port'     =>  '587',
-            'smtp_username' =>  'john.doe@gmail.com',
-            'smtp_password' =>  '',
-            'smtp_host'     =>  'smtp.gmail.com',
-        );
-        $mail = new Box_Mail();
-        $mail->setFrom('me@gmail.com');
-        $mail->addTo('support@1freehosting.com');
-        $mail->setSubject('PHPUnit');
-        $mail->setBodyHtml('testing email <b>html</b>');
-        $mail->send('smtp', $options);
+        $transport = 'smtp';
+
+        $mailMock = $this->getMockBuilder('Box_Mail')
+            ->setMethods(array('_sendSmtpMail'))
+            ->getMock();
+
+        $mailMock->expects($this->once())
+            ->method('_sendSmtpMail')
+            ->with(array());
+
+        $mailMock->send($transport);
     }
-    */
+
+    public function testsend_TransportUnknown()
+    {
+        $transport = 'mailServer';
+
+        $mail = new Box_Mail();
+
+        $this->setExpectedException('\Box_Exception', sprintf('Unknown mail transport: %s', $transport));
+        $mail->send($transport);
+    }
+
+    public function testsetBodyHtml()
+    {
+        $context = 'Mail body';
+        $mail = new Box_Mail();
+
+        $result = $mail->setBodyHtml($context);
+        $this->assertInstanceOf('Box_Mail', $result);
+
+        $result = $mail->getBody();
+        $this->assertEquals($context, $result);
+    }
+
+    public function testsetFrom()
+    {
+        $context = 'jobs@boxbilling.com';
+        $mail = new Box_Mail();
+
+        $result = $mail->setFrom($context);
+
+        $this->assertInstanceOf('Box_Mail', $result);
+    }
+
+    public function testsetSubject()
+    {
+        $context = 'Mail title';
+        $mail = new Box_Mail();
+
+        $result = $mail->setSubject($context);
+        $this->assertInstanceOf('Box_Mail', $result);
+
+        $result = $mail->getSubject();
+        $this->assertEquals($context, $result);
+    }
+
+    public function testsetReplyTo()
+    {
+        $context = 'do-not-reply@boxbilling.com';
+        $mail = new Box_Mail();
+
+        $result = $mail->setReplyTo($context);
+        $this->assertInstanceOf('Box_Mail', $result);
+    }
+
+    public function testaddTo()
+    {
+        $context = 'bcc@boxbilling.com';
+        $mail = new Box_Mail();
+
+        $result = $mail->addTo($context);
+        $this->assertInstanceOf('Box_Mail', $result);
+    }
 }

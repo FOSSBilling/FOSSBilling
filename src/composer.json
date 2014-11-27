@@ -24,7 +24,8 @@
         "rev42/tfpdf": "v1.24",
         "geoip2/geoip2": "v2.1.0",
         "dflydev/markdown": "1.0.*@dev",
-        "ircmaxell/password-compat": "v1.0.4"
+        "ircmaxell/password-compat": "v1.0.4",
+        "phpmailer/phpmailer": "5.2.4"
     },
     "suggest": {
         "ext-gettext": "*"
