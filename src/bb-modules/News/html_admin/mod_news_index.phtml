@@ -75,7 +75,7 @@
                     <div class="rowElem">
                         <label>{% trans 'Content' %}</label>
                         <div class="formRight">
-                            <textarea name="content" cols="5" rows="10">{{ request.content }}</textarea>
+                            <textarea name="content" cols="5" rows="10" class="bb-textarea">{{ request.content }}</textarea>
                         </div>
                         <div class="fix"></div>
                     </div>
@@ -88,3 +88,5 @@
 </div>
 
 {% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
