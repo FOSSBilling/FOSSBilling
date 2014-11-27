@@ -17,6 +17,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
             'password' =>  'dem2123123AAo',
             'name' =>  'John Doe',
             'signature' =>  'this is test sig',
+            'status' => 'active',
         );
         $id = $this->api_admin->staff_create($data);
         $this->assertInternalType('int', $id);
