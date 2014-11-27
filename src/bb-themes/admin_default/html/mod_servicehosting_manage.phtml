@@ -35,12 +35,12 @@
 
         <tr>
             <td>{% trans 'Account IP' %}:</td>
-            <td><div id="editable-ip" class="editable">{{ service.ip }}</div></td>
+            <td>{{ service.ip }}</td>
         </tr>
 
         <tr>
             <td>{% trans 'Username' %}:</td>
-            <td><div id="editable-username" class="editable">{{ service.username }}</div></td>
+            <td>{{ service.username }}</td>
         </tr>
 
         <tr>
@@ -199,26 +199,3 @@
     <input class="greyishBtn submitForm" type="submit" value="{% trans 'Change' %}">
 </fieldset>
 </form>
-
-<script type="text/javascript" src="js/jquery.jeditable.min.js"></script>
-
-<script type="text/javascript">
-$(function() {
-    $('#editable-username').editable(function(value, settings) {
-        bb.post(
-            'admin/servicehosting/update',
-            {order_id:{{order.id}}, username: value},
-            function(){
-            bb.msg('Username updated');
-         });
-    });
-    $('#editable-ip').editable(function(value, settings) {
-        bb.post(
-            'admin/servicehosting/update',
-            {order_id:{{order.id}}, ip: value},
-            function(){
-            bb.msg('IP updated');
-         });
-    });
-});
-</script>
