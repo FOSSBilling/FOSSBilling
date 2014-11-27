@@ -308,6 +308,23 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertTrue(count($cart['items']) == 2);
     }
 
+    public function testAddHostingProductWithOwnDomainWhenExists()
+    {
+        $this->api_guest->cart_reset();
+
+        $data = array(
+            'id'        =>  8,
+            'period'    =>  '3M',
+            'domain'    =>  array(
+                'action'=>  'owndomain',
+                'owndomain_tld'=>  '.com',
+                'owndomain_sld'=>  'exist',
+            ),
+        );
+        $bool = $this->api_guest->cart_add_item($data);
+        $this->assertTrue($bool);
+    }
+
     public function testAddHostingProductWithOwnDomain()
     {
         $this->api_guest->cart_reset();

@@ -10,7 +10,7 @@
     <service_hosting_server id="1" name="Server PHPUnit" ip="144.144.144.144" manager="Custom" ns1="ns1.1fh.com"  ns2="ns2.1fh.com"  ns3="ns3.1fh.com"  ns4="ns4.1fh.com"/>
     
     <service_custom id="1" client_id="1" plugin="Example" />
-    
+
     <promo id="1" code="PHPUNIT" description="Desc" type="absolute" value="1" once_per_client="0" freesetup="0" active="1" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
     <promo id="2" code="FREE_SETUP" description="Free setup" type="absolute" value="0" once_per_client="0" freesetup="1" active="1" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
     <promo id="3" code="ONCE_PER_CLIENT" description="Once per client promo" type="percentage" value="100" once_per_client="1" recurring="1" freesetup="1" active="1" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
@@ -76,7 +76,9 @@
     <service_downloadable />
     <service_hosting />
     <service_membership />
-    
+
+    <service_hosting id="1" client_id="1" service_hosting_hp_id="1" sld="exist" tld=".com" />
+
     <tld id="1" tld_registrar_id="1" tld=".com" allow_register="1" allow_transfer="1" price_registration="10" price_transfer="15"/>
     
     <setting id="1" param="last_cron_exec" value="2011-10-24T15:23:43+03:00" created_at="2011-10-24T15:23:43+03:00" updated_at="2011-10-24T15:23:43+03:00"/>
