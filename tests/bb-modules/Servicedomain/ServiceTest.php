@@ -115,57 +115,13 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $tld->min_years = 2;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('isDomainRegistered', 'tldFindOneByTld', 'canBeTransfered', 'isDomainAvailable'))->getMock();
+            ->setMethods(array('tldFindOneByTld', 'canBeTransfered', 'isDomainAvailable'))->getMock();
 
-        $serviceMock->expects($this->atLeastOnce())->method('isDomainRegistered')
-            ->will($this->returnValue(false));
         $serviceMock->expects($finOneByTldCalled)->method('tldFindOneByTld')
             ->will($this->returnValue($tld));
         $serviceMock->expects($canBeTransferedCalled)->method('canBeTransfered')
             ->will($this->returnValue(true));
         $serviceMock->expects($isDomainAvailableCalled)->method('isDomainAvailable')
-            ->will($this->returnValue(true));
-
-        $di              = new \Box_Di();
-        $di['validator'] = $validatorMock;
-        $serviceMock->setDi($di);
-
-        $result = $serviceMock->validateOrderData($data);
-        $this->assertNull($result);
-    }
-
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testValidateOrderDataDomainRegisteredException()
-    {
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
-            ->will($this->returnValue(true));
-
-        $tld = new \Model_Tld();
-        $tld->loadBean(new \RedBeanPHP\OODBBean());
-        $tld->tld       = '.com';
-        $tld->min_years = 2;
-
-
-        $data = array(
-            'action'        => 'owndomain',
-            'owndomain_sld' => 'example',
-            'owndomain_tld' => '.com'
-        );
-
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('isDomainRegistered', 'tldFindOneByTld', 'canBeTransfered', 'isDomainAvailable'))->getMock();
-
-        $serviceMock->expects($this->atLeastOnce())->method('isDomainRegistered')
-            ->will($this->returnValue(true));
-        $serviceMock->expects($this->never())->method('tldFindOneByTld')
-            ->will($this->returnValue($tld));
-        $serviceMock->expects($this->never())->method('canBeTransfered')
-            ->will($this->returnValue(true));
-        $serviceMock->expects($this->never())->method('isDomainAvailable')
             ->will($this->returnValue(true));
 
         $di              = new \Box_Di();

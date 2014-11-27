@@ -152,11 +152,6 @@ class Service implements \Box\InjectionAwareInterface
             $data['period']   = $years . 'Y';
             $data['quantity'] = $years;
         }
-
-        list($sld, $tld) = $this->_getTuple($data);
-        if ($this->isDomainRegistered($sld, $tld)) {
-            throw new \Box_Exception(':domain is already registered!', array(':domain' => $sld . $tld), 856);
-        }
     }
 
     /**
@@ -736,17 +731,6 @@ class Service implements \Box\InjectionAwareInterface
         }
 
         return array($d, $adapter);
-    }
-
-    protected function isDomainRegistered($sld, $tld)
-    {
-        $query = "SELECT id FROM service_domain WHERE sld=:sld AND tld=:tld";
-        $pdo   = $this->di['pdo'];
-        $stmt  = $pdo->prepare($query);
-        $stmt->execute(array('sld' => $sld, 'tld' => $tld));
-        $results = $stmt->fetchColumn();
-
-        return (bool)$results;
     }
 
     public function onBeforeAdminCronRun()
