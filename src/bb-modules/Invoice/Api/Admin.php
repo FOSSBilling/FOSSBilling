@@ -947,4 +947,25 @@ class Admin extends \Api_Abstract
 
         return true;
     }
+
+    /**
+     * Deletes taxes with given IDs
+     *
+     * @param array $ids - IDs for deletion
+     *
+     * @return bool
+     */
+    public function batch_delete_tax($data)
+    {
+        $required = array(
+            'ids' => 'IDs not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        foreach ($data['ids'] as $id) {
+            $this->tax_delete(array('id' => $id));
+        }
+
+        return true;
+    }
 }

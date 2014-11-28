@@ -18,6 +18,7 @@
             <table class="tableStatic wide">
                 <thead>
                     <tr>
+                        <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
                         <td>{% trans 'Name' %}</td>
                         <td>{% trans 'Country' %}</td>
                         <td>{% trans 'State/Region' %}</td>
@@ -29,6 +30,7 @@
                 <tbody>
                 {% for tax in admin.invoice_tax_get_list({"per_page":100}).list %}
                 <tr>
+                    <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ tax.id }}"/></td>
                     <td>{{ tax.name }}</td>
                     <td>
                         {% if tax.country %}
@@ -62,6 +64,8 @@
                 </tbody>
                 {% endfor %}
             </table>
+            {% include "partial_batch_delete.phtml" with {'action' : 'admin/invoice/batch_delete_tax'} %}
+
         </div>
         
         <div class="tab_content nopadding" id="tab-settings">
