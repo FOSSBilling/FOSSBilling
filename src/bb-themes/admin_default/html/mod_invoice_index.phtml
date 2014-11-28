@@ -109,6 +109,7 @@
             <table class="tableStatic wide">
                 <thead>
                     <tr>
+                        <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
                         <td colspan="3">{% trans 'Invoice' %}</td>
                         <td>{% trans 'Amount' %}</td>
                         <td>{% trans 'Issued at' %}</td>
@@ -121,6 +122,7 @@
                     {% set invoices = admin.invoice_get_list({"per_page":30, "page":request.page}|merge(request)) %}
                     {% for invoice in invoices.list %}
                     <tr>
+                        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ invoice.id }}"/></td>
                         <td style="width:5%;"><img src="{{ invoice.buyer.email|gravatar }}?size=20" alt="{{ invoice.buyer.email }}" title="{{invoice.buyer.first_name}} {{invoice.buyer.last_name}}"/></td>
                         <td><a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">{{invoice.client.first_name|truncate(1, null, '.')}} {{invoice.client.last_name|truncate(20)}}</a></td>
                         <td style="width:15%;" title="{{invoice.id}}">{{ invoice.serie_nr }}</td>
@@ -142,6 +144,7 @@
             </table>
             
             {% include "partial_pagination.phtml" with {'list': invoices, 'url':'invoice'} %}
+            {% include "partial_batch_delete.phtml" with {'action' : 'admin/invoice/batch_delete'} %}
         </div>
 
         <div class="tab_content nopadding" id="tab-new">
