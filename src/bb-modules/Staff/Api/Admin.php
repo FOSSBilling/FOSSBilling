@@ -513,4 +513,25 @@ class Admin extends \Api_Abstract
         $this->di['logger']->info('Changed profile password');
         return true;
     }
+
+    /**
+     * Deletes admin login logs with given IDs
+     *
+     * @param array $ids - IDs for deletion
+     *
+     * @return bool
+     */
+    public function batch_delete_logs($data)
+    {
+        $required = array(
+            'ids' => 'IDs not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        foreach ($data['ids'] as $id) {
+            $this->login_history_delete(array('id' => $id));
+        }
+
+        return true;
+    }
 }
