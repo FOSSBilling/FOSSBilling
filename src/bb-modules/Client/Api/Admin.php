@@ -722,4 +722,24 @@ class Admin extends \Api_Abstract
         return $this->di['db']->toArray($model);
     }
 
+    /**
+     * Deletes clients with given IDs
+     *
+     * @param array $ids - IDs for deletion
+     *
+     * @return bool
+     */
+    public function batch_delete($data)
+    {
+        $required = array(
+            'ids' => 'IDs not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        foreach ($data['ids'] as $id) {
+            $this->delete(array('id' => $id));
+        }
+
+        return true;
+    }
 }
