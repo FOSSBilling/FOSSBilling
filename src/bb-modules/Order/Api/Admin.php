@@ -454,4 +454,29 @@ class Admin extends \Api_Abstract
 
         return $this->di['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
     }
+
+    /**
+     * Deletes orders with given IDs
+     *
+     * @param array $ids - Order ids for deletion
+     *
+     * @optional bool $delete_addons - Remove addons also. Default false.
+     *
+     * @return bool
+     */
+    public function batch_delete($data)
+    {
+        $required = array(
+            'ids' => 'Orders ids not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $delete_addons = isset($data['delete_addons']) ? (bool)$data['delete_addons'] : false;
+
+        foreach ($data['ids'] as $id) {
+            $this->delete(array('id' => $id, 'delete_addons' => $delete_addons));
+        }
+
+        return true;
+    }
 }
