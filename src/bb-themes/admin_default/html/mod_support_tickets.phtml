@@ -120,6 +120,7 @@
             <table class="tableStatic wide">
                 <thead>
                     <tr>
+                        <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
                         <td colspan="2">{% trans 'Client' %}</td>
                         <td>{% trans 'Subject' %}</td>
                         <td>{% trans 'Status' %}</td>
@@ -132,6 +133,7 @@
                     {% set tickets = admin.support_ticket_get_list({"per_page":30, "page":request.page}|merge(request)) %}
                     {% for i, ticket in tickets.list %}
                     <tr class="priority_{{ ticket.priority }}">
+                        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ ticket.id }}"/></td>
                         <td style="width:5%"><a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}"><img src="{{ ticket.client.email|gravatar }}?size=20" alt="gravatar" /></a></td>
                         <td style="width:20%"><a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}">{{ ticket.client.first_name|truncate(1, null, '.') }} {{ ticket.client.last_name }}</a></td>
                         <td>
@@ -161,6 +163,8 @@
                 </tbody>
             </table>
             {% include "partial_pagination.phtml" with {'list': tickets, 'url':'support'} %}
+            {% include "partial_batch_delete.phtml" with {'action':'admin/support/batch_delete'} %}
+
         </div>
 
         <div class="tab_content nopadding" id="tab-new">
