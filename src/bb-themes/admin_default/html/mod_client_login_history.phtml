@@ -11,6 +11,7 @@
 <table class="tableStatic wide">
     <thead>
         <tr>
+            <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
             <td colspan="2">{% trans 'Client' %}</td>
             <td>{% trans 'IP' %}</td>
             <td>{% trans 'Country' %}</td>
@@ -23,6 +24,7 @@
     {% set history = admin.client_login_history_get_list({"per_page":30, "page":request.page}|merge(request)) %}
     {% for i, event in history.list %}
     <tr>
+        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ event.id }}"/></td>
         <td style="width:5%"><a href="{{ 'client/manage'|alink }}/{{ event.client.id }}"><img src="{{ event.client.email|gravatar }}?size=20" alt="{{ event.client.email }}" /></a></td>
         <td>{{ event.client.first_name }} {{ event.client.last_name }}</td>
         <td>{{ event.ip }}</td>
@@ -42,7 +44,8 @@
     </tbody>
     
 </table>
-{% include "partial_pagination.phtml" with {'list': history, 'url':'client/logins'} %}
+    {% include "partial_batch_delete.phtml" with {'action' : 'admin/client/batch_delete_log'} %}
+    {% include "partial_pagination.phtml" with {'list': history, 'url':'client/logins'} %}
 </div>
 
 {% endblock %}
