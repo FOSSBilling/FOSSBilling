@@ -697,6 +697,25 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $result = $this->api->get($data);
     }
 
+    public function testBatch_delete()
+    {
+        $activityMock = $this->getMockBuilder('\Box\Mod\Order\Api\Admin')->setMethods(array('delete'))->getMock();
+        $activityMock->expects($this->atLeastOnce())->
+        method('delete')->
+        will($this->returnValue(true));
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $activityMock->setDi($di);
+
+        $result = $activityMock->batch_delete(array('ids' => array(1, 2, 3)));
+        $this->assertEquals(true, $result);
+    }
+
 
 }
  
