@@ -104,6 +104,7 @@
     <table class="tableStatic wide">
         <thead>
             <tr>
+                <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
                 <td width="5%">{% trans 'Invoice' %}</td>
                 <td>{% trans 'Type' %}</td>
                 <td>{% trans 'Status' %}</td>
@@ -118,6 +119,7 @@
             {% set transactions = admin.invoice_transaction_get_list({"per_page":30, "page":request.page}|merge(request)) %}
             {% for i, tx in transactions.list %}
             <tr>
+                <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ tx.id }}"/></td>
                 <td>{% if tx.invoice_id %}<a href="{{ 'invoice/manage'|alink }}/{{tx.invoice_id}}">#{{ tx.invoice_id }}</a>{%else%}n/a{% endif %}</td>
                 <td>{{mf.status_name(tx.type|default('-')) }}</td>
                 <td>{% if tx.error %}<a href="#" onclick="bb.msg('{{ tx.error }}','{{ tx.error_code }}'); return false;">{{ tx.error_code }}</a>{% else %}{{mf.status_name(tx.status) }}{% endif %}</td>
@@ -139,6 +141,9 @@
             {% endfor %}
         </tbody>
     </table>
+
+    {% include "partial_batch_delete.phtml" with {'action':'admin/invoice/batch_delete_transaction'} %}
+
 </div>
 {% include "partial_pagination.phtml" with {'list': transactions, 'url':'invoice/transactions'} %}
 {% endblock %}

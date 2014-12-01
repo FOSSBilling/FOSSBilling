@@ -1331,5 +1331,41 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
 
         $this->assertTrue($result);
     }
+
+    public function testBatch_delete()
+    {
+        $activityMock = $this->getMockBuilder('\Box\Mod\Support\Api\Admin')->setMethods(array('ticket_delete'))->getMock();
+        $activityMock->expects($this->atLeastOnce())->method('ticket_delete')->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $activityMock->setDi($di);
+
+        $result = $activityMock->batch_delete(array('ids' => array(1, 2, 3)));
+        $this->assertEquals(true, $result);
+    }
+
+    public function testBatch_delete_public()
+    {
+        $activityMock = $this->getMockBuilder('\Box\Mod\Support\Api\Admin')->setMethods(array('public_ticket_delete'))->getMock();
+        $activityMock->expects($this->atLeastOnce())->method('public_ticket_delete')->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $activityMock->setDi($di);
+
+        $result = $activityMock->batch_delete_public(array('ids' => array(1, 2, 3)));
+        $this->assertEquals(true, $result);
+    }
 }
  

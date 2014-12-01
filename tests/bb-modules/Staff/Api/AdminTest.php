@@ -549,5 +549,23 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->assertInternalType('bool', $result);
         $this->assertTrue($result);
     }
+
+    public function testBatch_delete()
+    {
+        $activityMock = $this->getMockBuilder('\Box\Mod\Staff\Api\Admin')->setMethods(array('login_history_delete'))->getMock();
+        $activityMock->expects($this->atLeastOnce())->method('login_history_delete')->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $activityMock->setDi($di);
+
+        $result = $activityMock->batch_delete_logs(array('ids' => array(1, 2, 3)));
+        $this->assertEquals(true, $result);
+    }
 }
  

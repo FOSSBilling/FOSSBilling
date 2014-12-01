@@ -756,4 +756,60 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
             $this->assertInternalType('array', $gateway['accepted_currencies']);
         }
     }
+
+    public function testInvoiceBatchDelete()
+    {
+        $array = $this->api_admin->invoice_get_list(array());
+
+        foreach ($array['list'] as $value) {
+            $ids[] = $value['id'];
+        }
+        $result = $this->api_admin->invoice_batch_delete(array('ids' => $ids));
+        $array  = $this->api_admin->invoice_get_list(array());
+
+        $this->assertEquals(0, count($array['list']));
+        $this->assertTrue($result);
+    }
+
+    public function testInvoiceBatchDeleteSubscription()
+    {
+        $array = $this->api_admin->invoice_subscription_get_list(array());
+
+        foreach ($array['list'] as $value) {
+            $ids[] = $value['id'];
+        }
+        $result = $this->api_admin->invoice_batch_delete_subscription(array('ids' => $ids));
+        $array  = $this->api_admin->invoice_subscription_get_list(array());
+
+        $this->assertEquals(0, count($array['list']));
+        $this->assertTrue($result);
+    }
+
+    public function testInvoiceBatchDeleteTransaction()
+    {
+        $array = $this->api_admin->invoice_transaction_get_list(array());
+
+        foreach ($array['list'] as $value) {
+            $ids[] = $value['id'];
+        }
+        $result = $this->api_admin->invoice_batch_delete_transaction(array('ids' => $ids));
+        $array  = $this->api_admin->invoice_transaction_get_list(array());
+
+        $this->assertEquals(0, count($array['list']));
+        $this->assertTrue($result);
+    }
+
+    public function testInvoiceBatchDeleteTax()
+    {
+        $array = $this->api_admin->invoice_tax_get_list(array());
+
+        foreach ($array['list'] as $value) {
+            $ids[] = $value['id'];
+        }
+        $result = $this->api_admin->invoice_batch_delete_tax(array('ids' => $ids));
+        $array  = $this->api_admin->invoice_tax_get_list(array());
+
+        $this->assertEquals(0, count($array['list']));
+        $this->assertTrue($result);
+    }
 }

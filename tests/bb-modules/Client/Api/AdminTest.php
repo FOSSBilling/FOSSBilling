@@ -1087,4 +1087,42 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $data = array('id' => 1);
         $admin_Client->login_history_delete($data);
     }
+
+    public function testBatch_delete()
+    {
+        $activityMock = $this->getMockBuilder('\Box\Mod\Client\Api\Admin')->setMethods(array('delete'))->getMock();
+        $activityMock->expects($this->atLeastOnce())->method('delete')->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $activityMock->setDi($di);
+
+        $result = $activityMock->batch_delete(array('ids' => array(1, 2, 3)));
+        $this->assertEquals(true, $result);
+    }
+
+    public function testBatch_delete_log()
+    {
+        $activityMock = $this->getMockBuilder('\Box\Mod\Client\Api\Admin')->setMethods(array('login_history_delete'))->getMock();
+        $activityMock->expects($this->atLeastOnce())->method('login_history_delete')->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $activityMock->setDi($di);
+
+        $result = $activityMock->batch_delete_log(array('ids' => array(1, 2, 3)));
+        $this->assertEquals(true, $result);
+    }
+
+
 }

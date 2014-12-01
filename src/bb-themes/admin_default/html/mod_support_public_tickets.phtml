@@ -21,6 +21,7 @@
 <table class="tableStatic wide">
     <thead>
         <tr>
+            <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
             <td style="width: 50%">{% trans 'Subject' %}</td>
             <td>{% trans 'Email' %}</td>
             <td>{% trans 'Status' %}</td>
@@ -33,6 +34,7 @@
     {% set tickets = admin.support_public_ticket_get_list({"per_page":30, "page":request.page}|merge(request)) %}
     {% for i, ticket in tickets.list %}
     <tr>
+        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ ticket.id }}"/></td>
         <td><a href="{{ '/support/public-ticket'|alink }}/{{ticket.id}}">#{{ ticket.id }} - {{ ticket.subject }} ({{ ticket.messages|length}})</a></td>
         <td>{{ ticket.author_email }}</td>
         <td>{{ mf.status_name(ticket.status) }}</td>
@@ -52,4 +54,6 @@
 </table>
 </div>
 {% include "partial_pagination.phtml" with {'list': tickets, 'url':'support/public-tickets'} %}
+{% include "partial_batch_delete.phtml" with {'action':'admin/support/batch_delete_public'} %}
+
 {% endblock %}

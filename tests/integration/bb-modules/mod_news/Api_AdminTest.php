@@ -68,4 +68,18 @@ class Api_Admin_NewsTest extends BBDbApiTestCase
         }
 
     }
+
+    public function testNewsBatchDelete()
+    {
+        $array = $this->api_admin->news_get_list(array());
+
+        foreach ($array['list'] as $value) {
+            $ids[] = $value['id'];
+        }
+        $result = $this->api_admin->news_batch_delete(array('ids' => $ids));
+        $array  = $this->api_admin->news_get_list(array());
+
+        $this->assertEquals(0, count($array['list']));
+        $this->assertTrue($result);
+    }
 }

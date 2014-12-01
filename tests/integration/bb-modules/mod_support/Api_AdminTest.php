@@ -290,4 +290,32 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
             $this->assertInternalType('array', $item['client']);
         }
     }
+
+    public function testTicketBatchDelete()
+    {
+        $array = $this->api_admin->support_ticket_get_list(array());
+
+        foreach ($array['list'] as $value) {
+            $ids[] = $value['id'];
+        }
+        $result = $this->api_admin->support_batch_delete(array('ids' => $ids));
+        $array  = $this->api_admin->support_ticket_get_list(array());
+
+        $this->assertEquals(0, count($array['list']));
+        $this->assertTrue($result);
+    }
+
+    public function testPublicTicketBatchDelete()
+    {
+        $array = $this->api_admin->support_public_ticket_get_list(array());
+
+        foreach ($array['list'] as $value) {
+            $ids[] = $value['id'];
+        }
+        $result = $this->api_admin->support_batch_delete_public(array('ids' => $ids));
+        $array  = $this->api_admin->support_public_ticket_get_list(array());
+
+        $this->assertEquals(0, count($array['list']));
+        $this->assertTrue($result);
+    }
 }

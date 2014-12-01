@@ -167,5 +167,17 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->assertArrayHasKey('created_at', $item);
         $this->assertArrayHasKey('updated_at', $item);
     }
+    public function testBatchDelete()
+    {
+        $array = $this->api_admin->staff_login_history_get_list(array());
 
+        foreach ($array['list'] as $value) {
+            $ids[] = $value['id'];
+        }
+        $result = $this->api_admin->staff_batch_delete_logs(array('ids' => $ids));
+        $array  = $this->api_admin->staff_login_history_get_list(array());
+
+        $this->assertEquals(0, count($array['list']));
+        $this->assertTrue($result);
+    }
 }
