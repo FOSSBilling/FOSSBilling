@@ -220,6 +220,19 @@ class Api_Admin_EmailTest extends BBDbApiTestCase
             $this->assertArrayHasKey('subject', $item);
             $this->assertArrayHasKey('description', $item);
         }
+    }
 
+    public function testBatchDelete()
+    {
+        $array = $this->api_admin->email_email_get_list(array());
+
+        foreach ($array['list'] as $value) {
+            $ids[] = $value['id'];
+        }
+        $result = $this->api_admin->email_batch_delete(array('ids' => $ids));
+        $array  = $this->api_admin->email_email_get_list(array());
+
+        $this->assertEquals(0, count($array['list']));
+        $this->assertTrue($result);
     }
 }
