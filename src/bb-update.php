@@ -56,18 +56,6 @@ class BBPatch_17 extends BBPatchAbstract
               UNIQUE KEY `unique_id` (`id`)
             ) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
         $this->execSql($q);
-
-        try {
-            $this->di['api_admin']->extension_activate(array('id'=>'formbuilder', 'type'=>'mod'));
-        } catch(Exception $e) {
-            error_log('Error enabling formbuilder extension '.$e->getMessage());
-        }
-        try {
-            $this->di['api_admin']->extension_activate(array('id'=>'orderbutton', 'type'=>'mod'));
-        } catch(Exception $e) {
-            error_log('Error enabling orderbutton extension '.$e->getMessage());
-        }
-
     }
 }
 
@@ -143,32 +131,32 @@ class BBPatch_15 extends BBPatchAbstract
           ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;";
 
         $this->execSql($q);
-        
+
         $q="ALTER TABLE `invoice` ADD  `gateway_id` INT NULL AFTER  `buyer_email`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `post` ADD  `image` VARCHAR( 255 ) NULL AFTER  `status`;";
         $this->execSql($q);
 
         $q="ALTER TABLE  `post` ADD  `section` VARCHAR( 255 ) NULL AFTER  `image`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `post` ADD  `publish_at` VARCHAR( 255 ) NULL AFTER `section`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `post` ADD  `published_at` VARCHAR( 255 ) NULL AFTER `publish_at`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `post` ADD  `expires_at` VARCHAR( 255 ) NULL AFTER `published_at`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `client` ADD  `email_approved` BOOLEAN NULL AFTER  `status`;";
         $this->execSql($q);
 
         $q="ALTER TABLE  `client_order` ADD  `form_id` INTEGER NULL AFTER  `product_id`;";
         $this->execSql($q);
-        
-        
+
+
     }
 }
 
@@ -181,8 +169,8 @@ class BBPatch_14 extends BBPatchAbstract
     {
         $q="ALTER TABLE  `service_license` ADD  `checked_at` VARCHAR( 35 ) DEFAULT NULL AFTER  `plugin`;";
         $this->execSql($q);
-        
-        
+
+
     }
 }
 
@@ -195,19 +183,19 @@ class BBPatch_13 extends BBPatchAbstract
     {
         $q="ALTER TABLE  `forum` ADD  `category` VARCHAR( 255 ) NOT NULL AFTER  `id`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `forum_topic_message` ADD  `points` VARCHAR( 255 ) NULL DEFAULT NULL AFTER  `ip`;";
         $this->execSql($q);
-        
+
         $q="UPDATE forum SET category = 'General purpose' WHERE category IS NULL OR category = '';";
         $this->execSql($q);
-        
-        
+
+
     }
 }
 
 /**
- * Version 2.8.9 
+ * Version 2.8.9
  */
 class BBPatch_12 extends BBPatchAbstract
 {
@@ -215,13 +203,13 @@ class BBPatch_12 extends BBPatchAbstract
     {
         $q="ALTER TABLE  `admin` ADD  `permissions` TEXT NULL DEFAULT NULL AFTER  `api_token`;";
         $this->execSql($q);
-        
-        
+
+
     }
 }
 
 /**
- * Version 2.7.29 
+ * Version 2.7.29
  */
 class BBPatch_11 extends BBPatchAbstract
 {
@@ -229,49 +217,49 @@ class BBPatch_11 extends BBPatchAbstract
     {
         $q="ALTER TABLE  `client_order` ADD  `referred_by` VARCHAR( 255 ) NULL AFTER  `config`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `client` ADD  `company_vat` VARCHAR( 255 ) NULL AFTER  `company`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `client` ADD  `company_number` VARCHAR( 255 ) NULL AFTER  `company_vat`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `client` ADD  `type` VARCHAR( 255 ) NULL AFTER  `tax_exempt`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `invoice` ADD  `seller_company_vat` VARCHAR( 255 ) NULL AFTER  `seller_company`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `invoice` ADD  `seller_company_number` VARCHAR( 255 ) NULL AFTER  `seller_company_vat`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `invoice` ADD  `buyer_phone_cc` VARCHAR( 255 ) NULL AFTER  `buyer_phone`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `invoice` ADD  `buyer_company_vat` VARCHAR( 255 ) NULL AFTER  `buyer_company`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `invoice` ADD  `buyer_company_number` VARCHAR( 255 ) NULL AFTER  `buyer_company_vat`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `invoice` ADD  `text_1` TEXT NULL DEFAULT NULL AFTER  `notes`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `invoice` ADD  `text_2` TEXT NULL DEFAULT NULL AFTER  `text_1`;";
         $this->execSql($q);
-        
+
         try {
             $this->di['api_admin']->extension_activate(array('id'=>'queue', 'type'=>'mod'));
         } catch(Exception $e) {
             error_log('Error enabling queue extension '.$e->getMessage());
         }
-        
-        
+
+
     }
 }
 
 /**
- * Version 2.7.2 
+ * Version 2.7.2
  */
 class BBPatch_10 extends BBPatchAbstract
 {
@@ -279,15 +267,15 @@ class BBPatch_10 extends BBPatchAbstract
     {
         $q="ALTER TABLE  `client` ADD  `auth_type` VARCHAR( 255 ) NULL AFTER  `role`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `invoice_item` CHANGE  `rel_id`  `rel_id` TEXT NULL DEFAULT NULL;";
         $this->execSql($q);
-        
-        
+
+
     }
 }
 /**
- * Version 2.6.22 
+ * Version 2.6.22
  */
 class BBPatch_9 extends BBPatchAbstract
 {
@@ -295,13 +283,13 @@ class BBPatch_9 extends BBPatchAbstract
     {
         $q="UPDATE currency SET format = REPLACE(format, '%price%' , '{{price}}' ) WHERE 1;";
         $this->execSql($q);
-        
-        
+
+
     }
 }
 
 /**
- * Version 2.6.17 
+ * Version 2.6.17
  */
 class BBPatch_8 extends BBPatchAbstract
 {
@@ -309,16 +297,16 @@ class BBPatch_8 extends BBPatchAbstract
     {
         $q="ALTER TABLE  `client` ADD  `salt` VARCHAR(255) NULL AFTER  `pass`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `admin` ADD  `salt` VARCHAR(255) NULL AFTER  `pass`;";
         $this->execSql($q);
-        
-        
+
+
     }
 }
 
 /**
- * Version 2.6.16 
+ * Version 2.6.16
  */
 class BBPatch_7 extends BBPatchAbstract
 {
@@ -326,16 +314,16 @@ class BBPatch_7 extends BBPatchAbstract
     {
         $q="ALTER TABLE  `email_template` ADD  `description` TEXT NULL AFTER  `content`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_domain` ADD  `synced_at` VARCHAR( 255 ) NULL AFTER  `details`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_license` ADD  `pinged_at` VARCHAR( 255 ) NULL AFTER  `plugin`;";
         $this->execSql($q);
-        
+
         $q="UPDATE email_template SET category = 'DEPRECATED - NOT USED ANY MORE' WHERE 1;";
         $this->execSql($q);
-        
+
         // Migrate email options to module options table
         try {
             $api = $this->di['api_admin'];
@@ -352,13 +340,13 @@ class BBPatch_7 extends BBPatchAbstract
         } catch(Exception $e) {
             error_log('Error migrating email settings '.$e->getMessage());
         }
-        
-        
+
+
     }
 }
 
 /**
- * Version 2.6.12 
+ * Version 2.6.12
  */
 class BBPatch_6 extends BBPatchAbstract
 {
@@ -366,18 +354,18 @@ class BBPatch_6 extends BBPatchAbstract
     {
         $q="ALTER TABLE  `transaction` CHANGE  `amount`  `amount` VARCHAR( 255 ) NULL DEFAULT NULL;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `currency` ADD  `price_format` VARCHAR( 50 ) NOT NULL DEFAULT  '1' AFTER  `format`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `email_template` ADD  `vars` TEXT NOT NULL AFTER  `content`;";
         $this->execSql($q);
-        
+
         // Activate spamchecker extension and migrate options
         try {
             $api = $this->di['api_admin'];
             $api->extension_activate(array('id'=>'spamchecker', 'type'=>'mod'));
-            
+
             $enabled = $api->system_param(array("key"=>"captcha_enabled"));
             $pubkey = $api->system_param(array("key"=>"captcha_recaptcha_publickey"));
             $privkey = $api->system_param(array("key"=>"captcha_recaptcha_privatekey"));
@@ -392,13 +380,13 @@ class BBPatch_6 extends BBPatchAbstract
         } catch(Exception $e) {
             error_log($e->getMessage());
         }
-        
-        
+
+
     }
 }
 
 /**
- * Version 2.5.31 
+ * Version 2.5.31
  */
 class BBPatch_5 extends BBPatchAbstract
 {
@@ -406,68 +394,68 @@ class BBPatch_5 extends BBPatchAbstract
     {
         $q="ALTER TABLE  `extension_meta` ADD  `client_id` INT NULL DEFAULT NULL AFTER  `id`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `product` ADD  `plugin_config` TEXT NULL DEFAULT NULL AFTER  `plugin`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_custom` ADD  `plugin_config` TEXT NULL DEFAULT NULL AFTER  `plugin`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `invoice` ADD  `currency_rate` DECIMAL( 13, 6 ) NULL DEFAULT NULL AFTER  `currency`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `product_payment` ADD `w_price` decimal(18,2) DEFAULT '0.00' AFTER  `once_setup_price`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `product_payment` ADD `w_setup_price` decimal(18,2) DEFAULT '0.00' AFTER  `tria_price`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `product_payment` ADD `w_enabled` tinyint(1) DEFAULT '1' AFTER  `tria_setup_price`;";
         $this->execSql($q);
-        
+
         $q="UPDATE `product_payment` SET `w_enabled` = 0;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_custom` ADD  `f1` TEXT NULL AFTER  `config`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_custom` ADD  `f2` TEXT NULL AFTER  `f1`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_custom` ADD  `f3` TEXT NULL AFTER  `f2`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_custom` ADD  `f4` TEXT NULL AFTER  `f3`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_custom` ADD  `f5` TEXT NULL AFTER  `f4`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_custom` ADD  `f6` TEXT NULL AFTER  `f5`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_custom` ADD  `f7` TEXT NULL AFTER  `f6`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_custom` ADD  `f8` TEXT NULL AFTER  `f7`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_custom` ADD  `f9` TEXT NULL AFTER  `f8`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_custom` ADD  `f10` TEXT NULL AFTER  `f9`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `extension_meta` CHANGE  `rel_id`  `rel_id` VARCHAR( 255 ) NULL DEFAULT NULL;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `client_order` ADD  `invoice_option` VARCHAR( 255 ) NULL AFTER  `group_master`;";
         $this->execSql($q);
-        
+
         $q="UPDATE `client_order` SET `invoice_option` = 'issue-invoice' WHERE 1;";
         $this->execSql($q);
-        
-        
+
+
     }
 }
 
@@ -477,28 +465,28 @@ class BBPatch_4 extends BBPatchAbstract
     {
         $q="INSERT INTO `email_template` (`action_code`, `category`, `enabled`, `subject`, `content`) VALUES ('support_ticket_admin_close', 'support', 1, 'Support Ticket Closed', '<p>Ticket ID: #{{ticket.id}}<br/> closed</p>\n<hr/>\n<p>{{company.signature}}</p>');";
         $this->execSql($q);
-        
+
         $q="INSERT INTO `email_template` (`action_code`, `category`, `enabled`, `subject`, `content`) VALUES ('staff_ticket_client_close', 'staff', 1, 'Support Ticket Closed', '<p>Ticket ID: #{{ticket.id}}<br/> closed</p>\n<hr/>\n<p>{{company.signature}}</p>');";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `client_order` ADD  `promo_recurring` tinyint(1) NULL AFTER  `promo_id`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `client_order` ADD  `promo_used` int NULL AFTER  `promo_recurring`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `promo` ADD  `once_per_client` tinyint(1) NULL AFTER  `freesetup`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `promo` ADD  `recurring` tinyint(1) AFTER  `once_per_client`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_license` ADD  `config` TEXT NULL AFTER  `versions`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `extension` ADD  `manifest` TEXT NULL AFTER  `version`;";
         $this->execSql($q);
-        
+
         $q="CREATE TABLE `queue` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `name` varchar(100) DEFAULT NULL,
@@ -509,7 +497,7 @@ class BBPatch_4 extends BBPatchAbstract
             ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
         ";
         $this->execSql($q);
-        
+
         $q="CREATE TABLE `queue_message` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `queue_id` bigint(20) DEFAULT NULL,
@@ -523,10 +511,10 @@ class BBPatch_4 extends BBPatchAbstract
             PRIMARY KEY (`id`),
             KEY `queue_id_idx` (`queue_id`)
         ) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
-        
+
         $this->execSql($q);
-        
-        
+
+
     }
 }
 
@@ -550,8 +538,8 @@ class BBPatch_3 extends BBPatchAbstract
               PRIMARY KEY (`id`)
             ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;";
         $this->execSql($q);
-        
-        
+
+
     }
 }
 
@@ -579,14 +567,14 @@ class BBPatch_2 extends BBPatchAbstract
 
         $q="ALTER TABLE  `setting` ADD `category` VARCHAR( 255 ) NULL AFTER `public`;";
         $this->execSql($q);
-        
+
         $q="ALTER TABLE  `service_hosting_server` ADD  `port` VARCHAR( 20 ) NOT NULL AFTER  `accesshash`;";
         $this->execSql($q);
 
         $q="ALTER TABLE  `service_hosting_server` ADD  `config` TEXT NOT NULL AFTER  `port`;";
         $this->execSql($q);
 
-        
+
     }
 }
 
@@ -602,7 +590,7 @@ class BBPatch_1 extends BBPatchAbstract
         ";
 
         $this->execSql($query);
-        
+
     }
 }
 
