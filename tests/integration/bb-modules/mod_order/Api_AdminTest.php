@@ -254,4 +254,17 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $result = $this->api_admin->order_status_history_delete($data);
         $this->assertTrue($result);
     }
+
+    public function testOrderBatchDelete()
+    {
+        $array  = $this->api_admin->order_get_list(array());
+
+        foreach ($array['list'] as $value){
+            $ids[] = $value['id'];
+        }
+        $result = $this->api_admin->order_batch_delete(array('ids' => $ids, 'delete_addons' => true));
+        $array  = $this->api_admin->order_get_list(array());
+        $this->assertEquals(0, count($array['list']));
+        $this->assertTrue($result);
+    }
 }

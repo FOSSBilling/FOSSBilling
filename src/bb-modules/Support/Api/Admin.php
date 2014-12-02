@@ -793,4 +793,46 @@ class Admin extends \Api_Abstract
         return $this->getService()->ticketTaskComplete($model);
 
     }
+
+    /**
+     * Deletes tickets with given IDs
+     *
+     * @param array $ids - IDs for deletion
+     *
+     * @return bool
+     */
+    public function batch_delete($data)
+    {
+        $required = array(
+            'ids' => 'IDs not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        foreach ($data['ids'] as $id) {
+            $this->ticket_delete(array('id' => $id));
+        }
+
+        return true;
+    }
+
+    /**
+     * Deletes tickets with given IDs
+     *
+     * @param array $ids - IDs for deletion
+     *
+     * @return bool
+     */
+    public function batch_delete_public($data)
+    {
+        $required = array(
+            'ids' => 'IDs not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        foreach ($data['ids'] as $id) {
+            $this->public_ticket_delete(array('id' => $id));
+        }
+
+        return true;
+    }
 }

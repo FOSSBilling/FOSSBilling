@@ -32,4 +32,26 @@ class Box_Authorization
         return (bool)($this->session->get('admin'));
     }
 
+    public function authorizeUser($user, $plainTextPassword)
+    {
+        $user = $this->passwordBackwardCompatibility($user, $plainTextPassword);
+        if ($this->di['password']->verify($plainTextPassword, $user->pass)){
+            if ($this->di['password']->needsRehash($user->pass)){
+                $user->pass = $this->di['password']->hashIt($plainTextPassword);
+                $this->di['db']->store($user);
+            }
+            return $user;
+        }
+        return null;
+    }
+
+    public function passwordBackwardCompatibility($user, $plainTextPassword)
+    {
+        if (sha1($plainTextPassword) == $user->pass){
+            $user->pass = $this->di['password']->hashIt($plainTextPassword);
+            $this->di['db']->store($user);
+        }
+        return $user;
+    }
+
 }

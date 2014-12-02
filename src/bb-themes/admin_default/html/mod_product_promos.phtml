@@ -30,6 +30,7 @@
                         <td>{% trans 'Code' %}</td>
                         <td>{% trans 'Discount' %}</td>
                         <td>{% trans 'Applies to' %}</td>
+                        <td>{% trans 'Client groups' %}</td>
                         <td>{% trans 'Valid period' %}</td>
                         <td>{% trans 'Enabled' %}</td>
                         <td>{% trans 'Usage' %}</td>
@@ -47,6 +48,12 @@
                         <a href="{{ 'product/manage'|alink }}/{{pid}}">{{ product|truncate(15) }}</a><br/>
                         {% else %}
                         All products
+                        {% endfor %}
+                    </td>
+                    <td>{% for cid,client_group in promo.cgroups %}
+                        <a href="{{ 'client/group'|alink }}/{{cid}}">{{ client_group|truncate(15) }}</a><br/>
+                        {% else %}
+                        All client groups
                         {% endfor %}
                     </td>
                     <td>
@@ -178,6 +185,18 @@
                             <select name="periods[]" multiple="multiple" class="multiple" size="{{periods|length}}">
                                 {% for id,period in periods %}
                                 <option value="{{id}}">{{ period }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Periods (Select none to apply to all client groups)' %}</label>
+                        <div class="formRight">
+                            {% set client_groups = admin.client_group_get_pairs %}
+                            <select name="client_groups[]" multiple="multiple" class="multiple" size="{{groups|length}}">
+                                {% for id, client_group in client_groups %}
+                                <option value="{{id}}">{{ client_group }}</option>
                                 {% endfor %}
                             </select>
                         </div>

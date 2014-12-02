@@ -91,6 +91,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testChangeAdminPassword()
     {
+        $password = 'new_pass';
         $emMock = $this->getMockBuilder('\Box_EventManager')
             ->getMock();
         $emMock->expects($this->atLeastOnce())
@@ -103,10 +104,17 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue(true));
 
+
+        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock->expects($this->atLeastOnce())
+            ->method('hashIt')
+            ->with($password);
+
         $di                   = new \Box_Di();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
+        $di['password'] = $passwordMock;
 
         $model = new \Model_Admin();
         $model->loadBean(new \RedBeanPHP\OODBBean());
@@ -114,7 +122,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $service = new Service();
         $service->setDi($di);
 
-        $result = $service->changeAdminPassword($model, 'new_pass');
+        $result = $service->changeAdminPassword($model, $password);
         $this->assertTrue($result);
     }
 
@@ -166,7 +174,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             'first_name'     => 'string',
             'last_name'      => 'string',
             'gender'         => 'string',
-            'birthday'       => 'string',
+            'birthday'       => '1981-01-01',
             'company'        => 'string',
             'company_vat'    => 'string',
             'company_number' => 'string',

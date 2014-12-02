@@ -317,7 +317,7 @@
 function onAfterCartCheckout(result)
 {
     if(result.invoice_hash) {
-        bb.redirect('{{"invoice"|link}}' + '/' + result.invoice_hash + '?auto_redirect=1');
+        bb.redirect('{{"invoice"|link}}' + '/' + result.invoice_hash + '&auto_redirect=1');
     } else {
         bb.redirect('{{"order/service/manage"|link}}' + '/' + result.order_id );
     }

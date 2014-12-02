@@ -490,10 +490,16 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
+        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock->expects($this->atLeastOnce())
+            ->method('hashIt')
+            ->with($data['password']);
+
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
+        $di['password'] = $passwordMock;
 
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -1081,4 +1087,42 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $data = array('id' => 1);
         $admin_Client->login_history_delete($data);
     }
+
+    public function testBatch_delete()
+    {
+        $activityMock = $this->getMockBuilder('\Box\Mod\Client\Api\Admin')->setMethods(array('delete'))->getMock();
+        $activityMock->expects($this->atLeastOnce())->method('delete')->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $activityMock->setDi($di);
+
+        $result = $activityMock->batch_delete(array('ids' => array(1, 2, 3)));
+        $this->assertEquals(true, $result);
+    }
+
+    public function testBatch_delete_log()
+    {
+        $activityMock = $this->getMockBuilder('\Box\Mod\Client\Api\Admin')->setMethods(array('login_history_delete'))->getMock();
+        $activityMock->expects($this->atLeastOnce())->method('login_history_delete')->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $activityMock->setDi($di);
+
+        $result = $activityMock->batch_delete_log(array('ids' => array(1, 2, 3)));
+        $this->assertEquals(true, $result);
+    }
+
+
 }

@@ -29,8 +29,10 @@ class Admin extends \Api_Abstract
      * @optional string $ns2 - 2 Nameserver hostname, ie: ns2.mydomain.com
      * @optional string $ns3 - 3 Nameserver hostname, ie: ns3.mydomain.com
      * @optional string $ns4 - 4 Nameserver hostname, ie: ns4.mydomain.com
+     * @optional int $period - domain registration years
      * @optional bool $privacy - flag to define if domain privacy protection is enabled/disabled
      * @optional bool $locked - flag to define if domain is locked or not
+     * @optional string $transfer_code - domain EPP code
      *
      * @return boolean
      */
@@ -175,7 +177,13 @@ class Admin extends \Api_Abstract
         if (!isset($data['tld'])) {
             throw new \Box_Exception('TLD is missing');
         }
-        $model = $this->getService()->tldFindOneByTld($data['tld']);
+
+        $tld = $data['tld'];
+        if ($tld[0] != '.') {
+            $tld = '.' . $tld;
+        }
+
+        $model = $this->getService()->tldFindOneByTld($tld);
         if (!$model instanceof \Model_Tld) {
             throw new \Box_Exception('TLD not found');
         }

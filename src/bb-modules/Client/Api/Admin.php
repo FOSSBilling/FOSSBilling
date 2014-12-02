@@ -312,6 +312,9 @@ class Admin extends \Api_Abstract
             $client->gender = $gender;
         }
         if(!is_null($birthday)) {
+            if (strlen(trim($data['birthday'])) > 0 && strtotime($data['birthday']) == false) {
+                throw new \Box_Exception('Invalid birth date value');
+            }
             $client->birthday = $birthday;
         }
         if(!is_null($phone_cc)) {
@@ -441,7 +444,7 @@ class Admin extends \Api_Abstract
 
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminClientPasswordChange', 'params'=>$data));
 
-        $client->pass = sha1($data['password']);
+        $client->pass = $this->di['password']->hashIt($data['password']);
         $client->updated_at = date('c');
         $this->di['db']->store($client);
         
@@ -719,4 +722,46 @@ class Admin extends \Api_Abstract
         return $this->di['db']->toArray($model);
     }
 
+    /**
+     * Deletes clients with given IDs
+     *
+     * @param array $ids - IDs for deletion
+     *
+     * @return bool
+     */
+    public function batch_delete($data)
+    {
+        $required = array(
+            'ids' => 'IDs not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        foreach ($data['ids'] as $id) {
+            $this->delete(array('id' => $id));
+        }
+
+        return true;
+    }
+
+
+    /**
+     * Deletes client login logs with given IDs
+     *
+     * @param array $ids - IDs for deletion
+     *
+     * @return bool
+     */
+    public function batch_delete_log($data)
+    {
+        $required = array(
+            'ids' => 'IDs not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        foreach ($data['ids'] as $id) {
+            $this->login_history_delete(array('id' => $id));
+        }
+
+        return true;
+    }
 }

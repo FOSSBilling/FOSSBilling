@@ -28,6 +28,7 @@
     <ul class="tabs">
         <li><a href="#tab-info">{% trans 'Details' %}</a></li>
         <li><a href="#tab-manage">{% trans 'Edit order' %}</a></li>
+        <li><a href="#tab-config">{% trans 'Edit order config' %}</a></li>
         {% if admin.system_template_exists({"file":service_partial}) %}<li><a href="#tab-service">{% trans 'Service management' %}</a></li>{% endif %}
         <li><a href="#tab-invoices">{% trans 'Invoices' %}</a></li>
         {% if addons|length > 0 %}<li><a href="#tab-addons">{% trans 'Addons' %}</a></li>{% endif %}
@@ -64,6 +65,18 @@
                         <td><label>{% trans 'Payment amount' %}</label></td>
                         <td>{{ mf.currency_format( order.total, order.currency) }} {% if order.period %}{{mf.period_name(order.period)}}{% endif %} {% if order.quantity > 1 %}({{ order.quantity }} x {{ mf.currency_format( order.price, order.currency) }}){% endif %}</td>
                     </tr>
+
+                    {% if order.discount and order.discount > 0%}
+                    <tr>
+                        <td><label>{% trans 'Order discount' %}</label></td>
+                        <td>-{{ mf.currency_format( order.discount, order.currency) }} </td>
+                    </tr>
+
+                    <tr>
+                        <td><label>{% trans 'Payment amount after discount' %}</label></td>
+                        <td>{{ mf.currency_format( order.total - order.discount, order.currency) }} </td>
+                    </tr>
+                    {% endif %}
 
                     <tr>
                         <td><label>{% trans 'Order status' %}</label></td>
@@ -317,6 +330,35 @@
                 </fieldset>
             </form>
             {% endif #}
+        </div>
+
+        <div class="tab_content nopadding" id="tab-config">
+            <div class="help">
+                <h2>{% trans 'Order config management' %}</h2>
+                <h6>{% trans 'Please be cautious and make sure you know what you are doing when editing order config! BoxBilling relies on these parameters and you might get unexpected results if you change some of them' %}</h6>
+            </div>
+            <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="mainForm api-form" data-api-reload="1">
+                <fieldset>
+                    {% for key, config in order.config %}
+                    <div class="rowElem noborder">
+                        <label>{{ key }}</label>
+                        <div class="formRight noborder">
+                            {% if config is iterable %}
+                                {% for key2, config2 in config %}
+                                    <input type="text" name="config[{{key}}][{{key2}}]" value="{{ config2 }}" {% if config2 is null %} placeholder="null" {% endif %}/>
+                                {% endfor %}
+                            {% else %}
+                                <input type="text" name="config[{{key}}]" value="{{ config }}" {% if config is null %} placeholder="null" {% endif %}/>
+                            {% endif %}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    {% endfor %}
+
+                     <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                </fieldset>
+                <input type="hidden" name="id" value="{{ order.id }}">
+            </form>
         </div>
 
         <div class="tab_content nopadding" id="tab-addons">

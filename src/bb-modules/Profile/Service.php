@@ -35,7 +35,7 @@ class Service implements InjectionAwareInterface
         $event_params['id']       = $admin->id;
         $this->di['events_manager']->fire(array('event' => 'onBeforeAdminStaffProfilePasswordChange', 'params' => $event_params));
 
-        $admin->pass       = sha1($new_password);
+        $admin->pass       = $this->di['password']->hashIt($new_password);
         $admin->updated_at = date('c');
         $this->di['db']->store($admin);
 
@@ -151,6 +151,9 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($data['birthday'])) {
+            if (strlen(trim($data['birthday'])) > 0 && strtotime($data['birthday']) == false) {
+                throw new \Box_Exception('Invalid birth date value');
+            }
             $client->birthday = $data['birthday'];
         }
 
@@ -208,6 +211,9 @@ class Service implements InjectionAwareInterface
 
         if (isset($data['document_nr'])) {
             $client->document_nr = $data['document_nr'];
+            if (!isset($data['document_type'])){
+                $client->document_type = 'passport';
+            }
         }
 
         if (isset($data['lang'])) {

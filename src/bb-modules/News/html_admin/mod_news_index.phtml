@@ -20,6 +20,8 @@
         <table class="tableStatic wide">
             <thead>
                 <tr>
+                    <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
+                    <td>#</td>
                     <td colspan="2">{% trans 'Title' %}</td>
                     <td>{% trans 'Active' %}</td>
                     <td>{% trans 'Date' %}</td>
@@ -31,6 +33,7 @@
             {% set posts = admin.news_get_list({"per_page":30, "page":request.page}|merge(request)) %}
             {% for i, post in posts.list %}
             <tr>
+                <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ post.id }}"/></td>
                 <td>{{ post.id }}</td>
                 <td>{{ post.title }}</td>
                 <td>{{ mf.status_name(post.status) }}</td>
@@ -51,6 +54,8 @@
             </tbody>
         </table>
         {% include "partial_pagination.phtml" with {'list': posts, 'url':'news/index'} %}
+        {% include "partial_batch_delete.phtml" with {'action' : 'admin/news/batch_delete'} %}
+
         </div>
 
         <div class="tab_content nopadding" id="tab-new">
@@ -75,7 +80,7 @@
                     <div class="rowElem">
                         <label>{% trans 'Content' %}</label>
                         <div class="formRight">
-                            <textarea name="content" cols="5" rows="10">{{ request.content }}</textarea>
+                            <textarea name="content" cols="5" rows="10" class="bb-textarea">{{ request.content }}</textarea>
                         </div>
                         <div class="fix"></div>
                     </div>
@@ -88,3 +93,5 @@
 </div>
 
 {% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

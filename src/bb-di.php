@@ -305,4 +305,6 @@ $di['ftp'] = $di->protect(function($params) use($di){ return new \Box_Ftp($param
 $di['pdf'] = function () use ($di) { return new \tFPDF(); };
 
 $di['geoip'] = function () use ($di) { return new \GeoIp2\Database\Reader(BB_PATH_LIBRARY . '/GeoLite2-Country.mmdb'); };
+
+$di['password'] = function() use ($di) { return new Box_Password();};
 return $di;

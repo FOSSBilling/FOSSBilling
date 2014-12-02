@@ -42,6 +42,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
+        $orderConfig = $this->di['mod']('order')->getConfig();
+        $data['hide_addons'] = (isset($orderConfig['show_addons']) && $orderConfig['show_addons']) ? 0 : 1;
         list($sql, $params) = $this->getService()->getSearchQuery($data);
         $paginator = $this->di['pager'];
         $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
@@ -451,5 +453,30 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         return $this->di['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
+    }
+
+    /**
+     * Deletes orders with given IDs
+     *
+     * @param array $ids - Order ids for deletion
+     *
+     * @optional bool $delete_addons - Remove addons also. Default false.
+     *
+     * @return bool
+     */
+    public function batch_delete($data)
+    {
+        $required = array(
+            'ids' => 'Orders ids not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $delete_addons = isset($data['delete_addons']) ? (bool)$data['delete_addons'] : false;
+
+        foreach ($data['ids'] as $id) {
+            $this->delete(array('id' => $id, 'delete_addons' => $delete_addons));
+        }
+
+        return true;
     }
 }

@@ -189,12 +189,19 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             'mod' => 'extension',
         );
 
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $servuceMock->expects($this->atLeastOnce())
-            ->method('staffHasPermissions')
+        $staffServiceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->getMock();
+        $staffServiceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')
             ->will($this->returnValue(true));
 
-        $this->api->setService($servuceMock);
+        $di = new \Box_Di();
+        $di['mod_service'] = $di->protect(function($serviceName) use($staffServiceMock){
+            if ($serviceName == 'Staff'){
+                return $staffServiceMock;
+            }
+            return false;
+        });
+        $this->api->setDi($di);
 
         $result = $this->api->is_allowed($data);
         $this->assertInternalType('bool', $result);

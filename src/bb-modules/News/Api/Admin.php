@@ -176,4 +176,25 @@ class Admin extends \Api_Abstract
         $this->di['logger']->info('Removed news item #%s', $id);
         return true;
     }
+
+    /**
+     * Deletes news items with given IDs
+     *
+     * @param array $ids - IDs for deletion
+     *
+     * @return bool
+     */
+    public function batch_delete($data)
+    {
+        $required = array(
+            'ids' => 'IDs not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        foreach ($data['ids'] as $id) {
+            $this->delete(array('id' => $id));
+        }
+
+        return true;
+    }
 }

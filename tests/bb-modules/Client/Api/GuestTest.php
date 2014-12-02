@@ -191,7 +191,8 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
-            ->method('getByLoginDetails')
+            ->method('authorizeClient')
+            ->with($data['email'], $data['password'])
             ->will($this->returnValue($model));
         $serviceMock->expects($this->atLeastOnce())
             ->method('toSessionArray')

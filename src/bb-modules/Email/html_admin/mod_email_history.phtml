@@ -11,6 +11,7 @@
 <table class="tableStatic wide">
     <thead>
         <tr>
+            <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
             <td>{% trans 'To' %}</td>
             <td>{% trans 'From' %}</td>
             <td>{% trans 'Subject' %}</td>
@@ -23,6 +24,7 @@
     {% set emails = admin.email_email_get_list({"per_page":30, "page":request.page}|merge(request)) %}
     {% for i, email in emails.list %}
     <tr>
+        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ email.id }}"/></td>
         <td>{{ email.recipients }}</td>
         <td>{{ email.sender }}</td>
         <td>{{ email.subject|truncate(40) }}</td>
@@ -45,6 +47,7 @@
 
 </div>
 
+{% include "partial_batch_delete.phtml" with {'action' : 'admin/email/batch_delete'} %}
 {% include "partial_pagination.phtml" with {'list': emails, 'url':'email/history'} %}
 
 {% endblock %}

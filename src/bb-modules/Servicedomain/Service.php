@@ -152,11 +152,6 @@ class Service implements \Box\InjectionAwareInterface
             $data['period']   = $years . 'Y';
             $data['quantity'] = $years;
         }
-
-        list($sld, $tld) = $this->_getTuple($data);
-        if ($this->isDomainRegistered($sld, $tld)) {
-            throw new \Box_Exception(':domain is already registered!', array(':domain' => $sld . $tld), 856);
-        }
     }
 
     /**
@@ -697,6 +692,8 @@ class Service implements \Box\InjectionAwareInterface
         $company    = empty($model->contact_company) ? $client->company : $model->contact_company;
         $address1   = empty($model->contact_address1) ? $client->address_1 : $model->contact_address1;
         $address2   = empty($model->contact_address2) ? $client->address_2 : $model->contact_address2;
+        $birthday   = !empty($client->birthday) ? $client->birthday: '';
+        $company_number = !empty($client->company_number) ? $client->company_number : '';
 
         $contact = new \Registrar_Domain_Contact();
         $contact
@@ -712,10 +709,12 @@ class Service implements \Box\InjectionAwareInterface
             ->setTel($phone)
             ->setTelCC($phone_cc)
             ->setCompany($company)
+            ->setCompanyNumber($company_number)
             ->setAddress1($address1)
             ->setAddress2($address2)
             ->setFax($phone)
-            ->setFaxCC($phone_cc);
+            ->setFaxCC($phone_cc)
+            ->setBirthday($birthday);
 
         $d->setContactRegistrar($contact);
         $d->setContactAdmin($contact);
@@ -732,17 +731,6 @@ class Service implements \Box\InjectionAwareInterface
         }
 
         return array($d, $adapter);
-    }
-
-    protected function isDomainRegistered($sld, $tld)
-    {
-        $query = "SELECT id FROM service_domain WHERE sld=:sld AND tld=:tld";
-        $pdo   = $this->di['pdo'];
-        $stmt  = $pdo->prepare($query);
-        $stmt->execute(array('sld' => $sld, 'tld' => $tld));
-        $results = $stmt->fetchColumn();
-
-        return (bool)$results;
     }
 
     public function onBeforeAdminCronRun()

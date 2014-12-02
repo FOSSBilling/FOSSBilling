@@ -119,6 +119,7 @@
         <table class="tableStatic wide">
             <thead>
                 <tr>
+                    <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
                     <td>{% trans 'ID' %}</td>
                     <td width="25%" colspan="2">{% trans 'Client' %}</td>
                     <td width="40%">{% trans 'Title' %}</td>
@@ -130,9 +131,10 @@
             </thead>
 
             <tbody>
-                {% set orders = admin.order_get_list({"per_page":30, "page":request.page, "hide_addons":1}|merge(request)) %}
+                {% set orders = admin.order_get_list({"per_page":30, "page":request.page}|merge(request)) %}
                 {% for i, order in orders.list %}
                 <tr>
+                    <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ order.id }}"/></td>
                     <td>{{order.id}}</td>
                     <td><a href="{{ 'client/manage'|alink }}/{{ order.client_id }}"><img src="{{ order.client.email|gravatar }}?size=20" alt="{{ order.client.email }}" /></a></td>
                     <td><a href="{{ 'client/manage'|alink }}/{{ order.client_id }}">{{order.client.first_name}} {{order.client.last_name}}</a></td>
@@ -153,6 +155,7 @@
             </tbody>
         </table>
         {% include "partial_pagination.phtml" with {'list': orders, 'url':'order'} %}
+        {% include "partial_batch_delete.phtml" with {'action' : 'admin/order/batch_delete'} %}
         </div>
     </div>
     

@@ -203,7 +203,49 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
             $this->assertArrayHasKey('amount', $item);
             $this->assertArrayHasKey('currency', $item);
             $this->assertArrayHasKey('created_at', $item);
-
         }
+    }
+
+    public function testClientBatchDelete()
+    {
+        $id = $this->api_admin->client_create(
+            array(
+                'email'      => 'tester@gmail.com',
+                'first_name' => 'Client',
+                'password'   => 'password',
+            ));
+
+        $id2 = $this->api_admin->client_create(
+            array(
+                'email'      => 'tester2@gmail.com',
+                'first_name' => 'Client',
+                'password'   => 'password',
+            ));
+        $id3 = $this->api_admin->client_create(
+            array(
+                'email'      => 'tester3@gmail.com',
+                'first_name' => 'Client',
+                'password'   => 'password',
+            ));
+
+        $array  = $this->api_admin->client_get_list(array());
+        $count  = count($array['list']);
+        $result = $this->api_admin->client_batch_delete(array('ids' => array($id, $id2, $id3)));
+        $array  = $this->api_admin->client_get_list(array());
+
+        $this->assertEquals($count - 3, count($array['list']));
+        $this->assertTrue($result);
+    }
+
+    public function testClientBatchDeleteLog()
+    {
+        $this->api_admin->client_login(array('id' => 1));
+        $array = $this->api_admin->client_login_history_get_list(array());
+
+        $result = $this->api_admin->client_batch_delete_log(array('ids' => array($array['list'][0])));
+        $array = $this->api_admin->client_login_history_get_list(array());
+
+        $this->assertEquals(0, count($array['list']));
+        $this->assertTrue($result);
     }
 }

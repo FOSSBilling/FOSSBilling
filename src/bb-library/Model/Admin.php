@@ -24,4 +24,16 @@ class Model_Admin extends \RedBean_SimpleModel
     {
         return $this->name;
     }
+
+    public function getStatus($status = '')
+    {
+        $statusArray = array(
+            self::STATUS_ACTIVE,
+            self::STATUS_INACTIVE
+        );
+        if (in_array($status, $statusArray)){
+            return strtolower($status);
+        }
+        return self::STATUS_INACTIVE;
+    }
 }

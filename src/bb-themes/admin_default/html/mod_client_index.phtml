@@ -113,6 +113,7 @@
             <table class="tableStatic wide">
                 <thead>
                     <tr>
+                        <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
                         <td colspan="2">{% trans 'Name' %}</td>
                         <td>{% trans 'Company' %}</td>
                         <td width="30%">{% trans 'Email' %}</td>
@@ -126,6 +127,7 @@
                     {% set clients = admin.client_get_list({"per_page":30, "page":request.page}|merge(request)) %}
                     {% for client in clients.list %}
                     <tr>
+                        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ client.id }}"/></td>
                         <td>
                             <a href="{{ 'client/manage'|alink }}/{{ client.id }}"><img src="{{ client.email|gravatar }}?size=20" alt="{{ client.id }}" /></a>
                         </td>
@@ -153,7 +155,8 @@
         </div>
 
         <div class="fix"></div>
-        
+        {% include "partial_batch_delete.phtml" with {'action' : 'admin/client/batch_delete'} %}
+
         <div class="tab_content nopadding" id="tab-new">
 
             <form method="post" action="{{ 'api/admin/client/create'|link }}" class="mainForm api-form save" data-api-redirect="{{ 'client'|alink }}">
@@ -268,7 +271,7 @@
                         </div>
                         <div class="fix"></div>
                     </div>
-                    
+
                     <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>

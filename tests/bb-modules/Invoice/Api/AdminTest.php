@@ -1338,6 +1338,80 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->assertTrue($result);
     }
 
+    public function testBatch_delete()
+    {
+        $activityMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')->setMethods(array('delete'))->getMock();
+        $activityMock->expects($this->atLeastOnce())->
+        method('delete')->
+        will($this->returnValue(true));
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $activityMock->setDi($di);
+
+        $result = $activityMock->batch_delete(array('ids' => array(1, 2, 3)));
+        $this->assertEquals(true, $result);
+    }
+
+    public function testBatch_delete_subscription()
+    {
+        $activityMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')->setMethods(array('subscription_delete'))->getMock();
+        $activityMock->expects($this->atLeastOnce())->method('subscription_delete')->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $activityMock->setDi($di);
+
+        $result = $activityMock->batch_delete_subscription(array('ids' => array(1, 2, 3)));
+        $this->assertEquals(true, $result);
+    }
+
+    public function testBatch_delete_transaction()
+    {
+        $activityMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')->setMethods(array('transaction_delete'))->getMock();
+        $activityMock->expects($this->atLeastOnce())->method('transaction_delete')->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $activityMock->setDi($di);
+
+        $result = $activityMock->batch_delete_transaction(array('ids' => array(1, 2, 3)));
+        $this->assertEquals(true, $result);
+    }
+
+
+    public function testBatch_delete_tax()
+    {
+        $activityMock = $this->getMockBuilder('\Box\Mod\Invoice\Api\Admin')->setMethods(array('tax_delete'))->getMock();
+        $activityMock->expects($this->atLeastOnce())->method('tax_delete')->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $activityMock->setDi($di);
+
+        $result = $activityMock->batch_delete_tax(array('ids' => array(1, 2, 3)));
+        $this->assertEquals(true, $result);
+    }
+
 
 }
  

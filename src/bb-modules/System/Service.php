@@ -360,12 +360,6 @@ class Service
         return $data;
     }
 
-    public function staffHasPermissions($identity, $module, $f = null)
-    {
-        $service = $this->di['mod_service']('staff');
-        return $service->hasPermission($identity, $module, $f);
-    }
-
     public function getCurrentUrl()
     {
         $request = $this->di['request'];
@@ -640,7 +634,7 @@ class Service
             "TN" => "Tunisia",
             "TR" => "Turkey",
             "TM" => "Turkmenistan",
-            //          "TC" => "Turks And Caicos Islands",
+            "TC" => "Turks And Caicos Islands",
             "TV" => "Tuvalu",
             "UG" => "Uganda",
             "UA" => "Ukraine",

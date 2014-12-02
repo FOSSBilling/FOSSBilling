@@ -17,9 +17,13 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
             'password' =>  'dem2123123AAo',
             'name' =>  'John Doe',
             'signature' =>  'this is test sig',
+            'status' => 'active',
         );
         $id = $this->api_admin->staff_create($data);
         $this->assertInternalType('int', $id);
+
+        $staffModel = $this->di['db']->load('Admin', $id);
+        $this->assertNotEquals($data['password'], $staffModel->pass);
 
         $data['id'] = $id;
         $array = $this->api_admin->staff_get($data);
@@ -34,9 +38,15 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $data['password_confirm'] = 'new123123';
         $bool = $this->api_admin->staff_change_password($data);
         $this->assertTrue($bool);
+
+        $staffModel = $this->di['db']->load('Admin', $id);
+        $this->assertNotEquals($data['password'], $staffModel->pass);
         
         $bool = $this->api_admin->staff_delete($data);
         $this->assertTrue($bool);
+
+        $staffModel = $this->di['db']->load('Admin', $id);
+        $this->isNull($staffModel);
     }
 
     public function testChangePasswordException(){
@@ -157,5 +167,17 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->assertArrayHasKey('created_at', $item);
         $this->assertArrayHasKey('updated_at', $item);
     }
+    public function testBatchDelete()
+    {
+        $array = $this->api_admin->staff_login_history_get_list(array());
 
+        foreach ($array['list'] as $value) {
+            $ids[] = $value['id'];
+        }
+        $result = $this->api_admin->staff_batch_delete_logs(array('ids' => $ids));
+        $array  = $this->api_admin->staff_login_history_get_list(array());
+
+        $this->assertEquals(0, count($array['list']));
+        $this->assertTrue($result);
+    }
 }

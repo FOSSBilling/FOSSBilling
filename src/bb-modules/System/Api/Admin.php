@@ -146,7 +146,8 @@ class Admin extends \Api_Abstract
         }
         
         $f = isset($data['f']) ? $data['f'] : null;
-        return $this->getService()->staffHasPermissions($this->getIdentity(), $data['mod'], $f);
+        $service = $this->di['mod_service']('Staff');
+        return $service->hasPermission($this->getIdentity(), $data['mod'], $f);
     }
 
     /**

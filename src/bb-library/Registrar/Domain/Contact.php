@@ -15,6 +15,7 @@ class Registrar_Domain_Contact
     private $fax;
     private $fax_cc;
     private $company;
+    private $company_number = '';
     private $address_1;
     private $address_2;
     private $address_3;
@@ -23,7 +24,61 @@ class Registrar_Domain_Contact
     private $document_type;
     private $document_nr;
     private $job_title;
-    
+    private $birthday = '';
+    private $idn_language_code = '';
+
+    /**
+     * @return string
+     */
+    public function getCompanyNumber()
+    {
+        return $this->company_number;
+    }
+
+    /**
+     * @param string $company_number
+     */
+    public function setCompanyNumber($company_number)
+    {
+        $this->company_number = $company_number;
+        return $this;
+    }
+
+
+    /**
+     * @return string
+     */
+    public function getIdnLanguageCode()
+    {
+        return $this->idn_language_code;
+    }
+
+    /**
+     * @param string $idn_language_code
+     */
+    public function setIdnLanguageCode($idn_language_code)
+    {
+        $this->idn_language_code = $idn_language_code;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getBirthday()
+    {
+        return $this->birthday;
+    }
+
+    /**
+     * @param string $birthday
+     */
+    public function setBirthday($birthday)
+    {
+        $this->birthday = $birthday;
+        return $this;
+    }
+
     public function setId($param)
     {
         $this->id = $param;

@@ -34,6 +34,15 @@
         </div>
 
         <div class="rowElem">
+            <label>{% trans 'Show addon orders in orders list (if this is disabled they are shown in master order view "Addons" tab)' %}</label>
+            <div class="formRight">
+                <input type="radio" name="show_addons" value="1"{% if params.show_addons %} checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
+                <input type="radio" name="show_addons" value="0"{% if not params.show_addons %} checked="checked"{% endif %} /><label>{% trans 'No' %}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
             <label>{% trans 'Auto suspend reason' %}</label>
             <div class="formRight">
                 <input type="text" name="batch_suspend_reason" value="{{ params.batch_suspend_reason }}" />

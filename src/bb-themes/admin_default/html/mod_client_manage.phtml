@@ -148,6 +148,13 @@
                         </div> 
                         <div class="fix"></div>
                     </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Date of birth' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="birthday" value="{{client.birthday}}" />
+                        </div>
+                        <div class="fix"></div>
+                    </div>
                     <div class="rowElem" id="company-details">
                         <label>{% trans 'Company details' %}:</label>
                         <div class="formRight moreFields">
@@ -221,6 +228,13 @@
                             </ul>  
                         </div> 
                         <div class="fix"></div>   
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Passport number' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="document_nr" value="{{client.document_nr}}" />
+                        </div>
+                        <div class="fix"></div>
                     </div>
                     <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
                 </fieldset>
@@ -405,7 +419,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% set orders = admin.order_get_list({"per_page":"20", "hide_addons":1, "client_id":client.id}) %}
+                    {% set orders = admin.order_get_list({"per_page":"20", "client_id":client.id}) %}
                     {% for order in orders.list %}
                     <tr>
                         <td>{{order.id}}</td>
@@ -670,7 +684,7 @@
         <div class="widget">
             <div class="head"><h5 class="iMoney">2 Latest orders</h5><div class="num"><span>Total:</span><a href="{{ 'order'|alink({'client_id' : client.id}) }}" class="greenNum">{{ orders.total }}</a></div></div>
 
-            {% set orders = admin.order_get_list({"per_page":"2", "hide_addons":1, "client_id":client.id}) %}
+            {% set orders = admin.order_get_list({"per_page":"2", "client_id":client.id}) %}
             {% for order in orders.list %}
             <div class="supTicket{% if loop.first %} nobg{% endif %}">
                 <div class="issueType">

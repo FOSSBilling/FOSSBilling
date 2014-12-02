@@ -11,6 +11,7 @@
 <table class="tableStatic wide">
     <thead>
         <tr>
+            <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
             <td colspan="2">{% trans 'Message' %}</td>
             <td>{% trans 'Ip' %}</td>
             <td>{% trans 'Country' %}</td>
@@ -23,6 +24,7 @@
     {% set events = admin.activity_log_get_list({"per_page":10, "page":request.page}|merge(request)) %}
     {% for i, event in events.list %}
     <tr>
+        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ event.id }}"/></td>
         <td>
             {% if event.client %}
             <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}" title="{{ event.client.name }}"><img src="{{ event.client.email|gravatar }}?size=20" alt="{{ event.client.name }}" /> {{ event.client.name }} </a>
@@ -51,7 +53,7 @@
 </table>
 
 </div>
-
+{% include "partial_batch_delete.phtml" with {'action' : 'admin/activity/batch_delete'} %}
 {% include "partial_pagination.phtml" with {'list': events, 'url':'activity'} %}
 
 {% endblock %}

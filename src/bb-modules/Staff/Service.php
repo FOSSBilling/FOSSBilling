@@ -43,7 +43,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminLogin', 'params'=>$event_params));
 
-        $model = $this->di['db']->findOne('Admin', "email = ? AND pass = ? AND status = ?", array( $email, sha1($password), 'active' ));
+        $model = $this->authorizeAdmin($email, $password);
         if(!$model instanceof \Model_Admin ) {
             $this->di['events_manager']->fire(array('event'=>'onEventAdminLoginFailed', 'params'=>$event_params));
             throw new \Box_Exception('Check your login details', null, 403);
@@ -445,7 +445,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminStaffPasswordChange', 'params'=>array('id'=>$model->id)));
 
-        $model->pass = $password;
+        $model->pass = $this->di['password']->hashIt($password);
         $model->updated_at = date('c');
         $this->di['db']->store($model);
 
@@ -468,9 +468,9 @@ class Service implements InjectionAwareInterface
         $model->role                = \Model_Admin::ROLE_STAFF;
         $model->admin_group_id      = $data['admin_group_id'];
         $model->email               = $data['email'];
-        $model->pass                = $data['password'];
+        $model->pass                = $this->di['password']->hashIt($data['password']);
         $model->name                = $data['name'];
-        $model->status              = \Model_Admin::STATUS_ACTIVE;
+        $model->status              = $model->getStatus($data['status']);
         $model->signature           = $signature;
         $model->created_at          = date('c');
         $model->updated_at          = date('c');
@@ -495,7 +495,7 @@ class Service implements InjectionAwareInterface
         $admin->admin_group_id = 1;
         $admin->name = 'Administrator';
         $admin->email = $data['email'];
-        $admin->pass = sha1($data['password']);
+        $admin->pass = $this->di['password']->hashIt($data['password']);
         $admin->protected = 1;
         $admin->status = 'active';
         $admin->created_at = date('c');
@@ -673,6 +673,16 @@ class Service implements InjectionAwareInterface
         $from = $systemService->getParamValue('company_email');
         $emailService = $this->di['mod_service']('Email');
         $emailService->sendMail($admin_email, $from, $subject, $content);
+    }
+
+    public function authorizeAdmin($email, $plainTextPassword)
+    {
+        $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', array($email, \Model_Admin::STATUS_ACTIVE));
+        if ($model == null){
+            return null;
+        }
+
+        return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }
 
 }

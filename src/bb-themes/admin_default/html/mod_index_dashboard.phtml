@@ -73,7 +73,7 @@
 </div>
 {% endif %}
 
-{% set orders = admin.order_get_list({"per_page":"5", "hide_addons":1, "status":"active"}) %}
+{% set orders = admin.order_get_list({"per_page":"5", "status":"active"}) %}
 {% if orders.list|length > 0 %}
 <div class="widgets">
     <div class="left">

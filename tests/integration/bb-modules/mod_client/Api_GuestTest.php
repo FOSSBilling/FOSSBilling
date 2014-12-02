@@ -35,7 +35,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
         $client = $this->di['db']->load('Client', $id);
 
         $this->assertNotEquals($data['password'], $client->pass);
-        $this->assertEquals(sha1($data['password']), $client->pass);
+        $this->assertTrue($this->di['password']->verify($data['password'], $client->pass));
     }
 
     /**

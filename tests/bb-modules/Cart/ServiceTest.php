@@ -1289,4 +1289,86 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $discountSetup = $setupPrice;
         $this->assertEquals($discountSetup, $result[1]);
     }
+
+    public function testIsPromoAvailableForClientGroupProvider()
+    {
+        $promo1 = new \Model_Promo();
+        $promo1->loadBean(new \RedBeanPHP\OODBBean());
+        $promo1->client_groups = json_encode(array());
+
+        $client1 = new \Model_Client();
+        $client1->loadBean(new \RedBeanPHP\OODBBean());
+
+
+        $promo2 = new \Model_Promo();
+        $promo2->loadBean(new \RedBeanPHP\OODBBean());
+        $promo2->client_groups = json_encode(array(1, 2));
+
+        $client2 = new \Model_Client();
+        $client2->loadBean(new \RedBeanPHP\OODBBean());
+        $client2->client_group_id = null;
+
+
+        $promo3 = new \Model_Promo();
+        $promo3->loadBean(new \RedBeanPHP\OODBBean());
+        $promo3->client_groups = json_encode(array(1, 2));
+
+        $client3 = new \Model_Client();
+        $client3->loadBean(new \RedBeanPHP\OODBBean());
+        $client3->client_group_id = 3;
+
+
+        $promo4 = new \Model_Promo();
+        $promo4->loadBean(new \RedBeanPHP\OODBBean());
+        $promo4->client_groups = json_encode(array(1, 2));
+
+        $client4 = new \Model_Client();
+        $client4->loadBean(new \RedBeanPHP\OODBBean());
+        $client4->client_group_id = 2;
+
+
+        $promo5 = new \Model_Promo();
+        $promo5->loadBean(new \RedBeanPHP\OODBBean());
+        $promo5->client_groups = json_encode(array());
+
+        $client5 = null;
+
+
+        $promo6 = new \Model_Promo();
+        $promo6->loadBean(new \RedBeanPHP\OODBBean());
+        $promo6->client_groups = json_encode(array(1, 2));
+
+        $client6 = null;
+
+
+        return array(
+            array($promo1, $client1, true), //No client groups set for Promo, any client should be is valid
+            array($promo2, $client2, false), //Client groups are set for Promo, but client is not assigned to any client group
+            array($promo3, $client3, false), //Client groups are set for Promo, but client group is not included
+            array($promo4, $client4, true), //Client groups are set for Promo and it applies to client
+            array($promo5, null, true), //No client groups set for Promo, guest should be is valid
+            array($promo6, null, false), //Client groups are set for Promo,  guest should be is invalid
+        );
+    }
+
+    /**
+     * @dataProvider testIsPromoAvailableForClientGroupProvider
+     */
+    public function testIsPromoAvailableForClientGroup(\Model_Promo $promo, $client, $expectedResult)
+    {
+
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())
+            ->method('decodeJ')
+            ->willReturn(json_decode($promo->client_groups, 1));
+
+        $di                    = new \Box_Di();
+        $di['loggedin_client'] = $client;
+        $di['tools']           = $toolsMock;
+        $this->service->setDi($di);
+
+        $result = $this->service->isPromoAvailableForClientGroup($promo);
+
+        $this->assertEquals($result, $expectedResult);
+    }
 }

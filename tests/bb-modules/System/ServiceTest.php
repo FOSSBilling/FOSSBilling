@@ -299,23 +299,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $this->assertTrue($result);
     }
 
-    public function teststaffHasPermissions()
-    {
-
-        $staffServiceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->getMock();
-        $staffServiceMock->expects($this->atLeastOnce())
-            ->method('hasPermission')
-            ->will($this->returnValue(true));
-
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function () use($staffServiceMock) {return $staffServiceMock;});
-
-        $this->service->setDi($di);
-        $result = $this->service->staffHasPermissions(new \Model_Client(), 'extension');
-        $this->assertInternalType('bool', $result);
-        $this->assertTrue($result);
-    }
-
     public function testgetCurrentUrl()
     {
         $requestMock = $this->getMockBuilder('\Box_Request')->getMock();
