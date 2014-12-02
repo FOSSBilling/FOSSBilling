@@ -1,4 +1,15 @@
-Release 4.11.3(2014-11-03)
+Release 4.12 (2014-12-02)
+------------------------------------------------------------------------------
+
+* Client password hashing updated (php password_* functions are being used)
+* Added mass delete functionality in admin area
+* Ability to set promotional code for client groups
+* Ability for administrator to edit order config
+* ResellerClub adapter updated
+* Pagination fixed
+* Bug fixes
+
+Release 4.11.3 (2014-11-03)
 ------------------------------------------------------------------------------
 
 * BoxBilling going open source
