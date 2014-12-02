@@ -1,4 +1,4 @@
-Release 4.12 (2014-12-01)
+Release 4.12 (2014-12-02)
 ------------------------------------------------------------------------------
 
 * Client password hashing updated (php password_* functions are being used)
@@ -9,7 +9,7 @@ Release 4.12 (2014-12-01)
 * Pagination fixed
 * Bug fixes
 
-Release 4.11.3(2014-11-03)
+Release 4.11.3 (2014-11-03)
 ------------------------------------------------------------------------------
 
 * BoxBilling going open source
