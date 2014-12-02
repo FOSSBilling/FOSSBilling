@@ -49,13 +49,24 @@ class BBPatch_17 extends BBPatchAbstract
 {
     public function patch()
     {
-        $q = "CREATE TABLE `session` (
+        $q = "CREATE TABLE IF NOT EXISTS `session` (
               `id` varchar(32) NOT NULL DEFAULT '',
               `modified_at` int(11) DEFAULT NULL,
               `content` text,
               UNIQUE KEY `unique_id` (`id`)
             ) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
         $this->execSql($q);
+
+        try {
+            $this->di['api_admin']->extension_activate(array('id'=>'formbuilder', 'type'=>'mod'));
+        } catch(Exception $e) {
+            error_log('Error enabling formbuilder extension '.$e->getMessage());
+        }
+        try {
+            $this->di['api_admin']->extension_activate(array('id'=>'orderbutton', 'type'=>'mod'));
+        } catch(Exception $e) {
+            error_log('Error enabling orderbutton extension '.$e->getMessage());
+        }
 
     }
 }
@@ -111,18 +122,6 @@ class BBPatch_16 extends BBPatchAbstract
         $q="ALTER TABLE `client_order` ADD  `form_id` INT NULL AFTER  `product_id`;";
         $this->execSql($q);
 
-        try {
-            $this->di['api_admin']->extension_activate(array('id'=>'formbuilder', 'type'=>'mod'));
-        } catch(Exception $e) {
-            error_log('Error enabling formbuilder extension '.$e->getMessage());
-        }
-        try {
-            $this->di['api_admin']->extension_activate(array('id'=>'orderbutton', 'type'=>'mod'));
-        } catch(Exception $e) {
-            error_log('Error enabling orderbutton extension '.$e->getMessage());
-        }
-
-        
     }
 }
 /**
