@@ -18,7 +18,86 @@
  */
 
 /**
- * Version X.XX.X
+ * Version 4.12
+ */
+class BBPatch_20 extends BBPatchAbstract
+{
+    public function patch()
+    {
+        $tables = array(
+            'activity_admin_history'    => array('created_at', 'updated_at'),
+            'activity_client_email'     => array('created_at', 'updated_at'),
+            'activity_client_history'   => array('created_at', 'updated_at'),
+            'activity_system'           => array('created_at', 'updated_at'),
+            'admin'                     => array('created_at', 'updated_at'),
+            'admin_group'               => array('created_at', 'updated_at'),
+            'api_request'               => array('created_at'),
+            'cart'                      => array('created_at', 'updated_at'),
+            'client'                    => array('created_at', 'updated_at'),
+            'client_balance'            => array('created_at', 'updated_at'),
+            'client_group'              => array('created_at', 'updated_at'),
+            'client_order'              => array('expires_at', 'activated_at', 'suspended_at', 'unsuspended_at', 'canceled_at', 'created_at', 'updated_at'),
+            'client_order_meta'         => array('created_at', 'updated_at'),
+            'client_order_status'       => array('created_at', 'updated_at'),
+            'client_password_reset'     => array('created_at', 'updated_at'),
+            'currency'                  => array('created_at', 'updated_at'),
+            'extension_meta'            => array('created_at', 'updated_at'),
+            'form'                      => array('created_at', 'updated_at'),
+            'form_field'                => array('created_at', 'updated_at'),
+            'forum'                     => array('created_at', 'updated_at'),
+            'forum_topic'               => array('created_at', 'updated_at'),
+            'forum_topic_message'       => array('created_at', 'updated_at'),
+            'invoice'                   => array('due_at', 'reminded_at', 'paid_at', 'created_at', 'updated_at'),
+            'invoice_item'              => array('created_at', 'updated_at'),
+            'kb_article'                => array('created_at', 'updated_at'),
+            'kb_article_category'       => array('created_at', 'updated_at'),
+            'mod_email_queue'           => array('created_at', 'updated_at'),
+            'mod_massmailer'            => array('created_at', 'updated_at'),
+            'post'                      => array('publish_at', 'published_at', 'expires_at', 'created_at', 'updated_at'),
+            'product'                   => array('created_at', 'updated_at'),
+            'product_category'          => array('created_at', 'updated_at'),
+            'promo'                     => array('start_at', 'end_at', 'created_at', 'updated_at'),
+            'queue'                     => array('created_at', 'updated_at'),
+            'queue_message'             => array('execute_at', 'created_at', 'updated_at'),
+            'service_boxbillinglicense' => array('created_at', 'updated_at'),
+            'service_custom'            => array('created_at', 'updated_at'),
+            'service_domain'            => array('synced_at', 'registered_at', 'expires_at', 'created_at', 'updated_at'),
+            'service_downloadable'      => array('created_at', 'updated_at'),
+            'service_hosting'           => array('created_at', 'updated_at'),
+            'service_hosting_hp'        => array('created_at', 'updated_at'),
+            'service_hosting_server'    => array('created_at', 'updated_at'),
+            'service_license'           => array('checked_at', 'pinged_at', 'created_at', 'updated_at'),
+            'service_membership'        => array('created_at', 'updated_at'),
+            'service_solusvm'           => array('created_at', 'updated_at'),
+            'setting'                   => array('created_at', 'updated_at'),
+            'subscription'              => array('created_at', 'updated_at'),
+            'support_helpdesk'          => array('created_at', 'updated_at'),
+            'support_p_ticket'          => array('created_at', 'updated_at'),
+            'support_p_ticket_message'  => array('created_at', 'updated_at'),
+            'support_pr'                => array('created_at', 'updated_at'),
+            'support_pr_category'       => array('created_at', 'updated_at'),
+            'support_ticket'            => array('created_at', 'updated_at'),
+            'support_ticket_message'    => array('created_at', 'updated_at'),
+            'support_ticket_note'       => array('created_at', 'updated_at'),
+            'tax'                       => array('created_at', 'updated_at'),
+            'tld'                       => array('created_at', 'updated_at'),
+            'transaction'               => array('created_at', 'updated_at'),
+        );
+
+        foreach ($tables as $table => $fields) {
+            foreach ($fields as $field) {
+                try {
+                    $this->execSql("ALTER TABLE $table MODIFY $field datetime");
+                } catch (Exception $e) {
+                    error_log(sprintf('Error changing table %s field %s type: %s ', $table, $field, $e->getMessage()));
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Version 4.12
  */
 class BBPatch_19 extends BBPatchAbstract
 {
@@ -26,10 +105,10 @@ class BBPatch_19 extends BBPatchAbstract
     {
         $q="ALTER TABLE `client` MODIFY  `birthday` date;";
         $this->execSql($q);
-
     }
+}
 
-}/**
+/**
  * Version 4.12
  */
 class BBPatch_18 extends BBPatchAbstract
@@ -40,8 +119,8 @@ class BBPatch_18 extends BBPatchAbstract
         $this->execSql($q);
 
     }
-
 }
+
 /**
  * Version X.XX.X
  */
