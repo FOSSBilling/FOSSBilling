@@ -21,7 +21,6 @@
             <thead>
                 <tr>
                     <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
-                    <td>#</td>
                     <td colspan="2">{% trans 'Title' %}</td>
                     <td>{% trans 'Active' %}</td>
                     <td>{% trans 'Date' %}</td>
@@ -80,6 +79,8 @@
                     <div class="rowElem">
                         <label>{% trans 'Content' %}</label>
                         <div class="formRight">
+                            <p>If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.</p>
+                            <br/>
                             <textarea name="content" cols="5" rows="10" class="bb-textarea">{{ request.content }}</textarea>
                         </div>
                         <div class="fix"></div>
