@@ -21,7 +21,7 @@
     </thead>
 
     <tbody>
-    {% set events = admin.activity_log_get_list({"per_page":10, "page":request.page}|merge(request)) %}
+    {% set events = admin.activity_log_get_list({"per_page":30, "page":request.page}|merge(request)) %}
     {% for i, event in events.list %}
     <tr>
         <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ event.id }}"/></td>
