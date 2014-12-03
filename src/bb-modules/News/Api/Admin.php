@@ -31,7 +31,7 @@ class Admin extends \Api_Abstract
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $post               = $this->di['db']->getExistingModelById('Post', $item['id'], 'Post not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($post);
+            $pager['list'][$key] = $this->getService()->toApiArray($post, 'admin');
         }
 
         return $pager;
