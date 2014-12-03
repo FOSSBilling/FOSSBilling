@@ -37,8 +37,7 @@ class Service
 
     public function getSearchQuery($data)
     {
-        $sql='SELECT *,
-            SUBSTRING( content, 1, LOCATE(  "<!--more-->", content ) -1 ) AS excerpt
+        $sql='SELECT *
             FROM post
             WHERE 1 ';
 
@@ -64,32 +63,35 @@ class Service
 
     public function toApiArray($row, $role = 'guest', $deep = true)
     {
-        $admin = $this->di['db']->getRow('SELECT name, email FROM admin WHERE id=:id', array('id'=>$row->admin_id));
-        
+        $admin = $this->di['db']->getRow('SELECT name, email FROM admin WHERE id=:id', array('id' => $row->admin_id));
+
+        $pos     = strpos($row->content, '<!--more-->');
+        $excerpt = ($pos) ? substr($row->content, 0, $pos) : null;
+
         $data = array(
-            'id'            =>  $row->id,
-            'title'         =>  $row->title,
-            'content'       =>  $row->content,
-            'slug'          =>  $row->slug,
-            'image'         =>  $row->image,
-            'section'       =>  $row->section,
-            'publish_at'    =>  $row->publish_at,
-            'published_at'  =>  $row->published_at,
-            'expires_at'    =>  $row->expires_at,
-            'created_at'    =>  $row->created_at,
-            'updated_at'    =>  $row->updated_at,
-            'author'        => array(
-                'name'   =>  $admin['name'],
-                'email'  =>  $admin['email'],
+            'id'           => $row->id,
+            'title'        => $row->title,
+            'content'      => $row->content,
+            'slug'         => $row->slug,
+            'image'        => $row->image,
+            'section'      => $row->section,
+            'publish_at'   => $row->publish_at,
+            'published_at' => $row->published_at,
+            'expires_at'   => $row->expires_at,
+            'created_at'   => $row->created_at,
+            'updated_at'   => $row->updated_at,
+            'author'       => array(
+                'name'  => $admin['name'],
+                'email' => $admin['email'],
             ),
-            'excerpt'       =>  $row->excerpt,
+            'excerpt'      => $excerpt,
             //'tags'          =>  array('foo', 'bar', 'bas'), //@todo
         );
-        
-        if($role == 'admin') {
+
+        if ($role == 'admin') {
             $data['status'] = $row->status;
         }
-        
+
         return $data;
     }
 }
