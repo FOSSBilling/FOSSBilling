@@ -56,9 +56,9 @@ class Admin extends \Api_Abstract
 
         $systemService = $this->di['mod_service']('system');
         if($theme->isAdminAreaTheme()) {
-            $systemService->updateParam('admin_theme', $data['code']);
+            $systemService->setParamValue('admin_theme', $data['code']);
         } else {
-            $systemService->updateParam('theme', $data['code']);
+            $systemService->setParamValue('theme', $data['code']);
         }
 
         $this->di['logger']->info('Changed default theme');

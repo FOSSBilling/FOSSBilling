@@ -477,7 +477,7 @@ class Service implements InjectionAwareInterface
                 $next_nr = $r->nr + 1;
             }
         }
-        $systemService->updateParam($p, $next_nr+1);
+        $systemService->setParamValue($p, $next_nr+1);
         return $next_nr;
     }
 
@@ -763,7 +763,7 @@ class Service implements InjectionAwareInterface
                     $this->di['db']->store($new);
 
                     //update next credit note starting number
-                    $systemService->updateParam('invoice_cn_starting_number', ++$next_nr, true);
+                    $systemService->setParamValue('invoice_cn_starting_number', ++$next_nr, true);
                 }
                 $result = (int)$new->id;
                 break;
