@@ -2545,5 +2545,53 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $result = $this->service->ticketTaskComplete($model);
         $this->assertTrue($result);
     }
+
+    public function testCanClientSubmitNewTicketProvider()
+    {
+
+        $ticket = new \Model_SupportTicket();
+        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->client_id  = 5;
+        $ticket->created_at = date('c');
+
+        $ticket2 = new \Model_SupportTicket();
+        $ticket2->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket2->client_id  = 5;
+        $ticket2->created_at = date('c', strtotime("-2 days"));;
+
+        return array(
+            array($ticket, 24, false), //Ticket is created today, exception should be thrown
+            array(null, 24, true), //No previously created tickets found, can submit a ticket
+            array($ticket2, 24, true) //Last ticket submitted 2 days ago, can submit a ticket
+        );
+    }
+
+    /**
+     * @dataProvider testCanClientSubmitNewTicketProvider
+     */
+    public function testCanClientSubmitNewTicket($ticket, $hours, $expected)
+    {
+        if (!$expected) {
+            $this->setExpectedException('\Box_Exception');
+        }
+        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue($ticket));
+
+        $di       = new \Box_Di();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $client = new \Model_Client();
+        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->id = 5;
+
+        $config = array('wait_hours' => $hours);
+
+        $result = $this->service->canClientSubmitNewTicket($client, $config);
+        $this->assertTrue($result);
+
+    }
 }
  
