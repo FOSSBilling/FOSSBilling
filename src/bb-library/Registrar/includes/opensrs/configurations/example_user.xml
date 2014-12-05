@@ -20,7 +20,7 @@
                 <osrs_port>4449</osrs_port>
                 <osrs_username>mail_user</osrs_username>
                 <osrs_password>mail_password</osrs_password>
-                <osrs_domain>mail_domain</osrs_password>
+                <osrs_domain>mail_domain</osrs_domain>
 		<osrs_portwait>10</osrs_portwait>
         </osrsEMail>
 </config>
