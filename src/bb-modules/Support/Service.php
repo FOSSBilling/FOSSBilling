@@ -843,6 +843,24 @@ class Service implements \Box\InjectionAwareInterface
         return $ticket->hash;
     }
 
+    public function canClientSubmitNewTicket(\Model_Client $client, array $config)
+    {
+        $hours = $config['wait_hours'];
+
+        $lastTicket = $this->di['db']->findOne('SupportTicket', 'client_id = :client_id ORDER BY created_at DESC', array(':client_id' => $client->id));
+        if (!$lastTicket instanceof \Model_SupportTicket) {
+            return true;
+        }
+
+        $timeSinceLast = round(abs(strtotime($lastTicket->created_at) - strtotime(date('c'))) / 3600, 0);
+
+        if ($timeSinceLast < $hours) {
+            throw new \Box_Exception(sprintf('You can submit one ticket per %s hours. %s hours left', $hours, $hours - $timeSinceLast));
+        }
+
+        return true;
+    }
+
     public function ticketCreateForClient(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, array $data)
     {
         //@todo validate task params
@@ -855,6 +873,13 @@ class Service implements \Box\InjectionAwareInterface
         // check if support ticket with same uncompleted task already exists
         if ($rel_id && $rel_type && $rel_task && $this->checkIfTaskAlreadyExists($client, $rel_id, $rel_type, $rel_task)) {
             throw new \Box_Exception('We have already received this request.');
+        }
+
+        $mod    = $this->di['mod']('support');
+        $config = $mod->getConfig();
+
+        if (isset($config['wait_hours']) && is_numeric($config['wait_hours'])) {
+            $this->canClientSubmitNewTicket($client, $config);
         }
 
         $event_params              = $data;
@@ -882,19 +907,17 @@ class Service implements \Box\InjectionAwareInterface
 
         $this->di['events_manager']->fire(array('event' => 'onAfterClientOpenTicket', 'params' => array('id' => $ticket->id)));
 
-        $mod    = $this->di['mod']('support');
-        $config = $mod->getConfig();
         if (isset($config['autorespond_enable'])
             && $config['autorespond_enable']
             && isset($config['autorespond_message_id'])
             && !empty($config['autorespond_message_id'])
         ) {
             try {
-                $cannedObj = $this->di['db']->getExistingModelById('SupportPr', $config['autorespond_message_id'], 'Canned reply not found');
-                $canned    = $this->cannedToApiArray($cannedObj);
+                $cannedObj    = $this->di['db']->getExistingModelById('SupportPr', $config['autorespond_message_id'], 'Canned reply not found');
+                $canned       = $this->cannedToApiArray($cannedObj);
                 $staffService = $this->di['mod_service']('staff');
                 $admin        = $staffService->getCronAdmin();
-                if (isset($canned['content']) && $admin instanceof \Model_Admin){
+                if (isset($canned['content']) && $admin instanceof \Model_Admin) {
                     $this->ticketReply($ticket, $admin, $canned['content']);
                 }
 

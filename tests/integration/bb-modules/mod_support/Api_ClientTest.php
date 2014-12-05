@@ -82,4 +82,41 @@ class Api_Client_SupportTest extends BBDbApiTestCase
         $id = $this->api_client->support_ticket_create($data);
         $this->assertInternalType('int', $id);
     }
+
+    /**
+     * @expectedException \Box_Exception
+     */
+    public function testCanSubmitTicketException()
+    {
+        $this->api_admin->extension_config_save(
+            array(
+                'ext'      => 'mod_support',
+                'wait_hours' => 24,
+            ));
+        $data = array(
+            'client_id'           => 1,
+            'support_helpdesk_id' => 1,
+            'subject'             => 'this is subject',
+            'content'             => 'this is content',
+        );
+        $this->api_client->support_ticket_create($data);
+        $this->api_client->support_ticket_create($data); //should throw an exception because 1 ticket per 24 hours is allowed
+    }
+
+    public function testCanSubmitTicket()
+    {
+        $this->api_admin->extension_config_save(
+            array(
+                'ext'      => 'mod_support',
+                'wait_hours' => '',
+            ));
+        $data = array(
+            'client_id'           => 1,
+            'support_helpdesk_id' => 1,
+            'subject'             => 'this is subject',
+            'content'             => 'this is content',
+        );
+        $this->api_client->support_ticket_create($data);
+        $this->api_client->support_ticket_create($data); //should not throw an exception as delay time is not set
+    }
 }
