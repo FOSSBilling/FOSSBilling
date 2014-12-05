@@ -518,7 +518,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue');
         $systemService->expects($this->atLeastOnce())
-            ->method('updateParam');
+            ->method('setParamValue');
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

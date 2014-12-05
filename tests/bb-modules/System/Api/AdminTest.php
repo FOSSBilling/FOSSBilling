@@ -87,7 +87,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $servuceMock->expects($this->atLeastOnce())
-            ->method('updateParams')
+            ->method('setParamValue')
             ->will($this->returnValue(true));
 
         $this->api->setService($servuceMock);
