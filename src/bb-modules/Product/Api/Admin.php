@@ -269,8 +269,8 @@ class Admin extends \Api_Abstract
         if(!$model instanceof \Model_Product || !$model->is_addon) {
             throw new \Box_Exception('Addon not found');
         }
-        return $this->update($data);
         $this->di['logger']->info('Updated addon #%s', $model->id);
+        return $this->update($data);
     }
 
     /**
