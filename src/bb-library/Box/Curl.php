@@ -31,7 +31,28 @@ class Box_Curl {
     public $authentication = 0;
     public $auth_name = '';
     public $auth_pass = '';
-    
+
+    /**
+     * @var \Box_Di
+     */
+    protected $di = null;
+
+    /**
+     * @param \Box_Di $di
+     */
+    public function setDi($di)
+    {
+        $this->di = $di;
+    }
+
+    /**
+     * @return \Box_Di
+     */
+    public function getDi()
+    {
+        return $this->di;
+    }
+
     public function __construct($url, $timeOut = 30, $followlocation = true, $maxRedirecs = 4, $binaryTransfer = false, $includeHeader = false, $noBody = false) {
         if (!extension_loaded('curl')) {
             throw new \Box_Exception('CURL extension is not enabled');
