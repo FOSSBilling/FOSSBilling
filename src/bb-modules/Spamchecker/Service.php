@@ -73,7 +73,7 @@ class Service
         $api = $event->getApiAdmin();
         
         $config      = $api->extension_config_get(array("ext"=>"mod_spamchecker"));
-        if(!isset($config['akismet_enabled']) or !$config['akismet_enabled']) {
+        if(!isset($config['akismet_enabled']) || !$config['akismet_enabled']) {
             return false;
         }
         
