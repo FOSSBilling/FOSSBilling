@@ -29,9 +29,8 @@ class Box_Ftp
 		$this->method = 'ftpext';
 
 		//Check if possible to use ftp functions.
-		if ( ! extension_loaded('ftp') ) {
-            throw new \Box_Exception('The ftp PHP extension is not available');
-			return false;
+		if (!extension_loaded('ftp')) {
+			throw new \Box_Exception('The ftp PHP extension is not available');
 		}
 
 		// Set defaults:
