@@ -42,7 +42,7 @@ class Box_Event implements ArrayAccess, \Box\InjectionAwareInterface
   }
 
     /**
-     * @param null $di
+     * @param Box_Di|null $di
      */
     public function setDi($di)
     {
@@ -50,7 +50,7 @@ class Box_Event implements ArrayAccess, \Box\InjectionAwareInterface
     }
 
     /**
-     * @return null
+     * @return Box_Di|null
      */
     public function getDi()
     {

@@ -121,13 +121,13 @@ class Box_License implements \Box\InjectionAwareInterface
 
             $data = $l;
 
-            $systemService->updateParam($key, $this->di['crypt']->encrypt(serialize($l), $salt), true);
-            $systemService->updateParam($check_key, $this->di['crypt']->encrypt(time(), $salt), true);
+            $systemService->setParamValue($key, $this->di['crypt']->encrypt(serialize($l), $salt), true);
+            $systemService->setParamValue($check_key, $this->di['crypt']->encrypt(time(), $salt), true);
         } else {
             $data = @unserialize($this->di['crypt']->decrypt($cache, $salt));
             if (!is_array($data)) {
                 error_log('Invalid response from licensing server. 9115');
-                $systemService->updateParam($key, $this->di['crypt']->encrypt(serialize(false), $salt), true);
+                $systemService->setParamValue($key, $this->di['crypt']->encrypt(serialize(false), $salt), true);
             }
         }
 

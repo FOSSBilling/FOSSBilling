@@ -78,7 +78,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
-            ->method('updateParam')
+            ->method('setParamValue')
             ->with($this->equalTo('theme'));
 
         $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();
@@ -113,7 +113,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
-            ->method('updateParam')
+            ->method('setParamValue')
             ->with($this->equalTo('admin_theme'));
 
         $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();

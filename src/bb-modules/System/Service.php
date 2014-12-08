@@ -218,36 +218,12 @@ class Service
         return $result;
     }
 
-    public function updateParam($param, $value, $createIfNotExists = true)
-    {
-        $pdo = $this->di['pdo'];
-
-        if ($this->paramExists($param)) {
-            $query = "UPDATE setting SET value = :value WHERE param = :param";
-            $stmt  = $pdo->prepare($query);
-            $stmt->execute(array('param' => $param, 'value' => $value));
-        } else if ($createIfNotExists) {
-            try {
-                $query = "INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, :created_at, :updated_at)";
-                $stmt  = $pdo->prepare($query);
-                $stmt->execute(array('param' => $param, 'value' => $value, 'created_at' => date('c'), 'updated_at' => date('c')));
-            } catch (\Exception $e) {
-                //ignore duplicate key error
-                if ($e->getCode() != 23000) {
-                    throw $e;
-                }
-            }
-        }
-
-        return true;
-    }
-
     public function updateParams($data)
     {
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminSettingsUpdate', 'params'=>$data));
 
         foreach($data as $key=>$val) {
-            $this->updateParam($key, $val, true);
+            $this->setParamValue($key, $val, true);
         }
 
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminSettingsUpdate'));
