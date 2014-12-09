@@ -429,7 +429,7 @@ class Service implements InjectionAwareInterface
             ->setUsername($model->username)
             ->setReseller($model->reseller)
             ->setDomain($model->sld . $model->tld)
-            ->setPassword($model->getTmpPass())
+            ->setPassword($model->pass)
             ->setNs1($server->ns1)
             ->setNs2($server->ns2)
             ->setNs3($server->ns3)
