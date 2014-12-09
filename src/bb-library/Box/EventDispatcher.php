@@ -37,7 +37,7 @@ class Box_EventDispatcher
    * @param string   $name      An event name
    * @param mixed    $listener  A PHP callable
    *
-   * @return mixed false if listener does not exist, null otherwise
+   * @return false|null false if listener does not exist, null otherwise
    */
   public function disconnect($name, $listener)
   {
@@ -60,7 +60,7 @@ class Box_EventDispatcher
    *
    * @param string   $name      An event name
    *
-   * @return mixed false if listener does not exist, null otherwise
+   * @return false|null false if listener does not exist, null otherwise
    */
   public function disconnectAll($name)
   {

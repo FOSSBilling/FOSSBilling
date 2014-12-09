@@ -58,7 +58,7 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param Model_ClientOrder $order
+     * @param \Model_ClientOrder $order
      * @return void
      */
     public function action_create(\Model_ClientOrder $order)
@@ -78,8 +78,8 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param Model_ClientOrder $order
-     * @return void
+     * @param \Model_ClientOrder $order
+     * @return boolean
      */
     public function action_activate(\Model_ClientOrder $order)
     {
@@ -95,8 +95,8 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param Model_ClientOrder $order
-     * @return void
+     * @param \Model_ClientOrder $order
+     * @return boolean
      */
     public function action_renew(\Model_ClientOrder $order)
     {
@@ -112,8 +112,8 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param Model_ClientOrder $order
-     * @return void
+     * @param \Model_ClientOrder $order
+     * @return boolean
      */
     public function action_suspend(\Model_ClientOrder $order)
     {
@@ -130,8 +130,8 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param Model_ClientOrder $order
-     * @return void
+     * @param \Model_ClientOrder $order
+     * @return boolean
      */
     public function action_unsuspend(\Model_ClientOrder $order)
     {
@@ -148,8 +148,8 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param Model_ClientOrder $order
-     * @return void
+     * @param \Model_ClientOrder $order
+     * @return boolean
      */
     public function action_cancel(\Model_ClientOrder $order)
     {
@@ -166,8 +166,8 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param Model_ClientOrder $order
-     * @return void
+     * @param \Model_ClientOrder $order
+     * @return boolean
      */
     public function action_uncancel(\Model_ClientOrder $order)
     {
@@ -184,8 +184,8 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param Model_ClientOrder $order
-     * @return void
+     * @param \Model_ClientOrder $order
+     * @return boolean
      */
     public function action_delete(\Model_ClientOrder $order)
     {

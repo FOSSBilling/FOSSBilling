@@ -323,7 +323,6 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 	/**
    	 * Runs an api command and returns parsed data.
  	 * @param string $command
- 	 * @param array $postData
  	 * @return array
  	 */
 	private function _process($command, $params)
@@ -404,7 +403,6 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
     /**
      * Creates domain object from received data array.
-     * @param array $res
      * @param Registrar_Domain $domain
      * @return Registrar_Domain
      */

@@ -290,6 +290,9 @@ class Payment_Adapter_Payza extends Payment_AdapterAbstract
         return $this->_generateForm($url, $data);
     }
 
+    /**
+     * @param string $url
+     */
     private function _generateForm($url, $data, $method = 'post')
     {
         $form  = '';

@@ -37,7 +37,7 @@ class Client implements \Box\InjectionAwareInterface
      * Always use your module prefix to avoid conflicts with other modules
      * in future
      *
-     * @param Box_App $app - returned by reference
+     * @param \Box_App $app - returned by reference
      */
     public function register(\Box_App &$app)
     {

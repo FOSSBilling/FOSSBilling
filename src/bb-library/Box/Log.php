@@ -133,6 +133,9 @@ class Box_Log
         );
     }
 
+    /**
+     * @param Box_LogDb $writer
+     */
     public function addWriter($writer)
     {
         $this->_writers[] = $writer;

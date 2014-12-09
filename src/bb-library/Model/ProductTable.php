@@ -108,7 +108,6 @@ class Model_ProductTable implements \Box\InjectionAwareInterface
      * Price for one unit
      *
      * @param Model_Product $product
-     * @param Model_Currency $currency
      * @param array $config
      * @return float
      */
@@ -141,7 +140,6 @@ class Model_ProductTable implements \Box\InjectionAwareInterface
      * Price for one unit
      *
      * @param Model_Product $product
-     * @param Model_Currency $currency
      * @param array $config
      * @return float
      */

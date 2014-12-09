@@ -130,7 +130,7 @@ class Service
      * Suspend service
      *
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function suspend($order)
     {
@@ -152,7 +152,7 @@ class Service
 
     /**
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function unsuspend($order)
     {
@@ -165,7 +165,7 @@ class Service
 
     /**
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function cancel($order)
     {
@@ -175,7 +175,7 @@ class Service
     /**
      *
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function uncancel($order)
     {
@@ -184,7 +184,7 @@ class Service
 
     /**
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function delete($order)
     {

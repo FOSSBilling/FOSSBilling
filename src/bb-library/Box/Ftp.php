@@ -122,6 +122,9 @@ class Box_Ftp
 		return explode("\n", $this->get_contents($file));
 	}
 
+	/**
+	 * @param string $contents
+	 */
 	public function put_contents($file, $contents, $type = '' )
     {
 		if( empty($type) )
@@ -185,6 +188,9 @@ class Box_Ftp
 		return @ftp_chdir($this->link, $dir);
 	}
 
+	/**
+	 * @param boolean $group
+	 */
 	private function chgrp($file, $group, $recursive = false )
     {
 		return false;
@@ -211,6 +217,9 @@ class Box_Ftp
 		return true;
 	}
     
+	/**
+	 * @param boolean $owner
+	 */
 	private function chown($file, $owner, $recursive = false )
     {
 		return false;
@@ -274,6 +283,10 @@ class Box_Ftp
         return $res;
     }
 
+	/**
+	 * @param string $source
+	 * @param string $destination
+	 */
 	public function copy($source, $destination, $overwrite = false )
     {
 		if( ! $overwrite && $this->exists($destination) )
@@ -358,6 +371,9 @@ class Box_Ftp
 		return false;
 	}
 
+	/**
+	 * @param string $path
+	 */
 	public function mkdir($path, $chmod = false, $chown = false, $chgrp = false)
     {
 		if( !ftp_mkdir($this->link, $path) )

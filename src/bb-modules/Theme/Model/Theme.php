@@ -86,6 +86,9 @@ class Theme
         return $files;
     }
 
+    /**
+     * @return string
+     */
     public function getSettingsPageHtml()
     {
         $spp = $this->getPathConfig() .DIRECTORY_SEPARATOR. 'settings.html';
@@ -170,6 +173,9 @@ class Theme
         return $this->getPathConfig() . DIRECTORY_SEPARATOR .'settings_data.json';
     }
 
+    /**
+     * @param string $text
+     */
     private function strip_tags_content($text, $tags = '', $invert = TRUE)
     {
 

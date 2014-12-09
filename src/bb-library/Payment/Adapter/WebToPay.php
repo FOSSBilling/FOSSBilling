@@ -68,7 +68,7 @@ class Payment_Adapter_WebToPay extends Payment_AdapterAbstract
 	 * Init single payment call to webservice
 	 * Invoice id is passed via notify_url
      *
-	 * @return mixed
+	 * @return string
 	*/
     public function singlePayment(Payment_Invoice $invoice)
     {
@@ -150,6 +150,9 @@ class Payment_Adapter_WebToPay extends Payment_AdapterAbstract
         }
     }
 
+    /**
+     * @param double $amount
+     */
     public function moneyFormat($amount, $currency = null)
     {
         return $amount * 100;
@@ -521,7 +524,7 @@ class WebToPay {
      * https://www.mokejimai.lt/makro_specifikacija.html
      *
      * @param  array $data Information about current payment request.
-     * @return array
+     * @return string
      */
     public static function buildRequest($data) {
         $specs = self::getRequestSpec();
@@ -544,7 +547,7 @@ class WebToPay {
      * https://www.mokejimai.lt/makro_specifikacija.html
      *
      * @param  array $data Information about current payment request.
-     * @return array
+     * @return string
      */
     public static function buildRepeatRequest($data) {
         $specs = self::getRepeatRequestSpec();
@@ -743,7 +746,7 @@ class WebToPay {
      * Downloads xml data from webtopay.com
      *
      * @param int       $projectID
-     * @return string
+     * @return boolean
      */
     public static function getXML($projectID) {
         $response = self::getUrlContent(self::XML_URL.$projectID.'/');
@@ -795,7 +798,7 @@ class WebToPay {
     /**
      * Parses xml to array, serializes it and writes it to file CACHE_URL
      *
-     * @param obj   $xml
+     * @param SimpleXMLElement   $xml
      */
     public static function parseXML($xml){
 
@@ -1025,6 +1028,9 @@ class WebToPay {
     }
 
 
+    /**
+     * @param string $prefix
+     */
     public static function getPrefixed($data, $prefix) {
         if (empty($prefix)) return $data;
         $ret = array();
@@ -1036,6 +1042,9 @@ class WebToPay {
         return $ret;
     }
 
+    /**
+     * @param string $URL
+     */
     private static function getUrlContent($URL){
         $url = parse_url($URL);
         if ('https' == $url['scheme']) {
@@ -1170,6 +1179,9 @@ class WebToPay {
         return $response;
     }
 
+    /**
+     * @param string $type
+     */
     public static function responseToLog($type, $req) {
         if ('mikro' == $type) {
             return self::mikroResponseToLog($req);
@@ -1206,6 +1218,10 @@ class WebToPay {
         return 'MIKRO [answer] '.implode(', ', $ret);
     }
 
+    /**
+     * @param string $type
+     * @param string $msg
+     */
     public static function log($type, $msg, $logfile=null) {
         if (!isset($logfile)) {
             return false;

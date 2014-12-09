@@ -184,6 +184,12 @@ class Payment_Adapter_AuthorizeNet extends Payment_AdapterAbstract
         return ($ipn['x_MD5_Hash'] == $hash);
     }
 
+    /**
+     * @param double $amount
+     * @param string $currency
+     * @param string $fp_sequence
+     * @param integer $fp_timestamp
+     */
     private function _getFingerprint($amount, $currency, $fp_sequence, $fp_timestamp)
     {
         if (function_exists('hash_hmac')) {
@@ -198,6 +204,9 @@ class Payment_Adapter_AuthorizeNet extends Payment_AdapterAbstract
         }
     }
     
+    /**
+     * @param double $amount
+     */
     private function _getHash($transaction_id, $amount)
     {
     	$hash = MD5($this->getParam('md5Hash') . $this->getParam('apiLoginId') . $transaction_id . $amount);

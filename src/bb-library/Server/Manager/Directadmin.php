@@ -363,6 +363,9 @@ class Server_Manager_Directadmin extends Server_Manager
        return isset($results['list']) ? $results['list'] : array();
     }
 
+    /**
+     * @param string $command
+     */
     private function _request($command, $fields = array(), $post = true)
     {
         $host     = $this->_config['host'];

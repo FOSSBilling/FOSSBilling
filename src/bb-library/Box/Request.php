@@ -90,6 +90,9 @@ class Box_Request implements \Box\InjectionAwareInterface
         return $this->_filterValue($value, $filters);
     }
 
+    /**
+     * @param string $name
+     */
     public function getServer($name)
     {
         return isset($this->_server[$name]) ? $this->_server[$name] : null;
@@ -119,6 +122,9 @@ class Box_Request implements \Box\InjectionAwareInterface
         return isset($this->_get[$name]);
     }
 
+    /**
+     * @param string $name
+     */
     public function hasServer($name)
     {
         return isset($this->_server[$name]);
@@ -532,6 +538,7 @@ class Box_Request implements \Box\InjectionAwareInterface
 
     /**
      * Process a request header and return an array of values with their qualities
+     * @param string $q
      * @return array
      */
     protected function _getQualityHeader($header, $q)

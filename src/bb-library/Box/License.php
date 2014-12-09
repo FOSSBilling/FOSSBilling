@@ -25,6 +25,9 @@ class Box_License implements \Box\InjectionAwareInterface
         return $this->di;
     }
 
+    /**
+     * @return string
+     */
     public function getKey()
     {
         $license = $this->di['config']['license'];

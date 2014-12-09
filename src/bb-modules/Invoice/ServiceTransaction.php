@@ -347,6 +347,9 @@ class ServiceTransaction implements InjectionAwareInterface
         );
     }
 
+    /**
+     * @param \Model_Transaction $model
+     */
     public function oldProcessLogic($model)
     {
         $tx = $this->process($model);

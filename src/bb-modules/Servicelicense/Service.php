@@ -113,7 +113,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @param \Model_ClientOrder $order
-     * @return void
+     * @return boolean
      */
     public function action_activate(\Model_ClientOrder $order)
     {
@@ -144,7 +144,7 @@ class Service implements InjectionAwareInterface
      *
      * @todo
      * @param \Model_ClientOrder $order
-     * @return void
+     * @return boolean
      */
     public function action_renew(\Model_ClientOrder $order)
     {
@@ -155,7 +155,7 @@ class Service implements InjectionAwareInterface
      *
      * @todo
      * @param \Model_ClientOrder $order
-     * @return void
+     * @return boolean
      */
     public function action_suspend(\Model_ClientOrder $order)
     {
@@ -166,7 +166,7 @@ class Service implements InjectionAwareInterface
      *
      * @todo
      * @param \Model_ClientOrder $order
-     * @return void
+     * @return boolean
      */
     public function action_unsuspend(\Model_ClientOrder $order)
     {
@@ -177,7 +177,7 @@ class Service implements InjectionAwareInterface
      *
      * @todo
      * @param \Model_ClientOrder $order
-     * @return void
+     * @return boolean
      */
     public function action_cancel(\Model_ClientOrder $order)
     {
@@ -188,7 +188,7 @@ class Service implements InjectionAwareInterface
      *
      * @todo
      * @param \Model_ClientOrder $order
-     * @return void
+     * @return boolean
      */
     public function action_uncancel(\Model_ClientOrder $order)
     {
@@ -343,6 +343,9 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
+    /**
+     * @param string $key
+     */
     private function _addValue(\Model_ServiceLicense $model, $key, $value)
     {
         $m = "getAllowed".ucfirst($key);

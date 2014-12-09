@@ -25,6 +25,10 @@ class Service
         $this->di = $di;
     }
 
+    /**
+     * @param string $param
+     * @param boolean $default
+     */
     public function getParamValue($param, $default = NULL)
     {
         if(empty($param)) {
@@ -81,6 +85,9 @@ class Service
         return (bool)$results;
     }
 
+    /**
+     * @param string[] $params
+     */
     private function _getMultipleParams($params)
     {
         if (!is_array($params)){

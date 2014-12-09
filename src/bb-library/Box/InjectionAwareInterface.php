@@ -16,6 +16,7 @@ interface InjectionAwareInterface
 {
     /**
      * @param \Box_Di $di
+     * @return void
      */
     public function setDi($di);
 

@@ -23,8 +23,7 @@ class Box_LogDb
     /**
      * Class constructor
      *
-     * @param object $service - module service class object
-     * @param array $columnMap
+     * @param string $service - module service class object
      */
     public function __construct($service)
     {

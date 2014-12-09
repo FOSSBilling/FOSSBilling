@@ -18,8 +18,8 @@ class Simple
     /**
      * License generation script
      *
-     * @param Model_ServiceLicense $service
-     * @param Model_ClientOrder $order
+     * @param \Model_ServiceLicense $service
+     * @param \Model_ClientOrder $order
      * @param array $config
      * @return string
      */

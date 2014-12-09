@@ -63,6 +63,9 @@ class Server implements \Box\InjectionAwareInterface
         return $this->_result;
     }
 
+    /**
+     * @param string $key
+     */
     private function getServer($key = null, $default = null)
     {
         if (null === $key) {

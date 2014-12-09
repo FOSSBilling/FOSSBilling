@@ -74,6 +74,9 @@
             return $this->_request('guest/extension/search', $params);
         }
 
+        /**
+         * @param string $call
+         */
         private function _request($call, array $params)
         {
             $params['bb_version'] = Box_Version::VERSION;

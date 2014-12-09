@@ -106,7 +106,6 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
      * 
      * @param Api_Admin $api_admin
      * @param int $id - transaction id to process
-     * @param array $ipn - post, get, server, http_raw_post_data
      * @param int $gateway_id - payment gateway id on BoxBilling
      * 
      * @return mixed
@@ -395,6 +394,9 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         return $data;
     }
     
+    /**
+     * @param string $url
+     */
     private function _generateForm($url, $data, $method = 'post')
     {
         $form = '';

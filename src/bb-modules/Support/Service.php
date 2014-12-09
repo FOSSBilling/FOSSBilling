@@ -232,9 +232,9 @@ class Service implements \Box\InjectionAwareInterface
 
     /**
      * Find ticket for client
-     * @param Model_Client $c
+     * @param \Model_Client $c
      * @param int $id
-     * @return Model_SupportTicket
+     * @return \Model_SupportTicket
      */
     public function findOneByClient(\Model_Client $c, $id)
     {
@@ -739,6 +739,9 @@ class Service implements \Box\InjectionAwareInterface
         return true;
     }
 
+    /**
+     * @param \Model_Admin $identity
+     */
     public function ticketReply(\Model_SupportTicket $ticket, $identity, $content)
     {
         $msg                    = $this->di['db']->dispense('SupportTicketMessage');
@@ -931,6 +934,9 @@ class Service implements \Box\InjectionAwareInterface
         return (int)$ticketId;
     }
 
+    /**
+     * @param \Model_Client $identity
+     */
     public function messageCreateForTicket(\Model_SupportTicket $ticket, $identity, $content)
     {
         $msg                    = $this->di['db']->dispense('SupportTicketMessage');

@@ -62,6 +62,9 @@ class Box_AppClient extends Box_App
         throw new \Box_Exception('Page :url not found', array(':url'=>$page), 404);
     }
 
+    /**
+     * @param string $fileName
+     */
     public function render($fileName, $variableArray = array(), $ext = 'phtml')
     {
         try {

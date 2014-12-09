@@ -254,8 +254,8 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param Model_ClientOrder $order
-     * @return void
+     * @param \Model_ClientOrder $order
+     * @return boolean
      */
     public function action_renew(\Model_ClientOrder $order)
     {
@@ -276,8 +276,8 @@ class Service implements \Box\InjectionAwareInterface
     /**
      *
      * @todo
-     * @param Model_ClientOrder $order
-     * @return void
+     * @param \Model_ClientOrder $order
+     * @return boolean
      */
     public function action_suspend(\Model_ClientOrder $order)
     {
@@ -287,8 +287,8 @@ class Service implements \Box\InjectionAwareInterface
     /**
      *
      * @todo
-     * @param Model_ClientOrder $order
-     * @return void
+     * @param \Model_ClientOrder $order
+     * @return boolean
      */
     public function action_unsuspend(\Model_ClientOrder $order)
     {
@@ -296,8 +296,8 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param Model_ClientOrder $order
-     * @return void
+     * @param \Model_ClientOrder $order
+     * @return boolean
      */
     public function action_cancel(\Model_ClientOrder $order)
     {
@@ -314,8 +314,8 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param Model_ClientOrder $order
-     * @return void
+     * @param \Model_ClientOrder $order
+     * @return boolean
      */
     public function action_uncancel(\Model_ClientOrder $order)
     {
@@ -325,7 +325,7 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param Model_ClientOrder $order
+     * @param \Model_ClientOrder $order
      * @return void
      */
     public function action_delete(\Model_ClientOrder $order)
@@ -918,6 +918,9 @@ class Service implements \Box\InjectionAwareInterface
         );
     }
 
+    /**
+     * @return \Model_Tld
+     */
     public function tldFindOneByTld($tld)
     {
         return $this->di['db']->findOne('Tld', 'tld = :tld ORDER by id ASC', array(':tld' => $tld));

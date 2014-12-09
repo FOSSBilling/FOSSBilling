@@ -53,6 +53,9 @@ class Box_Curl {
         return $this->di;
     }
 
+    /**
+     * @param string $url
+     */
     public function __construct($url, $timeOut = 30, $followlocation = true, $maxRedirecs = 4, $binaryTransfer = false, $includeHeader = false, $noBody = false) {
         if (!extension_loaded('curl')) {
             throw new \Box_Exception('CURL extension is not enabled');

@@ -1050,6 +1050,11 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * @param integer $due_days
+     *
+     * @return \Model_Invoice
+     */
     public function generateForOrder(\Model_ClientOrder $order, $due_days = null)
     {
         //check if we do have invoice prepared already

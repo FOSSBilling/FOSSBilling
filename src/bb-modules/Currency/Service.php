@@ -83,6 +83,9 @@ class Service implements InjectionAwareInterface
         return $this->getDefault();
     }
 
+    /**
+     * @return \Model_Currency
+     */
     public function getByCode($code)
     {
         return $this->di['db']->findOne('Currency', 'code = :code', array(':code' => $code));

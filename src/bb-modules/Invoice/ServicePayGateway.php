@@ -310,6 +310,9 @@ class ServicePayGateway implements InjectionAwareInterface
         return (isset($config['description'])) ? $config['description'] : NULL;
     }
 
+    /**
+     * @param \Model_Invoice $model
+     */
     private function getCallbackUrl(\Model_PayGateway $pg, $model = null)
     {
         $p = array(
@@ -321,6 +324,9 @@ class ServicePayGateway implements InjectionAwareInterface
         return $this->di['config']['url'] . 'bb-ipn.php?'.http_build_query($p);
     }
 
+    /**
+     * @param \Model_Invoice $model
+     */
     private function getReturnUrl(\Model_PayGateway $pg, $model = null)
     {
         if($model instanceof \Model_Invoice) {
@@ -330,6 +336,9 @@ class ServicePayGateway implements InjectionAwareInterface
     }
 
 
+    /**
+     * @param \Model_Invoice $model
+     */
     private function getCancelUrl(\Model_PayGateway $pg, $model = null)
     {
         if($model instanceof \Model_Invoice) {
@@ -338,6 +347,9 @@ class ServicePayGateway implements InjectionAwareInterface
         return $this->di['tools']->url('/invoice?status=cancel');
     }
 
+    /**
+     * @param \Model_Invoice $model
+     */
     private function getCallbackRedirect(\Model_PayGateway $pg, $model = null)
     {
         $p = array(

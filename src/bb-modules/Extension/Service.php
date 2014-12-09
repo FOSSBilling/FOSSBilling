@@ -278,6 +278,9 @@ class Service implements InjectionAwareInterface
         return $nav;
     }
 
+    /**
+     * @return \Model_Extension
+     */
     public function findExtension($type, $id)
     {
         $extension = $this->di['db']->findOne('Extension', 'type = ? and name = ? ', array($type, $id));

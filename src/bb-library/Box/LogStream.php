@@ -15,6 +15,9 @@ class Box_LogStream
 {
     private $_stream = NULL;
 
+    /**
+     * @param string $streamOrUrl
+     */
     public function __construct($streamOrUrl, $mode = null)
     {
         // Setting the default
