@@ -222,6 +222,8 @@ class Box_Tools
 			break;
 		}
 
+        $passOrder = array();
+
 		for ($i = 0; $i < $upper; $i++) {
         	$passOrder[] = $upper_letters[rand() % strlen($upper_letters)];
     	}
