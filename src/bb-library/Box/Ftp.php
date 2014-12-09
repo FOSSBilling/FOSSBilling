@@ -18,6 +18,7 @@ class Box_Ftp
 
 	protected $bb_root = NULL; // initial dir
 	protected $permission = NULL;
+	protected $method;
 
 	public function __construct($opt=array())
     {
@@ -234,7 +235,7 @@ class Box_Ftp
 	}
 
     /**
-     * Perfomrs recursive directory copy with content
+     * Performs recursive directory copy with content
      * @todo check for unlimited recurse if source folder is hghr than destination
      * 
      * @param string $source
@@ -378,11 +379,12 @@ class Box_Ftp
 	private function parselisting($line)
     {
 		static $is_windows;
+		$b = array();
+		
 		if ( is_null($is_windows) )
 			$is_windows = strpos( strtolower(ftp_systype($this->link)), 'win') !== false;
 
 		if ($is_windows && preg_match("/([0-9]{2})-([0-9]{2})-([0-9]{2}) +([0-9]{2}):([0-9]{2})(AM|PM) +([0-9]+|<DIR>) +(.+)/", $line, $lucifer)) {
-			$b = array();
 			if ($lucifer[3]<70) { $lucifer[3] +=2000; } else { $lucifer[3]+=1900; } // 4digit year fix
 			$b['isdir'] = ($lucifer[7]=="<DIR>");
 			if ( $b['isdir'] )
