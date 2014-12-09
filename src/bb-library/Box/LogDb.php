@@ -16,7 +16,7 @@ class Box_LogDb
     /**
      * $service - module service class
      *
-     * @var string
+     * @var object $service
      */
     protected $service = null;
 
