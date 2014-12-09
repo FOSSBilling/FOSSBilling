@@ -95,7 +95,7 @@ class Admin extends \Api_Abstract
             try {
                 $id = $service->importYouhostingAccount($account, $this->getApiAdmin());
                 $log[] = 'Imported order #'.$id.' Youhosting account '.$account['domain'];
-            } catch(Exception $e) {
+            } catch(\Exception $e) {
                 $log[] = $e->getMessage();
             }
 
@@ -135,7 +135,7 @@ class Admin extends \Api_Abstract
             try {
                 $service->importYouhostingClient($client, $this->getApiAdmin());
                 $log[] = 'Imported client '.$client['email'];
-            } catch(Exception $e) {
+            } catch(\Exception $e) {
                 $log[] = $e->getMessage();
             }
         }

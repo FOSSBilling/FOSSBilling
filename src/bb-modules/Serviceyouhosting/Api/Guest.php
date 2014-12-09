@@ -113,7 +113,7 @@ class Guest extends \Api_Abstract
         try {
             $result = $this->getService()->getApi()->call('Settings.subdomains');
             $cache->set($key, $result);
-        } catch(Exception $e) {
+        } catch(\Exception $e) {
             error_log($e->getMessage());
             $result = array();
         }

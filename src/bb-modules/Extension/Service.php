@@ -59,7 +59,7 @@ class Service implements InjectionAwareInterface
         
         try {
             $api->extension_get_list();
-        } catch(Exception $e) {
+        } catch(\Exception $e) {
             error_log($e);
         }
         

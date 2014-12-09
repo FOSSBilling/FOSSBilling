@@ -62,7 +62,7 @@ class Service
                 $query="INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, :created_at, :updated_at)";
                 $stmt = $pdo->prepare($query);
                 $stmt->execute(array('param'=>$param, 'value'=>$value, 'created_at'=>date('c'), 'updated_at'=>date('c')));
-            } catch(Exception $e) {
+            } catch(\Exception $e) {
                 //ignore duplicate key error
                 if($e->getCode() != 23000) {
                     throw $e;
