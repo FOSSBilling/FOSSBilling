@@ -572,7 +572,7 @@ class WebToPay {
     /**
      * Check is response certificate is valid
      *
-     * @param  string $response
+     * @param  array $response
      * @param  string $cert
      * @return bool
      */
@@ -1104,7 +1104,7 @@ class WebToPay {
      *
      * @param array     $response       Response array.
      * @param array     $user_data
-     * @return void
+     * @return array
      */
     public static function checkResponse($response, $user_data=array()) {
         self::$verified = false;
