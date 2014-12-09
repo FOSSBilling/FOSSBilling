@@ -17,7 +17,7 @@ class Box_Validate
     protected $di = null;
 
     /**
-     * @param null $di
+     * @param Box_Di|null $di
      */
     public function setDi($di)
     {
@@ -25,7 +25,7 @@ class Box_Validate
     }
 
     /**
-     * @return null
+     * @return Box_Di|null
      */
     public function getDi()
     {

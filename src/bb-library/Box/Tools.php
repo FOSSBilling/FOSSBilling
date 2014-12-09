@@ -16,7 +16,7 @@ class Box_Tools
     protected $di = null;
 
     /**
-     * @param null $di
+     * @param Box_Di|null $di
      */
     public function setDi($di)
     {
@@ -24,7 +24,7 @@ class Box_Tools
     }
 
     /**
-     * @return null
+     * @return Box_Di|null
      */
     public function getDi()
     {
