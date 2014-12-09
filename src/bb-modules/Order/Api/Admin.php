@@ -62,6 +62,8 @@ class Admin extends \Api_Abstract
             if ($meta) {
                 $i     = 1;
                 $query = 'SELECT name, value FROM client_order_meta WHERE client_order_id = :id';
+                $where  = array();
+                $bindings = array();
                 foreach ($meta as $k => $v) {
                     $where[]                      = "(name = :meta_name$i AND value LIKE :meta_value$i)";
                     $bindings[':meta_name' . $i]  = $k;
