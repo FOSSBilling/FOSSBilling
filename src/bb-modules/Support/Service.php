@@ -915,23 +915,28 @@ class Service implements \Box\InjectionAwareInterface
             && isset($config['autorespond_message_id'])
             && !empty($config['autorespond_message_id'])
         ) {
-            try {
-                $cannedObj    = $this->di['db']->getExistingModelById('SupportPr', $config['autorespond_message_id'], 'Canned reply not found');
-                $canned       = $this->cannedToApiArray($cannedObj);
-                $staffService = $this->di['mod_service']('staff');
-                $admin        = $staffService->getCronAdmin();
-                if (isset($canned['content']) && $admin instanceof \Model_Admin) {
-                    $this->ticketReply($ticket, $admin, $canned['content']);
-                }
-
-            } catch (\Exception $e) {
-                error_log($e->getMessage());
-            }
+            $this->cannedReply($ticket, $config['autorespond_message_id']);
         }
 
         $this->di['logger']->info('Submitted new ticket "%s"', $ticketId);
 
         return (int)$ticketId;
+    }
+
+    private function cannedReply(\Model_SupportTicket $ticket, $cannedId)
+    {
+        try {
+            $cannedObj    = $this->di['db']->getExistingModelById('SupportPr', $cannedId, 'Canned reply not found');
+            $canned       = $this->cannedToApiArray($cannedObj);
+            $staffService = $this->di['mod_service']('staff');
+            $admin        = $staffService->getCronAdmin();
+            if (isset($canned['content']) && $admin instanceof \Model_Admin) {
+                $this->ticketReply($ticket, $admin, $canned['content']);
+            }
+
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
     }
 
     /**
