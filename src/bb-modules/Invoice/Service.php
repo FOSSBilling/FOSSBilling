@@ -1549,8 +1549,9 @@ class Service implements InjectionAwareInterface
         $mpi->setTitle($title);
         $mpi->setItems($items);
 
+        $subscribeService = $this->di['mod_service']('Invoice', 'Subscription');
         // can subscribe only if proforma has one item with defined period
-        if($subscribe && $this->isSubscribable($invoice->id)) {
+        if($subscribe && $subscribeService->isSubscribable($invoice->id)) {
 
             $subitem = $invoice->InvoiceItem->getFirst();
             $period = $this->di['period']($subitem->period);
