@@ -60,7 +60,7 @@ class Admin extends \Api_Abstract
      * Add new notification message
      *
      * @param string $message - message text
-     * @return int - new message id
+     * @return int|false - new message id
      */
     public function add($data)
     {

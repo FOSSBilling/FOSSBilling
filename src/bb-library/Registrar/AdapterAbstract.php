@@ -1,7 +1,7 @@
 <?php
 abstract class Registrar_AdapterAbstract
 {
-    protected $_log = false;
+    protected $_log = null;
 
     /**
      * Are we in test mode ?
@@ -68,7 +68,7 @@ abstract class Registrar_AdapterAbstract
     /**
      * Should return domain transfer code
      *
-     * @return Registrar_Domain
+     * @return string
      * @throws Registrar_Exception
      */
     abstract public function getEpp(Registrar_Domain $domain);

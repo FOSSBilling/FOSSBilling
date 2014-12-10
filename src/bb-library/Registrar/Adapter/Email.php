@@ -18,6 +18,8 @@
  */
 class Registrar_Adapter_Email extends Registrar_AdapterAbstract
 {
+    protected $config;
+    
     public function __construct($options)
     {
         if(isset($options['email']) && !empty($options['email'])) {
