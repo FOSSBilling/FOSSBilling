@@ -46,6 +46,8 @@ require BB_PATH_VENDOR . '/autoload.php';
 
 final class Box_Installer
 {
+    private $session;
+
     public function __construct()
     {
         include 'session.php';
