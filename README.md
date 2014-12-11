@@ -42,6 +42,12 @@ Vagrant is [very well documented](https://docs.vagrantup.com/v2/) but here are a
 * `vagrant halt` attempts a graceful shutdown of the machine and will need to be brought back with `vagrant up`
 * `vagrant ssh` gives you shell access to the virtual machine
 
+Install vagrant-hostmanager plugin
+    
+    $ vagrant plugin install vagrant-hostmanager
+    
+to update /etc/hosts file 
+
 ----
 ##### Virtual Machine Specifications #####
 
