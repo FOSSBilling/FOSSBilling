@@ -13,16 +13,12 @@ matrix:
   allow_failures:
     - php: hhvm
 
-mysql:
-  database: boxbilling
-  username: foo
-  password: foo
-  encoding: utf8
-
 install:
   - composer self-update
 
 before_script:
+  - mysql -e "CREATE USER foo@localhost IDENTIFIED BY foo;"
+  - mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'foo'@'localhost'"
   - mysql -e 'create database IF NOT EXISTS boxbilling'
 
 script: ant
