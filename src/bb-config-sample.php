@@ -87,12 +87,12 @@ return array(
         /**
          * Database username
          */
-        'user'   =>'root',
+        'user'   =>'foo',
 
         /**
          * Database password
          */
-        'password'   =>'',
+        'password'   =>'foo',
     ),
 
     'twig'   =>  array(
