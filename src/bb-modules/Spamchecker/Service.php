@@ -55,6 +55,9 @@ class Service
         self::_isSpam($event);
     }
 
+    /**
+     * @param \Box_Event $event
+     */
     private static function _isBlockedIp($event)
     {
         $api = $event->getApiAdmin();
@@ -68,6 +71,9 @@ class Service
         }
     }
 
+    /**
+     * @param \Box_Event $event
+     */
     private static function _isCommentSpam($event, $comment)
     {
         $api = $event->getApiAdmin();

@@ -130,7 +130,7 @@ class Service
      * Suspend service
      *
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function suspend($order)
     {
@@ -139,7 +139,7 @@ class Service
 
         try {
             $this->getApi()->call('Account.suspend', $params);
-        } catch(Exception $e) {
+        } catch(\Exception $e) {
             //6401 = Account not found
             if($e->getCode() == 6401) {
                 return true;
@@ -152,7 +152,7 @@ class Service
 
     /**
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function unsuspend($order)
     {
@@ -165,7 +165,7 @@ class Service
 
     /**
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function cancel($order)
     {
@@ -175,7 +175,7 @@ class Service
     /**
      *
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function uncancel($order)
     {
@@ -184,7 +184,7 @@ class Service
 
     /**
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function delete($order)
     {
@@ -192,7 +192,7 @@ class Service
             $o = $this->api_admin->order_get(array('id'=>$order['id']));
             $params = array('id'=>$o['meta']['yh_account_id']);
             $this->getApi()->call('Account.delete', $params);
-        } catch(Exception $e) {
+        } catch(\Exception $e) {
             error_log($e);
         }
 
@@ -430,7 +430,7 @@ class Service
                 $c = $yhc['list'][0];
                 try {
                     $client_id = $this->importYouhostingClient($c, $api_admin);
-                } catch(Exception $e) {
+                } catch(\Exception $e) {
                     error_log($e->getMessage());
                 }
             }

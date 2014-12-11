@@ -128,7 +128,7 @@ class Service
      * In this example we are going to count how many times client failed 
      * to enter correct login details
      * 
-     * @param Box_Event $event
+     * @param \Box_Event $event
      * @return type 
      */
     public function onEventClientLoginFailed(\Box_Event $event)
@@ -184,7 +184,7 @@ class Service
     
     /**
      * This event hook is registered in example module client API call
-     * @param Box_Event $event 
+     * @param \Box_Event $event 
      */
     public static function onAfterClientCalledExampleModule(\Box_Event $event)
     {
@@ -204,7 +204,7 @@ class Service
     
     /**
      * Example event hook for public ticket and set event return value
-     * @param Box_Event $event 
+     * @param \Box_Event $event 
      */
     public static function onBeforeGuestPublicTicketOpen(\Box_Event $event)
     {
@@ -217,7 +217,7 @@ class Service
 
     /**
      * Example email sending
-     * @param Box_Event $event
+     * @param \Box_Event $event
      */
     public static function onAfterClientOrderCreate(\Box_Event $event)
     {

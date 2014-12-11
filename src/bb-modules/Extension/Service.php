@@ -59,7 +59,7 @@ class Service implements InjectionAwareInterface
         
         try {
             $api->extension_get_list();
-        } catch(Exception $e) {
+        } catch(\Exception $e) {
             error_log($e);
         }
         
@@ -278,6 +278,9 @@ class Service implements InjectionAwareInterface
         return $nav;
     }
 
+    /**
+     * @return \Model_Extension
+     */
     public function findExtension($type, $id)
     {
         $extension = $this->di['db']->findOne('Extension', 'type = ? and name = ? ', array($type, $id));

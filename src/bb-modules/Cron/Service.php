@@ -76,6 +76,9 @@ class Service
         return true;
     }
 
+    /**
+     * @param string $method
+     */
     protected function _exec($api, $method, $params = null)
     {
         try {
@@ -85,6 +88,9 @@ class Service
         }
     }
 
+    /**
+     * @return string|null
+     */
     public function getLastExecutionTime()
     {
         $service = $this->di['mod_service']('system');

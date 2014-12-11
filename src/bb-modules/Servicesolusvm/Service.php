@@ -143,6 +143,9 @@ class Service implements InjectionAwareInterface
         $this->di['db']->exec($sql, $params);
     }
     
+    /**
+     * @param integer $cluster_id
+     */
     public function getMasterConfig($cluster_id)
     {
         $sql="
@@ -335,7 +338,7 @@ class Service implements InjectionAwareInterface
      * Suspend VPS
      * 
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function suspend($order, $model)
     {
@@ -347,7 +350,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function unsuspend($order, $model)
     {
@@ -359,7 +362,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function cancel($order, $model)
     {
@@ -369,7 +372,7 @@ class Service implements InjectionAwareInterface
     /**
      * 
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function uncancel($order, $model)
     {
@@ -378,7 +381,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function delete($order, $model)
     {
@@ -692,6 +695,9 @@ class SolusVM {
 		$this->api_key = $c['key'];
 	}
 	
+	/**
+	 * @param string $action
+	 */
 	private function callAPI($action, $raw_response = false){
 		
 		$postfields = array_merge(
@@ -1087,6 +1093,9 @@ class SolusVM {
 		return $this->callAPI("vserver-unmountiso");
 	}
 	
+	/**
+	 * @param string $pae
+	 */
 	public function vserver_pae($vserverid, $pae){
 		$this->_parameters = array(
 			'vserverid' => $vserverid,
@@ -1167,6 +1176,9 @@ class SolusVM {
 		return $a['client'];
 	}
 	
+	/**
+	 * @param string $type
+	 */
 	public function listplans($type){
 		$this->_parameters = array(
 			'type' => $type

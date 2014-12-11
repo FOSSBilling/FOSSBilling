@@ -140,7 +140,7 @@ class Service implements InjectionAwareInterface
      *
      * @todo
      * @param \Model_ClientOrder $order
-     * @return void
+     * @return boolean
      */
     public function action_renew(\Model_ClientOrder $order)
     {
@@ -159,7 +159,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @param \Model_ClientOrder $order
-     * @return void
+     * @return boolean
      */
     public function action_suspend(\Model_ClientOrder $order)
     {
@@ -178,7 +178,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @param \Model_ClientOrder $order
-     * @return void
+     * @return boolean
      */
     public function action_unsuspend(\Model_ClientOrder $order)
     {
@@ -197,7 +197,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @param \Model_ClientOrder $order
-     * @return void
+     * @return boolean
      */
     public function action_cancel(\Model_ClientOrder $order)
     {
@@ -216,7 +216,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @param \Model_ClientOrder $order
-     * @return void
+     * @return boolean
      */
     public function action_uncancel(\Model_ClientOrder $order)
     {
@@ -384,7 +384,6 @@ class Service implements InjectionAwareInterface
     /**
      * Generate username by domain
      *
-     * @param string $domain
      */
     private function _generateUsername()
     {
@@ -430,7 +429,7 @@ class Service implements InjectionAwareInterface
             ->setUsername($model->username)
             ->setReseller($model->reseller)
             ->setDomain($model->sld . $model->tld)
-            ->setPassword($model->getTmpPass())
+            ->setPassword($model->pass)
             ->setNs1($server->ns1)
             ->setNs2($server->ns2)
             ->setNs3($server->ns3)

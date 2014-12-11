@@ -134,6 +134,9 @@ class Payment_Invoice_Buyer
         return $this->phone;
     }
     
+    /**
+     * @param string $param
+     */
     public function setPhoneCountryCode($param)
     {
         $this->phone_cc = $param;

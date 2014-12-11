@@ -72,10 +72,20 @@ class Box_App {
         return $this->render('404', array('exception'=>$e));
     }
 
+    /**
+     * @param string $url
+     * @param string $methodName
+     * @param string $class
+     */
     public function get($url, $methodName, $conditions = array(), $class = null) {
        $this->event('get', $url, $methodName, $conditions, $class);
     }
 
+    /**
+     * @param string $url
+     * @param string $methodName
+     * @param string $class
+     */
     public function post($url, $methodName, $conditions = array(), $class = null) {
        $this->event('post', $url, $methodName, $conditions, $class);
     }
@@ -129,6 +139,9 @@ class Box_App {
         return $this->processRequest();
     }
 
+    /**
+     * @param string $path
+     */
     public function redirect($path)
     {
         $location = $this->di['url']->link($path);
@@ -136,6 +149,9 @@ class Box_App {
         exit;
     }
 
+    /**
+     * @param string $fileName
+     */
     public function render($fileName, $variableArray = array())
     {
         print 'Rendering '.$fileName;
@@ -207,6 +223,9 @@ class Box_App {
         return $response;
     }
 
+    /**
+     * @param string $httpMethod
+     */
     protected function event($httpMethod, $url, $methodName, $conditions=array(), $classname = null) {
         if (method_exists($this, $methodName)) {
             array_push($this->mappings, array($httpMethod, $url, $methodName, $conditions));

@@ -446,7 +446,7 @@ class Whois {
 
     /**
      * Constructor of class domain
-     * @param string	$str_domainame    the full name of the domain
+     * @param string	$str_domainname    the full name of the domain
      * @desc Constructor of class domain
      */
     public function __construct($str_domainname)
@@ -580,7 +580,7 @@ class Whois {
 
     /**
      * Returns all tlds which are supported by the class
-     * @return array $tlds all tlds as array
+     * @return string $tlds all tlds as array
      * @desc Returns all tlds which are supported by the class
      */
     public static function getTlds()

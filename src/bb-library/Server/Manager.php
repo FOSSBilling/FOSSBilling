@@ -152,6 +152,7 @@ abstract class Server_Manager
 
     /**
      * @param Server_Account
+     * @param string $new_domain
      * @return bool
      * @throws Server_Exception
      */

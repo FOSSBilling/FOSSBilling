@@ -29,6 +29,9 @@ class CCBaseAPIClient {
 	var $debugconsole = false;
 	var $encoding = 'UTF-8';
 	
+	/**
+	 * @param string $payload
+	 */
 	function build_request_packet($methodname,$payload) {
 		return sprintf(
 			'<?xml version="1.0" encoding="'.$this->encoding.'"?'.'>' .
@@ -132,6 +135,9 @@ class CCBaseAPIClient {
 		}
 	}
 	
+	/**
+	 * @param string $packet
+	 */
 	function api_request($packet) {
 		$url = $this->ccurl;
 		$apiscript = 'api.php';
@@ -154,6 +160,9 @@ class CCBaseAPIClient {
 		$this->raw_response = $this->http->raw_response;
 	}
 	
+	/**
+	 * @param string $msg
+	 */
 	function set_error($msg) {
 		$this->success = false;
 		$this->error = $msg;
@@ -223,6 +232,9 @@ class CCBaseAPIClient {
         return $this->domnode_to_array($doc->documentElement);
     }
 
+    /**
+     * @param DOMElement $node
+     */
     function domnode_to_array($node) {
         $output = array();
         switch ($node->nodeType) {

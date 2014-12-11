@@ -26,6 +26,10 @@ class Service implements \Box\InjectionAwareInterface
         return $this->di;
     }
 
+    /**
+     * @param string $path
+     * @param string $content
+     */
     public function saveFile($path, $content = PHP_EOL)
     {
         $path  = $this->_getPath($path);

@@ -280,6 +280,9 @@ class Service implements InjectionAwareInterface
         return $log;
     }
 
+    /**
+     * @param string $notes
+     */
     public function saveStatusChange(\Model_ClientOrder $order, $notes = NULL)
     {
         $os                  = $this->di['db']->dispense('ClientOrderStatus');

@@ -100,7 +100,7 @@ class Client extends \Api_Abstract
             $result = $this->getService()->getApi()->call('Client.create', $params);
             $id = $result['id'];
 
-        } catch(Exception $e) {
+        } catch(\Exception $e) {
             if($e->getCode() == 5108) {
 
                 $yh_clients = $this->getService()->getApi()->call('Client.getList', array('email' =>  $client->email));

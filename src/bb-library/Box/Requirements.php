@@ -27,6 +27,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
 
     private $_all_ok = true;
     private $_app_path = BB_PATH_ROOT;
+    private $_options = array();
 
     public function __construct()
     {
@@ -160,6 +161,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
     {
         $folders = $this->_options['writable_folders'];
 
+        $result = array();
         foreach($folders as $folder) {
             if($this->checkPerms($folder)) {
                 $result[$folder] = true;

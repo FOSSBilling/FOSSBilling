@@ -367,6 +367,9 @@ class Service implements \Box\InjectionAwareInterface
         return $server['url'];
     }
     
+    /**
+     * @param string $method
+     */
     private function _apiServerCall($model, $method, $arguments = array(), $admin = false)
     {
         $account_username = $model->username;
@@ -390,6 +393,9 @@ class Service implements \Box\InjectionAwareInterface
         return $server->bb_data;
     }
     
+    /**
+     * @param string $method
+     */
     private function _apiSystemCall($server, $method, $params = array())
     {
         require_once(dirname(__FILE__).'/ccapiclient/ccapiclient.php');

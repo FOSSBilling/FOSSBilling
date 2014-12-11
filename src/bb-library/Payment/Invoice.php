@@ -90,6 +90,9 @@ class Payment_Invoice
         return $this->subscription;
     }
 
+    /**
+     * @param null|string $title
+     */
     public function setTitle($title)
     {
         $this->title = $title;

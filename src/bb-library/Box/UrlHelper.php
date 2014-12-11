@@ -18,6 +18,9 @@ class Box_UrlHelper {
     public $params = array();
     public $match = false;
 
+    /**
+     * @param string $requestUri
+     */
     public function __construct($httpMethod, $url, $conditions=array(), $requestUri) {
 
         $requestMethod = $_SERVER['REQUEST_METHOD'];

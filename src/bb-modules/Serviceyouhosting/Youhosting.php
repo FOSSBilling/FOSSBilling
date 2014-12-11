@@ -52,16 +52,25 @@ class Youhosting_Api_V1
         $this->config = $config;
     }
 
+    /**
+     * @param string $url
+     */
     protected function _post($url, array $params = array())
     {
         return $this->_request($url, $params, 'POST');
     }
 
+    /**
+     * @param string $url
+     */
     protected function _get($url, array $params = array())
     {
         return $this->_request($url, $params, 'GET');
     }
 
+    /**
+     * @param string $url
+     */
     protected function _delete($url, array $params = array())
     {
         return $this->_request($url, $params, 'DELETE');
@@ -102,6 +111,11 @@ class Youhosting_Api_V1
         return $result['result'];
     }
 
+    /**
+     * @param string $meth
+     * @param string $absUrl
+     * @param string[] $headers
+     */
     private function _curlRequest($meth, $absUrl, $headers, $params)
     {
         $curl = curl_init();
@@ -150,6 +164,10 @@ class Youhosting_Api_V1
         return array($rbody, $rcode);
     }
 
+    /**
+     * @param integer $errno
+     * @param string $message
+     */
     private function _handleCurlError($errno, $message)
     {
         $supportEmail = 'support@youhosting.com';

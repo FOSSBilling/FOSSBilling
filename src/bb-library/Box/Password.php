@@ -35,6 +35,9 @@ class Box_Password {
         return $this->options;
     }
 
+    /**
+     * @return string
+     */
     public function hashIt($password)
     {
         return password_hash($password, $this->algo, $this->options);

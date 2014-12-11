@@ -232,9 +232,9 @@ class Service implements \Box\InjectionAwareInterface
 
     /**
      * Find ticket for client
-     * @param Model_Client $c
+     * @param \Model_Client $c
      * @param int $id
-     * @return Model_SupportTicket
+     * @return \Model_SupportTicket
      */
     public function findOneByClient(\Model_Client $c, $id)
     {
@@ -739,6 +739,9 @@ class Service implements \Box\InjectionAwareInterface
         return true;
     }
 
+    /**
+     * @param \Model_Admin $identity
+     */
     public function ticketReply(\Model_SupportTicket $ticket, $identity, $content)
     {
         $msg                    = $this->di['db']->dispense('SupportTicketMessage');
@@ -912,18 +915,7 @@ class Service implements \Box\InjectionAwareInterface
             && isset($config['autorespond_message_id'])
             && !empty($config['autorespond_message_id'])
         ) {
-            try {
-                $cannedObj    = $this->di['db']->getExistingModelById('SupportPr', $config['autorespond_message_id'], 'Canned reply not found');
-                $canned       = $this->cannedToApiArray($cannedObj);
-                $staffService = $this->di['mod_service']('staff');
-                $admin        = $staffService->getCronAdmin();
-                if (isset($canned['content']) && $admin instanceof \Model_Admin) {
-                    $this->ticketReply($ticket, $admin, $canned['content']);
-                }
-
-            } catch (\Exception $e) {
-                error_log($e->getMessage());
-            }
+            $this->cannedReply($ticket, $config['autorespond_message_id']);
         }
 
         $this->di['logger']->info('Submitted new ticket "%s"', $ticketId);
@@ -931,6 +923,25 @@ class Service implements \Box\InjectionAwareInterface
         return (int)$ticketId;
     }
 
+    private function cannedReply(\Model_SupportTicket $ticket, $cannedId)
+    {
+        try {
+            $cannedObj    = $this->di['db']->getExistingModelById('SupportPr', $cannedId, 'Canned reply not found');
+            $canned       = $this->cannedToApiArray($cannedObj);
+            $staffService = $this->di['mod_service']('staff');
+            $admin        = $staffService->getCronAdmin();
+            if (isset($canned['content']) && $admin instanceof \Model_Admin) {
+                $this->ticketReply($ticket, $admin, $canned['content']);
+            }
+
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
+    }
+
+    /**
+     * @param \Model_Client $identity
+     */
     public function messageCreateForTicket(\Model_SupportTicket $ticket, $identity, $content)
     {
         $msg                    = $this->di['db']->dispense('SupportTicketMessage');

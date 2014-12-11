@@ -51,6 +51,9 @@ class Box_Mod
         'formbuilder',
     );
     
+    /**
+     * @param string $mod
+     */
     public function __construct($mod)
     {
         if(!preg_match('#[a-zA-Z]#', $mod)) {

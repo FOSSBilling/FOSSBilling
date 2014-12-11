@@ -109,7 +109,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function activate($order, $model)
     {
@@ -130,7 +130,7 @@ class Service implements InjectionAwareInterface
      * Suspend VPS
      * 
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function suspend($order, $model)
     {
@@ -146,7 +146,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function unsuspend($order, $model)
     {
@@ -162,7 +162,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @param $order
-     * @return void
+     * @return boolean
      */
     public function delete($order, $model)
     {

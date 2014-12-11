@@ -392,6 +392,10 @@ class Service implements InjectionAwareInterface
         return $this->_genFlotArray($results, $time_from, $time_to);
     }
 
+    /**
+     * @param integer $time_from
+     * @param integer $time_to
+     */
     private function _genFlotArray($results, $time_from, $time_to)
     {
         $data = array();

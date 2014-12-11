@@ -23,7 +23,7 @@ class Admin extends \Api_Abstract
     /**
      * Return list of example objects
      * 
-     * @return array
+     * @return string[]
      */
     public function get_something($data)
     {

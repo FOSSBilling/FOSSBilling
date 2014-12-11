@@ -56,6 +56,11 @@ class Box_Paginator {
     protected $range;
 
     /**
+     * @var string currentUrl
+     */
+    protected $currentUrl;
+
+    /**
      * @param int $itemsCount
      * @param int $currentPage
      * @param int $limit

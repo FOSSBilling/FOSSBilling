@@ -225,7 +225,7 @@ class Payment_Adapter_WebMoney
 	/**
 	 * Gets currency code from purse
 	 * @param string $purse
-	 * @return string|boolean
+	 * @return false|string
 	 */
 	private function getCurrency($purse) {
 		$firstLetter = substr($purse, 0, 1);
@@ -264,6 +264,9 @@ class Payment_Adapter_WebMoney
 		);
 	}
     
+    /**
+     * @param string $url
+     */
     private function _generateForm($url, $data, $method = 'post')
     {
         $form  = '';

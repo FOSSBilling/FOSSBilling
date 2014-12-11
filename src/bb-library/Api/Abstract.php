@@ -64,7 +64,7 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     /**
-     * @return null
+     * @return Box_Mod
      */
     public function getMod()
     {
@@ -83,7 +83,7 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     /**
-     * @return null
+     * @return Model_Admin
      */
     public function getIdentity()
     {
@@ -115,7 +115,7 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     /**
-     * @return null
+     * @return string
      */
     public function getIp()
     {

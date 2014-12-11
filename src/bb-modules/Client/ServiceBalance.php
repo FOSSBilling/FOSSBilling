@@ -20,7 +20,7 @@ class ServiceBalance implements InjectionAwareInterface
     protected $di = null;
 
     /**
-     * @param null $di
+     * @param Box_Di|null $di
      */
     public function setDi($di)
     {
@@ -28,7 +28,7 @@ class ServiceBalance implements InjectionAwareInterface
     }
 
     /**
-     * @return null
+     * @return Box_Di|null
      */
     public function getDi()
     {

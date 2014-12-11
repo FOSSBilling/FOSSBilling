@@ -69,7 +69,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     
     /**
      * Tells what TLDs can be registered via this adapter
-     * @return array
+     * @return string[]
      */
     public function getTlds()
     {
@@ -654,7 +654,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      * @param string $url
      * @param array $params
      * @param string $method
-     * @return mixed
+     * @return string
      * @throws Registrar_Exception
      */
     protected function _makeRequest($url ,$params = array(), $method = 'GET', $type = 'json')
