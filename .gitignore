@@ -15,3 +15,8 @@ build
 composer.phar
 public
 report/*
+
+### Vagrant & puphpet ###
+.vagrant/
+puphpet/files/dot/ssh/*
+!puphpet/files/dot/ssh/insecure_private_key
