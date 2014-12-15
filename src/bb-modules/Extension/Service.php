@@ -112,33 +112,34 @@ class Service implements InjectionAwareInterface
         list($sql, $params) = $this->getSearchQuery($filter);
         $installed = $this->di['db']->getAll($sql, $params);
 
-        $has_settings = isset($filter['has_settings']) ? (bool)$filter['has_settings'] : NULL;
-        $only_installed = isset($filter['installed']) ? (bool)$filter['installed'] : NULL;
+        $has_settings       = isset($filter['has_settings']) ? (bool)$filter['has_settings'] : NULL;
+        $only_installed     = isset($filter['installed']) ? (bool)$filter['installed'] : NULL;
         $installed_and_core = isset($filter['active']) ? (bool)$filter['active'] : NULL;
-        $result = array();
+        $search             = isset($filter['search']) ? strtolower($filter['search']) : NULL;
+        $result             = array();
 
-        if($installed_and_core) {
+        if ($installed_and_core) {
             $core = $this->di['mod']('extension')->getCoreModules();
-            foreach($core as $core_mod) {
-                $m = $this->di['mod']($core_mod);
-                $manifest = $m->getManifest();
-                $manifest['status'] = 'core';
+            foreach ($core as $core_mod) {
+                $m                        = $this->di['mod']($core_mod);
+                $manifest                 = $m->getManifest();
+                $manifest['status']       = 'core';
                 $manifest['has_settings'] = $m->hasSettingsPage();
-                $result[] = $manifest;
+                $result[]                 = $manifest;
             }
         }
 
-        foreach($installed as $im) {
+        foreach ($installed as $im) {
             $manifest = json_decode($im['manifest'], 1);
-            if(!is_array($manifest)) {
-                error_log('Error decoding module json file. '.$im['name']);
+            if (!is_array($manifest)) {
+                error_log('Error decoding module json file. ' . $im['name']);
                 continue;
             }
-            $m = $this->di['mod']($im['name']);
+            $m                   = $this->di['mod']($im['name']);
             $manifest['version'] = $im['version'];
 
             $manifest['status'] = $im['status'];
-            if($im['type'] == 'mod' && $im['status'] == 'installed' && $m->hasSettingsPage()) {
+            if ($im['type'] == 'mod' && $im['status'] == 'installed' && $m->hasSettingsPage()) {
                 $manifest['has_settings'] = true;
             } else {
                 $manifest['has_settings'] = false;
@@ -147,36 +148,47 @@ class Service implements InjectionAwareInterface
             $result[] = $manifest;
         }
 
-        if(!$only_installed && !$installed_and_core) {
+        if (!$only_installed && !$installed_and_core) {
             //add inactive modules
             $a = $this->_getAvailable();
 
             //unset installed modules
-            foreach($installed as $ins) {
-                if(in_array($ins['name'], $a)) {
+            foreach ($installed as $ins) {
+                if (in_array($ins['name'], $a)) {
                     $key = array_search($ins['name'], $a);
                     unset($a[$key]);
                 }
             }
 
-            foreach($a as $mod) {
-                $m = $this->di['mod']($mod);
-                $manifest = $m->getManifest();
-                $manifest['status'] = null;
+            foreach ($a as $mod) {
+                $m                        = $this->di['mod']($mod);
+                $manifest                 = $m->getManifest();
+                $manifest['status']       = null;
                 $manifest['has_settings'] = false;
 
                 $result[] = $manifest;
             }
         }
 
-        if($has_settings) {
-            foreach ($result as $idx=>$mod) {
-                if(!$mod['has_settings']) {
+        if ($has_settings) {
+            foreach ($result as $idx => $mod) {
+                if (!$mod['has_settings']) {
                     unset($result[$idx]);
                 }
             }
             $result = array_values($result);
         }
+
+        if (!empty($search)) {
+            foreach ($result as $idx => $mod) {
+                if (strpos(strtolower($mod['name']), $search) === false) {
+                    unset($result[$idx]);
+                }
+
+            }
+            $result = array_values($result);
+        }
+
         return $result;
     }
 
