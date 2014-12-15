@@ -30,5 +30,9 @@ class Api_Admin_ServiceCustomTest extends BBDbApiTestCase
         } catch(Exception $e) {
             $this->assertEquals(403, $e->getCode());
         }
+
+        $orderModel = $this->di['db']->load('ClientOrder', $data['order_id']);
+        $serviceCustomModel = $this->di['db']->load('ServiceCustom', $orderModel->service_id);
+        $this->di['db']->trash($serviceCustomModel);
     }
 }
