@@ -1,7 +1,6 @@
 {% extends "layout.phtml" %}
 
 {% block left %}
-
         <div class="widget nomargin step step-1">
             <div class="head"><h5 class="iAlert">BoxBilling installation</h5></div>
             <div class="body">
@@ -61,7 +60,24 @@
             <fieldset>
                 <div class="widget nomargin">
                     <div class="wizard swMain">
-                    
+                        <noscript>
+                            <div style="border:red solid 5px; padding: 10px">
+                                <p> For full functionality of this installer and most of BoxBilling features it is
+                                    necessary to enable JavaScript.<br/>
+                                    Here are the <a href="http://www.enable-javascript.com/" target="_blank">
+                                        instructions how to enable JavaScript in your web browser</a>. </p>
+                                <p>
+                                    If you can not enable JavaScript for some reason you can follow these steps in
+                                    order to setup BoxBilling: <br/>
+                                    * Rename "bb-config-sample.php" file to "bb-config.php", fill in the values and change this file permissions to read only (CHMOD 644).<br/>
+                                    * Import /install/structure.sql to your database<br/>
+                                    * Import /install/content.sql to your database<br/>
+                                    * Open browser <a href="{{constant("BB_URL")}}index.php?_url=/bb-admin">{{constant("BB_URL")}}index.php?_url=/bb-admin</a> to create new admin
+                                    account.<br/>
+                                    * Remove /install directory<br/>
+                                </p>
+                            </div>
+                        </noscript>
                         <ul>
                             <li><a href="#step-1" class="bordLeft wFirst"><h5 class="stepDesc iSettings">1. Preparation</h5></a></li>
                             <li><a href="#step-2"><h5 class="stepDesc iDatabase">2. Database</h5></a></li>
