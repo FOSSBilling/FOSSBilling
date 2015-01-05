@@ -152,6 +152,30 @@ class Api_Admin_EmailTest extends BBDbApiTestCase
         
         $bool = $this->api_admin->email_template_send($params);
         $this->assertTrue($bool);
+
+    }
+
+    public function testTemplate_populateVariables()
+    {
+        $params = array();
+        $params['to'] = 'client@boxbilling.com';
+        $params['to_name'] = 'Client PHPUnit';
+
+        $params['code'] = 'mod_client_signup';
+
+        $params['default_template'] = 'Hello, message from {{ admin.client_get({"id":client_id}).first_name }}, {{subject}}';
+        $params['default_subject'] = 'My subject for client';
+
+        $params['to_client'] = 1;
+
+        $bool = $this->api_admin->email_template_send($params);
+        $this->assertTrue($bool);
+
+        $emailModel = $this->di['db']->findOne('ModEmailQueue', ' order by id desc');
+
+        $clientModel = $this->di['db']->load('Client', $params['to_client']);
+
+        $this->assertTrue(strpos($emailModel->subject, $clientModel->first_name) !== false, 'Template variables were not populated');
     }
     
     public function testSendToClient()
