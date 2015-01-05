@@ -283,14 +283,10 @@ class Service implements \Box\InjectionAwareInterface
         return $str;
     }
 
-    private function _parse($t, $vars)
+    private function _parse(\Model_EmailTemplate $t, $vars)
     {
-        $dd = $vars;
-        $pc = $this->di['twig']->render($t->content);
-
-        $dd = $vars;
-        $ps = $this->di['twig']->render($t->subject);
-
+        $pc = $this->di['twig']->render($t->content, $vars);
+        $ps = $this->di['twig']->render($t->subject, $vars);
         return array($ps, $pc);
     }
 
