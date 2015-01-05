@@ -479,16 +479,17 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function updateCategory(\Model_ProductCategory $productCategory, $title=null, $icon_url=null, $descprioption=null)
+    public function updateCategory(\Model_ProductCategory $productCategory, $title = null, $description = null, $icon_url = null)
     {
-        $productCategory->title = $title;
-        $productCategory->icon_url = $icon_url;
-        $productCategory->description = $descprioption;
+        $productCategory->title       = $title;
+        $productCategory->icon_url    = $icon_url;
+        $productCategory->description = $description;
 
         $productCategory->updated_at = date('c');
         $this->di['db']->store($productCategory);
 
         $this->di['logger']->info('Updated product category #%s', $productCategory->id);
+
         return true;
     }
 

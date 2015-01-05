@@ -520,7 +520,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $this->service->setDi($di);
 
-        $result = $this->service->updateCategory($model, 'title');
+        $result = $this->service->updateCategory($model, 'title', 'decription', 'http://urltoimg.com/img.jpg');
         $this->assertInternalType('bool', $result);
         $this->assertTrue($result);
 
