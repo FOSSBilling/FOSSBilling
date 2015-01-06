@@ -1288,7 +1288,9 @@ class Service implements InjectionAwareInterface
 
 
         $adapter = $payGatewayService->getPaymentAdapter($gtw, $invoice, $data);
-        $adapter->setDi($this->di);
+        if (method_exists($adapter, 'setDi')) {
+            $adapter->setDi($this->di);
+        }
         $pgc = $adapter->getConfig();
 
         //@since v2.9.15
