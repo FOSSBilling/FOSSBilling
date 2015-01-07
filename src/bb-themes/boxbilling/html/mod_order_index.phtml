@@ -49,8 +49,9 @@
                         <span class="starting_from">{% trans 'Starting from:' %}</span>
                         <div class="currency">{{ product.price_starting_from | money_convert }}</div>
                         {% if product.pricing.type == 'recurrent' %}
-                        <form method="get" action="{{ '/order'|link }}/{{ product.slug }}">
+                        <form method="get" action="">
                         <p>
+                        <input type="hidden" name="_url" value="/order/{{ product.slug }}"/>
                         <select name="period" id="period-selector">
                         {% for code,prices in product.pricing.recurrent %}
                             {% if prices.enabled %}
