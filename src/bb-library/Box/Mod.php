@@ -115,7 +115,7 @@ class Box_Mod
     
     public function hasService($sub = '')
     {
-        $filename = sprintf('Service%s.php', $sub);
+        $filename = sprintf('Service%s.php', ucfirst($sub));
         return file_exists($this->_getModPath() . $filename);
     }
 
