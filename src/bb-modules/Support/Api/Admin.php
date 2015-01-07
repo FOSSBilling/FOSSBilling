@@ -206,11 +206,12 @@ class Admin extends \Api_Abstract
     public function batch_ticket_auto_close($data)
     {
         // Auto close support tickets
-        $expired = $this->getService()->getExpired();
+        $expiredArr = $this->getService()->getExpired();
 
-        foreach ($expired as $model) {
-            if (!$this->getService()->autoClose($model)) {
-                $this->di['logger']->info('Ticket %s was not closed', $model->id);
+        foreach ($expiredArr as $ticketArr) {
+            $ticketModel =  $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
+            if (!$this->getService()->autoClose($ticketModel)) {
+                $this->di['logger']->info('Ticket %s was not closed', $ticketModel->id);
             }
         }
 

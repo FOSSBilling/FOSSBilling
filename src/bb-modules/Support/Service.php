@@ -393,8 +393,8 @@ class Service implements \Box\InjectionAwareInterface
                 WHERE st.status = :status
                 AND DATE_ADD(st.updated_at, INTERVAL sh.close_after HOUR) < NOW()
                 ORDER BY st.id ASC";
-        $result = $this->di['db']->getAll($sql, $bindings);
-        return $this->di['db']->convertToModels('SupportTicket', $result);
+
+        return $this->di['db']->getAll($sql, $bindings);
     }
 
     public function countByStatus($status)
