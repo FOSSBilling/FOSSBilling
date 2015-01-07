@@ -574,7 +574,12 @@ class Service implements InjectionAwareInterface
         $model->buyer_email     = $buyer['email'];
         $model->buyer_zip       = $buyer['postcode'];
 
-        $due_time = strtotime('+' . $systemService->getParamValue('invoice_due_days', 1) . ' day');
+
+        $invoice_due_days = $systemService->getParamValue('invoice_due_days');
+        if (!is_numeric($invoice_due_days)) {
+            $invoice_due_days = 1;
+        }
+        $due_time = strtotime('+' . $invoice_due_days . ' day');
         $model->due_at = date('c', $due_time);
 
         $model->serie = $systemService->getParamValue('invoice_series');
