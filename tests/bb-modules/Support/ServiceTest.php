@@ -540,10 +540,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue(array()));
-        $dbMock->expects($this->atLeastOnce())
-            ->method('convertToModels')
-            ->will($this->returnValue(array($ticket,$ticket)));
+            ->will($this->returnValue(array(array('id' => 1))));
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
@@ -551,7 +548,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $result = $this->service->getExpired();
         $this->assertInternalType('array', $result);
-        $this->assertInstanceOf('Model_SupportTicket', $result[0]);
+        $this->assertInternalType('array', $result[0]);
     }
 
     public function testCountByStatus()
