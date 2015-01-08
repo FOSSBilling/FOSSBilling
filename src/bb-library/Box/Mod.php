@@ -124,7 +124,7 @@ class Box_Mod
         if(!$this->hasService($sub)) {
             throw new \Box_Exception('Module :mod does not have service class', array(':mod'=>$this->mod), 5898);
         }
-        $class = 'Box\\Mod\\'.ucfirst($this->mod).'\\Service'.$sub;
+        $class = 'Box\\Mod\\'.ucfirst($this->mod).'\\Service'.ucfirst($sub);
     	$service = new $class();
         if(method_exists($service, 'setDi')) {
             $service->setDi($this->di);
