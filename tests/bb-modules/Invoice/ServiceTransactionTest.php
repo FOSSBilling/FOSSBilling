@@ -622,7 +622,7 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use($payGatewayService) {return $payGatewayService;});
-        $di['api_admin'] = new \Api_Handler(new \Model_Admin());
+        $di['api_system'] = new \Api_Handler(new \Model_Admin());
         $this->service->setDi($di);
 
         $this->service->processTransaction($id);
