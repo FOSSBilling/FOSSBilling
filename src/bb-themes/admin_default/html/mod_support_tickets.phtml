@@ -162,8 +162,8 @@
 
                 </tbody>
             </table>
-            {% include "partial_pagination.phtml" with {'list': tickets, 'url':'support'} %}
             {% include "partial_batch_delete.phtml" with {'action':'admin/support/batch_delete'} %}
+            {% include "partial_pagination.phtml" with {'list': tickets, 'url':'support'} %}
 
         </div>
 

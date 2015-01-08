@@ -159,9 +159,9 @@
                     {% endfor %}
                 </tbody>
             </table>
-            
-            {% include "partial_pagination.phtml" with {'list': invoices, 'url':'invoice'} %}
+
             {% include "partial_batch_delete.phtml" with {'action' : 'admin/invoice/batch_delete'} %}
+            {% include "partial_pagination.phtml" with {'list': invoices, 'url':'invoice'} %}
         </div>
 
         <div class="tab_content nopadding" id="tab-new">

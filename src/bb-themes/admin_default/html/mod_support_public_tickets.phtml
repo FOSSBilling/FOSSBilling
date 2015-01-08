@@ -53,7 +53,7 @@
     </tbody>
 </table>
 </div>
-{% include "partial_pagination.phtml" with {'list': tickets, 'url':'support/public-tickets'} %}
 {% include "partial_batch_delete.phtml" with {'action':'admin/support/batch_delete_public'} %}
+{% include "partial_pagination.phtml" with {'list': tickets, 'url':'support/public-tickets'} %}
 
 {% endblock %}
