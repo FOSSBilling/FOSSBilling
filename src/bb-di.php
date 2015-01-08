@@ -201,7 +201,7 @@ $di['api'] = $di->protect(function($role) use($di) {
            break;
 
         default :
-            throw new Exception('Unrecognized Handler type: '.$this->type);
+            throw new Exception('Unrecognized Handler type: '.$role);
     }
     $api = new Api_Handler($identity);
     $api->setDi($di);
