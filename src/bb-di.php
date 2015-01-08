@@ -26,15 +26,13 @@ $di['logger'] = function () use ($di) {
     if ($log_to_db) {
         $activity_service = $di['mod_service']('activity');
         $writer2          = new Box_LogDb($activity_service);
-        try {
-            $admin = $di['loggedin_admin'];
-            $log->setEventItem('admin_id', $admin->id);
-        } catch (Exception $e) {
-            try {
-                $client = $di['loggedin_client'];
-                $log->setEventItem('client_id', $client->id);
-            } catch (Exception $e) {
-            }
+        if ($di['auth']->isAdminLoggedIn()){
+                $admin = $di['loggedin_admin'];
+                $log->setEventItem('admin_id', $admin->id);
+        }
+        elseif ($di['auth']->isClientLoggedIn()) {
+            $client = $di['loggedin_client'];
+            $log->setEventItem('client_id', $client->id);
         }
         $log->addWriter($writer2);
     }
@@ -203,7 +201,7 @@ $di['api'] = $di->protect(function($role) use($di) {
            break;
 
         default :
-            throw new Exception('Unrecognized Handler type: '.$this->type);
+            throw new Exception('Unrecognized Handler type: '.$role);
     }
     $api = new Api_Handler($identity);
     $api->setDi($di);
