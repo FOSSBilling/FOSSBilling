@@ -98,6 +98,15 @@ class Box_ModTest extends PHPUnit_Framework_TestCase
 
         $bool = $mod->update();
         $this->assertTrue($bool);
+    }
+
+    public function testgetServiceSub()
+    {
+        $mod = new Box_Mod('Invoice');
+        $subServiceName = 'transaction';
+
+        $subService = $mod->getService($subServiceName);
+        $this->assertInstanceOf('\Box\Mod\Invoice\ServiceTransaction', $subService);
 
     }
 
