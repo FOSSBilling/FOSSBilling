@@ -1350,8 +1350,23 @@ class Service implements InjectionAwareInterface
 
         $pdf->SetFont('DejaVu', '', $font_size);
 
-        if (isset($company['logo_url']) && !empty($company['logo_url'])){
-            $pdf->Image($company['logo_url'], $left + 75, 35, 50);
+        if (isset($company['logo_url']) && !empty($company['logo_url'])) {
+            $url = $company['logo_url'];
+            if (substr($url, -4) === '.png') {
+                $pdf->ImagePngWithAlpha($url, $left + 75, 35, 50);
+            } else {
+                //Converting to .png
+                $img = imagecreatefromstring(file_get_contents($url));
+                if ($img) {
+                    $filename = 'logo.png';
+                    if (imagepng($img, $filename)) {
+                        $pdf->ImagePngWithAlpha($filename, $left + 75, 35, 50);
+                        unlink($filename);
+                    }
+                } else {
+                    throw new \Box_Exception('Error converting image to .png');
+                }
+            }
         }
 
         $localeDateFormat = $this->di['config']['locale_date_format'];

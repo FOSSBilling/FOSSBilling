@@ -300,7 +300,10 @@ $di['service_boxbilling'] = $di->protect(function ($config) use($di) {
 
 $di['ftp'] = $di->protect(function($params) use($di){ return new \Box_Ftp($params); });
 
-$di['pdf'] = function () use ($di) { return new \tFPDF(); };
+$di['pdf'] = function () use ($di) {
+    include BB_PATH_LIBRARY . '/PDF_ImageAlpha.php';
+    return new \PDF_ImageAlpha();
+};
 
 $di['geoip'] = function () use ($di) { return new \GeoIp2\Database\Reader(BB_PATH_LIBRARY . '/GeoLite2-Country.mmdb'); };
 
