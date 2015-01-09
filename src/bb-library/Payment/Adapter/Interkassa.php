@@ -60,7 +60,7 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract
 	*/
     public function getServiceUrl()
     {
-        return 'http://www.interkassa.com/lib/payment.php';
+        return 'https://api.interkassa.com/v1/';
     }
 
 	/**
@@ -131,7 +131,7 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract
             error_log('Shop ids does not match');
             return false;
         }
-        
+
         $sing_hash_str = $status_data['ik_shop_id'].':'.
                     $status_data['ik_payment_amount'].':'.
                     $status_data['ik_payment_id'].':'.
