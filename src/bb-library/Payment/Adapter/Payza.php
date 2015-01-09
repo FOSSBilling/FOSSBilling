@@ -263,21 +263,21 @@ class Payment_Adapter_Payza extends Payment_AdapterAbstract
 
         } else {
             $data = array();
-            $data['ap_itemname']          = $title;
-            $data['ap_quantity']        = $number;
-            //$data['no_shipping']        = '1';
-            //$data['no_note']            = '1';
-            $data['ap_currency']      = $invoice['currency'];
-            //$data['rm']                 = '2';
-            //$data['return']             = $this->config['return_url'];
-            //$data['cancel_return']      = $this->config['cancel_url'];
-            //$data['notify_url']         = $this->config['notify_url'];
-            $data['ap_merchant']           = $this->config['email'];
-            //$data['cmd']                = '_xclick';
-            $data['ap_amount']             = $this->moneyFormat($invoice['total'], $invoice['currency']);
-            $data['ap_taxamount']                = $this->moneyFormat($invoice['tax'], $invoice['currency']);
-            //$data['bn']                 = "PP-BuyNowBF";
-            //$data['charset']            = "utf-8";
+            $data['ap_itemname']        = $title;
+            $data['ap_quantity']        = 1;
+            //$data['no_shipping']      = '1';
+            //$data['no_note']          = '1';
+            $data['ap_currency']        = $invoice['currency'];
+            //$data['rm']               = '2';
+            //$data['return']           = $this->config['return_url'];
+            //$data['cancel_return']    = $this->config['cancel_url'];
+            //$data['notify_url']       = $this->config['notify_url'];
+            $data['ap_merchant']        = $this->config['email'];
+            //$data['cmd']              = '_xclick';
+            $data['ap_amount']          = $this->moneyFormat($invoice['total'], $invoice['currency']);
+            $data['ap_taxamount']       = $this->moneyFormat($invoice['tax'], $invoice['currency']);
+            //$data['bn']               = "PP-BuyNowBF";
+            //$data['charset']          = "utf-8";
             $data['ap_purchasetype']    = "item";
         }
 
