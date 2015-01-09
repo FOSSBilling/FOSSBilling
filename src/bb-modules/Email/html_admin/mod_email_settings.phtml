@@ -85,15 +85,6 @@
                 <fieldset>
                 
                 <div class="rowElem noborder">
-                    <label class="">{% trans %}Log sent emails to database{% endtrans %}</label>
-                    <div class="formRight" id="mailer">
-                        <input type="radio" name="log_enabled" value="1" {% if params.log_enabled %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
-                        <input type="radio" name="log_enabled" value="0" {% if not params.log_enabled %}checked="checked"{% endif %} /><label>{% trans 'No' %}</label>
-                    </div>
-                    <div class="fix"></div>
-                </div>
-
-                <div class="rowElem noborder">
                     <label class="topLabel">Queue options</label>
                     <div class="formBottom" id="mailer">
                         <label>{% trans %}Send emails per cron run (0 = unlimited){% endtrans %}</label><input type="text" name="queue_once" placeholder="0" value="{{ params.queue_once }}"/>
