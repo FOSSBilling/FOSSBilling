@@ -349,7 +349,7 @@ class ServicePayGatewayTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['config'] = array('url' => 'http://boxbilling.vm/', 'debug' => true);
         $di['tools'] = $toolsMock;
-        $di['url'] = $toolsMock;
+        $di['url'] = $urlMock;
         $serviceMock->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'Payment gateway  was not found');
