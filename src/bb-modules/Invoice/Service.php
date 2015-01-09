@@ -42,8 +42,8 @@ class Service implements InjectionAwareInterface
         $defaults = array();
         $config = $this->di['tools']->decodeJ($pg->config);
 
-        $cancel_url = $this->di['url']->get('invoice?status=cancel');
-        $return_url = $this->di['url']->get('invoice?status=ok');
+        $cancel_url = $this->di['url']->link('invoice', array('status' => 'cancel'));
+        $return_url = $this->di['url']->link('invoice', array('status' => 'ok'));
         $callback_url = $this->di['url']->get('bb-ipn.php?bb_gateway_id='.$pg->id);
         $callback_redirect_url = $callback_url;
 

@@ -330,9 +330,9 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getReturnUrl(\Model_PayGateway $pg, $model = null)
     {
         if($model instanceof \Model_Invoice) {
-            return $this->di['tools']->url('/invoice/'.$model->hash.'?status=ok');
+            return $this->di['url']->link('/invoice/'.$model->hash, array('status'=> 'ok'));
         }
-        return $this->di['tools']->url('/invoice?status=ok');
+        return $this->di['url']->link('/invoice', array('status'=> 'ok'));
     }
 
 
@@ -342,9 +342,9 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getCancelUrl(\Model_PayGateway $pg, $model = null)
     {
         if($model instanceof \Model_Invoice) {
-            return $this->di['tools']->url('/invoice/'.$model->hash.'?status=cancel');
+            return $this->di['url']->link('/invoice/'.$model->hash, array('status'=> 'cancel'));
         }
-        return $this->di['tools']->url('/invoice?status=cancel');
+        return $this->di['url']->link('/invoice', array('status'=> 'cancel'));
     }
 
     /**
