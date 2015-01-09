@@ -303,15 +303,17 @@ class ServicePayGatewayTest extends \PHPUnit_Framework_TestCase {
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
-            ->method('url');
-        $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->willReturn(array());
 
+        $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
+        $urlMock->expects($this->atLeastOnce())
+            ->method('link');
 
         $di = new \Box_Di();
         $di['config'] = array('url' => 'http://boxbilling.vm/', 'debug' => true);
         $di['tools'] = $toolsMock;
+        $di['url'] = $urlMock;
         $serviceMock->setDi($di);
 
         $optional = array(
@@ -337,14 +339,17 @@ class ServicePayGatewayTest extends \PHPUnit_Framework_TestCase {
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
-            ->method('url');
-        $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->willReturn(array());
+
+        $urlMock = $this->getMockBuilder('\Box_Url')->getMock();
+        $urlMock->expects($this->atLeastOnce())
+            ->method('link');
 
         $di = new \Box_Di();
         $di['config'] = array('url' => 'http://boxbilling.vm/', 'debug' => true);
         $di['tools'] = $toolsMock;
+        $di['url'] = $toolsMock;
         $serviceMock->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'Payment gateway  was not found');
