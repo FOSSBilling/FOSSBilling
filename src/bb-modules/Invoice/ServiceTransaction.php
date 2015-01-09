@@ -520,7 +520,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
-        $ipn = json_decode($tx->ipn);
+        $ipn = $this->di['tools']->decodeJ($tx->ipn);
 
         if(empty($tx->gateway_id)) {
             throw new \Box_Exception('Could not determine transaction origin. Transaction payment gateway is unknown.', null, 701);
