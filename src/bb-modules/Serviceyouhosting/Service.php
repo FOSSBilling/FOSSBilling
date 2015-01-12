@@ -11,9 +11,28 @@
  */
 
 namespace Box\Mod\Serviceyouhosting;
-class Service
+class Service implements \Box\InjectionAwareInterface
 {
-    public $mod = null;
+
+    protected $di;
+
+    /**
+     * @param mixed $di
+     */
+    public function setDi($di)
+    {
+        $this->di = $di;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDi()
+    {
+        return $this->di;
+    }
+
+    public $mod       = null;
     public $api_admin = null;
 
     public function __construct()
