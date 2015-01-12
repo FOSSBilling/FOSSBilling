@@ -10,8 +10,29 @@
  * with this source code in the file LICENSE
  */
 
-class Payment_Adapter_Interkassa extends Payment_AdapterAbstract
+class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box\InjectionAwareInterface
 {
+    /**
+     * @var Box_Di
+     */
+    protected $di;
+
+    /**
+     * @param Box_Di $di
+     */
+    public function setDi($di)
+    {
+        $this->di = $di;
+    }
+
+    /**
+     * @return Box_Di
+     */
+    public function getDi()
+    {
+        return $this->di;
+    }
+
     public function init()
     {
         if(!$this->getParam('ik_co_id')) {
