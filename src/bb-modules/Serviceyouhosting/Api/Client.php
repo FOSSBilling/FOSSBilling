@@ -19,7 +19,8 @@ class Client extends \Api_Abstract
 {
     public function is_yh_client()
     {
-        $id = $this->getService()->getYouhostingClientId($this->_identity->id);
+        $id = $this->getService()->getYouhostingClientId($this->getIdentity()->id);
+
         return (bool)$id;
     }
 
@@ -27,24 +28,28 @@ class Client extends \Api_Abstract
      * Get order info
      *
      * @return bool
+     *
+     * @throws \Exception
      */
     public function info($data)
     {
-        if(!isset($data['order_id'])) {
-            throw new Exception('order_id is missing');
+        if (!isset($data['order_id'])) {
+            throw new \Exception('order_id is missing');
         }
 
-        $id = $this->getService()->getYouhostingClientId($this->_identity->id);
+        $id     = $this->getService()->getYouhostingClientId($this->getIdentity()->id);
         $result = array(
             'is_youhosting_client' => (bool)$id,
         );
 
-        $order = $this->getApiClient()->order_get(array('id'=>$data['order_id']));
+        $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+        $order = $this->di['mod_service']('order')->toApiArray($order);
 
-        if(isset($order['meta']['yh_account_id']) && $order['meta']['yh_account_id']) {
-            $info = $this->getService()->getApi()->call('Account.get', array('id'=>$order['meta']['yh_account_id']));
+
+        if (isset($order['meta']['yh_account_id']) && $order['meta']['yh_account_id']) {
+            $info              = $this->getService()->getApi()->call('Account.get', array('id' => $order['meta']['yh_account_id']));
             $result['account'] = $info;
-            $result['ns'] = $this->getService()->getApi()->call('Settings.nameservers');
+            $result['ns']      = $this->getService()->getApi()->call('Settings.nameservers');
         }
 
         return $result;
@@ -65,21 +70,21 @@ class Client extends \Api_Abstract
      *
      * @param $data
      * @return bool
-     * @throws Exception
+     * @throws \Exception
      */
     public function signup($data)
     {
-        if(!isset($data['captcha_id'])) {
-            throw new Exception('Captcha id is missing');
+        if (!isset($data['captcha_id'])) {
+            throw new \Exception('Captcha id is missing');
         }
 
-        if(!isset($data['captcha_solution'])) {
-            throw new Exception('captcha_solution is missing');
+        if (!isset($data['captcha_solution'])) {
+            throw new \Exception('captcha_solution is missing');
         }
 
         $cp = array(
-            'id'        =>  $data['captcha_id'],
-            'solution'  =>  $data['captcha_solution'],
+            'id'       => $data['captcha_id'],
+            'solution' => $data['captcha_solution'],
         );
 
         $this->getService()->getApi()->call('Captcha.verify', $cp);
@@ -87,25 +92,25 @@ class Client extends \Api_Abstract
         $client = $this->getIdentity();
 
         $params = array(
-            'first_name'    =>  $client->first_name,
-            'last_name'     =>  $client->last_name,
-            'email'         =>  $client->email,
-            'password'      =>  Box_Tools::generatePassword(),
-            'captcha_id'    =>  $data['captcha_id'],
+            'first_name' => $client->first_name,
+            'last_name'  => $client->last_name,
+            'email'      => $client->email,
+            'password'   => $this->di['tools']->generatePassword(),
+            'captcha_id' => $data['captcha_id'],
         );
 
         $id = null;
 
         try {
             $result = $this->getService()->getApi()->call('Client.create', $params);
-            $id = $result['id'];
+            $id     = $result['id'];
 
-        } catch(\Exception $e) {
-            if($e->getCode() == 5108) {
+        } catch (\Exception $e) {
+            if ($e->getCode() == 5108) {
 
-                $yh_clients = $this->getService()->getApi()->call('Client.getList', array('email' =>  $client->email));
-                if($yh_clients['total']) {
-                    $id =$yh_clients['list'][0]['id'];
+                $yh_clients = $this->getService()->getApi()->call('Client.getList', array('email' => $client->email));
+                if ($yh_clients['total']) {
+                    $id = $yh_clients['list'][0]['id'];
                 } else {
                     error_log($e);
                 }
@@ -114,7 +119,7 @@ class Client extends \Api_Abstract
             }
         }
 
-        $this->getService()->storeYouhostingClientId($this->_identity->id, $id);
+        $this->getService()->storeYouhostingClientId($this->getIdentity()->id, $id);
 
         return true;
     }
@@ -124,18 +129,20 @@ class Client extends \Api_Abstract
      *
      * @param $data
      * @return mixed
-     * @throws Exception
+     * @throws \Exception
      */
     public function cpanel_url($data)
     {
-        if(!isset($data['order_id'])) {
-            throw new Exception('order_id is missing');
+        if (!isset($data['order_id'])) {
+            throw new \Exception('order_id is missing');
         }
 
-        $order = $this->getApiClient()->order_get(array('id'=>$data['order_id']));
+        $order  = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+        $order  = $this->di['mod_service']('order')->toApiArray($order);
         $params = array(
-            'id'  =>  $order['meta']['yh_account_id'],
+            'id' => $order['meta']['yh_account_id'],
         );
+
         return $this->getService()->getApi()->call('Account.getLoginUrl', $params);
     }
 
@@ -147,30 +154,34 @@ class Client extends \Api_Abstract
      * @param string $captcha_solution - captcha solution
      *
      * @return bool
-     * @throws Exception
+     * @throws \Exception
      */
     public function activate($data)
     {
-        if(!isset($data['captcha_id'])) {
-            throw new Exception('Captcha id is missing');
+        if (!isset($data['captcha_id'])) {
+            throw new \Exception('Captcha id is missing');
         }
 
-        if(!isset($data['order_id'])) {
-            throw new Exception('order_id is missing');
+        if (!isset($data['order_id'])) {
+            throw new \Exception('order_id is missing');
         }
 
-        if(!isset($data['captcha_solution'])) {
-            throw new Exception('captcha_solution is missing');
+        if (!isset($data['captcha_solution'])) {
+            throw new \Exception('captcha_solution is missing');
         }
 
         $cp = array(
-            'id'        =>  $data['captcha_id'],
-            'solution'  =>  $data['captcha_solution'],
+            'id'       => $data['captcha_id'],
+            'solution' => $data['captcha_solution'],
         );
         $this->getService()->getApi()->call('Captcha.verify', $cp);
 
-        $this->getApiAdmin()->order_update(array('id'=>$data['order_id'], 'meta'=>array('order_captcha_id'=>$data['captcha_id'])));
-        $this->getApiAdmin()->order_activate(array('id'=>$data['order_id']));
+        $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+
+        $orderService = $this->di['mod_service']('order');
+        $orderService->updateOrder($order, array('meta' => array('order_captcha_id' => $data['captcha_id'])));
+        $orderService->activateOrder($order);
+
         return true;
     }
 }
