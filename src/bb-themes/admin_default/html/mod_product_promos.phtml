@@ -191,7 +191,7 @@
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Periods (Select none to apply to all client groups)' %}</label>
+                        <label>{% trans 'Client Groups (Select none to apply to all client groups)' %}</label>
                         <div class="formRight">
                             {% set client_groups = admin.client_group_get_pairs %}
                             <select name="client_groups[]" multiple="multiple" class="multiple" size="{{groups|length}}">

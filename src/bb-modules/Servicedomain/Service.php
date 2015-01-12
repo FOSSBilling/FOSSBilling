@@ -54,7 +54,7 @@ class Service implements \Box\InjectionAwareInterface
         $validator = $this->di['validator'];
 
         if (!isset($data['action'])) {
-            throw new \Box_Exception('Are you registering new domain or transfering existing? Action parameter missing.');
+            throw new \Box_Exception('Are you registering new domain or transferring existing? Action parameter missing.');
         }
 
         $action = $data['action'];

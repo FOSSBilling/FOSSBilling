@@ -94,7 +94,7 @@
     <ul>
         <li><a href="{{ 'order'|alink({'status' : 'pending_setup'}) }}" class="count green" title="">{{ count_orders.pending_setup }}</a><span>{% trans 'Pending setup' %}</span></li>
         <li><a href="{{ 'order'|alink({'status' : 'active'}) }}" class="count blue" title="">{{ count_orders.active }}</a><span>{% trans 'Active' %}</span></li>
-        <li><a href="{{ 'order'|alink({'status' : 'suspended'}) }}" class="count red" title="">{{ count_orders.suspended }}</a><span>{% trans 'Supended' %}</span></li>
+        <li><a href="{{ 'order'|alink({'status' : 'suspended'}) }}" class="count red" title="">{{ count_orders.suspended }}</a><span>{% trans 'Suspended' %}</span></li>
         <li class="last"><a href="{{ 'order'|alink }}" class="count grey" title="">{{ count_orders.total }} </a><span>{% trans 'Total' %}</span></li>
     </ul>
     <div class="fix"></div>

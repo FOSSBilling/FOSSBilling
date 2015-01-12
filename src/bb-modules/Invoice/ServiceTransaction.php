@@ -684,7 +684,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $serviceSubscription = $this->di['mod_service']("Subscription");
         $model = $this->di['db']->load('Subscription', $tx->s_id);
         if(!$model instanceof \Model_Subscription) {
-            throw new \Box_Exception('Subscription #:id was not found. Could not unsusbscribe', array(':id'=>$tx->s_id));
+            throw new \Box_Exception('Subscription #:id was not found. Could not unsubscribe', array(':id'=>$tx->s_id));
         }
 
         $serviceSubscription->unsubscribe($model);

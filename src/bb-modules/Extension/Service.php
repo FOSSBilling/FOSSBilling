@@ -477,7 +477,7 @@ class Service implements InjectionAwareInterface
                 break;
 
             default:
-                throw new \Box_Exception('Extension does not support auto-install deature. Extension must be installed manually');
+                throw new \Box_Exception('Extension does not support auto-install feature. Extension must be installed manually');
                 break;
         }
 

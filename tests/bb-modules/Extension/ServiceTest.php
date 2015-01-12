@@ -645,7 +645,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['zip_archive'] = $zipArchiveMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Extension does not support auto-install deature. Extension must be installed manually');
+        $this->setExpectedException('\Box_Exception', 'Extension does not support auto-install feature. Extension must be installed manually');
         $this->service->downloadAndExtract('notDefinedType', 'extensionId');
     }
 

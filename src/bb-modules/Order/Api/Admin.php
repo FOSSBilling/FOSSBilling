@@ -152,7 +152,7 @@ class Admin extends \Api_Abstract
      *
      * @param int $id - Order id
      *
-     * @optional string $reason - Suspendation reason message
+     * @optional string $reason - Suspension reason message
      * @optional bool $skip_event - Skip calling event hooks
      *
      * @return bool

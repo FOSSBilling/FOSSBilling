@@ -173,7 +173,7 @@ class Admin extends \Api_Abstract
     public function category_get($data)
     {
         if (!isset($data['id'])) {
-            throw new \Box_Exception('Caegory id not passed');
+            throw new \Box_Exception('Category id not passed');
         }
 
         $model = $this->di['db']->findOne('KbArticleCategory', 'id = ?', array($data['id']));

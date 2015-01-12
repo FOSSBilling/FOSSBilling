@@ -97,7 +97,7 @@ class Client extends \Api_Abstract
         }
 
         if (!isset($data['password_confirm'])) {
-            throw new \Box_Exception('Password confiration required');
+            throw new \Box_Exception('Password confirmation required');
         }
 
         if ($data['password'] != $data['password_confirm']) {

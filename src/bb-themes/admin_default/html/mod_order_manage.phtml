@@ -144,14 +144,14 @@
                                     <a href="{{ 'api/admin/order/renew'|link({'id' : order.id}) }}" title="" data-api-confirm="Are you sure?" class="btn55 mr10 api-link" data-api-reload="Order renewed"><img src="images/icons/middlenav/play2.png" alt=""><span>Renew</span></a>
 
                                     {% if params.suspend_reason_list|trim == null %}
-                                    <a href="{{ 'api/admin/order/suspend'|link({'id' : order.id}) }}" title="" class="btn55 mr10 api-link" data-api-prompt-key="reason" data-api-prompt="1" data-api-prompt-text="{% trans 'Reason of suspendation' %}" data-api-prompt-title="{% trans 'Suspendation reason' %}" data-api-reload="Order suspended"><img src="images/icons/middlenav/stop.png" alt=""><span>Suspend</span></a>
+                                    <a href="{{ 'api/admin/order/suspend'|link({'id' : order.id}) }}" title="" class="btn55 mr10 api-link" data-api-prompt-key="reason" data-api-prompt="1" data-api-prompt-text="{% trans 'Reason of suspension' %}" data-api-prompt-title="{% trans 'Suspension reason' %}" data-api-reload="Order suspended"><img src="images/icons/middlenav/stop.png" alt=""><span>Suspend</span></a>
 
                                     {% else %}
                                     <div id="suspend_popup" style="position: fixed; z-index: 99999; padding: 5px; margin: 0px; min-width: 310px; max-width: 310px; top: 30%; left: 45%; display: none;">
-                                        <h5 id="suspend_popup_title">{% trans 'Suspendation reason' %}</h5>
+                                        <h5 id="suspend_popup_title">{% trans 'Suspension reason' %}</h5>
                                         <div id="suspend_popup_content" class="confirm">
                                             <div id="suspend_popup_message">
-                                                <div>{% trans 'Reason of suspendation' %}
+                                                <div>{% trans 'Reason of suspension' %}
                                                     {% for reason in params.suspend_reason_list|trim|split("\r\n") %}
                                                     <div class="item">
                                                         <input type="radio" value="{{reason}}" name="reason"/> <label>{{reason}}</label>
