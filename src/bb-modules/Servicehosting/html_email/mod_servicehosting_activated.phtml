@@ -13,8 +13,8 @@ Your website and email will not function until your domain has propagated.
 
 **{{ order.title }}**
 
-Activated: {{ order.activated_at|date }}      
-{% if order.expires_at %}Expires: {{ order.expires_at|date }} {% endif %}     
+Activated: {{ order.activated_at|bb_date }}
+{% if order.expires_at %}Expires: {{ order.expires_at|bb_date }} {% endif %}
 {% if order.period %}
 Billing period:
 

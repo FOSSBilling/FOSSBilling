@@ -3,7 +3,7 @@
 {% filter markdown %}
 Hi {{ staff.name }},
 
-Client **{{ order.client.first_name }} {{ order.client.last_name }}** placed a new order for **{{ order.title }}** on {{ order.created_at|date }}
+Client **{{ order.client.first_name }} {{ order.client.last_name }}** placed a new order for **{{ order.title }}** on {{ order.created_at|bb_date }}
 
 Manage order {{'order/manage'|alink}}/{{order.id}}
 

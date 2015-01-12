@@ -37,15 +37,15 @@
         </tr>
         <tr>
             <td>{% trans 'Created at' %}:</td>
-            <td>{{ info.created_at|date }}</td>
+            <td>{{ info.created_at|bb_date }}</td>
         </tr>
         <tr>
             <td>{% trans 'Updated at' %}:</td>
-            <td>{{ info.updated_at|date }}</td>
+            <td>{{ info.updated_at|bb_date }}</td>
         </tr>
         <tr>
             <td>{% trans 'Expires at' %}:</td>
-            <td>{{ info.expires_at|date }}</td>
+            <td>{{ info.expires_at|bb_date }}</td>
         </tr>
         <tr>
             <td>{% trans 'Valid IPs' %}:</td>
