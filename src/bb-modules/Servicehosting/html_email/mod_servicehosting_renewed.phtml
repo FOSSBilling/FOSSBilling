@@ -8,7 +8,7 @@ Your **{{ order.title }}** has been renewed.
 
 {% if order.expires_at %}
 
-Next renewal date: {{ order.expires_at|date }}
+Next renewal date: {{ order.expires_at|bb_date }}
 
 {% endif %}
 
