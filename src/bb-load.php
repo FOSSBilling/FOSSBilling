@@ -119,7 +119,7 @@ define('BB_SSL',            (substr($config['url'], 0, 5) === 'https'));
 if($config['sef_urls']) {
     define('BB_URL_API',    $config['url'] . 'api/');
 } else {
-    define('BB_URL_API',    $config['url'] . 'index.php/api/');
+    define('BB_URL_API',    $config['url'] . 'index.php?_url=/api/');
 }
 
 if($config['debug']) {
