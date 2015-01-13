@@ -146,7 +146,7 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
         return $tx;
     }
 
-    public function isIpnValid($data, Payment_Invoice $invoice)
+    public function isIpnValid($data)
     {
         $status_data = $data['post'];
         $shop_id = $this->getParam('ik_co_id');
@@ -165,5 +165,66 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
         $sign = base64_encode(md5($signString, true)); // take MD5 hash in a binary form by the
 
         return ($status_data["ik_sign"] == $sign);
+    }
+
+    public function processTransaction($api_admin, $id, $data, $gateway_id)
+    {
+        if(APPLICATION_ENV != 'testing' && !$this->isIpnValid($data)) {
+            throw new Exception('IPN is not valid');
+        }
+
+        $ipn = $data['post'];
+
+        $tx = $this->di['db']->load('Transaction', $id);
+
+        if(!$tx->invoice_id) {
+            $tx->invoice_id = $data['get']['bb_invoice_id'];
+            $this->di['db']->store($tx);
+        }
+
+        if(!$tx->txn_id) {
+            $tx->txn_id = $ipn['ik_trn_id'];
+            $this->di['db']->store($tx);
+        }
+
+        if(!$tx->txn_status) {
+            $tx->txn_status = $ipn['ik_inv_st'];
+            $this->di['db']->store($tx);
+        }
+
+        if(!$tx->amount) {
+            $tx->amount = $ipn['ik_am'];
+            $this->di['db']->store($tx);
+        }
+
+        if(!$tx->currency) {
+            $tx->currency = $ipn['ik_cur'];
+            $this->di['db']->store($tx);
+        }
+
+        $invoiceModel = $this->di['db']->load('Invoice', $data['get']['bb_invoice_id']);
+        $client_id = $invoiceModel->client_id;
+
+        if ($ipn['ik_inv_st'] == 'success') {
+            $bd = array(
+                'id'            =>  $client_id,
+                'amount'        =>  $ipn['ik_am'],
+                'description'   =>  'Interkassa transaction '.$ipn['ik_trn_id'],
+                'type'          =>  'Interkassa',
+                'rel_id'        =>  $ipn['ik_trn_id'],
+            );
+
+            $api_admin->client_balance_add_funds($bd);
+            if($tx->invoice_id) {
+                $api_admin->invoice_pay_with_credits(array('id'=>$tx->invoice_id));
+            }
+            $api_admin->invoice_batch_pay_with_credits(array('client_id'=>$client_id));
+        }
+
+        $tx->error = '';
+        $tx->error_code = '';
+        $tx->status = 'processed';
+        $tx->updated_at = date('c');
+        $this->di['db']->store($tx);
     }
 }
