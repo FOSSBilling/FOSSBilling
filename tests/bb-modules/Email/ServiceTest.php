@@ -312,7 +312,13 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             'default_template'    => 'TEMPLATE',
             'default_description' => 'DESCRIPTION',
         );
-        $service = new \Box\Mod\Email\Service();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Email\Service')
+            ->setMethods(array('sendMail'))
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('sendMail')
+            ->willReturn(true);
+
         $di      = new \Box_Di();
 
         $emailTemplate = new \Model_EmailTemplate();
@@ -344,7 +350,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             return $api;
         };
 
-        $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
+        $cryptMock = $this->getMockBuilder('\Box_Crypt')
+            ->disableOriginalConstructor()
+            ->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt');
 
@@ -355,9 +363,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             return $systemService;
         });
         $di['tools'] = new \Box_Tools();
-        $service->setDi($di);
+        $serviceMock->setDi($di);
 
-        $result = $service->sendTemplate($data);
+        $result = $serviceMock->sendTemplate($data);
 
         $this->assertTrue($result);
     }
@@ -399,7 +407,13 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testSendTemplateExistsStaff($data, $clientGetExpects, $staffgetListExpects)
     {
-        $service = new \Box\Mod\Email\Service();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Email\Service')
+            ->setMethods(array('sendMail'))
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('sendMail')
+            ->willReturn(true);
+
         $di      = new \Box_Di();
 
         $emailTemplate = new \Model_EmailTemplate();
@@ -456,7 +470,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('render')
             ->will($this->returnValue('value'));
 
-        $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
+        $cryptMock = $this->getMockBuilder('\Box_Crypt')
+            ->disableOriginalConstructor()
+            ->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt');
 
@@ -481,9 +497,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             }
         });
         $di['tools'] = new \Box_Tools();
-        $service->setDi($di);
+        $serviceMock->setDi($di);
 
-        $result = $service->sendTemplate($data);
+        $result = $serviceMock->sendTemplate($data);
 
         $this->assertTrue($result);
     }
@@ -965,7 +981,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $db->expects($this->at(0))
             ->method('findOne')
             ->will($this->returnValue($queueModel));
-        $db->expects($this->at(0))
+        $db->expects($this->at(1))
             ->method('findOne')
             ->will($this->returnValue(false));
          $db->expects($this->atLeastOnce())
@@ -1072,5 +1088,55 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $service->setDi($di);
 
         $service->resetTemplateByCode('mod_email_test');
+    }
+
+    public function testsendMail()
+    {
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+
+        $queueEmail = new \Model_ModEmailQueue();
+        $queueEmail->loadBean(new \RedBeanPHP\OODBBean());
+        $dbMock->expects($this->atLeastOnce())
+            ->method('dispense')
+            ->with('ModEmailQueue')
+            ->willReturn($queueEmail);
+
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store');
+
+       $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
+        $licenseMock->expects($this->atLeastOnce())
+            ->method('isPro')
+            ->will($this->returnValue(false));
+
+        $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
+        $modMock->expects($this->atLeastOnce())
+            ->method('getConfig')
+            ->will($this->returnValue(array(
+                'cancel_after' => 1
+            )));
+
+        $mailMock = $this->getMockBuilder('\Box_Mail')->disableOriginalConstructor()->getMock();
+
+
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
+
+        $di['mail']     = $mailMock;
+        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['mod'] = $di->protect(function () use ($modMock) {
+            return $modMock;
+        });
+        $di['license'] = $licenseMock;
+
+        $service = new \Box\Mod\Email\Service();
+        $service->setDi($di);
+
+        $to = 'receiver@example.com';
+        $from = 'sender@example.com';
+        $subject = 'Important message';
+        $content = 'content';
+        $result = $service->sendMail($to, $from, $subject, $content);
+        $this->assertTrue($result);
     }
 }
