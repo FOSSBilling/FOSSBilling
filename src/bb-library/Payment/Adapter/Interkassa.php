@@ -70,6 +70,11 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
                             'value' => '',
                     ),
                  ),
+                'ik_secret_key_test' => array('password', array(
+                            'label' => 'Test Key.',
+                            'value' => '',
+                    ),
+                 ),
             ),
         );
     }
@@ -91,13 +96,14 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
 	 * Init single payment call to webservice
 	 * Invoice id is passed via notify_url
      *
-	 * @return mixed
+     * @param Payment_Invoice $invoice
+	 * @return array
 	*/
     public function singlePayment(Payment_Invoice $invoice)
     {
         return array(
             'ik_co_id'              => $this->getParam('ik_co_id'),
-            'ik_pm_no'              => $invoice->Id,
+            'ik_pm_no'              => $invoice->getId(),
             'ik_am'                 => $invoice->getTotal(),
             'ik_desc'               => $invoice->getTitle(),
             'ik_cur'                => $invoice->getCurrency(),
@@ -111,7 +117,7 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
             'ik_fal_u'              => $this->getParam('cancel_url'),
             'ik_fal_m'              => 'get',
 
-            'ik_x_iid'              => $invoice->Id,
+            'ik_x_iid'              => $invoice->getId(),
         );
     }
 
@@ -151,7 +157,10 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
         $status_data = $data['post'];
         $shop_id = $this->getParam('ik_co_id');
         $secret_key = $this->getParam('ik_secret_key');
-        
+        if($this->getParam('test_mode')) {
+            $secret_key = $this->getParam('ik_secret_key_test');
+        }
+
         if($shop_id != $status_data['ik_co_id']) {
             error_log('Shop ids does not match');
             return false;
@@ -169,7 +178,7 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
 
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
-        if(APPLICATION_ENV != 'testing' && !$this->isIpnValid($data)) {
+        if(!$this->isIpnValid($data)) {
             throw new Exception('IPN is not valid');
         }
 
@@ -178,47 +187,46 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
         $tx = $this->di['db']->load('Transaction', $id);
 
         if(!$tx->invoice_id) {
-            $tx->invoice_id = $data['get']['bb_invoice_id'];
-            $this->di['db']->store($tx);
+            $tx->invoice_id = $ipn['ik_x_iid'];
         }
 
         if(!$tx->txn_id) {
             $tx->txn_id = $ipn['ik_trn_id'];
-            $this->di['db']->store($tx);
         }
 
         if(!$tx->txn_status) {
             $tx->txn_status = $ipn['ik_inv_st'];
-            $this->di['db']->store($tx);
         }
 
         if(!$tx->amount) {
             $tx->amount = $ipn['ik_am'];
-            $this->di['db']->store($tx);
         }
 
         if(!$tx->currency) {
             $tx->currency = $ipn['ik_cur'];
-            $this->di['db']->store($tx);
         }
-
-        $invoiceModel = $this->di['db']->load('Invoice', $data['get']['bb_invoice_id']);
-        $client_id = $invoiceModel->client_id;
+        $this->di['db']->store($tx);
 
         if ($ipn['ik_inv_st'] == 'success') {
+            $invoiceModel = $this->di['db']->load('Invoice', $data['get']['bb_invoice_id']);
+            $clientModel = $this->di['db']->load('Client', $invoiceModel->client_id);
+
             $bd = array(
-                'id'            =>  $client_id,
+                'id'            =>  $clientModel->id,
                 'amount'        =>  $ipn['ik_am'],
                 'description'   =>  'Interkassa transaction '.$ipn['ik_trn_id'],
                 'type'          =>  'Interkassa',
                 'rel_id'        =>  $ipn['ik_trn_id'],
             );
 
-            $api_admin->client_balance_add_funds($bd);
+            $clientService = $this->di['mod_service']('Client');
+            $clientService->addFunds($clientModel, $bd['amount'], $bd['description'], $bd);
+
+            $invoiceService = $this->di['mod_service']('Invoice');
             if($tx->invoice_id) {
-                $api_admin->invoice_pay_with_credits(array('id'=>$tx->invoice_id));
+                $invoiceService->payInvoiceWithCredits($invoiceModel);
             }
-            $api_admin->invoice_batch_pay_with_credits(array('client_id'=>$client_id));
+            $invoiceService->doBatchPayWithCredits(array('client_id' => $clientModel->id));
         }
 
         $tx->error = '';
@@ -226,5 +234,6 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
         $tx->status = 'processed';
         $tx->updated_at = date('c');
         $this->di['db']->store($tx);
+        return true;
     }
 }
