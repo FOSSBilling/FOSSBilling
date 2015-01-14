@@ -272,10 +272,20 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('load')
             ->will($this->returnValue(new \Model_Client()));
 
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->expects($this->atLeastOnce())
+            ->method('isClientLoggedIn')
+            ->willReturn(true);
+        $authMock->expects($this->atLeastOnce())
+            ->method('isAdminLoggedIn')
+            ->willReturn(true);
+
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['twig'] = $twigMock;
         $di['api_client'] = new \Model_Client();
+        $di['api_admin'] = new \Model_Admin();
+        $di['auth'] = $authMock;
         $this->service->setDi($di);
 
         $this->setExpectedException('\Twig_Error_Syntax');
