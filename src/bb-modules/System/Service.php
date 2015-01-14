@@ -292,13 +292,15 @@ class Service
         $twig = $this->di['twig'];
         if(isset($vars['_client_id'])) {
             $identity = $this->di['db']->load('Client', $vars['_client_id']);
-            if($identity instanceof \Model_Client && $this->di['auth']->isClientLoggedIn()) {
+            if($identity instanceof \Model_Client) {
                 $twig->addGlobal('client', $this->di['api_client']);
             }
         }
 
-        if ($this->di['auth']->isAdminLoggedIn()) {
+        try {
             $twig->addGlobal('admin', $this->di['api_admin']);
+        } catch(\Exception $e) {
+
         }
 
         try {
