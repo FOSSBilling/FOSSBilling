@@ -235,7 +235,6 @@ class Service implements InjectionAwareInterface
             'LKR' => 'Sri Lanka rupee',
             'LRD' => 'Liberian dollar',
             'LSL' => 'Lesotho loti',
-            'LTL' => 'Lithuanian litas',
             'LYD' => 'Libyan dinar',
             'MAD' => 'Moroccan dirham',
             'MDL' => 'Moldovan leu',
