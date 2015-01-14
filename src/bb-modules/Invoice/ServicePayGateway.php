@@ -246,6 +246,11 @@ class ServicePayGateway implements InjectionAwareInterface
         }
 
         $adapter = new $class($config);
+
+        if(method_exists($adapter, 'setDi')) {
+            $adapter->setDi($this->di);
+        }
+
         return $adapter;
     }
 
