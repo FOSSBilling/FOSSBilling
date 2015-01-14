@@ -96,7 +96,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 		return $this->_generateForm($url, $data);
 	}
 
-    public function processTransaction($api_admin, $id, $data)
+    public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
         if(APPLICATION_ENV != 'testing' && !$this->isIpnValid($data)) {
             throw new Exception('WebMoney IPN is not valid');
@@ -104,9 +104,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
         
         $ipn = $data['post'];
 
-        //$tx = $api_admin->invoice_transaction_get(array('id'=>$id));
-        $invoice = $api_admin->invoice_get(array('id'=>$ipn['INVOICE_ID']));
-        $client_id = $invoice['client']['id'];
+		$invoice = $this->di['db']->getExistingModelById('Invoice', $ipn['INVOICE_ID'], 'Invoice not found');
 
         $currency = $this->getCurrency($ipn['LMI_PAYER_PURSE']);
         $tx_data = array(
@@ -119,17 +117,26 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
             'type'          =>  'payment',
             'status'        =>  'complete',
         );
-        $api_admin->invoice_transaction_update($tx_data);
+
+		$transaction = $this->di['db']->getExistingModelById('Transaction', $id, 'Transaction not found');
+		$transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+		$transactionService->update($transaction, $tx_data);
         
         $bd = array(
-            'id'            =>  $client_id,
+            'id'            =>  $invoice->client_id,
             'amount'        =>  $ipn['LMI_PAYMENT_AMOUNT'],
             'description'   =>  'WebMoney sale: '.$ipn['LMI_SYS_TRANS_NO'],
             'type'          =>  'WebMoney',
             'rel_id'        =>  $ipn['LMI_SYS_TRANS_NO'],
         );
-        $api_admin->client_balance_add_funds($bd);
-        $api_admin->invoice_batch_pay_with_credits(array('client_id'=>$client_id));
+
+		$client = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
+		$clientService = $this->di['mod_service']('client');
+		$clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
+
+
+		$invoiceService = $this->di['mod_service']('Invoice');
+		$invoiceService->doBatchPayWithCredits(array('client_id'=>$invoice->client_id));
     }
 
 	private function isIpnValid($data)
