@@ -10,8 +10,27 @@
  * with this source code in the file LICENSE
  */
 
-class Payment_Adapter_WebMoney
+class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 {
+	/**
+	 * @var Box_Di
+	 */
+	protected $di;
+	/**
+	 * @param Box_Di $di
+	 */
+	public function setDi($di)
+	{
+		$this->di = $di;
+	}
+	/**
+	 * @return Box_Di
+	 */
+	public function getDi()
+	{
+		return $this->di;
+	}
+	
     private $config = array();
 
 	public $testMode = false;
