@@ -79,7 +79,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 		$data['LMI_PAYMENT_NO']		=	$invoice['id'];
 		$data['LMI_PAYMENT_DESC']	=	$invoice['serie_nr'];
 		$data['LMI_RESULT_URL']		=	$this->config['notify_url'];
-		$data['LMI_SUCCESS_URL']	=	$this->config['success_url'];
+		$data['LMI_SUCCESS_URL']	=	$this->config['return_url'];
 		$data['LMI_SUCCESS_METHOD']	=	1;											//The field may have values 0, 1 or 2 equal to values of the ‘Method of requesting Success URL’ – ‘GET’, ‘POST’ or ‘LINK’.
 		$data['LMI_FAIL_URL']		=	$this->config['cancel_url'];
 		$data['LMI_FAIL_METHOD']	=	1;											//The field may have the values 0, 1 or 2 equal to values of the ‘Method of requesting Fail URL’ – ‘GET’, ‘POST’ or ‘LINK’.
