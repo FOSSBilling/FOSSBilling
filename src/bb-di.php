@@ -250,7 +250,7 @@ $di['curl'] = function ($url) use ($di) {
     return $curl;
 
 };
-$di['zip_archive'] = function () use ($di) {return new ZipArchive;};
+$di['zip_archive'] = function () use ($di) {return new ZipArchive();};
 
 $di['server_package'] = function () use ($di) {return new Server_Package();};
 $di['server_client'] = function () use ($di) {return new Server_Client();};
@@ -294,7 +294,6 @@ $di['license_server'] = function () use ($di) {
 
 $di['service_boxbilling'] = $di->protect(function ($config) use($di) {
     $service = new \Box\Mod\Serviceboxbillinglicense\ServiceBoxbilling($config);
-    //$service->setDi($di);
     return $service;
 });
 
