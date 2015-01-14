@@ -56,17 +56,21 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 
     public static function getConfig()
     {
-        return array(
-            'supports_one_time_payments'   =>  true,
-            'supports_subscriptions'       =>  false,
-            'description'     =>  'Configure WebMoney gateway. Do not forget enable option "Allow URLs transmitted in the form"',
-            'form'  => array(
-                'purse' => array('text', array(
-                            'label' => 'WebMoney purse',
-                    ),
-                 ),
-            ),
-        );
+		return array(
+			'supports_one_time_payments' => true,
+			'supports_subscriptions'     => false,
+			'description'                => 'Configure WebMoney gateway. Do not forget enable option "Allow URLs transmitted in the form"',
+			'form'                       => array(
+				'purse'      => array('text', array(
+					'label' => 'WebMoney purse',
+				),
+				),
+				'secretWord' => array('text', array(
+					'label' => 'WebMoney secret word',
+				),
+				),
+			),
+		);
     }
 	
 	public function getHtml($api_admin, $id) 
