@@ -293,7 +293,12 @@ class Service
         if(isset($vars['_client_id'])) {
             $identity = $this->di['db']->load('Client', $vars['_client_id']);
             if($identity instanceof \Model_Client) {
-                $twig->addGlobal('client', $this->di['api_client']);
+                try{
+                    $twig->addGlobal('client', $this->di['api_client']);
+                }
+                catch (\Exception $e){
+                    error_log('api_client could not be added to template: '.$e->getMessage());
+                }
             }
         }
 
