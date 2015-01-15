@@ -307,4 +307,17 @@ $di['pdf'] = function () use ($di) {
 $di['geoip'] = function () use ($di) { return new \GeoIp2\Database\Reader(BB_PATH_LIBRARY . '/GeoLite2-Country.mmdb'); };
 
 $di['password'] = function() use ($di) { return new Box_Password();};
+$di['translate'] = $di->protect(function($textDomain = '') use ($di) {
+    $tr = new Box_Translate();
+    if (!empty($textDomain)){
+        $tr->setDomain($textDomain);
+    }
+    $cookieBBlang = $di['cookie']->get('BBLANG');
+    $locale = !empty($cookieBBlang) ? $cookieBBlang  : $di['config']['locale'];
+
+    $tr->setDi($di);
+    $tr->setLocale($locale);
+    $tr->setup();
+    return $tr;
+});
 return $di;

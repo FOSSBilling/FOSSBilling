@@ -18,9 +18,11 @@ if(strpos($url,$admin_prefix) !== false) {
     $url = str_replace($admin_prefix, '', preg_replace('/\?.+/', '', $url));
     $app = new Box_AppAdmin();
     $app->setUrl($url);
+    $di['translate']('admin');
 } else {
     $app = new Box_AppClient();
     $app->setUrl($url);
+    $di['translate']();
 }
 
 $app->setDi($di);
