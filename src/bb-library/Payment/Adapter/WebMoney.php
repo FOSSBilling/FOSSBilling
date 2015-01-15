@@ -141,6 +141,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 
 
 		$invoiceService = $this->di['mod_service']('Invoice');
+		$invoiceService->payInvoiceWithCredits($invoice);
 		$invoiceService->doBatchPayWithCredits(array('client_id'=>$invoice->client_id));
     }
 
