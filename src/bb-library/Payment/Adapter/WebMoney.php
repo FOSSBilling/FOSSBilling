@@ -48,6 +48,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 	public function __construct($config)
     {
         $this->config = $config;
+		$this->testMode = (isset($config['test_mode']) && $config['test_mode']) ? true : false;
         
         if(!$this->config['purse']) {
             throw new Payment_Exception('Payment gateway "WebMoney" is not configured properly. Please update configuration parameter "Purse" at "Configuration -> Payment gateways > WebMoney".');
@@ -165,7 +166,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 	 * @return string
 	 */
 	private function _getHash($data) {
-		$string = $data['LMI_PAYEE_PURSE'] . $data['LMI_PAYMENT_AMOUNT'] . $data['LMI_PAYMENT_NO'] . $data['INVOICE_ID'];
+		$string = $data['LMI_PAYEE_PURSE'] . number_format($data['LMI_PAYMENT_AMOUNT'], 2) . $data['LMI_PAYMENT_NO'] . $data['INVOICE_ID'];
 		if (isset($data['LMI_MODE']) && $data['LMI_MODE'] == 1) {
 			$string .= 'test';
 		}
@@ -234,7 +235,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 			$string .= $data['LMI_PAYER_WM'];
 		}
 		
-		return strtoupper(MD5($string));
+		return strtoupper(hash('sha256', $string));
 	}
 	
 	/**
