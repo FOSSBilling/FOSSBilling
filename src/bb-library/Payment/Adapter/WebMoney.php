@@ -48,6 +48,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 	public function __construct($config)
     {
         $this->config = $config;
+		$this->testMode = (isset($config['test_mode']) && $config['test_mode']) ? true : false;
         
         if(!$this->config['purse']) {
             throw new Payment_Exception('Payment gateway "WebMoney" is not configured properly. Please update configuration parameter "Purse" at "Configuration -> Payment gateways > WebMoney".');
@@ -56,17 +57,21 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 
     public static function getConfig()
     {
-        return array(
-            'supports_one_time_payments'   =>  true,
-            'supports_subscriptions'       =>  false,
-            'description'     =>  'Configure WebMoney gateway. Do not forget enable option "Allow URLs transmitted in the form"',
-            'form'  => array(
-                'purse' => array('text', array(
-                            'label' => 'WebMoney purse',
-                    ),
-                 ),
-            ),
-        );
+		return array(
+			'supports_one_time_payments' => true,
+			'supports_subscriptions'     => false,
+			'description'                => 'Configure WebMoney gateway. Do not forget enable option "Allow URLs transmitted in the form"',
+			'form'                       => array(
+				'purse'      => array('text', array(
+					'label' => 'WebMoney purse',
+				),
+				),
+				'secretWord' => array('text', array(
+					'label' => 'WebMoney secret word',
+				),
+				),
+			),
+		);
     }
 	
 	public function getHtml($api_admin, $id) 
@@ -136,6 +141,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 
 
 		$invoiceService = $this->di['mod_service']('Invoice');
+		$invoiceService->payInvoiceWithCredits($invoice);
 		$invoiceService->doBatchPayWithCredits(array('client_id'=>$invoice->client_id));
     }
 
@@ -161,7 +167,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 	 * @return string
 	 */
 	private function _getHash($data) {
-		$string = $data['LMI_PAYEE_PURSE'] . $data['LMI_PAYMENT_AMOUNT'] . $data['LMI_PAYMENT_NO'] . $data['INVOICE_ID'];
+		$string = $data['LMI_PAYEE_PURSE'] . number_format($data['LMI_PAYMENT_AMOUNT'], 2) . $data['LMI_PAYMENT_NO'] . $data['INVOICE_ID'];
 		if (isset($data['LMI_MODE']) && $data['LMI_MODE'] == 1) {
 			$string .= 'test';
 		}
@@ -230,7 +236,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 			$string .= $data['LMI_PAYER_WM'];
 		}
 		
-		return strtoupper(MD5($string));
+		return strtoupper(hash('sha256', $string));
 	}
 	
 	/**
