@@ -3,12 +3,19 @@ Release 4.13 (2015-01-15)
 
 * Vagrant configuration added
 * Interkassa payment adapter updated to v2
-* interlaced images support added to invoice pdf
-* fixed email template rendering 
+* Interlaced images support added to invoice pdf
+* Fixed email template rendering 
 * Web cron removed
-* fixed file manager module.
-* fixed date format in emails
+* Fixed file manager module.
+* Fixed date format in emails
 * Added button to remove item from cart popup
+* <!--more--> tag added for news/blog posts
+* WebMoney payment adapter updated
+* Ability to set how many hours user needs to wait until consequent support ticket submission
+* Added search in canned responses
+* Code improvements and optimisations
+* YouHosting module rewritten to work with open source version
+* Bug fixes
 
 
 Release 4.12 (2014-12-02)
