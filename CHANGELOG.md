@@ -15,6 +15,7 @@ Release 4.13 (2015-01-15)
 * Added search in canned responses
 * Code improvements and optimisations
 * YouHosting module rewritten to work with open source version
+* Translation implementation reworked.
 * Bug fixes
 
 
