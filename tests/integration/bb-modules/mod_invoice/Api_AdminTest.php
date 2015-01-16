@@ -836,6 +836,6 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         );
         $id    = $this->api_admin->invoice_prepare($data);
         $array = $this->api_admin->invoice_get(array('id' => $id));
-        $this->assertEquals($array['due_at'], date('Y-m-d H:i:s', strtotime("+ $diff day")));
+        $this->assertEquals(substr($array['due_at'], 0, 10), date('Y-m-d', strtotime("+ $diff day")));
     }
 }
