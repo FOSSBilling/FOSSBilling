@@ -146,7 +146,6 @@ class Service implements \Box\InjectionAwareInterface
         list($ps, $pc) = $this->getParsed($model, $client_id);
 
         $clientService = $this->di['mod_service']('client');
-        $emailService  = $this->di['mod_service']('email');
 
         $client = $clientService->get(array('id' => $client_id));
 
@@ -160,7 +159,20 @@ class Service implements \Box\InjectionAwareInterface
             'client_id' => $client_id,
         );
 
-        return $emailService->sendMail($data['to'], $data['from'], $data['subject'], $data['content'], $data['to_name'], $data['from_name'], $data['client_id']);
+        $mail = $this->di['mail'];
+        $mail->setSubject($data['subject']);
+        $mail->setBodyHtml($data['content']);
+        $mail->setFrom($data['from'], $data['from_name']);
+        $mail->addTo($data['to'], $data['to_name']);
+
+        if (APPLICATION_ENV != 'production') {
+            if($this->di['config']['debug'])
+                error_log('Skip email sending. Application ENV: '.APPLICATION_ENV);
+            return true;
+        }
+        $mail->send('sendmail');
+
+        return true;
     }
     
     public function toApiArray($row)
