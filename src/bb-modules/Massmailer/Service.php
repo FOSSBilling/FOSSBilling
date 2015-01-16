@@ -165,7 +165,11 @@ class Service implements \Box\InjectionAwareInterface
         $mail->setFrom($data['from'], $data['from_name']);
         $mail->addTo($data['to'], $data['to_name']);
 
-
+        if (APPLICATION_ENV != 'production') {
+            if($this->di['config']['debug'])
+                error_log('Skip email sending. Application ENV: '.APPLICATION_ENV);
+            return true;
+        }
         $mail->send('sendmail');
 
         return true;

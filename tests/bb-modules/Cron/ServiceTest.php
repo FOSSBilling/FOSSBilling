@@ -36,7 +36,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->setMethods(array('_exec'))
             ->getMock();
 
-        $serviceMock->expects($this->exactly(12))
+        $serviceMock->expects($this->exactly(13))
             ->method('_exec')
             ->withConsecutive(
                 array($this->equalTo($apiAdmin), $this->equalTo('hook_batch_connect')),
@@ -50,7 +50,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
                 array($this->equalTo($apiAdmin), $this->equalTo('support_batch_ticket_auto_close')),
                 array($this->equalTo($apiAdmin), $this->equalTo('support_batch_public_ticket_auto_close')),
                 array($this->equalTo($apiAdmin), $this->equalTo('client_batch_expire_password_reminders')),
-                array($this->equalTo($apiAdmin), $this->equalTo('cart_batch_expire'))
+                array($this->equalTo($apiAdmin), $this->equalTo('cart_batch_expire')),
+                array($this->equalTo($apiAdmin), $this->equalTo('email_batch_sendmail'))
             );
 
         $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
