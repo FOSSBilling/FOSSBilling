@@ -47,6 +47,8 @@ class Admin implements \Box\InjectionAwareInterface
      */
     public function save_theme_settings(\Box_App $app, $theme)
     {
+        $this->di['events_manager']->fire(array('event' => 'onBeforeThemeSettingsSave', 'params' => $_POST));
+
         $api = $app->getApiAdmin();
 
         $mod = $this->di['mod']('theme');
