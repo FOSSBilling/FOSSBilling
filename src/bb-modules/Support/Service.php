@@ -232,9 +232,9 @@ class Service implements \Box\InjectionAwareInterface
 
     /**
      * Find ticket for client
-     * @param Model_Client $c
+     * @param \Model_Client $c
      * @param int $id
-     * @return Model_SupportTicket
+     * @return \Model_SupportTicket
      */
     public function findOneByClient(\Model_Client $c, $id)
     {
@@ -393,8 +393,8 @@ class Service implements \Box\InjectionAwareInterface
                 WHERE st.status = :status
                 AND DATE_ADD(st.updated_at, INTERVAL sh.close_after HOUR) < NOW()
                 ORDER BY st.id ASC";
-        $result = $this->di['db']->getAll($sql, $bindings);
-        return $this->di['db']->convertToModels('SupportTicket', $result);
+
+        return $this->di['db']->getAll($sql, $bindings);
     }
 
     public function countByStatus($status)
@@ -739,6 +739,9 @@ class Service implements \Box\InjectionAwareInterface
         return true;
     }
 
+    /**
+     * @param \Model_Admin $identity
+     */
     public function ticketReply(\Model_SupportTicket $ticket, $identity, $content)
     {
         $msg                    = $this->di['db']->dispense('SupportTicketMessage');
@@ -843,6 +846,24 @@ class Service implements \Box\InjectionAwareInterface
         return $ticket->hash;
     }
 
+    public function canClientSubmitNewTicket(\Model_Client $client, array $config)
+    {
+        $hours = $config['wait_hours'];
+
+        $lastTicket = $this->di['db']->findOne('SupportTicket', 'client_id = :client_id ORDER BY created_at DESC', array(':client_id' => $client->id));
+        if (!$lastTicket instanceof \Model_SupportTicket) {
+            return true;
+        }
+
+        $timeSinceLast = round(abs(strtotime($lastTicket->created_at) - strtotime(date('c'))) / 3600, 0);
+
+        if ($timeSinceLast < $hours) {
+            throw new \Box_Exception(sprintf('You can submit one ticket per %s hours. %s hours left', $hours, $hours - $timeSinceLast));
+        }
+
+        return true;
+    }
+
     public function ticketCreateForClient(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, array $data)
     {
         //@todo validate task params
@@ -855,6 +876,13 @@ class Service implements \Box\InjectionAwareInterface
         // check if support ticket with same uncompleted task already exists
         if ($rel_id && $rel_type && $rel_task && $this->checkIfTaskAlreadyExists($client, $rel_id, $rel_type, $rel_task)) {
             throw new \Box_Exception('We have already received this request.');
+        }
+
+        $mod    = $this->di['mod']('support');
+        $config = $mod->getConfig();
+
+        if (isset($config['wait_hours']) && is_numeric($config['wait_hours'])) {
+            $this->canClientSubmitNewTicket($client, $config);
         }
 
         $event_params              = $data;
@@ -882,25 +910,12 @@ class Service implements \Box\InjectionAwareInterface
 
         $this->di['events_manager']->fire(array('event' => 'onAfterClientOpenTicket', 'params' => array('id' => $ticket->id)));
 
-        $mod    = $this->di['mod']('support');
-        $config = $mod->getConfig();
         if (isset($config['autorespond_enable'])
             && $config['autorespond_enable']
             && isset($config['autorespond_message_id'])
             && !empty($config['autorespond_message_id'])
         ) {
-            try {
-                $cannedObj = $this->di['db']->getExistingModelById('SupportPr', $config['autorespond_message_id'], 'Canned reply not found');
-                $canned    = $this->cannedToApiArray($cannedObj);
-                $staffService = $this->di['mod_service']('staff');
-                $admin        = $staffService->getCronAdmin();
-                if (isset($canned['content']) && $admin instanceof \Model_Admin){
-                    $this->ticketReply($ticket, $admin, $canned['content']);
-                }
-
-            } catch (\Exception $e) {
-                error_log($e->getMessage());
-            }
+            $this->cannedReply($ticket, $config['autorespond_message_id']);
         }
 
         $this->di['logger']->info('Submitted new ticket "%s"', $ticketId);
@@ -908,6 +923,25 @@ class Service implements \Box\InjectionAwareInterface
         return (int)$ticketId;
     }
 
+    private function cannedReply(\Model_SupportTicket $ticket, $cannedId)
+    {
+        try {
+            $cannedObj    = $this->di['db']->getExistingModelById('SupportPr', $cannedId, 'Canned reply not found');
+            $canned       = $this->cannedToApiArray($cannedObj);
+            $staffService = $this->di['mod_service']('staff');
+            $admin        = $staffService->getCronAdmin();
+            if (isset($canned['content']) && $admin instanceof \Model_Admin) {
+                $this->ticketReply($ticket, $admin, $canned['content']);
+            }
+
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
+    }
+
+    /**
+     * @param \Model_Client $identity
+     */
     public function messageCreateForTicket(\Model_SupportTicket $ticket, $identity, $content)
     {
         $msg                    = $this->di['db']->dispense('SupportTicketMessage');

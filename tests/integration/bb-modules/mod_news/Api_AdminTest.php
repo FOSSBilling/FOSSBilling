@@ -82,4 +82,37 @@ class Api_Admin_NewsTest extends BBDbApiTestCase
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);
     }
+
+    public function testNewsMoreTagProvider()
+    {
+        return array(
+            array(
+                'This is blog post with<!--more--> tag',
+                'This is blog post with'
+            ),
+            array(
+                'This is blog post without more tag',
+                null
+            )
+        );
+    }
+
+    /**
+     * @dataProvider testNewsMoreTagProvider
+     */
+    public function testNewsMoreTag($content, $expectedExcerpt)
+    {
+        $data = array(
+            'title'   => 'News Title',
+            'slug'    => 'news-title',
+            'status'  => 'draft',
+            'content' => $content,
+        );
+
+        $id = $this->api_admin->news_create($data);
+
+        $array = $this->api_admin->news_get(array('id' => $id));
+        $this->assertEquals($array['excerpt'], $expectedExcerpt);
+        $this->assertEquals($array['content'], $content);
+    }
 }

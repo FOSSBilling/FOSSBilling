@@ -272,7 +272,7 @@ class Server_Manager_Virtualmin extends Server_Manager
     /**
      *
      * Creates reseller
-     * @param Box_ServerAccount $a
+     * @param Server_Account $a
      * @throws Server_Exception
      * @return boolean
      */

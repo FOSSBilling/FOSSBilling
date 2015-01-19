@@ -479,16 +479,17 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function updateCategory(\Model_ProductCategory $productCategory, $title=null, $icon_url=null, $descprioption=null)
+    public function updateCategory(\Model_ProductCategory $productCategory, $title = null, $description = null, $icon_url = null)
     {
-        $productCategory->title = $title;
-        $productCategory->icon_url = $icon_url;
-        $productCategory->description = $descprioption;
+        $productCategory->title       = $title;
+        $productCategory->icon_url    = $icon_url;
+        $productCategory->description = $description;
 
         $productCategory->updated_at = date('c');
         $this->di['db']->store($productCategory);
 
         $this->di['logger']->info('Updated product category #%s', $productCategory->id);
+
         return true;
     }
 
@@ -742,27 +743,31 @@ class Service implements InjectionAwareInterface
     public function toProductCategoryApiArray(\Model_ProductCategory $model, $deep = true)
     {
         $min_price = 0;
-        $products = array();
-        $pr = $this->getCategoryProducts($model);
+        $products  = array();
+        $pr        = $this->getCategoryProducts($model);
 
         $type = null; //identified by first product in category
-        foreach($pr as $p) {
+        foreach ($pr as $p) {
             $pa = $this->toApiArray($p, false);
-            if (reset($pr) == $p){
+            if (reset($pr) == $p) {
                 $type = $p->type;
             }
-            $products[] = $pa;
+            $products[]    = $pa;
             $startingPrice = isset($pa['price_starting_from']) ? $pa['price_starting_from'] : 0;
-            if($startingPrice < $min_price) {
+
+            if (0 == $min_price) {
+                $min_price = $startingPrice;
+            } elseif ($startingPrice < $min_price) {
                 $min_price = $startingPrice;
             }
         }
 
-        $data = $this->di['db']->toArray($model);
+        $data                        = $this->di['db']->toArray($model);
         $data['price_starting_from'] = $min_price;
-        $data['icon_url'] = $model->icon_url;
-        $data['type'] = $type;
-        $data['products'] = $products;
+        $data['icon_url']            = $model->icon_url;
+        $data['type']                = $type;
+        $data['products']            = $products;
+
         return $data;
     }
 

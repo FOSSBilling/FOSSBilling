@@ -46,7 +46,7 @@
 
 </div>
 
-{% include "partial_pagination.phtml" with {'list': history, 'url':'staff/logins'} %}
 {% include "partial_batch_delete.phtml" with {'action' : 'admin/staff/batch_delete_logs'} %}
+{% include "partial_pagination.phtml" with {'list': history, 'url':'staff/logins'} %}
 
 {% endblock %}

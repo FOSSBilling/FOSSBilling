@@ -31,3 +31,4 @@ require_once 'BBModTestCase.php';
 require_once BB_PATH_TESTS.'/includes/Payment/Adapter/Dummy.php';
 
 $di = include BB_PATH_ROOT . '/bb-di.php';
+$di['translate']();

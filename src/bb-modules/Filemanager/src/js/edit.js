@@ -15,7 +15,7 @@ $(function(){
 		tabTemplate: '<li><a href="#{href}"><span>#{label}</span></a><span class="ui-icon ui-icon-close"></span></li>',
 		add: function(event, ui) {
 			var dpath = openFiles[ui.index].path;
-			var npath = bbUrl+'/filemanager/editor?file='+dpath;
+			var npath = bbUrl+'/filemanager/editor&file='+dpath;
 			var html = '<iframe class="editor-iframe" src="'+npath+'"></iframe>';
             $(ui.tab).parent().find('span.ui-icon-close').attr('data-path', dpath);
 			$(ui.panel).html(html);

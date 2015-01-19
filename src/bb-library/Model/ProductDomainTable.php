@@ -54,6 +54,9 @@ class Model_ProductDomainTable extends Model_ProductTable
         return 0;
     }
 
+    /**
+     * @param string $actionName
+     */
     private function isActionNameSet($item, $actionName)
     {
         return isset($item['config']['domain']['action']) && $item['config']['domain']['action'] == $actionName;

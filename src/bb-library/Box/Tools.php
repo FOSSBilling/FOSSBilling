@@ -16,7 +16,7 @@ class Box_Tools
     protected $di = null;
 
     /**
-     * @param null $di
+     * @param Box_Di|null $di
      */
     public function setDi($di)
     {
@@ -24,7 +24,7 @@ class Box_Tools
     }
 
     /**
-     * @return null
+     * @return Box_Di|null
      */
     public function getDi()
     {
@@ -159,9 +159,9 @@ class Box_Tools
         $d = dir($folder);
         while (false !== ($entry = $d->read())) {
             $isdir = is_dir($folder."/".$entry);
-            if (!$isdir and $entry!="." and $entry!="..") {
+            if (!$isdir && $entry!="." && $entry!="..") {
                 unlink($folder."/".$entry);
-            } elseif ($isdir  and $entry!="." and $entry!="..") {
+            } elseif ($isdir  &&  $entry!="." && $entry!="..") {
                 $this->emptyFolder($folder."/".$entry);
                 rmdir($folder."/".$entry);
             }
@@ -221,6 +221,8 @@ class Box_Tools
 				$other = $length - $lower - $upper - $numeric;
 			break;
 		}
+
+        $passOrder = array();
 
 		for ($i = 0; $i < $upper; $i++) {
         	$passOrder[] = $upper_letters[rand() % strlen($upper_letters)];
@@ -420,7 +422,7 @@ class Box_Tools
             $file_path = BB_PATH_CACHE .DIRECTORY_SEPARATOR. md5($cacheKey);
 
             // If the file hasn't yet been created or is out of date then call the require function and store it's result.
-            if(!file_exists($file_path) OR filemtime($file_path) < (time() - $timeoutSeconds)){
+            if(!file_exists($file_path) || filemtime($file_path) < (time() - $timeoutSeconds)){
                     $result = call_user_func_array($buildCallback, $args);
                     file_put_contents($file_path, serialize($result), LOCK_EX);
             // Else, grab the result from the cache.

@@ -338,6 +338,9 @@ class HTTPRetriever {
 		return $this->_execute_request($url,$cookies);
 	}	
 	
+	/**
+	 * @param string $arrayname
+	 */
 	function array_to_query($arrayname,$arraycontents) {
 		$output = "";
 		foreach ($arraycontents as $key=>$value) {
@@ -416,6 +419,10 @@ class HTTPRetriever {
 	}
 	
 	// (internal) store a page in the cache
+
+	/**
+	 * @param string $token
+	 */
 	function _cache_store($token,$url) {
 
 		if ($this->caching_intelligent) {
@@ -465,6 +472,10 @@ class HTTPRetriever {
 	}
 	
 	// (internal) fetch a page from the cache
+
+	/**
+	 * @param string $token
+	 */
 	function _cache_fetch($token) {
 		$this->cache_hit = false;
 		$this->progress(HRP_DEBUG,"Checking for cached page value");
@@ -1145,6 +1156,9 @@ class HTTPRetriever {
 		return ($this->error === false);
 	}
 	
+	/**
+	 * @param integer $level
+	 */
 	function progress($level,$msg) {
 		if (is_callable($this->progress_callback)) call_user_func($this->progress_callback,$level,$msg);
 	}

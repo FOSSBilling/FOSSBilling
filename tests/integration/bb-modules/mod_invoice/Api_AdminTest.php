@@ -812,4 +812,30 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         $this->assertEquals(0, count($array['list']));
         $this->assertTrue($result);
     }
+
+    public function testPrepareInvoiceDueDateProvider()
+    {
+        return array(
+            array(100, 100),
+            array('', 1),
+            array(null, 1),
+        );
+    }
+
+    /**
+     * @dataProvider testPrepareInvoiceDueDateProvider
+     */
+    public function testPrepareInvoiceDueDate($invoice_due_days, $diff)
+    {
+        if (!is_null($invoice_due_days)) {
+            $this->api_admin->system_update_params(array('invoice_due_days' => $invoice_due_days));
+        }
+
+        $data  = array(
+            'client_id' => 1,
+        );
+        $id    = $this->api_admin->invoice_prepare($data);
+        $array = $this->api_admin->invoice_get(array('id' => $id));
+        $this->assertEquals(substr($array['due_at'], 0, 10), date('Y-m-d', strtotime("+ $diff day")));
+    }
 }

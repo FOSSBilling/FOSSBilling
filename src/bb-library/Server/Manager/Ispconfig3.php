@@ -382,6 +382,9 @@ class Server_Manager_Ispconfig3 extends Server_Manager
         return true;
     }
 
+    /**
+     * @param integer $type
+     */
     private function createClient(Server_Account &$a, $type)
     {
         $client     = $a->getClient();
@@ -553,6 +556,9 @@ class Server_Manager_Ispconfig3 extends Server_Manager
         return $this;
     }
 
+    /**
+     * @param string $action
+     */
     private function _request($action, $params = array())
     {
 		$this->getLog()->debug(sprintf('ISP Config 3 action "%s" called with params: "%s" ', $action, print_r($params,1)));

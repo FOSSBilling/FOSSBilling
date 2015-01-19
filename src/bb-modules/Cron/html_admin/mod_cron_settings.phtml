@@ -18,23 +18,6 @@
         <h5 class="iCog">{% trans 'Cron settings' %}</h5>
     </div>
 
-    {% set params = admin.extension_config_get({"ext":"mod_cron"}) %}
-    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="Settings updated">
-        <fieldset>
-            <div class="rowElem noborder">
-                <label>{% trans 'Use Web-Cron' %}</label>
-                <div class="formRight">
-                    <input type="radio" name="use_web_cron" value="1" {% if params.use_web_cron %}checked="checked"{% endif %}/><label>Yes</label>
-                    <input type="radio" name="use_web_cron" value="0" {% if not params.use_web_cron %}checked="checked"{% endif %}/><label>No</label>
-                </div>
-                <div class="fix"></div>
-            </div>
-
-            <input type="hidden" name="ext" value="mod_cron" />
-            <input type="submit" value="{% trans 'Update settings' %}" class="greyishBtn submitForm" />
-        </fieldset>
-    </form>
-
     <div class="help">
         <h3>{% trans 'Setup scheduled tasks to be executed once a day' %}</h3>
         <p>{% trans 'Scheduled tasks must be enabled immediately after installation. Cron is responsible for sending your clients reminder about payments, domain renewal notices and many more.' %}</p>

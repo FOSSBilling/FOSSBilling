@@ -3,7 +3,22 @@
 
 <section>
     <div class="well">
-        <header><strong>{{ product.title }}</strong></header>
+        <strong>{{ product.title }}</strong>
+        {{ product.description | bbmd }}
+
+        {% if product.pricing.type == 'recurrent' %}
+        <select name="period" id="period-selector">
+            {% for code,prices in product.pricing.recurrent %}
+            {% if prices.enabled %}
+            <option value="{{code}}" data-bb-price="{{ prices.price | money_convert }}" name="period">{{ periods[code] }} - {{ prices.price | money_convert }}</option>
+            {% endif %}
+            {% endfor %}
+        </select>
+        {% elseif product.pricing.type == 'free' %}
+        <span class="label label-info">{% trans 'FREE' %}</span>
+        {% else %}
+        <span class="label label-info">{{ product.pricing.once.price | money_convert }}</span>
+        {% endif %}
         <div class="row-fluid">
         <label class="control-label">{% trans 'Vps hostname' %} </label>
             <div class="controls">

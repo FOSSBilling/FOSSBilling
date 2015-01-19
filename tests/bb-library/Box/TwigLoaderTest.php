@@ -14,7 +14,7 @@ class Box_TwigLoaderTest extends PHPUnit_Framework_TestCase
             "theme" => BB_PATH_THEMES.DIRECTORY_SEPARATOR."huraga",
             "type" => "client"
         ));
-        $test =  $loader->getSource("mod_cron_check.phtml");
+        $test =  $loader->getSource("mod_example_index.phtml");
         $test2 =  $loader->getSource("404.phtml");
 
         $this->assertInternalType('string', $test);

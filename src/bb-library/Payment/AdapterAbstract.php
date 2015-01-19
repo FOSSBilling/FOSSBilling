@@ -154,6 +154,7 @@ abstract class Payment_AdapterAbstract
 
     /**
      * Get config parameter
+     * @param string $param
      */
     public function getParam($param)
     {
@@ -176,7 +177,7 @@ abstract class Payment_AdapterAbstract
      * Set test mode
      *
      * @param none
-     * @return none
+     * @return Payment_AdapterAbstract
      */
     public function setTestMode($bool)
     {
@@ -194,6 +195,7 @@ abstract class Payment_AdapterAbstract
      * Used only by payment gateways who care about notify_url response
      * 
      * @param string
+     * @param string $response
      */
     public function setOutput($response)
     {

@@ -279,7 +279,7 @@ class Server_Manager_Whm extends Server_Manager
 
     /**
      * Check if Package exists
-     * @param Server_Account $a
+     * @param Server_Package $package
      * @return bool
      */
     private function _checkPackageExists(Server_Package $package, $create = false)
@@ -396,6 +396,9 @@ class Server_Manager_Whm extends Server_Manager
         return $return;
     }
 
+    /**
+     * @param string $action
+     */
     private function _request($action, $params = array())
     {
         $this->getLog()->debug(sprintf('Requesting WHM server action "%s" with params "%s" ', $action, print_r($params, true)));
@@ -715,7 +718,7 @@ class xmlapi {
 	* the queries made, the response XML/JSON and other such pertinent information.
 	* Calling this function without any parameters will enable debug mode.
 	*
-	* @param bool $debug turn on or off debug mode
+	* @param integer $debug turn on or off debug mode
 	* @see get_debug()
 	*/
 	public function set_debug( $debug = 1 ) {
@@ -748,7 +751,7 @@ class xmlapi {
 	* Get the port to connect to
 	*
 	* This will return which port the class is connecting to
-	* @return int $port
+	* @return string $port
 	* @see set_port()
 	*/
 	public function get_port() {
@@ -874,6 +877,7 @@ class xmlapi {
 	* @see set_hash()
 	* @see get_auth_type()
 	* @param string auth_type the auth type to be set
+	* @param string $auth_type
 	*/
 	public function set_auth_type( $auth_type ) {
 		if ( $auth_type != 'hash' && $auth_type != 'pass') {
@@ -1151,6 +1155,11 @@ class xmlapi {
 		return $response;
 	}
 	
+	/**
+	 * @param string $url
+	 * @param string $postdata
+	 * @param string $authstr
+	 */
 	private function curl_query( $url, $postdata, $authstr ) {
 		$curl = curl_init();
 		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
@@ -1184,6 +1193,11 @@ class xmlapi {
 		return $result;
 	}
 	
+	/**
+	 * @param string $url
+	 * @param string $postdata
+	 * @param string $authstr
+	 */
 	private function fopen_query( $url, $postdata, $authstr ) {
 		if ( !(ini_get('allow_url_fopen') ) ) {
 			throw new Exception('fopen_query called on system without allow_url_fopen enabled in php.ini');
@@ -2363,9 +2377,6 @@ class xmlapi {
 	* @param string $nameserver1 The IP of the first nameserver to use
 	* @param string $nameserver2 The IP of the second namesever to use
 	* @param string $nameserver3 The IP of the third nameserver to use
-	* @param string $nameserver4 The IP of the forth nameserver to use
-	* @return mixed
-	* @link http://docs.cpanel.net/twiki/bin/view/AllDocumentation/AutomationIntegration/SetResolvers XML API Call documentation
 	*/
 	public function setresolvers($nameserver1, $nameserver2 = null, $nameserver3 = null) {
 		$args = array();
@@ -2441,9 +2452,6 @@ class xmlapi {
 	* Service Status
 	*
 	* This function will return the status of all services on the and whether they are running or not
-	* @param string $service A single service to filter for.
-	* @return mixed
-	* @link http://docs.cpanel.net/twiki/bin/view/AllDocumentation/AutomationIntegration/ServiceStatus XML API Call documentation
 	*/
     public function servicestatus($args=array())
      {

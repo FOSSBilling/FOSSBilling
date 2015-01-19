@@ -47,5 +47,6 @@ class Box_DiTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('\Model_Cart', $di['cart']);
         $this->assertInstanceOf('\GeoIp2\Database\Reader', $di['geoip']);
         $this->assertInstanceOf('\Box_Password', $di['password']);
+        $this->assertInstanceOf('\Box_Translate', $di['translate']());
     }
 }

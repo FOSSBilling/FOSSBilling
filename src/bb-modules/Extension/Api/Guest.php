@@ -61,7 +61,7 @@ class Guest extends \Api_Abstract
         }
         $service = $this->getService();
         $config = $service->getConfig($data['ext']);
-        return (isset($config['public']) and is_array($config['public'])) ? $config['public'] : array();
+        return (isset($config['public']) && is_array($config['public'])) ? $config['public'] : array();
     }
 
     /**

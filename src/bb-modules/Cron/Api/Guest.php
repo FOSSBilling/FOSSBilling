@@ -25,12 +25,6 @@ class Guest extends \Api_Abstract
      */
     public function check()
     {
-        $config = $this->getMod()->getConfig();
-        $service = $this->getService();
-        if(isset($config['use_web_cron']) && $config['use_web_cron'] && $service->isLate()) {
-            $service->runCrons();
-            return true;
-        }
         return false;
     }
 

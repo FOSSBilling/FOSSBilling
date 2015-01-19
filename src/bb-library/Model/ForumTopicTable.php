@@ -28,9 +28,20 @@ class Model_ForumTopicTable implements \Box\InjectionAwareInterface
     {
         return $this->di;
     }
+
     public function getActiveForumTopics(Model_Forum $forum)
     {
-        return $this->getActiveForumTopicsQuery($forum)->execute();
+        $query = "SELECT * FROM forum_topic ft
+                LEFT JOIN forum_topic_message ftm ON ftm.forum_topic_id = ft.id
+                WHERE ft.forum_id = :forum_id
+                AND ft.status IN ('active', 'locked')
+                ORDER BY ftm.created_at DESC";
+
+        $bindings = array(
+            ':forum_id' => $forum->id
+        );
+
+        return $this->di['db']->exec($query, $bindings);
     }
 
     public function getSearchQuery($data)
@@ -73,22 +84,7 @@ class Model_ForumTopicTable implements \Box\InjectionAwareInterface
 
         return $this->di['db']->find('ForumTopic', "id IN (:ids) AND status IN ('active', 'locked')", $bindings);
     }
-    
-    public function getActiveForumTopicsQuery(Model_Forum $forum)
-    {
-        $query = "SELECT * FROM forum_topic ft
-                LEFT JOIN forum_topic_message ftm ON ftm.forum_topic_id = ft.id
-                WHERE ft.forum_id = :forum_id
-                AND ft.status IN ('active', 'locked')
-                ORDER BY ftm.created_at DESC";
 
-        $bindings = array(
-            ':forum_id' => $forum->id
-        );
-
-        return array($query, $bindings);
-    }
-    
     public function findTopic($slug)
     {
         $query = "SELECT ft.*, f.* FROM forum_topic ft

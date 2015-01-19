@@ -188,6 +188,9 @@ class Registrar_Adapter_Dottk extends Registrar_AdapterAbstract
     Please see http://www.dot.tk/en/pageH12.html for detailed argument
     description and examples.
     */
+    /**
+     * @param string $call
+     */
     private function _rest_call($call, $args = array())
     {
         $base_url = "https://api.domainshare.tk/";
@@ -267,6 +270,9 @@ class Registrar_Adapter_Dottk extends Registrar_AdapterAbstract
 
         Required arguments: email,password,domainname
     */
+    /**
+     * @param string $domainname
+     */
     private function domainshare_availability_check($domainname)
     {
         $result = $this->_rest_call("availability_check",array("domainname" => $domainname));
@@ -288,6 +294,10 @@ class Registrar_Adapter_Dottk extends Registrar_AdapterAbstract
         Required arguments: email,password,domainname,enduseremail
                             + nameservers OR forwardurl
     */
+    /**
+     * @param string $domainname
+     * @param integer $monthsofregistration
+     */
     private function domainshare_register($domainname,$enduseremail,$monthsofregistration=null,$nameservers=null,$forwardurl=null)
     {
         $result = $this->_rest_call("register",array("domainname" => $domainname, "enduseremail" => $enduseremail, "monthsofregistration" => $monthsofregistration, "nameservers" => $nameservers, "forwardurl" => $forwardurl));
@@ -305,6 +315,10 @@ class Registrar_Adapter_Dottk extends Registrar_AdapterAbstract
 
         Required arguments: email,password,domainname
     */
+    /**
+     * @param string $domainname
+     * @param integer $monthsofregistration
+     */
     private function domainshare_renew($domainname,$monthsofregistration=null)
     {
         $result = $this->_rest_call("renew",array("domainname" => $domainname, "monthsofregistration" => $monthsofregistration));
@@ -387,6 +401,9 @@ class Registrar_Adapter_Dottk extends Registrar_AdapterAbstract
         Required arguments: email,password,domainname
                             + nameservers OR forwardurl
     */
+    /**
+     * @param string $domainname
+     */
     private function domainshare_modify($domainname,$nameservers=null,$forwardurl=null)
     {
         $result = $this->_rest_call("modify",array("domainname" => $domainname, "nameservers" => $nameservers, "forwardurl" => $forwardurl));

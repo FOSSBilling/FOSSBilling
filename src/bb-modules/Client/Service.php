@@ -20,7 +20,7 @@ class Service implements InjectionAwareInterface
     protected $di = null;
 
     /**
-     * @param null $di
+     * @param Box_Di|null $di
      */
     public function setDi($di)
     {
@@ -28,7 +28,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @return null
+     * @return Box_Di|null
      */
     public function getDi()
     {

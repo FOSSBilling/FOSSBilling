@@ -288,6 +288,9 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         return number_format($amount, 2, '.', '');
     }
 
+	/**
+	 * @param string $url
+	 */
 	private function download($url, $post_vars = false, $phd = array(), $contentType = 'application/x-www-form-urlencoded')
     {
 		$post_contents = '';
@@ -345,6 +348,9 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
 		return $data;
 	}
     
+    /**
+     * @param string $url
+     */
     private function _generateForm($url, $data, $method = 'post')
     {
         $form  = '';

@@ -29,6 +29,23 @@
                 </div>
 
                 <div class="rowElem">
+                    <label>{% trans 'Client' %}</label>
+
+                    <div class="formRight">
+
+                        <input type="text" class="client_selector"
+                               placeholder="{% trans 'Start typing clients name, email or ID' %}"
+                        {% if request.client_id %}
+                            {% set client = admin.client_get({"id":request.client_id}) %}
+                            value="{{ client.first_name }} {{ client.last_name }}"
+                        {% endif %}
+                            />
+                        <input type="hidden" name="client_id" value="{{ request.client_id }}" class="client_id"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
                     <label>{% trans 'Currency' %}</label>
                     <div class="formRight">
                         {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All currencies') }}
@@ -142,9 +159,9 @@
                     {% endfor %}
                 </tbody>
             </table>
-            
-            {% include "partial_pagination.phtml" with {'list': invoices, 'url':'invoice'} %}
+
             {% include "partial_batch_delete.phtml" with {'action' : 'admin/invoice/batch_delete'} %}
+            {% include "partial_pagination.phtml" with {'list': invoices, 'url':'invoice'} %}
         </div>
 
         <div class="tab_content nopadding" id="tab-new">
@@ -153,8 +170,8 @@
                     <div class="rowElem noborder">
                         <label>{% trans 'Client' %}</label>
                         <div class="formRight">
-                            <input type="text" id="client_selector" placeholder="{% trans 'Start typing clients name, email or ID' %}"/>
-                            <input type="hidden" name="client_id" value="{{ request.client_id }}" id="client_id"/>
+                            <input type="text" class="client_selector" placeholder="{% trans 'Start typing clients name, email or ID' %}"/>
+                            <input type="hidden" name="client_id" value="{{ request.client_id }}" class="client_id"/>
                         </div>
                         <div class="fix"></div>
                     </div>
@@ -178,7 +195,7 @@
 <script type="text/javascript">
 $(function() {
 
-	$('#client_selector').autocomplete({
+	$('.client_selector').autocomplete({
         source: function( request, response ) {
             $.ajax({
                 url: bb.restUrl('admin/client/get_pairs'),
@@ -199,8 +216,8 @@ $(function() {
         },
         minLength: 1,
         select: function( event, ui ) {
-            $("#client_selector").val(ui.item.label);
-            $("#client_id").val(ui.item.value);
+            $(".client_selector").val(ui.item.label);
+            $(".client_id").val(ui.item.value);
             return false;
         }
     });

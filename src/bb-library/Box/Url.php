@@ -39,6 +39,9 @@ class Box_Url implements Box\InjectionAwareInterface
         return $this->baseUri . $uri;
     }
 
+    /**
+     * @param string $uri
+     */
     public function link($uri = null, $params = array())
     {
         $uri = trim($uri, '/');

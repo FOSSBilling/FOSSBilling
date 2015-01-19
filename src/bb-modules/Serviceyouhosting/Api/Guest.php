@@ -21,13 +21,16 @@ class Guest extends \Api_Abstract
      * Youhosting webhooks listener
      *
      * @return bool
+     *
+     * @throws \Exception
      */
     public function webhook($data)
     {
         $this->di['logger']->info('YouHosting WebHook: ' . print_r($data, 1));
 
-        $config = $this->_mod->getConfig();
-        if(isset($config['yh_ips'])) {
+        $config = $this->di['mod_config']('serviceyouhosting');
+
+        if (isset($config['yh_ips'])) {
             $allowed_ips = explode(PHP_EOL, $config['yh_ips']);
             array_walk($allowed_ips, create_function('&$val', '$val = trim($val);'));
         } else {
@@ -36,26 +39,26 @@ class Guest extends \Api_Abstract
             );
         }
 
-        if(!in_array($this->_ip, $allowed_ips)) {
-            throw new Exception('IP not allowed');
+        if (!in_array($this->di['request']->getClientAddress(), $allowed_ips)) {
+            throw new \Exception('IP not allowed');
         }
 
-        if(!isset($data['yh_event'])) {
-            throw new Exception('Event name is missing');
+        if (!isset($data['yh_event'])) {
+            throw new \Exception('Event name is missing');
         }
 
         $account_id = isset($data['yh_account_id']) ? $data['yh_account_id'] : null;
-        $client_id = isset($data['yh_client_id']) ? $data['yh_client_id'] : null;
+        $client_id  = isset($data['yh_client_id']) ? $data['yh_client_id'] : null;
 
-        $service = $this->getService();
-        $api_admin = $this->getApiAdmin();
+        $service      = $this->getService();
+        $orderService = $this->di['mod_service']('order');
 
         switch ($data['yh_event']) {
             case 'CREATE_ACCOUNT':
                 $bb_order_id = $service->isYHAccountImported($account_id);
-                if(!$bb_order_id) {
-                    $account = $service->getApi()->call('Account.get', array('id'=>$account_id));
-                    $service->importYouhostingAccount($account, $api_admin);
+                if (!$bb_order_id) {
+                    $account = $service->getApi()->call('Account.get', array('id' => $account_id));
+                    $service->importYouhostingAccount($account);
 
                     $this->di['logger']->info('Imported YouHosting account. Invoked by WebHook');
                 }
@@ -64,27 +67,27 @@ class Guest extends \Api_Abstract
 
             case 'SUSPEND_ACCOUNT':
                 $bb_order_id = $service->isYHAccountImported($account_id);
-                $order = $api_admin->order_get(array('id'=>$bb_order_id));
-                if($order['status'] == 'active') {
-                    $api_admin->order_suspend(array('id'=>$bb_order_id, 'reason'=>'Auto-Suspend'));
+                $order       = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+                if ($order->status == 'active') {
+                    $orderService->suspendFromOrder($order, 'Auto-Suspend');
                     $this->di['logger']->info('Suspended YouHosting account. Invoked by WebHook');
                 }
                 break;
 
             case 'UNSUSPEND_ACCOUNT':
                 $bb_order_id = $service->isYHAccountImported($account_id);
-                $order = $api_admin->order_get(array('id'=>$bb_order_id));
-                if($order['status'] == 'suspended') {
-                    $api_admin->order_unsuspend(array('id'=>$bb_order_id));
+                $order       = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+                if ($order->status == 'suspended') {
+                    $orderService->unsuspendFromOrder($order);
                     $this->di['logger']->info('Unsuspended YouHosting account. Invoked by WebHook');
                 }
                 break;
 
             case 'REMOVE_ACCOUNT':
                 $bb_order_id = $service->isYHAccountImported($account_id);
-                $order = $api_admin->order_get(array('id'=>$bb_order_id));
-                if($order['status'] == 'active') {
-                    $api_admin->order_cancel(array('id'=>$bb_order_id, 'reason'=>'Auto-Suspend'));
+                $order       = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+                if ($order->status == 'active') {
+                    $orderService->cancelFromOrder($order, 'Auto-Suspend');
                     $this->di['logger']->info('Canceled YouHosting account. Invoked by WebHook');
                 }
                 break;
@@ -105,18 +108,19 @@ class Guest extends \Api_Abstract
     {
         $key = 'settings_subdomains';
 
-        $cache = new FileCache();
-        if($cache->exists($key)) {
+        $cache = $this->di['cache'];
+        if ($cache->exists($key)) {
             return $cache->get($key);
         }
 
         try {
             $result = $this->getService()->getApi()->call('Settings.subdomains');
             $cache->set($key, $result);
-        } catch(Exception $e) {
+        } catch (\Exception $e) {
             error_log($e->getMessage());
             $result = array();
         }
+
         return $result;
     }
 }

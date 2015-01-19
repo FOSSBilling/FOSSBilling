@@ -136,36 +136,6 @@ ini_set('log_errors', '1');
 ini_set('html_errors', FALSE);
 ini_set('error_log', BB_PATH_LOG . '/php_error.log');
 
-$lang = (isset($_COOKIE) && isset($_COOKIE['BBLANG']) && !empty($_COOKIE['BBLANG'])) ? $_COOKIE['BBLANG'] : $config['locale'];
-$domain = 'messages';
-$codeset = "UTF-8";
-if(!function_exists('gettext')) {
-    require_once BB_PATH_LIBRARY . '/php-gettext/gettext.inc';
-    T_setlocale(LC_MESSAGES, $lang.'.'.$codeset);
-    T_setlocale(LC_TIME, $lang.'.'.$codeset);
-    T_bindtextdomain($domain, BB_PATH_LANGS);
-    T_bind_textdomain_codeset($domain, $codeset);
-    T_textdomain($domain);
-} else {
-    @putenv('LANG='.$lang.'.'.$codeset);
-    @putenv('LANGUAGE='.$lang.'.'.$codeset);
-    // set locale
-    if (!defined('LC_MESSAGES')) define('LC_MESSAGES', 5);
-    if (!defined('LC_TIME')) define('LC_TIME', 2);
-    setlocale(LC_MESSAGES, $lang.'.'.$codeset);
-    setlocale(LC_TIME, $lang.'.'.$codeset);
-    bindtextdomain($domain, BB_PATH_LANGS);
-    if(function_exists('bind_textdomain_codeset')) bind_textdomain_codeset($domain, $codeset);
-    textdomain($domain);
-    
-    function __($msgid, array $values = NULL)
-    {
-        if(empty($msgid)) return null;
-        $string = gettext($msgid);
-        return empty($values) ? $string : strtr($string, $values);
-    }
-}
-
 // Strip magic quotes from request data.
 if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
     // Create lamba style unescaping function (for portability)

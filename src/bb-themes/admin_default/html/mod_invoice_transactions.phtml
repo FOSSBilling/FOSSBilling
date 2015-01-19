@@ -142,8 +142,8 @@
         </tbody>
     </table>
 
-    {% include "partial_batch_delete.phtml" with {'action':'admin/invoice/batch_delete_transaction'} %}
 
 </div>
+{% include "partial_batch_delete.phtml" with {'action':'admin/invoice/batch_delete_transaction'} %}
 {% include "partial_pagination.phtml" with {'list': transactions, 'url':'invoice/transactions'} %}
 {% endblock %}

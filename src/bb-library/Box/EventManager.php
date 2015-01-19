@@ -56,6 +56,10 @@ class Box_EventManager implements \Box\InjectionAwareInterface
     }
 
 
+    /**
+     * @param Box_EventDispatcher $disp
+     * @param string $event
+     */
     private function _connectDatabaseHooks(&$disp, $event)
     {
         $sql="SELECT id, rel_id, meta_value

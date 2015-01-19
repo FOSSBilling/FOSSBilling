@@ -246,6 +246,11 @@ class ServicePayGateway implements InjectionAwareInterface
         }
 
         $adapter = new $class($config);
+
+        if(method_exists($adapter, 'setDi')) {
+            $adapter->setDi($this->di);
+        }
+
         return $adapter;
     }
 
@@ -310,6 +315,9 @@ class ServicePayGateway implements InjectionAwareInterface
         return (isset($config['description'])) ? $config['description'] : NULL;
     }
 
+    /**
+     * @param \Model_Invoice $model
+     */
     private function getCallbackUrl(\Model_PayGateway $pg, $model = null)
     {
         $p = array(
@@ -321,23 +329,32 @@ class ServicePayGateway implements InjectionAwareInterface
         return $this->di['config']['url'] . 'bb-ipn.php?'.http_build_query($p);
     }
 
+    /**
+     * @param \Model_Invoice $model
+     */
     private function getReturnUrl(\Model_PayGateway $pg, $model = null)
     {
         if($model instanceof \Model_Invoice) {
-            return $this->di['tools']->url('/invoice/'.$model->hash.'?status=ok');
+            return $this->di['url']->link('/invoice/'.$model->hash, array('status'=> 'ok'));
         }
-        return $this->di['tools']->url('/invoice?status=ok');
+        return $this->di['url']->link('/invoice', array('status'=> 'ok'));
     }
 
 
+    /**
+     * @param \Model_Invoice $model
+     */
     private function getCancelUrl(\Model_PayGateway $pg, $model = null)
     {
         if($model instanceof \Model_Invoice) {
-            return $this->di['tools']->url('/invoice/'.$model->hash.'?status=cancel');
+            return $this->di['url']->link('/invoice/'.$model->hash, array('status'=> 'cancel'));
         }
-        return $this->di['tools']->url('/invoice?status=cancel');
+        return $this->di['url']->link('/invoice', array('status'=> 'cancel'));
     }
 
+    /**
+     * @param \Model_Invoice $model
+     */
     private function getCallbackRedirect(\Model_PayGateway $pg, $model = null)
     {
         $p = array(

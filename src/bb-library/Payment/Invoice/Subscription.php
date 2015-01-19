@@ -37,6 +37,9 @@ class Payment_Invoice_Subscription
         return $this->id;
     }
 
+    /**
+     * @param double $price
+     */
     public function setAmount($price)
     {
         $this->amount = $price;

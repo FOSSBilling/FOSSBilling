@@ -10,7 +10,7 @@ class Payment_Adapter_WebMoneyTest extends BBDbApiTestCase
     {
         $config  = array(
             'purse'       => 'test',
-            'success_url' => 'http://www.google.com?q=success',
+            'return_url' => 'http://www.google.com?q=success',
             'cancel_url'  => 'http://www.google.com?q=cancel',
             'notify_url'  => 'http://www.google.com?q=notify',
         );
@@ -24,6 +24,7 @@ class Payment_Adapter_WebMoneyTest extends BBDbApiTestCase
             'LMI_SYS_TRANS_NO'   => '1',
             'LMI_PAYER_PURSE'    => 'WMZ'
         );
-        $adapter->processTransaction($this->api_admin, 1, $data);
+        $adapter->setDi($this->di);
+        $adapter->processTransaction($this->api_admin, 1, $data, 4);
     }
 }

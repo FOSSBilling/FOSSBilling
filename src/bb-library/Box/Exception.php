@@ -17,7 +17,7 @@ class Box_Exception extends Exception
 	 *
 	 * @param   string   error message
 	 * @param   array    translation variables
-	 * @return  void
+	 * @return  Exception|null
 	 */
 	public function __construct($message, array $variables = NULL, $code = 0)
 	{

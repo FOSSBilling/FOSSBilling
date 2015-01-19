@@ -157,9 +157,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $logMock = $this->getMockBuilder('\Box_Log')->getMock();
 
-        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->setMethods(array('updateParam'))->getMock();
+        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->setMethods(array('setParamValue'))->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
-            ->method('updateParam')
+            ->method('setParamValue')
             ->will($this->returnValue(true));
 
         $di = new \Box_Di();

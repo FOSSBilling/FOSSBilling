@@ -76,6 +76,9 @@ class Client implements InjectionAwareInterface
         return $this->tryCall($role, $call, $p);
     }
 
+    /**
+     * @param string $call
+     */
     private function tryCall($role, $call, $p)
     {
         try {

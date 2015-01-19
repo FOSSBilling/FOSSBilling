@@ -95,6 +95,10 @@ class Box_Database implements InjectionAwareInterface
         return $beans;
     }
 
+    /**
+     * @param string $modelName
+     * @param integer $id
+     */
     public function load($modelName,$id)
     {
         $type = $this->_getTypeFromModelName($modelName);

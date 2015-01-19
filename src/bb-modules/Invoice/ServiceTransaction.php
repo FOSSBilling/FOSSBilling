@@ -347,6 +347,9 @@ class ServiceTransaction implements InjectionAwareInterface
         );
     }
 
+    /**
+     * @param \Model_Transaction $model
+     */
     public function oldProcessLogic($model)
     {
         $tx = $this->process($model);
@@ -517,7 +520,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
-        $ipn = json_decode($tx->ipn);
+        $ipn = $this->di['tools']->decodeJ($tx->ipn);
 
         if(empty($tx->gateway_id)) {
             throw new \Box_Exception('Could not determine transaction origin. Transaction payment gateway is unknown.', null, 701);
@@ -681,7 +684,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $serviceSubscription = $this->di['mod_service']("Subscription");
         $model = $this->di['db']->load('Subscription', $tx->s_id);
         if(!$model instanceof \Model_Subscription) {
-            throw new \Box_Exception('Subscription #:id was not found. Could not unsusbscribe', array(':id'=>$tx->s_id));
+            throw new \Box_Exception('Subscription #:id was not found. Could not unsubscribe', array(':id'=>$tx->s_id));
         }
 
         $serviceSubscription->unsubscribe($model);

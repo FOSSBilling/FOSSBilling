@@ -10,6 +10,7 @@
  * with this source code in the file LICENSE
  */
 
+namespace Box\Mod\Serviceyouhosting;
 
 class Youhosting_Api
 {
@@ -22,17 +23,19 @@ class Youhosting_Api
 
     public function call($resource, $params = array())
     {
-        list($class, $method) = explode('.',$resource);
+        list($class, $method) = explode('.', $resource);
         $version = isset($this->config['version']) ? $this->config['version'] : 'V1';
-        $r = 'Youhosting_Api_'.$version.'_'.$class;
+        $r       = '\Box\Mod\Serviceyouhosting\Youhosting_Api_' . $version . '_' . $class;
 
-        $reflection = new ReflectionClass($r);
+        $reflection = new \ReflectionClass($r);
 
-        if(!$reflection->hasMethod($method)) {
-            throw new Exception("Resource $resource is not valid. (Hint: Check resource method)", 101);
+        if (!$reflection->hasMethod($method)) {
+            throw new \Exception("Resource $resource is not valid. (Hint: Check resource method)", 101);
         }
 
+
         $m = $reflection->getMethod($method);
+
         return $m->invoke(new $r($this->config), $params);
     }
 }
@@ -46,22 +49,31 @@ class Youhosting_Api_V1
 
     public function __construct($config)
     {
-        if(!isset($config['api_key'])) {
-            throw new Exception('No API key provided');
+        if (!isset($config['api_key'])) {
+            throw new \Exception('No API key provided');
         }
         $this->config = $config;
     }
 
+    /**
+     * @param string $url
+     */
     protected function _post($url, array $params = array())
     {
         return $this->_request($url, $params, 'POST');
     }
 
+    /**
+     * @param string $url
+     */
     protected function _get($url, array $params = array())
     {
         return $this->_request($url, $params, 'GET');
     }
 
+    /**
+     * @param string $url
+     */
     protected function _delete($url, array $params = array())
     {
         return $this->_request($url, $params, 'DELETE');
@@ -70,38 +82,44 @@ class Youhosting_Api_V1
     private function _request($url, array $params = array(), $meth = 'POST')
     {
         $client = self::VERSION;
-        $absUrl = $this->apiBase.$url;
+        $absUrl = $this->apiBase . $url;
 
         $params['client_ip'] = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : $this->config['ip'];
 
         $langVersion = phpversion();
-        $uname = php_uname();
-        $ua = array(
+        $uname       = php_uname();
+        $ua          = array(
             'bindings_version' => $client,
-            'lang' => 'php',
-            'lang_version' => $langVersion,
-            'publisher' => 'youhosting',
-            'uname' => $uname
+            'lang'             => 'php',
+            'lang_version'     => $langVersion,
+            'publisher'        => 'youhosting',
+            'uname'            => $uname
         );
-        $headers = array(
+        $headers     = array(
             'X-Youhosting-Client-User-Agent: ' . json_encode($ua),
             'User-Agent: YouHosting/PHP/' . $client,
-            'Authorization: Basic ' . base64_encode('reseller:'.$this->config['api_key']),
+            'Authorization: Basic ' . base64_encode('reseller:' . $this->config['api_key']),
         );
 
-        if(isset($this->config['boxbilling'])) {
-           $headers[] = 'X-BoxBilling: ' . json_encode($this->config['boxbilling']);
+        if (isset($this->config['boxbilling'])) {
+            $headers[] = 'X-BoxBilling: ' . json_encode($this->config['boxbilling']);
         }
 
         list($rbody, $rcode) = $this->_curlRequest($meth, $absUrl, $headers, $params);
 
         $result = json_decode($rbody, true);
-        if($result['error']) {
-            throw new Exception($result['error']['message'],$result['error']['code']);
+        if ($result['error']) {
+            throw new \Exception($result['error']['message'], $result['error']['code']);
         }
+
         return $result['result'];
     }
 
+    /**
+     * @param string $meth
+     * @param string $absUrl
+     * @param string[] $headers
+     */
     private function _curlRequest($meth, $absUrl, $headers, $params)
     {
         $curl = curl_init();
@@ -111,27 +129,27 @@ class Youhosting_Api_V1
             $opts[CURLOPT_HTTPGET] = 1;
             if (count($params) > 0) {
                 $encoded = $this->_encode($params);
-                $absUrl = "$absUrl?$encoded";
+                $absUrl  = "$absUrl?$encoded";
             }
         } else if ($meth == 'post') {
-            $opts[CURLOPT_POST] = 1;
+            $opts[CURLOPT_POST]       = 1;
             $opts[CURLOPT_POSTFIELDS] = $this->_encode($params);
-        } else if ($meth == 'delete')  {
+        } else if ($meth == 'delete') {
             $opts[CURLOPT_CUSTOMREQUEST] = 'DELETE';
             if (count($params) > 0) {
                 $encoded = $this->_encode($params);
-                $absUrl = "$absUrl?$encoded";
+                $absUrl  = "$absUrl?$encoded";
             }
         } else {
-            throw new Exception("Unrecognized method $meth");
+            throw new \Exception("Unrecognized method $meth");
         }
 
-        $absUrl = $this->_utf8($absUrl);
-        $opts[CURLOPT_URL] = $absUrl;
+        $absUrl                       = $this->_utf8($absUrl);
+        $opts[CURLOPT_URL]            = $absUrl;
         $opts[CURLOPT_RETURNTRANSFER] = true;
         $opts[CURLOPT_CONNECTTIMEOUT] = 30;
-        $opts[CURLOPT_TIMEOUT] = 80;
-        $opts[CURLOPT_HTTPHEADER] = $headers;
+        $opts[CURLOPT_TIMEOUT]        = 80;
+        $opts[CURLOPT_HTTPHEADER]     = $headers;
         $opts[CURLOPT_SSL_VERIFYPEER] = false;
 
         curl_setopt_array($curl, $opts);
@@ -139,7 +157,7 @@ class Youhosting_Api_V1
         $errno = curl_errno($curl);
 
         if ($rbody === false) {
-            $errno = curl_errno($curl);
+            $errno   = curl_errno($curl);
             $message = curl_error($curl);
             curl_close($curl);
             $this->_handleCurlError($errno, $message);
@@ -147,13 +165,18 @@ class Youhosting_Api_V1
 
         $rcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
+
         return array($rbody, $rcode);
     }
 
+    /**
+     * @param integer $errno
+     * @param string $message
+     */
     private function _handleCurlError($errno, $message)
     {
         $supportEmail = 'support@youhosting.com';
-        $apiBase = $this->apiBase;
+        $apiBase      = $this->apiBase;
         switch ($errno) {
             case CURLE_COULDNT_CONNECT:
             case CURLE_COULDNT_RESOLVE_HOST:
@@ -169,7 +192,7 @@ class Youhosting_Api_V1
         }
 
         $msg .= "\n\n(Network error [errno $errno]: $message)";
-        throw new Exception($msg, (int)$errno);
+        throw new \Exception($msg, (int)$errno);
     }
 
     private function _utf8($value)
@@ -195,7 +218,7 @@ class Youhosting_Api_V1_Captcha extends Youhosting_Api_V1
 
     public function verify($params)
     {
-        return $this->_post('captcha/'.$params['id'], $params);
+        return $this->_post('captcha/' . $params['id'], $params);
     }
 }
 
@@ -208,7 +231,7 @@ class Youhosting_Api_V1_Client extends Youhosting_Api_V1
 
     public function get($params)
     {
-        return $this->_get('client/'.$params['id'], $params);
+        return $this->_get('client/' . $params['id'], $params);
     }
 
     public function getList($params)
@@ -218,7 +241,7 @@ class Youhosting_Api_V1_Client extends Youhosting_Api_V1
 
     public function getLoginUrl($params)
     {
-        return $this->_get('client/'.$params['id'].'/login-url', $params);
+        return $this->_get('client/' . $params['id'] . '/login-url', $params);
     }
 }
 
@@ -236,32 +259,32 @@ class Youhosting_Api_V1_Account extends Youhosting_Api_V1
 
     public function get($params)
     {
-        return $this->_get('account/'.$params['id'], $params);
+        return $this->_get('account/' . $params['id'], $params);
     }
 
     public function getList($params)
     {
         return $this->_get('account/list', $params);
     }
-    
+
     public function suspend($params)
     {
-        return $this->_post('account/'.$params['id'].'/suspend', $params);
+        return $this->_post('account/' . $params['id'] . '/suspend', $params);
     }
 
     public function unsuspend($params)
     {
-        return $this->_post('account/'.$params['id'].'/unsuspend', $params);
+        return $this->_post('account/' . $params['id'] . '/unsuspend', $params);
     }
 
     public function delete($params)
     {
-        return $this->_delete('account/'.$params['id'], $params);
+        return $this->_delete('account/' . $params['id'], $params);
     }
 
     public function getLoginUrl($params)
     {
-        return $this->_get('account/'.$params['id'].'/login-url', $params);
+        return $this->_get('account/' . $params['id'] . '/login-url', $params);
     }
 }
 

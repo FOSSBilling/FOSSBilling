@@ -83,6 +83,9 @@ class Service implements InjectionAwareInterface
         return $this->getDefault();
     }
 
+    /**
+     * @return \Model_Currency
+     */
     public function getByCode($code)
     {
         return $this->di['db']->findOne('Currency', 'code = :code', array(':code' => $code));
@@ -232,7 +235,6 @@ class Service implements InjectionAwareInterface
             'LKR' => 'Sri Lanka rupee',
             'LRD' => 'Liberian dollar',
             'LSL' => 'Lesotho loti',
-            'LTL' => 'Lithuanian litas',
             'LYD' => 'Libyan dinar',
             'MAD' => 'Moroccan dirham',
             'MDL' => 'Moldovan leu',

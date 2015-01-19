@@ -37,55 +37,6 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getPaymentAdapter(\Model_PayGateway $pg, \Model_Invoice $model = null, $optional = array())
-    {
-        $defaults = array();
-        $config = $this->di['tools']->decodeJ($pg->config);
-
-        $cancel_url = $this->di['url']->get('invoice?status=cancel');
-        $return_url = $this->di['url']->get('invoice?status=ok');
-        $callback_url = $this->di['url']->get('bb-ipn.php?bb_gateway_id='.$pg->id);
-        $callback_redirect_url = $callback_url;
-
-        if($model instanceof \Model_Invoice) {
-            $cancel_url = $this->di['url']->get('invoice/'.$model->hash.'?status=cancel');
-            $return_url = $this->di['url']->get('invoice/'.$model->hash.'?status=ok');
-            $callback_url .= '&bb_invoice_id='.$model->id;
-            $callback_redirect_url .= '&bb_invoice_id='.$model->id.'&bb_redirect_=1&&bb_invoice_hash='.$model->hash;
-            $defaults['thankyou_url']     = $this->di['url']->get('invoice/thank-you/'.$model->hash);
-            $defaults['invoice_url']     = $this->di['url']->get('invoice/'.$model->hash);
-        }
-
-        $defaults['auto_redirect']  = false;
-        $defaults['test_mode']      = (bool)$pg->test_mode;
-        $defaults['return_url']     = $return_url;
-        $defaults['cancel_url']     = $cancel_url;
-        $defaults['notify_url']     = $callback_url;
-        $defaults['redirect_url']   = $callback_redirect_url;
-        $defaults['continue_shopping_url'] = $this->di['url']->get('order');
-        $defaults['single_page'] = true;
-
-        if(isset($optional['auto_redirect'])) {
-            $defaults['auto_redirect'] = $optional['auto_redirect'];
-        }
-
-        $config = array_merge($config, $defaults);
-        $class = sprintf('Payment_Adapter_%s', $pg->gateway);
-
-        if(!class_exists($class)) {
-            throw new \Box_Exception("Payment gateway :adapter was not found", array(':adapter'=>$class));
-        }
-
-        $adapter = new $class($config);
-
-        //set dependency injection without interface
-        if(method_exists($adapter, 'setDi')) {
-            $adapter->setDi($this->di);
-        }
-
-        return $adapter;
-    }
-
     public function getSearchQuery($data)
     {
         $sql="SELECT p.*
@@ -477,7 +428,7 @@ class Service implements InjectionAwareInterface
                 $next_nr = $r->nr + 1;
             }
         }
-        $systemService->updateParam($p, $next_nr+1);
+        $systemService->setParamValue($p, $next_nr+1);
         return $next_nr;
     }
 
@@ -574,7 +525,12 @@ class Service implements InjectionAwareInterface
         $model->buyer_email     = $buyer['email'];
         $model->buyer_zip       = $buyer['postcode'];
 
-        $due_time = strtotime('+' . $systemService->getParamValue('invoice_due_days', 1) . ' day');
+
+        $invoice_due_days = $systemService->getParamValue('invoice_due_days');
+        if (!is_numeric($invoice_due_days)) {
+            $invoice_due_days = 1;
+        }
+        $due_time = strtotime('+' . $invoice_due_days . ' day');
         $model->due_at = date('c', $due_time);
 
         $model->serie = $systemService->getParamValue('invoice_series');
@@ -763,7 +719,7 @@ class Service implements InjectionAwareInterface
                     $this->di['db']->store($new);
 
                     //update next credit note starting number
-                    $systemService->updateParam('invoice_cn_starting_number', ++$next_nr, true);
+                    $systemService->setParamValue('invoice_cn_starting_number', ++$next_nr, true);
                 }
                 $result = (int)$new->id;
                 break;
@@ -1050,6 +1006,11 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * @param integer $due_days
+     *
+     * @return \Model_Invoice
+     */
     public function generateForOrder(\Model_ClientOrder $order, $due_days = null)
     {
         //check if we do have invoice prepared already
@@ -1283,7 +1244,9 @@ class Service implements InjectionAwareInterface
 
 
         $adapter = $payGatewayService->getPaymentAdapter($gtw, $invoice, $data);
-        $adapter->setDi($this->di);
+        if (method_exists($adapter, 'setDi')) {
+            $adapter->setDi($this->di);
+        }
         $pgc = $adapter->getConfig();
 
         //@since v2.9.15
@@ -1559,8 +1522,9 @@ class Service implements InjectionAwareInterface
         $mpi->setTitle($title);
         $mpi->setItems($items);
 
+        $subscribeService = $this->di['mod_service']('Invoice', 'Subscription');
         // can subscribe only if proforma has one item with defined period
-        if($subscribe && $this->isSubscribable($invoice->id)) {
+        if($subscribe && $subscribeService->isSubscribable($invoice->id)) {
 
             $subitem = $invoice->InvoiceItem->getFirst();
             $period = $this->di['period']($subitem->period);

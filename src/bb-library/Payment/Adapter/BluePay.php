@@ -9,7 +9,6 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
-
 class Payment_Adapter_BluePay
 {
     private $config = array();
@@ -64,10 +63,10 @@ To find your ACCOUNT ID and SECRET KEY:
     {
         $invoice = $api_admin->invoice_get(array('id'=>$invoice_id));
         $buyer = $invoice['buyer'];
-        
+
         $p = array(
-            ':id'=>sprintf('%05s', $invoice['nr']), 
-            ':serie'=>$invoice['serie'], 
+            ':id'=>sprintf('%05s', $invoice['nr']),
+            ':serie'=>$invoice['serie'],
             ':title'=>$invoice['lines'][0]['title']
         );
         $title = __('Payment for invoice :serie:id [:title]', $p);
@@ -95,9 +94,12 @@ To find your ACCOUNT ID and SECRET KEY:
                     break;
             }
         }
-        
+        // https://secure.bluepay.com/interfaces/bp10emu
+        // <input type=hidden name=DECLINED_URL value="'.$this->config['cancel_url'].'">
+        // <input type=hidden name=MISSING_URL value="'.$this->config['return_url'].'">
         $html = '
             <form action="https://secure.bluepay.com/interfaces/bp10emu" method=POST>
+            <input type=hidden name=RESPONSEVERSION value="3">
                 <input type=hidden name=MERCHANT value="'.$account_id.'">
                 <input type=hidden name=TRANSACTION_TYPE value="'.$type.'">
                 <input type=hidden name=TAMPER_PROOF_SEAL value="'.$tps.'">
@@ -109,11 +111,11 @@ To find your ACCOUNT ID and SECRET KEY:
                 <input type=hidden name=COMMENT value="'.$title.'">
                 <input type=hidden name=MODE         value="'.$mode.'">
                 <input type=hidden name=AUTOCAP      value="0">
-                <input type=hidden name=REBILLING    value="">
+                <input type=hidden name=REBILLING    value="1">
                 <input type=hidden name=REB_CYCLES   value="">
                 <input type=hidden name=REB_AMOUNT   value="">
-                <input type=hidden name=REB_EXPR     value="">
-                <input type=hidden name=REB_FIRST_DATE value="">
+                <input type=hidden name=REB_EXPR     value="1 MONTH">
+                <input type=hidden name=REB_FIRST_DATE value="1 MONTH">
                 <input type=hidden name=ORDER_ID value="'.$invoice['id'].'">
                 <input type=hidden name=CUSTOM_ID  value="'.$invoice['id'].'">
                 <input type=hidden name=INVOICE_ID  value="'.$invoice['id'].'">
@@ -201,14 +203,92 @@ To find your ACCOUNT ID and SECRET KEY:
         if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($data)) {
             throw new Exception('IPN is not valid');
         }
-        
-        $ipn = $data['post'];
+
+        $ipn = $data['get'];
         
         $tx = $api_admin->invoice_transaction_get(array('id'=>$id));
-        
-        
+
+        if(!$tx['invoice_id']) {
+            $api_admin->invoice_transaction_update(array('id'=>$id, 'invoice_id'=>$data['get']['bb_invoice_id']));
+        }
+
+        if(!$tx['type']) {
+            $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>$ipn['TRANS_TYPE']));
+        }
+
+        if(!$tx['txn_id']) {
+            $api_admin->invoice_transaction_update(array('id'=>$id, 'txn_id'=>$ipn['TRANS_ID']));
+        }
+
+        if(!$tx['txn_status']) {
+            $api_admin->invoice_transaction_update(array('id'=>$id, 'txn_status'=>$ipn['Result']));
+        }
+
+        if(!$tx['amount']) {
+            $api_admin->invoice_transaction_update(array('id'=>$id, 'amount'=>$ipn['AMOUNT']));
+        }
+
+        if(!$tx['currency']) {
+            $api_admin->invoice_transaction_update(array('id'=>$id, 'currency'=>'USD'));
+        }
+
+        $invoice = $api_admin->invoice_get(array('id'=>$data['get']['bb_invoice_id']));
+        $client_id = $invoice['client']['id'];
+
+        //echo "<pre>";
+        //print_r($ipn);
+        //echo "</pre>";
+
+        switch ($ipn['TRANS_TYPE']) {
+            //TRANSACTION_TYPE
+            //-- Required
+            //AUTH, SALE, CAPTURE, REFUND, REBCANCEL
+            //AUTH = Reserve funds on a customer's card. No funds are transferred.
+            //SALE = Make a sale. Funds are transferred.TRANS_TYPE
+            //CAPTURE = Capture a previous AUTH. Funds are transferred.
+            //REFUND = Reverse a previous SALE. Funds are transferred.
+            //REBCANCEL = Cancel a rebilling sequence.
+
+            case 'AUTH':
+            case 'SALE':
+
+                if($ipn['STATUS']) {
+
+                    $bd = array(
+                        'id'            =>  $client_id,
+                        'amount'        =>  $ipn['AMOUNT'],
+                        'description'   =>  'BluePay transaction '.$ipn['TRANS_ID'],
+                        'type'          =>  'BluePay',
+                        'rel_id'        =>  $ipn['TRANS_ID'],
+                    );
+                    $api_admin->client_balance_add_funds($bd);
+                    $api_admin->invoice_batch_pay_with_credits(array('client_id'=>$client_id));
+                }
+
+                break;
+
+            case 'REBCANCEL':
+                $s = $api_admin->invoice_subscription_get(array('sid'=>$ipn['CUSTOM_ID']));
+                $api_admin->invoice_subscription_update(array('id'=>$s['id'], 'status'=>'canceled'));
+                break;
+
+            case 'CAPTURE':
+            case 'REFUND':
+                $refd = array(
+                    'id'    => $invoice['CUSTOM_ID'],
+                    'note'  => 'BluePay refund '.$ipn['TRANS_ID'],
+                );
+                $api_admin->invoice_refund($refd);
+                break;
+
+            default:
+                error_log('Unknown Bluepay transaction '.$id);
+                break;
+        }
+
+
         $d = array(
-            'id'        => $id, 
+            'id'        => $id,
             'error'     => '',
             'error_code'=> '',
             'status'    => 'processed',
@@ -216,6 +296,11 @@ To find your ACCOUNT ID and SECRET KEY:
         );
         $api_admin->invoice_transaction_update($d);
     }
+
+    // todo: need validation. use $data['post']['md5sig']. read MBs_gateway_manual pdf, page 18, point IV.
+    private function _isIpnValid($data)
+    {
+        return true;
+    }
+
 }
-
-

@@ -16,7 +16,7 @@ class Box_LogDb
     /**
      * $service - module service class
      *
-     * @var string
+     * @var object $service
      */
     protected $service = null;
 
@@ -24,7 +24,6 @@ class Box_LogDb
      * Class constructor
      *
      * @param object $service - module service class object
-     * @param array $columnMap
      */
     public function __construct($service)
     {

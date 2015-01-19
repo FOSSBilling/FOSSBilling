@@ -215,7 +215,7 @@
             
         },
         /**
-         * Called when the form is submited, shows prompts accordingly
+         * Called when the form is submitted, shows prompts accordingly
          *
          * @param {jqObject}
          *            form

@@ -110,6 +110,9 @@ class Service implements \Box\InjectionAwareInterface
         return true;
     }
 
+    /**
+     * @param \Model_EmailTemplate $t
+     */
     public function getVars($t)
     {
         $json = $this->di['crypt']->decrypt($t->vars, 'v8JoWZph12DYSY4aq8zpvWdzC');
@@ -201,7 +204,9 @@ class Service implements \Box\InjectionAwareInterface
 
     public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null)
     {
-        return $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id);
+        $email = $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id);
+        $this->_sendFromQueue($email);
+        return true;
     }
 
     private function _getDefaults($data)
@@ -266,7 +271,7 @@ class Service implements \Box\InjectionAwareInterface
             error_log($e->getMessage());
         }
 
-        return true;
+        return $queue;
     }
 
     private function _getVarsString()
@@ -551,21 +556,18 @@ class Service implements \Box\InjectionAwareInterface
         $tries      = 0;
         $time_limit = (isset($settings['time_limit']) ? $settings['time_limit'] : 5) * 60;
         $start      = time();
-        while ($this->_sendFromQueue()) {
+        while ($email = $this->di['db']->findOne('ModEmailQueue', ' status = \'unsent\' ORDER BY updated_at ')) {
+            $this->_sendFromQueue($email);
             $tries++;
             if (isset($settings['queue_once']) && $settings['queue_once'] && $settings['queue_once'] <= $tries) break;
             if ($time_limit && time() - $start > $time_limit) break;
         }
     }
 
-    private function _sendFromQueue()
+    private function _sendFromQueue(\Model_ModEmailQueue $queue)
     {
-        $queue = $this->di['db']->findOne('ModEmailQueue', ' status = \'unsent\' ORDER BY updated_at ');
-        if (!$queue) return false;
-
         $queue->status = 'sending';
         $this->di['db']->store($queue);
-
         //@demoVersionLimit
         if (!$this->di['license']->isPro()) {
             $queue->content .= PHP_EOL;

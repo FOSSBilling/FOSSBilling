@@ -22,7 +22,7 @@ return array(
     /**
      * Full URL where BoxBilling is installed with trailing slash
      */
-    'url'     => 'http://www.boxbilling.vm/',
+    'url'     => 'http://www.boxbilling.test/',
 
     'admin_area_prefix' =>  '/bb-admin',
 
@@ -88,12 +88,12 @@ return array(
         /**
          * Database username
          */
-        'user'   =>'root',
+        'user'   =>'foo',
 
         /**
          * Database password
          */
-        'password'   =>'',
+        'password'   =>'foo',
     ),
 
     'twig'   =>  array(

@@ -10,8 +10,27 @@
  * with this source code in the file LICENSE
  */
 
-class Payment_Adapter_WebMoney
+class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 {
+	/**
+	 * @var Box_Di
+	 */
+	protected $di;
+	/**
+	 * @param Box_Di $di
+	 */
+	public function setDi($di)
+	{
+		$this->di = $di;
+	}
+	/**
+	 * @return Box_Di
+	 */
+	public function getDi()
+	{
+		return $this->di;
+	}
+	
     private $config = array();
 
 	public $testMode = false;
@@ -29,6 +48,7 @@ class Payment_Adapter_WebMoney
 	public function __construct($config)
     {
         $this->config = $config;
+		$this->testMode = (isset($config['test_mode']) && $config['test_mode']) ? true : false;
         
         if(!$this->config['purse']) {
             throw new Payment_Exception('Payment gateway "WebMoney" is not configured properly. Please update configuration parameter "Purse" at "Configuration -> Payment gateways > WebMoney".');
@@ -37,17 +57,21 @@ class Payment_Adapter_WebMoney
 
     public static function getConfig()
     {
-        return array(
-            'supports_one_time_payments'   =>  true,
-            'supports_subscriptions'       =>  false,
-            'description'     =>  'Configure WebMoney gateway. Do not forget enable option "Allow URLs transmitted in the form"',
-            'form'  => array(
-                'purse' => array('text', array(
-                            'label' => 'WebMoney purse',
-                    ),
-                 ),
-            ),
-        );
+		return array(
+			'supports_one_time_payments' => true,
+			'supports_subscriptions'     => false,
+			'description'                => 'Configure WebMoney gateway. Do not forget enable option "Allow URLs transmitted in the form"',
+			'form'                       => array(
+				'purse'      => array('text', array(
+					'label' => 'WebMoney purse',
+				),
+				),
+				'secretWord' => array('text', array(
+					'label' => 'WebMoney secret word',
+				),
+				),
+			),
+		);
     }
 	
 	public function getHtml($api_admin, $id) 
@@ -60,7 +84,7 @@ class Payment_Adapter_WebMoney
 		$data['LMI_PAYMENT_NO']		=	$invoice['id'];
 		$data['LMI_PAYMENT_DESC']	=	$invoice['serie_nr'];
 		$data['LMI_RESULT_URL']		=	$this->config['notify_url'];
-		$data['LMI_SUCCESS_URL']	=	$this->config['success_url'];
+		$data['LMI_SUCCESS_URL']	=	$this->config['return_url'];
 		$data['LMI_SUCCESS_METHOD']	=	1;											//The field may have values 0, 1 or 2 equal to values of the ‘Method of requesting Success URL’ – ‘GET’, ‘POST’ or ‘LINK’.
 		$data['LMI_FAIL_URL']		=	$this->config['cancel_url'];
 		$data['LMI_FAIL_METHOD']	=	1;											//The field may have the values 0, 1 or 2 equal to values of the ‘Method of requesting Fail URL’ – ‘GET’, ‘POST’ or ‘LINK’.
@@ -77,7 +101,7 @@ class Payment_Adapter_WebMoney
 		return $this->_generateForm($url, $data);
 	}
 
-    public function processTransaction($api_admin, $id, $data)
+    public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
         if(APPLICATION_ENV != 'testing' && !$this->isIpnValid($data)) {
             throw new Exception('WebMoney IPN is not valid');
@@ -85,9 +109,7 @@ class Payment_Adapter_WebMoney
         
         $ipn = $data['post'];
 
-        //$tx = $api_admin->invoice_transaction_get(array('id'=>$id));
-        $invoice = $api_admin->invoice_get(array('id'=>$ipn['INVOICE_ID']));
-        $client_id = $invoice['client']['id'];
+		$invoice = $this->di['db']->getExistingModelById('Invoice', $ipn['INVOICE_ID'], 'Invoice not found');
 
         $currency = $this->getCurrency($ipn['LMI_PAYER_PURSE']);
         $tx_data = array(
@@ -100,17 +122,27 @@ class Payment_Adapter_WebMoney
             'type'          =>  'payment',
             'status'        =>  'complete',
         );
-        $api_admin->invoice_transaction_update($tx_data);
+
+		$transaction = $this->di['db']->getExistingModelById('Transaction', $id, 'Transaction not found');
+		$transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+		$transactionService->update($transaction, $tx_data);
         
         $bd = array(
-            'id'            =>  $client_id,
+            'id'            =>  $invoice->client_id,
             'amount'        =>  $ipn['LMI_PAYMENT_AMOUNT'],
             'description'   =>  'WebMoney sale: '.$ipn['LMI_SYS_TRANS_NO'],
             'type'          =>  'WebMoney',
             'rel_id'        =>  $ipn['LMI_SYS_TRANS_NO'],
         );
-        $api_admin->client_balance_add_funds($bd);
-        $api_admin->invoice_batch_pay_with_credits(array('client_id'=>$client_id));
+
+		$client = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
+		$clientService = $this->di['mod_service']('client');
+		$clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
+
+
+		$invoiceService = $this->di['mod_service']('Invoice');
+		$invoiceService->payInvoiceWithCredits($invoice);
+		$invoiceService->doBatchPayWithCredits(array('client_id'=>$invoice->client_id));
     }
 
 	private function isIpnValid($data)
@@ -135,7 +167,7 @@ class Payment_Adapter_WebMoney
 	 * @return string
 	 */
 	private function _getHash($data) {
-		$string = $data['LMI_PAYEE_PURSE'] . $data['LMI_PAYMENT_AMOUNT'] . $data['LMI_PAYMENT_NO'] . $data['INVOICE_ID'];
+		$string = $data['LMI_PAYEE_PURSE'] . number_format($data['LMI_PAYMENT_AMOUNT'], 2) . $data['LMI_PAYMENT_NO'] . $data['INVOICE_ID'];
 		if (isset($data['LMI_MODE']) && $data['LMI_MODE'] == 1) {
 			$string .= 'test';
 		}
@@ -204,7 +236,7 @@ class Payment_Adapter_WebMoney
 			$string .= $data['LMI_PAYER_WM'];
 		}
 		
-		return strtoupper(MD5($string));
+		return strtoupper(hash('sha256', $string));
 	}
 	
 	/**
@@ -225,7 +257,7 @@ class Payment_Adapter_WebMoney
 	/**
 	 * Gets currency code from purse
 	 * @param string $purse
-	 * @return string|boolean
+	 * @return false|string
 	 */
 	private function getCurrency($purse) {
 		$firstLetter = substr($purse, 0, 1);
@@ -264,6 +296,9 @@ class Payment_Adapter_WebMoney
 		);
 	}
     
+    /**
+     * @param string $url
+     */
     private function _generateForm($url, $data, $method = 'post')
     {
         $form  = '';

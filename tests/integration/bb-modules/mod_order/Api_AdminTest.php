@@ -122,7 +122,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->assertInternalType('array', $array);
     }
 
-    public function testSuspendation()
+    public function testSuspension()
     {
         $bool = $this->api_admin->order_batch_suspend_expired();
         $this->assertTrue($bool);

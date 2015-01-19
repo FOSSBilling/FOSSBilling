@@ -43,6 +43,9 @@ class Server_Package
         return $this;
     }
 
+    /**
+     * @param string $param
+     */
     public function getCustomValue($param)
     {
         return isset($this->custom[$param]) ? $this->custom[$param] : NULL;

@@ -12,6 +12,7 @@
                 <tr>
                     <th>{% trans 'Product' %}</th>
                     <th>{% trans 'Price' %}</th>
+                    <th style="width: 3%; text-align: center"></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -35,6 +36,7 @@
                             {{ (item.price * item.quantity) | money_convert }}
                         {% endif %}
                     </td>
+                    <td><button data-cart-item-id="{{ item.id }}" class="btn btn-inverse btn-mini remove-cart-item" title="{% trans 'Remove item' %}"><strong><i class="awe-remove"></i></strong></button></td>
                 </tr>
 
                 {% if request.show_custom_form_values %}
@@ -185,6 +187,20 @@
                 bb.msg("{% trans 'Promo code was removed' %}");
                 location.reload(false);
         });
+
+    });
+
+    $('.remove-cart-item').click(function(e){
+        e.preventDefault();
+        var btn = $(this);
+        if (confirm('{% trans 'Are you sure you want to remove this item from cart?' %}')){
+            var item_id = $(btn).attr('data-cart-item-id');
+            bb.post("guest/cart/remove_item", {id: item_id}, function(r){
+                bb.msg("{% trans 'Item was removed from cart' %}");
+                location.reload(false);
+            });
+        }
+
 
     });
 </script>

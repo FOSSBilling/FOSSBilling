@@ -39,6 +39,9 @@ class Service implements InjectionAwareInterface
         return array($sql, array());
     }
 
+    /**
+     * @return \Model_Cart
+     */
     public function getSessionCart()
     {
         $sqlBindings = array(':session_id' => $this->di['session']->getId());
@@ -637,8 +640,8 @@ class Service implements InjectionAwareInterface
      * Function checks if product is related to other products in cart
      * If relation exists then count discount for this
      *
-     * @param Model_Cart $cart
-     * @param Model_CartProduct $model
+     * @param \Model_Cart $cart
+     * @param \Model_CartProduct $model
      * @return type
      */
     protected function getRelatedItemsDiscount(\Model_Cart $cart, \Model_CartProduct $model)

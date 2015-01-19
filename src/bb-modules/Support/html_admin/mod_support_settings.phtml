@@ -88,6 +88,15 @@
             </div>
     </div>
 
+    <legend>{% trans 'Wait time - how many hours user needs to wait until consequent ticket submission' %}</legend>
+    <div class="rowElem noborder">
+        <label>{% trans 'Wait time in hours' %}</label>
+        <div class="formRight">
+            <input type="text" name="wait_hours"  value="{{ params.wait_hours }}" />
+        </div>
+        <div class="fix"></div>
+    </div>
+
     <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
     <input type="hidden" name="ext" value="mod_support" />
     </fieldset>

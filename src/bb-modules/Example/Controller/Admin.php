@@ -73,7 +73,7 @@ class Admin implements \Box\InjectionAwareInterface
      *
      * @example $app->get('/example/test',      'get_test', null, get_class($this)); // calls get_test method on this class
      * @example $app->get('/example/:id',        'get_index', array('id'=>'[0-9]+'), get_class($this));
-     * @param Box_App $app
+     * @param \Box_App $app
      */
     public function register(\Box_App &$app)
     {

@@ -18,6 +18,7 @@ class Box_Ftp
 
 	protected $bb_root = NULL; // initial dir
 	protected $permission = NULL;
+	protected $method;
 
 	public function __construct($opt=array())
     {
@@ -29,9 +30,8 @@ class Box_Ftp
 		$this->method = 'ftpext';
 
 		//Check if possible to use ftp functions.
-		if ( ! extension_loaded('ftp') ) {
-            throw new \Box_Exception('The ftp PHP extension is not available');
-			return false;
+		if (!extension_loaded('ftp')) {
+			throw new \Box_Exception('The ftp PHP extension is not available');
 		}
 
 		// Set defaults:
@@ -122,6 +122,9 @@ class Box_Ftp
 		return explode("\n", $this->get_contents($file));
 	}
 
+	/**
+	 * @param string $contents
+	 */
 	public function put_contents($file, $contents, $type = '' )
     {
 		if( empty($type) )
@@ -185,6 +188,9 @@ class Box_Ftp
 		return @ftp_chdir($this->link, $dir);
 	}
 
+	/**
+	 * @param boolean $group
+	 */
 	private function chgrp($file, $group, $recursive = false )
     {
 		return false;
@@ -211,6 +217,9 @@ class Box_Ftp
 		return true;
 	}
     
+	/**
+	 * @param boolean $owner
+	 */
 	private function chown($file, $owner, $recursive = false )
     {
 		return false;
@@ -235,7 +244,7 @@ class Box_Ftp
 	}
 
     /**
-     * Perfomrs recursive directory copy with content
+     * Performs recursive directory copy with content
      * @todo check for unlimited recurse if source folder is hghr than destination
      * 
      * @param string $source
@@ -274,6 +283,10 @@ class Box_Ftp
         return $res;
     }
 
+	/**
+	 * @param string $source
+	 * @param string $destination
+	 */
 	public function copy($source, $destination, $overwrite = false )
     {
 		if( ! $overwrite && $this->exists($destination) )
@@ -358,6 +371,9 @@ class Box_Ftp
 		return false;
 	}
 
+	/**
+	 * @param string $path
+	 */
 	public function mkdir($path, $chmod = false, $chown = false, $chgrp = false)
     {
 		if( !ftp_mkdir($this->link, $path) )
@@ -379,11 +395,12 @@ class Box_Ftp
 	private function parselisting($line)
     {
 		static $is_windows;
+		$b = array();
+		
 		if ( is_null($is_windows) )
 			$is_windows = strpos( strtolower(ftp_systype($this->link)), 'win') !== false;
 
 		if ($is_windows && preg_match("/([0-9]{2})-([0-9]{2})-([0-9]{2}) +([0-9]{2}):([0-9]{2})(AM|PM) +([0-9]+|<DIR>) +(.+)/", $line, $lucifer)) {
-			$b = array();
 			if ($lucifer[3]<70) { $lucifer[3] +=2000; } else { $lucifer[3]+=1900; } // 4digit year fix
 			$b['isdir'] = ($lucifer[7]=="<DIR>");
 			if ( $b['isdir'] )

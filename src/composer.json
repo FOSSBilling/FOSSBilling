@@ -17,6 +17,7 @@
         "ext-curl": "*",
         "ext-zlib": "*",
         "ext-PDO": "*",
+        "ext-mbstring" : "*",
 
         "pimple/pimple": "v2.0.0",
         "twig/twig": "v1.15.1",
@@ -42,6 +43,7 @@
         "phpunit/phpunit": "4.2.6",
         "phpunit/dbunit": ">=1.2",
         "squizlabs/php_codesniffer": "1.*"
+
     },
     "autoload-dev": {
         "psr-0": { "": "../tests/bb-library" }

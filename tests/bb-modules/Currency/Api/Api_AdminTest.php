@@ -88,7 +88,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         'LKR' => 'LKR - Sri Lanka rupee',
         'LRD' => 'LRD - Liberian dollar',
         'LSL' => 'LSL - Lesotho loti',
-        'LTL' => 'LTL - Lithuanian litas',
         'LYD' => 'LYD - Libyan dinar',
         'MAD' => 'MAD - Moroccan dirham',
         'MDL' => 'MDL - Moldovan leu',
