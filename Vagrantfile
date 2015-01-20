@@ -5,7 +5,11 @@ dir = File.dirname(File.expand_path(__FILE__))
 configValues = YAML.load_file("#{dir}/puphpet/config.yaml")
 data         = configValues['vagrantfile-local']
 
-Vagrant.require_version '>= 1.6.0'
+begin
+  Vagrant.require_version ">= 1.6.0"
+rescue NoMethodError
+  raise 'BoxBilling is only supported on Vagrant >= 1.6. Please upgrade.'
+end
 
 Vagrant.configure('2') do |config|
   config.vm.box     = "#{data['vm']['box']}"
