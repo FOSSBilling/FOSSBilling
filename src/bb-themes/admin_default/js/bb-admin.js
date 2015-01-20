@@ -137,7 +137,6 @@ var bb = {
         matches.parents('li').addClass('active');
     },
     insertToTextarea: function(areaId, text){
-
         var txtarea = document.getElementById(areaId);
         var scrollPos = txtarea.scrollTop;
         var strPos = 0;
@@ -169,6 +168,9 @@ var bb = {
             txtarea.focus();
         }
         txtarea.scrollTop = scrollPos;
+        if ('undefined' !== typeof CKEDITOR ){
+            CKEDITOR.instances[areaId].insertText(text);
+        }
 
         return false
     }
