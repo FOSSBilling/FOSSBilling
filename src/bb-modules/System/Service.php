@@ -313,11 +313,7 @@ class Service
             $parsed   = $template->render($vars);
         } catch (\Exception $e) {
             $parsed = $tpl;
-            if ($e instanceof \Twig_Error_Syntax || $e instanceof \Twig_Error_Loader) {
-                if (!$try_render) {
-                    throw $e;
-                }
-            } else {
+            if (!$try_render) {
                 throw $e;
             }
         }
