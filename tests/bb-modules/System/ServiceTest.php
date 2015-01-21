@@ -282,6 +282,34 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $this->service->renderString('test', false, $vars);
     }
 
+    public function testrenderStringTemplate()
+    {
+        $vars = array(
+            '_client_id' => 1
+        );
+
+        $twigMock = $this->getMockBuilder('\Twig_Environment')->disableOriginalConstructor()->getMock();
+        $twigMock->expects($this->atLeastOnce())
+            ->method('addGlobal');
+        $twigMock->expects($this->atLeastOnce())
+            ->method('loadTemplate')
+            ->willThrowException(new \Twig_Error_Syntax('Exception created with PHPUNIT'));
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->will($this->returnValue(new \Model_Client()));
+
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
+        $di['twig'] = $twigMock;
+        $di['api_client'] = new \Model_Client();
+        $this->service->setDi($di);
+
+        $string = $this->service->renderString('test', true, $vars);
+        $this->assertEquals($string, 'test');
+    }
+
     public function testclearCache()
     {
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
