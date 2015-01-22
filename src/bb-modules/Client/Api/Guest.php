@@ -119,7 +119,15 @@ class Guest extends \Api_Abstract
 
         $client = $service->guestCreateClient($data);
 
+
+        if (isset($config['require_email_confirmation']) && (int)$config['require_email_confirmation']) {
+            if (!$client->email_approved) {
+                throw new \Box_Exception('Account has been created. Please check your mailbox and confirm email address.');
+            }
+        }
+
         if(isset($data['auto_login']) && $data['auto_login']) {
+
             try {
                 $this->login(array('email'=>$client->email, 'password' => $data['password']));
             } catch(\Exception $e) {
