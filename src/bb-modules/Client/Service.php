@@ -546,7 +546,7 @@ class Service implements InjectionAwareInterface
         $data['status'] = \Model_Client::ACTIVE;
         $client = $this->createClient($data);
 
-        $this->di['events_manager']->fire(array('event'=>'onAfterClientSignUp', 'params'=>array('id'=>$client->id, 'password'=>$client->pass)));
+        $this->di['events_manager']->fire(array('event'=>'onAfterClientSignUp', 'params'=>array('id'=>$client->id, 'password'=>$data['password'])));
         $this->di['logger']->info('Client #%s signed up', $client->id);
 
         return $client;
@@ -593,6 +593,5 @@ class Service implements InjectionAwareInterface
         }
 
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
-
     }
 }

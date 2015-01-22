@@ -121,7 +121,7 @@ class Guest extends \Api_Abstract
 
         if(isset($data['auto_login']) && $data['auto_login']) {
             try {
-                $this->login(array('email'=>$client->email, 'password' => $client->pass));
+                $this->login(array('email'=>$client->email, 'password' => $data['password']));
             } catch(\Exception $e) {
                 error_log($e->getMessage());
             }
