@@ -593,7 +593,7 @@ class Service implements \Box\InjectionAwareInterface
             $mail->addTo($queue->to, $queue->to_name);
 
             if (APPLICATION_ENV != 'production') {
-                //if(BB_DEBUG) error_log('Skip email sending');
+                error_log('Skip email sending. Application ENV: '.APPLICATION_ENV);
                 return true;
             }
 
