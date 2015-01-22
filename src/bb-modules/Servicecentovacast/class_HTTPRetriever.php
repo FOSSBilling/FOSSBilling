@@ -1,4 +1,5 @@
 <?php
+namespace Box\Mod\Servicecentovacast;
 /* HTTP Retriever
  * Version v1.1.11
  * Copyright 2004-2009, Steve Blinch

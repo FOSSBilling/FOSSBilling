@@ -89,9 +89,9 @@ class Service implements \Box\InjectionAwareInterface
         
         if(APPLICATION_ENV == 'testing') {
             $config = array();
-            $config['url']      = 'http://castdemo.centova.com';
+            $config['url']      = 'http://castdemo.centova.com:2199';
             $config['secret']   = 'example';
-            $config['ip']       = '123.123.123';
+            $config['ip']       = '123.123.123.123';
             $config['hostname'] = 'castdemo.centova.com';
             return $config;
         }
@@ -398,10 +398,11 @@ class Service implements \Box\InjectionAwareInterface
      */
     private function _apiSystemCall($server, $method, $params = array())
     {
-        require_once(dirname(__FILE__).'/ccapiclient/ccapiclient.php');
+        require_once(dirname(__FILE__).'/ccapiclient.php');
         $centovacast_url    = $server['url'];
         $admin_password     = $server['secret'];
         $system = new CCSystemAPIClient($centovacast_url);
+        $system->cc_initialize($centovacast_url);
         $system->call($method, $admin_password, $params);
         
         if (!$system->success) {
