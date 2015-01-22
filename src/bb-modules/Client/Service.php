@@ -592,6 +592,13 @@ class Service implements InjectionAwareInterface
             return null;
         }
 
+        $config = $this->di['mod_config']('client');
+        if (isset($config['require_email_confirmation']) && (int)$config['require_email_confirmation']) {
+            if (!$model->email_approved) {
+                throw new \Box_Exception('Please check your mailbox and confirm email address.');
+            }
+        }
+
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }
 }
