@@ -12,7 +12,9 @@
  * calls to what would be the public methods of each class.
  *
  */
-require_once(dirname(__FILE__).'/class_HTTPRetriever.php');
+namespace Box\Mod\Servicecentovacast;
+
+require_once(dirname(__FILE__) . '/class_HTTPRetriever.php');
 
 // This library was originally designed to support object overloading, but
 // PHP's support for this appears to be flaky and prone to segfaulting
@@ -51,6 +53,7 @@ class CCBaseAPIClient {
 	function cc_initialize($ccurl) {
 		$this->ccurl = $ccurl;
 		$this->http = new HTTPRetriever();
+		$this->http->HTTPRetriever();
 		$this->http->headers["User-Agent"] = 'CentovaCast PHP API Client';
 	}
 	
