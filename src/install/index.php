@@ -2,7 +2,7 @@
 date_default_timezone_set('UTC');
 
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 ini_set('display_startup_errors', 1);
 ini_set('log_errors', '1');
 ini_set('error_log', dirname(__FILE__) . '/php_error.log');
@@ -32,15 +32,6 @@ set_include_path(implode(PATH_SEPARATOR, array(
     BB_PATH_LIBRARY,
     get_include_path(),
 )));
-spl_autoload_register('bb_autoloader');
-
-function bb_autoloader($className)
-{
-    if(strpos($className, '_') !== false) {
-        $className = str_replace('_', DIRECTORY_SEPARATOR, $className);
-    }
-    require_once $className.'.php';
-}
 
 require BB_PATH_VENDOR . '/autoload.php';
 
@@ -113,6 +104,7 @@ final class Box_Installer
                     }
 
                     $this->makeInstall($this->session);
+                    $this->generateEmailTemplates();
                     session_destroy();
                     print 'ok';
                 } catch(Exception $e) {
@@ -445,6 +437,16 @@ final class Box_Installer
         if(!$this->isValidLicense($ns->get('license'))) {
             throw new Exception('License Key is not valid');
         }
+    }
+
+    private function generateEmailTemplates()
+    {
+        define('BB_PATH_MODS',      BB_PATH_ROOT . '/bb-modules');
+
+        $emailService = new \Box\Mod\Email\Service();
+        $di = $di = include BB_PATH_ROOT  . '/bb-di.php';
+        $emailService->setDi($di);
+        return $emailService->templateBatchGenerate();
     }
 }
 
