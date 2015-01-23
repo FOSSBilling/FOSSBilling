@@ -150,7 +150,12 @@ class Payment_Adapter_InterkassaTest extends PHPUnit_Framework_TestCase {
             ->getMock();
         $adapterMock->expects($this->atLeastOnce())
             ->method('getParam')
-            ->withConsecutive('notify_url', 'return_url', 'return_url', 'cancel_url');
+            ->withConsecutive(
+                array('ik_co_id'),
+                array('notify_url'),
+                array('return_url'),
+                array('return_url'),
+                array('cancel_url'));
 
         $paymentInvoiceMock = $this->getMockBuilder('Payment_Invoice')
             ->getMock();
@@ -234,7 +239,9 @@ class Payment_Adapter_InterkassaTest extends PHPUnit_Framework_TestCase {
 
         $adapterMock->expects($this->atLeastOnce())
             ->method('getParam')
-            ->withConsecutive('ik_co_id', 'ik_secret_key')
+            ->withConsecutive(
+                array('ik_co_id'),
+                array('ik_secret_key'))
             ->willReturnOnConsecutiveCalls($shop_id, $secret_key);
 
         $data = array(
@@ -265,7 +272,9 @@ class Payment_Adapter_InterkassaTest extends PHPUnit_Framework_TestCase {
 
         $adapterMock->expects($this->atLeastOnce())
             ->method('getParam')
-            ->withConsecutive('ik_co_id', 'ik_secret_key')
+            ->withConsecutive(
+                array('ik_co_id'),
+                array('ik_secret_key'))
             ->willReturnOnConsecutiveCalls($shop_id, $secret_key);
 
         $data = array(
@@ -291,7 +300,11 @@ class Payment_Adapter_InterkassaTest extends PHPUnit_Framework_TestCase {
 
         $adapterMock->expects($this->atLeastOnce())
             ->method('getParam')
-            ->withConsecutive('ik_co_id', 'ik_secret_key', 'test_mode', 'ik_secret_key_test')
+            ->withConsecutive(
+                array('ik_co_id'),
+                array('ik_secret_key'),
+                array('test_mode'),
+                array('ik_secret_key_test'))
             ->willReturnOnConsecutiveCalls($shop_id, $secret_key, true, $secret_key);
 
         $data = array(
@@ -355,7 +368,10 @@ class Payment_Adapter_InterkassaTest extends PHPUnit_Framework_TestCase {
 
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
-            ->withConsecutive('Transaction', 'Invoice', 'Client')
+            ->withConsecutive(
+                array('Transaction'),
+                array('Invoice'),
+                array('Client'))
             ->willReturnOnConsecutiveCalls($transactionModel, $invoiceModel, $clientModel);
 
         $dbMock->expects($this->atLeastOnce())
@@ -389,14 +405,18 @@ class Payment_Adapter_InterkassaTest extends PHPUnit_Framework_TestCase {
         $api_admin = new \Api_Handler($adminModel);
 
         $transaction_id = 1;
+        $invoice_id = 22;
         $data = array(
             'post' => array(
-                'ik_x_iid' => 1,
+                'ik_x_iid' => $invoice_id,
                 'ik_trn_id' => 2,
                 'ik_inv_st' => 'success',
                 'ik_am' => 1.00,
                 'ik_cur' => 'USD',
             ),
+            'get'=> array(
+                'bb_invoice_id' => $invoice_id
+            )
         );
         $gateway_id = 1;
         $adapterMock->processTransaction($api_admin, $transaction_id, $data, $gateway_id);
