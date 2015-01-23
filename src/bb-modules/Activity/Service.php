@@ -92,6 +92,7 @@ class Service implements InjectionAwareInterface
         $search = isset($data['search']) ? $data['search'] : NULL;
         $priority = isset($data['priority']) ? $data['priority'] : NULL;
         $only_staff = isset($data['only_staff']) ? $data['only_staff'] : NULL;
+        $admin_id = isset($data['admin_id']) ? $data['admin_id'] : NULL;
         $only_clients = isset($data['only_clients']) ? $data['only_clients'] : NULL;
         $no_info = isset($data['no_info']) ? $data['no_info'] : NULL;
         $no_debug = isset($data['no_debug']) ? $data['no_debug'] : NULL;
@@ -113,6 +114,11 @@ class Service implements InjectionAwareInterface
 
         if($only_staff) {
             $where[] = 'm.admin_id IS NOT NULL';
+        }
+
+        if($admin_id) {
+            $where[] = 'm.admin_id = :admin_id';
+            $params[':admin_id'] = $admin_id;
         }
 
         if($only_clients) {
