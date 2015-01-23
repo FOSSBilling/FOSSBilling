@@ -874,7 +874,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $result = $service->templateCreate($data['action_code'], $data['subject'], $data['content'], 1, $data['category']);
 
-        $this->assertEquals($id, $result);
+        $this->assertEquals($emailTemplateModel, $result);
     }
 
     public function testBatchTemplateGenerateProvider()

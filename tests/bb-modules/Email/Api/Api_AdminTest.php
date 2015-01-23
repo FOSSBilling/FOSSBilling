@@ -411,6 +411,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $adminApi = new \Box\Mod\Email\Api\Admin();
 
         $modelId = rand(1, 100);
+
+        $templateModel = new \Model_EmailTemplate();
+        $templateModel->loadBean(new \RedBeanPHP\OODBBean());
+        $templateModel->id = $modelId;
+
         $data    = array(
             'action_code' => 'Action_code',
             'subject'     => 'Subject',
@@ -420,7 +425,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $emailService = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('templateCreate'))->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('templateCreate')
-            ->will($this->returnValue($modelId));
+            ->will($this->returnValue($templateModel));
         $adminApi->setService($emailService);
 
         $result = $adminApi->template_create($data);
