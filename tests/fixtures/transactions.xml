@@ -8,9 +8,9 @@
     <pay_gateway id="2" name="PayPal" gateway="PayPalEmail" enabled="1" config='{"email":"john.doe@gmail.com"}'/>
     <pay_gateway id="3" name="TwoCheckout" gateway="TwoCheckout" enabled="1" config='{"vendor_nr":"1", "secret":123}'/>
 
-    <client_order id="3" client_id="1" group_id="1" product_id="10" currency="USD" service_type="custom" period="1M" quantity="1" price="8.99" status="pending_setup" notes="" created_at="2011-10-24T15:23:43+03:00" updated_at="2011-10-24T15:23:43+03:00"/>
-    <client_order id="4" client_id="1" group_id="1" product_id="10" currency="USD" service_type="custom" period="1M" quantity="1" price="8.99" status="pending_setup" notes="" created_at="2011-10-24T15:23:43+03:00" updated_at="2011-10-24T15:23:43+03:00"/>
-    <client_order id="5" client_id="1" group_id="1" product_id="10" currency="USD" service_type="custom" period="1M" quantity="1" price="8.99" status="active" notes="" expires_at="2012-10-10" created_at="2011-10-24T15:23:43+03:00" updated_at="2011-10-24T15:23:43+03:00"/>
+    <client_order id="3" client_id="1" group_id="100" product_id="10" currency="USD" service_type="custom" period="1M" quantity="1" price="8.99" status="pending_setup" notes="" created_at="2011-10-24T15:23:43+03:00" updated_at="2011-10-24T15:23:43+03:00"/>
+    <client_order id="4" client_id="1" group_id="100" product_id="10" currency="USD" service_type="custom" period="1M" quantity="1" price="8.99" status="pending_setup" notes="" created_at="2011-10-24T15:23:43+03:00" updated_at="2011-10-24T15:23:43+03:00"/>
+    <client_order id="5" client_id="1" group_id="100" product_id="10" currency="USD" service_type="custom" period="1M" quantity="1" price="8.99" status="active" notes="" expires_at="2012-10-10" created_at="2011-10-24T15:23:43+03:00" updated_at="2011-10-24T15:23:43+03:00"/>
 
     <invoice id="1" client_id="1" hash="hash" currency="USD" status="unpaid" due_at="2014-01-01T12:00:00+00:00" created_at="2011-11-01T12:00:00+00:00" updated_at="2011-11-01T12:00:00+00:00"/>
     <invoice_item id="1" invoice_id="1" type="custom" task="void" title="Payment for development services" period="" quantity="10" unit="hours" price="50" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
