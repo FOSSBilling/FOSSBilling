@@ -71,8 +71,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_client_confirmation(\Box_App $app, $hash)
     {
-        $mod = new Box_Mod('client');
-        $service = $mod->getService();
+        $service = $this->di['mod_service']('client');
         $service->approveClientEmailByHash($hash);
         $app->redirect('/');
     }
