@@ -181,7 +181,8 @@ class Box_Database implements InjectionAwareInterface
     public function convertToModels($modelName, array $records)
     {
         $result = array();
-        $beans = $this->orm->convertToBeans($modelName, $records);
+        $type = $this->_getTypeFromModelName($modelName);
+        $beans = $this->orm->convertToBeans($type, $records);
         foreach($beans as $bean){
             $result[] = $bean->box();
         }
