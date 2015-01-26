@@ -210,7 +210,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $data['client_id']      = 1;
         $data['product_id']     = $pid;
         $data['period']         = '1M';
-        $data['group_id']       = 2;
+        $data['group_id']       = 200;
 //        $data['currency']       = 'EUR';
 //        $data['invoice_option'] = 'issue-invoice';
         $data['invoice_option'] = 'no-invoice';
