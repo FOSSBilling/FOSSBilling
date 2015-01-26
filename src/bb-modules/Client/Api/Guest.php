@@ -122,7 +122,7 @@ class Guest extends \Api_Abstract
 
         if (isset($config['require_email_confirmation']) && (int)$config['require_email_confirmation']) {
             if (!$client->email_approved) {
-                throw new \Box_Exception('Account has been created. Please check your mailbox and confirm email address.');
+                throw new \Box_Exception('Account has been created. Please check your mailbox and confirm email address.', null,  7777);
             }
         }
 
