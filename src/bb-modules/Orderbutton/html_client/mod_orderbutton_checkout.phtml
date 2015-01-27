@@ -154,7 +154,7 @@
 
                     <form method="post" action="client/cart/checkout" class="form-horizontal" id="checkout-form" onsubmit="return false;">
                         <fieldset>
-                            {% set enough_in_balance = client.client_balance_get_total > cart.total %}
+                            {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
                             {% if cart.total and not enough_in_balance %}
                             <div class="control-group">
                                 {% for gtw in guest.invoice_gateways %}

@@ -425,7 +425,7 @@ class Service implements InjectionAwareInterface
             )
         );
 
-        list($order, $invoice_id, $orders) = $this->createFromCart($client, $gateway_id);
+        list($order, $invoice, $orders) = $this->createFromCart($client, $gateway_id);
 
         $this->rm($cart);
 
@@ -450,9 +450,8 @@ class Service implements InjectionAwareInterface
         );
 
         // invoice may not be created if total is 0
-        if ($invoice_id) {
-            $idata                  = $this->di['db']->getExistingModelById('Invoice', $invoice_id, 'Invoice not found');
-            $result['invoice_hash'] = $idata->hash;
+        if ($invoice instanceof \Model_Invoice && $invoice->status == \Model_Invoice::STATUS_UNPAID) {
+            $result['invoice_hash'] = $invoice->hash;
         }
 
         return $result;
@@ -569,7 +568,7 @@ class Service implements InjectionAwareInterface
 
             $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
             $balanceAmount = $clientBalanceService->getClientBalance($client);
-            $useCredits = $balanceAmount > $ca['total'];
+            $useCredits = $balanceAmount >= $ca['total'];
 
             $invoiceService->approveInvoice($invoiceModel, array('id' => $invoiceModel->id, 'use_credits' => $useCredits));
 
@@ -611,7 +610,7 @@ class Service implements InjectionAwareInterface
 
         return array(
             $master_order,
-            isset($invoiceModel) ? $invoiceModel->id : null,
+            isset($invoiceModel) ? $invoiceModel : null,
             $ids,
         );
     }
