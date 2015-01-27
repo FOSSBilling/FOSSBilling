@@ -582,8 +582,9 @@ class Service implements InjectionAwareInterface
 
         //activate orders if product is setup to be activated after order place or order total is $0
         $orderService = $this->di['mod_service']('Order');
+        $ids = array();
         foreach ($orders as $order) {
-
+            $ids[] = $order->id;
             $oa      = $orderService->toApiArray($order, false, $client);
             $product = $this->di['db']->getExistingModelById('Product', $oa['product_id']);
             if ($product->setup == \Model_ProductTable::SETUP_AFTER_ORDER || ($product->setup == \Model_ProductTable::SETUP_AFTER_PAYMENT && $oa['total'] - $oa['discount'] <= 0)) {
@@ -598,6 +599,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        $result[2] = $ids;
         return $result;
     }
 
