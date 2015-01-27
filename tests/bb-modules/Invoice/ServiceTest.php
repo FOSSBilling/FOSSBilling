@@ -628,8 +628,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $serviceMock->setDi($di);
         $result = $serviceMock->prepareInvoice($clientModel, $data);
-        $this->assertInternalType('int', $result);
-        $this->assertEquals($newRecordId, $result);
+        $this->assertInstanceOf('Model_Invoice', $result);
     }
 
     public function testsetInvoiceDefaults()
