@@ -68,19 +68,7 @@ class Admin extends \Api_Abstract
             return false;
         }
 
-        $meta             = $this->di['db']->dispense('extension_meta');
-        $meta->extension  = 'mod_notification';
-        $meta->rel_type   = 'staff';
-        $meta->rel_id     = 1;
-        $meta->meta_key   = 'message';
-        $meta->meta_value = $data['message'];
-        $meta->created_at = date('c');
-        $meta->updated_at = date('c');
-        $id               = $this->di['db']->store($meta);
-
-        $this->di['events_manager']->fire(array('event' => 'onAfterAdminNotificationAdd', 'params' => array('id' => $id)));
-
-        return $id;
+        return $this->getService()->create($data['message']);
     }
 
     /**
