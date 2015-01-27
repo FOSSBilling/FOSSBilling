@@ -566,7 +566,12 @@ class Service implements InjectionAwareInterface
 
             $invoiceService =  $this->di['mod_service']('Invoice');
             $invoiceModel   = $invoiceService->prepareInvoice($client, array('client_id' => $client->id, 'items' => $invoice_items, 'gateway_id' => $gateway_id));
-            $invoiceService->approveInvoice($invoiceModel, array('id' => $invoiceModel->id, 'use_credits' => true));
+
+            $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
+            $balanceAmount = $clientBalanceService->getClientBalance($client);
+            $useCredits = $balanceAmount > $ca['total'];
+
+            $invoiceService->approveInvoice($invoiceModel, array('id' => $invoiceModel->id, 'use_credits' => $useCredits));
 
             if ($invoiceModel->status == \Model_Invoice::STATUS_UNPAID) {
                 foreach ($orders as $order) {
@@ -593,6 +598,10 @@ class Service implements InjectionAwareInterface
                 }
 
                 if ($ca['total'] <= 0 && $product->setup == \Model_ProductTable::SETUP_AFTER_PAYMENT && $oa['total'] - $oa['discount'] <= 0){
+                    $orderService->activateOrder($order);
+                }
+
+                if ($ca['total'] > 0 && $product->setup == \Model_ProductTable::SETUP_AFTER_PAYMENT && $invoiceModel->status == \Model_Invoice::STATUS_PAID ){
                     $orderService->activateOrder($order);
                 }
             }
