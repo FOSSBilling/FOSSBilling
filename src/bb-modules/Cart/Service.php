@@ -521,7 +521,7 @@ class Service implements InjectionAwareInterface
             $order->updated_at     = date('c');
             $this->di['db']->store($order);
 
-            $orders[] = $order->id;
+            $orders[] = $order;
 
             // mark promo as used
             if ($cart->promo_id) {
@@ -575,10 +575,9 @@ class Service implements InjectionAwareInterface
             $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
             $invoiceService->approveInvoice($invoiceModel, array('id' => $invoice_id, 'use_credits' => true));
 
-            foreach ($orders as $oid) {
-                $o                    = $this->di['db']->load('ClientOrder', $oid);
-                $o->unpaid_invoice_id = $invoice_id;
-                $this->di['db']->store($o);
+            foreach ($orders as $order) {
+                $order->unpaid_invoice_id = $invoice_id;
+                $this->di['db']->store($order);
             }
 
             $result = array($master_order, $invoice_id, $orders);
@@ -588,9 +587,8 @@ class Service implements InjectionAwareInterface
 
         //activate orders if product is setup to be activated after order place or order total is $0
         $orderService = $this->di['mod_service']('Order');
-        foreach ($orders as $oid) {
+        foreach ($orders as $order) {
 
-            $order   = $this->di['db']->load('ClientOrder', $oid);
             $oa      = $orderService->toApiArray($order, false, $client);
             $product = $this->di['db']->getExistingModelById('Product', $oa['product_id']);
             if ($product->setup == \Model_ProductTable::SETUP_AFTER_ORDER || ($this->canActivateOrder($product, $oa))) {
