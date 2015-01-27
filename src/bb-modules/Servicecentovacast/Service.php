@@ -384,6 +384,7 @@ class Service implements \Box\InjectionAwareInterface
         
         require_once(dirname(__FILE__).'/ccapiclient/ccapiclient.php');
         $server = new CCServerAPIClient($centovacast_url);
+        $server->cc_initialize($centovacast_url);
         $server->call($method, $account_username, $account_password, $arguments);
 
         if (!$server->success) {
