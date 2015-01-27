@@ -565,16 +565,17 @@ class Service implements InjectionAwareInterface
         if ($ca['total'] > 0) { //crete invoice if order total > 0
 
             $invoiceService =  $this->di['mod_service']('Invoice');
-            $invoice_id = $invoiceService->prepareInvoice($client, array('client_id' => $client->id, 'items' => $invoice_items, 'gateway_id' => $gateway_id));
-            $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
-            $invoiceService->approveInvoice($invoiceModel, array('id' => $invoice_id, 'use_credits' => true));
+            $invoiceModel   = $invoiceService->prepareInvoice($client, array('client_id' => $client->id, 'items' => $invoice_items, 'gateway_id' => $gateway_id));
+            $invoiceService->approveInvoice($invoiceModel, array('id' => $invoiceModel->id, 'use_credits' => true));
 
-            foreach ($orders as $order) {
-                $order->unpaid_invoice_id = $invoice_id;
-                $this->di['db']->store($order);
+            if ($invoiceModel->status == \Model_Invoice::STATUS_UNPAID) {
+                foreach ($orders as $order) {
+                    $order->unpaid_invoice_id = $invoiceModel->id;
+                    $this->di['db']->store($order);
+                }
             }
 
-            $result = array($master_order, $invoice_id, $orders);
+            $result = array($master_order, $invoiceModel->id, $orders);
         } else {
             $result = array($master_order, null, $orders);
         }
