@@ -579,10 +579,6 @@ class Service implements InjectionAwareInterface
                     $this->di['db']->store($order);
                 }
             }
-
-            $result = array($master_order, $invoiceModel->id, $orders);
-        } else {
-            $result = array($master_order, null, $orders);
         }
 
         //activate orders if product is setup to be activated after order place or order total is $0
@@ -613,8 +609,11 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $result[2] = $ids;
-        return $result;
+        return array(
+            $master_order,
+            isset($invoiceModel) ? $invoiceModel->id : null,
+            $ids,
+        );
     }
 
     public function usePromo(\Model_Promo $promo)
