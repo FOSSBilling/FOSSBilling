@@ -460,18 +460,12 @@ class Service implements InjectionAwareInterface
 
     public function createFromCart(\Model_Client $client, $gateway_id = null)
     {
-        $cart         = $this->getSessionCart();
-        $cartProducts = $this->di['db']->find('CartProduct', 'cart_id = :cart_id', array(':cart_id' => $cart->id));
-        if (count($cartProducts) == 0) {
+        $cart = $this->getSessionCart();
+        $ca = $this->toApiArray($cart);
+        if (count($ca['items']) == 0) {
             throw new \Box_Exception('Can not checkout empty cart.');
         }
 
-        $ca = $this->toApiArray($cart);
-
-        $create_invoice = true;
-        if ($ca['total'] == 0) {
-            $create_invoice = false;
-        }
 
         $currency = $this->di['db']->getExistingModelById('Currency', $cart->currency_id, 'Currency not found.');
 
@@ -568,7 +562,7 @@ class Service implements InjectionAwareInterface
             $i++;
         }
 
-        if ($create_invoice) {
+        if ($ca['total'] > 0) { //crete invoice if order total > 0
 
             $invoiceService =  $this->di['mod_service']('Invoice');
             $invoice_id = $invoiceService->prepareInvoice($client, array('client_id' => $client->id, 'items' => $invoice_items, 'gateway_id' => $gateway_id));
