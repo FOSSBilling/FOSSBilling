@@ -493,7 +493,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        return $invoiceId;
+        return $model;
     }
 
     public function setInvoiceDefaults(\Model_Invoice $model)
