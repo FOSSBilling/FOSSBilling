@@ -154,7 +154,8 @@
 
                     <form method="post" action="client/cart/checkout" class="form-horizontal" id="checkout-form" onsubmit="return false;">
                         <fieldset>
-                            {% if cart.total %}
+                            {% set enough_in_balance = client.client_balance_get_total > cart.total %}
+                            {% if cart.total and not enough_in_balance %}
                             <div class="control-group">
                                 {% for gtw in guest.invoice_gateways %}
                                 {% if cart.currency.code in gtw.accepted_currencies %}
@@ -168,6 +169,9 @@
                             {% endif %}
                             <div class="control-group">
                                 <div class="controls">
+                                    {% if enough_in_balance %}
+                                        <p>{% trans 'Total amount will be deducted from account balance' %}</p>
+                                    {% endif %}
                                     <button class="btn btn-primary btn-large" type="submit">{% trans 'Checkout' %}</button>
                                 </div>
                             </div>
