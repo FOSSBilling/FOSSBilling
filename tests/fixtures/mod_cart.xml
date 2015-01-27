@@ -76,7 +76,6 @@
     <service_downloadable />
     <service_hosting />
     <service_membership />
-    <client_order_status />
 
     <service_hosting id="1" client_id="1" service_hosting_hp_id="1" sld="exist" tld=".com" />
 

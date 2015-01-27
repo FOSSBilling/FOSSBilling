@@ -585,7 +585,7 @@ class Service implements InjectionAwareInterface
 
             $oa      = $orderService->toApiArray($order, false, $client);
             $product = $this->di['db']->getExistingModelById('Product', $oa['product_id']);
-            if ($product->setup == \Model_ProductTable::SETUP_AFTER_ORDER || ($this->canActivateOrder($product, $oa))) {
+            if ($product->setup == \Model_ProductTable::SETUP_AFTER_ORDER || ($product->setup == \Model_ProductTable::SETUP_AFTER_PAYMENT && $oa['total'] - $oa['discount'] <= 0)) {
                 try {
                     $orderService->activateOrder($order);
                 } catch (\Exception $e) {
@@ -598,37 +598,6 @@ class Service implements InjectionAwareInterface
         }
 
         return $result;
-    }
-
-    /**
-     * Activate order rules:
-     * - product setup == SETUP_AFTER_PAYMENT
-     * - order amount must be > 0
-     * - group invoice must be paid to activate zero amount and addon order
-     *
-     * @param \Model_Product $product
-     * @param array          $orderArray
-     * @return bool
-     */
-    public function canActivateOrder(\Model_Product $product, array $orderArray)
-    {
-        if ($product->setup != \Model_ProductTable::SETUP_AFTER_PAYMENT){
-            return false;
-        }
-
-        if ($orderArray['total'] - $orderArray['discount'] > 0){
-            return false;
-        }
-
-        if ($orderArray['group_master'] == 0 && $orderArray['group_id'] > 0){
-            $invoice = $this->di['db']->load('Invoice', $orderArray['unpaid_invoice_id']);
-            if ($invoice->status != \Model_Invoice::STATUS_PAID){
-                return false;
-            }
-
-        }
-
-        return true;
     }
 
     public function usePromo(\Model_Promo $promo)
