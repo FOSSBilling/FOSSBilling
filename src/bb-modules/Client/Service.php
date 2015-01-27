@@ -530,7 +530,7 @@ class Service implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminCreateClient', 'params'=>$data));
         $client = $this->createClient($data);
-        $this->di['events_manager']->fire(array('event'=>'onAfterAdminCreateClient', 'params'=>array('id'=>$client->id, 'password'=>$client->pass)));
+        $this->di['events_manager']->fire(array('event'=>'onAfterAdminCreateClient', 'params'=>array('id'=>$client->id, 'password'=>$data['password'])));
         $this->di['logger']->info('Created new client #%s', $client->id);
 
         return $client->id;
