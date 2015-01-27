@@ -587,15 +587,20 @@ class Service implements InjectionAwareInterface
             $ids[] = $order->id;
             $oa      = $orderService->toApiArray($order, false, $client);
             $product = $this->di['db']->getExistingModelById('Product', $oa['product_id']);
-            if ($product->setup == \Model_ProductTable::SETUP_AFTER_ORDER || ($product->setup == \Model_ProductTable::SETUP_AFTER_PAYMENT && $oa['total'] - $oa['discount'] <= 0)) {
-                try {
+            try {
+                if ($product->setup == \Model_ProductTable::SETUP_AFTER_ORDER){
                     $orderService->activateOrder($order);
-                } catch (\Exception $e) {
-                    error_log($e->getMessage());
-                    $status = 'error';
-                    $notes = 'Order could not be activated after checkout due to error: ' . $e->getMessage();
-                    $orderService->orderStatusAdd($order, $status, $notes);
                 }
+
+                if ($ca['total'] <= 0 && $product->setup == \Model_ProductTable::SETUP_AFTER_PAYMENT && $oa['total'] - $oa['discount'] <= 0){
+                    $orderService->activateOrder($order);
+                }
+            }
+            catch (\Exception $e) {
+                error_log($e->getMessage());
+                $status = 'error';
+                $notes  = 'Order could not be activated after checkout due to error: ' . $e->getMessage();
+                $orderService->orderStatusAdd($order, $status, $notes);
             }
         }
 

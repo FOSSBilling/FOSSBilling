@@ -102,4 +102,43 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
             $this->assertEquals(9874, $e->getCode());
         }
     }
+
+    /**
+     * addon activated while order Invoice Unpaid
+     */
+    public function testAddonActivatedWhileOrderInvoiceUnpaid()
+    {
+
+        $this->api_guest->cart_reset();
+        $data = array(
+            'id'       =>  11,
+            'period'    =>  '6M',
+            'domain' => array(
+                'action' => "register",
+                'owndomain_sld' =>"",
+                'owndomain_tld' =>".com",
+                'register_sld' =>"newdomainregister",
+                'register_tld' =>".com",
+                'register_years' => "1",
+            ),
+            'multiple' => 1,
+
+        );
+        $this->api_guest->cart_add_item($data);
+        $this->api_client->cart_checkout();
+
+        $masterOrder = $this->di['db']->findOne('ClientOrder', 'group_master = 1 ORDER BY id desc');
+        $addonOrder = $this->di['db']->findOne('ClientOrder', 'group_id = ? and group_master = 0', array($masterOrder->group_id));
+
+        $invoiceModel = $this->di['db']->load('Invoice', $masterOrder->unpaid_invoice_id);
+
+        $this->assertInstanceOf('Model_ClientOrder', $masterOrder);
+        $this->assertInstanceOf('Model_ClientOrder', $addonOrder);
+        $this->assertInstanceOf('Model_Invoice', $invoiceModel);
+
+        $this->assertEquals(Model_ClientOrder::STATUS_PENDING_SETUP, $masterOrder->status);
+        $this->assertEquals(Model_ClientOrder::STATUS_PENDING_SETUP, $addonOrder->status);
+        $this->assertEquals(Model_Invoice::STATUS_UNPAID, $invoiceModel->status);
+    }
+
 }
