@@ -309,4 +309,14 @@ class Client extends \Api_Abstract
         return $pager;
     }
 
+    /**
+     * Get client balance
+     * @return float
+     */
+    public function balance_get_total()
+    {
+        $service = $this->di['mod_service']('Client', 'Balance');
+        return $service->getClientBalance($this->identity);
+    }
+
 }

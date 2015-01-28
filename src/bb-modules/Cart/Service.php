@@ -425,7 +425,7 @@ class Service implements InjectionAwareInterface
             )
         );
 
-        list($order, $invoice_id, $orders) = $this->createFromCart($client, $gateway_id);
+        list($order, $invoice, $orders) = $this->createFromCart($client, $gateway_id);
 
         $this->rm($cart);
 
@@ -450,9 +450,8 @@ class Service implements InjectionAwareInterface
         );
 
         // invoice may not be created if total is 0
-        if ($invoice_id) {
-            $idata                  = $this->di['db']->getExistingModelById('Invoice', $invoice_id, 'Invoice not found');
-            $result['invoice_hash'] = $idata->hash;
+        if ($invoice instanceof \Model_Invoice && $invoice->status == \Model_Invoice::STATUS_UNPAID) {
+            $result['invoice_hash'] = $invoice->hash;
         }
 
         return $result;
@@ -460,18 +459,12 @@ class Service implements InjectionAwareInterface
 
     public function createFromCart(\Model_Client $client, $gateway_id = null)
     {
-        $cart         = $this->getSessionCart();
-        $cartProducts = $this->di['db']->find('CartProduct', 'cart_id = :cart_id', array(':cart_id' => $cart->id));
-        if (count($cartProducts) == 0) {
+        $cart = $this->getSessionCart();
+        $ca = $this->toApiArray($cart);
+        if (count($ca['items']) == 0) {
             throw new \Box_Exception('Can not checkout empty cart.');
         }
 
-        $ca = $this->toApiArray($cart);
-
-        $create_invoice = true;
-        if ($ca['total'] == 0) {
-            $create_invoice = false;
-        }
 
         $currency = $this->di['db']->getExistingModelById('Currency', $cart->currency_id, 'Currency not found.');
 
@@ -521,7 +514,7 @@ class Service implements InjectionAwareInterface
             $order->updated_at     = date('c');
             $this->di['db']->store($order);
 
-            $orders[] = $order->id;
+            $orders[] = $order;
 
             // mark promo as used
             if ($cart->promo_id) {
@@ -568,44 +561,58 @@ class Service implements InjectionAwareInterface
             $i++;
         }
 
-        if ($create_invoice) {
+        if ($ca['total'] > 0) { //crete invoice if order total > 0
 
             $invoiceService =  $this->di['mod_service']('Invoice');
-            $invoice_id = $invoiceService->prepareInvoice($client, array('client_id' => $client->id, 'items' => $invoice_items, 'gateway_id' => $gateway_id));
-            $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
-            $invoiceService->approveInvoice($invoiceModel, array('id' => $invoice_id, 'use_credits' => true));
+            $invoiceModel   = $invoiceService->prepareInvoice($client, array('client_id' => $client->id, 'items' => $invoice_items, 'gateway_id' => $gateway_id));
 
-            foreach ($orders as $oid) {
-                $o                    = $this->di['db']->load('ClientOrder', $oid);
-                $o->unpaid_invoice_id = $invoice_id;
-                $this->di['db']->store($o);
-            }
+            $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
+            $balanceAmount = $clientBalanceService->getClientBalance($client);
+            $useCredits = $balanceAmount >= $ca['total'];
 
-            $result = array($master_order, $invoice_id, $orders);
-        } else {
-            $result = array($master_order, null, $orders);
-        }
+            $invoiceService->approveInvoice($invoiceModel, array('id' => $invoiceModel->id, 'use_credits' => $useCredits));
 
-        //activate orders if product is setup to be activated after order place or order total is $0
-        $orderService = $this->di['mod_service']('Order');
-        foreach ($orders as $oid) {
-
-            $order   = $this->di['db']->load('ClientOrder', $oid);
-            $oa      = $orderService->toApiArray($order, false, $client);
-            $product = $this->di['db']->getExistingModelById('Product', $oa['product_id']);
-            if ($product->setup == \Model_ProductTable::SETUP_AFTER_ORDER || ($product->setup == \Model_ProductTable::SETUP_AFTER_PAYMENT && $oa['total'] - $oa['discount'] <= 0)) {
-                try {
-                    $orderService->activateOrder($order);
-                } catch (\Exception $e) {
-                    error_log($e->getMessage());
-                    $status = 'error';
-                    $notes = 'Order could not be activated after checkout due to error: ' . $e->getMessage();
-                    $orderService->orderStatusAdd($order, $status, $notes);
+            if ($invoiceModel->status == \Model_Invoice::STATUS_UNPAID) {
+                foreach ($orders as $order) {
+                    $order->unpaid_invoice_id = $invoiceModel->id;
+                    $this->di['db']->store($order);
                 }
             }
         }
 
-        return $result;
+        //activate orders if product is setup to be activated after order place or order total is $0
+        $orderService = $this->di['mod_service']('Order');
+        $ids = array();
+        foreach ($orders as $order) {
+            $ids[] = $order->id;
+            $oa      = $orderService->toApiArray($order, false, $client);
+            $product = $this->di['db']->getExistingModelById('Product', $oa['product_id']);
+            try {
+                if ($product->setup == \Model_ProductTable::SETUP_AFTER_ORDER){
+                    $orderService->activateOrder($order);
+                }
+
+                if ($ca['total'] <= 0 && $product->setup == \Model_ProductTable::SETUP_AFTER_PAYMENT && $oa['total'] - $oa['discount'] <= 0){
+                    $orderService->activateOrder($order);
+                }
+
+                if ($ca['total'] > 0 && $product->setup == \Model_ProductTable::SETUP_AFTER_PAYMENT && $invoiceModel->status == \Model_Invoice::STATUS_PAID ){
+                    $orderService->activateOrder($order);
+                }
+            }
+            catch (\Exception $e) {
+                error_log($e->getMessage());
+                $status = 'error';
+                $notes  = 'Order could not be activated after checkout due to error: ' . $e->getMessage();
+                $orderService->orderStatusAdd($order, $status, $notes);
+            }
+        }
+
+        return array(
+            $master_order,
+            isset($invoiceModel) ? $invoiceModel : null,
+            $ids,
+        );
     }
 
     public function usePromo(\Model_Promo $promo)
