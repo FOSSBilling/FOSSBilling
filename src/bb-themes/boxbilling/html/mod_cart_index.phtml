@@ -89,7 +89,8 @@
                         <p>{% trans 'Total:' %}</p>
                         <div class="currency">{{ cart.total | money_convert }}</div>
                         <form method="post" action="{{ 'api/client/cart/checkout'|link }}" class="api-form" data-api-jsonp="onAfterCartCheckout">
-                        {% if cart.total %}
+                        {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
+                        {% if cart.total and not enough_in_balance  %}
                         <div style="text-align: left;">
                         {% for gtw in guest.invoice_gateways %}
                             {% if cart.currency.code in gtw.accepted_currencies %}
@@ -103,6 +104,9 @@
                         {% endif %}
                         <br/>
                         <button class="bb-button bb-button-submit bb-button-big" type="submit">{% trans 'Checkout' %}</button>
+                        {% if enough_in_balance %}
+                        <p>{% trans 'Total amount will be deducted from account balance' %}</p>
+                        {% endif %}
                         </form>
                     </div>
                 </div>
