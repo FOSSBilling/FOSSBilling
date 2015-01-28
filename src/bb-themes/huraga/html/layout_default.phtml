@@ -172,27 +172,48 @@
     <ul>
         {% if settings.footer_link_1_enabled %}
         <li>
+            {% if 'http://' in settings.footer_link_1_page or  'https://' in settings.footer_link_1_page%}
+            <a href="{{ settings.footer_link_1_page }}">{{ settings.footer_link_1_title }}</a>
+            {% else %}
             <a href="{{ settings.footer_link_1_page | link }}">{{ settings.footer_link_1_title }}</a>
+            {% endif %}
         </li>
         {% endif %}
         {% if settings.footer_link_2_enabled %}
         <li>
-            <a href="{{ settings.footer_link_2_page | link }}">{{ settings.footer_link_2_title }}</a>
+            {% if 'http://' in settings.footer_link_2_page or  'https://' in settings.footer_link_2_page%}
+            <a href="{{ settings.footer_link_2_page }}">{{ settings.footer_link_2_title }}</a>
+            {% else %}
+            <a href="{{ settings.footer_link_2_page | link}}">{{ settings.footer_link_2_title }}</a>
+            {% endif %}
         </li>
         {% endif %}
         {% if settings.footer_link_3_enabled %}
         <li>
+            {% if 'http://' in settings.footer_link_3_page or  'https://' in settings.footer_link_3_page%}
+            <a href="{{ settings.footer_link_3_page }}">{{ settings.footer_link_3_title }}</a>
+            {% else %}
             <a href="{{ settings.footer_link_3_page | link }}">{{ settings.footer_link_3_title }}</a>
+
+            {%endif %}
         </li>
         {% endif %}
         {% if settings.footer_link_4_enabled %}
         <li>
+            {% if 'http://' in settings.footer_link_4_page or  'https://' in settings.footer_link_4_page%}
+            <a href="{{ settings.footer_link_4_page }}">{{ settings.footer_link_4_title }}</a>
+            {% else %}
             <a href="{{ settings.footer_link_4_page | link }}">{{ settings.footer_link_4_title }}</a>
+            {% endif %}
         </li>
         {% endif %}
         {% if settings.footer_link_5_enabled %}
         <li>
+            {% if 'http://' in settings.footer_link_5_page or  'https://' in settings.footer_link_5_page%}
+            <a href="{{ settings.footer_link_5_page }}">{{ settings.footer_link_5_title }}</a>
+            {% else %}
             <a href="{{ settings.footer_link_5_page | link }}">{{ settings.footer_link_5_title }}</a>
+            {% endif %}
         </li>
         {% endif %}
 
