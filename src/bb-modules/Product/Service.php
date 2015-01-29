@@ -567,6 +567,10 @@ class Service implements InjectionAwareInterface
 
     public function createPromo($code, $type, $value, $products = array(), $periods = array(), $clientGroups = array(), $data)
     {
+        if ($this->di['db']->findOne('Promo', 'code = :code', array(':code' => $code))){
+            throw new \Box_Exception('This promo code already exists.');
+        }
+
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Promo', 2);
 
