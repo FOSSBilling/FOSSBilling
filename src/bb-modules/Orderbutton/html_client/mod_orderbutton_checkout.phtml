@@ -145,9 +145,18 @@
                         </tr>
                         {% endif %}
 
+                        {% set tax_amount = 0 %}
+                        {% if client.client_is_taxable %}
+                        {% set tax_rate = client.invoice_get_tax_rate %}
+                        {% set tax_amount = cart.total * tax_rate / 100 %}
+                        <tr>
+                            <td><strong>{% trans 'VAT'%} ({{ tax_rate }}%) :</strong></td>
+                            <td><strong>{{ tax_amount | money_convert }}</strong></td>
+                        </tr>
+                        {% endif %}
                         <tr>
                             <td><strong>{% trans 'Total:' %}</strong></td>
-                            <td><strong>{{ cart.total | money_convert }}</strong></td>
+                            <td><strong>{{ (cart.total + tax_amount) | money_convert }}</strong></td>
                         </tr>
 
                     </table>
