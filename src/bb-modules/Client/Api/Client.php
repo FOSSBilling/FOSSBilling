@@ -319,4 +319,9 @@ class Client extends \Api_Abstract
         return $service->getClientBalance($this->identity);
     }
 
+    public function is_taxable()
+    {
+        return $this->getService()->isClientTaxable($this->identity);
+    }
+
 }

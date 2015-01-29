@@ -200,5 +200,27 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $this->assertEquals($balanceAmount, $result);
 
     }
+
+    public function testis_taxable()
+    {
+        $clientIsTaxable = true;
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('isClientTaxable')
+            ->willReturn($clientIsTaxable);
+
+        $client = new \Model_Client();
+        $client->loadBean(new \RedBeanPHP\OODBBean());
+
+        $api = new \Box\Mod\Client\Api\Client();
+        $api->setService($serviceMock);
+        $api->setIdentity($client);
+
+        $result = $api->is_taxable();
+        $this->assertInternalType('bool', $result);
+        $this->assertEquals($clientIsTaxable, $result);
+
+    }
 }
  
