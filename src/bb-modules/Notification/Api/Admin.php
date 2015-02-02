@@ -68,7 +68,9 @@ class Admin extends \Api_Abstract
             return false;
         }
 
-        return $this->getService()->create($data['message']);
+        $message = htmlspecialchars($data['message'], ENT_QUOTES, 'UTF-8');
+
+        return $this->getService()->create($message);
     }
 
     /**
