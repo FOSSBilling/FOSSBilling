@@ -107,18 +107,19 @@ function popup(){
         $('#popup-iframe').show();
     }
 }
-
-if (typeof jQuery === "undefined") {
-    (function(d, script) {
-        script = d.createElement('script');
-        script.type = 'text/javascript';
-        script.async = true;
-        script.onload = function(){
-            show_popup();
-        };
-        script.src = 'http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js';
-        d.getElementsByTagName('head')[0].appendChild(script);
-        }(document));
-}else{
-    show_popup();
-};
+$( document ).ready(function() {
+    if (typeof jQuery === "undefined") {
+        (function(d, script) {
+            script = d.createElement('script');
+            script.type = 'text/javascript';
+            script.async = true;
+            script.onload = function(){
+                show_popup();
+            };
+            script.src = 'http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js';
+            d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+    }else{
+        show_popup();
+    };
+});
