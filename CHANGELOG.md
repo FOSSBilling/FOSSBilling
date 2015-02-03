@@ -1,13 +1,29 @@
-Release 4.14 (2015-02-xx)
+Release 4.14 (2015-02-03)
 ------------------------------------------------------------------------------
 
 * New event hook:  
     * onBeforeThemeSettingsSave
-* Taxes are shown in the cart checkout summary;
-* Email templates are generated after install;
-* Footer links fix for Huraga theme;
+* New API(client) calls:
+    * invoice_get_tax_rate
+    * client_is_taxable
+    * client_balance_get_total
+* Taxes are shown in the cart checkout summary
+* Email templates are generated after install
+* Footer links fix for Huraga theme
 * Only one coupon code name can be created and used;
-* And various other fixes and updates;
+* Fixed CKEditor issue with canned responses
+* Custom payment gateway render error fixed
+* Fixed Centova Cast module
+* Password hash in email resolved
+* Orderbutton module popup improved
+* Client email confirmation logic updated
+* Variables in email templates list fixed
+* Generating email templates just after installing of BoxBilling
+* Allow only text in Notification module messages
+* Fixed constantly regenerating invoices issue
+* Add funds logic updated
+* Settings of footer links updated
+* Security and performance fixes and updates
 
 Release 4.13 (2015-01-15)
 ------------------------------------------------------------------------------
