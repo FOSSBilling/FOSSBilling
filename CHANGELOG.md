@@ -3,6 +3,11 @@ Release 4.14 (2015-02-xx)
 
 * New event hook:  
     * onBeforeThemeSettingsSave
+* Taxes are shown in the cart checkout summary;
+* Email templates are generated after install;
+* Footer links fix for Huraga theme;
+* Only one coupon code name can be created and used;
+* And various other fixes and updates;
 
 Release 4.13 (2015-01-15)
 ------------------------------------------------------------------------------
