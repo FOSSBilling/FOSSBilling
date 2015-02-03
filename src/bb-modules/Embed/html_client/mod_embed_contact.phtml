@@ -60,7 +60,7 @@
             {% if guest.extension_is_on({"mod":"spamchecker"}) %}
             {% set rc = guest.spamchecker_recaptcha %}
             {% if rc.enabled %} 
-            {% set server = "http://www.google.com/recaptcha/api" %}
+            {% set server = "https://www.google.com/recaptcha/api" %}
             <script type="text/javascript">
                 var RecaptchaOptions = {
                 theme : 'custom',
