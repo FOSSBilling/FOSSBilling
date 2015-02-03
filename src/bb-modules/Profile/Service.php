@@ -287,7 +287,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['validator']->isPasswordStrong($password);
 
-        $client->pass = $password;
+        $client->pass = $this->di['password']->hashIt($password);
         $this->di['db']->store($client);
 
         $this->di['events_manager']->fire(array('event' => 'onAfterClientProfilePasswordChange', 'params' => array('id' => $client->id)));

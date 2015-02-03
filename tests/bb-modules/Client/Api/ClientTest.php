@@ -175,5 +175,52 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $result = $api->update($data);
         $this->assertTrue($result);
     }
+
+    public function testbalance_get_total()
+    {
+        $balanceAmount = 0.00;
+        $model = new \Model_Client();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Client\ServiceBalance')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getClientBalance')
+            ->will($this->returnValue($balanceAmount));
+
+        $di = new \Box_Di();
+        $di['mod_service'] = $di->protect(function ($name, $sub) use($serviceMock) {return $serviceMock;});
+
+        $api = new \Box\Mod\Client\Api\Client();
+        $api->setDi($di);
+        $api->setIdentity($model);
+
+        $result = $api->balance_get_total();
+
+        $this->assertInternalType('float', $result);
+        $this->assertEquals($balanceAmount, $result);
+
+    }
+
+    public function testis_taxable()
+    {
+        $clientIsTaxable = true;
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('isClientTaxable')
+            ->willReturn($clientIsTaxable);
+
+        $client = new \Model_Client();
+        $client->loadBean(new \RedBeanPHP\OODBBean());
+
+        $api = new \Box\Mod\Client\Api\Client();
+        $api->setService($serviceMock);
+        $api->setIdentity($client);
+
+        $result = $api->is_taxable();
+        $this->assertInternalType('bool', $result);
+        $this->assertEquals($clientIsTaxable, $result);
+
+    }
 }
  

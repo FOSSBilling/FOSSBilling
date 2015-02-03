@@ -530,7 +530,7 @@ class Service implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminCreateClient', 'params'=>$data));
         $client = $this->createClient($data);
-        $this->di['events_manager']->fire(array('event'=>'onAfterAdminCreateClient', 'params'=>array('id'=>$client->id, 'password'=>$client->pass)));
+        $this->di['events_manager']->fire(array('event'=>'onAfterAdminCreateClient', 'params'=>array('id'=>$client->id, 'password'=>$data['password'])));
         $this->di['logger']->info('Created new client #%s', $client->id);
 
         return $client->id;
@@ -546,7 +546,7 @@ class Service implements InjectionAwareInterface
         $data['status'] = \Model_Client::ACTIVE;
         $client = $this->createClient($data);
 
-        $this->di['events_manager']->fire(array('event'=>'onAfterClientSignUp', 'params'=>array('id'=>$client->id, 'password'=>$client->pass)));
+        $this->di['events_manager']->fire(array('event'=>'onAfterClientSignUp', 'params'=>array('id'=>$client->id, 'password'=>$data['password'])));
         $this->di['logger']->info('Client #%s signed up', $client->id);
 
         return $client;
@@ -592,7 +592,13 @@ class Service implements InjectionAwareInterface
             return null;
         }
 
-        return $this->di['auth']->authorizeUser($model, $plainTextPassword);
+        $config = $this->di['mod_config']('client');
+        if (isset($config['require_email_confirmation']) && (int)$config['require_email_confirmation']) {
+            if (!$model->email_approved) {
+                throw new \Box_Exception('Please check your mailbox and confirm email address.');
+            }
+        }
 
+        return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }
 }

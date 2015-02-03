@@ -93,7 +93,8 @@ class Admin extends \Api_Abstract
 
         $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
 
-        return $this->getService()->prepareInvoice($client, $data);
+        $invoice = $this->getService()->prepareInvoice($client, $data);
+        return $invoice->id;
     }
 
     /**

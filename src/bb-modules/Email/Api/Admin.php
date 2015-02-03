@@ -264,7 +264,8 @@ class Admin extends \Api_Abstract
         $enabled  = isset($data['enabled']) ? $data['enabled'] : 0;
         $category = isset($data['category']) ? $data['category'] : NULL;
 
-        return $this->getService()->templateCreate($data['action_code'], $data['subject'], $data['content'], $enabled, $category);
+        $templateModel = $this->getService()->templateCreate($data['action_code'], $data['subject'], $data['content'], $enabled, $category);
+        return $templateModel->id;
     }
 
     /**

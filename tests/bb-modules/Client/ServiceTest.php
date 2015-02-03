@@ -1039,8 +1039,81 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['auth'] = $authMock;
-
+        $di['mod_config'] = $di->protect(function ($name) use($di) {
+            return array ('require_email_confirmation' => false);
+        });
         $service = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+
+        $result = $service->authorizeClient($email, $password);
+        $this->assertInstanceOf('\Model_Client', $result);
+    }
+
+    /**
+     * @expectedException \Box_Exception
+     */
+    public function testauthorizeClientEmailRequiredNotConfirmed()
+    {
+        $email    = 'example@boxbilling.vm';
+        $password = '123456';
+
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->with('Client')
+            ->willReturn($clientModel);
+
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->expects($this->never())
+            ->method('authorizeUser')
+            ->with($clientModel, $password)
+            ->willReturn($clientModel);
+
+        $di               = new \Box_Di();
+        $di['db']         = $dbMock;
+        $di['auth']       = $authMock;
+        $di['mod_config'] = $di->protect(function ($name) use ($di) {
+            return array('require_email_confirmation' => true);
+        });
+        $service          = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+
+        $result = $service->authorizeClient($email, $password);
+        $this->assertInstanceOf('\Model_Client', $result);
+    }
+
+
+    public function testauthorizeClientEmailRequiredConfirmed()
+    {
+        $email    = 'example@boxbilling.vm';
+        $password = '123456';
+
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->email_approved = 1;
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->with('Client')
+            ->willReturn($clientModel);
+
+        $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
+        $authMock->expects($this->any())
+            ->method('authorizeUser')
+            ->with($clientModel, $password)
+            ->willReturn($clientModel);
+
+        $di               = new \Box_Di();
+        $di['db']         = $dbMock;
+        $di['auth']       = $authMock;
+        $di['mod_config'] = $di->protect(function ($name) use ($di) {
+            return array('require_email_confirmation' => true);
+        });
+        $service          = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
         $result = $service->authorizeClient($email, $password);

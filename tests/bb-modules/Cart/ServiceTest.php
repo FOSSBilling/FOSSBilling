@@ -679,9 +679,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->will($this->returnValue($invoice));
-        $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->will($this->returnValue($promo));
 

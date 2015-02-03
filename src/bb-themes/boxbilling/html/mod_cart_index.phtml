@@ -86,10 +86,20 @@
             <div class="grid_5 omega">
                 <div class="box">
                     <div class="block pricing">
+                        {% set tax_amount = 0 %}
+                        {% if client.client_is_taxable %}
+                            {% set tax_rate = client.invoice_get_tax_rate %}
+                            {% set tax_amount = cart.total * tax_rate / 100 %}
+
+                            <p>{% trans 'VAT'%} ({{ tax_rate }}%) :</p>
+
+                            <div class="currency">{{ tax_amount | money_convert }}</div>
+                        {% endif %}
                         <p>{% trans 'Total:' %}</p>
-                        <div class="currency">{{ cart.total | money_convert }}</div>
+                        <div class="currency">{{ (cart.total + tax_amount) | money_convert }}</div>
                         <form method="post" action="{{ 'api/client/cart/checkout'|link }}" class="api-form" data-api-jsonp="onAfterCartCheckout">
-                        {% if cart.total %}
+                        {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
+                        {% if cart.total and not enough_in_balance  %}
                         <div style="text-align: left;">
                         {% for gtw in guest.invoice_gateways %}
                             {% if cart.currency.code in gtw.accepted_currencies %}
@@ -103,6 +113,9 @@
                         {% endif %}
                         <br/>
                         <button class="bb-button bb-button-submit bb-button-big" type="submit">{% trans 'Checkout' %}</button>
+                        {% if enough_in_balance %}
+                        <p>{% trans 'Total amount will be deducted from account balance' %}</p>
+                        {% endif %}
                         </form>
                     </div>
                 </div>

@@ -117,10 +117,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         );
         $newInvoiceId = 1;
 
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->id = $newInvoiceId;
+
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('prepareInvoice')
-            ->will($this->returnValue($newInvoiceId));
+            ->will($this->returnValue($invoiceModel));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())

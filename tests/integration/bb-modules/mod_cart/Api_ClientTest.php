@@ -102,4 +102,86 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
             $this->assertEquals(9874, $e->getCode());
         }
     }
+
+    /**
+     * checkout cart with product with addon and client has insufficient funds to cover
+     */
+    public function testAddonActivatedWhileOrderInvoiceUnpaid()
+    {
+
+        $this->api_guest->cart_reset();
+        $data = array(
+            'id'       =>  11,
+            'period'    =>  '6M',
+            'domain' => array(
+                'action' => "register",
+                'owndomain_sld' =>"",
+                'owndomain_tld' =>".com",
+                'register_sld' =>"newdomainregister",
+                'register_tld' =>".com",
+                'register_years' => "1",
+            ),
+            'multiple' => 1,
+
+        );
+        $this->api_guest->cart_add_item($data);
+        $this->api_client->cart_checkout();
+
+        $masterOrder = $this->di['db']->findOne('ClientOrder', 'group_master = 1 ORDER BY id desc');
+        $addonOrder = $this->di['db']->findOne('ClientOrder', 'group_id = ? and group_master = 0', array($masterOrder->group_id));
+
+        $invoiceModel = $this->di['db']->load('Invoice', $masterOrder->unpaid_invoice_id);
+
+        $this->assertInstanceOf('Model_ClientOrder', $masterOrder);
+        $this->assertInstanceOf('Model_ClientOrder', $addonOrder);
+        $this->assertInstanceOf('Model_Invoice', $invoiceModel);
+
+        $this->assertNotNull($masterOrder->unpaid_invoice_id);
+        $this->assertEquals(Model_ClientOrder::STATUS_PENDING_SETUP, $masterOrder->status);
+        $this->assertEquals(Model_ClientOrder::STATUS_PENDING_SETUP, $addonOrder->status);
+        $this->assertEquals(Model_Invoice::STATUS_UNPAID, $invoiceModel->status);
+    }
+
+
+    /**
+     * checkout cart with product with addon and client has sufficient funds to cover
+     */
+    public function testOrderWithAddonCoverFromAccountBalance()
+    {
+        $this->api_guest->cart_reset();
+        $data = array(
+            'id'       =>  11,
+            'period'    =>  '6M',
+            'domain' => array(
+                'action' => "register",
+                'owndomain_sld' =>"",
+                'owndomain_tld' =>".com",
+                'register_sld' =>"newdomainregister2",
+                'register_tld' =>".com",
+                'register_years' => "1",
+            ),
+            'multiple' => 1,
+
+        );
+
+        $this->api_admin->client_balance_add_funds(array('id' => 1, 'amount' => 100, 'description' => 'Added from PHPUnit'));
+        $this->api_guest->cart_add_item($data);
+        $this->api_client->cart_checkout();
+
+        $masterOrder = $this->di['db']->findOne('ClientOrder', 'group_master = 1 ORDER BY id desc');
+        $addonOrder = $this->di['db']->findOne('ClientOrder', 'group_id = ? and group_master = 0', array($masterOrder->group_id));
+
+        $invoiceItemModel = $this->di['db']->findOne('InvoiceItem', "type = 'order' and rel_id = ?", array($masterOrder->id));
+        $invoiceModel = $this->di['db']->load('Invoice', $invoiceItemModel->invoice_id);
+
+        $this->assertInstanceOf('Model_ClientOrder', $masterOrder);
+        $this->assertInstanceOf('Model_ClientOrder', $addonOrder);
+        $this->assertInstanceOf('Model_Invoice', $invoiceModel);
+
+        $this->assertNull($masterOrder->unpaid_invoice_id);
+        $this->assertEquals(Model_ClientOrder::STATUS_ACTIVE, $masterOrder->status);
+        $this->assertEquals(Model_ClientOrder::STATUS_ACTIVE, $addonOrder->status);
+        $this->assertEquals(Model_Invoice::STATUS_PAID, $invoiceModel->status);
+    }
+
 }

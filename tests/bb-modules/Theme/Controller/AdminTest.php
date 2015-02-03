@@ -122,6 +122,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('getService')
             ->willReturn($themeServiceMock);
 
+	    $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+	    $eventMock->expects($this->atLeastOnce())->method('fire');
+
         $di = new \Box_Di();
         $di['mod'] = $di->protect(function ($name) use($modMock){
             if ($name == 'theme')
@@ -129,6 +132,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
                 return $modMock;
             }
         });
+	    $di['events_manager'] = $eventMock;
 
         $controller = new \Box\Mod\Theme\Controller\Admin();
         $controller->setDi($di);
@@ -174,6 +178,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('getService')
             ->willReturn($themeServiceMock);
 
+	    $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+	    $eventMock->expects($this->atLeastOnce())->method('fire');
+
         $di = new \Box_Di();
         $di['mod'] = $di->protect(function ($name) use($modMock){
             if ($name == 'theme')
@@ -181,6 +188,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
                 return $modMock;
             }
         });
+	    $di['events_manager'] = $eventMock;
 
         $controller = new \Box\Mod\Theme\Controller\Admin();
         $controller->setDi($di);

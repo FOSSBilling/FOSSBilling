@@ -489,7 +489,7 @@ class Service implements \Box\InjectionAwareInterface
 
         $this->di['logger']->info('Added new  email template #%s', $modelId);
 
-        return $modelId;
+        return $model;
     }
 
     public function templateBatchGenerate()
@@ -516,15 +516,12 @@ class Service implements \Box\InjectionAwareInterface
                 continue;
             }
 
-            list($s, $c, $desc, $enabled, $mod) = $this->_getDefaults(array('code' => $code));
-            $t              = $this->di['db']->dispense('EmailTemplate');
-            $t->enabled     = $enabled;
-            $t->action_code = $code;
-            $t->category    = $mod;
-            $t->subject     = $s;
-            $t->content     = $c;
-            $t->description = $desc;
-            $this->di['db']->store($t);
+            list($subject, $content, $desc, $enabled, $mod) = $this->_getDefaults(array('code' => $code));
+            $t = $this->templateCreate($code, $subject, $content, $enabled, $mod);
+            if ($desc) {
+                $t->description = $desc;
+                $this->di['db']->store($t);
+            }
         }
 
         $this->di['logger']->info('Generated email templates for installed extensions');
@@ -593,7 +590,7 @@ class Service implements \Box\InjectionAwareInterface
             $mail->addTo($queue->to, $queue->to_name);
 
             if (APPLICATION_ENV != 'production') {
-                //if(BB_DEBUG) error_log('Skip email sending');
+                error_log('Skip email sending. Application ENV: '.APPLICATION_ENV);
                 return true;
             }
 

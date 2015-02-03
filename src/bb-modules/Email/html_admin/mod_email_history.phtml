@@ -4,6 +4,16 @@
 {% set active_menu = 'activity' %}
 
 {% block content %}
+
+{% set config = admin.extension_config_get({"ext":"mod_email"}) %}
+{% if config.log_enabled is not defined or config.log_enabled != 1 %}
+<div class="nNote nInformation first">
+    <p><strong>{% trans 'INFORMATION' %}: </strong>{% trans 'Email logging is not enabled. If you want to log sent mails to database, enable it in' %}
+        <a href="{{'extension/settings/email'|alink}}"> {% trans 'email settings.' %}</a>
+    </p>
+</div>
+{% endif %}
+
 <div class="widget">
     <div class="head"><h5 class="iFrames">{% trans 'Email history' %}</h5></div>
 

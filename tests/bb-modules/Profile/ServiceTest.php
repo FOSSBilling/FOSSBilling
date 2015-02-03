@@ -362,18 +362,27 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
 
+        $password = 'new password';
+
+        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock->expects($this->atLeastOnce())
+            ->method('hashIt')
+            ->with($password);
+
+
         $di                   = new \Box_Di();
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $emMock;
         $di['db']             = $dbMock;
         $di['validator']      = $validatorMock;
+        $di['password']          = $passwordMock;
 
         $model = new \Model_Client();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $service = new Service();
         $service->setDi($di);
-        $result = $service->changeClientPassword($model, 'new password');
+        $result = $service->changeClientPassword($model, $password);
         $this->assertTrue($result);
     }
 

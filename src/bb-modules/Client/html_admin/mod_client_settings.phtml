@@ -86,7 +86,7 @@
         </div>
         <div id="tab-custom-fields" class="tab_content nopadding">
                 <fieldset>
-                    {% for i in 0..10 %}
+                    {% for i in 1..10 %}
                     {% set field_name = 'custom_' ~ i %}
                     {% set custom_field = attribute(params.custom_fields, field_name) %}
                     <div class="rowElem noborder">

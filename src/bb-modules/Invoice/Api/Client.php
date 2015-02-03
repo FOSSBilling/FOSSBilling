@@ -195,4 +195,10 @@ class Client extends \Api_Abstract
 
         return $pager;
     }
+
+    public function get_tax_rate()
+    {
+        $service = $this->di['mod_service']('Invoice', 'Tax');
+        return $service->getTaxRateForClient($this->identity);
+    }
 }
