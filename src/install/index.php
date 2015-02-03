@@ -1,4 +1,14 @@
 <?php
+/**
+ * @return bool
+ * @see http://stackoverflow.com/a/2886224/2728507
+ */
+function isSSL() {
+    return
+        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || $_SERVER['SERVER_PORT'] == 443;
+}
+
 date_default_timezone_set('UTC');
 
 error_reporting(E_ALL);
@@ -7,7 +17,7 @@ ini_set('display_startup_errors', 1);
 ini_set('log_errors', '1');
 ini_set('error_log', dirname(__FILE__) . '/php_error.log');
 
-$protocol = empty($_SERVER['HTTPS']) ? 'http' : 'https';
+$protocol = isSSL() ? 'https' : 'http';
 $url = $protocol . "://" . $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 $current_url = pathinfo($url, PATHINFO_DIRNAME);
 $root_url = str_replace('/install', '', $current_url).'/';
