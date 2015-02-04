@@ -100,4 +100,15 @@ class Api_Admin_SystemTest extends BBDbApiTestCase
         $this->assertEquals('2', '2');
         
     }
+
+    public function testRenderDate()
+    {
+        $result = strftime($this->di['config']['locale_date_format']);
+        $data = array(
+            'id'    =>  1,
+            '_tpl'    =>  '{{ now|date("Y-m-d")|bb_date }}',
+        );
+        $string = $this->api_admin->email_template_render($data);
+        $this->assertEquals($result, $string);
+    }
 }
