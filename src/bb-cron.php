@@ -13,6 +13,7 @@
 
 require_once dirname(__FILE__) . '/bb-load.php';
 $di = include dirname(__FILE__) . '/bb-di.php';
+$di['translate']();
 
 $interval = isset($argv[1]) ? $argv[1] : null;
 $service = $di['mod_service']('cron');

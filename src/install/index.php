@@ -455,6 +455,7 @@ final class Box_Installer
 
         $emailService = new \Box\Mod\Email\Service();
         $di = $di = include BB_PATH_ROOT  . '/bb-di.php';
+        $di['translate']();
         $emailService->setDi($di);
         return $emailService->templateBatchGenerate();
     }
