@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <dataset>
-    <client id="1" aid="1" role="client" email="client@boxbilling.com" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" tax_exempt="0" status="active" first_name="Demo" last_name="Client" phone_cc="1" phone="646-123-4567" company="BoxBilling" address_1="Wall Street 45" city="New York" state="NY" country="US" currency="USD" postcode="123456" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
+    <client id="1" aid="1" role="client" email="client@boxbilling.com" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" tax_exempt="0" status="active" first_name="Demo" last_name="Client" phone_cc="1" phone="646-123-4567" company="BoxBilling" address_1="Wall Street 45" city="New York" state="NY" country="US" currency="USD" postcode="123456" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 
-    <invoice id="1" client_id="1" hash="hash" currency="USD" status="unpaid" due_at="2014-01-01T12:00:00+00:00" created_at="2011-11-01T12:00:00+00:00" updated_at="2011-11-01T12:00:00+00:00"/>
-    <invoice_item id="1" invoice_id="1" type="custom" task="void" title="Payment for development services" period="" quantity="10" unit="hours" price="50" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
+    <invoice id="1" client_id="1" hash="hash" currency="USD" status="unpaid" due_at="2014-01-01 12:00:00" created_at="2011-11-01 12:00:00" updated_at="2011-11-01 12:00:00"/>
+    <invoice_item id="1" invoice_id="1" type="custom" task="void" title="Payment for development services" period="" quantity="10" unit="hours" price="50" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 
-    <invoice id="2" client_id="1" hash="hash2" currency="USD" status="unpaid" approved="1" due_at="2014-01-01T12:00:00+00:00" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
-    <invoice_item id="2" invoice_id="2" type="order" rel_id="3" task="activate" title="Payment for domain example.com" period="1Y" quantity="1" unit="years" price="8.99" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
+    <invoice id="2" client_id="1" hash="hash2" currency="USD" status="unpaid" approved="1" due_at="2014-01-01 12:00:00" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
+    <invoice_item id="2" invoice_id="2" type="order" rel_id="3" task="activate" title="Payment for domain example.com" period="1Y" quantity="1" unit="years" price="8.99" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 
-    <invoice id="3" client_id="1" hash="hash3" currency="USD" status="paid" due_at="2014-01-01T12:00:00+00:00" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
-    <invoice_item id="3" invoice_id="3" type="custom" rel_id="" task="activate" title="Payment for custom product" period="1Y" quantity="1" unit="years" price="8.99" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
+    <invoice id="3" client_id="1" hash="hash3" currency="USD" status="paid" due_at="2014-01-01 12:00:00" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
+    <invoice_item id="3" invoice_id="3" type="custom" rel_id="" task="activate" title="Payment for custom product" period="1Y" quantity="1" unit="years" price="8.99" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     
-    <invoice id="4" client_id="1" hash="hash4" currency="USD" status="paid" due_at="2014-01-01T12:00:00+00:00" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
-    <invoice_item id="4" invoice_id="4" type="custom" rel_id="" task="activate" title="Payment for custom product" period="1Y" quantity="1" unit="years" price="8.99" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
+    <invoice id="4" client_id="1" hash="hash4" currency="USD" status="paid" due_at="2014-01-01 12:00:00" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
+    <invoice_item id="4" invoice_id="4" type="custom" rel_id="" task="activate" title="Payment for custom product" period="1Y" quantity="1" unit="years" price="8.99" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 
-    <setting id="9" param="company_email" value="boxbilling@boxbilling.com" created_at="2011-10-24T15:23:43+03:00" updated_at="2011-10-24T15:23:43+03:00"/>
-    <setting id="10" param="theme" value="huraga" created_at="2011-10-24T15:23:43+03:00" updated_at="2011-10-24T15:23:43+03:00"/>
+    <setting id="9" param="company_email" value="boxbilling@boxbilling.com" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
+    <setting id="10" param="theme" value="huraga" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
 </dataset>
