@@ -70,8 +70,8 @@ class Service implements InjectionAwareInterface
         $bean = $this->di['db']->dispense('Form');
         $bean->name = $data['name'];
         $bean->style =  $data['style'];
-        $bean->created_at = date('c');
-        $bean->updated_at = date('c');
+        $bean->created_at = date('Y-m-d H:i:s');
+        $bean->updated_at = date('Y-m-d H:i:s');
 
         $form_id = $this->di['db']->store($bean);
         $this->di['logger']->info('Created new form %s with id %s', $data['name'], $form_id);
@@ -120,8 +120,8 @@ class Service implements InjectionAwareInterface
         $bean->show_prefix = isset($field['show_prefix']) ? $field['show_prefix'] : null;
         $bean->show_suffix = isset ($field['show_suffix']) ? $field['show_suffix'] : null;
         $bean->text_size = isset($field['text_size']) ? $field['text_size'] : null;
-        $bean->created_at = date('c');
-        $bean->updated_at = date('c');
+        $bean->created_at = date('Y-m-d H:i:s');
+        $bean->updated_at = date('Y-m-d H:i:s');
 
         $fieldId = $this->di['db']->store($bean);
         $this->di['logger']->info('Added new field %s to form %s', $fieldId, $field['form_id']);
@@ -218,7 +218,7 @@ class Service implements InjectionAwareInterface
         $bean->show_prefix = isset($field['show_prefix']) ? $field['show_prefix'] : null;
         $bean->show_suffix = isset($field['show_suffix']) ? $field['show_suffix'] : null;
         $bean->text_size = isset($field['text_size']) ? $field['text_size'] : null;
-        $bean->updated_at = date('c');
+        $bean->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($bean);
         $this->di['logger']->info('Updated custom form %s', $fieldId);

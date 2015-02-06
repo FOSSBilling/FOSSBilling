@@ -60,7 +60,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $list = $this->api_admin->order_get_list(array());
         $this->assertInternalType('array', $list);
 
-        $bool = $this->api_admin->order_update(array('id'=>1,'expires_at'=>date('c', strtotime('+ 2 days'))));
+        $bool = $this->api_admin->order_update(array('id'=>1,'expires_at'=>date('Y-m-d H:i:s', strtotime('+ 2 days'))));
         $this->assertTrue($bool);
 
         $bool = $this->api_admin->order_renew($data);
@@ -164,7 +164,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $data = array(
             'id'            => 8,
             'period'        => '2Y',
-            'expires_at'    => date('c', strtotime('2012-01-10')),
+            'expires_at'    => date('Y-m-d H:i:s', strtotime('2012-01-10')),
         );
         $this->api_admin->order_update($data);
         $ob = $this->api_admin->order_get($data);

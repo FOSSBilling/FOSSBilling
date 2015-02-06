@@ -202,7 +202,7 @@ class Client extends \Api_Abstract
             $client->custom_10 = $data['custom_10'];
         }
 
-        $client->updated_at = date('c');
+        $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterClientProfileUpdate', 'params'=>array('id'=>$client->id)));
@@ -230,7 +230,7 @@ class Client extends \Api_Abstract
         $client = $this->getIdentity();
         
         $client->api_token = $this->di['tools']->generatePassword(32);
-        $client->updated_at = date('c');
+        $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
 
         $this->di['logger']->info('Generated new API key');

@@ -67,8 +67,8 @@ class Admin extends \Api_Abstract
         $entry->admin_id        = isset($data['admin_id']) ? $data['admin_id'] : NULL;
         $entry->priority        = $priority;
         $entry->message         = $data['m'];
-        $entry->created_at      = date('c');
-        $entry->updated_at      = date('c');
+        $entry->created_at      = date('Y-m-d H:i:s');
+        $entry->updated_at      = date('Y-m-d H:i:s');
         $entry->ip              = $this->di['request']->getClientAddress();
         $this->di['db']->store($entry);
         

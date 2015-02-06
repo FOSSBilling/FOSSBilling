@@ -719,11 +719,11 @@ abstract class BBPatchAbstract
         if(is_null($this->getParamValue($param))) {
             $query="INSERT INTO setting (param, value, public, updated_at, created_at) VALUES (:param, :value, 1, :u, :c)";
             $stmt = $this->pdo->prepare($query);
-            $stmt->execute(array('param'=>$param, 'value'=>$value, 'c'=>date('c'), 'u'=>date('c')));
+            $stmt->execute(array('param'=>$param, 'value'=>$value, 'c'=>date('Y-m-d H:i:s'), 'u'=>date('Y-m-d H:i:s')));
         } else {
             $query="UPDATE setting SET value = :value, updated_at = :u WHERE param = :param";
             $stmt = $this->pdo->prepare($query);
-            $stmt->execute(array('param'=>$param, 'value'=>$value, 'u'=>date('c')));
+            $stmt->execute(array('param'=>$param, 'value'=>$value, 'u'=>date('Y-m-d H:i:s')));
         }
     }
 

@@ -457,9 +457,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
                       'subject'             => 'subject',
                       'content'             => 'Content',
                       'support_helpdesk_id' => rand(1, 100),
-                      'created_at'          => date('c'),
-                      'date_from'           => date('c'),
-                      'date_to'             => date('c'),
+                      'created_at'          => date('Y-m-d H:i:s'),
+                      'date_from'           => date('Y-m-d H:i:s'),
+                      'date_to'             => date('Y-m-d H:i:s'),
                       'priority'            => rand(1, 100),
                 )
             ),
@@ -474,9 +474,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
                     'subject'             => 'subject',
                     'content'             => 'Content',
                     'support_helpdesk_id' => rand(1, 100),
-                    'created_at'          => date('c'),
-                    'date_from'           => date('c'),
-                    'date_to'             => date('c'),
+                    'created_at'          => date('Y-m-d H:i:s'),
+                    'date_from'           => date('Y-m-d H:i:s'),
+                    'date_to'             => date('Y-m-d H:i:s'),
                     'priority'            => rand(1, 100),
                 )
             )
@@ -2549,12 +2549,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \RedBeanPHP\OODBBean());
         $ticket->client_id  = 5;
-        $ticket->created_at = date('c');
+        $ticket->created_at = date('Y-m-d H:i:s');
 
         $ticket2 = new \Model_SupportTicket();
         $ticket2->loadBean(new \RedBeanPHP\OODBBean());
         $ticket2->client_id  = 5;
-        $ticket2->created_at = date('c', strtotime("-2 days"));;
+        $ticket2->created_at = date('Y-m-d H:i:s', strtotime("-2 days"));;
 
         return array(
             array($ticket, 24, false), //Ticket is created today, exception should be thrown

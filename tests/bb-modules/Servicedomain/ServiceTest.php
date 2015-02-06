@@ -1604,8 +1604,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $model->period        = 'period';
         $model->privacy       = 'privacy';
         $model->locked        = 'locked';
-        $model->registered_at = date('c');
-        $model->expires_at    = date('c');
+        $model->registered_at = date('Y-m-d H:i:s');
+        $model->expires_at    = date('Y-m-d H:i:s');
 
         $model->contact_first_name = 'first_name';
         $model->contact_last_name  = 'last_name';
@@ -1760,7 +1760,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')
             ->setMethods(array('getParamValue', 'setParamValue'))->getMock();
         $systemServiceMock->expects($this->atLeastOnce())->method('getParamValue')
-            ->will($this->returnValue(date('c')));
+            ->will($this->returnValue(date('Y-m-d H:i:s')));
         $systemServiceMock->expects($this->never())->method('setParamValue')
             ->will($this->returnValue(null));
 
@@ -2279,8 +2279,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $data['min_years']          = rand(1, 5);
         $data['allow_register']     = 1;
         $data['allow_transfer']     = 1;
-        $data['updated_at']         = date('c');
-        $data['created_at']         = date('c');
+        $data['updated_at']         = date('Y-m-d H:i:s');
+        $data['created_at']         = date('Y-m-d H:i:s');
 
         $randId = rand(1, 100);
 
@@ -2319,8 +2319,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $data['allow_register']     = true;
         $data['allow_transfer']     = true;
         $data['active']             = true;
-        $data['updated_at']         = date('c');
-        $data['created_at']         = date('c');
+        $data['updated_at']         = date('Y-m-d H:i:s');
+        $data['created_at']         = date('Y-m-d H:i:s');
 
         $randId = rand(1, 100);
 

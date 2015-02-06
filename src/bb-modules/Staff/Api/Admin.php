@@ -436,7 +436,7 @@ class Admin extends \Api_Abstract
             $admin->signature = $data['signature'];
         }
         
-        $admin->updated_at = date('c');
+        $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
         $event_params = array();
@@ -462,7 +462,7 @@ class Admin extends \Api_Abstract
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminStaffApiKeyChange', 'params'=>$event_params));
         
         $admin->api_token = $this->di['tools']->generatePassword(32);
-        $admin->updated_at = date('c');
+        $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminStaffApiKeyChange', 'params'=>$event_params));
@@ -503,7 +503,7 @@ class Admin extends \Api_Abstract
         $admin = $this->getIdentity();
 
         $admin->pass = $data['password'];
-        $admin->updated_at = date('c');
+        $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
         $event_params = array();

@@ -54,8 +54,8 @@ class Service implements InjectionAwareInterface
         $meta->rel_id     = 1;
         $meta->meta_key   = 'message';
         $meta->meta_value = $message;
-        $meta->created_at = date('c');
-        $meta->updated_at = date('c');
+        $meta->created_at = date('Y-m-d H:i:s');
+        $meta->updated_at = date('Y-m-d H:i:s');
         $id               = $this->di['db']->store($meta);
 
         $this->di['events_manager']->fire(array('event' => 'onAfterAdminNotificationAdd', 'params' => array('id' => $id)));

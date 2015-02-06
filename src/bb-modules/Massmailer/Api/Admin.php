@@ -93,7 +93,7 @@ class Admin extends \Api_Abstract
             $model->from_email = $data['from_email'];
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated mail message #%s', $model->id);
@@ -142,8 +142,8 @@ Order our services at {{ "order"|link }}
         $model->subject = $data['subject'];
         $model->content = isset($data['content']) ? $data['content'] : $default_content;
         $model->status = 'draft';
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
@@ -207,7 +207,7 @@ Order our services at {{ "order"|link }}
         }
 
         $model->status = 'sent';
-        $model->sent_at = date('c');
+        $model->sent_at = date('Y-m-d H:i:s');
         $id = $this->di['db']->store($model);
 
         $this->di['logger']->info('Added mass mail messages #%s to queue', $id);
@@ -232,8 +232,8 @@ Order our services at {{ "order"|link }}
         $copy->content    = $model->content;
         $copy->filter     = $model->filter;
         $copy->status     = 'draft';
-        $copy->created_at = date('c');
-        $copy->updated_at = date('c');
+        $copy->created_at = date('Y-m-d H:i:s');
+        $copy->updated_at = date('Y-m-d H:i:s');
 
         $copyId = $this->di['db']->store($copy);
 

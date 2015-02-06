@@ -69,7 +69,7 @@ class Service
 
         $create = (APPLICATION_ENV == 'production');
         $ss = $this->di['mod_service']('system');
-        $ss->setParamValue('last_cron_exec', date('c'), $create);
+        $ss->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), $create);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminCronRun'));
 

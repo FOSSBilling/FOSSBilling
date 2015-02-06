@@ -390,8 +390,8 @@ class Service implements InjectionAwareInterface
         $invoice->approved      = TRUE;
         $invoice->currency_rate = $ctable->getRateByCode($invoice->currency);
         $invoice->status        = \Model_Invoice::STATUS_PAID;
-        $invoice->paid_at       = date('c');
-        $invoice->updated_at    = date('c');
+        $invoice->paid_at       = date('Y-m-d H:i:s');
+        $invoice->updated_at    = date('Y-m-d H:i:s');
         $this->di['db']->store($invoice);
 
         $this->countIncome($invoice);
@@ -469,8 +469,8 @@ class Service implements InjectionAwareInterface
             $model->text_2 = $data['text_2'];
         }
 
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $invoiceId = $this->di['db']->store($model);;
 
         $this->setInvoiceDefaults($model);
@@ -531,7 +531,7 @@ class Service implements InjectionAwareInterface
             $invoice_due_days = 1;
         }
         $due_time = strtotime('+' . $invoice_due_days . ' day');
-        $model->due_at = date('c', $due_time);
+        $model->due_at = date('Y-m-d H:i:s', $due_time);
 
         $model->serie = $systemService->getParamValue('invoice_series');
         $model->nr = $model->id;
@@ -551,7 +551,7 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminInvoiceApprove', 'params'=>array('id'=>$invoice->id)));
 
         $invoice->approved = 1;
-        $invoice->updated_at = date('c');
+        $invoice->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($invoice);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminInvoiceApprove', 'params'=>array('id'=>$invoice->id)));
@@ -673,9 +673,9 @@ class Service implements InjectionAwareInterface
                 $new->buyer_email     = $invoice->buyer_email;
                 $new->buyer_zip       = $invoice->buyer_zip;
 
-                $new->paid_at    = date('c');
-                $new->created_at = date('c');
-                $new->updated_at = date('c');
+                $new->paid_at    = date('Y-m-d H:i:s');
+                $new->created_at = date('Y-m-d H:i:s');
+                $new->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($new);
 
             $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', array($invoice->id));
@@ -693,8 +693,8 @@ class Service implements InjectionAwareInterface
                     $pi->charged        = 1;
                     $pi->price          = -$item->price;
                     $pi->taxed          = $item->taxed;
-                    $pi->created_at     = date('c');
-                    $pi->updated_at     = date('c');
+                    $pi->created_at     = date('Y-m-d H:i:s');
+                    $pi->updated_at     = date('Y-m-d H:i:s');
                     $this->di['db']->store($pi);
                 }
 
@@ -729,7 +729,7 @@ class Service implements InjectionAwareInterface
             case 'same_invoice':
                 $amount = $this->getTotalWithTax($invoice);
                 $invoice->refund = empty($amount) ? NULL : $amount;
-                $invoice->updated_at = date('c');
+                $invoice->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($invoice);
 
                 if(!empty($note)) {
@@ -854,7 +854,7 @@ class Service implements InjectionAwareInterface
             if(empty($data['paid_at'])) {
                 $model->paid_at = null;
             } else {
-                $model->paid_at = date('c', strtotime($data['paid_at']));
+                $model->paid_at = date('Y-m-d H:i:s', strtotime($data['paid_at']));
             }
         }
 
@@ -862,7 +862,7 @@ class Service implements InjectionAwareInterface
             if(empty($data['due_at'])) {
                 $model->due_at = null;
             } else {
-                $model->due_at = date('c', strtotime($data['due_at']));
+                $model->due_at = date('Y-m-d H:i:s', strtotime($data['due_at']));
             }
         }
 
@@ -894,7 +894,7 @@ class Service implements InjectionAwareInterface
         }
 
         if(isset($data['created_at'])) {
-            $model->created_at = date('c', strtotime($data['created_at']));
+            $model->created_at = date('Y-m-d H:i:s', strtotime($data['created_at']));
         }
 
         if(isset($data['new_item']) && is_array($data['new_item'])) {
@@ -913,7 +913,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminInvoiceUpdate', 'params'=>array('id'=>$model->id)));
@@ -1033,8 +1033,8 @@ class Service implements InjectionAwareInterface
         $proforma->status = \Model_Invoice::STATUS_UNPAID;
         $proforma->currency = $order->currency;
         $proforma->approved = false;
-        $proforma->created_at = date('c');
-        $proforma->updated_at = date('c');
+        $proforma->created_at = date('Y-m-d H:i:s');
+        $proforma->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($proforma);
 
         $this->setInvoiceDefaults($proforma);
@@ -1055,7 +1055,7 @@ class Service implements InjectionAwareInterface
 
         // invoice due date
         if($due_days > 0) {
-            $proforma->due_at = date('c', strtotime('+'.$due_days.' days'));
+            $proforma->due_at = date('Y-m-d H:i:s', strtotime('+'.$due_days.' days'));
             $this->di['db']->store($proforma);
         } else if($order->expires_at) {
             $proforma->due_at = $order->expires_at;
@@ -1139,7 +1139,7 @@ class Service implements InjectionAwareInterface
             $this->di['events_manager']->fire(array('event'=>'onEventAfterInvoiceIsDue', 'params'=>$params));
         }
 
-        $ss->setParamValue($key, date('c'));
+        $ss->setParamValue($key, date('Y-m-d H:i:s'));
         $this->di['logger']->info('Executed action to invoke invoice due event');
         return true;
     }
@@ -1153,8 +1153,8 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminInvoiceSendReminder', 'params'=>array('id'=>$invoice->id)));
 
-        $invoice->reminded_at = date('c');
-        $invoice->updated_at = date('c');
+        $invoice->reminded_at = date('Y-m-d H:i:s');
+        $invoice->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($invoice);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminInvoiceReminderSent', 'params'=>array('id'=>$invoice->id)));
@@ -1206,8 +1206,8 @@ class Service implements InjectionAwareInterface
         $proforma->status = \Model_Invoice::STATUS_UNPAID;
         $proforma->currency = $client->currency;
         $proforma->approved = $this->_isAutoApproved();
-        $proforma->created_at = date('c');
-        $proforma->updated_at = date('c');
+        $proforma->created_at = date('Y-m-d H:i:s');
+        $proforma->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($proforma);
 
         $this->setInvoiceDefaults($proforma);
@@ -1407,8 +1407,8 @@ class Service implements InjectionAwareInterface
     public function addNote(\Model_Invoice $model, $note)
     {
         $n = $model->notes;
-        $model->notes = $n . date('c') .': '.$note.'       '.PHP_EOL;
-        $model->updated_at = date('c');
+        $model->notes = $n . date('Y-m-d H:i:s') .': '.$note.'       '.PHP_EOL;
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
     }

@@ -63,8 +63,8 @@ class Service implements InjectionAwareInterface
         $cart              = $this->di['db']->dispense('Cart');
         $cart->session_id  = $this->di['session']->getId();
         $cart->currency_id = $currency->id;
-        $cart->created_at  = date('c');
-        $cart->updated_at  = date('c');
+        $cart->created_at  = date('Y-m-d H:i:s');
+        $cart->updated_at  = date('Y-m-d H:i:s');
         $this->di['db']->store($cart);
 
         return $cart;
@@ -240,7 +240,7 @@ class Service implements InjectionAwareInterface
             $this->di['db']->trash($cartProduct);
         }
         $cart->promo_id   = NULL;
-        $cart->updated_at = date('c');
+        $cart->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($cart);
 
         return true;
@@ -249,7 +249,7 @@ class Service implements InjectionAwareInterface
     public function removePromo(\Model_Cart $cart)
     {
         $cart->promo_id   = NULL;
-        $cart->updated_at = date('c');
+        $cart->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($cart);
 
         $this->di['logger']->info('Removed promo code from shopping cart #%s', $cart->id);
@@ -510,8 +510,8 @@ class Service implements InjectionAwareInterface
             $order->status         = \Model_ClientOrder::STATUS_PENDING_SETUP;
             $order->notes          = isset($item['notes']) ? $item['notes'] : NULL;
             $order->config         = json_encode($item);
-            $order->created_at     = date('c');
-            $order->updated_at     = date('c');
+            $order->created_at     = date('Y-m-d H:i:s');
+            $order->updated_at     = date('Y-m-d H:i:s');
             $this->di['db']->store($order);
 
             $orders[] = $order;
@@ -618,7 +618,7 @@ class Service implements InjectionAwareInterface
     public function usePromo(\Model_Promo $promo)
     {
         $promo->used++;
-        $promo->updated_at = date('c');
+        $promo->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($promo);
     }
 

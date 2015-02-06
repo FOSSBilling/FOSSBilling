@@ -470,8 +470,8 @@ class Admin extends \Api_Abstract
                 $model->consoleuser = null;
                 $model->consolepassword = null;
                 $model->mainipaddress = $server['ipaddress'];
-                $model->created_at   = date('c');
-                $model->updated_at   = date('c');
+                $model->created_at   = date('Y-m-d H:i:s');
+                $model->updated_at   = date('Y-m-d H:i:s');
                 $this->di['db']->store($model);
                 
                 //activate order
@@ -521,7 +521,7 @@ class Admin extends \Api_Abstract
                 'last_name'     => $client['lastname'],
                 'password'      => $password,
                 'notes'         => 'Imported from SolusVM server',
-                'created_at'    => date('c', strtotime($client['created'])),
+                'created_at'    => date('Y-m-d H:i:s', strtotime($client['created'])),
             );
             try {
                 $id = $this->di['api_admin']->client_create($cdata);

@@ -261,8 +261,8 @@ class Service implements \Box\InjectionAwareInterface
         $queue->client_id  = $client_id;
         $queue->admin_id   = $admin_id;
         $queue->status     = 'unsent';
-        $queue->created_at = date('c');
-        $queue->updated_at = date('c');
+        $queue->created_at = date('Y-m-d H:i:s');
+        $queue->updated_at = date('Y-m-d H:i:s');
         $queue->priority   = 1;
         $queue->tries      = 0;
         try {
@@ -605,7 +605,7 @@ class Service implements \Box\InjectionAwareInterface
             if ($queue->priority) $queue->priority--;
             $queue->status = 'unsent';
             $queue->tries++;
-            $queue->updated_at = date('c');
+            $queue->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($queue);
             if ($settings['cancel_after'] && $queue->tries > $settings['cancel_after']) $this->di['db']->trash($queue);
         }

@@ -23,7 +23,7 @@ class Box_LogTest extends PHPUnit_Framework_TestCase
         $log->err('Test', array('admin_id'=>1, 'client_id'=>2));
         $log->err('Test 2', array('admin_id'=>3, 'client_id'=>4));
 
-        $date = date('c');
+        $date = date('Y-m-d H:i:s');
         $outputString = $date." ERR (3): Test".PHP_EOL;
         $outputString .= $date." ERR (3): Test 2".PHP_EOL;
         $this->expectOutputString($outputString);

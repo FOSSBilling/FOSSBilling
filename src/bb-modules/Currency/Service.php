@@ -355,8 +355,8 @@ class Service implements InjectionAwareInterface
         $model->title           = $title;
         $model->format          = $format;
         $model->conversion_rate = $conversionRate;
-        $model->created_at      = date('c');
-        $model->updated_at      = date('c');
+        $model->created_at      = date('Y-m-d H:i:s');
+        $model->updated_at      = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Added new currency %s', $model->code);
@@ -400,7 +400,7 @@ class Service implements InjectionAwareInterface
             $model->conversion_rate = $conversionRate;
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $db->store($model);
 
         $this->di['logger']->info('Updated currency %s', $model->code);
