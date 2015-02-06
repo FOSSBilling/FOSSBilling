@@ -248,7 +248,7 @@ class Guest extends \Api_Abstract
         $new_pass = substr(md5(time() . uniqid()), 0, 10);
         
         $c = $this->di['db']->load('Client', $reset->client_id);
-        $c->pass = $new_pass;
+        $c->pass = $this->di['password']->hashIt($new_pass);
         $this->di['db']->store($c);
         
         //send email
