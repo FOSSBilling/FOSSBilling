@@ -329,10 +329,15 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $emailServiceMock->expects($this->atLeastOnce())->
             method('sendTemplate');
 
+        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock->expects($this->atLeastOnce())
+            ->method('hashIt');
+        
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $di['mod_service'] =  $di->protect(function ($name) use($emailServiceMock) {return $emailServiceMock;});
+        $di['password'] = $passwordMock;
 
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
