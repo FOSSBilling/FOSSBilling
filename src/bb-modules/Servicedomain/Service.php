@@ -208,8 +208,8 @@ class Service implements \Box\InjectionAwareInterface
         $model->contact_phone_cc   = $client->phone_cc;
         $model->contact_phone      = $client->phone;
 
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
 
@@ -372,9 +372,9 @@ class Service implements \Box\InjectionAwareInterface
         $model->contact_phone      = $contact->getTel();
 
         $model->details       = serialize($whois);
-        $model->expires_at    = date('c', $whois->getExpirationTime());
-        $model->registered_at = date('c', $whois->getRegistrationTime());
-        $model->updated_at    = date('c');
+        $model->expires_at    = date('Y-m-d H:i:s', $whois->getExpirationTime());
+        $model->registered_at = date('Y-m-d H:i:s', $whois->getRegistrationTime());
+        $model->updated_at    = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
     }
@@ -405,7 +405,7 @@ class Service implements \Box\InjectionAwareInterface
         $model->ns2        = $ns2;
         $model->ns3        = $ns3;
         $model->ns4        = $ns4;
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
@@ -459,7 +459,7 @@ class Service implements \Box\InjectionAwareInterface
         list($domain, $adapter) = $this->_getD($model);
         $adapter->modifyContact($domain);
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
@@ -484,7 +484,7 @@ class Service implements \Box\InjectionAwareInterface
         $epp = $adapter->lock($domain);
 
         $model->locked     = true;
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
@@ -500,7 +500,7 @@ class Service implements \Box\InjectionAwareInterface
         $epp = $adapter->unlock($domain);
 
         $model->locked     = false;
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
@@ -516,7 +516,7 @@ class Service implements \Box\InjectionAwareInterface
         $adapter->enablePrivacyProtection($domain);
 
         $model->privacy    = TRUE;
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
@@ -532,7 +532,7 @@ class Service implements \Box\InjectionAwareInterface
         $adapter->disablePrivacyProtection($domain);
 
         $model->privacy    = FALSE;
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
@@ -765,7 +765,7 @@ class Service implements \Box\InjectionAwareInterface
             }
         }
 
-        $ss->setParamValue($key, date('c'));
+        $ss->setParamValue($key, date('Y-m-d H:i:s'));
         $this->di['logger']->info('Executed action to synchronize domain expiration dates with registrar');
 
         return true;
@@ -782,8 +782,8 @@ class Service implements \Box\InjectionAwareInterface
         $model->min_years          = isset($data['min_years']) ? (int)$data['min_years'] : 1;
         $model->allow_register     = isset($data['allow_register']) ? (bool)$data['allow_transfer'] : true;
         $model->active             = isset($data['active']) ? (bool)$data['active'] : false;
-        $model->updated_at         = date('c');
-        $model->created_at         = date('c');
+        $model->updated_at         = date('Y-m-d H:i:s');
+        $model->created_at         = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
@@ -826,7 +826,7 @@ class Service implements \Box\InjectionAwareInterface
             $model->active = $data['active'];
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
 
@@ -1121,7 +1121,7 @@ class Service implements \Box\InjectionAwareInterface
             $s->transfer_code = $data['transfer_code'];
         }
 
-        $s->updated_at = date('c');
+        $s->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($s);
 

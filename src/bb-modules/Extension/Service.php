@@ -567,8 +567,8 @@ class Service implements InjectionAwareInterface
             $c->extension = $ext;
             $c->meta_key = 'config';
             $c->meta_value = null;
-            $c->created_at = date('c');
-            $c->updated_at = date('c');
+            $c->created_at = date('Y-m-d H:i:s');
+            $c->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($c);
             $config = array();
         } else {

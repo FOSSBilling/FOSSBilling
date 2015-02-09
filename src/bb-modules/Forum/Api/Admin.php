@@ -114,8 +114,8 @@ class Admin extends \Api_Abstract
         $model->status = isset($data['status']) ? $data['status'] : \Model_Forum::STATUS_ACTIVE;
         $model->description = isset($data['description']) ? $data['description'] : NULL;
         $model->priority = $priority + 1;
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new forum "%s"', $model->title);
@@ -174,7 +174,7 @@ class Admin extends \Api_Abstract
             $model->priority = $data['priority'];
         }
         
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated forum "%s"', $model->title);
@@ -199,7 +199,7 @@ class Admin extends \Api_Abstract
             $model = $this->di['db']->getExistingModelById('Forum', $id);
             if($model instanceof \Model_Forum) {
                 $model->priority = $p;
-                $model->updated_at = date('c');
+                $model->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($model);
             }
         }
@@ -330,8 +330,8 @@ class Admin extends \Api_Abstract
         $topic->title = $data['title'];
         $topic->slug = $this->di['tools']->slug($data['title']);
         $topic->status = isset($data['status']) ? $data['status'] : \Model_ForumTopic::STATUS_ACTIVE;
-        $topic->created_at = date('c');
-        $topic->updated_at = date('c');
+        $topic->created_at = date('Y-m-d H:i:s');
+        $topic->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($topic);
 
         $msg = $this->di['db']->dispense('ForumTopicMessage');
@@ -339,8 +339,8 @@ class Admin extends \Api_Abstract
         $msg->forum_topic_id = $topic->id;
         $msg->message = $data['message'];
         $msg->ip = $this->getIp();
-        $msg->created_at = date('c');
-        $msg->updated_at = date('c');
+        $msg->created_at = date('Y-m-d H:i:s');
+        $msg->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($msg);
 
         $this->di['logger']->info('Started new forum topic "%s"', $topic->title);
@@ -395,7 +395,7 @@ class Admin extends \Api_Abstract
             $model->views = $data['views'];
         }
         
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated forum topic "%s"', $model->title);
@@ -471,7 +471,7 @@ class Admin extends \Api_Abstract
             $model->message = $data['message'];
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated forum topic message #%s', $model->id);
@@ -534,11 +534,11 @@ class Admin extends \Api_Abstract
         $msg->forum_topic_id = $topic->id;
         $msg->message = $data['message'];
         $msg->ip = $this->getIp();
-        $msg->created_at = date('c');
-        $msg->updated_at = date('c');
+        $msg->created_at = date('Y-m-d H:i:s');
+        $msg->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($msg);
 
-        $topic->updated_at = date('c');
+        $topic->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($topic);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminRepliedInForum', 'params'=>array('id'=>$topic->id, 'message_id'=>$msg->id, 'admin_id'=>$admin->id)));

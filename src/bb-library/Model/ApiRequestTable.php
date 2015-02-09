@@ -39,13 +39,13 @@ class Model_ApiRequestTable implements \Box\InjectionAwareInterface
         $r = $this->di['db']->dispense('ApiRequest');
         $r->ip = $ip;
         $r->request = $request;
-        $r->created_at = date('c');
+        $r->created_at = date('Y-m-d H:i:s');
         $this->di['db']->store($r);
     }
 
     public function getRequestCount($since, $ip = null)
     {
-        $sinceIso = date('c', $since);
+        $sinceIso = date('Y-m-d H:i:s', $since);
 
         $sql = 'SELECT count(id) as cc
                 WHERE created_at > :since';

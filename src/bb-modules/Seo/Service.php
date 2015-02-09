@@ -64,7 +64,7 @@ class Service implements InjectionAwareInterface
             error_log('Submitted sitemap to Bing');
         }
 
-        $api->system_update_params(array($key => date('c')));
+        $api->system_update_params(array($key => date('Y-m-d H:i:s')));
 
         return true;
     }

@@ -69,8 +69,8 @@ class Service implements InjectionAwareInterface
         $model->client_id = $order->client_id;
         $model->filename = $c['filename'];
         $model->downloads = 0;
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         return $model;
@@ -154,7 +154,7 @@ class Service implements InjectionAwareInterface
     public function hitDownload(\Model_ServiceDownloadable $model)
     {
         $model->downloads += 1;
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
     }
 
@@ -191,7 +191,7 @@ class Service implements InjectionAwareInterface
 
         $config['filename'] = $file->getName();
         $productModel->config = json_encode($config);
-        $productModel->updated_at = date('c');
+        $productModel->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($productModel);
 
         $this->di['logger']->info('Uploaded new file for product %s', $productModel->id);
@@ -217,7 +217,7 @@ class Service implements InjectionAwareInterface
         // End upload
 
         $serviceDownloadable->filename = $file->getName();
-        $serviceDownloadable->updated_at = date('c');
+        $serviceDownloadable->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($serviceDownloadable);
 
         $this->di['logger']->info('Uploaded new file for order %s', $order->id);

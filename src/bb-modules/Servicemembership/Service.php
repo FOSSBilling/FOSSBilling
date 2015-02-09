@@ -51,8 +51,8 @@ class Service implements \Box\InjectionAwareInterface
         $model->client_id = $order->client_id;
         $model->config = $order->config;
 
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
 

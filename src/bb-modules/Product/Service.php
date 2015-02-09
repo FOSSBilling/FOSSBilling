@@ -191,8 +191,8 @@ class Service implements InjectionAwareInterface
         $model->setup = self::SETUP_AFTER_PAYMENT;
         $model->priority = $priority + 10;
 
-        $model->updated_at = date('c');
-        $model->created_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->created_at = date('Y-m-d H:i:s');
 
         // try save with slug
         try {
@@ -352,7 +352,7 @@ class Service implements InjectionAwareInterface
             $model->plugin = $data['plugin'];
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
 
@@ -366,7 +366,7 @@ class Service implements InjectionAwareInterface
             $model = $this->di['db']->load('Product', $id);
             if($model instanceof \Model_Product) {
                 $model->priority = $p;
-                $model->updated_at = date('c');
+                $model->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($model);
             }
         }
@@ -398,7 +398,7 @@ class Service implements InjectionAwareInterface
         }
 
         $model->config = json_encode($config);
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated product #%s configuration', $model->id);
@@ -439,8 +439,8 @@ class Service implements InjectionAwareInterface
         $model->icon_url = $iconUrl;
         $model->description = $description;
 
-        $model->updated_at = date('c');
-        $model->created_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->created_at = date('Y-m-d H:i:s');
 
         // try save with slug
         try {
@@ -485,7 +485,7 @@ class Service implements InjectionAwareInterface
         $productCategory->icon_url    = $icon_url;
         $productCategory->description = $description;
 
-        $productCategory->updated_at = date('c');
+        $productCategory->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($productCategory);
 
         $this->di['logger']->info('Updated product category #%s', $productCategory->id);
@@ -502,8 +502,8 @@ class Service implements InjectionAwareInterface
         $model->title = $title;
         $model->description = $description;
         $model->icon_url = $icon_url;
-        $model->updated_at = date('c');
-        $model->created_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->created_at = date('Y-m-d H:i:s');
         $id = $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new product category #%s', $id);
@@ -583,15 +583,15 @@ class Service implements InjectionAwareInterface
         $model->once_per_client = isset($data['once_per_client']) ? (bool)$data['once_per_client'] : 0;
         $model->recurring = isset($data['recurring']) ? (bool)$data['recurring'] : 0;
         $model->maxuses = isset($data['maxuses']) ? $data['maxuses'] : NULL;
-        $model->start_at = (isset($data['start_at']) && !empty($data['start_at'])) ? date('c', strtotime($data['start_at'])) : NULL;
-        $model->end_at = (isset($data['end_at']) && !empty($data['end_at'])) ? date('c', strtotime($data['end_at'])) : NULL;
+        $model->start_at = (isset($data['start_at']) && !empty($data['start_at'])) ? date('Y-m-d H:i:s', strtotime($data['start_at'])) : NULL;
+        $model->end_at = (isset($data['end_at']) && !empty($data['end_at'])) ? date('Y-m-d H:i:s', strtotime($data['end_at'])) : NULL;
 
         $model->products = json_encode($products);
         $model->periods = json_encode($periods);
         $model->client_groups = json_encode($clientGroups);
 
-        $model->updated_at = date('c');
-        $model->created_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->created_at = date('Y-m-d H:i:s');
         $promoId = $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new promo code %s', $model->code);
@@ -657,7 +657,7 @@ class Service implements InjectionAwareInterface
             if(empty ($data['start_at'])) {
                 $model->start_at = NULL;
             } else {
-                $model->start_at = date('c', strtotime($data['start_at']));
+                $model->start_at = date('Y-m-d H:i:s', strtotime($data['start_at']));
             }
         }
 
@@ -665,7 +665,7 @@ class Service implements InjectionAwareInterface
             if(empty ($data['end_at'])) {
                 $model->end_at = NULL;
             } else {
-                $model->end_at = date('c', strtotime($data['end_at']));
+                $model->end_at = date('Y-m-d H:i:s', strtotime($data['end_at']));
             }
         }
 
@@ -689,7 +689,7 @@ class Service implements InjectionAwareInterface
             $model->periods = json_encode($data['periods']);
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Update promo code %s', $model->code);

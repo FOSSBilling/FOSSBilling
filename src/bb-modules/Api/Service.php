@@ -59,7 +59,7 @@ class Service implements \Box\InjectionAwareInterface
         if (!is_numeric($since)){
             $since = strtotime($since);
         }
-        $sinceIso = date('c', $since);
+        $sinceIso = date('Y-m-d H:i:s', $since);
         $values = array(
             'since' =>  $sinceIso,
         );

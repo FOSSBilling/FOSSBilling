@@ -188,11 +188,11 @@ class Service implements InjectionAwareInterface
             $meta->rel_type = 'settings';
             $meta->rel_id = $theme->getName();
             $meta->meta_key = $preset;
-            $meta->created_at = date('c');
+            $meta->created_at = date('Y-m-d H:i:s');
         }
 
         $meta->meta_value = json_encode($params);
-        $meta->updated_at = date('c');
+        $meta->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($meta);
 
         return true;

@@ -124,7 +124,7 @@ class Box_Log
     protected function _packEvent($message, $priority)
     {
         return array_merge(array(
-            'timestamp'    => date('c'),
+            'timestamp'    => date('Y-m-d H:i:s'),
             'message'      => $message,
             'priority'     => $priority,
             'priorityName' => $this->_priorities[$priority]

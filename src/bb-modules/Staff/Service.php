@@ -362,8 +362,8 @@ class Service implements InjectionAwareInterface
         $cron->signature = "";
         $cron->protected = 1;
         $cron->status = 'active';
-        $cron->created_at = date('c');
-        $cron->updated_at = date('c');
+        $cron->created_at = date('Y-m-d H:i:s');
+        $cron->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($cron);
         return $cron;
     }
@@ -415,7 +415,7 @@ class Service implements InjectionAwareInterface
             $model->signature = $data['signature'];
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminStaffUpdate', 'params'=>array('id'=>$model->id)));
@@ -446,7 +446,7 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminStaffPasswordChange', 'params'=>array('id'=>$model->id)));
 
         $model->pass = $this->di['password']->hashIt($password);
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminStaffPasswordChange', 'params'=>array('id'=>$model->id)));
@@ -472,8 +472,8 @@ class Service implements InjectionAwareInterface
         $model->name                = $data['name'];
         $model->status              = $model->getStatus($data['status']);
         $model->signature           = $signature;
-        $model->created_at          = date('c');
-        $model->updated_at          = date('c');
+        $model->created_at          = date('Y-m-d H:i:s');
+        $model->updated_at          = date('Y-m-d H:i:s');
 
         try {
             $newId = $this->di['db']->store($model);
@@ -498,8 +498,8 @@ class Service implements InjectionAwareInterface
         $admin->pass = $this->di['password']->hashIt($data['password']);
         $admin->protected = 1;
         $admin->status = 'active';
-        $admin->created_at = date('c');
-        $admin->updated_at = date('c');
+        $admin->created_at = date('Y-m-d H:i:s');
+        $admin->updated_at = date('Y-m-d H:i:s');
 
         $newId = $this->di['db']->store($admin);
 
@@ -540,8 +540,8 @@ class Service implements InjectionAwareInterface
         $model = $this->di['db']->dispense('AdminGroup');
         $model->name = $name;
 
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $groupId = $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new staff group %s', $groupId);
@@ -585,7 +585,7 @@ class Service implements InjectionAwareInterface
         if (isset($data['name'])){
             $model->name = $data['name'];
         }
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated staff group %s', $model->id);

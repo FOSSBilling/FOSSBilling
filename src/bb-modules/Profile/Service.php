@@ -36,7 +36,7 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(array('event' => 'onBeforeAdminStaffProfilePasswordChange', 'params' => $event_params));
 
         $admin->pass       = $this->di['password']->hashIt($new_password);
-        $admin->updated_at = date('c');
+        $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
         $event_params       = array();
@@ -55,7 +55,7 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(array('event' => 'onBeforeAdminStaffApiKeyChange', 'params' => $event_params));
 
         $admin->api_token  = $this->di['tools']->generatePassword(32);
-        $admin->updated_at = date('c');
+        $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
         $this->di['events_manager']->fire(array('event' => 'onAfterAdminStaffApiKeyChange', 'params' => $event_params));
@@ -83,7 +83,7 @@ class Service implements InjectionAwareInterface
             $admin->signature = $data['signature'];
         }
 
-        $admin->updated_at = date('c');
+        $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
         $event_params       = array();
@@ -255,7 +255,7 @@ class Service implements InjectionAwareInterface
             $client->custom_10 = $data['custom_10'];
         }
 
-        $client->updated_at = date('c');
+        $client->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($client);
 
@@ -269,7 +269,7 @@ class Service implements InjectionAwareInterface
     public function resetApiKey(\Model_Client $client)
     {
         $client->api_token  = $this->di['tools']->generatePassword(32);
-        $client->updated_at = date('c');
+        $client->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($client);
 

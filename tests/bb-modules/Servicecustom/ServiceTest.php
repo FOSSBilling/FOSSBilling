@@ -518,8 +518,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $model->client_id  = rand(1, 100);
         $model->plugin     = 'plugin';
         $model->config     = 'config_json';
-        $model->updated_at = date('c');
-        $model->created_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->created_at = date('Y-m-d H:i:s');
 
         $result = $this->service->toApiArray($model);
 

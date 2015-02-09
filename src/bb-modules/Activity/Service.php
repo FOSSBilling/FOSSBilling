@@ -34,8 +34,8 @@ class Service implements InjectionAwareInterface
         $entry->admin_id        = isset($data['admin_id']) ? $data['admin_id'] : NULL;
         $entry->priority        = isset($data['priority']) ? $data['priority'] : NULL;
         $entry->message         = $data['message'];
-        $entry->created_at      = date('c');
-        $entry->updated_at      = date('c');
+        $entry->created_at      = date('Y-m-d H:i:s');
+        $entry->updated_at      = date('Y-m-d H:i:s');
         $entry->ip              = $this->di['request']->getClientAddress();
         $this->di['db']->store($entry);
     }
@@ -60,8 +60,8 @@ class Service implements InjectionAwareInterface
         $log = $di['db']->dispense('ActivityClientHistory');
         $log->client_id       = $params['id'];
         $log->ip              = $params['ip'];
-        $log->created_at      = date('c');
-        $log->updated_at      = date('c');
+        $log->created_at      = date('Y-m-d H:i:s');
+        $log->updated_at      = date('Y-m-d H:i:s');
 
         $di['db']->store($log);
     }
@@ -74,8 +74,8 @@ class Service implements InjectionAwareInterface
         $log= $di['db']->dispense('ActivityAdminHistory');
         $log->admin_id        = $params['id'];
         $log->ip              = $params['ip'];
-        $log->created_at      = date('c');
-        $log->updated_at      = date('c');
+        $log->created_at      = date('Y-m-d H:i:s');
+        $log->updated_at      = date('Y-m-d H:i:s');
 
         $di['db']->store($log);
     }
@@ -150,8 +150,8 @@ class Service implements InjectionAwareInterface
         $entry->subject      = $subject;
         $entry->content_html = $content_html;
         $entry->content_text = $content_text;
-        $entry->created_at   = date('c');
-        $entry->updated_at   = date('c');
+        $entry->created_at   = date('Y-m-d H:i:s');
+        $entry->updated_at   = date('Y-m-d H:i:s');
 
         $this->di['db']->store($entry);
 

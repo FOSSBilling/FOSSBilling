@@ -211,8 +211,8 @@ class Guest extends \Api_Abstract
         $reset->client_id   = $c->id;
         $reset->ip          = $this->ip;
         $reset->hash        = $hash;
-        $reset->created_at  = date('c');
-        $reset->updated_at  = date('c');
+        $reset->created_at  = date('Y-m-d H:i:s');
+        $reset->updated_at  = date('Y-m-d H:i:s');
         $this->di['db']->store($reset);
 
         //send email

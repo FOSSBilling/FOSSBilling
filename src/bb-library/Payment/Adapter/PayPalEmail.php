@@ -251,7 +251,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
             'error'     => '',
             'error_code'=> '',
             'status'    => 'processed',
-            'updated_at'=> date('c'),
+            'updated_at'=> date('Y-m-d H:i:s'),
         );
         $api_admin->invoice_transaction_update($d);
     }

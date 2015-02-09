@@ -51,8 +51,8 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $subject      = 'Subject';
         $content_html = 'HTML';
         $content_text = 'TEXT';
-        $created      = date('c', time() - 86400);
-        $updated      = date('c');
+        $created      = date('Y-m-d H:i:s', time() - 86400);
+        $updated      = date('Y-m-d H:i:s');
 
         $model               = new \Model_ActivityClientEmail();
         $model->loadBean(new \RedBeanPHP\OODBBean());

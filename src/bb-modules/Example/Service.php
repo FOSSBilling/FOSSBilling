@@ -168,10 +168,10 @@ class Service
             $meta->rel_type   = 'ip';
             $meta->rel_id     = $params['ip'];
             $meta->meta_key   = 'counter';
-            $meta->created_at = date('c');
+            $meta->created_at = date('Y-m-d H:i:s');
         }
         $meta->meta_value = $meta->meta_value + 1;
-        $meta->updated_at = date('c');
+        $meta->updated_at = date('Y-m-d H:i:s');
         $di['db']->store($meta);
 
         // Now we can perform task depending on how many times wrong details were entered
@@ -202,8 +202,8 @@ class Service
         $meta->extension  = 'mod_example';
         $meta->meta_key   = 'event_params';
         $meta->meta_value = json_encode($params);
-        $meta->created_at = date('c');
-        $meta->updated_at = date('c');
+        $meta->created_at = date('Y-m-d H:i:s');
+        $meta->updated_at = date('Y-m-d H:i:s');
         $di['db']->store($meta);
     }
 

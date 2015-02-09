@@ -70,8 +70,8 @@ class Service implements \Box\InjectionAwareInterface
         $model->plugin        = $product->plugin;
         $model->plugin_config = $product->plugin_config;
         $model->config        = $order->config;
-        $model->created_at    = date('c');
-        $model->updated_at    = date('c');
+        $model->created_at    = date('Y-m-d H:i:s');
+        $model->updated_at    = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         return $model;
@@ -104,7 +104,7 @@ class Service implements \Box\InjectionAwareInterface
         $model = $this->_getOrderService($order);
         $this->callOnAdapter($model, 'renew');
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
 
@@ -122,7 +122,7 @@ class Service implements \Box\InjectionAwareInterface
 
         $this->callOnAdapter($model, 'suspend');
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
 
@@ -140,7 +140,7 @@ class Service implements \Box\InjectionAwareInterface
 
         $this->callOnAdapter($model, 'unsuspend');
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
 
@@ -158,7 +158,7 @@ class Service implements \Box\InjectionAwareInterface
 
         $this->callOnAdapter($model, 'cancel');
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
 
@@ -176,7 +176,7 @@ class Service implements \Box\InjectionAwareInterface
 
         $this->callOnAdapter($model, 'uncancel');
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
 
@@ -245,7 +245,7 @@ class Service implements \Box\InjectionAwareInterface
 
         $model             = $this->getServiceCustomByOrderId($orderId);
         $model->config     = json_encode($config);
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
 

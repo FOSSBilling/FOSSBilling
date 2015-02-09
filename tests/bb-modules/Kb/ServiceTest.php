@@ -150,8 +150,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $model->title                  = "Title";
         $model->views                  = rand(1, 100);
         $model->content                = 'Content';
-        $model->created_at             = '2013-01-01T12:00:00+00:00';
-        $model->updated_at             = '2014-01-01T12:00:00+00:00';
+        $model->created_at             = '2013-01-01 12:00:00';
+        $model->updated_at             = '2014-01-01 12:00:00';
         $model->status                 = 'active';
         $model->kb_article_category_id = rand(1, 100);
 

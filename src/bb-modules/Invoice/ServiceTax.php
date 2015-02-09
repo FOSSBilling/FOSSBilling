@@ -100,8 +100,8 @@ class ServiceTax implements InjectionAwareInterface
         $model->country = (!isset($data['country']) || empty($data['country'])) ? NULL : $data['country'];
         $model->state = (!isset($data['state']) || empty($data['state'])) ? NULL : $data['state'];
         $model->taxrate = $data['taxrate'];
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new tax rule %s', $model->name);

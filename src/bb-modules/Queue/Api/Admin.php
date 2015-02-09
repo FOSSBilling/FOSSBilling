@@ -112,11 +112,11 @@ class Admin extends \Api_Abstract
             $q = $this->di['db']->dispense('queue');
             $q->name        = $data['queue'];
             $q->mod         = $data['mod'];
-            $q->created_at  = date('c');
+            $q->created_at  = date('Y-m-d H:i:s');
         }
         $q->timeout = $interval;
         $q->iteration = $max;
-        $q->updated_at = date('c');
+        $q->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($q);
         
         $params = isset($data['params']) ? $data['params'] : null;
@@ -127,11 +127,11 @@ class Admin extends \Api_Abstract
         $msg->handler = $handler;
         $msg->body = $body;
         $msg->hash = md5($body);
-        $msg->created_at = date('c');
-        $msg->updated_at = date('c');
+        $msg->created_at = date('Y-m-d H:i:s');
+        $msg->updated_at = date('Y-m-d H:i:s');
         
         if(isset($data['execute_at'])) {
-            $msg->execute_at = date('c', strtotime($data['execute_at']));
+            $msg->execute_at = date('Y-m-d H:i:s', strtotime($data['execute_at']));
         }
         
         $this->di['db']->store($msg);
@@ -223,7 +223,7 @@ class Admin extends \Api_Abstract
                 $this->di['db']->exec($dsql, array('id'=>$msg['id']));
                 $result[$msg['id']] = array('status'=> 'executed', 'error'=>null);
             } catch(\Exception $e) {
-                $this->di['db']->exec($lsql, array('log'=>$e->getMessage(). ' '. $e->getCode(), 'id'=>$msg['id'], 'u'=>date('c')));
+                $this->di['db']->exec($lsql, array('log'=>$e->getMessage(). ' '. $e->getCode(), 'id'=>$msg['id'], 'u'=>date('Y-m-d H:i:s')));
                 $this->di['logger']->info(sprintf('Error executing queue %s message #%s %s', $q->name, $msg['id'], $e->getMessage()));
                 $result[$msg['id']] = array('status'=> 'fail', 'error' => $e->getMessage());
             }

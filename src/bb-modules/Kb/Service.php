@@ -137,8 +137,8 @@ class Service
         $model->slug                   = $this->di['tools']->slug($title);
         $model->status                 = $status;
         $model->content                = $content;
-        $model->updated_at             = date('c');
-        $model->created_at             = date('c');
+        $model->updated_at             = date('Y-m-d H:i:s');
+        $model->created_at             = date('Y-m-d H:i:s');
         $id                            = $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new knowledge base article #%s', $id);
@@ -177,7 +177,7 @@ class Service
         if (isset($views)) {
             $model->views = $views;
         }
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
 
@@ -298,8 +298,8 @@ class Service
         $model->title       = $title;
         $model->description = $description;
         $model->slug        = $this->di['tools']->slug($title);
-        $model->updated_at  = date('c');
-        $model->created_at  = date('c');
+        $model->updated_at  = date('Y-m-d H:i:s');
+        $model->created_at  = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
@@ -322,7 +322,7 @@ class Service
             $model->description = $description;
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
 
