@@ -41,12 +41,12 @@
         
         <tr>
             <td>{% trans 'Privacy protected' %}</td>
-            <td>{{ service.privacy }}</td>
+            <td id="privacy-value">{{ service.privacy }}</td>
         </tr>
         
         <tr>
             <td>{% trans 'Locked' %}</td>
-            <td>{{ service.locked }}</td>
+            <td id="locked-value">{{ service.locked }}</td>
         </tr>
         
         <tr>
@@ -76,8 +76,8 @@
                     <a class="btn55 mr10" type="button" id="get-epp"><img src="images/icons/middlenav/key.png" alt=""><span>Get EPP</span></a>
                     <a class="btn55 mr10" type="button" id="domain-unlock" {% if service.locked == 0 %}style="display:none;"{% endif %}><img src="images/icons/middlenav/locked2.png" alt=""><span>{% trans 'Unlock' %}</span></a>
                     <a class="btn55 mr10" type="button" id="domain-lock" {% if service.locked == 1 %}style="display:none;"{% endif %}><img src="images/icons/middlenav/unlocked.png" alt=""><span>{% trans 'Lock' %}</span></a>
-                    <a class="btn55 mr10" type="button" id="domain-disable-pp" {% if service.privacy == 1 %}style="display:none;"{% endif %}><img src="images/icons/middlenav/umbrella.png" alt=""><span>{% trans 'Disable privacy protection' %}</span></a>
-                    <a class="btn55 mr10" type="button" id="domain-enable-pp" {% if service.privacy == 0 %}style="display:none;"{% endif %}><img src="images/icons/middlenav/umbrella.png" alt=""><span>{% trans 'Enable privacy protection' %}</span></a>
+                    <a class="btn55 mr10" type="button" id="domain-disable-pp"><img src="images/icons/middlenav/umbrella.png" alt=""><span>{% trans 'Disable privacy protection' %}</span></a>
+                    <a class="btn55 mr10" type="button" id="domain-enable-pp"><img src="images/icons/middlenav/umbrella.png" alt=""><span>{% trans 'Enable privacy protection' %}</span></a>
                     {% endif %}
                 </div>
             </td>
@@ -268,6 +268,14 @@
 
 <script type="text/javascript">
 $(function() {
+
+   {% if service.privacy == 0 %}
+       $('#domain-disable-pp').hide();
+   {% endif %}
+
+   {% if service.privacy == 1 %}
+       $('#domain-enable-pp').hide();
+   {% endif %}
     
     $('#domain-lock').bind('click',function(event){
         bb.post(
@@ -277,6 +285,7 @@ $(function() {
                 bb.msg('Domain locked');
                 $('#domain-lock').toggle();
                 $('#domain-unlock').toggle();
+                $('#locked-value').text('1');
             }
         );
     });
@@ -289,6 +298,7 @@ $(function() {
                 bb.msg('Domain unlocked');
                 $('#domain-lock').toggle();
                 $('#domain-unlock').toggle();
+                $('#locked-value').text('0');
             }
         );
     });
@@ -301,6 +311,7 @@ $(function() {
                 bb.msg('Privacy Protection enabled');
                 $('#domain-enable-pp').toggle();
                 $('#domain-disable-pp').toggle();
+                $('#privacy-value').text('1');
             }
         );
     });
@@ -313,6 +324,7 @@ $(function() {
                 bb.msg('Privacy Protection disabled');
                 $('#domain-enable-pp').toggle();
                 $('#domain-disable-pp').toggle();
+                $('#privacy-value').text('0');
             }
         );
     });
