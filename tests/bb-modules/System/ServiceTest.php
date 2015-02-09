@@ -421,5 +421,132 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $this->assertInternalType('string', $result);
         $this->assertEquals(\Box_Version::VERSION, $result);
     }
+
+    public function testcheckLimits_UserIsPro()
+    {
+        $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
+        $licenseMock->expects($this->atLeastOnce())
+            ->method('isPro')
+            ->willReturn(true);
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->never())
+            ->method('find');
+
+
+        $di = new \Box_Di();
+        $di['license'] = $licenseMock;
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+
+        $result = $this->service->checkLimits('Model_Product');
+    }
+
+    public function testcheckLimits_LimitIsNotReached()
+    {
+        $modelName = 'Model_Product';
+        $model = new \Model_Product();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+
+        $findResult = array(
+            array($model),
+            array($model),
+        );
+        $limit = 5;
+
+        $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
+        $licenseMock->expects($this->atLeastOnce())
+            ->method('isPro')
+            ->willReturn(false);
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->once())
+            ->method('find')
+            ->willReturn($findResult);
+
+
+        $di = new \Box_Di();
+        $di['license'] = $licenseMock;
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+
+        $result = $this->service->checkLimits($modelName, $limit);
+    }
+
+    public function testcheckLimits_OverTheLimit()
+    {
+        $modelName = 'Model_Product';
+        $model = new \Model_Product();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+
+        $findResult = array(
+            array($model),
+            array($model),
+            array($model),
+            array($model),
+            array($model),
+            array($model),
+        );
+        $limit = 5;
+
+        $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
+        $licenseMock->expects($this->atLeastOnce())
+            ->method('isPro')
+            ->willReturn(false);
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->once())
+            ->method('find')
+            ->willReturn($findResult);
+
+
+        $di = new \Box_Di();
+        $di['license'] = $licenseMock;
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+
+        $this->setExpectedException('\Box_Exception', 'You have reached free version limit. Upgrade to PRO version of BoxBilling if you want this limit removed.', 875);
+        $this->service->checkLimits($modelName, $limit);
+    }
+
+    public function testcheckLimits_LimitAndResultRowsEqual()
+    {
+        $modelName = 'Model_Product';
+        $model = new \Model_Product();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+
+        $findResult = array(
+            array($model),
+            array($model),
+            array($model),
+            array($model),
+            array($model),
+            array($model),
+        );
+        $limit = count($findResult);
+
+        $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
+        $licenseMock->expects($this->atLeastOnce())
+            ->method('isPro')
+            ->willReturn(false);
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->once())
+            ->method('find')
+            ->willReturn($findResult);
+
+
+        $di = new \Box_Di();
+        $di['license'] = $licenseMock;
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+
+        $this->setExpectedException('\Box_Exception', 'You have reached free version limit. Upgrade to PRO version of BoxBilling if you want this limit removed.', 875);
+        $this->service->checkLimits($modelName, $limit);
+    }
 }
  
