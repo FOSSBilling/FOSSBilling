@@ -125,6 +125,7 @@ class Service implements InjectionAwareInterface
                             throw new \Box_Exception('Selected billing period is not valid for addon');
                         }
                     }
+                    $ac['parent_id'] = $product->id;
 
                     $list[] = array(
                         'product' => $addon,
@@ -205,17 +206,29 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function removeProduct(\Model_Cart $cart, $id)
+    public function removeProduct(\Model_Cart $cart, $id, $removeAddons = true)
     {
-        $bindings    = array(
-            ':cart_id'    => $cart->id,
-            ':id' => $id
+        $bindings = array(
+            ':cart_id' => $cart->id,
+            ':id'      => $id
         );
 
         $cartProduct = $this->di['db']->findOne('CartProduct', 'id = :id AND cart_id = :cart_id', $bindings);
         if (!$cartProduct instanceof \Model_CartProduct) {
             throw new \Box_Exception('Product not found');
         }
+
+        if ($removeAddons) {
+            $allCartProducts = $this->di['db']->find('CartProduct', 'cart_id = :cart_id', array(':cart_id' => $cart->id));
+            foreach ((array)$allCartProducts as $cProduct) {
+                $config = json_decode($cProduct->config, true);
+                if (isset($config['parent_id']) && $config['parent_id'] == $cartProduct->product_id) {
+                    $this->di['db']->trash($cProduct);
+                    $this->di['logger']->info('Removed product addon from shopping cart');
+                }
+            }
+        }
+
         $this->di['db']->trash($cartProduct);
 
         $this->di['logger']->info('Removed product from shopping cart');

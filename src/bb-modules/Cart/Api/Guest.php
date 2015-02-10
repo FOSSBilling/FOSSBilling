@@ -145,7 +145,7 @@ class Guest extends \Api_Abstract
 
         $cart = $this->getService()->getSessionCart();
 
-        return $this->getService()->removeProduct($cart, $data['id']);
+        return $this->getService()->removeProduct($cart, $data['id'], true);
     }
 
     /**
