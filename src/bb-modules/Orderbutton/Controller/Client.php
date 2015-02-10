@@ -46,6 +46,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_js(\Box_App $app)
     {
+        header("Content-Type: application/javascript");
         return $app->render('mod_orderbutton_js');
     }
 }
