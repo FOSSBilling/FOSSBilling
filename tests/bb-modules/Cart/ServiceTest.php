@@ -239,10 +239,16 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testRemoveProduct()
     {
+        $cartProduct = new \Model_CartProduct();
+        $cartProduct->loadBean(new \RedBeanPHP\OODBBean());
+
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->will($this->returnValue(new \Model_CartProduct()));
+            ->will($this->returnValue($cartProduct));
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->will($this->returnValue(array($cartProduct)));
         $dbMock->expects($this->atLeastOnce())
             ->method('trash')
             ->will($this->returnValue(null));
