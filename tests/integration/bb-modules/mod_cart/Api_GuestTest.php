@@ -417,6 +417,51 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
             $this->assertTrue($bool);
         }
     }
+
+    public function testRemoveItemWithAddons()
+    {
+        $this->api_guest->cart_reset();
+
+        $data = array(
+            'id'        => 1,
+            'multiple' => true
+        );
+        $bool = $this->api_guest->cart_add_item($data);
+        $cart = $this->api_guest->cart_get();
+
+        $this->assertEquals(1, count($cart['items']));
+
+
+        $data = array(
+            'id'        => 2,
+            'multiple' => true,
+            'addons'    => array(
+                3  =>  array(
+                    'selected'  =>  1,
+                    'period'    =>  '1Y',
+                    'quantity'  =>  2,
+                ),
+                4  =>  array(
+                    'selected'  =>  1,
+                    'period'    =>  '1Y',
+                ),
+            ),
+        );
+
+
+        $bool = $this->api_guest->cart_add_item($data);
+        $this->assertTrue($bool);
+
+        $cart = $this->api_guest->cart_get();
+
+        $this->assertEquals(4, count($cart['items']));
+
+        $this->api_guest->cart_remove_item(array('id'=> $cart['items'][1]['id'])); //removing second item from cart. Should remove it's addons as well
+        $cart = $this->api_guest->cart_get();
+
+        $this->assertEquals(1, count($cart['items']));
+
+    }
     
     public function testMultiple()
     {
