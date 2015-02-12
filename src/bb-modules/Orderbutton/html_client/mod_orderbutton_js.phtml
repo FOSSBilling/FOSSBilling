@@ -10,37 +10,49 @@
 {% set border_radius = request.border_radius | default(0) %}
 {% set bind_selector = request.bind_selector | default('.order-button') %}
 
-    var orderbutton = function (){};
+    var orderbutton = function (){
+        this.data_product_id = null;
+        this.backgroundElem = null;
+        this.iframeElem = null;
+        this.loaderImageElem = null;
+    };
 
-    orderbutton.prototype.show_popup = function() {
+    orderbutton.prototype.setDataProductId = function (product_id){
+        this.data_product_id = product_id;
+    };
+
+    orderbutton.prototype.getDataProductId = function (){
+        return this.data_product_id;
+    };
+
+    orderbutton.prototype.hideElements = function(){
+        this.backgroundElem.hide();
+        this.iframeElem.hide();
+    };
+
+    orderbutton.prototype.attachEvents = function() {
         var _this = this;
         $(document).keyup(function(e) { // esc
             if (e.keyCode == 27) {
-                document.getElementById('popup-background').style.display = 'none';
-                document.getElementById('popup-iframe').style.display = 'none';
+                _this.hideElements();
             }
         });
         var bodyElem = $('body');
 
-        bodyElem.delegate('#popup-background','click',function(){
-            document.getElementById('popup-background').style.display = 'none';
-            document.getElementById('popup-iframe').style.display = 'none';
-        });
-
-
         bodyElem.undelegate('{{bind_selector}}', 'click');
         bodyElem.delegate('{{bind_selector}}', 'click', function (event) {
             event.preventDefault();
-            var product_id = $(this).data('product');
-            _this.popup(product_id);
+            _this.setDataProductId($(this).data('product'))
+            _this.popup();
         });
     };
 
-    orderbutton.prototype.srclink = function(product_id){
+    orderbutton.prototype.srclink = function(){
         var params = [
             { name: "theme_color", value: "{{request.theme_color | default('green')}}" },
             { name: "loader", value: "1" }
         ];
+        var product_id = this.getDataProductId();
 
         {% if request.product_id %}
             // request has product_id
@@ -56,108 +68,124 @@
         return "{{ "orderbutton" | link }}&"+jQuery.param(params);
     };
 
-    orderbutton.prototype.popup = function (product_id){
-        if ($('#popup-background').length && $('#popup-iframe').length){
+    orderbutton.prototype.createIframe = function (){
 
-            if ($('#popup-iframe').attr('src') != this.srclink(product_id)){
-                $('#popup-iframe').attr('src', this.srclink(product_id));
-                $('#loader-image').show();
+        this.iframeElem  = $('<iframe frameborder="0" allowtransparency="true" onload="" id="popup-iframe"  src="'+this.srclink()+'" />').appendTo('body');
+        this.iframeElem .css({
+            {% if request.popup_center == "1" %}
+            'top': {{request.popup_top}},
+            'left': {{request.popup_left}},
+            {% endif %}
+            'background-color': 'transparent',
+            'border-radius': '{{border_radius}}px',
+            '-webkit-border-radius': '{{border_radius}}px',
+            '-moz-border-radius': '{{border_radius}}px',
+            //'box-shadow': '0 0 20px 0 #222',
+            //'-webkit-box-shadow': '0 0 20px 0 #222',
+            //'-moz-box-shadow': '0 0 20px 0 #222',
+            'display': 'none',
+            'margin': '0 auto',
+            'padding': '0px',
+            'position': 'absolute',
+            'width': "{{width}}px",
+            'z-index': '1000'
+
+        });
+
+        var _this = this;
+        this.iframeElem.load(function() {
+            _this.loaderImageElem.hide();
+            this.style.height = '100%';
+            var pWidth = jQuery(window).width();
+            var pTop = jQuery(window).scrollTop();
+            var eWidth = jQuery(this).width();
+            jQuery(this).css('top', pTop + 100 + 'px');
+            jQuery(this).css('left', parseInt((pWidth / 2) - (eWidth / 2)) + 'px');
+            $(this).show();
+        });
+
+        $(window).resize(function(){
+            var pWidth = jQuery(window).width();
+            var pTop = jQuery(window).scrollTop();
+            var eWidth = _this.iframeElem.width();
+            this.iframeElem.css('top', pTop + 100 + 'px');
+            this.iframeElem.css('left', parseInt((pWidth / 2) - (eWidth / 2)) + 'px');
+        });
+    };
+
+    orderbutton.prototype.createBackground = function (){
+        var _this = this;
+        this.backgroundElem = $('<div/>', {
+            id: 'popup-background'
+        }).appendTo('body');
+        this.backgroundElem.css({
+            'display': 'none',
+            'position': 'fixed',
+            'top': '0',
+            'left': '0',
+            'width': '100%',
+            'height': '100%',
+            'background-color': '{{background_color}}',
+            'opacity': '{{background_opacity/100}}',
+            '-webkit-opacity': '{{background_opacity/100}}',
+            '-moz-opacity': '{{background_opacity/100}}',
+            'filter': 'alpha(opacity={{background_opacity}})',
+            'z-index': '1000'
+        }).on('click', function(){
+            _this.hideElements();
+        });
+
+
+        this.backgroundElem.show();
+    };
+
+    orderbutton.prototype.createLoaderImage = function(){
+        this.loaderImageElem = $('<img />').attr({
+            'src': "{{ loader_url | mod_asset_url('orderbutton')}}",
+            'id' : 'loader-image'
+        }).css({
+            'display': 'block',
+            'margin-left': 'auto',
+            'margin-right': 'auto',
+            'position': 'relative',
+            'top': '50%'
+        }).appendTo(this.backgroundElem).show();
+    };
+
+    orderbutton.prototype.popup = function (){
+        if (this.backgroundElem && this.iframeElem){
+
+            if (this.iframeElem.attr('src') != this.srclink()){
+                this.iframeElem.attr('src', this.srclink());
+                this.loaderImageElem.show();
             }
             else{
-                $('#popup-iframe').show();
+                this.iframeElem.show();
             }
-            $('#popup-background').show();
+            this.backgroundElem.show();
+
         }else{
-
-            var background_div = $('<div/>', {
-                id: 'popup-background'
-            }).appendTo('body');
-
-            $('#popup-background').css({
-                'display': 'none',
-                'position': 'fixed',
-                'top': '0',
-                'left': '0',
-                'width': '100%',
-                'height': '100%',
-                'background-color': '{{background_color}}',
-                'opacity': '{{background_opacity/100}}',
-                '-webkit-opacity': '{{background_opacity/100}}',
-                '-moz-opacity': '{{background_opacity/100}}',
-                'filter': 'alpha(opacity={{background_opacity}})',
-                'z-index': '1000'
-            });
-            var srclink = this.srclink(product_id);
-            var iframe = $('<iframe frameborder="0" allowtransparency="true" onload="" id="popup-iframe"  src="'+srclink+'" id="popup-iframe"/>').appendTo('body');
-            $(iframe).css({
-            {% if request.popup_center == "1" %}
-                'top': {{request.popup_top}},
-                'left': {{request.popup_left}},
-                {% endif %}
-                'background-color': 'transparent',
-                'border-radius': '{{border_radius}}px',
-                '-webkit-border-radius': '{{border_radius}}px',
-                '-moz-border-radius': '{{border_radius}}px',
-                //'box-shadow': '0 0 20px 0 #222',
-                //'-webkit-box-shadow': '0 0 20px 0 #222',
-                //'-moz-box-shadow': '0 0 20px 0 #222',
-                'display': 'none',
-                'margin': '0 auto',
-                'padding': '0px',
-                'position': 'absolute',
-                'width': "{{width}}px",
-                'z-index': '1000'
-
-            });
-
-            $(window).resize(function(){
-                var pWidth = jQuery(window).width();
-                var pTop = jQuery(window).scrollTop();
-                var eWidth = jQuery('#popup-iframe').width();
-                jQuery('#popup-iframe').css('top', pTop + 100 + 'px');
-                jQuery('#popup-iframe').css('left', parseInt((pWidth / 2) - (eWidth / 2)) + 'px');
-            });
-
-            $('#popup-iframe').load(function() {
-                $('#loader-image').hide();
-                this.style.height = '100%';
-                var pWidth = jQuery(window).width();
-                var pTop = jQuery(window).scrollTop();
-                var eWidth = jQuery(this).width();
-                jQuery(this).css('top', pTop + 100 + 'px');
-                jQuery(this).css('left', parseInt((pWidth / 2) - (eWidth / 2)) + 'px');
-                $(this).show();
-            });
-
-            $("#popup-background").show();
-            var img = $('<img />').attr({
-                'src': "{{ loader_url | mod_asset_url('orderbutton')}}",
-                'id' : 'loader-image'
-            }).css({
-                'display': 'block',
-                'margin-left': 'auto',
-                'margin-right': 'auto',
-                'position': 'relative',
-                'top': '50%'
-            }).appendTo($('#popup-background')).show();
+            this.createBackground();
+            this.createLoaderImage();
+            this.createIframe();
         }
     };
 
     $( document ).ready(function() {
-    if (typeof jQuery === "undefined") {
-        (function(d, script) {
-            script = d.createElement('script');
-            script.type = 'text/javascript';
-            script.async = true;
-            script.onload = function(){
-                ob = new orderbutton();
-                ob.popup();
-            };
-            script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js';
-            d.getElementsByTagName('head')[0].appendChild(script);
-            }(document));
-    }else{
-        ob = new orderbutton();
-        ob.show_popup();
-    };
-});
+        if (typeof jQuery === "undefined") {
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    ob = new orderbutton();
+                    ob.attachEvents();
+                };
+                script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js';
+                d.getElementsByTagName('head')[0].appendChild(script);
+                }(document));
+        }else{
+            ob = new orderbutton();
+            ob.attachEvents();
+        }
+    });
