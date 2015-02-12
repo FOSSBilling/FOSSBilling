@@ -220,14 +220,16 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $service->expects($this->atLeastOnce())
             ->method('getByCode')
             ->will($this->returnValue($model));
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->will($this->returnValue(array()));
 
         $data = array(
             'code' => 'EUR'
         );
         $adminApi->setService($service);
         $result = $adminApi->get($data);
-        $this->assertInternalType('object', $result);
-        $this->assertInstanceOf('Model_Currency', $result);
+        $this->assertInternalType('array', $result);
     }
 
     public function testGetExceptionProvider()
