@@ -173,6 +173,8 @@
                         <p><strong>{% trans 'IMPORTANT' %}: </strong>{% trans 'You need to add ID (if you want to use it for one html element) or class (if you want to use it for multiple elements) in order for it to work' %}</p>
                         <p id="button-info">
                             {% trans 'Add order-button class to your elements which must call popup. For example: ' %}<strong>&lt;button type=&quot;button&quot;<span class="red">&nbsp;class=&quot;order-button</span>&quot; &gt;Order Now&lt;/button&gt;</strong>
+                            <p>{% trans 'Add data-product attribute to your element to open specific product. For example:<br/>' %}<strong>&lt;button type=&quot;button&quot; class=&quot;order-button" <span class="red">data-product="2"</span> &gt;Order Product#2 Now &lt;/button&gt;</strong></p>
+                            <p>{% trans 'data-product attribute value will be overiden if popup\'s product is selected from select-box above' %}</p>
                         </p>
                     </div>
                 </div>

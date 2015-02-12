@@ -241,28 +241,7 @@
 {% endblock %}
 
 {% if settings.top_menu_order or settings.side_menu_order %}
-<script type="text/javascript">
-    $(function () {
-        $('.order-button').click(function (e) {
-            e.stopImmediatePropagation();
-            if (typeof popup === "function") {
-                $("#popup-background").show();
-                $('#popup-iframe').show();
-            } else {
-                (function (d, script) {
-                    script = d.createElement('script');
-                    script.type = 'text/javascript';
-                    script.async = true;
-                    script.onload = function () {
-                        popup();
-                    };
-                    script.src = "{{'orderbutton/js'| link({'options' : '1', 'width' : 600, 'theme_color' : 'green', 'background_color' : 'black', 'background_opacity' : 50, 'background_close' : 1, 'bind_selector' : '.order-button', 'border_radius' : 0, 'loader' : 8}) }}";
-                    d.getElementsByTagName('head')[0].appendChild(script);
-                }(document));
-            }
-        });
-    });
-</script>
+<script src="{{'orderbutton/js'| link({'options' : '1', 'width' : 600, 'theme_color' : 'green', 'background_color' : 'black', 'background_opacity' : 50, 'background_close' : 1, 'bind_selector' : '.order-button', 'border_radius' : 0, 'loader' : 8}) }}" ></script>
 {% endif %}
 
 {% if settings.inject_javascript %}
