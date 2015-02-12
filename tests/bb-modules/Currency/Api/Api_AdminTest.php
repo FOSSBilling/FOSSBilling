@@ -220,7 +220,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $service->expects($this->atLeastOnce())
             ->method('getByCode')
             ->will($this->returnValue($model));
-        $serviceMock->expects($this->atLeastOnce())
+        $service->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
