@@ -18,6 +18,33 @@
  */
 
 /**
+ * Version 4.14
+ */
+class BBPatch_21 extends BBPatchAbstract
+{
+    public function patch()
+    {
+        $q = "CREATE TABLE IF NOT EXISTS `mod_email_queue` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `to` varchar(255) NOT NULL,
+          `from` varchar(255) NOT NULL,
+          `subject` varchar(255) NOT NULL,
+          `content` text NOT NULL,
+          `to_name` varchar(255) DEFAULT NULL,
+          `from_name` varchar(255) DEFAULT NULL,
+          `client_id` int(11) DEFAULT NULL,
+          `admin_id` int(11) DEFAULT NULL,
+          `priority` int(11) DEFAULT NULL,
+          `tries` int(11) NOT NULL,
+          `status` varchar(20) NOT NULL,
+          `created_at` datetime NOT NULL,
+          `updated_at` datetime NOT NULL,
+          PRIMARY KEY (`id`)
+        ) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
+        $this->execSql($q);
+    }
+}
+/**
  * Version 4.12
  */
 class BBPatch_20 extends BBPatchAbstract
