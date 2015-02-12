@@ -20,7 +20,7 @@ class ServiceBalance implements InjectionAwareInterface
     protected $di = null;
 
     /**
-     * @param Box_Di|null $di
+     * @param \Box_Di|null $di
      */
     public function setDi($di)
     {
@@ -28,7 +28,7 @@ class ServiceBalance implements InjectionAwareInterface
     }
 
     /**
-     * @return Box_Di|null
+     * @return \Box_Di|null
      */
     public function getDi()
     {
@@ -117,5 +117,36 @@ class ServiceBalance implements InjectionAwareInterface
         $q .= ' ORDER by m.id DESC';
 
         return array($q, $params);
+    }
+
+    /**
+     * @param \Model_Client $client
+     * @param double        $amount
+     * @param string        $description
+     * @param array         $data
+     * @return \Model_ClientBalance
+     * @throws \Box_Exception
+     */
+    public function deductFunds(\Model_Client $client, $amount, $description, array $data = null)
+    {
+        if(!is_numeric($amount)) {
+            throw new \Box_Exception('Funds amount is not valid');
+        }
+
+        if(strlen(trim($description)) == 0) {
+            throw new \Box_Exception('Funds description is not valid');
+        }
+
+        $credit = $this->di['db']->dispense('ClientBalance');
+        $credit->client_id = $client->id;
+        $credit->type = isset($data['type']) ? $data['type'] : 'default';
+        $credit->rel_id = isset($data['rel_id']) ? $data['rel_id'] : null;
+        $credit->description = $description;
+        $credit->amount = -$amount;
+        $credit->created_at = date('Y-m-d H:i:s');
+        $credit->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($credit);
+
+        return $credit;
     }
 }
