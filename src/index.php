@@ -14,7 +14,7 @@ require_once dirname(__FILE__) . '/bb-load.php';
 $di = include dirname(__FILE__) . '/bb-di.php';
 $url = $di['request']->getQuery('_url');
 $admin_prefix = $di['config']['admin_area_prefix'];
-if(strpos($url,$admin_prefix) !== false) {
+if (strncasecmp($url,$admin_prefix, strlen($admin_prefix)) === 0) {
     $url = str_replace($admin_prefix, '', preg_replace('/\?.+/', '', $url));
     $app = new Box_AppAdmin();
     $app->setUrl($url);
