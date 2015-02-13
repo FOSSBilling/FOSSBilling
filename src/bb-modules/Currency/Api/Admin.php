@@ -60,9 +60,12 @@ class Admin extends \Api_Abstract
         }
 
         $service = $this->getService();
-        $curency = $service->getByCode($data['code']);
+        $model = $service->getByCode($data['code']);
 
-        return $curency;
+        if(!$model instanceof \Model_Currency) {
+            throw new \Box_Exception('Currency not found');
+        }
+        return $service->toApiArray($model);
     }
 
     /**

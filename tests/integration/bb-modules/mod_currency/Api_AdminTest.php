@@ -11,9 +11,9 @@ class Api_Admin_CurrencyTest extends BBDbApiTestCase
         $array = $this->api_admin->currency_get_pairs();
         $this->assertInternalType('array', $array);
 
-        $currency = $this->api_admin->currency_get(array('code' => 'USD'));
-        $this->assertInstanceOf('Model_Currency', $currency);
-        $this->assertEquals($currency->code, 'USD');
+        $array = $this->api_admin->currency_get(array('code' => 'USD'));
+        $this->assertInternalType('array', $array);
+        $this->assertEquals('USD', $array['code']);
 
         $array = $this->api_admin->currency_get_default();
         $this->assertInternalType('array', $array);
