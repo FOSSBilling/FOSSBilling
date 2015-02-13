@@ -160,7 +160,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $this->assertTrue($result);
     }
 
-    public function testonBeforeClientOpenTicket()
+    public function testonBeforeClientOpenTicket_PaidSupportForHelpdeskEnabled()
     {
         $di = new \Box_Di();
 
@@ -176,6 +176,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $paidSupportMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')->getMock();
         $paidSupportMock->expects($this->atLeastOnce())
+            ->method('hasHelpdeskPaidSupport')
+            ->willReturn(true);
+        $paidSupportMock->expects($this->atLeastOnce())
             ->method('enoughInBalanceToOpenTicket')
             ->with($clientModel);
         $di['mod_service'] = $di->protect(function ($serviceName) use($paidSupportMock){
@@ -186,6 +189,51 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $params = array(
             'client_id' => 1,
+            'support_helpdesk_id' => 1,
+        );
+
+        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
+        $boxEventMock->expects($this->atLeastOnce())
+            ->method('getDi')
+            ->willReturn($di);
+        $boxEventMock->expects($this->atLeastOnce())
+            ->method('getParameters')
+            ->willReturn($params);
+
+        $result = $this->service->onBeforeClientOpenTicket($boxEventMock);
+        $this->assertTrue($result);
+    }
+
+    public function testonBeforeClientOpenTicket_PaidSupportForHelpdeskDisabled()
+    {
+        $di = new \Box_Di();
+
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->with('Client')
+            ->willReturn($clientModel);
+        $di['db'] = $dbMock;
+
+        $paidSupportMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')->getMock();
+        $paidSupportMock->expects($this->atLeastOnce())
+            ->method('hasHelpdeskPaidSupport')
+            ->willReturn(false);
+        $paidSupportMock->expects($this->never())
+            ->method('enoughInBalanceToOpenTicket')
+            ->with($clientModel);
+        $di['mod_service'] = $di->protect(function ($serviceName) use($paidSupportMock){
+            if ($serviceName == 'Paidsupport'){
+                return $paidSupportMock;
+            }
+        });
+
+        $params = array(
+            'client_id' => 1,
+            'support_helpdesk_id' => 1,
         );
 
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -289,6 +337,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $paidSupportMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')->getMock();
         $paidSupportMock->expects($this->atLeastOnce())
+            ->method('hasHelpdeskPaidSupport')
+            ->willReturn(true);
+        $paidSupportMock->expects($this->atLeastOnce())
             ->method('enoughInBalanceToOpenTicket')
             ->with($clientModel);
 
@@ -307,6 +358,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $params = array(
             'id' => 1,
+            'support_helpdesk_id' => 1,
         );
 
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -318,6 +370,146 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->willReturn($params);
 
         $result = $this->service->onAfterClientOpenTicket($boxEventMock);
+        $this->assertTrue($result);
+    }
+
+    public function testonAfterClientOpenTicket_PaidSupportDisabledForHelpdesk()
+    {
+        $di = new \Box_Di();
+
+        $supportTicketModel = new \Model_SupportTicket();
+        $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->withConsecutive(array('SupportTicket'), array('Client'))
+            ->willReturnOnConsecutiveCalls($supportTicketModel, $clientModel);
+        $di['db'] = $dbMock;
+
+        $paidSupportMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')->getMock();
+        $paidSupportMock->expects($this->atLeastOnce())
+            ->method('hasHelpdeskPaidSupport')
+            ->willReturn(false);
+        $paidSupportMock->expects($this->never())
+            ->method('enoughInBalanceToOpenTicket')
+            ->with($clientModel);
+
+        $di['mod_service'] = $di->protect(function ($serviceName, $sub ='') use($paidSupportMock){
+            if ($serviceName == 'Paidsupport'){
+                return $paidSupportMock;
+            }
+        });
+
+        $params = array(
+            'id' => 1,
+            'support_helpdesk_id' => 1,
+        );
+
+        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
+        $boxEventMock->expects($this->atLeastOnce())
+            ->method('getDi')
+            ->willReturn($di);
+        $boxEventMock->expects($this->atLeastOnce())
+            ->method('getParameters')
+            ->willReturn($params);
+
+        $result = $this->service->onAfterClientOpenTicket($boxEventMock);
+        $this->assertTrue($result);
+    }
+
+    public function testgetPaidHelpdeskConfig()
+    {
+        $di = new \Box_Di();
+        $helpdeskId = 2;
+        $helpdeskConfig = array(
+            $helpdeskId => 0
+        );
+        $paidSupportConfig = array(
+            'helpdesk' => $helpdeskConfig,
+        );
+
+        $di['mod_config'] = $di->protect(function($serviceName) use ($paidSupportConfig){
+            if ($serviceName== 'Paidsupport'){
+                return $paidSupportConfig;
+            }
+        });
+
+        $this->service->setDi($di);
+        $result = $this->service->getPaidHelpdeskConfig();
+        $this->assertInternalType('array', $result);
+        $this->assertNotEmpty($result);
+        $this->assertEquals($helpdeskConfig, $result);
+
+    }
+
+    public function testgetPaidHelpdeskConfig_IsNotSet()
+    {
+        $di = new \Box_Di();
+        $paidSupportConfig = array();
+
+        $di['mod_config'] = $di->protect(function($serviceName) use ($paidSupportConfig){
+            if ($serviceName== 'Paidsupport'){
+                return $paidSupportConfig;
+            }
+        });
+
+        $this->service->setDi($di);
+        $result = $this->service->getPaidHelpdeskConfig();
+        $this->assertInternalType('array', $result);
+        $this->assertEmpty($result);
+    }
+
+    public function testhasHelpdeskPaidSupport_turnedOff()
+    {
+        $helpdeskId = 1;
+        $helpdeskConfig = array(
+            $helpdeskId => 0
+        );
+        $paidSupportServiceMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')
+            ->setMethods(array('getPaidHelpdeskConfig'))
+            ->getMock();
+        $paidSupportServiceMock->expects($this->atLeastOnce())
+            ->method('getPaidHelpdeskConfig')
+            ->willReturn($helpdeskConfig);
+
+        $result = $paidSupportServiceMock->hasHelpdeskPaidSupport($helpdeskId);
+        $this->assertFalse($result);
+    }
+
+    public function testhasHelpdeskPaidSupport_turnedOn()
+    {
+        $helpdeskId = 1;
+        $helpdeskConfig = array(
+            $helpdeskId => 1
+        );
+        $paidSupportServiceMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')
+            ->setMethods(array('getPaidHelpdeskConfig'))
+            ->getMock();
+        $paidSupportServiceMock->expects($this->atLeastOnce())
+            ->method('getPaidHelpdeskConfig')
+            ->willReturn($helpdeskConfig);
+
+        $result = $paidSupportServiceMock->hasHelpdeskPaidSupport($helpdeskId);
+        $this->assertTrue($result);
+    }
+
+    public function testhasHelpdeskPaidSupport_ConfigNotConfigured()
+    {
+        $helpdeskId = 1;
+        $helpdeskConfig = array();
+
+        $paidSupportServiceMock = $this->getMockBuilder('\Box\Mod\Paidsupport\Service')
+            ->setMethods(array('getPaidHelpdeskConfig'))
+            ->getMock();
+        $paidSupportServiceMock->expects($this->atLeastOnce())
+            ->method('getPaidHelpdeskConfig')
+            ->willReturn($helpdeskConfig);
+
+        $result = $paidSupportServiceMock->hasHelpdeskPaidSupport($helpdeskId);
         $this->assertTrue($result);
     }
 }

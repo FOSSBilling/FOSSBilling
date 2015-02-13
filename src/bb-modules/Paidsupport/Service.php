@@ -54,8 +54,9 @@ class Service implements InjectionAwareInterface
 
         $paidSupportService = $di['mod_service']('Paidsupport');
         $paidSupportService->setDi($di);
-        $paidSupportService->enoughInBalanceToOpenTicket($client);
-
+        if ($paidSupportService->hasHelpdeskPaidSupport($params['support_helpdesk_id'])) {
+            $paidSupportService->enoughInBalanceToOpenTicket($client);
+        }
         return true;
     }
 
@@ -73,6 +74,10 @@ class Service implements InjectionAwareInterface
 
         $paidSupportService = $di['mod_service']('Paidsupport');
         $paidSupportService->setDi($di);
+        if (!$paidSupportService->hasHelpdeskPaidSupport($supportTicket->support_helpdesk_id)) {
+            return true;
+        }
+
         $paidSupportService->enoughInBalanceToOpenTicket($client);
 
         $clientBalanceService = $di['mod_service']('Client', 'Balance');
@@ -110,6 +115,12 @@ class Service implements InjectionAwareInterface
         return isset($config['error_msg']) ? $config['error_msg'] : 'Configure paid support module!';
     }
 
+    public function getPaidHelpdeskConfig()
+    {
+        $config = $this->di['mod_config']('Paidsupport');
+        return isset($config['helpdesk']) ? $config['helpdesk'] : array();
+    }
+
     public function enoughInBalanceToOpenTicket(\Model_Client $client)
     {
         $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
@@ -122,5 +133,22 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * @param $id
+     * @return bool
+     */
+    public function hasHelpdeskPaidSupport($id)
+    {
+        $helpdeskConfig = $this->getPaidHelpdeskConfig();
+
+        if (empty ($helpdeskConfig)) {
+            return true;
+        }
+
+        if (isset($helpdeskConfig[$id]) && $helpdeskConfig[$id] == 1){
+            return true;
+        }
+        return false;
+    }
 
 }
