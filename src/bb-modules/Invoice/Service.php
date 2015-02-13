@@ -1285,6 +1285,14 @@ class Service implements InjectionAwareInterface
         if (!$invoice instanceof \Model_Invoice) {
             throw new \Box_Exception('Invoice not found');
         }
+
+        if (isset($invoice->currency)) {
+            $currencyCode = $invoice->currency;
+        } else {
+            $client       = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
+            $currencyCode = $client->currency;
+        }
+
         $invoice       = $this->toApiArray($invoice, false, $identity);
         $systemService = $this->di['mod_service']('System');
         $company       = $systemService->getCompany();
@@ -1365,8 +1373,8 @@ class Service implements InjectionAwareInterface
         foreach ($invoice['lines'] as $row) {
             $pdf->Cell($w[0], 6, $nr++, 'LR');
             $pdf->Cell($w[1], 6, $row['title'], 'LR');
-            $pdf->Cell($w[2], 6, ($row['quantity'] > 1) ? $row['quantity'] . ' x ' . $this->money($row['price']) : $this->money($row['price']), 'LR', 0, 'R');
-            $pdf->Cell($w[3], 6, $this->money($row['total']), 'LR', 0, 'R');
+            $pdf->Cell($w[2], 6, ($row['quantity'] > 1) ? $row['quantity'] . ' x ' . $this->money($row['price'], $currencyCode) : $this->money($row['price'], $currencyCode), 'LR', 0, 'R');
+            $pdf->Cell($w[3], 6, $this->money($row['total'], $currencyCode), 'LR', 0, 'R');
             $pdf->Ln();
         }
         $pdf->Cell(array_sum($w), 0, '', 'T');
@@ -1375,7 +1383,7 @@ class Service implements InjectionAwareInterface
         $pdf->SetXY(120, $y + 10);
         if ($invoice['tax'] > 0) {
             $pdf->Cell(40, 6, $invoice['taxname'] . ' ' . $invoice['taxrate'] . "%", 'LRTB', 0, 'C');
-            $pdf->Cell(40, 6, $this->money($invoice['tax']), 'LRTB', 0, 'C');
+            $pdf->Cell(40, 6, $this->money($invoice['tax'], $currencyCode), 'LRTB', 0, 'C');
             $pdf->Ln();
             $pdf->SetX(120);
         }
@@ -1383,25 +1391,22 @@ class Service implements InjectionAwareInterface
         $pdf->SetX(120);
         if (isset($invoice['discount']) && $invoice['discount'] > 0) {
             $pdf->Cell(40, 8, __('Discount '), 'LRTB', 0, 'C');
-            $pdf->Cell(40, 8, $this->money($invoice['discount']), 'LRTB', 0, 'C');
+            $pdf->Cell(40, 8, $this->money($invoice['discount'], $currencyCode), 'LRTB', 0, 'C');
             $pdf->Ln();
             $pdf->SetX(120);
         }
 
         $pdf->SetFont('Arial', 'B', $font_size + 2);
         $pdf->Cell(40, 10, __('Total'), 'LRTB', 0, 'C');
-        $pdf->Cell(40, 10, $this->money($invoice['total']), 'LRTB', 0, 'C');
+        $pdf->Cell(40, 10, $this->money($invoice['total'], $currencyCode), 'LRTB', 0, 'C');
         $pdf->Ln();
 
         $pdf->Output($invoice["serie_nr"] . ".pdf", "I");
     }
 
-    private function money($price)
+    private function money($price, $currencyCode)
     {
-        $api_guest = $this->di['api_guest'];
-        $currency  = $api_guest->cart_get_currency();
-
-        return $api_guest->currency_format(array("price" => $price, 'code' => $currency['code'], 'convert' => false));
+        return $this->di['api_guest']->currency_format(array("price" => $price, 'code' => $currencyCode, 'convert' => false));
     }
 
     public function addNote(\Model_Invoice $model, $note)
