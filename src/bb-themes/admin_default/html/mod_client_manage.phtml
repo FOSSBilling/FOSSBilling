@@ -123,6 +123,18 @@
                         </div>
                         <div class="fix"></div>
                     </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Mail approved' %}:</label>
+                        <div class="formRight noborder">
+                            <input type="radio" name="email_approved" value="1"{% if client.email_approved == 1 %} checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
+                            <input type="radio" name="email_approved" value="0"{% if client.email_approved != 1 %} checked="checked"{% endif %} /><label>{% trans 'No' %}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+
+
                     <div class="rowElem">
                         <label>{% trans 'Group' %}:</label>
                         <div class="formRight">

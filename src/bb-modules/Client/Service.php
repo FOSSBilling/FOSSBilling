@@ -391,6 +391,7 @@ class Service implements InjectionAwareInterface
             $details['tax_exempt'] = $model->tax_exempt;
             $details['group'] = ($clientGroup) ? $clientGroup->title : NULL;
             $details['updated_at'] = $model->updated_at;
+            $details['email_approved'] = $model->email_approved;
         }
 
         return $details;

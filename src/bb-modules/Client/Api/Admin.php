@@ -266,6 +266,7 @@ class Admin extends \Api_Abstract
         $city      = isset($data['city']) ? $data['city'] : NULL ;
         $currency      = isset($data['currency']) ? $data['currency'] : NULL ;
         $status      = isset($data['status']) ? $data['status'] : NULL ;
+        $email_approved      = isset($data['email_approved']) ? $data['email_approved'] : NULL ;
         $tax_exempt  = isset($data['tax_exempt']) ? (bool)$data['tax_exempt'] : NULL;
         $created_at  = isset($data['created_at']) ? $data['created_at'] : NULL;
 
@@ -307,6 +308,9 @@ class Admin extends \Api_Abstract
         }
         if(!is_null($status)) {
             $client->status = $status;
+        }
+        if(!is_null($email_approved)) {
+            $client->email_approved = $email_approved;
         }
         if(!is_null($gender)) {
             $client->gender = $gender;
