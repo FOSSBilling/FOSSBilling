@@ -108,6 +108,7 @@ class Admin implements \Box\InjectionAwareInterface
         $app->get('/invoice/transaction/:id','get_transaction', array('id'=>'[0-9]+'), get_class($this));
         $app->get('/invoice/subscription/:id','get_subscription', array('id'=>'[0-9]+'), get_class($this));
         $app->get('/invoice/tax',           'get_tax', array(), get_class($this));
+        $app->get('/invoice/pdf/:hash', 'get_pdf', array('hash'=>'[a-z0-9]+'), get_class($this));
     }
 
     public function get_tax(\Box_App $app)
@@ -167,4 +168,15 @@ class Admin implements \Box\InjectionAwareInterface
         $gateway = $api->invoice_gateway_get(array('id'=>$id));
         return $app->render('mod_invoice_gateway', array('gateway'=>$gateway));
     }
+
+    public function get_pdf (\Box_App $app, $hash)
+    {
+        $api = $app->getApiGuest();
+        $data = array(
+            'hash' => $hash,
+        );
+        $invoice = $api->invoice_pdf($data);
+        return $app->render('mod_invoice_pdf', array('invoice'=>$invoice));
+    }
+
 }
