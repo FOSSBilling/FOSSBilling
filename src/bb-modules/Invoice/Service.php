@@ -1116,7 +1116,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function doBatchInvokeDueEvent()
+    public function doBatchInvokeDueEvent(array $data)
     {
         $once_per_day = isset($data['once_per_day']) ? (bool)$data['once_per_day']: true;
         $key = 'invoice_overdue_invoked';
