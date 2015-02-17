@@ -1396,7 +1396,7 @@ class Service implements InjectionAwareInterface
             $pdf->SetX(120);
         }
 
-        $pdf->SetFont('Arial', 'B', $font_size + 2);
+        $pdf->SetFont('DejaVu', 'B', $font_size + 2);
         $pdf->Cell(40, 10, __('Total'), 'LRTB', 0, 'C');
         $pdf->Cell(40, 10, $this->money($invoice['total'], $currencyCode), 'LRTB', 0, 'C');
         $pdf->Ln();
