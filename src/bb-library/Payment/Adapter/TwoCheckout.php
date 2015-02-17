@@ -116,7 +116,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         $ipn = array_merge($data['get'], $data['post']);
         
         if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($ipn)) {
-            throw new Exception('2Checkout IPN is not valid');
+            throw new Payment_Exception('2Checkout IPN is not valid');
         }
         
         if($ipn['message_type'] == 'ORDER_CREATED') {
@@ -172,7 +172,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         }
         
         if(!$invoice_id) {
-            throw new Exception('Invoice id could not be determined for this transaction');
+            throw new Payment_Exception('Invoice id could not be determined for this transaction');
         }
         
         $invoice = $api_admin->invoice_get(array('id'=>$invoice_id));

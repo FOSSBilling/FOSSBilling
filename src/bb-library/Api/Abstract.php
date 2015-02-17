@@ -69,7 +69,7 @@ class Api_Abstract implements InjectionAwareInterface
     public function getMod()
     {
         if(!$this->mod) {
-            throw new Exception('Mod object is not set for the service');
+            throw new Box_Exception('Mod object is not set for the service');
         }
         return $this->mod;
     }

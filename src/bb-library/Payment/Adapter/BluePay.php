@@ -201,7 +201,7 @@ To find your ACCOUNT ID and SECRET KEY:
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
         if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($data)) {
-            throw new Exception('IPN is not valid');
+            throw new Payment_Exception('IPN is not valid');
         }
 
         $ipn = $data['get'];

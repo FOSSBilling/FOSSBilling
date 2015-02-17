@@ -19,11 +19,11 @@ class Payment_Adapter_Payza extends Payment_AdapterAbstract
         $this->config = $config;
 
         if(!function_exists('curl_exec')) {
-            throw new Exception('PHP Curl extension must be enabled in order to use Payza gateway');
+            throw new Payment_Exception('PHP Curl extension must be enabled in order to use Payza gateway');
         }
 
         if(!$this->config['email']) {
-            throw new Exception('Payment gateway "Payza" is not configured properly. Please update configuration parameter "Payza Email address" at "Configuration -> Payments".');
+            throw new Payment_Exception('Payment gateway "Payza" is not configured properly. Please update configuration parameter "Payza Email address" at "Configuration -> Payments".');
         }
     }
 

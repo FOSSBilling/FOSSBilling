@@ -467,14 +467,14 @@ class Whois {
 
         // If tldname have not been found
         if($whois_server == "") {
-            throw new Exception('No whois server for this tld in list!');
+            throw new Box_Exception('No whois server for this tld in list!');
         }
 
         // Getting whois information
         $fp = @fsockopen($whois_server,43);
 
         if (!$fp) {
-            throw new Exception('Whois server '. $whois_server .' is not available');
+            throw new Box_Exception('Whois server '. $whois_server .' is not available');
         }
 
         $dom=$domainname.".".$tldname;

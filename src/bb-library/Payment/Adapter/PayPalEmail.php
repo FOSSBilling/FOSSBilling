@@ -31,11 +31,11 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         $this->config = $config;
         
         if(!function_exists('curl_exec')) {
-            throw new Exception('PHP Curl extension must be enabled in order to use PayPal gateway');
+            throw new Payment_Exception('PHP Curl extension must be enabled in order to use PayPal gateway');
         }
         
         if(!$this->config['email']) {
-            throw new Exception('Payment gateway "PayPal" is not configured properly. Please update configuration parameter "PayPal Email address" at "Configuration -> Payments".');
+            throw new Payment_Exception('Payment gateway "PayPal" is not configured properly. Please update configuration parameter "PayPal Email address" at "Configuration -> Payments".');
         }
     }
 
@@ -147,7 +147,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
         if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($data)) {
-            throw new Exception('IPN is not valid');
+            throw new Payment_Exception('IPN is not valid');
         }
         
         $ipn = $data['post'];

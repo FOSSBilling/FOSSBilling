@@ -18,7 +18,7 @@ class Box_Crypt implements \Box\InjectionAwareInterface
     function __construct()
     {
         if (!extension_loaded('mcrypt')) {
-            throw new Exception('php mcrypt extension must be enabled on your server');
+            throw new Box_Exception('php mcrypt extension must be enabled on your server');
         }
     }
 
