@@ -13,8 +13,6 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
         return new \Registrar_Adapter_Resellerclub($options);
     }
 
-
-
     public function testConstruction_MissingUserId()
     {
         $options = array();
@@ -27,8 +25,8 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
         $options = array(
             'userid' => '12345',
         );
-        $this->setExpectedException('Registrar_Exception', 'Domain registrar "Resellerclub" is not configured properly. Please update configuration parameter "Resellerclub Pasword" at "Configuration -> Domain registration".');
-        $adapter = new \Registrar_Adapter_Resellerclub($options);
+        $this->setExpectedException('Registrar_Exception', 'Domain registrar "Resellerclub" is not configured properly. Please update configuration parameter "Resellerclub Password or API key" at "Configuration -> Domain registration".');
+        new \Registrar_Adapter_Resellerclub($options);
     }
 
     public function testConstruction()
@@ -37,7 +35,24 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
             'userid' => '12345',
             'password' => 'password'
         );
-        new \Registrar_Adapter_Resellerclub($options);
+        $adapter = new \Registrar_Adapter_Resellerclub($options);
+
+        $this->assertEquals($options['userid'], $adapter->config['userid']);
+        $this->assertEquals($options['password'], $adapter->config['password']);
+        $this->assertNull($adapter->config['api-key']);
+    }
+
+    public function testConstruction_ApiKeyProvided()
+    {
+        $options = array(
+            'userid' => '12345',
+            'api-key' => 'api-key Token'
+        );
+        $adapter = new \Registrar_Adapter_Resellerclub($options);
+
+        $this->assertEquals($options['userid'], $adapter->config['userid']);
+        $this->assertEquals($options['api-key'], $adapter->config['api-key']);
+        $this->assertNull($adapter->config['password']);
     }
 
     public function testgetConfig()
@@ -233,7 +248,50 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
+    public function testincludeAuthorizationParams_PasswordProvided()
+    {
+        $options = array(
+            'userid' => '12345',
+            'password' => 'password'
+        );
+        $adapter = new \Registrar_Adapter_Resellerclub($options);
 
+        $params = array();
+        $result = $adapter->includeAuthorizationParams($params);
+        $this->assertArrayHasKey('auth-userid', $result);
+        $this->assertArrayHasKey('auth-password', $result);
+        $this->assertArrayNotHasKey('api-key', $result);
+    }
+
+    public function testincludeAuthorizationParams_ApiKeyProvided()
+    {
+        $options = array(
+            'userid' => '12345',
+            'api-key' => 'password'
+        );
+        $adapter = new \Registrar_Adapter_Resellerclub($options);
+
+        $params = array();
+        $result = $adapter->includeAuthorizationParams($params);
+        $this->assertArrayHasKey('auth-userid', $result);
+        $this->assertArrayHasKey('api-key', $result);
+    }
+
+    public function testincludeAuthorizationParams_BothProvided_ApiKeyIsUsed()
+    {
+        $options = array(
+            'userid' => '12345',
+            'password' => 'password',
+            'api-key' => 'password'
+        );
+        $adapter = new \Registrar_Adapter_Resellerclub($options);
+
+        $params = array();
+        $result = $adapter->includeAuthorizationParams($params);
+        $this->assertArrayHasKey('auth-userid', $result);
+        $this->assertArrayHasKey('api-key', $result);
+        $this->assertArrayNotHasKey('auth-password', $result);
+    }
 
 
 

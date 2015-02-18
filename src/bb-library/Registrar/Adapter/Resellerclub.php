@@ -25,6 +25,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     public $config = array(
         'userid'   => null,
         'password' => null,
+        'api-key' => null,
     );
 
     public function __construct($options)
@@ -43,8 +44,15 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         if(isset($options['password']) && !empty($options['password'])) {
             $this->config['password'] = $options['password'];
             unset($options['password']);
-        } else {
-            throw new Registrar_Exception('Domain registrar "Resellerclub" is not configured properly. Please update configuration parameter "Resellerclub Pasword" at "Configuration -> Domain registration".');
+        }
+
+        if(isset($options['api-key']) && !empty($options['api-key'])) {
+            $this->config['api-key'] = $options['api-key'];
+            unset($options['api-key']);
+        }
+
+        if (!isset($this->config['api-key']) && !isset($this->config['password'])){
+            throw new Registrar_Exception('Domain registrar "Resellerclub" is not configured properly. Please update configuration parameter "Resellerclub Password or API key" at "Configuration -> Domain registration".');
         }
     }
     
@@ -61,6 +69,13 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                 'password' => array('password', array(
                             'label' => 'Resellerclub Pasword', 
                             'description'=>'Resellerclub Password',
+                            'required' => false,
+                        ),
+                     ),
+                'api-key' => array('password', array(
+                            'label' => 'Resellerclub API Key',
+                            'description'=> 'You can get this at ResellerClub control panel, go to Settings -> API. (Preferred)',
+                            'required' => false,
                         ),
                      ),
             ),
@@ -650,6 +665,25 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     }
 
     /**
+     * @param array $params
+     * @return array
+     */
+    public function includeAuthorizationParams(array $params)
+    {
+        $params['auth-userid'] = $this->config['userid'];
+
+        if (isset($this->config['api-key'])){
+            $params['api-key'] = $this->config['api-key'];
+        }
+
+        if (!isset($params['api-key'])){
+            $params['auth-password'] = $this->config['password'];
+        }
+
+        return $params;
+    }
+
+    /**
      * Perform call to Api
      * @param string $url
      * @param array $params
@@ -659,10 +693,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      */
     protected function _makeRequest($url ,$params = array(), $method = 'GET', $type = 'json')
     {
-        $params = array_merge(array(
-            'auth-userid'   =>  $this->config['userid'],
-            'auth-password' =>  $this->config['password'],
-        ), $params);
+        $params = $this->includeAuthorizationParams($params);
 
         $opts = array(
             CURLOPT_CONNECTTIMEOUT  => 30,

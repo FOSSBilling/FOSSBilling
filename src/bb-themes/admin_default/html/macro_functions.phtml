@@ -60,7 +60,7 @@
             {% else %}
             <label class="topLabel" for="el-{{ name }}">{{ element[1].label }}{% if element[1].description %} - {{ element[1].description }}{% endif %}</label>
             <div class="formBottom">
-                <input id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}" required="required"/>
+                <input id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}" {% if not element[1].required is defined and not element[1].required == 'false' %}required="required"{% endif %}/>
             </div>
             <div class="fix"></div>
             {% endif %}

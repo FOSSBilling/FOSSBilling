@@ -2,6 +2,8 @@ Release 4.15
 ------------------------------------------------------------------------------
 * New module paidsupport
 * Module orderbutton javascript code updates
+* ResellerClub adapter supports API-KEY as authorization option.
+
 
 Release 4.14 (2015-02-03)
 ------------------------------------------------------------------------------
