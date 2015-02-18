@@ -655,7 +655,8 @@ class Service
 
     public function getEuCountries()
     {
-        $list = array('AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI',
+        $list = array(
+            'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI',
             'FR', 'GB', 'GR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL',
             'PL', 'PT', 'RO', 'SE', 'SI', 'SK');
         $c = $this->getCountries();
