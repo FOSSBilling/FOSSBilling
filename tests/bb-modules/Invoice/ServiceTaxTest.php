@@ -277,6 +277,32 @@ class ServiceTaxTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($newId, $result);
     }
 
+    public function testUpdate()
+    {
+        $taxModel = new \Model_Tax();
+        $taxModel->loadBean(new \RedBeanPHP\OODBBean());
+        $dbMock = $this->getMockBuilder('\Box_Database')
+            ->getMock();
+
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->will($this->returnValue(2));
+
+        $di                = new \Box_Di();
+        $di['db']          = $dbMock;
+        $di['logger']      = new \Box_Log();
+        $this->service->setDi($di);
+
+        $data   = array(
+            'name'    => 'tax',
+            'taxrate' => '0.18',
+        );
+        $result = $this->service->update($taxModel, $data);
+        $this->assertInternalType('boolean', $result);
+        $this->assertTrue($result);
+    }
+
+
     public function testgetSearchQuery()
     {
         $result = $this->service->getSearchQuery(array());
