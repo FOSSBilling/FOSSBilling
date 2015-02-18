@@ -47,7 +47,8 @@
                         {% endif %}
                     </td>
                     <td>{{ tax.taxrate }}%</td>
-                    <td class="actions" style="width: 5%;">
+                    <td class="actions" style="width: 8%;">
+                        <a class="bb-button btn14" href="{{ 'invoice/tax'|alink}}/{{ tax.id }}"><img src="images/icons/dark/pencil.png" alt=""></a>
                         <a class="bb-button btn14 bb-rm-tr api-link" data-api-reload="1" data-api-confirm="Are you sure?" href="{{ 'api/admin/invoice/tax_delete'|link({'id' : tax.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
                     </td>
 

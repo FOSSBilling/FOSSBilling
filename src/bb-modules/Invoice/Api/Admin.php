@@ -807,7 +807,7 @@ class Admin extends \Api_Abstract
      * @param int $id - tax id
      * 
      * @return boolean
-     * @throws Box_Exception 
+     * @throws \Box_Exception
      */
     public function tax_delete($data)
     {
@@ -825,7 +825,7 @@ class Admin extends \Api_Abstract
      * Create new tax rule
      * 
      * @param string $name - tax name
-     * @param flaot $taxrate - tax rate
+     * @param float $taxrate - tax rate
      * 
      * @return int - new tax id
      */
@@ -839,6 +839,52 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
         return $taxService->create($data);
+    }
+
+    /**
+     * Update tax rule
+     *
+     * @param string $id - tax ID
+     *
+     * @return array
+     */
+    public function tax_get($data)
+    {
+        $required = array(
+            'id' => 'Tax id is missing'
+        );
+
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $tax = $this->di['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
+
+        $taxService = $this->di['mod_service']('Invoice', 'Tax');
+        return $taxService->toApiArray($tax);
+    }
+
+    /**
+     * Update tax rule
+     *
+     * @param int $id - tax ID
+     * @param string $name - tax name
+     * @param float $taxrate - tax rate
+     *
+     * @return boolean
+     */
+    public function tax_update($data)
+    {
+        $required = array(
+            'id' => 'Tax id is missing',
+            'taxrate' => 'Tax rate is missing',
+            'name' => 'Tax name is missing'
+        );
+
+        $tax = $this->di['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
+
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        $taxService = $this->di['mod_service']('Invoice', 'Tax');
+
+        return $taxService->update($tax, $data);
     }
 
     /**
