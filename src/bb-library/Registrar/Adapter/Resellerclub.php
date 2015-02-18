@@ -28,25 +28,34 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         'api-key' => null,
     );
 
+    public function isKeyValueNotEmpty($array, $key)
+    {
+        $value = isset ($array[$key]) ? $array[$key] : '';
+        if (strlen(trim($value)) == 0){
+            return false;
+        }
+        return true;
+    }
+
     public function __construct($options)
     {
         if (!extension_loaded('curl')) {
             throw new Registrar_Exception('CURL extension is not enabled');
         }
 
-        if(isset($options['userid']) && !empty($options['userid'])) {
-            $this->config['userid'] = $options['userid'];
-            unset($options['userid']);
-        } else {
+        if(!$this->isKeyValueNotEmpty($options, 'userid')) {
             throw new Registrar_Exception('Domain registrar "Resellerclub" is not configured properly. Please update configuration parameter "Resellerclub Username" at "Configuration -> Domain registration".');
         }
 
-        if(isset($options['password']) && !empty($options['password'])) {
+        $this->config['userid'] = $options['userid'];
+        unset($options['userid']);
+
+        if($this->isKeyValueNotEmpty($options, 'password')){
             $this->config['password'] = $options['password'];
             unset($options['password']);
         }
 
-        if(isset($options['api-key']) && !empty($options['api-key'])) {
+        if($this->isKeyValueNotEmpty($options, 'api-key')) {
             $this->config['api-key'] = $options['api-key'];
             unset($options['api-key']);
         }

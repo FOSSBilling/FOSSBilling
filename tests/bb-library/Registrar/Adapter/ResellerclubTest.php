@@ -294,5 +294,36 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
     }
 
 
+    public function providerTestArray()
+    {
+        return array(
+            array(
+                array(), 'NotExistingKey', false,
+            ),
+            array(
+                array('api-key' => ''), 'api-key', false,
+            ),
+            array(
+                array('api-key' => '   '), 'api-key', false,
+            ),
+            array(
+                array('api-key' => '123'), 'api-key', true,
+            ),
+        );
+    }
+
+    /**
+     * @dataProvider providerTestArray
+     */
+    public function testisKeyValueNotEmpty($array, $key, $expected)
+    {
+        $adapterMock = $this->getMockBuilder('\Registrar_Adapter_Resellerclub')
+            ->disableOriginalConstructor()
+            ->setMethods(null)
+            ->getMock();
+
+        $result = $adapterMock->isKeyValueNotEmpty($array, $key);
+        $this->assertEquals($expected, $result);
+    }
 
 }
