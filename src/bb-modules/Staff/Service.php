@@ -219,8 +219,8 @@ class Service implements InjectionAwareInterface
         
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
-            $ticket = $supportTicketService->toApiArray($ticketModel, true);
+            $ticketModel = $supportTicketService->getPublicTicketById($params['id']);
+            $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
             $email = array();
             $email['to_staff']  = true;
             $email['code']      = 'mod_staff_pticket_open';
@@ -260,8 +260,8 @@ class Service implements InjectionAwareInterface
         
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
-            $ticket = $supportTicketService->toApiArray($ticketModel, true);
+            $ticketModel = $supportTicketService->getPublicTicketById($params['id']);
+            $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
             $email = array();
             $email['to_staff']  = true;
             $email['code']      = 'mod_staff_pticket_reply';

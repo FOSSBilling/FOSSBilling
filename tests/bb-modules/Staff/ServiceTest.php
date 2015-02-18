@@ -380,10 +380,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $supportServiceMock = $this->getMockBuilder('\Box\Mod\Support\Service')->getMock();
         $supportServiceMock->expects($this->atLeastOnce())
-            ->method('getTicketById')
-            ->will($this->returnValue(new \Model_SupportTicket()));
+            ->method('getPublicTicketById')
+            ->will($this->returnValue(new \Model_SupportPTicket()));
         $supportServiceMock->expects($this->atLeastOnce())
-            ->method('toApiArray')
+            ->method('publicToApiArray')
             ->will($this->returnValue(array()));
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
@@ -420,10 +420,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $supportServiceMock = $this->getMockBuilder('\Box\Mod\Support\Service')->getMock();
         $supportServiceMock->expects($this->atLeastOnce())
-            ->method('getTicketById')
-            ->will($this->returnValue(new \Model_SupportTicket()));
+            ->method('getPublicTicketById')
+            ->will($this->returnValue(new \Model_SupportPTicket()));
         $supportServiceMock->expects($this->atLeastOnce())
-            ->method('toApiArray')
+            ->method('publicToApiArray')
             ->will($this->returnValue(array()));
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
@@ -461,10 +461,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $supportServiceMock = $this->getMockBuilder('\Box\Mod\Support\Service')->getMock();
         $supportServiceMock->expects($this->atLeastOnce())
-            ->method('getTicketById')
-            ->will($this->returnValue(new \Model_SupportTicket()));
+            ->method('getPublicTicketById')
+            ->will($this->returnValue(new \Model_SupportPTicket()));
         $supportServiceMock->expects($this->atLeastOnce())
-            ->method('toApiArray')
+            ->method('publicToApiArray')
             ->will($this->returnValue(array()));
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
@@ -501,10 +501,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $supportServiceMock = $this->getMockBuilder('\Box\Mod\Support\Service')->getMock();
         $supportServiceMock->expects($this->atLeastOnce())
-            ->method('getTicketById')
-            ->will($this->returnValue(new \Model_SupportTicket()));
+            ->method('getPublicTicketById')
+            ->will($this->returnValue(new \Model_SupportPTicket()));
         $supportServiceMock->expects($this->atLeastOnce())
-            ->method('toApiArray')
+            ->method('publicToApiArray')
             ->will($this->returnValue(array()));
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
