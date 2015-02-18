@@ -548,5 +548,77 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $this->setExpectedException('\Box_Exception', 'You have reached free version limit. Upgrade to PRO version of BoxBilling if you want this limit removed.', 875);
         $this->service->checkLimits($modelName, $limit);
     }
+
+    public function testgetPendingMessages()
+    {
+        $di = new \Box_Di();
+
+        $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
+        $sessionMock->expects($this->atLeastOnce())
+            ->method('get')
+            ->with('pending_messages')
+            ->willReturn(array());
+
+        $di['session'] = $sessionMock;
+
+        $this->service->setDi($di);
+        $result = $this->service->getPendingMessages();
+        $this->assertInternalType('array', $result);
+    }
+
+    public function testgetPendingMessages_GetReturnsNotArray()
+    {
+        $di = new \Box_Di();
+
+        $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
+        $sessionMock->expects($this->atLeastOnce())
+            ->method('get')
+            ->with('pending_messages')
+            ->willReturn(null);
+
+        $di['session'] = $sessionMock;
+
+        $this->service->setDi($di);
+        $result = $this->service->getPendingMessages();
+        $this->assertInternalType('array', $result);
+    }
+
+    public function testsetPendingMessage()
+    {
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')
+            ->setMethods(array('getPendingMessages'))
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getPendingMessages')
+            ->willReturn(array());
+
+        $di = new \Box_Di();
+
+        $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
+        $sessionMock->expects($this->atLeastOnce())
+            ->method('set')
+            ->with('pending_messages');
+
+        $di['session'] = $sessionMock;
+
+        $serviceMock->setDi($di);
+
+        $message = 'Important Message';
+        $result = $serviceMock->setPendingMessage($message);
+        $this->assertTrue($result);
+    }
+
+    public function testclearPendingMessages()
+    {
+        $di = new \Box_Di();
+
+        $sessionMock = $this->getMockBuilder('\Box_Session')->disableOriginalConstructor()->getMock();
+        $sessionMock->expects($this->atLeastOnce())
+            ->method('delete')
+            ->with('pending_messages');
+        $di['session'] = $sessionMock;
+        $this->service->setDi($di);
+        $result = $this->service->clearPendingMessages();
+        $this->assertTrue($result);
+    }
 }
- 

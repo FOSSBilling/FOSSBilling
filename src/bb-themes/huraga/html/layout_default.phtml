@@ -247,5 +247,6 @@
 {% if settings.inject_javascript %}
     {{ settings.inject_javascript | raw}}
 {% endif %}
+{% include 'partial_pending_messages.phtml' %}
 </body>
 </html>

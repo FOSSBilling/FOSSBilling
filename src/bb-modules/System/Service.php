@@ -1281,4 +1281,29 @@ class Service
     {
         return \Box_Version::VERSION;
     }
+
+    public function getPendingMessages()
+    {
+        $messages = $this->di['session']->get('pending_messages');
+
+        if (!is_array($messages)){
+            return array();
+        }
+
+        return $messages;
+    }
+
+    public function setPendingMessage($msg)
+    {
+        $messages = $this->getPendingMessages();
+        array_push($messages, $msg);
+        $this->di['session']->set('pending_messages', $messages);
+        return true;
+    }
+
+    public function clearPendingMessages()
+    {
+        $this->di['session']->delete('pending_messages');
+        return true;
+    }
 }

@@ -177,4 +177,11 @@ class Guest extends \Api_Abstract
         }
         return $locale;
     }
+
+    public function get_pending_messages()
+    {
+        $messages = $this->getService()->getPendingMessages();
+        $this->getService()->clearPendingMessages();
+        return $messages;
+    }
 }
