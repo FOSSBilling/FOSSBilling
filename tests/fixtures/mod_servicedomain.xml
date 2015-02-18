@@ -5,8 +5,8 @@
 
     <product id="1" product_category_id="1" product_payment_id="1" type="custom" title="Plugin config test" description="" unit="product" active="1" is_addon="0" setup="after_payment" plugin="Example" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 
-    <client_order id="1" client_id="1" service_type="domain" service_id="" status="pending_setup" config='{"action":"register","register_tld":".com","register_sld":"test1", "register_years":1}'/>
-    <client_order id="2" client_id="1" service_type="domain" service_id="" status="pending_setup" config='{"action":"transfer","transfer_tld":".com","transfer_sld":"test", "transfer_years":1, "transfer_code":"epp"}'/>
+    <client_order id="1" client_id="1" service_type="domain" status="pending_setup" config='{"action":"register","register_tld":".com","register_sld":"test1", "register_years":1}'/>
+    <client_order id="2" client_id="1" service_type="domain" status="pending_setup" config='{"action":"transfer","transfer_tld":".com","transfer_sld":"test", "transfer_years":1, "transfer_code":"epp"}'/>
 
     <tld id="1" tld_registrar_id="1" tld=".com" allow_register="1" allow_transfer="1"/>
     <tld_registrar id="1" name="Custom" registrar="Custom"/>

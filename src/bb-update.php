@@ -17,6 +17,15 @@
  * @version   $Id$
  */
 
+class BBPatch_22 extends BBPatchAbstract
+{
+    public function patch()
+    {
+        $q="ALTER TABLE  `client_balance` CHANGE  `rel_id`  `rel_id` VARCHAR(20) NULL DEFAULT NULL;";
+        $this->execSql($q);
+    }
+}
+
 /**
  * Version 4.12
  */

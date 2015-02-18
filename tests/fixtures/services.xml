@@ -7,11 +7,11 @@
 
     <client_order id="1" client_id="1" service_type="downloadable" service_id="1" status="active"/>
     <client_order id="2" client_id="1" service_type="license" service_id="1" status="active"/>
-    <client_order id="3" client_id="1" service_type="domain" service_id="" status="pending_setup" config='{"action":"register","register_tld":".com","register_sld":"test1", "register_years":1}'/>
-    <client_order id="4" client_id="1" service_type="domain" service_id="" status="pending_setup" config='{"action":"transfer","transfer_tld":".com","transfer_sld":"test", "transfer_years":1, "transfer_code":"epp"}'/>
-    <client_order id="5" client_id="1" service_type="hosting" service_id="" status="pending_setup" config='{"server_id":"1","hosting_plan_id":"1", "sld":"mydomain", "tld":".com"}'/>
-    <client_order id="6" client_id="1" service_type="hosting" service_id="" status="pending_setup" config='{"server_id":"1","hosting_plan_id":"1", "sld":"mydomain", "tld":".com", "reseller":1}'/>
-    <client_order id="7" client_id="1" service_type="hosting" service_id="" status="pending_setup" config='{"server_id":"2","hosting_plan_id":"1", "sld":"mydomain", "tld":".com", "reseller":0}'/>
+    <client_order id="3" client_id="1" service_type="domain" status="pending_setup" config='{"action":"register","register_tld":".com","register_sld":"test1", "register_years":1}'/>
+    <client_order id="4" client_id="1" service_type="domain" status="pending_setup" config='{"action":"transfer","transfer_tld":".com","transfer_sld":"test", "transfer_years":1, "transfer_code":"epp"}'/>
+    <client_order id="5" client_id="1" service_type="hosting" status="pending_setup" config='{"server_id":"1","hosting_plan_id":"1", "sld":"mydomain", "tld":".com"}'/>
+    <client_order id="6" client_id="1" service_type="hosting" status="pending_setup" config='{"server_id":"1","hosting_plan_id":"1", "sld":"mydomain", "tld":".com", "reseller":1}'/>
+    <client_order id="7" client_id="1" service_type="hosting" status="pending_setup" config='{"server_id":"2","hosting_plan_id":"1", "sld":"mydomain", "tld":".com", "reseller":0}'/>
     <client_order id="8" client_id="1" service_type="hosting" service_id="1" status="active" config='{"server_id":"1","hosting_plan_id":"1", "sld":"mydomain", "tld":".com", "reseller":0}'/>
     <client_order id="9" client_id="1" service_type="custom" service_id="1" status="pending_setup" config=''/>
     <client_order id="10" client_id="1" service_type="custom" service_id="1" status="pending_setup" config='' product_id="1"/>
