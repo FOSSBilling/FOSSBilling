@@ -3,6 +3,14 @@ Release 4.15
 * New module paidsupport
 * Module orderbutton javascript code updates
 * ResellerClub adapter supports API-KEY as authorization option.
+* Fix admin_prefix issue.
+* Notification message shown when email confirmed.
+* EU Tax rules generation improved.
+* Fix UTF-8 currency symbols issue in PDF and print invoice view.
+* Fixed onAfterGuestPublicTicketReply and onAfterGuestPublicTicketOpen hooks. Incorrect public ticket subject was sent to staff members.
+* Added option to approve client email by admin
+* DotTk registrar adapter is not supported.
+* initiate translation DI object after bb-di is included
 
 
 Release 4.14 (2015-02-03)
