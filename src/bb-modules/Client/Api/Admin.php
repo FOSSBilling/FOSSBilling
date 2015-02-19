@@ -373,7 +373,7 @@ class Admin extends \Api_Abstract
             $client->tax_exempt = $tax_exempt;
         }
         if(!is_null($created_at)) {
-            $client->created_at = date('c', strtotime($created_at));
+            $client->created_at = date('Y-m-d H:i:s', strtotime($created_at));
         }
 
         if(!is_null($c1)) {
@@ -407,7 +407,7 @@ class Admin extends \Api_Abstract
             $client->custom_10 = $c10;
         }
 
-        $client->updated_at = date('c');
+        $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminClientUpdate', 'params'=>array('id'=>$client->id)));
         
@@ -449,7 +449,7 @@ class Admin extends \Api_Abstract
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminClientPasswordChange', 'params'=>$data));
 
         $client->pass = $this->di['password']->hashIt($data['password']);
-        $client->updated_at = date('c');
+        $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
         
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminClientPasswordChange', 'params'=>array('id'=>$client->id, 'password'=>$data['password'])));
@@ -678,7 +678,7 @@ class Admin extends \Api_Abstract
             $model->title = $data['title'];
         }
         
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
     }

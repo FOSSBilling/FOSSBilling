@@ -94,8 +94,8 @@ class Service implements InjectionAwareInterface
         $model->tld = $c['tld'];
         $model->ip = $server->ip;
         $model->reseller = isset($c['reseller']) ? $c['reseller'] : FALSE;
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         return $model;
@@ -152,7 +152,7 @@ class Service implements InjectionAwareInterface
         }
         //@todo ?
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
     }
@@ -171,7 +171,7 @@ class Service implements InjectionAwareInterface
         list($adapter, $account) = $this->_getAM($model);
         $adapter->suspendAccount($account);
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
     }
@@ -190,7 +190,7 @@ class Service implements InjectionAwareInterface
         list($adapter, $account) = $this->_getAM($model);
         $adapter->unsuspendAccount($account);
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
     }
@@ -209,7 +209,7 @@ class Service implements InjectionAwareInterface
         list($adapter, $account) = $this->_getAM($model);
         $adapter->cancelAccount($account);
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
     }
@@ -250,7 +250,7 @@ class Service implements InjectionAwareInterface
         }
 
         $model->service_hosting_hp_id = $hp->id;
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Changed hosting plan of account #%s', $model->id);
         return TRUE;
@@ -270,7 +270,7 @@ class Service implements InjectionAwareInterface
         }
         
         $model->username = $u;
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Changed hosting account %s username', $model->id);
@@ -291,7 +291,7 @@ class Service implements InjectionAwareInterface
         }
         
         $model->ip = $ip;
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Changed hosting account %s ip', $model->id);
         return TRUE;
@@ -314,7 +314,7 @@ class Service implements InjectionAwareInterface
         
         $model->sld = $sld;
         $model->tld = $tld;
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Changed hosting account %s domain', $model->id);
         return TRUE;
@@ -335,7 +335,7 @@ class Service implements InjectionAwareInterface
         }
 
         $model->pass = $p;
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Changed hosting account %s password', $model->id);
         return TRUE;
@@ -354,7 +354,7 @@ class Service implements InjectionAwareInterface
             $model->ip = $updated->getIp();
         }
         
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Synchronizing hosting account %s with server', $model->id);
         return TRUE;
@@ -550,7 +550,7 @@ class Service implements InjectionAwareInterface
             $model->ip = $data['ip'];
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated hosting account %s without sending actions to server', $model->id);
@@ -644,8 +644,8 @@ class Service implements InjectionAwareInterface
         $model->port = isset($extras['port']) ? $extras['port'] : NULL;
         $model->secure = isset($extras['secure']) ? $extras['secure'] : 0;
 
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($model);
 
         $this->di['logger']->info('Added new hosting server %s', $newId);
@@ -732,7 +732,7 @@ class Service implements InjectionAwareInterface
             $model->secure = $data['secure'];
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Update hosting server %s', $model->id);
@@ -878,7 +878,7 @@ class Service implements InjectionAwareInterface
         }
 
         $model->config = json_encode($config);
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated hosting plan %s', $model->id);
@@ -900,8 +900,8 @@ class Service implements InjectionAwareInterface
         $model->max_sql = isset($data['max_sql']) ? $data['max_sql'] : 1;
         $model->max_ftp = isset($data['max_ftp']) ? $data['max_ftp'] : 1;
 
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($model);
 
         $this->di['logger']->info('Added new hosting plan %s', $newId);

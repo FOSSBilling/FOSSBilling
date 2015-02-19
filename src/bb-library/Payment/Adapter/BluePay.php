@@ -292,7 +292,7 @@ To find your ACCOUNT ID and SECRET KEY:
             'error'     => '',
             'error_code'=> '',
             'status'    => 'processed',
-            'updated_at'=> date('c'),
+            'updated_at'=> date('Y-m-d H:i:s'),
         );
         $api_admin->invoice_transaction_update($d);
     }

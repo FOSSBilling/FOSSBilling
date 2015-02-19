@@ -41,11 +41,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         if($charge && !$item->charged) {
             $this->creditInvoiceItem($item);
             $item->charged        = TRUE;
-            $item->updated_at     = date('c');
+            $item->updated_at     = date('Y-m-d H:i:s');
         }
 
         $item->status         = \Model_InvoiceItem::STATUS_PENDING_SETUP;
-        $item->updated_at     = date('c');
+        $item->updated_at     = date('Y-m-d H:i:s');
         $this->di['db']->store($item);
 
         $oid = $this->getOrderId($item);
@@ -152,8 +152,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->charged        = isset($data['charged']) ? (bool)$data['charged'] : 0;
         $pi->price          = isset($data['price']) ? (float)$data['price'] : 0;
         $pi->taxed          = isset($data['taxed']) ? (bool)$data['taxed'] : FALSE;
-        $pi->created_at     = date('c');
-        $pi->updated_at     = date('c');
+        $pi->created_at     = date('Y-m-d H:i:s');
+        $pi->updated_at     = date('Y-m-d H:i:s');
         $itemId = $this->di['db']->store($pi);
 
         return (int) $itemId;
@@ -194,7 +194,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             $item->taxed = false;
         }
 
-        $item->updated_at = date('c');
+        $item->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($item);
     }
 
@@ -222,8 +222,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->charged        = 1;
         $pi->price          = $amount;
         $pi->taxed          = FALSE;
-        $pi->created_at     = date('c');
-        $pi->updated_at     = date('c');
+        $pi->created_at     = date('Y-m-d H:i:s');
+        $pi->updated_at     = date('Y-m-d H:i:s');
         $this->di['db']->store($pi);
     }
 
@@ -243,8 +243,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $credit->rel_id = $invoice->id;
         $credit->description = $item->title;
         $credit->amount = -$total;
-        $credit->created_at = date('c');
-        $credit->updated_at = date('c');
+        $credit->created_at = date('Y-m-d H:i:s');
+        $credit->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($credit);
 
         $invoiceService = $this->di['mod_service']('Invoice');
@@ -267,7 +267,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     protected function markAsExecuted(\Model_InvoiceItem $item)
     {
         $item->status         = \Model_InvoiceItem::STATUS_EXECUTED;
-        $item->updated_at     = date('c');
+        $item->updated_at     = date('Y-m-d H:i:s');
         $this->di['db']->store($item);
     }
 
@@ -291,8 +291,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->unit           = $order->unit;
         $pi->price          = $price;
         $pi->taxed          = $taxed;
-        $pi->created_at     = date('c');
-        $pi->updated_at     = date('c');
+        $pi->created_at     = date('Y-m-d H:i:s');
+        $pi->updated_at     = date('Y-m-d H:i:s');
         $this->di['db']->store($pi);
 
         $corderService->setUnpaidInvoice($order, $proforma);

@@ -39,13 +39,13 @@ class Model_ClientPasswordResetTable implements \Box\InjectionAwareInterface
         $r = $this->di['db']->findOne('ClientPasswordReset', 'client_id', $client->id);
         if(!$r instanceof Model_ClientPasswordReset) {
             $r = $this->di['db']->dispense('ClientPasswordReset');
-            $r->created_at  = date('c');
+            $r->created_at  = date('Y-m-d H:i:s');
             $r->client_id   = $client->id;
         }
         
         $r->ip          = $ip;
         $r->hash        = sha1(rand(50, rand(10, 99)));
-        $r->updated_at  = date('c');
+        $r->updated_at  = date('Y-m-d H:i:s');
         $this->di['db']->store($r);
         
         return $r;

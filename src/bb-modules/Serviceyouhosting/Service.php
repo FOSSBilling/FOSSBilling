@@ -271,11 +271,11 @@ class Service implements \Box\InjectionAwareInterface
             $meta             = $this->di['db']->dispense('extension_meta');
             $meta->extension  = 'mod_serviceyouhosting';
             $meta->meta_key   = 'last_account_page';
-            $meta->created_at = date('c');
+            $meta->created_at = date('Y-m-d H:i:s');
         }
 
         $meta->meta_value = $page;
-        $meta->updated_at = date('c');
+        $meta->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($meta);
     }
 
@@ -307,11 +307,11 @@ class Service implements \Box\InjectionAwareInterface
             $meta             = $this->di['db']->dispense('extension_meta');
             $meta->extension  = 'mod_serviceyouhosting';
             $meta->meta_key   = 'last_client_page';
-            $meta->created_at = date('c');
+            $meta->created_at = date('Y-m-d H:i:s');
         }
 
         $meta->meta_value = $page;
-        $meta->updated_at = date('c');
+        $meta->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($meta);
     }
 
@@ -331,8 +331,8 @@ class Service implements \Box\InjectionAwareInterface
         $meta->client_id  = $client_id;
         $meta->meta_key   = 'yh_client_id';
         $meta->meta_value = $yh_client_id;
-        $meta->created_at = date('c');
-        $meta->updated_at = date('c');
+        $meta->created_at = date('Y-m-d H:i:s');
+        $meta->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($meta);
     }
 

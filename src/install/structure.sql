@@ -256,7 +256,7 @@ CREATE TABLE `client_balance` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
   `type` varchar(100) DEFAULT NULL,
-  `rel_id` int(11) DEFAULT NULL,
+  `rel_id` varchar(20) DEFAULT NULL,
   `amount` decimal(18,2) DEFAULT '0.00',
   `description` text,
   `created_at` datetime DEFAULT NULL,

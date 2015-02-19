@@ -110,7 +110,7 @@ class Server implements \Box\InjectionAwareInterface
             throw new \LogicException('Your license key is not valid.', 1005);
         }
 
-        $model->pinged_at = date('c');
+        $model->pinged_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         if (!isset($data['host']) || empty($data['host'])) {

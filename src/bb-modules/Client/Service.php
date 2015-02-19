@@ -57,8 +57,8 @@ class Service implements InjectionAwareInterface
         $meta->client_id    = $client_id;
         $meta->meta_key     = 'confirm_email';
         $meta->meta_value   = $hash;
-        $meta->created_at   = date('c');
-        $meta->updated_at   = date('c');
+        $meta->created_at   = date('Y-m-d H:i:s');
+        $meta->updated_at   = date('Y-m-d H:i:s');
         $db->store($meta);
 
         return $this->di['tools']->url('/client/confirm-email/'.$hash);
@@ -260,8 +260,8 @@ class Service implements InjectionAwareInterface
         $credit->rel_id = isset($data['rel_id']) ? $data['rel_id'] : null;
         $credit->description = $description;
         $credit->amount = $amount;
-        $credit->created_at = date('c');
-        $credit->updated_at = date('c');
+        $credit->created_at = date('Y-m-d H:i:s');
+        $credit->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($credit);
         return true;
@@ -454,8 +454,8 @@ class Service implements InjectionAwareInterface
         $model = $this->di['db']->dispense('ClientGroup');
 
         $model->title = $data['title'];
-        $model->updated_at = date('c');
-        $model->created_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->created_at = date('Y-m-d H:i:s');
 
         $group_id = $this->di['db']->store($model);
 
@@ -521,8 +521,8 @@ class Service implements InjectionAwareInterface
         $client->custom_10 = isset($data['custom_10']) ? $data['custom_10'] : NULL ;
 
         $client->ip = isset($data['ip']) ? $data['ip'] : NULL;
-        $client->created_at = isset($data['created_at']) ? date('c', strtotime($data['created_at'])) : date('c');
-        $client->updated_at = date('c');
+        $client->created_at = isset($data['created_at']) ? date('Y-m-d H:i:s', strtotime($data['created_at'])) : date('Y-m-d H:i:s');
+        $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
         return $client;
     }

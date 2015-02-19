@@ -61,7 +61,7 @@ class Service
             try {
                 $query="INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, :created_at, :updated_at)";
                 $stmt = $pdo->prepare($query);
-                $stmt->execute(array('param'=>$param, 'value'=>$value, 'created_at'=>date('c'), 'updated_at'=>date('c')));
+                $stmt->execute(array('param'=>$param, 'value'=>$value, 'created_at'=>date('Y-m-d H:i:s'), 'updated_at'=>date('Y-m-d H:i:s')));
             } catch(\Exception $e) {
                 //ignore duplicate key error
                 if($e->getCode() != 23000) {
@@ -195,7 +195,7 @@ class Service
         $expires_at = null;
         if(isset($details['expires_at']) && $details['expires_at']) {
             if(is_numeric($details['expires_at'])) {
-                $expires_at = date('c', $details['expires_at']);
+                $expires_at = date('Y-m-d H:i:s', $details['expires_at']);
             } else {
                 $expires_at = $details['expires_at'];
             }

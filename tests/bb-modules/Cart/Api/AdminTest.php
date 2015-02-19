@@ -93,7 +93,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAssoc')
-            ->will($this->returnValue(array(rand(1, 100), date('c'))));
+            ->will($this->returnValue(array(rand(1, 100), date('Y-m-d H:i:s'))));
         $dbMock->expects($this->atLeastOnce())
             ->method('exec')
             ->will($this->returnValue(null));

@@ -257,7 +257,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
             'notes'  => 'note',
             'serie'  => 'NEW',
             'nr'     => 4,
-            'due_at' => date('c'),
+            'due_at' => date('Y-m-d H:i:s'),
         );
         $bool = $this->api_admin->invoice_update($data);
         $this->assertTrue($bool);

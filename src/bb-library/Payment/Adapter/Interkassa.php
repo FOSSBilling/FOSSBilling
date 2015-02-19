@@ -232,7 +232,7 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
         $tx->error = '';
         $tx->error_code = '';
         $tx->status = 'processed';
-        $tx->updated_at = date('c');
+        $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
         return true;
     }

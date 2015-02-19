@@ -165,8 +165,8 @@ class Service implements InjectionAwareInterface
             $meta->rel_id = $cluster_id;
             $meta->meta_key = 'config';
             $meta->meta_value = json_encode($config);
-            $meta->created_at = date('c');
-            $meta->updated_at = date('c');
+            $meta->created_at = date('Y-m-d H:i:s');
+            $meta->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($meta);
         } else {
             $config = json_decode($config, 1);
@@ -187,8 +187,8 @@ class Service implements InjectionAwareInterface
         $meta->client_id = $client->id;
         $meta->meta_key = 'solusvm_username';
         $meta->meta_value = $username;
-        $meta->created_at = date('c');
-        $meta->updated_at = date('c');
+        $meta->created_at = date('Y-m-d H:i:s');
+        $meta->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($meta);
 
         $meta = $this->di['db']->dispense('extension_meta');
@@ -196,8 +196,8 @@ class Service implements InjectionAwareInterface
         $meta->client_id = $client->id;
         $meta->meta_key = 'solusvm_password';
         $meta->meta_value = $password;
-        $meta->created_at = date('c');
-        $meta->updated_at = date('c');
+        $meta->created_at = date('Y-m-d H:i:s');
+        $meta->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($meta);
     }
     
@@ -234,8 +234,8 @@ class Service implements InjectionAwareInterface
         $model->client_id    = $order->client_id;
         $model->hostname     = strtolower($c['hostname']);
         $model->template     = $c['template'];
-        $model->created_at   = date('c');
-        $model->updated_at   = date('c');
+        $model->created_at   = date('Y-m-d H:i:s');
+        $model->updated_at   = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return $model;
     }
@@ -324,7 +324,7 @@ class Service implements InjectionAwareInterface
         $model->issuelicense = $issuelicense;
         $model->mainipaddress = $result['mainipaddress'];
         $model->extraipaddress = isset($result['extraipaddress']) ? $result['extraipaddress'] : null ;
-        $model->updated_at   = date('c');
+        $model->updated_at   = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         
         //pass params to event hook
@@ -343,7 +343,7 @@ class Service implements InjectionAwareInterface
     public function suspend($order, $model)
     {
         $this->_getApi()->vserver_suspend($model->vserverid);
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
     }
@@ -355,7 +355,7 @@ class Service implements InjectionAwareInterface
     public function unsuspend($order, $model)
     {
         $this->_getApi()->vserver_unsuspend($model->vserverid);
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
     }

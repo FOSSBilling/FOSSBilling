@@ -206,7 +206,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
 
         $model = $this->di['db']->load('SupportPTicket',$ticket['id']);
         $model->status = 'on_hold';
-        $model->updated_at = date('c', strtotime('-50 days'));
+        $model->updated_at = date('Y-m-d H:i:s', strtotime('-50 days'));
         $this->di['db']->store($model);
 
         $bool = $this->api_admin->support_batch_public_ticket_auto_close();

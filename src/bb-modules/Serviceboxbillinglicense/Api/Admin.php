@@ -132,7 +132,7 @@ class Admin extends \Api_Abstract
             $service->oid = $data['oid'];
         }
 
-        $service->updated_at = date('c');
+        $service->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($service);
         
         $this->di['logger']->info('Updated BoxBilling license %s details', $service->id);

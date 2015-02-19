@@ -48,8 +48,8 @@ class ServiceSubscription implements InjectionAwareInterface
         $model->currency = isset($data['currency']) ? $data['currency'] : NULL;
         $model->rel_id = isset($data['rel_id']) ? $data['rel_id'] : NULL;
         $model->rel_type = isset($data['rel_type']) ? $data['rel_type'] : NULL;
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($model);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminSubscriptionCreate', 'params'=>array('id'=>$newId)));
@@ -80,7 +80,7 @@ class ServiceSubscription implements InjectionAwareInterface
             $model->currency = $data['currency'];
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated subscription %s', $newId);
@@ -252,7 +252,7 @@ class ServiceSubscription implements InjectionAwareInterface
     public function unsubscribe(\Model_Subscription $model)
     {
         $model->status = 'canceled';
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
     }
 }

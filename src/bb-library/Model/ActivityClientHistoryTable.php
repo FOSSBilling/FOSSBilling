@@ -46,8 +46,8 @@ class Model_ActivityClientHistoryTable implements \Box\InjectionAwareInterface
         $entry = $this->di['db']->dispense('ActivityClientHistory');
         $entry->client_id       = $data['client_id'];
         $entry->ip              = $data['ip'];
-        $entry->created_at      = date('c');
-        $entry->updated_at      = date('c');
+        $entry->created_at      = date('Y-m-d H:i:s');
+        $entry->updated_at      = date('Y-m-d H:i:s');
         $this->di['db']->store($entry);
     }
 

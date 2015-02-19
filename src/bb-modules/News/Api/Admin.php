@@ -113,11 +113,11 @@ class Admin extends \Api_Abstract
         }
         
         if(isset($data['created_at'])) {
-             $model->created_at = date('c', strtotime($data['created_at']));
+             $model->created_at = date('Y-m-d H:i:s', strtotime($data['created_at']));
         }
         
         if(isset($data['updated_at'])) {
-             $model->updated_at = date('c', strtotime($data['updated_at']));
+             $model->updated_at = date('Y-m-d H:i:s', strtotime($data['updated_at']));
         }
         
         $model->admin_id = $this->getIdentity()->id;
@@ -149,8 +149,8 @@ class Admin extends \Api_Abstract
         $model->slug = $this->di['tools']->slug($data['title']);
         $model->status = isset($data['status']) ? $data['status'] : NULL;
         $model->content = isset($data['content']) ? $data['content'] : NULL;
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         
         $this->di['logger']->info('Created news item #%s', $model->id);

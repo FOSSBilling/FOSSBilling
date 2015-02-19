@@ -160,7 +160,7 @@ class Service implements InjectionAwareInterface
             $amount = $meta->meta_value + $amount;
         }
         $meta->meta_value = $amount;
-        $meta->updated_at = date('c');
+        $meta->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($meta);
     }
     
@@ -174,7 +174,7 @@ class Service implements InjectionAwareInterface
         $minus_points = -$post->points;
         
         $post->points = null;
-        $post->updated_at = date('c');
+        $post->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($post);
         
         $this->updateTotalPoints($post->client_id, $minus_points, true);
@@ -191,8 +191,8 @@ class Service implements InjectionAwareInterface
             $meta->client_id = $client_id;
             $meta->meta_key = 'points_total';
             $meta->meta_value = 0;
-            $meta->created_at = date('c');
-            $meta->updated_at = date('c');
+            $meta->created_at = date('Y-m-d H:i:s');
+            $meta->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($meta);
         }        
         return $meta;

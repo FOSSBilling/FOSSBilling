@@ -89,7 +89,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $model->validate_ipn = $data['validate_ipn'];
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminTransactionUpdate', 'params'=>array('id'=>$model->id)));
 
@@ -142,8 +142,8 @@ class ServiceTransaction implements InjectionAwareInterface
         $transaction->ip            = $this->di['request']->getClientAddress();
         $transaction->ipn           = json_encode($ipn);
         $transaction->note          = (isset($data['note'])) ? $data['note'] : NULL;
-        $transaction->created_at    = date('c');
-        $transaction->updated_at    = date('c');
+        $transaction->created_at    = date('Y-m-d H:i:s');
+        $transaction->updated_at    = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($transaction);
 
         $this->di['logger']->info('Received transaction %s from payment gateway %s', $newId, $transaction->gateway_id);
@@ -368,7 +368,7 @@ class ServiceTransaction implements InjectionAwareInterface
                 $model->status = \Model_Transaction::STATUS_ERROR;
                 $model->error = $e->getMessage();
                 $model->error_code = $e->getCode();
-                $model->updated_at = date('c');
+                $model->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($model);
                 throw $e;
             }
@@ -460,7 +460,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $transaction->status = \Model_Transaction::STATUS_ERROR;
             $transaction->error = $e->getMessage();
             $transaction->error_code = $e->getCode();
-            $transaction->updated_at = date('c');
+            $transaction->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($transaction);
 
             if(BB_DEBUG) error_log($e->getMessage());
@@ -475,7 +475,7 @@ class ServiceTransaction implements InjectionAwareInterface
         if($tx->status == \Model_Transaction::STATUS_PROCESSED) {
             $tx->error = NULL;
             $tx->error_code = NULL;
-            $tx->updated_at = date('c');
+            $tx->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($tx);
             return true;
         }
@@ -483,7 +483,7 @@ class ServiceTransaction implements InjectionAwareInterface
         if($this->hasProcessedTransaction($tx)) {
 
             $tx->note       .= 'Transaction was marked as processed. Transaction with same ID is already processed';
-            $tx->updated_at = date('c');
+            $tx->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($tx);
 
             $this->_markAsProcessed($tx);
@@ -508,7 +508,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $tx->error = NULL;
         $tx->error_code = NULL;
         $tx->status = \Model_Transaction::STATUS_PROCESSED;
-        $tx->updated_at = date('c');
+        $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
     }
 
@@ -591,7 +591,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         $tx->status     = \Model_Transaction::STATUS_APPROVED;
-        $tx->updated_at = date('c');
+        $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
         return $tx;
@@ -666,8 +666,8 @@ class ServiceTransaction implements InjectionAwareInterface
         $s->amount = $tx->amount;
         $s->currency = $invoice->currency;
         $s->status = 'active';
-        $s->created_at = date('c');
-        $s->updated_at = date('c');
+        $s->created_at = date('Y-m-d H:i:s');
+        $s->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($s);
 
         $this->_markAsProcessed($tx);
@@ -736,8 +736,8 @@ class ServiceTransaction implements InjectionAwareInterface
         $credit->rel_id = $tx->id;
         $credit->description = "Invoice #".$proforma->id . ' payment received from transaction #'.$tx->id;
         $credit->amount = $tx->amount;
-        $credit->created_at = date('c');
-        $credit->updated_at = date('c');
+        $credit->created_at = date('Y-m-d H:i:s');
+        $credit->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($credit);
     }
 

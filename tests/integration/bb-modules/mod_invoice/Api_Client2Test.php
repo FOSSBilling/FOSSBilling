@@ -11,7 +11,7 @@ class Api_Client_InvoiceTest extends BBDbApiTestCase
         //prepare expiring order
         $data = array(
             'id'            =>  5,
-            'expires_at'    =>  date('c', strtotime('+1 day')),
+            'expires_at'    =>  date('Y-m-d H:i:s', strtotime('+1 day')),
         );
         $bool = $this->api_admin->order_update($data);
         $this->assertTrue($bool);
