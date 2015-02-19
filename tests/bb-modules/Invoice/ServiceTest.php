@@ -1334,7 +1334,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $this->service->setDi($di);
 
-        $result = $this->service->doBatchInvokeDueEvent();
+        $result = $this->service->doBatchInvokeDueEvent(array());
         $this->assertInternalType('bool', $result);
         $this->assertTrue($result);
     }

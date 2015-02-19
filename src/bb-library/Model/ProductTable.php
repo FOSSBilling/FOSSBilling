@@ -88,7 +88,7 @@ class Model_ProductTable implements \Box\InjectionAwareInterface
                 break;
 
             default:
-                throw new Exception('Unknown period selected ' . $code);
+                throw new Box_Exception('Unknown period selected ' . $code);
                 break;
         }
     }

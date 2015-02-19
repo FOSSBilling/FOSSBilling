@@ -277,6 +277,32 @@ class ServiceTaxTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($newId, $result);
     }
 
+    public function testUpdate()
+    {
+        $taxModel = new \Model_Tax();
+        $taxModel->loadBean(new \RedBeanPHP\OODBBean());
+        $dbMock = $this->getMockBuilder('\Box_Database')
+            ->getMock();
+
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->will($this->returnValue(2));
+
+        $di                = new \Box_Di();
+        $di['db']          = $dbMock;
+        $di['logger']      = new \Box_Log();
+        $this->service->setDi($di);
+
+        $data   = array(
+            'name'    => 'tax',
+            'taxrate' => '0.18',
+        );
+        $result = $this->service->update($taxModel, $data);
+        $this->assertInternalType('boolean', $result);
+        $this->assertTrue($result);
+    }
+
+
     public function testgetSearchQuery()
     {
         $result = $this->service->getSearchQuery(array());
@@ -298,9 +324,17 @@ class ServiceTaxTest extends \PHPUnit_Framework_TestCase
             'AT' => 'Austria',
         );
 
+        $euVatData = array(
+            'AT' => 20,
+        );
+
         $systemService->expects($this->atLeastOnce())
             ->method('getEuCountries')
             ->will($this->returnValue($euCountriesData));
+
+        $systemService->expects($this->atLeastOnce())
+            ->method('getEuVat')
+            ->will($this->returnValue($euVatData));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTax')
             ->setMethods(array('create'))
@@ -315,11 +349,7 @@ class ServiceTaxTest extends \PHPUnit_Framework_TestCase
         });
         $serviceMock->setDi($di);
 
-        $data   = array(
-            'name'    => 'tax',
-            'taxrate' => '0.18',
-        );
-        $result = $serviceMock->setupEUTaxes($data);
+        $result = $serviceMock->setupEUTaxes(array());
         $this->assertTrue($result);
     }
 

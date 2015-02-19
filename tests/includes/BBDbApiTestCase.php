@@ -6,6 +6,7 @@ abstract class BBDbApiTestCase extends BBDatabaseTestCase
     protected $api_guest = NULL;
     protected $api_client = NULL;
     protected $api_admin = NULL;
+    protected $api_system = NULL;
 
     public function setBoxUpdateMock()
     {
@@ -35,6 +36,7 @@ abstract class BBDbApiTestCase extends BBDatabaseTestCase
         $this->api_guest = $this->di['api_guest'];
         $this->api_client = $this->di['api_client'];
         $this->api_admin = $this->di['api_admin'];
+        $this->api_system = $this->di['api_system'];
         //$this->api_admin->hook_batch_connect();
     }
 }

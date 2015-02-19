@@ -402,7 +402,6 @@ class Service
     {
         //default countries
         $countries = array(
-            "US" => "United States",
             "AF" => "Afghanistan",
             "AL" => "Albania",
             "DZ" => "Algeria",
@@ -411,7 +410,7 @@ class Service
             "AO" => "Angola",
             "AI" => "Anguilla",
             "AQ" => "Antarctica",
-            "AG" => "Antigua And Barbuda",
+            "AG" => "Antigua and Barbuda",
             "AR" => "Argentina",
             "AM" => "Armenia",
             "AW" => "Aruba",
@@ -429,11 +428,10 @@ class Service
             "BM" => "Bermuda",
             "BT" => "Bhutan",
             "BO" => "Bolivia",
-            "BA" => "Bosnia And Herzegowina",
+            "BA" => "Bosnia and Herzegovina",
             "BW" => "Botswana",
             "BR" => "Brazil",
-            //          "IO" => "British Indian Ocean Territory",
-            "BN" => "Brunei Darussalam",
+            "BN" => "Brunei",
             "BG" => "Bulgaria",
             "BF" => "Burkina Faso",
             "BI" => "Burundi",
@@ -450,8 +448,8 @@ class Service
             "CC" => "Cocos (Keeling) Islands",
             "CO" => "Colombia",
             "KM" => "Comoros",
-            "CG" => "Congo",
-            //          "CD" => "Congo, The Democratic Republic Of The",
+            "CG" => "Congo - Brazzaville",
+            "CD" => "Congo - Kinshasa",
             "CK" => "Cook Islands",
             "CR" => "Costa Rica",
             "CI" => "Cote D'Ivoire",
@@ -471,11 +469,12 @@ class Service
             "ER" => "Eritrea",
             "EE" => "Estonia",
             "ET" => "Ethiopia",
-            //          "FK" => "Falkland Islands (Malvinas)",
             "FO" => "Faroe Islands",
             "FJ" => "Fiji",
             "FI" => "Finland",
             "FR" => "France",
+            "GF" => "French Guiana",
+            "PF" => "French Polynesia",
             "GA" => "Gabon",
             "GB" => "Great Britain",
             "GM" => "Gambia",
@@ -494,8 +493,6 @@ class Service
             "GY" => "Guyana",
             "HT" => "Haiti",
             "EL" => "Hellenic Republic (Greece)",
-            //          "HM" => "Heard And Mc Donald Islands",
-            //          "VA" => "Holy See (Vatican City State)",
             "HN" => "Honduras",
             "HK" => "Hong Kong",
             "HU" => "Hungary",
@@ -513,21 +510,19 @@ class Service
             "KZ" => "Kazakhstan",
             "KE" => "Kenya",
             "KI" => "Kiribati",
-            //          "KP" => "Korea, Democratic People's Republic Of",
-            "KR" => "Korea, Republic Of",
             "KW" => "Kuwait",
             "KG" => "Kyrgyzstan",
-            //          "LA" => "Lao People's Democratic Republic",
+            "LA" => "Laos",
             "LV" => "Latvia",
             "LB" => "Lebanon",
             "LS" => "Lesotho",
             "LR" => "Liberia",
-            "LY" => "Libyan Arab Jamahiriya",
+            "LY" => "Libya",
             "LI" => "Liechtenstein",
             "LT" => "Lithuania",
             "LU" => "Luxembourg",
             "MO" => "Macau",
-            //          "MK" => "Macedonia, Former Yugoslav Republic Of",
+            "MK" => "Macedonia",
             "MG" => "Madagascar",
             "MW" => "Malawi",
             "MY" => "Malaysia",
@@ -540,14 +535,14 @@ class Service
             "MU" => "Mauritius",
             "YT" => "Mayotte",
             "MX" => "Mexico",
-            //          "FM" => "Micronesia, Federated States Of",
-            "MD" => "Moldova, Republic Of",
+            "MD" => "Moldova",
             "MC" => "Monaco",
             "MN" => "Mongolia",
+            "ME" => "Montenegro",
             "MS" => "Montserrat",
             "MA" => "Morocco",
             "MZ" => "Mozambique",
-            "MM" => "Myanmar",
+            "MM" => "Myanmar (Burma)",
             "NA" => "Namibia",
             "NR" => "Nauru",
             "NP" => "Nepal",
@@ -570,23 +565,23 @@ class Service
             "PY" => "Paraguay",
             "PE" => "Peru",
             "PH" => "Philippines",
-            "PN" => "Pitcairn",
+            "PN" => "Pitcairn Islands",
             "PL" => "Poland",
             "PT" => "Portugal",
             "PR" => "Puerto Rico",
             "QA" => "Qatar",
             "RE" => "Reunion",
             "RO" => "Romania",
-            "RU" => "Russian Federation",
+            "RU" => "Russia",
             "RW" => "Rwanda",
             "KN" => "Saint Kitts And Nevis",
             "LC" => "Saint Lucia",
-            //          "VC" => "Saint Vincent And The Grenadines",
             "WS" => "Samoa",
             "SM" => "San Marino",
             "ST" => "Sao Tome And Principe",
             "SA" => "Saudi Arabia",
             "SN" => "Senegal",
+            "RS" => "Serbia",
             "SC" => "Seychelles",
             "SL" => "Sierra Leone",
             "SG" => "Singapore",
@@ -595,18 +590,17 @@ class Service
             "SB" => "Solomon Islands",
             "SO" => "Somalia",
             "ZA" => "South Africa",
-            //          "GS" => "South Georgia, South Sandwich Islands",
+            "KR" => "South Korea",
             "ES" => "Spain",
             "LK" => "Sri Lanka",
             "SH" => "St. Helena",
             "PM" => "St. Pierre And Miquelon",
             "SD" => "Sudan",
             "SR" => "Suriname",
-            //          "SJ" => "Svalbard And Jan Mayen Islands",
             "SZ" => "Swaziland",
             "SE" => "Sweden",
             "CH" => "Switzerland",
-            "SY" => "Syrian Arab Republic",
+            "SY" => "Syria",
             "TW" => "Taiwan",
             "TJ" => "Tajikistan",
             "TZ" => "Tanzania",
@@ -614,27 +608,25 @@ class Service
             "TG" => "Togo",
             "TK" => "Tokelau",
             "TO" => "Tonga",
-            "TT" => "Trinidad And Tobago",
+            "TT" => "Trinidad and Tobago",
             "TN" => "Tunisia",
             "TR" => "Turkey",
             "TM" => "Turkmenistan",
-            "TC" => "Turks And Caicos Islands",
+            "TC" => "Turks and Caicos Islands",
             "TV" => "Tuvalu",
             "UG" => "Uganda",
             "UA" => "Ukraine",
             "AE" => "United Arab Emirates",
-            //          "UM" => "United States Minor Outlying Islands",
+            "US" => "United States",
             "UY" => "Uruguay",
             "UZ" => "Uzbekistan",
             "VU" => "Vanuatu",
+            "VA" => "Vatican City",
             "VE" => "Venezuela",
-            "VN" => "Viet Nam",
-            "VG" => "Virgin Islands (British)",
+            "VN" => "Vietnam",
             "VI" => "Virgin Islands (U.S.)",
-            //          "WF" => "Wallis And Futuna Islands",
             "EH" => "Western Sahara",
             "YE" => "Yemen",
-            "YU" => "Yugoslavia",
             "ZM" => "Zambia",
             "ZW" => "Zimbabwe"
         );
@@ -655,7 +647,8 @@ class Service
 
     public function getEuCountries()
     {
-        $list = array('AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI',
+        $list = array(
+            'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI',
             'FR', 'GB', 'GR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL',
             'PL', 'PT', 'RO', 'SE', 'SI', 'SK');
         $c = $this->getCountries();
@@ -665,6 +658,40 @@ class Service
             $res[$code] = $c[$code];
         }
         return $res;
+    }
+
+    public function getEuVat()
+    {
+        return array(
+            'AT' => 20, //Austria
+            'BE' => 21, //Belgium
+            'BG' => 20, //Bulgaria
+            'HR' => 25, //Croatia
+            'CY' => 19, //Cyprus
+            'CZ' => 21, //Czech Republic
+            'DK' => 25, //Denmark
+            'EE' => 20, //Estonia
+            'FI' => 24, //Finland
+            'FR' => 20, //France
+            'DE' => 19, //Germany
+            'GR' => 23, //Greece
+            'HU' => 27, //Hungary
+            'IE' => 23, //Ireland
+            'IT' => 22, //Italy
+            'LV' => 21, //Latvia
+            'LT' => 21, //Lithuania
+            'LU' => 15, //Luxembourg
+            'MT' => 18, //Malta
+            'NL' => 21, //Netherlands
+            'PL' => 23, //Poland
+            'PT' => 23, //Portugal
+            'RO' => 24, //Romania
+            'SK' => 20, //Slovakia
+            'SI' => 22, //Slovenia
+            'ES' => 21, //Spain
+            'SE' => 25, //Sweden
+            'GB' => 20, //United Kingdom
+        );
     }
 
     public function getStates()
@@ -952,7 +979,6 @@ class Service
             'YU' => '',
             'EL' => '30',
             'AE' => '971',
-            'GB' => '44',
             'GE' => '995',
             'US' => '1',
             'UY' => '598',
@@ -1280,5 +1306,30 @@ class Service
     public function getVersion()
     {
         return \Box_Version::VERSION;
+    }
+
+    public function getPendingMessages()
+    {
+        $messages = $this->di['session']->get('pending_messages');
+
+        if (!is_array($messages)){
+            return array();
+        }
+
+        return $messages;
+    }
+
+    public function setPendingMessage($msg)
+    {
+        $messages = $this->getPendingMessages();
+        array_push($messages, $msg);
+        $this->di['session']->set('pending_messages', $messages);
+        return true;
+    }
+
+    public function clearPendingMessages()
+    {
+        $this->di['session']->delete('pending_messages');
+        return true;
     }
 }

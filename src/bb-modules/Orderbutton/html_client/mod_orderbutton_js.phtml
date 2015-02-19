@@ -9,117 +9,252 @@
 {% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
 {% set border_radius = request.border_radius | default(0) %}
 {% set bind_selector = request.bind_selector | default('.order-button') %}
-function show_popup() {
-    $(document).keyup(function(e) { // esc
-        if (e.keyCode == 27) {
-            $("#popup-background").hide();
-            $('#popup-iframe').hide();
-        }
-    });
 
-    $('body').delegate('#popup-background','click',function(){
-        $('#popup-background').hide();
-        $('#popup-iframe').hide();
-    });
+    var orderbutton = function (){
+        this.data_product_id = null;
+        this.backgroundElem = null;
+        this.iframeElem = null;
+        this.loaderImageElem = null;
+    };
 
+    orderbutton.prototype.setDataProductId = function (product_id){
+        this.data_product_id = product_id;
+    };
 
-    $('body').undelegate('{{bind_selector}}', 'click');
-    $('body').delegate('{{bind_selector}}', 'click', function (event) {
-        event.preventDefault();
-        popup();
-    });
-}
-function popup(){
-    if ($('#popup-background').length && $('#popup-iframe').length){
-        $('#popup-background').show();
-        $('#popup-iframe').show();
-    }else{
+    orderbutton.prototype.getDataProductId = function (){
+        return this.data_product_id;
+    };
 
-        var background_div = $('<div/>', {
-        id: 'popup-background'
-        }).appendTo('body');
+    orderbutton.prototype.hideElements = function(){
+        this.backgroundElem.hide();
+        this.iframeElem.hide();
+    };
 
-        $('#popup-background').css({
-        'display': 'none',
-        'position': 'fixed',
-        'top': '0',
-        'left': '0',
-        'width': '100%',
-        'height': '100%',
-        'background-color': '{{background_color}}',
-        'opacity': '{{background_opacity/100}}',
-        '-webkit-opacity': '{{background_opacity/100}}',
-        '-moz-opacity': '{{background_opacity/100}}',
-        'filter': 'alpha(opacity={{background_opacity}})',
-        'z-index': '1000'
+    orderbutton.prototype.attachEvents = function() {
+        var _this = this;
+        $(document).keyup(function(e) { // esc
+            if (e.keyCode == 27) {
+                _this.hideElements();
+            }
         });
-        var iframe = $('<iframe frameborder="0" allowtransparency="true" onload="" id="popup-iframe"  src="{{ "orderbutton" | link }}&theme_color={{request.theme_color | default('green')}}{% if request.product_id %}&order={{ request.product_id}}{% endif %}{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}&loader=3" id="popup-iframe"/>').appendTo('body');
-        $(iframe).css({
-        {% if request.popup_center == "1" %}
-        'top': {{request.popup_top}},
-        'left': {{request.popup_left}},
-        {% endif %}
-        'background-color': 'transparent',
-        'border-radius': '{{border_radius}}px',
-        '-webkit-border-radius': '{{border_radius}}px',
-        '-moz-border-radius': '{{border_radius}}px',
-        //'box-shadow': '0 0 20px 0 #222',
-        //'-webkit-box-shadow': '0 0 20px 0 #222',
-        //'-moz-box-shadow': '0 0 20px 0 #222',
-        'display': 'none',
-        'margin': '0 auto',
-        'padding': '0px',
-        'position': 'absolute',
-        'width': "{{width}}px",
-        'z-index': '1000'
+        var bodyElem = $('body');
 
+        bodyElem.undelegate('{{bind_selector}}', 'click');
+        bodyElem.delegate('{{bind_selector}}', 'click', function (event) {
+            event.preventDefault();
+            _this.setDataProductId($(this).data('product'))
+            _this.popup();
+        });
+    };
+
+    orderbutton.prototype.srclink = function(){
+        var params = [
+            { name: "theme_color", value: "{{request.theme_color | default('green')}}" },
+            { name: "loader", value: "1" }
+        ];
+        var product_id = this.getDataProductId();
+
+        {% if request.product_id %}
+            // request has product_id
+            product_id = {{request.product_id}};
+        {% endif %}
+
+        if (product_id)
+            params.push({'name' : 'order', 'value' : product_id});
+        {% if request.show_custom_form_values %}
+            params['show_custom_form_values'] = 1;
+        {% endif %}
+
+        return "{{ "orderbutton" | link }}&"+jQuery.param(params);
+    };
+
+    orderbutton.prototype.createIframe = function (){
+
+        this.iframeElem  = $('<iframe frameborder="0" allowtransparency="true" onload="" id="popup-iframe"  src="'+this.srclink()+'" />').appendTo('body');
+        this.iframeElem .css({
+            {% if request.popup_center == "1" %}
+            'top': {{request.popup_top}},
+            'left': {{request.popup_left}},
+            {% endif %}
+            'background-color': 'transparent',
+            'border-radius': '{{border_radius}}px',
+            '-webkit-border-radius': '{{border_radius}}px',
+            '-moz-border-radius': '{{border_radius}}px',
+            //'box-shadow': '0 0 20px 0 #222',
+            //'-webkit-box-shadow': '0 0 20px 0 #222',
+            //'-moz-box-shadow': '0 0 20px 0 #222',
+            'display': 'none',
+            'margin': '0 auto',
+            'padding': '0px',
+            'position': 'absolute',
+            'width': "{{width}}px",
+            'z-index': '1000'
+
+        });
+
+        var _this = this;
+        this.iframeElem.load(function() {
+            _this.loaderImageElem.hide();
+            this.style.height = '100%';
+            var pWidth = jQuery(window).width();
+            var pTop = jQuery(window).scrollTop();
+            var eWidth = jQuery(this).width();
+            jQuery(this).css('top', pTop + 100 + 'px');
+            jQuery(this).css('left', parseInt((pWidth / 2) - (eWidth / 2)) + 'px');
+            $(this).show();
         });
 
         $(window).resize(function(){
-        var pWidth = jQuery(window).width();
-        var pTop = jQuery(window).scrollTop();
-        var eWidth = jQuery('#popup-iframe').width();
-        jQuery('#popup-iframe').css('top', pTop + 100 + 'px');
-        jQuery('#popup-iframe').css('left', parseInt((pWidth / 2) - (eWidth / 2)) + 'px');
+            var pWidth = jQuery(window).width();
+            var pTop = jQuery(window).scrollTop();
+            var eWidth = _this.iframeElem.width();
+            this.iframeElem.css('top', pTop + 100 + 'px');
+            this.iframeElem.css('left', parseInt((pWidth / 2) - (eWidth / 2)) + 'px');
         });
-
-        $('#popup-iframe').load(function() {
-        $('#loader-image').hide();
-        this.style.height = '100%';
-        var pWidth = jQuery(window).width();
-        var pTop = jQuery(window).scrollTop();
-        var eWidth = jQuery(this).width();
-        jQuery(this).css('top', pTop + 100 + 'px');
-        jQuery(this).css('left', parseInt((pWidth / 2) - (eWidth / 2)) + 'px');
-        });
-
-        $("#popup-background").show();
-        var img = $('<img />').attr({
-        'src': "{{ loader_url | mod_asset_url('orderbutton')}}",
-        'id' : 'loader-image'
-        }).css({
-        'display': 'block',
-        'margin-left': 'auto',
-        'margin-right': 'auto',
-        'position': 'relative',
-        'top': '50%'
-        }).appendTo($('#popup-background')).show();
-        $('#popup-iframe').show();
-    }
-}
-$( document ).ready(function() {
-    if (typeof jQuery === "undefined") {
-        (function(d, script) {
-            script = d.createElement('script');
-            script.type = 'text/javascript';
-            script.async = true;
-            script.onload = function(){
-                show_popup();
-            };
-            script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js';
-            d.getElementsByTagName('head')[0].appendChild(script);
-            }(document));
-    }else{
-        show_popup();
     };
-});
+
+    orderbutton.prototype.createBackground = function (){
+        var _this = this;
+        this.backgroundElem = $('<div/>', {
+            id: 'popup-background'
+        }).appendTo('body');
+        this.backgroundElem.css({
+            'display': 'none',
+            'position': 'fixed',
+            'top': '0',
+            'left': '0',
+            'width': '100%',
+            'height': '100%',
+            'background-color': '{{background_color}}',
+            'opacity': '{{background_opacity/100}}',
+            '-webkit-opacity': '{{background_opacity/100}}',
+            '-moz-opacity': '{{background_opacity/100}}',
+            'filter': 'alpha(opacity={{background_opacity}})',
+            'z-index': '1000'
+        }).on('click', function(){
+            _this.hideElements();
+        });
+
+
+        this.backgroundElem.show();
+    };
+
+    orderbutton.prototype.createLoaderImage = function(){
+        this.loaderImageElem = $('<img />').attr({
+            'src': "{{ loader_url | mod_asset_url('orderbutton')}}",
+            'id' : 'loader-image'
+        }).css({
+            'display': 'block',
+            'margin-left': 'auto',
+            'margin-right': 'auto',
+            'position': 'relative',
+            'top': '50%'
+        }).appendTo(this.backgroundElem).show();
+    };
+
+    orderbutton.prototype.popup = function (){
+        if (this.backgroundElem && this.iframeElem){
+
+            if (this.iframeElem.attr('src') != this.srclink()){
+                this.iframeElem.attr('src', this.srclink());
+                this.loaderImageElem.show();
+            }
+            else{
+                this.iframeElem.show();
+            }
+            this.backgroundElem.show();
+
+        }else{
+            this.createBackground();
+            this.createLoaderImage();
+            this.createIframe();
+        }
+    };
+
+    docReady(function() {
+        if (typeof jQuery === "undefined") {
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    ob = new orderbutton();
+                    ob.attachEvents();
+                };
+                script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js';
+                d.getElementsByTagName('head')[0].appendChild(script);
+                }(document));
+        }else{
+            ob = new orderbutton();
+            ob.attachEvents();
+        }
+    });
+    (function(funcName, baseObj) {
+        // The public function name defaults to window.docReady
+        // but you can pass in your own object and own function name and those will be used
+        // if you want to put them in a different namespace
+        funcName = funcName || "docReady";
+        baseObj = baseObj || window;
+        var readyList = [];
+        var readyFired = false;
+        var readyEventHandlersInstalled = false;
+
+        // call this when the document is ready
+        // this function protects itself against being called more than once
+        function ready() {
+            if (!readyFired) {
+                // this must be set to true before we start calling callbacks
+                readyFired = true;
+                for (var i = 0; i < readyList.length; i++) {
+                    // if a callback here happens to add new ready handlers,
+                    // the docReady() function will see that it already fired
+                    // and will schedule the callback to run right after
+                    // this event loop finishes so all handlers will still execute
+                    // in order and no new ones will be added to the readyList
+                    // while we are processing the list
+                    readyList[i].fn.call(window, readyList[i].ctx);
+                }
+                // allow any closures held by these functions to free
+                readyList = [];
+            }
+        }
+
+        function readyStateChange() {
+            if ( document.readyState === "complete" ) {
+                ready();
+            }
+        }
+
+        // This is the one public interface
+        // docReady(fn, context);
+        // the context argument is optional - if present, it will be passed
+        // as an argument to the callback
+        baseObj[funcName] = function(callback, context) {
+            // if ready has already fired, then just schedule the callback
+            // to fire asynchronously, but right away
+            if (readyFired) {
+                setTimeout(function() {callback(context);}, 1);
+                return;
+            } else {
+                // add the function and context to the list
+                readyList.push({fn: callback, ctx: context});
+            }
+            // if document already ready to go, schedule the ready function to run
+            if (document.readyState === "complete") {
+                setTimeout(ready, 1);
+            } else if (!readyEventHandlersInstalled) {
+                // otherwise if we don't have event handlers installed, install them
+                if (document.addEventListener) {
+                    // first choice is DOMContentLoaded event
+                    document.addEventListener("DOMContentLoaded", ready, false);
+                    // backup is window load event
+                    window.addEventListener("load", ready, false);
+                } else {
+                    // must be IE
+                    document.attachEvent("onreadystatechange", readyStateChange);
+                    window.attachEvent("onload", ready);
+                }
+                readyEventHandlersInstalled = true;
+            }
+        }
+    })("docReady", window);

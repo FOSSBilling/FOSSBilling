@@ -96,7 +96,7 @@ class Admin implements \Box\InjectionAwareInterface
             ),
         );
     }
-    
+
     public function register(\Box_App &$app)
     {
         $app->get('/invoice',           'get_index', array(), get_class($this));
@@ -107,13 +107,23 @@ class Admin implements \Box\InjectionAwareInterface
         $app->get('/invoice/manage/:id','get_invoice', array('id'=>'[0-9]+'), get_class($this));
         $app->get('/invoice/transaction/:id','get_transaction', array('id'=>'[0-9]+'), get_class($this));
         $app->get('/invoice/subscription/:id','get_subscription', array('id'=>'[0-9]+'), get_class($this));
-        $app->get('/invoice/tax',           'get_tax', array(), get_class($this));
+        $app->get('/invoice/tax',           'get_taxes', array(), get_class($this));
+        $app->get('/invoice/tax/:id',           'get_tax', array(), get_class($this));
+        $app->get('/invoice/pdf/:hash', 'get_pdf', array('hash'=>'[a-z0-9]+'), get_class($this));
     }
 
-    public function get_tax(\Box_App $app)
+    public function get_taxes(\Box_App $app)
     {
         $api = $app->getApiAdmin();
         return $app->render('mod_invoice_tax');
+    }
+
+    public function get_tax(\Box_App $app, $id)
+    {
+        $api = $app->getApiAdmin();
+        $tax = $api->invoice_tax_get(array('id' => $id));
+
+        return $app->render('mod_invoice_taxupdate', array('tax' => $tax));
     }
     
     public function get_index(\Box_App $app)
@@ -167,4 +177,15 @@ class Admin implements \Box\InjectionAwareInterface
         $gateway = $api->invoice_gateway_get(array('id'=>$id));
         return $app->render('mod_invoice_gateway', array('gateway'=>$gateway));
     }
+
+    public function get_pdf (\Box_App $app, $hash)
+    {
+        $api = $app->getApiGuest();
+        $data = array(
+            'hash' => $hash,
+        );
+        $invoice = $api->invoice_pdf($data);
+        return $app->render('mod_invoice_pdf', array('invoice'=>$invoice));
+    }
+
 }

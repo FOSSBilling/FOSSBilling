@@ -15,8 +15,6 @@ class Box_AppClient extends Box_App
 {
     protected function init()
     {
-        $this->options->redirect_on_auth_exception = '/login';
-
         $m = $this->di['mod']($this->mod);
         $m->registerClientRoutes($this);
 

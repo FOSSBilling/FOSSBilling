@@ -42,7 +42,12 @@
             <div class="rowElem">
                 <label>{% trans 'Period' %}</label>
                 <div class="formRight">
-                    {{ mf.selectbox('period', guest.system_periods, request.period, 1) }}
+                    <select name="period" id="period" required="required">
+                        {% for val,label in guest.system_periods %}
+                        <option value="{{ val }}" label="{{ label|e }}" data-price="{{product.pricing.recurrent[val].price}}" data-status="{{product.pricing.recurrent[val].enabled}}" {% if request.period == val %}selected="selected"{% endif %}>{{ label|e }}</option>
+                        {% endfor %}
+                    </select>
+                    <span id="period-info" class="help"></span>
                 </div>
                 <div class="fix"></div>
             </div>
@@ -68,6 +73,21 @@
     function onAfterOrderPlaced(id) {
         bb.redirect("{{'order/manage/'|alink}}/"+id);
     }
+
+    $('#period').on('change', function(){
+        var optionSelected = $("option:selected", this);
+        var periodNotification = $('#period-info');
+        var spanElem = $('<span />').css({'padding-left' : '20px', 'line-height' : '28px', 'float' : 'left'});
+
+        periodNotification.text('');
+        if (optionSelected.data('price') == 0){
+            spanElem.clone().text("{% trans 'Selected price is 0.00'%}").appendTo(periodNotification);
+        }
+        if (optionSelected.data('status') == 0){
+            spanElem.clone().text("{% trans 'Product is disabled in configuration'%}").appendTo(periodNotification);
+        }
+
+    });
     
 </script>
 {% endblock %}

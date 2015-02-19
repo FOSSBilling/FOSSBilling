@@ -104,7 +104,7 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
     public function processTransaction($api_admin, $id, $data, $gateway_id)
     {
         if(APPLICATION_ENV != 'testing' && !$this->isIpnValid($data)) {
-            throw new Exception('WebMoney IPN is not valid');
+            throw new Payment_Exception('WebMoney IPN is not valid');
         }
         
         $ipn = $data['post'];

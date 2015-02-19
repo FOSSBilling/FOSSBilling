@@ -1,3 +1,30 @@
+Release 4.15 (2015-02-19)
+------------------------------------------------------------------------------
+* New module:
+    * paidsupport
+* Module orderbutton javascript code improvements
+* ResellerClub adapter supports API-KEY as authorization option.
+* Fix admin area prefix issue.
+* Added getEuVat() method which returns standard tax rate for each EU country
+* Tax rules edit option added
+* Notification message shown when email confirmed.
+* Tax rules can be generated automatically for all EU countries
+* Fix UTF-8 currency symbols issue in PDF and print invoice view.
+* Fixed onAfterGuestPublicTicketReply and onAfterGuestPublicTicketOpen hooks. Incorrect public ticket subject was sent to staff members.
+* Added option to approve client email for admin
+* DotTk registrar adapter is not supported.
+* Initiate translation DI object after bb-di is included
+* Spamchecker module updated
+* When removing product from cart it's addons will remove automatically
+* Missing email queue table after upgrade fixed
+* admin/currency/get API call returns array
+* Admin can generate invoice PDF from admin area
+* Scheduled tasks fix
+* Spyc package moved to composer
+* Countries list updated
+* Missing `mod_cron_check` file fixed for custom templates
+* Various bug fixes and improvements
+
 Release 4.14 (2015-02-03)
 ------------------------------------------------------------------------------
 

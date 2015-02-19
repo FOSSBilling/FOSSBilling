@@ -838,4 +838,25 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         $array = $this->api_admin->invoice_get(array('id' => $id));
         $this->assertEquals(substr($array['due_at'], 0, 10), date('Y-m-d', strtotime("+ $diff day")));
     }
+
+    public function testUpdateTaxRule()
+    {
+        $id = 2;
+
+        $data = array(
+            'id' => $id,
+            'name' => 'Updated Tax rule',
+            'taxrate' => 99,
+            'country' => 'NL'
+        );
+        $this->api_admin->invoice_tax_update($data);
+
+
+        $tax = $this->api_admin->invoice_tax_get(array('id' => $id));
+
+        $this->assertInternalType('array', $tax);
+        $this->assertEquals($data['name'], $tax['name']);
+        $this->assertEquals($data['taxrate'], $tax['taxrate']);
+        $this->assertEquals($data['country'], $tax['country']);
+    }
 }

@@ -8,10 +8,10 @@ class Api_Admin_CronTest extends BBDbApiTestCase
 
     public function testRun()
     {
-        $array = $this->api_admin->cron_info();
+        $array = $this->api_system->cron_info();
         $this->assertInternalType('array', $array);
         
-        $bool = $this->api_admin->cron_run();
+        $bool = $this->api_system->cron_run();
         $this->assertTrue($bool);
     }
 }

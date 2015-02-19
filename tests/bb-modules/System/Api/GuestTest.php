@@ -230,5 +230,22 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $this->assertEquals($setLang, $result);
     }
 
+    public function testget_pending_messages()
+    {
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $messageArr = array('Important message to user');
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getPendingMessages')
+            ->willReturn($messageArr);
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('clearPendingMessages');
+
+        $this->api->setService($serviceMock);
+        $result = $this->api->get_pending_messages();
+        $this->assertInternalType('array', $result);
+        $this->assertEquals($messageArr, $result);
+    }
+
 }
  

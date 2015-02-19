@@ -110,6 +110,7 @@
                                     {% if invoice.status == 'paid' %}
                                     <a href="{{ 'api/admin/invoice/refund'|link({'id' : invoice.id}) }}" data-api-confirm="Are you sure?"  title="" class="btn55 mr10 api-link" data-api-redirect="{{ 'invoice'|alink }}"><img src="images/icons/middlenav/refresh4.png" alt=""><span>Refund</span></a>
                                     {% endif %}
+                                    <a href="{{ 'invoice/pdf' | link }}/{{invoice.hash}}" target="_blank" class="btn55 mr10"><img src="images/icons/middlenav/incoming.png" alt=""><span>PDF</span></a>
                                 </div>
                             </td>
                         </tr>

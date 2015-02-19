@@ -114,22 +114,4 @@ final class Api_Handler implements InjectionAwareInterface
         if($this->_enable_cache) $this->_cache[$cache_key] = $res;
         return $res;
     }
-
-    private function _getIdentity()
-    {
-        if ('guest' == $this->type){
-            return new Model_Guest();
-        }
-        if ('system' == $this->type){
-            return $this->di['mod_service']('staff')->getCronAdmin();
-        }
-        if ('admin' == $this->type){
-            return $this->di['loggedin_admin'];
-        }
-        if ('client' == $this->type){
-            return $this->di['loggedin_client'];
-        }
-
-        throw new Exception('Unrecognized Handler type: '.$this->type);
-    }
 }

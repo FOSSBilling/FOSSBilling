@@ -49,7 +49,7 @@ class Service
      */
     public function runCrons($interval = null)
     {
-        $api = $this->di['api_admin'];
+        $api = $this->di['api_system'];
         $this->di['logger']->info('- Started executing cron');
 
         //@core tasks

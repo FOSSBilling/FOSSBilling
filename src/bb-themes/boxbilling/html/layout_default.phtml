@@ -225,5 +225,6 @@
 <div class="loading dim" style="display:none"><div class="popup_block"><h3>{% trans 'Loading ..' %}</h3></div></div>
     {% block js %}{% endblock %}
     <noscript>NOTE: Many features on BoxBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
+{% include 'partial_pending_messages.phtml' %}
 </body>
 </html>

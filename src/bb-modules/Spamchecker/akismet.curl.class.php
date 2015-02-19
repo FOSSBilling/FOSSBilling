@@ -81,8 +81,8 @@ class akismet {
         if($api_key) {
             $this->api_key = $api_key;
         } else {
-            throw new Exception('Akismet API Key not set.');
             $this->error = true;
+            throw new Exception(__('Akismet API Key not set.'));
         }
         
         //If no site URL was given
@@ -124,7 +124,7 @@ class akismet {
         if(!is_resource($this->connection_handle)) {
             //Try to create one
             if(!$this->connection_handle = curl_init()) {
-                throw new Exception('Could not start new CURL instance');
+                throw new Exception(__('Could not start new CURL instance'));
                 $this->error = true;
                 return;
             }
@@ -161,9 +161,8 @@ class akismet {
         if(is_resource($this->connection_handle)) {
             //Try to close it
             if(!curl_close($this->connection_handle)) {
-                throw new Exception('Could not close the CURL instance');
                 $this->error = true;
-                return;
+                throw new Exception(__('Could not close the CURL instance'));
             }
         }
         return true;
@@ -188,8 +187,8 @@ class akismet {
         
         //Send Data and grab the result
         if(!$response = curl_exec($this->connection_handle)) {
-            throw new Exception('Could not send cURL request');
             $this->error = true;
+            throw new Exception(__('Could not send cURL request'));
             return;
         }
         
