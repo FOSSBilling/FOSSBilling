@@ -89,29 +89,13 @@
 
             <div class="help">
                 <h3>{% trans 'Automatic VAT Tax Rules Setup' %}</h3>
-                <p>{% trans 'If you would like BoxBilling to automatically setup the EU VAT tax rules for you for all EU Member States then simply enter your VAT Label & local VAT rate below and click the submit button. This action will delete any existing tax rules and configure the VAT rates for all EU countries.' %}</p>
+                <p>{% trans 'If you would like BoxBilling to automatically setup the EU VAT tax rules for you for all EU Member States then simply enter your VAT Label & local VAT rate below and click the submit button. <strong>This action will delete any existing tax rules</strong> and configure the VAT rates for all EU countries.' %}</p>
             </div>
-            
-            <form method="post" action="{{ 'api/admin/invoice/tax_setup_eu'|link }}" class="mainForm save api-form" data-api-reload="1">
-                <fieldset>
-                    <div class="rowElem noborder">
-                        <label>{% trans 'VAT Label' %}:</label>
-                        <div class="formRight">
-                            <input type="text" name="name" value="VAT" required="required" placeholder="{% trans 'VAT' %}"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    
-                    <div class="rowElem">
-                        <label>{% trans 'VAT rate' %}:</label>
-                        <div class="formRight">
-                            <input type="text" name="taxrate" value="20" required="required" placeholder="{% trans '21' %}" style="width: 100px"/> %
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <input type="submit" value="{% trans 'Create EU VAT Rules' %}" class="greyishBtn submitForm" />
-                </fieldset>
-            </form>
+            <br/>
+            <div class="aligncenter">
+                <a href="{{ 'api/admin/invoice/tax_setup_eu'|link}}" title="" class="btn55 mr10 api-link" data-api-reload="1" data-api-confirm="It will overwrite your existing VAT rules. Are you sure?"><img src="images/icons/middlenav/power.png" alt=""><span>Generate VAT rates</span></a>
+            </div>
+            <br/>
         </div>
         
         <div class="tab_content nopadding" id="tab-new">

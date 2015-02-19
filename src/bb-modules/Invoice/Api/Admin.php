@@ -911,11 +911,6 @@ class Admin extends \Api_Abstract
      */
     public function tax_setup_eu($data)
     {
-        $required = array(
-            'name' => 'Tax name is missing',
-            'taxrate' => 'Tax rate is missing or is not valid',
-        );
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
         return $taxService->setupEUTaxes($data);
     }
