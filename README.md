@@ -54,7 +54,7 @@ to update /etc/hosts file
 * OS     - Ubuntu 12.04
 * PHP    - 5.5.4 
 * Apache
-* MySQL
+* MySQL 5.6
 * IP - 10.20.30.12
 * servername - boxbilling.test
 * target folder - /var/www/boxbilling
