@@ -2,7 +2,7 @@ BoxBilling [![Download Latest](http://i.imgur.com/djy4ExU.png)](https://github.c
 ================================================================================
 *If you want to download BoxBilling for use please click on `Download BoxBilling` button above instead of `git pull` command or GitHub's `Download ZIP` button!*
 
-[![Build Status](https://travis-ci.org/boxbilling/boxbilling.svg)](https://travis-ci.org/boxbilling/boxbilling)
+[![Build Status](https://travis-ci.org/boxbilling/boxbilling.svg?branch=master)](https://travis-ci.org/boxbilling/boxbilling)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/boxbilling/boxbilling/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/boxbilling/boxbilling/?branch=master)
 
 Open Source billing software
