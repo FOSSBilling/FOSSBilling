@@ -324,9 +324,17 @@ class ServiceTaxTest extends \PHPUnit_Framework_TestCase
             'AT' => 'Austria',
         );
 
+        $euVatData = array(
+            'AT' => 20,
+        );
+
         $systemService->expects($this->atLeastOnce())
             ->method('getEuCountries')
             ->will($this->returnValue($euCountriesData));
+
+        $systemService->expects($this->atLeastOnce())
+            ->method('getEuVat')
+            ->will($this->returnValue($euVatData));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTax')
             ->setMethods(array('create'))
@@ -341,11 +349,7 @@ class ServiceTaxTest extends \PHPUnit_Framework_TestCase
         });
         $serviceMock->setDi($di);
 
-        $data   = array(
-            'name'    => 'tax',
-            'taxrate' => '0.18',
-        );
-        $result = $serviceMock->setupEUTaxes($data);
+        $result = $serviceMock->setupEUTaxes(array());
         $this->assertTrue($result);
     }
 

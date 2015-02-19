@@ -1317,27 +1317,18 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
     public function testtax_setup_eu()
     {
-        $data = array(
-            'id' => 1,
-        );
-
         $taxService = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTax')->getMock();
         $taxService->expects($this->atLeastOnce())
             ->method('setupEUTaxes')
             ->will($this->returnValue(true));
 
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray');
-
 
         $di = new \Box_Di();
-        $di['validator'] = $validatorMock;
         $di['mod_service'] = $di->protect(function () use($taxService) {return $taxService;});
 
         $this->api->setDi($di);
 
-        $result = $this->api->tax_setup_eu($data);
+        $result = $this->api->tax_setup_eu(array());
         $this->assertInternalType('bool', $result);
         $this->assertTrue($result);
     }
