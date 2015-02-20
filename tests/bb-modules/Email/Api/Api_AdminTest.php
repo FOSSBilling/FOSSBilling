@@ -578,6 +578,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $id = rand(1, 100);
         $data = array(
             'id'          => $id,
+            'enabled'     => '1',
             'action_code' => 'Action_code',
             'subject'     => 'Subject',
             'content'     => 'Content'
@@ -596,12 +597,13 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $emailService = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('updateTemplate'))->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('updateTemplate')
-            ->will($this->returnValue($id));
+            ->with($emailTemplateModel, $data['enabled'], $data['category'], $data['subject'], $data['content'])
+            ->will($this->returnValue(true));
         $adminApi->setService($emailService);
         $adminApi->setDi($di);
 
         $result = $adminApi->template_update($data);
-        $this->assertEquals($result, $id);
+        $this->assertEquals($result, true);
     }
 
     public function testTemplate_reset()
