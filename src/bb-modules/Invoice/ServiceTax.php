@@ -57,8 +57,8 @@ class ServiceTax implements InjectionAwareInterface
             return $tax->taxrate;
         }
 
-        // find rate which matches clients country
-        $tax = $this->di['db']->findOne('Tax', 'state is NULL or state = "" and  country is null or country = ""');
+        // find global rate
+        $tax = $this->di['db']->findOne('Tax', '(state is NULL or state = "") and (country is null or country = "")');
         if($tax instanceof \Model_Tax)  {
             $title = $tax->name;
             return $tax->taxrate;
