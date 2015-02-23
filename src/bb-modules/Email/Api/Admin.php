@@ -282,7 +282,7 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Email template ID is required');
         }
 
-        $enabled = isset($data['enabled']) ? $data['id'] : null;
+        $enabled = isset($data['enabled']) ? $data['enabled'] : null;
         $category = isset($data['category']) ? $data['category'] : null;
         $subject = isset($data['subject']) ? $data['subject'] : null;
         $content = isset($data['content']) ? $data['content'] : null;
