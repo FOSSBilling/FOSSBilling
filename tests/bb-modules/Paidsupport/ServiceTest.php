@@ -510,6 +510,90 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->willReturn($helpdeskConfig);
 
         $result = $paidSupportServiceMock->hasHelpdeskPaidSupport($helpdeskId);
+        $this->assertFalse($result);
+    }
+
+    public function testPaidSupportAppliedForAllHelpdesks_AllHelpdesksAreNotChecked()
+    {
+        $di = new \Box_Di();
+        $helpdeskId = 2;
+        $helpdeskId1 = 3;
+        $helpdeskConfig = array(
+            $helpdeskId => 0,
+            $helpdeskId1 => 0
+        );
+        $paidSupportConfig = array(
+            'helpdesk' => $helpdeskConfig,
+        );
+
+        $di['mod_config'] = $di->protect(function($serviceName) use ($paidSupportConfig){
+            if ($serviceName == 'Paidsupport'){
+                return $paidSupportConfig;
+            }
+        });
+
+        $this->service->setDi($di);
+        $result = $this->service->hasHelpdeskPaidSupport($helpdeskId);
+        $this->assertFalse($result);
+    }
+
+    public function testUninstall()
+    {
+        $di = new \Box_Di();
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $model = new \Model_ExtensionMeta();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->with('ExtensionMeta')
+            ->willReturn($model);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('trash')
+            ->with($model);
+
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+        $result = $this->service->uninstall();
+        $this->assertTrue($result);
+    }
+
+    public function testUninstall_ConfigNotFound()
+    {
+        $di = new \Box_Di();
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $model = new \Model_ExtensionMeta();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->with('ExtensionMeta');
+        $dbMock->expects($this->never())
+            ->method('trash');
+
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+        $result = $this->service->uninstall();
+        $this->assertTrue($result);
+    }
+
+    public function testInstall()
+    {
+        $di = new \Box_Di();
+
+        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('setConfig')
+            ->willReturn(true);
+
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($extensionServiceMock){
+            if ($serviceName == 'Extension'){
+                return $extensionServiceMock;
+            }
+        });
+
+        $this->service->setDi($di);
+        $result = $this->service->install();
         $this->assertTrue($result);
     }
 }
