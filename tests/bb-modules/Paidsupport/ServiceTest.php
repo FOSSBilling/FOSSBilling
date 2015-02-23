@@ -536,5 +536,45 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $result = $this->service->hasHelpdeskPaidSupport($helpdeskId);
         $this->assertFalse($result);
     }
+
+    public function testUninstall()
+    {
+        $di = new \Box_Di();
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $model = new \Model_ExtensionMeta();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->with('ExtensionMeta')
+            ->willReturn($model);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('trash')
+            ->with($model);
+
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+        $result = $this->service->uninstall();
+        $this->assertTrue($result);
+    }
+
+    public function testUninstall_ConfigNotFound()
+    {
+        $di = new \Box_Di();
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $model = new \Model_ExtensionMeta();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->with('ExtensionMeta');
+        $dbMock->expects($this->never())
+            ->method('trash');
+
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+        $result = $this->service->uninstall();
+        $this->assertTrue($result);
+    }
 }
  

@@ -147,4 +147,14 @@ class Service implements InjectionAwareInterface
         return false;
     }
 
+    public function uninstall()
+    {
+        $model = $this->di['db']->findOne('ExtensionMeta', 'extension = :ext AND meta_key = :key',
+            array(':ext'=>'mod_paidsupport', ':key'=>'config'));
+        if ($model instanceof \Model_ExtensionMeta) {
+            $this->di['db']->trash($model);
+        }
+        return true;
+    }
+
 }
