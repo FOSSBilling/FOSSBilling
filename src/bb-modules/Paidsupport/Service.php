@@ -141,10 +141,6 @@ class Service implements InjectionAwareInterface
     {
         $helpdeskConfig = $this->getPaidHelpdeskConfig();
 
-        if (empty ($helpdeskConfig)) {
-            return true;
-        }
-
         if (isset($helpdeskConfig[$id]) && $helpdeskConfig[$id] == 1){
             return true;
         }

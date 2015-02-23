@@ -510,7 +510,31 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->willReturn($helpdeskConfig);
 
         $result = $paidSupportServiceMock->hasHelpdeskPaidSupport($helpdeskId);
-        $this->assertTrue($result);
+        $this->assertFalse($result);
+    }
+
+    public function testPaidSupportAppliedForAllHelpdesks_AllHelpdesksAreNotChecked()
+    {
+        $di = new \Box_Di();
+        $helpdeskId = 2;
+        $helpdeskId1 = 3;
+        $helpdeskConfig = array(
+            $helpdeskId => 0,
+            $helpdeskId1 => 0
+        );
+        $paidSupportConfig = array(
+            'helpdesk' => $helpdeskConfig,
+        );
+
+        $di['mod_config'] = $di->protect(function($serviceName) use ($paidSupportConfig){
+            if ($serviceName == 'Paidsupport'){
+                return $paidSupportConfig;
+            }
+        });
+
+        $this->service->setDi($di);
+        $result = $this->service->hasHelpdeskPaidSupport($helpdeskId);
+        $this->assertFalse($result);
     }
 }
  
