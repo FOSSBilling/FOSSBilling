@@ -576,5 +576,25 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $result = $this->service->uninstall();
         $this->assertTrue($result);
     }
+
+    public function testInstall()
+    {
+        $di = new \Box_Di();
+
+        $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('setConfig')
+            ->willReturn(true);
+
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($extensionServiceMock){
+            if ($serviceName == 'Extension'){
+                return $extensionServiceMock;
+            }
+        });
+
+        $this->service->setDi($di);
+        $result = $this->service->install();
+        $this->assertTrue($result);
+    }
 }
  

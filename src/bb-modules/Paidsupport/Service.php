@@ -112,7 +112,8 @@ class Service implements InjectionAwareInterface
     public function getErrorMessage()
     {
         $config = $this->di['mod_config']('Paidsupport');
-        return isset($config['error_msg']) ? $config['error_msg'] : 'Configure paid support module!';
+        $errorMessage = isset($config['error_msg']) ? $config['error_msg'] : '';
+        return strlen(trim($errorMessage)) > 0 ? $errorMessage : 'Configure paid support module!';
     }
 
     public function getPaidHelpdeskConfig()
@@ -154,6 +155,17 @@ class Service implements InjectionAwareInterface
         if ($model instanceof \Model_ExtensionMeta) {
             $this->di['db']->trash($model);
         }
+        return true;
+    }
+
+    public function install()
+    {
+        $extensionService = $this->di['mod_service']('Extension');
+        $defaultConfig = array(
+            'ext' => 'mod_paidsupport',
+            'error_msg' => 'Insufficient funds'
+        );
+        $extensionService->setConfig($defaultConfig);
         return true;
     }
 
