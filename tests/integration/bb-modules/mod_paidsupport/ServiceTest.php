@@ -28,18 +28,20 @@ class Box_Mod_Paidsupport_ServiceTest extends ApiTestCase
             $this->api_admin->client_balance_add_funds(array('id' => 1, 'amount' => $ticketPrice, 'description' => 'Added from PHPUnit'));
         }
 
+        $helpdeskId = 1;
         $beforeBalance = $this->api_client->client_balance_get_total();
         $data = array(
             'ext'           =>  'mod_paidsupport',
             'ticket_price'  =>  $ticketPrice,
             'error_msg'     =>  'Insufficient amount in balance',
+            'helpdesk'      => array($helpdeskId => 1),
         );
 
         $this->api_admin->extension_config_save($data);
         $data = array(
             'subject'               =>  'Subject',
             'content'               =>  'content',
-            'support_helpdesk_id'   =>  '1',
+            'support_helpdesk_id'   =>  $helpdeskId,
 
             'order_id'              =>  '1',
             'task'                  =>  'cancel',
@@ -145,10 +147,13 @@ class Box_Mod_Paidsupport_ServiceTest extends ApiTestCase
 
         $errorMessage = 'Insufficient amount in balance';
 
+        $helpdeskId = 1;
+
         $data = array(
             'ext'           =>  'mod_paidsupport',
             'ticket_price'  =>  $ticketPrice,
             'error_msg'     =>  $errorMessage,
+            'helpdesk'      => array($helpdeskId => 1),
         );
 
         $this->api_admin->extension_config_save($data);

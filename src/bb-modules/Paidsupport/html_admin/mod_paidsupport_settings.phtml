@@ -24,21 +24,20 @@
         <div class="rowElem">
             <label>{% trans 'Ticket price:' %}</label>
             <div class="formRight">
-                <input type="text" name="ticket_price" value="{{ params.ticket_price }}" />
+                <input type="text" name="ticket_price" value="{{ params.ticket_price }}" required="required"/>
             </div>
             <div class="fix"></div>
         </div>
         <div class="rowElem">
             <label>{% trans 'Error message:' %}</label>
             <div class="formRight">
-                <input type="text" name="error_msg" value="{{ params.error_msg }}" />
+                <input type="text" name="error_msg" value="{{ params.error_msg }}" required="required" />
             </div>
             <div class="fix"></div>
         </div>
             <div class="tab_content nopadding" id="tab-addons">
                 <div class="help">
                     <h5>{% trans 'Set paid supoprt for helpdesks: ' %}</h5>
-                    <p>{% trans 'Paid support applied for all of them if nothing is selected' %}</p>
                 </div>
                 <table class="tableStatic wide">
                     <tbody>
