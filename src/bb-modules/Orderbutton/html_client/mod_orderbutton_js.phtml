@@ -108,8 +108,8 @@
             var pWidth = jQuery(window).width();
             var pTop = jQuery(window).scrollTop();
             var eWidth = _this.iframeElem.width();
-            this.iframeElem.css('top', pTop + 100 + 'px');
-            this.iframeElem.css('left', parseInt((pWidth / 2) - (eWidth / 2)) + 'px');
+            _this.iframeElem.css('top', pTop + 100 + 'px');
+            _this.iframeElem.css('left', parseInt((pWidth / 2) - (eWidth / 2)) + 'px');
         });
     };
 
@@ -170,25 +170,6 @@
             this.createIframe();
         }
     };
-
-    docReady(function() {
-        if (typeof jQuery === "undefined") {
-            (function(d, script) {
-                script = d.createElement('script');
-                script.type = 'text/javascript';
-                script.async = true;
-                script.onload = function(){
-                    ob = new orderbutton();
-                    ob.attachEvents();
-                };
-                script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js';
-                d.getElementsByTagName('head')[0].appendChild(script);
-                }(document));
-        }else{
-            ob = new orderbutton();
-            ob.attachEvents();
-        }
-    });
     (function(funcName, baseObj) {
         // The public function name defaults to window.docReady
         // but you can pass in your own object and own function name and those will be used
@@ -258,3 +239,22 @@
             }
         }
     })("docReady", window);
+
+    docReady(function() {
+        if (typeof jQuery === "undefined") {
+            (function(d, script) {
+                script = d.createElement('script');
+                script.type = 'text/javascript';
+                script.async = true;
+                script.onload = function(){
+                    ob = new orderbutton();
+                    ob.attachEvents();
+                };
+                script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js';
+                d.getElementsByTagName('head')[0].appendChild(script);
+            }(document));
+        }else{
+            ob = new orderbutton();
+            ob.attachEvents();
+        }
+    });
