@@ -25,6 +25,9 @@
                         <h1>{{ product.title }}</h1>
                         {{ product.description|bbmd }}
                     </div>
+                    {% if product.form_id and guest.extension_is_on({"mod":"formbuilder"}) %}
+                        {% include 'mod_formbuilder_build.phtml' with product %}
+                    {% endif %}
                 </div>
             </div>
             <div class="grid_4 omega">
