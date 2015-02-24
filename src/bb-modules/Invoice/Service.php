@@ -221,6 +221,7 @@ class Service implements InjectionAwareInterface
             'address'   => !empty($row['seller_address']) ? $row['seller_address'] : trim($c['address_1'] .' '. $c['address_2'] .' '. $c['address_2']),
             'phone'     => !empty($row['seller_phone']) ? $row['seller_phone'] : $c['tel'],
             'email'     => !empty($row['seller_email']) ? $row['seller_email'] : $c['email'],
+            'account_number' => !empty($c['account_number']) ? $c['account_number'] : null,
         );
 
         if($identity instanceof \Model_Admin) {
