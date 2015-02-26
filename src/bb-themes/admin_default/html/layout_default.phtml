@@ -34,7 +34,19 @@
 <div id="topNav">
     <div class="fixed">
         <div class="wrapper">
-            <div class="welcome"><a href="{{ 'staff/profile'|alink }}" title=""><img src="{{ profile.email|gravatar }}?size=20" alt="{{ profile.name }}" /></a><span>{% trans 'Hi,' %} {{ profile.name }}!</span></div>
+            <div class="welcome">
+                <a href="{{ 'staff/profile'|alink }}" title=""><img src="{{ profile.email|gravatar }}?size=20" alt="{{ profile.name }}" /></a><span>{% trans 'Hi,' %} {{ profile.name }}!</span>
+                {% set languages = guest.extension_languages %}
+                {% if languages|length > 1 %}
+                <span>
+                    <select name="lang" class="language_selector" style="background-color: #262b2f; color:white;">
+                        {% for lang in languages %}
+                        <option value="{{ lang }}" class="lang_{{ lang }}">{{ lang|trans }}</option>
+                        {% endfor %}
+                    </select>
+                </span>
+                {% endif %}
+            </div>
             <div class="userNav">
                 <ul>
                     <li class="loading" style="display:none;"><img src="images/loader.gif" alt="" /><span>{% trans 'Loading ...' %}</span></li>

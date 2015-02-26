@@ -2,6 +2,9 @@ Release 4.16
 ------------------------------------------------------------------------------
 * Compatibility with MySQL 5.6 Datetime values updated to meet MySQL STRICT_TRANS_TABLES mode rules.
 * Fixed add funds issue when admin marked invoice as paid.
+* updated translation:
+  * merged admin.po into messages.po 
+  * added language selector in admin area
 
 Release 4.15 (2015-02-19)
 ------------------------------------------------------------------------------
