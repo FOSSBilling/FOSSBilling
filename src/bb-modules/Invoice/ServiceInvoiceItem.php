@@ -113,7 +113,16 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         if($item->type == \Model_InvoiceItem::TYPE_DEPOSIT) {
-            //@todo - do nothing on deposit transaction
+            $clientService = $this->di['mod_service']('Client');
+
+            $invoice = $this->di['db']->findOne('Invoice', $item->invoice_id);
+            $client = $this->di['db']->findOne('Client', $invoice->client_id);
+            $data = array(
+                'type' => 'invoice',
+                'rel_id' => $item->invoice_id,
+            );
+            $clientService->addFunds($client, $this->getTotal($item), $item->title, $data);
+
             $this->markAsExecuted($item);
         }
 
