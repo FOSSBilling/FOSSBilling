@@ -256,29 +256,27 @@ class WebToPay {
      */
     public static function throwResponseError($code) {
         $errors = array(
-            '0x1'    => self::_('mokėjimo suma per maža'),
-            '0x2'    => self::_('mokėjimo suma per didelė'),
-            '0x3'    => self::_('nurodyta valiuta neaptarnaujama'),
-            '0x4'    => self::_('nėra sumos arba valiutos'),
-            '0x6'    => self::_('klaidos kodas nebenaudojamas'),
-            '0x7'    => self::_('išjungtas testavimo režimas'),
-            '0x8'    => self::_('jūs uždraudėte šį mokėjimo būdą'),
-            '0x9'    => self::_('blogas "paytext" kintamojo kodavimas (turi būti utf-8)'),
-            '0x10'   => self::_('tuščias arba neteisingai užpildytas "orderid"'),
-            '0x11'   => self::_('mokėjimas negalimas, kol projektas nepatvirtintas arba jeigu jis yra blokuotas'),
-            '0x12'   => self::_('negautas "projectid" parametras, nors jis yra privalomas'),
-            '0x13'   => self::_('"accepturl", "cancellurl" arba "callbacurl" skiriasi nuo projekte patvirtintų adresų'),
-            '0x14'   => self::_('blogai sugeneruotas paraštas ("sign" parametras)'),
-            '0x15'   => self::_('klaidingi kai kurie iš perduotų parametrų'),
-            '0x15x0' => self::_('neteisingas vienas iš šių parametrų: cancelurl, accepturl, callbackurl'),
-            '0x15x1' => self::_('neteisingas parametras: time_limit'),
+            '0x1'   => self::_('Payment amount is too small.'),
+            '0x2'   => self::_('Payment amount is too big.'),
+            '0x3'   => self::_('Selected currency is not available.'),
+            '0x4'   => self::_('Amount or currency is missing.'),
+            '0x6'   => self::_('projectId is missing or such ID does not exist.'),
+            '0x7'   => self::_('Testing mode is turned off, but you have still tried to make a test payment.'),
+            '0x8'   => self::_('You have banned this way of payment.'),
+            '0x9'   => self::_('Coding of variable "paytext" is not suitable (has to be utf-8).'),
+            '0x10'  => self::_('Empty or not correctly filled "orderID".'),
+            '0x11'  => self::_('Project has not been checked by our administrator.'),
+            '0x13'  => self::_('Accepturl, cancellurl, callbacurl or referer base address differs from the addresses confirmed in the project.'),
+            '0x14'  => self::_('Invalid "sign" parameter.'),
+            '0x15x0'  => self::_('At least one of these parameters is incorrect: cancelurl, accepturl, callbackurl.'),
+            '0x15x1'  => self::_('Parameter time_limit is not valid (wrong format or not valid value)'),
         );
 
         if (isset($errors[$code])) {
             $msg = $errors[$code];
         }
         else {
-            $msg = self::_('Nenumatyta klaida');
+            $msg = self::_('Unknown error');
         }
 
         throw new WebToPayException($msg);
