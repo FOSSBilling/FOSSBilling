@@ -2,15 +2,11 @@
 
 require_once dirname(__FILE__) . '/../src/bb-load.php';
 
-echo "Caching admin templates".PHP_EOL;
+echo "Caching templates".PHP_EOL;
 $dirs = glob(BB_PATH_MODS.'/*/html_admin');
-$dirs[] = BB_PATH_THEMES . '/admin_default/html';
-genCache($dirs, "/tmp/bb_admin_cache/");
-
-echo "Caching client templates".PHP_EOL;
-$dirs = glob(BB_PATH_MODS.'/*/html_client');
-$dirs[] = BB_PATH_THEMES . '/huraga/html';
-genCache($dirs, "/tmp/bb_client_cache/");
+$dirs = array_merge($dirs, glob(BB_PATH_MODS . '/*/html_client'));
+$dirs = array_merge($dirs, glob(BB_PATH_THEMES . '/*/html'));
+genCache($dirs, "/tmp/bb-translations/");
 
 function genCache($dirs, $tmpDir)
 {
@@ -22,7 +18,7 @@ function genCache($dirs, $tmpDir)
     ));
     $twig->addExtension(new Twig_Extensions_Extension_I18n());
     $twig->addExtension(new Twig_Extensions_Extension_Debug());
-    $twig->addExtension(new Twig_Extensions_Extension_BB());
+    $twig->addExtension(new Box_TwigExtensions());
 
     foreach($dirs as $tplDir) {
         if(is_link(pathinfo($tplDir, PATHINFO_DIRNAME))) {
