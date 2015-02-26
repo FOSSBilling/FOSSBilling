@@ -18,6 +18,6 @@ find . -iname "*.php" | xargs xgettext --omit-header --output=$BB_POT --join-exi
 
 echo "Generating messages.pot from php files"
 cd $APPDIR/src
-find . -iname '*.php' -not -path './bb-vendor/*' | xargs xgettext --omit-header --output=$BB_POT --join-existing --from-code=UTF-8 --no-location --language=PHP --keyword=__ --keyword=Box_Exception --keyword=gettext -x $BB_POT_EXCLUDE
+find . -iname '*.php' -not -path './bb-vendor/*' | xargs xgettext --omit-header --output=$BB_POT --join-existing --from-code=UTF-8 --no-location --language=PHP --keyword=__ --keyword=Box_Exception --keyword=Payment_Exception --keyword=gettext -x $BB_POT_EXCLUDE
 echo "Joining gettext_include.pot file to messages.pot"
 msgcat $BB_POT_INCLUDE $BB_POT --output=$BB_POT

@@ -6100,3 +6100,153 @@ msgstr ""
 
 msgid "Solved tickets"
 msgstr ""
+
+msgid ""
+"Payment gateway \"AlertPay\" is not configured properly. Please update "
+"configuration parameter \"AlertPay Email address\" at \"Configuration -> "
+"Payments\"."
+msgstr ""
+
+msgid ""
+"Payment gateway \"AlertPay\" is not configured properly. Please update "
+"configuration parameter \"IPN Security Code\" at \"Configuration -> Payments"
+"\"."
+msgstr ""
+
+msgid "Not implemented yet"
+msgstr ""
+
+msgid ""
+"Payment gateway \"AliPay\" is not configured properly. Please update "
+"configuration parameter \"Partner ID\" at \"Configuration -> Payment gateways"
+"\"."
+msgstr ""
+
+msgid ""
+"Payment gateway \"AliPay\" is not configured properly. Please update "
+"configuration parameter \"Security Code\" at \"Configuration -> Payment "
+"gateways\"."
+msgstr ""
+
+msgid ""
+"Payment gateway \"AliPay\" is not configured properly. Please update "
+"configuration parameter \"Seller email\" at \"Configuration -> Payment "
+"gateways\"."
+msgstr ""
+
+msgid "AliPay does not support recurrent payments"
+msgstr ""
+
+msgid "cURL extension is not enabled"
+msgstr ""
+
+msgid "SimpleXml extension is not enabled"
+msgstr ""
+
+msgid ""
+"Payment gateway \"Authorize.net\" is not configured properly. Please update "
+"configuration parameter \"API Login ID\" at \"Configuration -> Payments\"."
+msgstr ""
+
+msgid ""
+"Payment gateway \"Authorize.net\" is not configured properly. Please update "
+"configuration parameter \"Transaction Key\" at \"Configuration -> Payments\"."
+msgstr ""
+
+msgid ""
+"Payment gateway \"Authorize.net\" is not configured properly. Please update "
+"configuration parameter \"MD5 Hash Value\" at \"Configuration -> Payments\"."
+msgstr ""
+
+msgid "Authorize.net unknown x_response_code"
+msgstr ""
+
+msgid "IPN is not valid"
+msgstr ""
+
+msgid "Shop ID is missing in gateway configuration"
+msgstr ""
+
+msgid "Secret key is missing in gateway configuration"
+msgstr ""
+
+msgid "Interkassa payment gateway do not support recurrent payments"
+msgstr ""
+
+msgid "PHP Curl extension must be enabled in order to use PayPal gateway"
+msgstr ""
+
+msgid ""
+"Payment gateway \"PayPal\" is not configured properly. Please update "
+"configuration parameter \"PayPal Email address\" at \"Configuration -> "
+"Payments\"."
+msgstr ""
+
+msgid "PHP Curl extension must be enabled in order to use Payza gateway"
+msgstr ""
+
+msgid ""
+"Payment gateway \"Payza\" is not configured properly. Please update "
+"configuration parameter \"Payza Email address\" at \"Configuration -> "
+"Payments\"."
+msgstr ""
+
+msgid ""
+"Payment gateway \"Payza\" is not configured properly. Please update "
+"configuration parameter \"IPN Security Code\" at \"Configuration -> Payments"
+"\"."
+msgstr ""
+
+msgid ""
+"Payment gateway \"2Checkout\" is not configured properly. Please update "
+"configuration parameter \"Vendor account number\" at \"Configuration -> "
+"Payments\"."
+msgstr ""
+
+msgid ""
+"Payment gateway \"2Checkout\" is not configured properly. Please update "
+"configuration parameter \"Secret word\" at \"Configuration -> Payments\"."
+msgstr ""
+
+msgid "2Checkout IPN is not valid"
+msgstr ""
+
+msgid "Invoice id could not be determined for this transaction"
+msgstr ""
+
+msgid ""
+"Payment gateway \"WebMoney\" is not configured properly. Please update "
+"configuration parameter \"Purse\" at \"Configuration -> Payment gateways > "
+"WebMoney\"."
+msgstr ""
+
+msgid "WebMoney IPN is not valid"
+msgstr ""
+
+msgid ""
+"Payment gateway \"WebToPay\" is not configured properly. Please update "
+"configuration parameter \"Project ID\" at \"Configuration -> Payments\"."
+msgstr ""
+
+msgid ""
+"Payment gateway \"WebToPay\" is not configured properly. Please update "
+"configuration parameter \"Sign Password\" at \"Configuration -> Payments\"."
+msgstr ""
+
+msgid "WebToPay payment gateway do not support recurrent payments"
+msgstr ""
+
+msgid "Return URL for payment gateway was not set"
+msgstr ""
+
+msgid "Cancel URL for payment gateway was not set"
+msgstr ""
+
+msgid "IPN Notification URL for payment gateway was not set"
+msgstr ""
+
+msgid "IPN redirect URL for payment gateway was not set"
+msgstr ""
+
+msgid "Payment adapter class did not implement configuration options method"
+msgstr ""
