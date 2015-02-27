@@ -73,7 +73,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $expected = array(
             array(
                 'locale' => 'en_US',
-                'title' => 'English',
+                'title' => 'English (United States)',
             ),
         );
 
