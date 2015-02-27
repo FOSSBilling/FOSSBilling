@@ -20,6 +20,7 @@
     <link rel='stylesheet' type='text/css' href="{{ ('css/huraga-' ~ settings.color_scheme ~ '.css') | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ 'css/plugins/jquery.jgrowl.css' | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ 'css/logos.css' | asset_url }}">
+    <link rel='stylesheet' type='text/css' href="{{ 'css/flags16.css' | asset_url }}">
 
     <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}">
     <link rel="apple-touch-icon-precomposed" sizes="114x114" href="{{ 'img/icons/apple-touch-icon-114-precomposed.png' | asset_url }}">
@@ -48,25 +49,29 @@
 <div id="wrapper">
     <header class="container" id="header">
     <nav>
-        <ul>
-            {% set currentLang = guest.system_locale %}
+        <ul class="f16">
             {% set languages = guest.extension_languages %}
             {% if languages|length > 1 %}
+            {% set currentLang = guest.system_locale %}
+            {% set countryCode = currentLang | slice(3, 2) %}
                 <li>
                     <div class="btn-group">
                         <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-                            {{ currentLang }}
+                            <span class="flag  {{ countryCode | lower }}"></span>
+                            {{ countryCode }}
                             <span class="caret"></span>
                         </a>
                         <ul class="dropdown-menu">
                             {% for lang in languages %}
-                                {% if lang != currentLang %}
-                                    <li class="language_selector" data-language-code="{{ lang }}"><a href="javascript:;"> {{ lang | trans }}</a></li>
+                            {% set countryCode = lang | slice(3, 2) %}
+                            {% if lang != currentLang %}
+                                    <li class="language_selector" data-language-code="{{ lang }}"><a href="javascript:;"> <span class="flag {{ countryCode | lower }}"></span> {{ lang | trans }}</a></li>
                                 {% endif %}
                             {% endfor %}
                         </ul>
                     </div>
                 </li>
+
             {% endif %}
 
             {% if settings.top_menu_dashboard %}
