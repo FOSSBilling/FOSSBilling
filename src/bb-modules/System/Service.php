@@ -149,42 +149,36 @@ class Service
         $path = BB_PATH_LANGS;
         if ($handle = opendir($path)) {
             while (false !== ($entry = readdir($handle))) {
-                if ($entry != ".svn" && $entry != "." && $entry != ".." && is_dir($path.DIRECTORY_SEPARATOR.$entry)) {
+                if ($entry != ".svn" && $entry != "." && $entry != ".." && is_dir($path . DIRECTORY_SEPARATOR . $entry)) {
                     $locales[] = $entry;
                 }
             }
             closedir($handle);
         }
         sort($locales);
-        if(!$deep){
+        if (!$deep) {
             return $locales;
         }
 
         $details = array();
 
-        foreach($locales as $locale) {
-            $file = $path.'/'.$locale.'/LC_MESSAGES/messages.po';
-            if(file_exists($file)) {
-                $f = fopen($file, 'r');
-                $project_info = fread($f, 400);
-                fclose($f);
+        foreach ($locales as $locale) {
+            $file = $path . '/' . $locale . '/LC_MESSAGES/messages.po';
 
-                $lines = explode(PHP_EOL, $project_info);
-                foreach($lines as $line) {
-                    if(strpos($line, 'Language:')) {
-                        $l = str_replace('"Language:', '', $line);
-                        $l = str_replace('\n"', '', $l);
-                        $l = trim($l);
-
-                        $details[] = array(
-                            'locale' => $locale,
-                            'title' => $l,
-                        );
-                        break;
-                    }
+            if (file_exists($file)) {
+                $lNames = $this->getLocales();
+                if (isset($lNames[$locale]) && !empty($lNames[$locale])) {
+                    $title = $lNames[$locale];
+                }else{
+                    $title = null;
                 }
+                $details[] = array(
+                    'locale' => $locale,
+                    'title'  => $title,
+                );
             }
         }
+
         return $details;
     }
 
