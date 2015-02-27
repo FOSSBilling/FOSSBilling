@@ -47,9 +47,28 @@
 
 <div id="wrapper">
     <header class="container" id="header">
-
     <nav>
         <ul>
+            {% set currentLang = guest.system_locale %}
+            {% set languages = guest.extension_languages %}
+            {% if languages|length > 1 %}
+                <li>
+                    <div class="btn-group">
+                        <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                            {{ currentLang }}
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% for lang in languages %}
+                                {% if lang != currentLang %}
+                                    <li class="language_selector" data-language-code="{{ lang }}"><a href="javascript:;"> {{ lang | trans }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </li>
+            {% endif %}
+
             {% if settings.top_menu_dashboard %}
             <li>
                 <a href="{{ ''|link }}" class="show-tip" title="{% trans 'Dashboard' %}">{% trans 'Dashboard' %}</a>
