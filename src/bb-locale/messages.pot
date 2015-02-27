@@ -1,3 +1,19 @@
+# en_US translation of BoxBilling Application
+# Copyright 2011 -2015 BoxBilling <info@boxbilling.com>
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: 4\n"
+"POT-Creation-Date: 2015-02-27 08:07+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: BoxBilling TM <info@boxbilling.com>\n"
+"Language-Team: BoxBilling TM <info@boxbilling.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
 msgid "sq_AL"
 msgstr "Albanian (Albania)"
 
