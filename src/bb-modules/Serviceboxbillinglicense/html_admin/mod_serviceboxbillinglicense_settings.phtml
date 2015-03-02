@@ -23,7 +23,7 @@
         </div>
         
         {% set params = admin.serviceboxbillinglicense_config_get %}
-        <form method="post" action="{{ 'api/admin/serviceboxbillinglicense/config_update'|link }}class="mainForm api-form" data-api-msg="{% trans 'Configuration updated' %}">
+        <form method="post" action="{{ 'api/admin/serviceboxbillinglicense/config_update'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Configuration updated' %}">
             <fieldset>
                 <div class="rowElem noborder">
                     <label class="topLabel"><a href="http://www.boxbilling.com/login" target="_blank">Login to BoxBilling</a> and get your API key at <a href="http://www.boxbilling.com/me" target="_blank">profile page</a>.</label>
