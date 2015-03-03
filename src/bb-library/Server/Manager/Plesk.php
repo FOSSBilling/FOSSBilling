@@ -124,10 +124,11 @@ class Server_Manager_Plesk extends Server_Manager
     	}
 
     	$id = $this->_creatClient($a);
+        $client = $a->getClient();
     	if (!$id) {
     		throw new Server_Exception('Failed to create new account');
     	} else {
-    		$a->setId((string)$id);
+            $client->setId((string)$id);
     	}
 
     	$this->_setPermissions($a);
@@ -238,10 +239,11 @@ class Server_Manager_Plesk extends Server_Manager
     public function changeAccountPackage(Server_Account $a, Server_Package $p)
     {
     	$id = $this->_modifyClient($a);
+        $client = $a->getClient();
     	if (!$id) {
     		throw new Server_Exception('Can\'t modify client');
     	} else {
-    		$a->setId($id);
+            $client->setId($id);
     	}
 
 		$this->_setPermissions($a);
@@ -261,7 +263,7 @@ class Server_Manager_Plesk extends Server_Manager
 
     public function changeAccountPassword(Server_Account $a, $new)
     {
-    	if ($a->reseller) {
+    	if ($a->getReseller()) {
     		$type = 'reseller';
     		$genInfo = 'gen-info';
     	} else {
@@ -400,7 +402,7 @@ class Server_Manager_Plesk extends Server_Manager
     					'status'			=>	0,					//active
     					'phone'				=>	$client->getTelephone(),
     					'fax'				=>	$client->getFax(),
-    					'email'				=>	$a->getEmail(),
+    					'email'				=>	$client->getEmail(),
     					'address'			=>	$client->getAddress1(),
     					'city'				=>	$client->getCity(),
     					'state'				=>	$client->getState(),
@@ -465,10 +467,11 @@ class Server_Manager_Plesk extends Server_Manager
     		$type = 'client';
     	}
 
+        $client = $a->getClient();
     	$params = array(
     		'client'	=>	array(
     			'ippool_add_ip'	=>	array(
-    				'client_id'		=>	$a->getId(),
+    				'client_id'		=>	$client->getId(),
     				'ip_address'	=>	$a->getIp(),
     			),
     		),
@@ -494,7 +497,7 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     private function _setLimits(Server_Account $a) {
-    	if ($a->reseller) {
+    	if ($a->getReseller()) {
     		$type = 'reseller';
     	} else {
     		$type = 'client';
@@ -569,7 +572,7 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     private function _setPermissions(Server_Account $a) {
-    	if ($a->reseller) {
+    	if ($a->getReseller()) {
     		$type = 'reseller';
     	} else {
     		$type = 'client';
@@ -628,7 +631,7 @@ class Server_Manager_Plesk extends Server_Manager
     						),	//The manage_quota node is optional. It allows/disallows the client to change the hard disk limit. Data type: Boolean.
     						'11permission'	=>	array(
     							'name'	=>	'manage_quota',
-    							'value'	=>	$a->reseller ? 'true' : 'false',
+    							'value'	=>	$a->getReseller() ? 'true' : 'false',
     						),	//The manage_not_chroot_shell node is optional. It allows/disallows the client to manage shell without changing the mount point of the UNIX root. Data type: Boolean.
     						'12permission'	=>	array(
     							'name'	=>	'manage_not_chroot_shell',
@@ -677,13 +680,14 @@ class Server_Manager_Plesk extends Server_Manager
 
     private function _addDomain(Server_Account $a) {
     	$p = $a->getPackage();
+        $client = $a->getClient();
     	$params = array(
     		'domain'	=>	array(
     			'add'	=>	array(
     				'gen_setup'	=>	array(
     					'name'			=>	$a->getDomain(),	//The name node is required. It holds the domain name. Data type: domainName (string, 1 to 255 characters long).
     					'status'		=>	0,					//The status node is required. It holds the current status of the specified domain. Data type: objectStatus (bitmask, plesk_common.xsd). Allowed values: 0 (active) | 4 (under backup/restore) | 16 (disabled by Plesk Administrator) | 64 (disabled by Plesk Client) | 256 (expired).
-    					'owner-id'		=>	$a->getId(),		//The client_id node is required. It holds the identifier of Plesk Client who owns this domain account. Data type: id_type (integer).
+    					'owner-id'		=>	$client->getId(),		//The client_id node is required. It holds the identifier of Plesk Client who owns this domain account. Data type: id_type (integer).
     					'htype'			=>	'vrt_hst',			//The htype node is required. It specifies the type of hosting set on the domain. Data type: DomainHType (string). Allowed values: vrt_hst | std_fwd | frm_fwd | none.
     					'ip_address'	=>	$a->getIp(),
     					//'owner-login'	=>	$a->getUsername(),
@@ -908,7 +912,7 @@ class Server_Manager_Plesk extends Server_Manager
     						'status'			=>	0,					//active
     						'phone'				=>	$client->getTelephone(),
     						'fax'				=>	$client->getFax(),
-    						'email'				=>	$a->getEmail(),
+    						'email'				=>	$client->getEmail(),
     						'address'			=>	$client->getAddress1(),
     						'city'				=>	$client->getCity(),
     						'state'				=>	$client->getState(),
@@ -941,6 +945,7 @@ class Server_Manager_Plesk extends Server_Manager
 
     private function _modifyDomain(Server_Account $a) {
     	$p = $a->getPackage();
+        $client = $a->getClient();
     	$params = array(
     		'domain'	=>	array(
     			'set'	=>	array(
@@ -951,7 +956,7 @@ class Server_Manager_Plesk extends Server_Manager
     					'gen_setup'	=>	array(
     						'name'			=>	$a->getDomain(),	//The name node is required. It holds the domain name. Data type: domainName (string, 1 to 255 characters long).
     						'status'		=>	0,					//The status node is required. It holds the current status of the specified domain. Data type: objectStatus (bitmask, plesk_common.xsd). Allowed values: 0 (active) | 4 (under backup/restore) | 16 (disabled by Plesk Administrator) | 64 (disabled by Plesk Client) | 256 (expired).
-    						'owner-id'		=>	$a->getId(),		//The client_id node is required. It holds the identifier of Plesk Client who owns this domain account. Data type: id_type (integer).
+    						'owner-id'		=>	$client->getId(),		//The client_id node is required. It holds the identifier of Plesk Client who owns this domain account. Data type: id_type (integer).
     						'ip_address'	=>	$a->getIp(),		//The dns_ip_address node is optional. It holds the domain's IP address shown in the DNS record. Data type: ip_address (string, pattern: ([01]?\p{Nd}{1,2}|2([0-4]\p{Nd}|5[0-5]))(\.([01]?\p{Nd}{1,2}|2([0-4]\p{Nd}|5[0-5]))){3}).
     					),
     					'hosting'	=>	array(
@@ -1004,10 +1009,11 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     private function _changeIpType(Server_Account $a) {
+        $client = $a->getClient();
     	$params = array(
     		'reseller'	=>	array(
     			'ippool-set-ip'	=>	array(
-    				'reseller-id'	=>	$a->getId(),
+    				'reseller-id'	=>	$client->getId(),
     				'filter'	=>	array(
     					'ip-address'	=>	$a->getIp(),
     				),

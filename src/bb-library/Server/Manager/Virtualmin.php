@@ -283,10 +283,11 @@ class Server_Manager_Virtualmin extends Server_Manager
     	}
 
     	$p = $a->getPackage();
+        $client = $a->getClient();
     	$params = array(
     		'name'			=>	$a->getUsername(),
     		'pass'			=>	$a->getPassword(),
-    		'email'			=>	$a->getEmail(),
+    		'email'			=>	$client->getEmail(),
     		'max-doms'		=>	($p->getMaxDomains() == 'unlimited') ? 'UNLIMITED' : (int)$p->getMaxDomains(),
     		'max-aliasdoms'	=>	($p->getMaxDomains() == 'unlimited') ? 'UNLIMITED' : (int)$p->getMaxDomains(),
     		'max-realdoms'	=>	($p->getMaxDomains() == 'unlimited') ? 'UNLIMITED' : (int)$p->getMaxDomains(),
@@ -368,10 +369,11 @@ class Server_Manager_Virtualmin extends Server_Manager
     private function _createUser(Server_Account $a)
     {
     	$p = $a->getPackage();
+        $client = $a->getClient();
     	$params = array(
     		'domain'			=>	$a->getDomain(),
     		'pass'				=>	$a->getPassword(),
-    		'email'				=>	$a->getEmail(),
+    		'email'				=>	$client->getEmail(),
     		'user'				=>	$a->getUsername(),
     		'dns'				=>	'',
     		'web'				=>	'',
@@ -527,10 +529,11 @@ class Server_Manager_Virtualmin extends Server_Manager
     private function _modifyDomain(Server_Account $a)
     {
     	$p = $a->getPackage();
+        $client = $a->getClient();
     	$params = array(
     		'domain'	=>	$a->getDomain(),
     		'pass'		=>	$a->getPassword(),
-    		'email'		=>	$a->getEmail(),
+    		'email'		=>	$client->getEmail(),
     	    'quota'		=>	($p->getQuota() == 'unlimited') ? 'UNLIMITED' : (int)$p->getMaxQuota(),
     		'uquota'	=>	($p->getQuota() == 'unlimited') ? 'UNLIMITED' : (int)$p->getMaxQuota(),
     		'bw'		=>	($p->getBandwidth() == 'unlimited') ? 'UNLIMITED' : (int)$p->getBandwidth(),
@@ -658,10 +661,11 @@ class Server_Manager_Virtualmin extends Server_Manager
     	}
 
 		$p = $a->getPackage();
+        $client = $a->getClient();
     	$params = array(
     		'name'			=>	$a->getUsername(),
     		'pass'			=>	$a->getPassword(),
-    		'email'			=>	$a->getEmail(),
+    		'email'			=>	$client->getEmail(),
     		'max-doms'		=>	($p->getMaxDomains() == 'unlimited') ? 'UNLIMITED' : $p->getMaxDomains(),
     		'max-aliasdoms'	=>	($p->getMaxDomains() == 'unlimited') ? 'UNLIMITED' : $p->getMaxDomains(),
     		'max-realdoms'	=>	($p->getMaxDomains() == 'unlimited') ? 'UNLIMITED' : $p->getMaxDomains(),
