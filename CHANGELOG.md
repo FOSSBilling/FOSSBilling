@@ -5,6 +5,7 @@ Release 4.16
 * updated translation:
   * merged admin.po into messages.po 
   * added language selector in admin area
+* updated blue pay payment adapter ipn validation check function
 
 Release 4.15 (2015-02-19)
 ------------------------------------------------------------------------------
