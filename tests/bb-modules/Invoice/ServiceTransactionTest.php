@@ -581,7 +581,6 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
     public function paymentsAdapterProvider_withprocessTransaction()
     {
         return array(
-            array('\Payment_Adapter_BluePay'),
             array('\Payment_Adapter_PayPalEmail'),
             array('\Payment_Adapter_TwoCheckout'),
             array('\Payment_Adapter_WebMoney'),
