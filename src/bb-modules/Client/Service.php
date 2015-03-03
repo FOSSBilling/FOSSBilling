@@ -602,4 +602,20 @@ class Service implements InjectionAwareInterface
 
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }
+
+    public static function onBeforeAdminExtensionConfigSave(\Box_Event $event)
+    {
+        $data = $event->getParameters();
+
+        $ext          = isset($data['ext']) ? $data['ext'] : null;
+        $confirmation = isset($data['require_email_confirmation']) ? $data['require_email_confirmation'] : 0;
+
+        if ($ext == 'mod_client' && $confirmation) {
+            $di = $event->getDi();
+            $db = $di['db'];
+
+            $result = $db->getAssoc('SELECT client_id FROM extension_meta WHERE extension = "mod_client" AND meta_key = "confirm_email"');
+            $db->exec(sprintf('UPDATE client SET email_approved = 1 WHERE email_approved != 1 AND id NOT IN (%s)', implode(", ", $result)));
+        }
+    }
 }
