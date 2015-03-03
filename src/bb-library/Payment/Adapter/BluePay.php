@@ -303,12 +303,23 @@ To find your ACCOUNT ID and SECRET KEY:
         if (empty($md5sign)){
             return true;
         }
+
+        return $md5sign == $this->genHashSign($data);
+    }
+
+    /**
+     * @param array $data
+     * @return string
+     */
+    private function genHashSign(array $data)
+    {
         $master_id = isset($data['master_id']) ? $data['master_id'] : '';
         $payment_account = isset($data['payment_account']) ? $data['payment_account'] : '';
-        $hashstr = $this->config['secret'] . $this->config['account_id'] . $data['trans_type'] .
-            $data['amount'] . $master_id . $data['name1'] . $payment_account;
 
-        return $md5sign == bin2hex( md5($hashstr, true) );
+        $hashstr = $this->config['secret'] . $this->config['account_id'] . $data['trans_type'] .
+        $data['amount'] . $master_id . $data['name1'] . $payment_account;
+
+        return bin2hex( md5($hashstr, true) );
     }
 
 }
