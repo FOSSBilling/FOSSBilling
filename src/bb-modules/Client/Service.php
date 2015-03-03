@@ -589,33 +589,39 @@ class Service implements InjectionAwareInterface
     public function authorizeClient($email, $plainTextPassword)
     {
         $model = $this->di['db']->findOne('Client', 'email = ? AND status = ?', array($email, \Model_Client::ACTIVE));
-        if ($model == null){
+        if ($model == null) {
             return null;
         }
 
         $config = $this->di['mod_config']('client');
         if (isset($config['require_email_confirmation']) && (int)$config['require_email_confirmation']) {
             if (!$model->email_approved) {
-                throw new \Box_Exception('Please check your mailbox and confirm email address.');
+                $meta = $this->di['db']->findOne('ExtensionMeta', ' extension = "mod_client" AND meta_key = "confirm_email" AND client_id = :client_id', array(':client_id' => $model->id));
+                if (!is_null($meta)) {
+                    throw new \Box_Exception('Please check your mailbox and confirm email address.');
+                } else {
+                    $this->sendEmailConfirmationForClient($model);
+                    throw new \Box_Exception('Confirmation email was sent to your email address. Please click on link in it in order to verify your email.');
+                }
             }
         }
 
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }
 
-    public static function onBeforeAdminExtensionConfigSave(\Box_Event $event)
+    private function sendEmailConfirmationForClient(\Model_Client $client)
     {
-        $data = $event->getParameters();
+        try {
+            $email                               = array();
+            $email['to_client']                  = $client->id;
+            $email['code']                       = 'mod_client_confirm';
+            $email['require_email_confirmation'] = true;
+            $email['email_confirmation_link']    = $this->generateEmailConfirmationLink($client->id);
 
-        $ext          = isset($data['ext']) ? $data['ext'] : null;
-        $confirmation = isset($data['require_email_confirmation']) ? $data['require_email_confirmation'] : 0;
-
-        if ($ext == 'mod_client' && $confirmation) {
-            $di = $event->getDi();
-            $db = $di['db'];
-
-            $result = $db->getAssoc('SELECT client_id FROM extension_meta WHERE extension = "mod_client" AND meta_key = "confirm_email"');
-            $db->exec(sprintf('UPDATE client SET email_approved = 1 WHERE email_approved != 1 AND id NOT IN (%s)', implode(", ", $result)));
+            $emailService = $this->di['mod_service']('email');
+            $emailService->sendTemplate($email);
+        } catch (\Exception $exc) {
+            error_log($exc->getMessage());
         }
     }
 }

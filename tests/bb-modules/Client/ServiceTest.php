@@ -1060,11 +1060,18 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
 
+        $extensionMetaModel = new \Model_ExtensionMeta();
+        $extensionMetaModel->loadBean(new \RedBeanPHP\OODBBean());
+
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
+        $dbMock->expects($this->at(0))
             ->method('findOne')
             ->with('Client')
             ->willReturn($clientModel);
+        $dbMock->expects($this->at(1))
+            ->method('findOne')
+            ->with('ExtensionMeta')
+            ->willReturn($extensionMetaModel);
 
         $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
         $authMock->expects($this->never())
