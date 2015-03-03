@@ -579,6 +579,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $data = array(
             'id'          => $id,
             'enabled'     => '1',
+            'category'    => 'Category',
             'action_code' => 'Action_code',
             'category'    => '',
             'subject'     => 'Subject',
