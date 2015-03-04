@@ -24,6 +24,9 @@
     <invoice id="4" client_id="1" hash="hash4" currency="USD" status="paid" due_at="2014-01-01 12:00:00" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     <invoice_item id="4" invoice_id="4" type="custom" rel_id="" task="activate" title="Payment for custom product" period="1Y" quantity="1" unit="years" price="8.99" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 
+    <invoice id="5" client_id="1" hash="hash5" currency="USD" status="unpaid" approved="1" due_at="2014-01-01 12:00:00" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
+    <invoice_item id="5" invoice_id="5" type="deposit" rel_id="" task="void" title="Add funds to account" quantity="1" price="25.00" charged="0" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
+
     <transaction id="1" invoice_id="1"  gateway_id="1" ip="123.123.123.123" validate_ipn="1" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00" ipn='{"get":{"bb_amount":"500", "bb_currency":"USD", "bb_id":"123"}}'/>
     <transaction id="2" invoice_id="1"  gateway_id="1" ip="123.123.123.123" validate_ipn="1" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00" ipn='{"get":{"bb_amount":"500", "bb_currency":"USD", "bb_id":"123"}}'/>
     <transaction id="3" invoice_id="2"  gateway_id="1" ip="123.123.123.123" validate_ipn="0" amount="500" currency="USD" txn_status="complete"  created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00" ipn='{"get":{"bb_amount":"500", "bb_currency":"USD", "bb_id":"1234"}}'/>

@@ -219,6 +219,10 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
                 'rel_id'        =>  $ipn['ik_trn_id'],
             );
 
+            if ($this->isIpnDuplicate($ipn)){
+                throw new Payment_Exception('IPN is duplicate');
+            }
+
             $clientService = $this->di['mod_service']('Client');
             $clientService->addFunds($clientModel, $bd['amount'], $bd['description'], $bd);
 
@@ -235,5 +239,29 @@ class Payment_Adapter_Interkassa extends Payment_AdapterAbstract implements \Box
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
         return true;
+    }
+
+    public function isIpnDuplicate(array $ipn)
+    {
+        $sql = 'SELECT id
+                FROM transaction
+                WHERE txn_id = :transaction_id
+                  AND txn_status = :transaction_status
+                  AND amount = :transaction_amount
+                LIMIT 2';
+
+        $bindings = array(
+            ':transaction_id' => $ipn['ik_trn_id'],
+            ':transaction_status' => $ipn['ik_inv_st'],
+            ':transaction_amount' => $ipn['ik_am'],
+        );
+
+        $rows = $this->di['db']->getAll($sql, $bindings);
+        if (count($rows) > 1){
+            return true;
+        }
+
+
+        return false;
     }
 }

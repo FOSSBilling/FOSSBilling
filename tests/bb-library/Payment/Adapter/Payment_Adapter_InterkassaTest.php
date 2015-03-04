@@ -348,12 +348,15 @@ class Payment_Adapter_InterkassaTest extends PHPUnit_Framework_TestCase {
     {
         $adapterMock = $this->getMockBuilder('\Payment_Adapter_Interkassa')
             ->disableOriginalConstructor()
-            ->setMethods(array('isIpnValid'))
+            ->setMethods(array('isIpnValid', 'isIpnDuplicate'))
             ->getMock();
 
         $adapterMock->expects($this->atLeastOnce())
             ->method('isIpnValid')
             ->willReturn(true);
+        $adapterMock->expects($this->atLeastOnce())
+            ->method('isIpnDuplicate')
+            ->willReturn(false);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
@@ -422,6 +425,147 @@ class Payment_Adapter_InterkassaTest extends PHPUnit_Framework_TestCase {
         $adapterMock->processTransaction($api_admin, $transaction_id, $data, $gateway_id);
     }
 
+    public function testprocessTransaction_IpnDuplicate()
+    {
+        $adapterMock = $this->getMockBuilder('\Payment_Adapter_Interkassa')
+            ->disableOriginalConstructor()
+            ->setMethods(array('isIpnValid', 'isIpnDuplicate'))
+            ->getMock();
+
+        $adapterMock->expects($this->atLeastOnce())
+            ->method('isIpnValid')
+            ->willReturn(true);
+        $adapterMock->expects($this->atLeastOnce())
+            ->method('isIpnDuplicate')
+            ->willReturn(true);
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+
+        $transactionModel = new \Model_Transaction();
+        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $invoiceModel= new \Model_Invoice();
+        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $clientModel = new \Model_Client();
+        $clientModel ->loadBean(new \RedBeanPHP\OODBBean());
+
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->withConsecutive(
+                array('Transaction'),
+                array('Invoice'),
+                array('Client'))
+            ->willReturnOnConsecutiveCalls($transactionModel, $invoiceModel, $clientModel);
+
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($transactionModel);
+
+        $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
+        $clientServiceMock->expects($this->never())
+            ->method('addFunds');
+
+        $invoiceServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
+        $invoiceServiceMock->expects($this->never())
+            ->method('payInvoiceWithCredits')
+            ->with($invoiceModel);
+        $invoiceServiceMock->expects($this->never())
+            ->method('doBatchPayWithCredits');
+
+        $di = new \Box_Di();
+        $di['mod_service'] = $di->protect(function ($serviceName) use($clientServiceMock, $invoiceServiceMock){
+            if ($serviceName == 'Client'){
+                return $clientServiceMock;
+            }
+            if ($serviceName == 'Invoice'){
+                return $invoiceServiceMock;
+            }
+        });
+        $di['db'] = $dbMock;
+        $adapterMock->setDi($di);
+
+        $adminModel = new \Model_Admin();
+        $api_admin = new \Api_Handler($adminModel);
+
+        $transaction_id = 1;
+        $invoice_id = 22;
+        $data = array(
+            'post' => array(
+                'ik_x_iid' => $invoice_id,
+                'ik_trn_id' => 2,
+                'ik_inv_st' => 'success',
+                'ik_am' => 1.00,
+                'ik_cur' => 'USD',
+            ),
+            'get'=> array(
+                'bb_invoice_id' => $invoice_id
+            )
+        );
+        $gateway_id = 1;
+        $this->setExpectedException('Payment_Exception', 'IPN is duplicate');
+        $adapterMock->processTransaction($api_admin, $transaction_id, $data, $gateway_id);
+    }
+
+
+    public function testisIpnDuplicate()
+    {
+        $di = new \Box_Di();
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getAll')
+            ->willReturn(array(
+                array('id' => 1),
+                array('id' => 2),
+            ));
+
+        $di['db'] = $dbMock;
+
+        $adapterMock = $this->getMockBuilder('\Payment_Adapter_Interkassa')
+            ->disableOriginalConstructor()
+            ->setMethods(null)
+            ->getMock();
+
+        $adapterMock->setDi($di);
+
+        $ipn = array(
+            'ik_trn_id' => '1A2D3F4G5G6B7X8Z9C',
+            'ik_inv_st' => 'Completed',
+            'ik_am' => '5.45'
+        );
+
+        $result = $adapterMock->isIpnDuplicate($ipn);
+        $this->assertTrue($result);
+    }
+
+    public function testisIpnDuplicate_IsNot()
+    {
+        $di = new \Box_Di();
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getAll')
+            ->willReturn(array(
+                array('id' => 1),
+            ));
+
+        $di['db'] = $dbMock;
+        $adapterMock = $this->getMockBuilder('\Payment_Adapter_Interkassa')
+            ->disableOriginalConstructor()
+            ->setMethods(null)
+            ->getMock();
+        $adapterMock->setDi($di);
+
+        $ipn = array(
+            'ik_trn_id' => '1A2D3F4G5G6B7X8Z9C',
+            'ik_inv_st' => 'Completed',
+            'ik_am' => '5.45'
+        );
+
+        $result = $adapterMock->isIpnDuplicate($ipn);
+        $this->assertFalse($result);
+    }
 
 
 

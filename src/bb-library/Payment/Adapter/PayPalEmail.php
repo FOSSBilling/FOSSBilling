@@ -34,7 +34,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
             throw new Payment_Exception('PHP Curl extension must be enabled in order to use PayPal gateway');
         }
         
-        if(!$this->config['email']) {
+        if(!isset($this->config['email'])) {
             throw new Payment_Exception('Payment gateway "PayPal" is not configured properly. Please update configuration parameter "PayPal Email address" at "Configuration -> Payments".');
         }
     }
@@ -177,10 +177,10 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         if(!$tx['currency']) {
             $api_admin->invoice_transaction_update(array('id'=>$id, 'currency'=>$ipn['mc_currency']));
         }
-        
+
         $invoice = $api_admin->invoice_get(array('id'=>$data['get']['bb_invoice_id']));
         $client_id = $invoice['client']['id'];
-        
+
         switch ($ipn['txn_type']) {
             
             case 'web_accept':
@@ -194,6 +194,9 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
                         'type'          =>  'PayPal',
                         'rel_id'        =>  $ipn['txn_id'],
                     );
+                    if ($this->isIpnDuplicate($ipn)){
+                        throw new Payment_Exception('IPN is duplicate');
+                    }
                     $api_admin->client_balance_add_funds($bd);
                     if($tx['invoice_id']) {
                         $api_admin->invoice_pay_with_credits(array('id'=>$tx['invoice_id']));
@@ -367,5 +370,34 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         }
 
         return $form;
+    }
+
+    /**
+     * @param string $txn_id
+     */
+    public function isIpnDuplicate(array $ipn)
+    {
+        $sql = 'SELECT id
+                FROM transaction
+                WHERE txn_id = :transaction_id
+                  AND txn_status = :transaction_status
+                  AND type = :transaction_type
+                  AND amount = :transaction_amount
+                LIMIT 2';
+
+        $bindings = array(
+            ':transaction_id' => $ipn['txn_id'],
+            ':transaction_status' => $ipn['payment_status'],
+            ':transaction_type' => $ipn['txn_type'],
+            ':transaction_amount' => $ipn['mc_gross'],
+        );
+
+        $rows = $this->di['db']->getAll($sql, $bindings);
+        if (count($rows) > 1){
+            return true;
+        }
+
+
+        return false;
     }
 }

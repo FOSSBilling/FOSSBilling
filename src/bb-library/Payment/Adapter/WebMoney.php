@@ -137,6 +137,10 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
 
 		$client = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
 		$clientService = $this->di['mod_service']('client');
+
+        if ($this->isIpnDuplicate($ipn)){
+            throw new Payment_Exception('IPN is duplicate');
+        }
 		$clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
 
@@ -314,5 +318,26 @@ class Payment_Adapter_WebMoney implements \Box\InjectionAwareInterface
         }
 
         return $form;
+    }
+
+    public function isIpnDuplicate(array $ipn)
+    {
+        $sql = 'SELECT id
+                FROM transaction
+                WHERE txn_id = :transaction_id
+                  AND amount = :transaction_amount
+                LIMIT 2';
+
+        $bindings = array(
+            ':transaction_id' => $ipn['LMI_SYS_TRANS_NO'],
+            ':transaction_amount' => $ipn['LMI_PAYMENT_AMOUNT'],
+        );
+
+        $rows = $this->di['db']->getAll($sql, $bindings);
+        if (count($rows) > 1){
+            return true;
+        }
+
+        return false;
     }
 }
