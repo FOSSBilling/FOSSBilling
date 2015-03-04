@@ -585,9 +585,8 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         $list = $array['list'];
         $this->assertInternalType('array', $list);
 
-        //var_export($list);
         if (count($list)) {
-            $item = $list[0];
+            $item = $list[1];
             $this->assertArrayHasKey('id', $item);
             $this->assertArrayHasKey('serie', $item);
             $this->assertArrayHasKey('nr', $item);

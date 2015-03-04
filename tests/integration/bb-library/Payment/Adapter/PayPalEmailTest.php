@@ -16,6 +16,7 @@ class Payment_Adapter_PayPalEmailTest extends BBDbApiTestCase
         $config['notify_url'] = 'http://www.google.com?q=notify';
         
         $adapter = new Payment_Adapter_PayPalEmail($config);
+        $adapter->setDi($this->di);
         $adapter->getConfig();
         $adapter->getHtml($this->api_admin, 1, false);
         $adapter->getHtml($this->api_admin, 2, true);
@@ -40,6 +41,7 @@ class Payment_Adapter_PayPalEmailTest extends BBDbApiTestCase
         $config['notify_url'] = 'http://www.google.com?q=notify';
 
         $adapter = new Payment_Adapter_PayPalEmail($config);
+        $adapter->setDi($this->di);
         $form = $adapter->getHtml($this->api_admin, 1, false);
         $this->assertRegExp('/action="https:\/\/www\.paypal\.com\/cgi-bin\/webscr"/', $form);
     }
@@ -54,6 +56,7 @@ class Payment_Adapter_PayPalEmailTest extends BBDbApiTestCase
         $config['notify_url'] = 'http://www.google.com?q=notify';
         
         $adapter = new Payment_Adapter_PayPalEmail($config);
+        $adapter->setDi($this->di);
         $form = $adapter->getHtml($this->api_admin, 1, false);
         $this->assertRegExp('/action="https:\/\/www\.sandbox\.paypal\.com\/cgi-bin\/webscr"/', $form);
     }
