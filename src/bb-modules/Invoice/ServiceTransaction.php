@@ -100,7 +100,8 @@ class ServiceTransaction implements InjectionAwareInterface
     public function createAndProcess($ipn)
     {
         $id = $this->create($ipn);
-        return $this->processTransaction($id);
+        $this->processTransaction($id);
+        return $id;
     }
 
     public function create(array $data)

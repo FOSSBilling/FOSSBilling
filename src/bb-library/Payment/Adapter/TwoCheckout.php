@@ -205,6 +205,11 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
                 'type'          =>  '2Checkout',
                 'rel_id'        =>  $ipn['order_number'],
             );
+
+            if ($this->isIpnDuplicate($ipn)){
+                throw new Payment_Exception('IPN is duplicate');
+            }
+
             $api_admin->client_balance_add_funds($bd);
             
             $tx_data['txn_status']  = 'complete';
@@ -413,5 +418,28 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         }
 
         return $form;
+    }
+
+    public function isIpnDuplicate(array $ipn)
+    {
+        $sql = 'SELECT id
+                FROM transaction
+                WHERE txn_id = :transaction_id
+                  AND type = :transaction_type
+                  AND amount = :transaction_amount
+                LIMIT 2';
+
+        $bindings = array(
+            ':transaction_id' => $ipn['order_number'],
+            ':transaction_type' => $ipn['message_type'],
+            ':transaction_amount' => $ipn['total'],
+        );
+
+        $rows = $this->di['db']->getAll($sql, $bindings);
+        if (count($rows) > 1){
+            return true;
+        }
+
+        return false;
     }
 }

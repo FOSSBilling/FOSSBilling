@@ -574,7 +574,8 @@ class Service implements InjectionAwareInterface
         $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', array($invoice->id));
         foreach($invoiceItems as $item) {
             if($item->type == \Model_InvoiceItem::TYPE_DEPOSIT) {
-                return ;
+                $this->markAsPaid($invoice, false);
+                return true;
             }
         }
 

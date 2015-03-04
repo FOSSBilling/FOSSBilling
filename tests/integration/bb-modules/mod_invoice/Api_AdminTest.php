@@ -447,6 +447,27 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     }
 
     /**
+     * Deposit invoice should be marked as paid and do not charge for it.
+     */
+    public function testDepositInvoice()
+    {
+        $id = 5;
+        $invoiceModel = $this->di['db']->load('Invoice', 5);
+        $this->assertEquals(\Model_Invoice::STATUS_UNPAID, $invoiceModel->status);
+        $invoiceItemModel = $this->di['db']->findOne('InvoiceItem', 'invoice_id = ?', array($invoiceModel->id));
+        $this->assertEquals(Model_InvoiceItem::TYPE_DEPOSIT, $invoiceItemModel->type);
+
+        $balanceBefore = $this->api_client->client_balance_get_total();
+        $this->api_admin->invoice_pay_with_credits(array('id' => $id));
+        $balanceAfter = $this->api_client->client_balance_get_total();
+
+        $array = $this->api_admin->invoice_get(array('id' => $id));
+
+        $this->assertEquals(\Model_Invoice::STATUS_PAID, $array['status']);
+        $this->assertEquals($balanceBefore, $balanceAfter);
+    }
+
+    /**
      * Invoice should be marked as paid after adding money to balance
      */
     public function testCredits()
@@ -564,9 +585,8 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         $list = $array['list'];
         $this->assertInternalType('array', $list);
 
-        //var_export($list);
         if (count($list)) {
-            $item = $list[0];
+            $item = $list[1];
             $this->assertArrayHasKey('id', $item);
             $this->assertArrayHasKey('serie', $item);
             $this->assertArrayHasKey('nr', $item);
