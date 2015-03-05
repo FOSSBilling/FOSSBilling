@@ -53,7 +53,7 @@ to update /etc/hosts file
 ##### Virtual Machine Specifications #####
 
 * OS     - Ubuntu 12.04
-* PHP    - 5.5.4 
+* PHP    - 5.4.* 
 * Apache
 * MySQL 5.6
 * IP - 10.20.30.12
