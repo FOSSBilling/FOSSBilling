@@ -12,6 +12,7 @@
 
 require_once dirname(__FILE__) . '/bb-load.php';
 $di = include dirname(__FILE__) . '/bb-di.php';
+$di['translate']();
 
 $bb_invoice_id = null;
 if(isset($_GET['bb_invoice_id'])) {
