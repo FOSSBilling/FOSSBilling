@@ -70,12 +70,12 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
             $w = new Whois2($domain->getName());
             return $w->isAvailable();
         }
-        throw new Registrar_Exception('Email registrar can not determine wheather domain is available');
+        throw new Registrar_Exception('Email registrar can not determine whether domain is available');
     }
 
     public function isDomainCanBeTransfered(Registrar_Domain $domain)
     {
-        throw new Registrar_Exception('Email registrar can not determine wheather domain can be transferred');
+        throw new Registrar_Exception('Email registrar can not determine whether domain can be transferred');
     }
 
     public function modifyNs(Registrar_Domain $domain)
@@ -621,7 +621,7 @@ class Whois2 {
 
     /**
      * Returns the tld of the domain without domain name
-     * @return string $tldname the tlds name without domain name
+     * @return string $tldname the TLDs name without domain name
      * @desc Returns the tld of the domain without domain name
      */
     private function get_tld()
@@ -646,9 +646,9 @@ class Whois2 {
     }
 
     /**
-     * Returns all tlds which are supported by the class
-     * @return string $tlds all tlds as array
-     * @desc Returns all tlds which are supported by the class
+     * Returns all TLDs which are supported by the class
+     * @return string $tlds all TLDs as array
+     * @desc Returns all TLDs which are supported by the class
      */
     public static function getTlds()
     {

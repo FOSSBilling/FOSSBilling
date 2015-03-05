@@ -119,7 +119,7 @@ class Client implements InjectionAwareInterface
             throw new \Box_Exception('Request limit reached', null, 1003);
 		}
 
-        // snake oil: check request is from the same domain as boxbilling is installed if present
+        // snake oil: check request is from the same domain as BoxBilling is installed if present
         $check_referer_header = isset($this->_api_config['require_referrer_header']) ? (bool)$this->_api_config['require_referrer_header'] : false;
         if($check_referer_header) {
             $url = strtolower(BB_URL);

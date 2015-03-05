@@ -19,12 +19,12 @@ namespace Box\Mod\Servicedomain\Api;
 class Guest extends \Api_Abstract
 {
     /**
-     * Get configured TLDs which can be ordered. Shows only enabled TLDS
+     * Get configured TLDs which can be ordered. Shows only enabled TLDs
      *
-     * @optional bool $allow_register - shows only these tlds which can be registered
-     * @optional bool $allow_transfer - shows only these tlds which can be transferred
+     * @optional bool $allow_register - shows only these TLDs which can be registered
+     * @optional bool $allow_transfer - shows only these TLDs which can be transferred
      *
-     * @return array - list of tlds
+     * @return array - list of TLDs
      */
     public function tlds($data)
     {

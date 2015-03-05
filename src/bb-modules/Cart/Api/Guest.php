@@ -130,7 +130,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Removes product from shoping cart
+     * Removes product from shopping cart
      *
      * @param int $id - Shopping cart item id
      *

@@ -20,7 +20,7 @@ class Admin extends \Api_Abstract
 {
     /**
      * Update domain service.
-     * Does not send actions to domain registar. Used to sync domain details
+     * Does not send actions to domain registrar. Used to sync domain details
      * on BoxBilling
      *
      * @param int $order_id - domain order id
@@ -283,7 +283,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get paginated registars list
+     * Get paginated registrars list
      *
      * @return array
      */
@@ -316,7 +316,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get available registars for install
+     * Get available registrars for install
      *
      * @return type
      */
@@ -328,7 +328,7 @@ class Admin extends \Api_Abstract
     /**
      * Install domain registrar
      *
-     * @param string $code - registar code
+     * @param string $code - registrar code
      *
      * @return bool
      */
@@ -349,7 +349,7 @@ class Admin extends \Api_Abstract
     /**
      * Uninstall domain registrar
      *
-     * @param int $id - registar id
+     * @param int $id - registrar id
      *
      * @return bool
      */
@@ -370,7 +370,7 @@ class Admin extends \Api_Abstract
     /**
      * Copy domain registrar
      *
-     * @param int $id - registar id
+     * @param int $id - registrar id
      *
      * @return bool
      */
@@ -392,7 +392,7 @@ class Admin extends \Api_Abstract
     /**
      * Get domain registrar details
      *
-     * @param int $id - registar id
+     * @param int $id - registrar id
      *
      * @return array
      */
@@ -424,10 +424,10 @@ class Admin extends \Api_Abstract
     /**
      * Update domain registrar
      *
-     * @param int $id - registar id
+     * @param int $id - registrar id
      *
-     * @optional string $title - registar title
-     * @optional array $config - registar configuration array
+     * @optional string $title - registrar title
+     * @optional array $config - registrar configuration array
      *
      * @return bool
      */

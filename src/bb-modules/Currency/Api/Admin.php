@@ -18,7 +18,7 @@ namespace Box\Mod\Currency\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Get list of availabe currencies on system
+     * Get list of available currencies on system
      * 
      * @return array
      */

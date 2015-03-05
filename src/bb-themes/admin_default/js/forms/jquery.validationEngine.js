@@ -1107,7 +1107,7 @@
             var prompt = methods._getPrompt(field);
 			// The ajax submit errors are not see has an error in the form,
 			// When the form errors are returned, the engine see 2 bubbles, but those are ebing closed by the engine at the same time
-			// Because no error was found befor submitting
+			// Because no error was found before submitting
 			if(ajaxform) prompt = false;
             if (prompt)
                 methods._updatePrompt(field, prompt, promptText, type, ajaxed, options);

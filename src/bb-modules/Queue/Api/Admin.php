@@ -82,7 +82,7 @@ class Admin extends \Api_Abstract
      * 
      * @optional string $execute_at - Message execution time. Schedule message to be executed later, ie: 2022-12-29 14:53:51
      * @optional mixed $params      - queue message params. Any serializable param
-     * @optional string $handler    - function hanlder. Static function name in extensions service class - default $queue name
+     * @optional string $handler    - function handler. Static function name in extensions service class - default $queue name
      * @optional int $interval      - Interval to execute messages in the queue.  Default 30
      * @optional int $max           - Maximum amount of messages to be executed per interval. Default 25
      * 

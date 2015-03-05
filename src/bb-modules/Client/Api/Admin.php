@@ -103,7 +103,7 @@ class Admin extends \Api_Abstract
      * @optional string $password - client password
      * @optional string $auth_type - client authorization type. Default null
      * @optional string $last_name - client last name
-     * @optional string $aid - alternative ID. If you import cients from other systems you can use this field to store foreign system ID
+     * @optional string $aid - alternative ID. If you import clients from other systems you can use this field to store foreign system ID
      * @optional string $group_id - client group id
      * @optional string $status - client status: "active, suspended, canceled"
      * @optional string $created_at - ISO 8601 date for client creation date
@@ -123,7 +123,7 @@ class Admin extends \Api_Abstract
      * @optional string $state - country state
      * @optional string $phone - Phone number
      * @optional string $phone_cc - Phone country code
-     * @optional string $document_type - Related document type, ie: passpord, driving license
+     * @optional string $document_type - Related document type, ie: passport, driving license
      * @optional string $document_nr - Related document number, ie: passport number: LC45698122
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $lang - Client language
@@ -214,7 +214,7 @@ class Admin extends \Api_Abstract
      * @optional string $state - country state
      * @optional string $phone - Phone number
      * @optional string $phone_cc - Phone country code
-     * @optional string $document_type - Related document type, ie: passpord, driving license
+     * @optional string $document_type - Related document type, ie: passport, driving license
      * @optional string $document_nr - Related document number, ie: passport number: LC45698122
      * @optional string $lang - Client language
      * @optional string $notes - Notes about client. Visible for admin only
@@ -420,7 +420,7 @@ class Admin extends \Api_Abstract
      *
      * @param int $id - Client ID
      * @param string $password - new client password
-     * @param string $password_confirm - repeast same new client password
+     * @param string $password_confirm - repeat same new client password
      *
      * @return bool
      */
@@ -515,7 +515,7 @@ class Admin extends \Api_Abstract
      *
      * @param int $id - Client ID
      * @param int $amount - Amount of clients currency to added to balance
-     * @param int $description - Descrition of this transaction
+     * @param int $description - Description of this transaction
      * 
      * @optional string $type - Related item type
      * @optional string $rel_id - Related item id

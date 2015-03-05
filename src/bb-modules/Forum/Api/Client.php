@@ -406,7 +406,7 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Check if topic is added to favoites
+     * Check if topic is added to favorites
      *
      * @param int $id - forum topic id
      * @return bool

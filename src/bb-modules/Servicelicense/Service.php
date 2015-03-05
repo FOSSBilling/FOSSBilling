@@ -422,7 +422,7 @@ class Service implements InjectionAwareInterface
 
         /**
          * Return error code in result field if related to license error
-         * If error comes from boxbilling core use $result['error'] field
+         * If error comes from BoxBilling core use $result['error'] field
          * @since v2.7.1
          */
         if(isset($data['format']) && $data['format'] == 2) {

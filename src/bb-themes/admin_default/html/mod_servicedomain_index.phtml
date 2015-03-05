@@ -10,7 +10,7 @@
         <li><a href="#tab-tlds">{% trans 'Top level domains' %}</a></li>
         <li><a href="#tab-new-tld">{% trans 'New top level domain' %}</a></li>
         <li><a href="#tab-registrars">{% trans 'Registrars' %}</a></li>
-        <li><a href="#tab-new-registar">{% trans 'New domain registrar' %}</a></li>
+        <li><a href="#tab-new-registrar">{% trans 'New domain registrar' %}</a></li>
         <li><a href="#tab-nameservers">{% trans 'Nameservers' %}</a></li>
     </ul>
 
@@ -227,7 +227,7 @@
         </form>
         </div>
 
-        <div class="tab_content nopadding" id="tab-new-registar">
+        <div class="tab_content nopadding" id="tab-new-registrar">
             {% include "partial_extensions.phtml" with {'type': 'domain-registrar', 'header':"List of domain registrars on extensions site"} only %}
             <div class="body">
                 <h1 class="pt10">{% trans 'Adding new domain registrar' %}</h1>

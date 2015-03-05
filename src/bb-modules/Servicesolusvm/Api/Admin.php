@@ -454,7 +454,7 @@ class Admin extends \Api_Abstract
                 
                 // create service
                 $model = $this->di['db']->dispense('service_solusvm');
-                $model->cluster_id = 1; //for future if ever boxbilling supports multiple master servers
+                $model->cluster_id = 1; //for future if ever BoxBilling supports multiple master servers
                 $model->client_id    = $client->id;
                 $model->hostname     = $server['hostname'];
                 $model->template     = $server['template'];
@@ -560,9 +560,9 @@ class Admin extends \Api_Abstract
     
     /**
      * Update existing order service
-     * This methd used to change clients data if order setup fails 
-     * or you have changed data on solusvm server and you need to sync with
-     * boxbilling database
+     * This method used to change clients data if order setup fails
+     * or you have changed data on solusVM server and you need to sync with
+     * BoxBilling database
      * @return boolean 
      */
     public function update($data)

@@ -554,7 +554,7 @@ class Whois {
 
     /**
      * Returns the tld of the domain without domain name
-     * @return string $tldname the tlds name without domain name
+     * @return string $tldname the TLDs name without domain name
      * @desc Returns the tld of the domain without domain name
      */
     private function get_tld()
@@ -579,9 +579,9 @@ class Whois {
     }
 
     /**
-     * Returns all tlds which are supported by the class
-     * @return string $tlds all tlds as array
-     * @desc Returns all tlds which are supported by the class
+     * Returns all TLDs which are supported by the class
+     * @return string $tlds all TLDs as array
+     * @desc Returns all TLDs which are supported by the class
      */
     public static function getTlds()
     {

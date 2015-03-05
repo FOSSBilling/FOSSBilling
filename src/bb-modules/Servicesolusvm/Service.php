@@ -301,7 +301,7 @@ class Service implements InjectionAwareInterface
         
         $result = $this->_getApi()->vserver_create($type, $node, $nodegroup, $hostname, $password, $username, $plan, $template, $ips, $hvmt, $custommemory, $customdiskspace, $custombandwidth, $customcpu, $customextraip, $issuelicense);
         
-        $model->cluster_id = 1; //for future if ever boxbilling supports multiple master servers
+        $model->cluster_id = 1; //for future if ever BoxBilling supports multiple master servers
         $model->vserverid = $result['vserverid'];
         $model->virtid = $result['virtid'];
         $model->nodeid = $result['nodeid'];

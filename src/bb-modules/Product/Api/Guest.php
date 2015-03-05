@@ -19,7 +19,7 @@ namespace Box\Mod\Product\Api;
 class Guest extends \Api_Abstract
 {
     /**
-     * Get pagineted list of products
+     * Get paginated list of products
      * 
      * @optional bool $show_hidden - also get hidden products. Default false
      * @return type 
@@ -120,7 +120,7 @@ class Guest extends \Api_Abstract
      * Product configuration must have slider_%s keys
      * 
      * @optional string $type - product type for slider - default = hosting
-     * @optional string $format - return format. Default is array . You can chosse json format, to directly inject to javascript
+     * @optional string $format - return format. Default is array . You can choose json format, to directly inject to javascript
      * @return mixed
      */
     public function get_slider($data)

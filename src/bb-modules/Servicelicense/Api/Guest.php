@@ -25,7 +25,7 @@ class Guest extends \Api_Abstract
      * @param string $version - software version
      * @param string $path - software install path
      * 
-     * @optional string $legacy - deprecated paramater. Returns result in non consistent API result
+     * @optional string $legacy - deprecated parameter. Returns result in non consistent API result
      * 
      * @return array - bool
      */
