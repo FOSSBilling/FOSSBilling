@@ -174,6 +174,73 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->assertEquals(2, date('Y', strtotime($oa['expires_at'])) - date('Y', strtotime($ob['expires_at'])));
     }
 
+    public function testOrderExpiration_SettingFromToday()
+    {
+        $data = array(
+            'id'            => 8,
+            'period'        => '1M',
+            'expires_at'    => date('Y-m-d H:i:s', strtotime('2012-01-10')),
+        );
+        $this->api_admin->order_update($data);
+
+        $orderConfig = $this->di['mod_config']('Order');
+        $orderConfig['order_renewal_logic'] = 'from_today';
+        $extensionService = $this->di['mod_service']('Extension');
+        $extensionService->setConfig($orderConfig);
+
+        $this->api_admin->order_renew($data);
+        $order = $this->api_admin->order_get($data);
+
+        $expectedExpireDate = date('Y-m-d', strtotime('+1 month'));
+
+        $this->assertEquals($expectedExpireDate, date('Y-m-d', strtotime($order['expires_at'])) );
+    }
+
+    public function testOrderExpiration_SettingFrom_greater_FromTodayIsGreater()
+    {
+        $orderExpireDate = strtotime('2012-01-10');
+        $data = array(
+            'id'            => 8,
+            'period'        => '1M',
+            'expires_at'    => date('Y-m-d H:i:s', $orderExpireDate),
+        );
+        $this->api_admin->order_update($data);
+
+        $orderConfig = $this->di['mod_config']('Order');
+        $orderConfig['order_renewal_logic'] = 'from_greater';
+        $extensionService = $this->di['mod_service']('Extension');
+        $extensionService->setConfig($orderConfig);
+
+        $this->api_admin->order_renew($data);
+        $order = $this->api_admin->order_get($data);
+
+        $expectedExpiryDate = date('Y-m-d', strtotime('+1 month'));
+
+        $this->assertEquals($expectedExpiryDate, date('Y-m-d', strtotime($order['expires_at'])) );
+    }
+
+    public function testOrderExpiration_SettingFrom_greater_ExpireIsGreater()
+    {
+        $orderExpireDate = strtotime('+1 week');
+        $data = array(
+            'id'            => 8,
+            'period'        => '1M',
+            'expires_at'    => date('Y-m-d H:i:s', $orderExpireDate),
+        );
+        $this->api_admin->order_update($data);
+
+        $orderConfig = $this->di['mod_config']('Order');
+        $orderConfig['order_renewal_logic'] = 'from_greater';
+        $extensionService = $this->di['mod_service']('Extension');
+        $extensionService->setConfig($orderConfig);
+
+        $this->api_admin->order_renew($data);
+        $order = $this->api_admin->order_get($data);
+
+        $expectedExpiryDate = date('Y-m-d', ($orderExpireDate + (strtotime('+1 month') - time())));
+        $this->assertEquals($expectedExpiryDate, date('Y-m-d', strtotime($order['expires_at'])) );
+    }
+
     public function testDomainOrderExpiration()
     {
         $data['id'] = 7;
