@@ -1747,15 +1747,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
         $clientOrderModel->period = '1Y';
 
-        $systemMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $systemMock->expects($this->atLeastOnce())
-            ->method('getParamValue')
-            ->with('order_renewal_logic');
-
-        $boxModMock = $this->getMockBuilder('\Box_mod')->disableOriginalConstructor()->getMock();
-        $boxModMock->expects($this->atLeastOnce())
-            ->method('getConfig');
-
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
         $periodMock->expects($this->atLeastOnce())
             ->method('getExpirationTime');
@@ -1766,8 +1757,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->with($clientOrderModel);
 
         $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function ($name) use($systemMock){return $systemMock;});
-        $di['mod'] = $di->protect(function($name) use($boxModMock){return $boxModMock;});
+        $di['mod_config'] = $di->protect(function($name) {return array();});
         $di['period'] = $di->protect(function () use($periodMock) {return $periodMock; });
         $di['db'] = $dbMock;
 

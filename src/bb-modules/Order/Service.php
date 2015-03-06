@@ -904,13 +904,8 @@ class Service implements InjectionAwareInterface
         if (!empty($order->period)) {
             $from_time = (NULL === $order->expires_at) ? time() : strtotime($order->expires_at); // from expiration date
 
-            //@deprecated setting, moved to config
-            $systemService = $this->di['mod_service']('system');
-            $logic          = $systemService->getParamValue('order_renewal_logic');
-
-            $mod    = $this->di['mod']('order');
-            $config = $mod->getConfig();
-            $logic  = isset($config['order_renewal_logic']) ? $config['order_renewal_logic'] : $logic;
+            $config = $this->di['mod_config']('order');
+            $logic  = isset($config['order_renewal_logic']) ? $config['order_renewal_logic'] : '';
 
             if ($logic == 'from_today') {
                 $from_time = time(); //renew order from the date renewal occured
