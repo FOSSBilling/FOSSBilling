@@ -394,11 +394,10 @@ class Service implements InjectionAwareInterface
             $s->license_key = $data['license_key'];
         }
 
-        $fn = create_function('&$val', '$val = trim($val);');
         foreach (array('ips', 'hosts', 'paths', 'versions') as $key) {
             if(isset($data[$key])) {
                 $array = explode(PHP_EOL, $data[$key]);
-                array_walk($array, $fn);
+                $array = array_map('trim', $array);
                 $array = array_diff($array, array(''));
                 $s->{$key} = json_encode($array);
             }

@@ -94,7 +94,7 @@ class Service implements InjectionAwareInterface
         $config = $di['mod_config']('Spamchecker');
         if(isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
-            array_walk($blocked_ips, create_function('&$val', '$val = trim($val);'));
+            $blocked_ips = array_map('trim', $blocked_ips);
             if(in_array($di['tools']->getIpv4(), $blocked_ips)) {
                 throw new \Box_Exception('IP :ip is blocked', array(':ip'=>$di['tools']->getIpv4()), 403);
             }
