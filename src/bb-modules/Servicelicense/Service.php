@@ -220,8 +220,6 @@ class Service implements InjectionAwareInterface
         );
         $this->di['events_manager']->fire(array('event'=>'onBeforeServicelicenseReset', 'params'=>$data));
 
-        throw new \Box_Exception(print_r($data, 1));
-
         $model->ips = json_encode(array());
         $model->hosts = json_encode(array());
         $model->paths = json_encode(array());
