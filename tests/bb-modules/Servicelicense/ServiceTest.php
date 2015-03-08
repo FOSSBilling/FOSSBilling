@@ -190,7 +190,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
-
+        
+        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock->expects($this->atLeastOnce())->
+            method('fire');
+        
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
@@ -198,6 +202,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['db']       = $dbMock;
         $di['logger']   = new \Box_Log();
+        $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
         $result = $this->service->reset($serviceLicenseModel);
