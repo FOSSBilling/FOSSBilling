@@ -230,6 +230,7 @@ class Service implements InjectionAwareInterface
 
         $data = array(
             'id'=>$model->id,
+            'client_id'=>$model->client_id,
             'updated_at'=>$model->updated_at
         );
         $this->di['events_manager']->fire(array('event'=>'onAfterServicelicenseReset', 'params'=>$data));
