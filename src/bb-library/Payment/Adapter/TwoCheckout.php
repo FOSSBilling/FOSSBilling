@@ -118,45 +118,22 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         if(APPLICATION_ENV != 'testing' && !$this->_isIpnValid($ipn)) {
             throw new Payment_Exception('2Checkout IPN is not valid');
         }
-        
-        if($ipn['message_type'] == 'ORDER_CREATED') {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>'ORDER_CREATED'));
-        }
-        
-        if($ipn['message_type'] == 'SHIP_STATUS_CHANGED') {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>'SHIP_STATUS_CHANGED'));
-        }
-        
-        if($ipn['message_type'] == 'INVOICE_STATUS_CHANGED') {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>'INVOICE_STATUS_CHANGED'));
-        }
-        
-        if($ipn['message_type'] == 'REFUND_ISSUED') {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>'REFUND_ISSUED'));
-        }
-        
-        if($ipn['message_type'] == 'FRAUD_STATUS_CHANGED') {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>'FRAUD_STATUS_CHANGED'));
-        }
-        
-        if($ipn['message_type'] == 'RECURRING_INSTALLMENT_SUCCESS') {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>'RECURRING_INSTALLMENT_SUCCESS'));
-        }
-        
-        if($ipn['message_type'] == 'RECURRING_STOPPED') {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>'RECURRING_STOPPED'));
-        }
-        
-        if($ipn['message_type'] == 'RECURRING_INSTALLMENT_FAILED') {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>'RECURRING_INSTALLMENT_FAILED'));
-        }
-        
-        if($ipn['message_type'] == 'RECURRING_COMPLETE') {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>'RECURRING_COMPLETE'));
-        }
-        
-        if($ipn['message_type'] == 'RECURRING_RESTARTED') {
-            $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>'RECURRING_RESTARTED'));
+
+        $types = array(
+            'ORDER_CREATED',
+            'SHIP_STATUS_CHANGED',
+            'INVOICE_STATUS_CHANGED',
+            'REFUND_ISSUED',
+            'FRAUD_STATUS_CHANGED',
+            'RECURRING_INSTALLMENT_SUCCESS',
+            'RECURRING_STOPPED',
+            'RECURRING_INSTALLMENT_FAILED',
+            'RECURRING_COMPLETE',
+            'RECURRING_RESTARTED',
+        );
+
+        if (in_array($ipn['message_type'], $types)) {
+            $api_admin->invoice_transaction_update(array('id' => $id, 'type' => $ipn['message_type']));
         }
 
         $invoice_id = null;
