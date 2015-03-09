@@ -210,6 +210,16 @@ class Service implements InjectionAwareInterface
 
     public function reset(\Model_ServiceLicense $model)
     {
+        $data = array(
+            'id'=>$model->id,
+            'ips'=>$model->ips,
+            'hosts'=>$model->hosts,
+            'paths'=>$model->paths,
+            'versions'=>$model->versions,
+            'client_id'=>$model->client_id
+        );
+        $this->di['events_manager']->fire(array('event'=>'onBeforeServicelicenseReset', 'params'=>$data));
+
         $model->ips = json_encode(array());
         $model->hosts = json_encode(array());
         $model->paths = json_encode(array());
@@ -217,6 +227,13 @@ class Service implements InjectionAwareInterface
         $model->updated_at = date('c');
         $this->di['db']->store($model);
         $this->di['logger']->info('Reset license %s information', $model->id);
+
+        $data = array(
+            'id'=>$model->id,
+            'client_id'=>$model->client_id,
+            'updated_at'=>$model->updated_at
+        );
+        $this->di['events_manager']->fire(array('event'=>'onAfterServicelicenseReset', 'params'=>$data));
         return true;
     }
 
