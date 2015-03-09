@@ -360,23 +360,20 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $config  = array(
-            'remove_after_days' => 64,
-        );
-        $modMock = $this->getMockBuilder('\Box_Mod')
-            ->disableOriginalConstructor()
-            ->getMock();
-        $modMock->expects($this->atLeastOnce())
-            ->method('getConfig')
-            ->will($this->returnValue($config));
+        $remove_after_days = 64;
+        $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $systemServiceMock->expects($this->atLeastOnce())
+            ->method('getParamValue')
+            ->with('remove_after_days')
+            ->willReturn($remove_after_days);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('exec');
 
         $di        = new \Box_Di();
-        $di['mod'] = $di->protect(function () use ($modMock) {
-            return $modMock;
+        $di['mod_service'] = $di->protect(function () use ($systemServiceMock) {
+            return $systemServiceMock;
         });
         $di['db']  = $dbMock;
 

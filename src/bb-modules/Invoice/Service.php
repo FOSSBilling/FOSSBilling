@@ -323,22 +323,11 @@ class Service implements InjectionAwareInterface
     public static function onAfterAdminCronRun(\Box_Event $event)
     {
         $di = $event->getDi();
-        $mod = $di['mod']('invoice');
-        $config = $mod->getConfig();
-        if(isset($config['remove_after_days']) && $config['remove_after_days']) {
+        $systemService = $di['mod_service']('System');
+        $remove_after_days = $systemService->getParamValue('remove_after_days');
+        if(isset($remove_after_days) && $remove_after_days) {
             //removing old invoices
-            $days = (int)$config['remove_after_days'];
-
-            /*
-            $sql="
-            SELECT id, due_at, DATEDIFF(NOW(), due_at) AS days_after_expiration
-            FROM invoice
-            WHERE status = 'unpaid'
-            HAVING days_after_expiration > $days
-            ORDER BY due_at DESC
-            ";
-            */
-
+            $days = (int)$remove_after_days;
             $sql="DELETE FROM invoice WHERE status = 'unpaid' AND DATEDIFF(NOW(), due_at) > $days";
             $di['db']->exec($sql);
         }

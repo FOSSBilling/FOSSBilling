@@ -80,4 +80,35 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
 
     }
 
+    public function testonAfterAdminCronRun()
+    {
+        $systemService = $this->di['mod_service']('System');
+
+        $remove_after_days = 1;
+
+        $systemService->setParamValue('remove_after_days', $remove_after_days);
+        $expected = $systemService->getParamValue('remove_after_days');
+        $this->assertEquals($expected, $remove_after_days);
+
+        $sql = "SELECT 1 FROM invoice WHERE status = 'unpaid' AND DATEDIFF(NOW(), due_at) > :days";
+        $binigns = array(':days' => $remove_after_days);
+        $result = $this->di['db']->getAll($sql, $binigns);
+        $invoiceNeedsToBeDeleted = count($result);
+
+        $this->assertGreaterThan(0, $invoiceNeedsToBeDeleted);
+
+        $eventMock = $this->getMockBuilder('\Box_Event')
+            ->disableOriginalConstructor()
+            ->setMethods(array('getDi'))
+            ->getMock();
+        $eventMock->expects($this->atLeastOnce())
+            ->method('getDi')
+            ->willReturn($this->di);
+        $service = new \Box\Mod\Invoice\Service();
+        $service->onAfterAdminCronRun($eventMock);
+
+        $result = $this->di['db']->getAll($sql, $binigns);
+        $this->assertEquals(0, count($result));
+    }
+
 }
