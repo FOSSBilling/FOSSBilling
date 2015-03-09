@@ -257,7 +257,7 @@
 
 
             <div class="body">
-                <a href="#"  class="btnIconLeft mr10" onclick="$('.conversation .body').toggle(); return false;"><span>{% trans 'Show/Hide messages' %}</span></a>
+                <a href="#"  class="btnIconLeft mr10" id="toggleMessages" ><span>{% trans 'Show/Hide messages' %}</span></a>
 
                 {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
                 <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id }) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btnIconLeft mr10 api-link" ><span>{% trans 'Close ticket' %}</span></a>
@@ -315,6 +315,14 @@ $(function() {
         }, 500);
         $('#direct-msg').css("background-color", "rgb(228, 228, 228)");
     }
+
+    var showAllMessages = false;
+    $('.api-form').on('click', '#toggleMessages', function(e) {
+        e.preventDefault();
+        showAllMessages = !showAllMessages;
+        $('.conversation .body').toggle(showAllMessages);
+
+    });
 });
 </script>
 {% endblock %}
