@@ -7,6 +7,7 @@ Release 4.16
   * added language selector in admin area
 * updated blue pay payment adapter ipn validation check function
 * Bluepay payment adapter no longer supported. Adapter file moved to boxbilling/extensions repository
+* added direct link to support ticket message
 
 Release 4.15 (2015-02-19)
 ------------------------------------------------------------------------------
