@@ -93,12 +93,12 @@
                          <td colspan="2">
                             <div class="aligncenter">
                                 {% if ticket.status != 'closed' %}
-                                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btn55 mr10 api-link" ><img src="images/icons/middlenav/stop.png" alt=""><span>Close ticket</span></a>
+                                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btn55 mr10 api-link" ><img src="images/icons/middlenav/stop.png" alt=""><span>{% trans 'Close ticket' %}</span></a>
                                 {% endif %}
-                                <a href="{{ 'api/admin/support/ticket_delete'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink }}" class="btn55 mr10 api-link"><img src="images/icons/middlenav/trash.png" alt=""><span>Delete</span></a>
+                                <a href="{{ 'api/admin/support/ticket_delete'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink }}" class="btn55 mr10 api-link"><img src="images/icons/middlenav/trash.png" alt=""><span>{% trans 'Delete' %}</span></a>
 
                                 {% if task.status == 'pending' %}
-                                <a href="{{ 'api/admin/support/task_complete'|link({'id' : ticket.id }) }}" class="btn55 mr10 api-link" data-api-reload="1"><img src="images/icons/middlenav/check.png" alt="" data-api-reload="1"><span>Set Task complete</span></a>
+                                <a href="{{ 'api/admin/support/task_complete'|link({'id' : ticket.id }) }}" class="btn55 mr10 api-link" data-api-reload="1"><img src="images/icons/middlenav/check.png" alt="" data-api-reload="1"><span>{% trans 'Set Task complete' %}</span></a>
                                 {% endif %}
                             </div>
                          </td>
@@ -210,7 +210,7 @@
                 <tfoot>
                     <tr>
                         <td colspan="5">
-                            <a href="{{ 'support'|alink({'client_id' : client.id})}}#tab-new" class="btnIconLeft mr10 mt5" ><img src="images/icons/dark/help.png" alt="" class="icon"><span>New support ticket</span></a>
+                            <a href="{{ 'support'|alink({'client_id' : client.id})}}#tab-new" class="btnIconLeft mr10 mt5" ><img src="images/icons/dark/help.png" alt="" class="icon"><span>{% trans 'New support ticket' %}</span></a>
                         </td>
                     </tr>
                 </tfoot>
@@ -257,10 +257,10 @@
 
 
             <div class="body">
-                <a href="#"  class="btnIconLeft mr10" onclick="$('.conversation .body').toggle(); return false;"><span>Show/Hide messages</span></a>
+                <a href="#"  class="btnIconLeft mr10" onclick="$('.conversation .body').toggle(); return false;"><span>{% trans 'Show/Hide messages' %}</span></a>
 
                 {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
-                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id }) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btnIconLeft mr10 api-link" ><span>Close ticket</span></a>
+                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id }) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btnIconLeft mr10 api-link" ><span>{% trans 'Close ticket' %}</span></a>
                 {% endif %}
             </div>
         </fieldset>
