@@ -81,6 +81,7 @@ class Admin implements \Box\InjectionAwareInterface
         $app->get('/support/',          'get_index', array(), get_class($this));
         $app->get('/support/index',     'get_index', array(), get_class($this));
         $app->get('/support/ticket/:id','get_ticket', array('id'=>'[0-9]+'), get_class($this));
+        $app->get('/support/ticket/:id/message/:messageid','get_ticket', array('id'=>'[0-9]+', 'messageid' => '[0-9]+'), get_class($this));
         $app->get('/support/public-tickets', 'get_public_tickets', array(), get_class($this));
         $app->get('/support/public-ticket/:id', 'get_public_ticket', array('id'=>'[0-9]+'), get_class($this));
         $app->get('/support/helpdesks', 'get_helpdesks', array(), get_class($this));
@@ -96,7 +97,7 @@ class Admin implements \Box\InjectionAwareInterface
         return $app->render('mod_support_tickets');
     }
     
-    public function get_ticket(\Box_App $app, $id)
+    public function get_ticket(\Box_App $app, $id, $messageid = '')
     {
         $api = $app->getApiAdmin();
         $ticket = $api->support_ticket_get(array('id'=>$id));
@@ -120,7 +121,7 @@ class Admin implements \Box\InjectionAwareInterface
             error_log($e->getMessage());
         }
          
-        return $app->render('mod_support_ticket', array('ticket'=>$ticket, 'canned_delay_message'=>$cdm));
+        return $app->render('mod_support_ticket', array('ticket'=>$ticket, 'canned_delay_message'=>$cdm, 'request_message' => $messageid));
     }
     
     public function get_public_tickets(\Box_App $app)
