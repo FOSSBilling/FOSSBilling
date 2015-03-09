@@ -22,7 +22,7 @@ class Admin extends \Api_Abstract
      * 
      * @return array
      */
-    public function get_list()
+    public function get_list($data)
     {
         list($query, $params) = $this->getService()->getSearchQuery();
         $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
