@@ -55,14 +55,15 @@ class Service implements InjectionAwareInterface
 
     public static function onBeforeAdminCronRun(\Box_Event $event)
     {
-        $api = $event->getApiAdmin();
-        
+        $di               = $event->getDi();
+        $extensionService = $di['mod_service']('extension');
+
         try {
-            $api->extension_get_list();
-        } catch(\Exception $e) {
+            $extensionService->getExtensionsList();
+        } catch (\Exception $e) {
             error_log($e);
         }
-        
+
         return true;
     }
 

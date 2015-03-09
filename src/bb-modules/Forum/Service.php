@@ -214,7 +214,6 @@ class Service implements InjectionAwareInterface
     
     public static function onAfterClientCreateForumTopic(\Box_Event $event)
     {
-        $api = $event->getApiAdmin();
         $params = $event->getParameters();
         $id = $params['id'];
     }
