@@ -733,10 +733,12 @@ class Service implements \Box\InjectionAwareInterface
         return array($d, $adapter);
     }
 
-    public function onBeforeAdminCronRun()
+    public static function onBeforeAdminCronRun(\Box_Event $event)
     {
         try {
-            $this->batchSyncExpirationDates();
+            $di = $event->getDi();
+            $domainService = $di['mod_service']('servicedomain');
+            $domainService->batchSyncExpirationDates();
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
