@@ -34,15 +34,6 @@
         </div>
         
         <div class="rowElem">
-            <label>{% trans 'Ping sitemap to Yahoo' %}</label>
-            <div class="formRight">
-                <input type="radio" name="sitemap_yahoo" value="1" {% if params.sitemap_yahoo == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
-                <input type="radio" name="sitemap_yahoo" value="0" {% if not params.sitemap_yahoo %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
-            </div>
-            <div class="fix"></div>
-        </div>
-        
-        <div class="rowElem">
             <label>{% trans 'Ping sitemap to Bing' %}</label>
             <div class="formRight">
                 <input type="radio" name="sitemap_bing" value="1" {% if params.sitemap_bing == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>

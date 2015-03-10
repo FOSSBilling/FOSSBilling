@@ -56,12 +56,6 @@ class Service implements InjectionAwareInterface
            }
         }
 
-        if (isset($config['sitemap_yahoo']) && $config['sitemap_yahoo']) {
-            $link = "http://search.yahooapis.com/SiteExplorerService/V1/updateNotification?appid=SitemapWriter&url=" . $url;
-            $this->di['guzzle_client']->get($link);
-            error_log('Submitted sitemap to Yahoo');
-        }
-
         if (isset($config['sitemap_bing']) && $config['sitemap_bing']) {
             $link = "http://www.bing.com/ping?sitemap=" . $url;
             $this->di['guzzle_client']->get($link);
