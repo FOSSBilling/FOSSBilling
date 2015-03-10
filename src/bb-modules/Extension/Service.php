@@ -59,7 +59,7 @@ class Service implements InjectionAwareInterface
         $extensionService = $di['mod_service']('extension');
 
         try {
-            $extensionService->getExtensionsList();
+            $extensionService->getExtensionsList(array());
         } catch (\Exception $e) {
             error_log($e);
         }
