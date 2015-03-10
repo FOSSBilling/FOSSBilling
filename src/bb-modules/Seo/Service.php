@@ -48,8 +48,7 @@ class Service implements InjectionAwareInterface
         $url = urldecode(BB_URL . 'sitemap.xml');
         if (isset($config['sitemap_google']) && $config['sitemap_google']) {
            try{
-
-               $link = "http://www.google.com/webmasters/tools/ping?sitemap=" . $url;
+               $link = "http://www.google.com/webmasters/sitemaps/ping?sitemap=" . $url;
                $this->di['guzzle_client']->get($link);
                error_log('Submitted sitemap to Google');
            }catch (\Exception $e){
@@ -64,7 +63,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($config['sitemap_bing']) && $config['sitemap_bing']) {
-            $link = "http://www.bing.com/webmaster/ping.aspx?siteMap=" . $url;
+            $link = "http://www.bing.com/ping?sitemap=" . $url;
             $this->di['guzzle_client']->get($link);
             error_log('Submitted sitemap to Bing');
         }
