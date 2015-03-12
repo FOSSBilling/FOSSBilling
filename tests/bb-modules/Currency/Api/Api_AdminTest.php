@@ -189,7 +189,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $service = new \Box\Mod\Currency\Service();
         $adminApi->setService($service);
 
-        $result = $adminApi->get_list();
+        $result = $adminApi->get_list(array());
 
         $this->assertInternalType('array', $result);
         $this->assertInternalType('array', $result['list']);
