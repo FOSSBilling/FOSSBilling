@@ -560,13 +560,8 @@ class Service implements InjectionAwareInterface
             return ;
         }
 
-        // check if invoice is not "deposit" type invoice
-        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', array($invoice->id));
-        foreach($invoiceItems as $item) {
-            if($item->type == \Model_InvoiceItem::TYPE_DEPOSIT) {
-                $this->markAsPaid($invoice, false);
-                return true;
-            }
+        if ($this->isInvoiceTypeDeposit($invoice)){
+            $this->markAsPaid($invoice, false);
         }
 
         $client = $this->di['db']->load('Client', $invoice->client_id);
@@ -1575,5 +1570,20 @@ class Service implements InjectionAwareInterface
             }
             $this->di['db']->trash($invoice);
         }
+    }
+
+    /**
+     * @param \Model_Invoice $invoice
+     * @return bool
+     */
+    public function isInvoiceTypeDeposit(\Model_Invoice $invoice)
+    {
+        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', array($invoice->id));
+        foreach($invoiceItems as $item) {
+            if($item->type == \Model_InvoiceItem::TYPE_DEPOSIT) {
+                return true;
+            }
+        }
+        return false;
     }
 }
