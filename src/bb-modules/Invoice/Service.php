@@ -1414,6 +1414,11 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * Return list of unpaid invoices which can be covered from client balance
+     * @param array $filter
+     * @return array
+     */
     public function findAllUnpaid(array $filter = null)
     {
         $sql = 'SELECT m.*
@@ -1422,7 +1427,8 @@ class Service implements InjectionAwareInterface
                     LEFT JOIN client_balance as cb on m.client_id = cb.client_id
                     LEFT JOIN invoice_item as pi on pi.invoice_id = m.id
                 WHERE m.status = :status
-                    AND m.approved = 1';
+                    AND m.approved = 1
+                    AND cb.amount >= pi.price';
         $params = array('status' => \Model_Invoice::STATUS_UNPAID);
 
         $client_id = isset($filter['client_id']) ? (int)$filter['client_id'] : null;
@@ -1433,7 +1439,6 @@ class Service implements InjectionAwareInterface
         }
 
         $sql .= ' GROUP BY m.id, cl.id
-                 HAVING SUM(cb.amount) >= SUM(pi.price)
                  ORDER BY m.id DESC';
 
         $records = $this->di['db']->getAll($sql, $params);
