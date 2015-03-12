@@ -1705,12 +1705,21 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testOnBeforeAdminCronRun()
     {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('batchSyncExpirationDates'))->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('batchSyncExpirationDates')
-            ->will($this->returnValue(null));
+        $di = new \Box_Di();
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('batchSyncExpirationDates')
+            ->willReturn(true);
+        $di['mod_service'] = $di->protect(function ($serviceName) use($serviceMock){
+                return $serviceMock;
+        });
 
-        $result = $serviceMock->onBeforeAdminCronRun();
+        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
+        $boxEventMock->expects($this->atLeastOnce())
+            ->method('getDi')
+            ->willReturn($di);
+
+        $result = $this->service->onBeforeAdminCronRun($boxEventMock);
 
         $this->assertTrue($result);
     }
