@@ -16,7 +16,6 @@ Disallow: /bb-data/
 Disallow: /bb-library/
 Disallow: /bb-locale/
 Disallow: /bb-modules/
-Disallow: /bb-themes/
 Disallow: /bb-uploads/
 Disallow: /bb-vendor/
 Disallow: /install/
