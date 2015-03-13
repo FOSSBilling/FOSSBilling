@@ -181,7 +181,7 @@ class Admin extends \Api_Abstract
         $iterate = true;
         while($iterate) {
             $start = (float) array_sum(explode(' ',microtime())); 
-            $this->_execute($q, $max, $interval);
+            $r = $this->_execute($q, $max, $interval);
             $end = (float) array_sum(explode(' ',microtime())); 
             
             $wait_for = $interval - ($end-$start);
