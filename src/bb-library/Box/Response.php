@@ -24,7 +24,7 @@ class Box_Response implements \Box\InjectionAwareInterface
     protected $cookies;
     protected $di;
 
-    function __construct ($content = null, $code = null, $status = null)
+    public function __construct ($content = null, $code = null, $status = null)
     {
 
     }

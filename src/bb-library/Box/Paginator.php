@@ -66,7 +66,7 @@ class Box_Paginator {
      * @param int $limit
      * @param int $midRange
      */
-    function __construct($itemsCount = 0, $currentPage = 1, $limit = 20, $midRange = 7)
+    public function __construct($itemsCount = 0, $currentPage = 1, $limit = 20, $midRange = 7)
     {
         //set total items count from controller
         $this->itemsCount = $itemsCount;
