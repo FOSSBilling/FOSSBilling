@@ -299,7 +299,7 @@ class Service
         try {
             $twig->addGlobal('admin', $this->di['api_admin']);
         } catch(\Exception $e) {
-
+            //skip if admin is not logged in
         }
 
         try {

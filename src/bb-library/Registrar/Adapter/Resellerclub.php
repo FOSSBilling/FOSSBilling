@@ -915,11 +915,11 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         if($tld == '.ru' || $tld == '.com.ru' || $tld == '.org.ru' || $tld == '.net.ru') {
-            if(strlen(trim($client->getBirthday())) == 0 || strtotime($client->getBirthday()) == false) {
+            if(strlen(trim($client->getBirthday())) === 0 || strtotime($client->getBirthday()) === false) {
                 throw new Registrar_Exception('Valid contact Birth Date is required while registering RU domain name');
             }
 
-            if(strlen(trim($client->getDocumentNr())) == 0 ) {
+            if(strlen(trim($client->getDocumentNr())) === 0 ) {
                 throw new Registrar_Exception('Valid contact Passport information is required while registering RU domain name');
             }
 
@@ -1005,7 +1005,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                 'status'        => 'Active',
                 'type'          => $type,
             );
-            $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json', true);
+            $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json');
             if($result['recsonpage'] < 1) {
                 throw new Registrar_Exception('Contact not found');
             }
@@ -1020,7 +1020,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     private function getCARegistrantAgreementVersion()
     {
-        $agreement = $this->_makeRequest('contacts/dotca/registrantagreement', array(), 'GET', 'json', true);
+        $agreement = $this->_makeRequest('contacts/dotca/registrantagreement', array(), 'GET', 'json');
         return $agreement['version'];
     }
 }

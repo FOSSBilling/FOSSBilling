@@ -213,7 +213,7 @@ class Service implements \Box\InjectionAwareInterface
     {
         $code = $data['code'];
 
-        $enabled     = false;
+        $enabled     = 0;
         $subject     = isset($data['default_subject']) ? $data['default_subject'] : ucwords(str_replace('_', ' ', $code));
         $content     = isset($data['default_template']) ? $data['default_template'] : $this->_getVarsString();
         $description = isset($data['default_description']) ? $data['default_description'] : null;
@@ -238,7 +238,7 @@ class Service implements \Box\InjectionAwareInterface
             preg_match('/{%.?block content.?%}((.*?\n)+){%.?endblock.?%}/m', $tpl, $mc);
             if (isset($mc[1])) {
                 $content = $mc[1];
-                $enabled = true;
+                $enabled = 1;
             } else {
                 //if(BB_DEBUG) error_log(sprintf('Default email template %s does not have content block', $code));
             }
