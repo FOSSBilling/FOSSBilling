@@ -200,7 +200,7 @@ $di['api'] = $di->protect(function($role) use($di) {
             $identity = $di['mod_service']('staff')->getCronAdmin();
            break;
 
-        default :
+        default:
             throw new Exception('Unrecognized Handler type: '.$role);
     }
     $api = new Api_Handler($identity);
