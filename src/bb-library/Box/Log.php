@@ -10,7 +10,16 @@
  * with this source code in the file LICENSE
  */
 
-
+/**
+ * @method void emerg(string $message)
+ * @method void alert(string $message)
+ * @method void crit(string $message)
+ * @method void err(string $message)
+ * @method void warn(string $message)
+ * @method void notice(string $message)
+ * @method void info(string $message)
+ * @method void debug(string $message)
+ */
 class Box_Log
 {
     const EMERG   = 0;  // Emergency: system is unusable
