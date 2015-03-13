@@ -62,6 +62,14 @@
     border: 0;
     margin: 10px;
 }
+.logo-ClientBalance{
+   background: transparent url("../img/gateway_logos/clientbalance.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:50px;
+    height: 50px;
+    border: 0;
+    margin: 10px;
+}
 .logo-Payza{
    background: transparent url("../img/gateway_logos/payza.png") no-repeat scroll 0% 0%;
     background-size: contain;

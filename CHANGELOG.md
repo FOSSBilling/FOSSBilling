@@ -8,6 +8,7 @@ Release 4.16
 * updated blue pay payment adapter ipn validation check function
 * Bluepay payment adapter no longer supported. Adapter file moved to boxbilling/extensions repository
 * added direct link to support ticket message
+* added new gateway - Pay with Client Balance.
 
 Release 4.15 (2015-02-19)
 ------------------------------------------------------------------------------

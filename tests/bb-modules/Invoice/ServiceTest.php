@@ -1765,4 +1765,78 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $this->assertInternalType('array', $result);
         $this->assertEquals($expected, $result);
     }
+
+    public function testisInvoiceTypeDeposit()
+    {
+        $di = new \Box_Di();
+
+        $modelInvoiceItem = new \Model_InvoiceItem();
+        $modelInvoiceItem->loadBean(new \RedBeanPHP\OODBBean());
+        $modelInvoiceItem->type = \Model_InvoiceItem::TYPE_DEPOSIT;
+
+        $invoiceItems = array($modelInvoiceItem);
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->with('InvoiceItem')
+            ->willReturn($invoiceItems);
+
+        $di['db'] = $dbMock;
+
+        $modelInvoice = new \Model_Invoice();
+        $modelInvoice->loadBean(new \RedBeanPHP\OODBBean());
+
+        $this->service->setDi($di);
+        $result = $this->service->isInvoiceTypeDeposit($modelInvoice);
+        $this->assertTrue($result);
+    }
+
+    public function testisInvoiceTypeDeposit_TypeIsNotDeposit()
+    {
+        $di = new \Box_Di();
+
+        $modelInvoiceItem = new \Model_InvoiceItem();
+        $modelInvoiceItem->loadBean(new \RedBeanPHP\OODBBean());
+        $modelInvoiceItem->type = \Model_InvoiceItem::TYPE_ORDER;
+
+        $invoiceItems = array($modelInvoiceItem);
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->with('InvoiceItem')
+            ->willReturn($invoiceItems);
+
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $modelInvoice = new \Model_Invoice();
+        $modelInvoice->loadBean(new \RedBeanPHP\OODBBean());
+
+        $result = $this->service->isInvoiceTypeDeposit($modelInvoice);
+        $this->assertFalse($result);
+    }
+
+    public function testisInvoiceTypeDeposit_EmptyArray()
+    {
+        $di = new \Box_Di();
+
+        $invoiceItems = array();
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->with('InvoiceItem')
+            ->willReturn($invoiceItems);
+
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $modelInvoice = new \Model_Invoice();
+        $modelInvoice->loadBean(new \RedBeanPHP\OODBBean());
+
+        $result = $this->service->isInvoiceTypeDeposit($modelInvoice);
+        $this->assertFalse($result);
+    }
 }
