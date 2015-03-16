@@ -1564,7 +1564,7 @@ class Service implements InjectionAwareInterface
     {
         $invoices = $this->di['db']->find('Invoice', 'client_id = ?', array($client->id));
         foreach($invoices as $invoice) {
-            $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', $invoice->id);
+            $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', array($invoice->id));
             foreach ($invoiceItems as $invoiceItem){
                 $this->di['db']->trash($invoiceItem);
             }

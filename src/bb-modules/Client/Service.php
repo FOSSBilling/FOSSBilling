@@ -562,6 +562,7 @@ class Service implements InjectionAwareInterface
         $service = $this->di['mod_service']('Support');
         $service->rmByClient($model);
         $service = $this->di['mod_service']('Client', 'Balance');
+        $service->rmByClient($model);
 
         $table = $this->di['table']('ActivityClientHistory');
         $table->rmByClient($model);
