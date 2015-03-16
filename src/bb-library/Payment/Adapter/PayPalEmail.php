@@ -158,23 +158,23 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
             $api_admin->invoice_transaction_update(array('id'=>$id, 'invoice_id'=>$data['get']['bb_invoice_id']));
         }
         
-        if(!$tx['type']) {
+        if(!$tx['type'] && isset($ipn['txn_type'])) {
             $api_admin->invoice_transaction_update(array('id'=>$id, 'type'=>$ipn['txn_type']));
         }
         
-        if(!$tx['txn_id']) {
+        if(!$tx['txn_id'] && isset($ipn['txn_id'])) {
             $api_admin->invoice_transaction_update(array('id'=>$id, 'txn_id'=>$ipn['txn_id']));
         }
         
-        if(!$tx['txn_status']) {
+        if(!$tx['txn_status'] && isset($ipn['payment_status'])) {
             $api_admin->invoice_transaction_update(array('id'=>$id, 'txn_status'=>$ipn['payment_status']));
         }
         
-        if(!$tx['amount']) {
+        if(!$tx['amount'] && isset($ipn['mc_gross'])) {
             $api_admin->invoice_transaction_update(array('id'=>$id, 'amount'=>$ipn['mc_gross']));
         }
         
-        if(!$tx['currency']) {
+        if(!$tx['currency'] && isset($ipn['mc_currency'])) {
             $api_admin->invoice_transaction_update(array('id'=>$id, 'currency'=>$ipn['mc_currency']));
         }
 
@@ -241,7 +241,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
                 break;
         }
         
-        if($ipn['payment_status'] == 'Refunded') {
+        if(isset($ipn['payment_status']) && $ipn['payment_status'] == 'Refunded') {
             $refd = array(
                 'id'    => $invoice['id'],
                 'note'  => 'PayPal refund '.$ipn['parent_txn_id'],
