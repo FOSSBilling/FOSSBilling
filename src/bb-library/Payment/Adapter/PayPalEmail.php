@@ -316,7 +316,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
 			($post_contents ? 'POST' : 'GET')." $path HTTP/1.1",
 			"Host: $host",
 		);
-		if ($phd) {
+		if (!empty($phd)) {
 			if (!is_array($phd)) {
 				$headers[count($headers)] = $phd;
 			} else {

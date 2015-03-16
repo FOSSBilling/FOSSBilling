@@ -140,12 +140,6 @@ class Box_Curl {
         if ($this->_noBody) {
             curl_setopt($ch, CURLOPT_NOBODY, true);
         }
-        /*
-          if($this->_binary)
-          {
-          curl_setopt($s,CURLOPT_BINARYTRANSFER,true);
-          }
-         */
         curl_setopt($ch, CURLOPT_USERAGENT, $this->_useragent);
         curl_setopt($ch, CURLOPT_REFERER, $this->_referer);
 
@@ -189,42 +183,4 @@ class Box_Curl {
     public function __tostring() {
         return $this->_webpage;
     }
-/*
-	private function postViaSocket($host, $url, $data='')
-	{
-		$fp = fsockopen($host, 80, $errno, $errstr, 2);
-		if (!$fp) {
-			return '';
-		}
-
-		$newline = "\r\n";
-		$post_data = "POST " . $url . " HTTP/1.0" . $newline;
-		$post_data .= "Host: " . $host . $newline;
-		$post_data .= "Content-Type: text/xml; charset=ISO-8859-1" . $newline;
-		$post_data .= "Content-Length: " . strlen($data) . $newline;
-		$post_data .= "Connection: close" . $newline . $newline;
-		$post_data .= $data;
-
-		fputs($fp, $post_data, strlen($post_data));
-
-		$in_headers = true;
-		$response = '';
-		while (!feof($fp)) {
-			$line = trim(fgets($fp, 1024));
-
-			if ($line == '') {
-				$in_headers = false;
-				continue;
-			}
-
-			if ($in_headers) {
-				continue;
-			}
-
-			$response .= $line;
-		}
-		fclose($fp);
-		return $response;
-	}
-*/
 }

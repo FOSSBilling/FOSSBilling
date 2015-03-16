@@ -606,7 +606,8 @@ class Whois2 {
         $found=false;
         $tldname=$this->get_tld();
         $servers = self::getServers();
-        for($i=0;$i<count($servers);$i++) {
+        $counted = count($servers);
+        for($i=0;$i<$counted;$i++) {
             if($servers[$i][0]==$tldname) {
                 $server=$servers[$i][1];
                 $found=true;
@@ -631,7 +632,8 @@ class Whois2 {
 
         if(count($domain)>2) {
             $domainname=$domain[0];
-            for($i=1;$i<count($domain);$i++) {
+            $counted = count($domain);
+            for($i=1;$i<$counted;$i++) {
                 if($i==1) {
                     $tldname=$domain[$i];
                 }else {
@@ -654,7 +656,8 @@ class Whois2 {
     {
         $tlds="";
         $servers = self::getServers();
-        for($i=0;$i<count($servers);$i++) {
+        $counted = count($servers);
+        for($i=0;$i<$counted;$i++) {
             $tlds[$i]=$servers[$i][0];
         }
         return $tlds;
@@ -682,7 +685,8 @@ class Whois2 {
         $found=false;
         $tldname=$this->get_tld();
         $servers = self::getServers();
-        for($i=0;$i<count($servers);$i++) {
+        $counted = count($servers);
+        for($i=0;$i<$counted;$i++) {
             if($servers[$i][0]==$tldname) {
                 $notfound=$servers[$i][2];
             }

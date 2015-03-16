@@ -572,7 +572,7 @@ class Box_Request implements \Box\InjectionAwareInterface
     /**
      * @todo implement filtering
      * @param $value - value to filter
-     * @param [string|array $filters] - list of filter to apply on value
+     * @param string|array $filters - list of filter to apply on value
      */
     private function _filterValue($value, $filters)
     {

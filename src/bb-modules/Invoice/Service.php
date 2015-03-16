@@ -1356,7 +1356,8 @@ class Service implements InjectionAwareInterface
         $pdf->SetXY($left, 150);
         $w = array(10, 120, 30, 30);
 
-        for ($i = 0; $i < count($header); $i++)
+        $counted = count($header);
+        for ($i = 0; $i < $counted; $i++)
             $pdf->Cell($w[$i], 7, $header[$i], 1, 0, 'C');
         $pdf->Ln();
 

@@ -101,7 +101,6 @@ class Box_TwigExtensions extends Twig_Extension implements \Box\InjectionAwareIn
             $record = $this->di['geoip']->country($value);
             return $record->country->name;
         } catch (Exception $e) {
-            //return $e->getMessage();
             return '';
         }
     }
