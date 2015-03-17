@@ -337,7 +337,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         return __('Payment for invoice :serie:id [:title]', $p);
     }
 
-    public function appendSubscriptionFields()
+    public function getSubscriptionFields()
     {
         $data = array();
         $subs = $invoice['subscription'];
