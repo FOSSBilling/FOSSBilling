@@ -327,7 +327,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         return false;
     }
 
-    public function getInvoiceTitle()
+    public function getInvoiceTitle(array $invoice)
     {
         $p = array(
             ':id'=>sprintf('%05s', $invoice['nr']),
@@ -337,12 +337,12 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         return __('Payment for invoice :serie:id [:title]', $p);
     }
 
-    public function getSubscriptionFields()
+    public function getSubscriptionFields(array $invoice)
     {
         $data = array();
         $subs = $invoice['subscription'];
 
-        $data['item_name']          = $this->getInvoiceTitle();
+        $data['item_name']          = $this->getInvoiceTitle($invoice);
         $data['item_number']        = $invoice['nr'];
         $data['no_shipping']        = '1';
         $data['no_note']            = '1'; // Do not prompt payers to include a note with their payments. Allowable values for Subscribe buttons:
@@ -383,14 +383,13 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         $data['last_name']			= $buyer['last_name'];
         $data['zip']				= $buyer['zip'];
         $data['state']				= $buyer['state'];
-        $data['charset']            = "utf-8";
         return $data;
     }
 
-    public function getOneTimePaymentFields()
+    public function getOneTimePaymentFields(array $invoice)
     {
         $data = array();
-        $data['item_name']          = $this->getInvoiceTitle();
+        $data['item_name']          = $this->getInvoiceTitle($invoice);
         $data['item_number']        = $invoice['nr'];
         $data['no_shipping']        = '1';
         $data['no_note']            = '1';

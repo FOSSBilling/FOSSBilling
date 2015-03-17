@@ -111,4 +111,137 @@ class Payment_Adapter_PaypalTest extends PHPUnit_Framework_TestCase {
         $result = $adapter->isIpnDuplicate($ipn);
         $this->assertFalse($result);
     }
+
+    public function testgetOneTimePaymentFields()
+    {
+        $config = array(
+            'return_url' => '',
+            'cancel_url' => '',
+            'notify_url' => '',
+            'email' => '',
+        );
+        $adapterMock = $this->getMockBuilder('Payment_Adapter_PayPalEmail')
+            ->setMethods(array('__construct', 'getInvoiceTitle', 'moneyFormat'))
+            ->setConstructorArgs(array($config))
+            ->getMock();
+
+        $title = 'Payment for invoice BOX000001';
+        $adapterMock->expects($this->atLeastOnce())
+            ->method('getInvoiceTitle')
+            ->willReturn($title);
+
+        $invoice = array(
+            'nr' => '00001',
+            'currency' => 'USD',
+            'subtotal' => '10.00',
+            'tax' => '4',
+        );
+        $result = $adapterMock->getOneTimePaymentFields($invoice);
+        $this->assertArrayHasKey('item_name', $result);
+        $this->assertArrayHasKey('item_number', $result);
+        $this->assertArrayHasKey('no_shipping', $result);
+        $this->assertArrayHasKey('no_note', $result);
+        $this->assertArrayHasKey('currency_code', $result);
+        $this->assertArrayHasKey('rm', $result);
+        $this->assertArrayHasKey('return', $result);
+        $this->assertArrayHasKey('cancel_return', $result);
+        $this->assertArrayHasKey('notify_url', $result);
+        $this->assertArrayHasKey('business', $result);
+        $this->assertArrayHasKey('cmd', $result);
+        $this->assertArrayHasKey('amount', $result);
+        $this->assertArrayHasKey('tax', $result);
+        $this->assertArrayHasKey('bn', $result);
+        $this->assertArrayHasKey('charset', $result);
+    }
+
+    public function testgetSubscriptionFields()
+    {
+        $config = array(
+            'return_url' => '',
+            'cancel_url' => '',
+            'notify_url' => '',
+            'email' => '',
+        );
+        $adapterMock = $this->getMockBuilder('Payment_Adapter_PayPalEmail')
+            ->setMethods(array('__construct', 'getInvoiceTitle', 'moneyFormat'))
+            ->setConstructorArgs(array($config))
+            ->getMock();
+
+        $title = 'Payment for invoice BOX000001';
+        $adapterMock->expects($this->atLeastOnce())
+            ->method('getInvoiceTitle')
+            ->willReturn($title);
+
+        $invoice = array(
+            'nr' => '00001',
+            'currency' => 'USD',
+            'total' => '10.00',
+            'tax' => '4',
+            'subscription' => array(
+                'cycle' => '',
+                'unit' => '',
+            ),
+            'buyer' => array(
+                'address' => '',
+                'city' => '',
+                'email' => '',
+                'first_name' => '',
+                'last_name' => '',
+                'zip' => '',
+                'state' => '',
+            ),
+            'id' => '2',
+        );
+        $result = $adapterMock->getSubscriptionFields($invoice);
+        $this->assertArrayHasKey('item_name', $result);
+        $this->assertArrayHasKey('item_number', $result);
+        $this->assertArrayHasKey('no_shipping', $result);
+        $this->assertArrayHasKey('no_note', $result);
+        $this->assertArrayHasKey('currency_code', $result);
+        $this->assertArrayHasKey('rm', $result);
+        $this->assertArrayHasKey('return', $result);
+        $this->assertArrayHasKey('cancel_return', $result);
+        $this->assertArrayHasKey('notify_url', $result);
+        $this->assertArrayHasKey('business', $result);
+        $this->assertArrayHasKey('cmd', $result);
+        $this->assertArrayHasKey('a3', $result);
+        $this->assertArrayHasKey('p3', $result);
+        $this->assertArrayHasKey('t3', $result);
+        $this->assertArrayHasKey('src', $result);
+        $this->assertArrayHasKey('sra', $result);
+        $this->assertArrayHasKey('charset', $result);
+        $this->assertArrayHasKey('address1', $result);
+        $this->assertArrayHasKey('city', $result);
+        $this->assertArrayHasKey('email', $result);
+        $this->assertArrayHasKey('first_name', $result);
+        $this->assertArrayHasKey('last_name', $result);
+        $this->assertArrayHasKey('zip', $result);
+        $this->assertArrayHasKey('state', $result);
+    }
+
+    public function testgetInvoiceTitle()
+    {
+        $adapterMock = $this->getMockBuilder('Payment_Adapter_PayPalEmail')
+            ->disableOriginalConstructor()
+            ->setMethods(null)
+            ->getMock();
+
+        $nr = 1;
+        $serie = 'BOX';
+        $title = 'Product';
+        $invoice = array(
+            'nr' => $nr,
+            'serie' => $serie,
+            'lines' => array(
+                array(
+                    'title' => $title,
+                ),
+            ),
+        );
+
+        $nr = sprintf('%05s', $nr);
+        $expectedTitle = sprintf('Payment for invoice %s%s [%s]', $serie, $nr, $title);
+        $result = $adapterMock->getInvoiceTitle($invoice);
+        $this->assertEquals($expectedTitle, $result);
+    }
 }
