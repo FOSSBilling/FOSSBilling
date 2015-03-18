@@ -398,7 +398,6 @@ class Client extends \Api_Abstract
         $table  = $this->di['table']('ForumTopic');
         $topics = $table->getTopicsByIds(array_values($list));
         foreach ($topics as $topic) {
-            //var_dump($topic->id);exit;
             $result[] = $table->toApiArray($topic);
         }
 

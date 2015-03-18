@@ -222,11 +222,6 @@ class Service implements InjectionAwareInterface
         $staff_service = $this->di['mod_service']('staff');
         $current_mod = null;
         $current_url = null;
-        if($url) {
-            $p = parse_url($url);
-            $path = $p['path'];
-            //@todo
-        }
         $nav = array();
         $subpages = array();
 
@@ -323,12 +318,6 @@ class Service implements InjectionAwareInterface
 
             throw new \Box_Exception('Visit extension site for update information.', null, 252);
 
-            /*
-            //@todo perform module update here
-            if(empty($extension->download_url)) {
-                throw new \Box_Exception('Extension :mod does not have download url', array(':mod'=>$data['mod']), 786);
-            }
-            */
             $result = array(
                 'version_old' => $model->version,
                 'version_new' => $latest,
@@ -479,7 +468,6 @@ class Service implements InjectionAwareInterface
 
             default:
                 throw new \Box_Exception('Extension does not support auto-install feature. Extension must be installed manually');
-                break;
         }
 
         if (file_exists($zip)){

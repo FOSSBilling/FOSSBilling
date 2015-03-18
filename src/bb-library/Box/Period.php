@@ -133,7 +133,6 @@ class Box_Period
                 break;
             default:
                 throw new \Box_Exception('Unit not defined');
-                break;
         }
 
         return $shift;
@@ -167,7 +166,6 @@ class Box_Period
                 break;
             default:
                 throw new \Box_Exception('Can not determine months amount from unit');
-                break;
         }
 
         return $qty;
@@ -194,7 +192,6 @@ class Box_Period
                 break;
             default:
                 throw new \Box_Exception('Unit not defined');
-                break;
         }
         return strtotime("+$this->qty $shift", $now);
     }

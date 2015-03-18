@@ -85,7 +85,6 @@ class Service
                 'email' => $admin['email'],
             ),
             'excerpt'      => $excerpt,
-            //'tags'          =>  array('foo', 'bar', 'bas'), //@todo
         );
 
         if ($role == 'admin') {

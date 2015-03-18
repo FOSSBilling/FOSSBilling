@@ -129,7 +129,7 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
-        list($order, $s) = $this->_getService($data);
+        list(, $s) = $this->_getService($data);
         $service = $this->getService();
         return (bool) $service->update($s, $data);
     }

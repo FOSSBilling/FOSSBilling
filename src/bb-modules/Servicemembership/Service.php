@@ -42,11 +42,6 @@ class Service implements \Box\InjectionAwareInterface
      */
     public function action_create(\Model_ClientOrder $order)
     {
-        $orderService = $this->di['mod_service']('order');
-        $c = $orderService->getConfig($order);
-
-        $this->validateOrderData($c);
-
         $model = $this->di['db']->dispense('ServiceMembership');
         $model->client_id = $order->client_id;
         $model->config = $order->config;

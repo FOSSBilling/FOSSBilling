@@ -937,8 +937,6 @@ class Service implements InjectionAwareInterface
         $order_service = $this->di['mod_service']('order');
         $log = $order_service->getLogger($order);
         $manager->setLog($log);
-//        $manager->setDi($this->di);
-
         return $manager;
     }
 

@@ -455,7 +455,6 @@ class ServiceTransaction implements InjectionAwareInterface
 
                 default:
                     throw new \Box_Exception('Unknown transaction #:id type: :type', array(':id'=>$transaction->id, ':type'=>$transaction->type), 632);
-                    break;
             }
         } catch(\Exception $e) {
             $transaction->status = \Model_Transaction::STATUS_ERROR;

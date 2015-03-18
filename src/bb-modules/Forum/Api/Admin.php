@@ -56,8 +56,6 @@ class Admin extends \Api_Abstract
     public function get_categories($data)
     {
         $table = $this->di['table']('Forum');
-        list($query, $bindings) = $table->getSearchQuery($data);
-        //$list = $q->execute();
         $list = $this->di['db']->find('Forum');
         
         $result = array();

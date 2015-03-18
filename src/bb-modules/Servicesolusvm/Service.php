@@ -718,14 +718,7 @@ class SolusVM {
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $postfields);
 		$return = curl_exec($ch);
-        
-        /*
-        if(BB_DEBUG) { 
-            error_log(print_r($postfields, 1));
-            error_log($return);
-        }
-        */
-        
+
         $curl_error = curl_error($ch);
         if($curl_error) {
             throw new \Exception($curl_error, 8755);
@@ -815,7 +808,6 @@ class SolusVM {
 			'customextraip' => $customextraip,
 			'issuelicense' => $issuelicense
 		);
-        //throw new \Exception(print_r($this->_parameters, 1));
         return $this->callAPI("vserver-create");
 	}
 	
@@ -1213,8 +1205,7 @@ class SolusVM {
 		);
         $xml = $this->callAPI("node-virtualservers", true);
         $a = json_decode(json_encode((array) simplexml_load_string($xml)),1);
-        //error_log(print_r($a, 1));
-        
+
         //one server
         if(isset($a['virtualserver']['vserverid'])) {
             return array($a['virtualserver']);

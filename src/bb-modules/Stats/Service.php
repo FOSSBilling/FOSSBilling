@@ -169,10 +169,6 @@ class Service implements InjectionAwareInterface
         $stmt->execute();
         $stats['last_month'] = $stmt->fetchColumn();
 
-//        $stmt = $pdo->prepare(sprintf($total_query, $table));
-//        $stmt->execute();
-//        $stats['this_year'] = $stmt->fetchColumn();
-
         return $stats;
     }
 

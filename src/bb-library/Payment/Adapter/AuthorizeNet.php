@@ -167,7 +167,6 @@ class Payment_Adapter_AuthorizeNet extends Payment_AdapterAbstract
 
 				default:
                     throw new Payment_Exception('Authorize.net unknown x_response_code');
-                    break;
 			}
 		}
 		

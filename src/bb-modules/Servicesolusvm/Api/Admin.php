@@ -185,7 +185,7 @@ class Admin extends \Api_Abstract
      */
     public function info($data)
     {
-        list($order, $vps) = $this->_getService($data);
+        list(, $vps) = $this->_getService($data);
         try {
             $result = $this->getService()->info($vps->vserverid);
         } catch(\Exception $exc) {
@@ -437,7 +437,7 @@ class Admin extends \Api_Abstract
                     throw new \Exception(sprintf('Client with alternative id %s was not found', $server['clientid']));
                 }
                 
-                list($username, $password) = $this->getService()->getSolusUserPassword($client);
+                list($username, ) = $this->getService()->getSolusUserPassword($client);
                 
                 $odata = array(
                     'client_id'     => $client->id,
@@ -567,7 +567,7 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
-        list($order, $vps) = $this->_getService($data);
+        list(, $vps) = $this->_getService($data);
         
         if(isset($data['plan'])) {
             $vps->plan = $data['plan'];
