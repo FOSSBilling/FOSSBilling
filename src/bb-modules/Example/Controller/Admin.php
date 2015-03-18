@@ -114,7 +114,7 @@ class Admin implements \Box\InjectionAwareInterface
     public function get_api(\Box_App $app, $id)
     {
         // always call this method to validate if admin is logged in
-        $this->di['is_admin_logged'];
+        $api = $this->di['api_admin'];
         $list_from_controller = $api->example_get_something();
 
         $params = array();
