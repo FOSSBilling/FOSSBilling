@@ -41,17 +41,7 @@ class Service implements InjectionAwareInterface
     }
 
     /** EVENTS  **/
-    
-    /*
-    public static function onEventAdminLoginFailed(Box_Event $event)
-    {
-        $api = $event->getApiAdmin();
-        $params = $event->getParameters();
-        $ip = $params['ip'];
-        throw new Exception('Wait 2 minutes');
-    }
-    */
-    
+
     public static function onAfterClientLogin(\Box_Event $event)
     {
         $params = $event->getParameters();

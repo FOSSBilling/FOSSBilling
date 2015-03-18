@@ -228,10 +228,6 @@ class Payment_Adapter_Payza extends Payment_AdapterAbstract
 
             $data['invoice_id']         = $invoice['id'];
 
-            // 1 period Trial data
-            //$data['a1']                 = $this->moneyFormat($invoice->totalAmount()); // Trial period 1 price. For a free trial period, specify 0.
-            //$data['p1']                 = $invoice->firstPeriod(); // Trial period 1 duration. Required if you specify a1. Specify an integer value in the allowable range for the units of duration that you specify with t1.
-            //$data['t1']                 = $invoice->firstPaymentTerm();
 
             // Recurrence info
             $data['a3']                 = $this->moneyFormat($invoice['total'], $invoice['currency']); // Regular subscription price.
@@ -247,7 +243,6 @@ class Payment_Adapter_Payza extends Payment_AdapterAbstract
             $data['t3']                 = $subs['unit'];
 
             $data['src']                = 1; //Recurring payments. Subscription payments recur unless subscribers cancel their subscriptions before the end of the current billing cycle or you limit the number of times that payments recur with the value that you specify for srt.
-            //        $data['srt']                = 1; //Recurring times. Number of times that subscription payments recur. Specify an integer above 1. Valid only if you specify src="1".
             $data['sra']                = 1; //Reattempt on failure. If a recurring payment fails, PayPal attempts to collect the payment two more times before canceling the subscription.
             $data['charset']			= 'UTF-8'; //Sets the character encoding for the billing information/log-in page, for the information you send to PayPal in your HTML button code, and for the information that PayPal returns to you as a result of checkout processes initiated by the payment button. The default is based on the character encoding settings in your account profile.
 
@@ -265,19 +260,10 @@ class Payment_Adapter_Payza extends Payment_AdapterAbstract
             $data = array();
             $data['ap_itemname']        = $title;
             $data['ap_quantity']        = 1;
-            //$data['no_shipping']      = '1';
-            //$data['no_note']          = '1';
             $data['ap_currency']        = $invoice['currency'];
-            //$data['rm']               = '2';
-            //$data['return']           = $this->config['return_url'];
-            //$data['cancel_return']    = $this->config['cancel_url'];
-            //$data['notify_url']       = $this->config['notify_url'];
             $data['ap_merchant']        = $this->config['email'];
-            //$data['cmd']              = '_xclick';
             $data['ap_amount']          = $this->moneyFormat($invoice['total'], $invoice['currency']);
             $data['ap_taxamount']       = $this->moneyFormat($invoice['tax'], $invoice['currency']);
-            //$data['bn']               = "PP-BuyNowBF";
-            //$data['charset']          = "utf-8";
             $data['ap_purchasetype']    = "item";
         }
 

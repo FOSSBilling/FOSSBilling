@@ -191,8 +191,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'address-line-2'    =>  $c->getAddress2(),
             'address-line-3'    =>  $c->getAddress3(),
             'state'             =>  $c->getState(),
-//            'fax-cc'            =>  $c->getFax(),
-//            'fax'               =>  $c->getFaxCc(),
         );
 
         $params = array_merge($optional_params, $required_params);
@@ -341,7 +339,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'tech-contact-id'   =>  $tech_contact_id,
             'billing-contact-id'=>  $billing_contact_id,
             'invoice-option'    =>  'NoInvoice',
-            'protect-privacy'   =>  false, //$domain->getPrivacyEnabled(),
+            'protect-privacy'   =>  false,
         );
 
         if($tld == '.asia') {
@@ -500,7 +498,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'mobile'                         =>  '',
         );
 
-//        $params = $this->_checkRequiredParams($optional_params, $params);
         $params = array_merge($optional_params, $params);
         $customer_id = $this->_makeRequest('customers/signup', $params, 'POST');
         return $customer_id;
@@ -787,10 +784,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         foreach($required_params as $param => $value) {
             if(!isset($params[$param])) {
                 $params[$param] = $value;
-            }
-
-            if(!is_bool($params[$param]) && empty($params[$param])) {
-//                throw new Registrar_Exception(sprintf('Required param "%s" can not be blank', $param));
             }
         }
 

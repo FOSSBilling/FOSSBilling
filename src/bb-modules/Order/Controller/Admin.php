@@ -68,7 +68,7 @@ class Admin implements \Box\InjectionAwareInterface
         $app->get('/order/',           'get_index', array(), get_class($this));
         $app->get('/order/index',      'get_index', array(), get_class($this));
         $app->get('/order/manage/:id', 'get_order', array('id'=>'[0-9]+'), get_class($this));
-        $app->post('/order/new', 'get_new', null, get_class($this));
+        $app->post('/order/new', 'get_new', array(), get_class($this));
     }
 
     public function get_index(\Box_App $app)

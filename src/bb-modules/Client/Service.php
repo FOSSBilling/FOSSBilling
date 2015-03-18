@@ -231,11 +231,6 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception('Currency can not be changed. Client already have orders.');
         }
 
-        /*
-        if($model->ClientBalance->count() > 0) {
-            throw new \Box_Exception('Currency can not be changed. Client have money in balance.');
-        }
-        */
         return true;
     }
 

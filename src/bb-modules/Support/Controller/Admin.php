@@ -86,7 +86,7 @@ class Admin implements \Box\InjectionAwareInterface
         $app->get('/support/public-ticket/:id', 'get_public_ticket', array('id'=>'[0-9]+'), get_class($this));
         $app->get('/support/helpdesks', 'get_helpdesks', array(), get_class($this));
         $app->get('/support/helpdesk/:id', 'get_helpdesk', array('id'=>'[0-9]+'), get_class($this));
-        $app->get('/support/canned-responses', 'get_canned_list', null, get_class($this));
+        $app->get('/support/canned-responses', 'get_canned_list', array(), get_class($this));
         $app->get('/support/canned/:id', 'get_canned', array('id'=>'[0-9]+'), get_class($this));
         $app->get('/support/canned-category/:id', 'get_canned_cat', array('id'=>'[0-9]+'), get_class($this));
     }
