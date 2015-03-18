@@ -744,9 +744,14 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
+        $passwordMock = $this->getMockBuilder('\Box_Password')->getMock();
+        $passwordMock->expects($this->atLeastOnce())
+            ->method('hashIt');
+
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['tools'] = new \Box_Tools();
+        $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);

@@ -357,7 +357,7 @@ class Service implements InjectionAwareInterface
         $cron->role = \Model_Admin::ROLE_CRON;
         $cron->admin_group_id = 1;
         $cron->email = $this->di['tools']->generatePassword().'@'.$this->di['tools']->generatePassword().'.com';
-        $cron->pass = uniqid() . microtime();
+        $cron->pass = $this->di['password']->hashIt(uniqid() . microtime());
         $cron->name = "System Cron Job";
         $cron->signature = "";
         $cron->protected = 1;
