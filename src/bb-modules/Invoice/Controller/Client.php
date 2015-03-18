@@ -54,7 +54,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_invoice(\Box_App $app, $hash)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $data = array(
             'hash' => $hash,
         );
@@ -64,7 +64,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_invoice_print(\Box_App $app, $hash)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $data = array(
             'hash' => $hash,
         );
@@ -74,7 +74,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_thankyoupage(\Box_App $app, $hash)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $data = array(
             'hash' => $hash,
         );
@@ -84,7 +84,7 @@ class Client implements \Box\InjectionAwareInterface
     
     public function get_banklink(\Box_App $app, $hash, $id)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $data = array(
             'subscription'  =>  $this->di['request']->getQuery('subscription'),
             'hash'          =>  $hash,
@@ -99,7 +99,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_pdf (\Box_App $app, $hash)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $data = array(
             'hash' => $hash,
         );

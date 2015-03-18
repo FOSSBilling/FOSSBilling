@@ -61,7 +61,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_contact_us_conversation(\Box_App $app, $hash)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $data = array(
             'hash'    => $hash,
         );

@@ -47,7 +47,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_kb_category(\Box_App $app, $category)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $data = array('slug'=>$category);
         $model = $api->kb_category_get($data);
         return $app->render('mod_kb_category', array('category'=>$model));
@@ -55,7 +55,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_kb_article(\Box_App $app, $category, $slug)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $data = array('slug'=>$slug);
         $article = $api->kb_article_get($data);
         return $app->render('mod_kb_article', array('article'=>$article));

@@ -50,7 +50,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_configure_product_by_slug(\Box_App $app, $slug)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $product = $api->product_get(array('slug'=>$slug));
         $tpl = 'mod_service'.$product['type'].'_order';
         if($api->system_template_exists(array('file'=>$tpl.'.phtml'))) {
@@ -61,7 +61,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_configure_product(\Box_App $app, $id)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $product = $api->product_get(array('id'=>$id));
         $tpl = 'mod_service'.$product['type'].'_order';
         if($api->system_template_exists(array('file'=>$tpl.'.phtml'))) {

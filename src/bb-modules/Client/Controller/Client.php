@@ -94,7 +94,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_reset_password_confirm(\Box_App $app, $hash)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $data = array(
             'hash' =>  $hash,
         );

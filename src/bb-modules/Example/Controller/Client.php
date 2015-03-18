@@ -52,7 +52,6 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
-        $api = $app->getApiGuest();
         return $app->render('mod_example_index');
     }
 

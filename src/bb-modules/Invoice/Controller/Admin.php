@@ -180,7 +180,7 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_pdf (\Box_App $app, $hash)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $data = array(
             'hash' => $hash,
         );
