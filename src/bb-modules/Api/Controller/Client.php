@@ -129,9 +129,17 @@ class Client implements InjectionAwareInterface
             }
         }
 
+        if (!in_array($role, $this->allowedRoles())){
+            throw new \Box_Exception('Unknow API call', null, 701);
+        }
         $api = $this->di['api']($role);
         $result = $api->$method($params);
         return $this->renderJson($result);
+    }
+
+    private function allowedRoles()
+    {
+        return array('guest', 'client', 'admin');
     }
 
     public function renderJson($data = NULL, \Exception $e = NULL)
