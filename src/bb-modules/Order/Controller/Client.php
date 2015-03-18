@@ -72,13 +72,13 @@ class Client implements \Box\InjectionAwareInterface
     
     public function get_orders(\Box_App $app)
     {
-        $api = $app->getApiClient();
+        $this->di['is_client_logged'];
         return $app->render('mod_order_list');
     }
 
     public function get_order(\Box_App $app, $id)
     {
-        $api = $app->getApiClient();
+        $api = $this->di['api_client'];
         $data = array(
             'id'    =>  $id,
         );

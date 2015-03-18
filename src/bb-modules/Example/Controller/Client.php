@@ -57,8 +57,8 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_protected(\Box_App $app)
     {
-        // call $app->getApiClient() method to validate if client is logged in
-        $api = $app->getApiClient();
+        // call $this->di['is_client_logged'] method to validate if client is logged in
+        $this->di['is_client_logged'];
         return $app->render('mod_example_index', array('show_protected'=>true));
     }
 }

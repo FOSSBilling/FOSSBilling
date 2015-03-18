@@ -39,7 +39,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_download(\Box_App $app, $id)
     {
-        $api = $app->getApiClient();
+        $api = $this->di['api_client'];
         $data = array(
             'order_id'  =>  $id,
         );

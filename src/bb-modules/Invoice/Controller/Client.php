@@ -48,7 +48,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_invoices(\Box_App $app)
     {
-        $api = $app->getApiClient();
+        $this->di['is_client_logged'];
         return $app->render('mod_invoice_index');
     }
 

@@ -43,13 +43,13 @@ class Client implements \Box\InjectionAwareInterface
     
     public function get_tickets(\Box_App $app)
     {
-        $api = $app->getApiClient();
+        $this->di['is_client_logged'];
         return $app->render('mod_support_tickets');
     }
 
     public function get_ticket(\Box_App $app, $id)
     {
-        $api = $app->getApiClient();
+        $api = $this->di['api_client'];
         $ticket = $api->support_ticket_get(array('id'=>$id));
         return $app->render('mod_support_ticket', array('ticket'=>$ticket));
     }

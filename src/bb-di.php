@@ -163,10 +163,16 @@ $di['twig'] = function () use ($di) {
     return $twig;
 };
 
-$di['loggedin_client'] = function() use ($di) {
+
+$di['is_client_logged'] = function() use($di) {
     if(!$di['auth']->isClientLoggedIn()) {
         throw new Exception('Client is not logged in');
     }
+    return true;
+};
+
+$di['loggedin_client'] = function() use ($di) {
+    $di['is_client_logged'];
     $client_id = $di['session']->get('client_id');
     return $di['db']->getExistingModelById('Client', $client_id);
 };

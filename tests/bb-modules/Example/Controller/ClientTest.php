@@ -44,8 +44,6 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
-            ->method('getApiClient');
-        $boxAppMock->expects($this->atLeastOnce())
             ->method('render')
             ->with('mod_example_index');
 
