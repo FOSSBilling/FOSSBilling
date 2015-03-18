@@ -53,8 +53,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
-            ->method('getApiAdmin');
-        $boxAppMock->expects($this->atLeastOnce())
             ->method('render')
             ->with('mod_filemanager_index');
 
@@ -65,8 +63,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     public function testget_ide()
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
-        $boxAppMock->expects($this->atLeastOnce())
-            ->method('getApiAdmin');
         $boxAppMock->expects($this->atLeastOnce())
             ->method('render')
             ->with('mod_filemanager_ide');
@@ -83,8 +79,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
-            ->method('getApiAdmin');
-        $boxAppMock->expects($this->atLeastOnce())
             ->method('render')
             ->with('mod_filemanager_icons');
 
@@ -97,8 +91,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $controller = new \Box\Mod\Filemanager\Controller\Admin();
 
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
-        $boxAppMock->expects($this->atLeastOnce())
-            ->method('getApiAdmin');
 
         $_GET['file'] = 'notexisting.fl';
 
@@ -109,6 +101,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['tools'] = $toolsMock;
+        $di['is_admin_logged']  = true;
 
         $controller->setDi($di);
         $this->setExpectedException('\Box_Exception', 'File does not exist', 404);
@@ -120,8 +113,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $controller = new \Box\Mod\Filemanager\Controller\Admin();
 
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
-        $boxAppMock->expects($this->atLeastOnce())
-            ->method('getApiAdmin');
 
         $_GET['file'] = 'index.html';
 
@@ -132,6 +123,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['tools'] = $toolsMock;
+        $di['is_admin_logged']  = true;
 
         $controller->setDi($di);
         $this->setExpectedException('\Box_Exception', 'File does not exist', 405);
@@ -143,8 +135,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $controller = new \Box\Mod\Filemanager\Controller\Admin();
 
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
-        $boxAppMock->expects($this->atLeastOnce())
-            ->method('getApiAdmin');
         $boxAppMock->expects($this->atLeastOnce())
             ->method('render')
             ->with('mod_filemanager_editor')
@@ -162,6 +152,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['tools'] = $toolsMock;
+        $di['is_admin_logged']  = true;
 
         $controller->setDi($di);
         $result = $controller->get_editor($boxAppMock);
@@ -173,8 +164,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $controller = new \Box\Mod\Filemanager\Controller\Admin();
 
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
-        $boxAppMock->expects($this->atLeastOnce())
-            ->method('getApiAdmin');
         $boxAppMock->expects($this->atLeastOnce())
             ->method('render')
             ->with('mod_filemanager_image')
@@ -189,6 +178,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['tools'] = $toolsMock;
+        $di['is_admin_logged']  = true;
 
         $controller->setDi($di);
         $result = $controller->get_editor($boxAppMock);

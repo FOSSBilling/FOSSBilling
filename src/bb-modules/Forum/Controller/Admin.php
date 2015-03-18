@@ -58,27 +58,27 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_forum_index');
     }
     
     public function get_forum(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $forum = $api->forum_get(array('id'=>$id));
         return $app->render('mod_forum_forum', array('forum'=>$forum));
     }
     
     public function get_topic(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $topic = $api->forum_topic_get(array('id'=>$id));
         return $app->render('mod_forum_topic', array('topic'=>$topic));
     }
     
     public function get_profile(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_forum_profile', array('client_id'=>$id));
     }
 }

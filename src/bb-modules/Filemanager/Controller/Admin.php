@@ -58,13 +58,13 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_filemanager_index');
     }
     
     public function get_ide(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         $dir = BB_PATH_ROOT . DIRECTORY_SEPARATOR;
         $data = array('dir'=>$dir);
         if(isset($_GET['inline'])) {
@@ -78,7 +78,7 @@ class Admin implements \Box\InjectionAwareInterface
     
     public function get_editor(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         
         $file = $_GET['file'];
         if(!$file || !$this->di['tools']->fileExists($file)) {
@@ -161,7 +161,7 @@ class Admin implements \Box\InjectionAwareInterface
     
     public function get_icons(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         $location = BB_PATH_UPLOADS.'/icons/*';
         $list = array();
         $files = glob($location);

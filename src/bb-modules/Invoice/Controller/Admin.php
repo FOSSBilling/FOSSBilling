@@ -114,13 +114,13 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_taxes(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_invoice_tax');
     }
 
     public function get_tax(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $tax = $api->invoice_tax_get(array('id' => $id));
 
         return $app->render('mod_invoice_taxupdate', array('tax' => $tax));
@@ -128,52 +128,52 @@ class Admin implements \Box\InjectionAwareInterface
     
     public function get_index(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_invoice_index');
     }
     
     public function get_invoice(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $invoice = $api->invoice_get(array('id'=>$id));
         return $app->render('mod_invoice_invoice', array('invoice'=>$invoice));
     }
 
     public function get_transaction(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $tx = $api->invoice_transaction_get(array('id'=>$id));
         return $app->render('mod_invoice_transaction', array('transaction'=>$tx));
     }
 
     public function get_transactions(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_invoice_transactions');
     }
     
     public function get_subscriptions(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_invoice_subscriptions');
     }
 
     public function get_subscription(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $tx = $api->invoice_subscription_get(array('id'=>$id));
         return $app->render('mod_invoice_subscription', array('subscription'=>$tx));
     }
 
     public function get_gateways(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_invoice_gateways');
     }
 
     public function get_gateway(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $gateway = $api->invoice_gateway_get(array('id'=>$id));
         return $app->render('mod_invoice_gateway', array('gateway'=>$gateway));
     }

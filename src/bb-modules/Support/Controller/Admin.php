@@ -93,13 +93,13 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
-        $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_support_tickets');
     }
     
     public function get_ticket(\Box_App $app, $id, $messageid = '')
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $ticket = $api->support_ticket_get(array('id'=>$id));
         
         $cdm = '';
@@ -126,46 +126,46 @@ class Admin implements \Box\InjectionAwareInterface
     
     public function get_public_tickets(\Box_App $app)
     {
-        $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_support_public_tickets');
     }
     
     public function get_public_ticket(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $ticket = $api->support_public_ticket_get(array('id'=>$id));
         return $app->render('mod_support_public_ticket', array('ticket'=>$ticket));
     }
     
     public function get_helpdesk(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $helpdesk = $api->support_helpdesk_get(array('id'=>$id));
         return $app->render('mod_support_helpdesk', array('helpdesk'=>$helpdesk));
     }
     
     public function get_helpdesks(\Box_App $app)
     {
-        $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_support_helpdesks');
     }
     
     public function get_canned_list(\Box_App $app)
     {
-        $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_support_canned_responses');
     }
     
     public function get_canned(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $c = $api->support_canned_get(array('id'=>$id)); 
         return $app->render('mod_support_canned_response', array('response'=>$c));
     }
     
     public function get_canned_cat(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $c = $api->support_canned_category_get(array('id'=>$id)); 
         return $app->render('mod_support_canned_category', array('category'=>$c));
     }

@@ -163,10 +163,16 @@ $di['twig'] = function () use ($di) {
     return $twig;
 };
 
-
 $di['is_client_logged'] = function() use($di) {
     if(!$di['auth']->isClientLoggedIn()) {
         throw new Exception('Client is not logged in');
+    }
+    return true;
+};
+
+$di['is_admin_logged'] = function() use($di) {
+    if(!$di['auth']->isAdminLoggedIn()) {
+        throw new Exception('Admin is not logged in');
     }
     return true;
 };
@@ -181,9 +187,7 @@ $di['loggedin_admin'] = function() use ($di) {
         return $di['mod_service']('staff')->getCronAdmin();
     }
 
-    if(!$di['auth']->isAdminLoggedIn()) {
-        throw new Exception('Admin is not logged in');
-    }
+    $di['is_admin_logged'];
     $admin = $di['session']->get('admin');
     return $di['db']->getExistingModelById('Admin', $admin['id']);
 };

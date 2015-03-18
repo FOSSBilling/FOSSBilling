@@ -54,8 +54,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
-            ->method('getApiAdmin');
-        $boxAppMock->expects($this->atLeastOnce())
             ->method('render')
             ->with('mod_example_index');
 
@@ -67,8 +65,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
-            ->method('getApiAdmin');
-        $boxAppMock->expects($this->atLeastOnce())
             ->method('render')
             ->with('mod_example_index');
 
@@ -79,8 +75,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     public function testget_user()
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
-        $boxAppMock->expects($this->atLeastOnce())
-            ->method('getApiAdmin');
         $boxAppMock->expects($this->atLeastOnce())
             ->method('render')
             ->with('mod_example_index');

@@ -49,7 +49,7 @@ class Admin implements \Box\InjectionAwareInterface
     {
         $this->di['events_manager']->fire(array('event' => 'onBeforeThemeSettingsSave', 'params' => $_POST));
 
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
 
         $mod = $this->di['mod']('theme');
         $service = $mod->getService();
@@ -97,7 +97,7 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_theme(\Box_App $app, $theme)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
 
         $mod = $this->di['mod']('theme');
         $service = $mod->getService();

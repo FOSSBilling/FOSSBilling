@@ -69,13 +69,13 @@ class Admin implements InjectionAwareInterface
     
     public function get_profile(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_staff_profile');
     }
 
     public function get_manage(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $staff = $api->staff_get(array('id'=>$id));
 
         $extensionService = $this->di['mod_service']("Extension");
@@ -85,7 +85,7 @@ class Admin implements InjectionAwareInterface
 
     public function get_group(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $group = $api->staff_group_get(array('id'=>$id));
 
         $extensionService = $this->di['mod_service']("Extension");
@@ -94,7 +94,7 @@ class Admin implements InjectionAwareInterface
     }
     public function get_history(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_staff_login_history');
     }
 }

@@ -73,13 +73,13 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
-        $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_order_index');
     }
 
     public function get_new(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $product = $api->product_get(array('id' => $this->di['request']->getPost('product_id')));
         $client = $api->client_get(array('id' => $this->di['request']->getPost('client_id')));
         return $app->render('mod_order_new', array('product' => $product, 'client' => $client));
@@ -87,7 +87,7 @@ class Admin implements \Box\InjectionAwareInterface
     
     public function get_order(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $data = array(
             'id'    =>  $id,
         );

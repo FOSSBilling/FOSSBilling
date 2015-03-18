@@ -59,20 +59,20 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_history(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_email_history');
     }
     
     public function get_template(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $template = $api->email_template_get(array('id'=>$id));
         return $app->render('mod_email_template', array('template'=>$template));
     }
     
     public function get_email(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $template = $api->email_email_get(array('id'=>$id));
         return $app->render('mod_email_details', array('email'=>$template));
     }
