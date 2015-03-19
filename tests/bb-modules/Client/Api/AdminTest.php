@@ -350,6 +350,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
@@ -357,6 +362,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di['events_manager'] = $eventMock;
         $di['validator'] = $validatorMock;
         $di['logger'] = new \Box_Log();
+        $di['api_request_data'] = $apiRequest;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -417,15 +423,20 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())->
             method('emailAreadyRegistered')->will($this->returnValue(true));
-        $serviceMock->expects($this->atLeastOnce())->
+        $serviceMock->expects($this->never())->
             method('canChangeCurrency')->will($this->returnValue(true));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
+        $eventMock->expects($this->never())->
             method('fire');
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
@@ -433,6 +444,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di['events_manager'] = $eventMock;
         $di['validator'] = $validatorMock;
         $di['logger'] = new \Box_Log();
+        $di['api_request_data'] = $apiRequest;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -446,6 +458,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $data = array();
         $admin_Client = new \Box\Mod\Client\Api\Admin();
 
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+
+        $di = new \Box_Di();
+        $di['api_request_data'] = $apiRequest;
+        $di['validator'] = new \Box_Validate();
+        $admin_Client->setDi($di);
+
         $this->setExpectedException('\Box_Exception', 'Id required');
         $admin_Client->update($data);
     }
@@ -458,8 +478,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('load')->will($this->returnValue(null));
 
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray');
+
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $di['api_request_data'] = $apiRequest;
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
