@@ -23,6 +23,14 @@ class GuestTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($willReturn));
         $guestApi->setService($kbService);
 
+        $pagerMock = $this->getMockBuilder('Box_Pagination')->getMock();
+        $pagerMock->expects($this->atLeastOnce())
+            ->method('getPer_page')
+            ->willReturn(100);
+        $di = new \Box_Di();
+        $di['pager'] = $pagerMock;
+
+        $guestApi->setDi($di);
         $result = $guestApi->article_get_list(array());
         $this->assertInternalType('array', $result);
         $this->assertEquals($result, $willReturn);
