@@ -131,17 +131,11 @@
             <fileset refid="api-sources"/>
         </copy>
 
-        <exec executable="git">
-            <arg line="fetch --tags"/>
-        </exec>
-
-        <exec executable="git" outputproperty="release" >
-            <arg line="describe --abbrev=0"/>
-        </exec>
-        <echo message="Release version: ${release}" />
+        <property environment="env"/>
+        <echo message="Release TAG: ${env.TRAVIS_TAG}" />
 
         <exec executable="sed" failonerror="true" output="${source}/bb-library/Box/Version2.php">
-            <arg line="s/0.0.1/${release}/ ${source}/bb-library/Box/Version.php" />
+            <arg line="s/0.0.1/${env.TRAVIS_TAG}/ ${source}/bb-library/Box/Version.php" />
         </exec>
         <exec executable="mv" failonerror="true">
             <arg line="${source}/bb-library/Box/Version2.php ${source}/bb-library/Box/Version.php" />
