@@ -133,6 +133,7 @@ class Client implements InjectionAwareInterface
             throw new \Box_Exception('Unknow API call', null, 701);
         }
         $api = $this->di['api']($role);
+        $this->di['api_request_data']->setRequest($params);
         $result = $api->$method($params);
         return $this->renderJson($result);
     }
