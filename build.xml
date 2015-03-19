@@ -131,6 +131,10 @@
             <fileset refid="api-sources"/>
         </copy>
 
+        <exec executable="git">
+            <arg line="fetch --tags"/>
+        </exec>
+
         <exec executable="git" outputproperty="release" >
             <arg line="describe --abbrev=0"/>
         </exec>
