@@ -156,17 +156,23 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
 
-        $boxModMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
-        $boxModMock->expects($this->atLeastOnce())
-            ->method('getConfig')
-            ->willReturn(array());
-
         $di = new \Box_Di();
         $di['db'] = $dbMock;
-        $di['mod'] = $di->protect(function ($name) use($boxModMock) {return $boxModMock;});
         $di['events_manager'] = $eventMock;
         $di['validator'] = $validatorMock;
         $di['logger'] = new \Box_Log();
+
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di['api_request_data'] = $apiRequest;
+
+        $config = array(
+            'allow_change_email' => true,
+        );
+
+        $di['mod_config'] = $di->protect(function ($modName) use($config){
+            return $config;
+        });
 
         $api = new \Box\Mod\Client\Api\Client();
         $api->setDi($di);

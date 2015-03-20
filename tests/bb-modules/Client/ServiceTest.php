@@ -1127,5 +1127,89 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $this->assertInstanceOf('\Model_Client', $result);
     }
 
+    public function testcanChangeEmail()
+    {
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $email = 'client@boxbilling.com';
+
+        $config = array(
+            'allow_change_email' => true,
+        );
+
+        $di = new \Box_Di();
+        $di['mod_config'] = $di->protect(function ($modName) use($config){
+            return $config;
+        });
+        $service = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+
+        $result = $service->canChangeEmail($clientModel, $email);
+        $this->assertTrue($result);
+    }
+
+    public function testcanChangeEmail_EmailAreTheSame()
+    {
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $email = 'client@boxbilling.com';
+
+        $clientModel->email = $email;
+
+        $config = array(
+            'allow_change_email' => true,
+        );
+
+        $di = new \Box_Di();
+        $di['mod_config'] = $di->protect(function ($modName) use($config){
+            return $config;
+        });
+        $service = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+
+        $result = $service->canChangeEmail($clientModel, $email);
+        $this->assertTrue($result);
+    }
+
+    public function testcanChangeEmail_EmptyConfig()
+    {
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $email = 'client@boxbilling.com';
+
+        $config = array();
+
+        $di = new \Box_Di();
+        $di['mod_config'] = $di->protect(function ($modName) use($config){
+            return $config;
+        });
+        $service = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+
+        $result = $service->canChangeEmail($clientModel, $email);
+        $this->assertTrue($result);
+    }
+
+    public function testcanChangeEmail_CanntChangeEmail()
+    {
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $email = 'client@boxbilling.com';
+
+        $config = array(
+            'allow_change_email' => false,
+        );
+
+        $di = new \Box_Di();
+        $di['mod_config'] = $di->protect(function ($modName) use($config){
+            return $config;
+        });
+        $service = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+
+        $this->setExpectedException('Box_Exception', 'Email can not be changed');
+        $service->canChangeEmail($clientModel, $email);
+    }
+
 }
  

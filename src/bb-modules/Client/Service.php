@@ -620,4 +620,17 @@ class Service implements InjectionAwareInterface
             error_log($exc->getMessage());
         }
     }
+
+    public function canChangeEmail(\Model_Client $client, $email)
+    {
+        $config  = $this->di['mod_config']('client');
+
+        if ($client->email != $email
+            && isset($config['allow_change_email'])
+            && !$config['allow_change_email']) {
+            throw new \Box_Exception('Email can not be changed');
+        }
+        return true;
+
+    }
 }
