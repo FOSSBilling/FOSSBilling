@@ -607,7 +607,13 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     {
         $simpleResultArr = array(
             'list' => array(
-                array('id' => 1),
+                array(
+                    'id' => 1,
+                    'description' => 'Testing',
+                    'amount' => '1.00',
+                    'currency' => 'USD',
+                    'created_at' => date('Y:m:d H:i:s'),
+                ),
             ),
         );
 

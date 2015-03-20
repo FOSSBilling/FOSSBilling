@@ -364,11 +364,11 @@ class Admin extends \Api_Abstract
 
         foreach($pager['list'] as $key => $item){
             $pager['list'][$key] = array(
-                'id'            =>  isset($item['id']) ? $item['id'] : '',
-                'description'   =>  isset($item['description']) ? $item['description'] : '',
-                'amount'        =>  isset($item['amount']) ? $item['amount'] : '',
-                'currency'      =>  isset($item['currency']) ? $item['currency'] : '',
-                'created_at'    =>  isset($item['created_at']) ? $item['created_at'] : '',
+                'id'            =>  $item['id'],
+                'description'   =>  $item['description'],
+                'amount'        =>  $item['amount'],
+                'currency'      =>  $item['currency'],
+                'created_at'    =>  $item['created_at'],
             );
         }
 
@@ -470,14 +470,14 @@ class Admin extends \Api_Abstract
 
         foreach($pager['list'] as $key => $item){
             $pager['list'][$key] = array(
-                'id'            =>  isset($item['id']) ? $item['id'] : '',
-                'ip'            =>  isset($item['ip']) ? $item['ip'] : '',
-                'created_at'    =>  isset($item['created_at']) ? $item['created_at'] : '',
+                'id'            =>  $item['id'],
+                'ip'            =>  $item['ip'],
+                'created_at'    =>  $item['created_at'],
                 'client'        =>  array(
-                    'id'            =>  isset($item['client_id']) ? $item['client_id'] : '',
-                    'first_name'    => isset($item['first_name']) ? $item['first_name'] : '',
-                    'last_name'     =>  isset($item['last_name']) ? $item['last_name'] : '',
-                    'email'         =>  isset($item['email']) ? $item['email'] : '',
+                    'id'            => $item['client_id'],
+                    'first_name'    => $item['first_name'],
+                    'last_name'     => $item['last_name'],
+                    'email'         => $item['email'],
                 )
             );
         }
