@@ -79,37 +79,29 @@ class Admin extends \Api_Abstract
      * @return bool
      * @throws Exception
      */
-    public function send($data)
+    public function send($data = array())
     {
-        if (!isset($data['to'])) {
-            throw new \Box_Exception('Receiver Email is required');
-        }
-
-        if (!isset($data['to_name'])) {
-            throw new \Box_Exception('Receiver Name is required');
-        }
-
-        if (!isset($data['from'])) {
-            throw new \Box_Exception('Sender Name is required');
-        }
-
-        if (!isset($data['from_name'])) {
-            throw new \Box_Exception('Sender email is required');
-        }
-
-        if (!isset($data['subject'])) {
-            throw new \Box_Exception('Email subject is required');
-        }
-
-        if (!isset($data['content'])) {
-            throw new \Box_Exception('Email content is required');
-        }
-
-        $client_id = isset($data['client_id']) ? $data['client_id'] : null;
-
+        $required = array(
+            'to' => 'Receiver Email is required',
+            'to_name' => 'Receiver Name is required',
+            'from' => 'Sender Name is required',
+            'from_name' => 'Sender email is required',
+            'subject' => 'Email subject is required',
+            'content' => 'Email content is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
+        $client_id = $this->di['api_request_data']->get('client_id');
         $emailService = $this->getService();
 
-        return $emailService->sendMail($data['to'], $data['from'], $data['subject'], $data['content'], $data['to_name'], $data['from_name'], $client_id);
+        return $emailService->sendMail(
+            $this->di['api_request_data']->get('to'),
+            $this->di['api_request_data']->get('from'),
+            $this->di['api_request_data']->get('subject'),
+            $this->di['api_request_data']->get('content'),
+            $this->di['api_request_data']->get('to_name'),
+            $this->di['api_request_data']->get('from_name'),
+            $client_id
+        );
     }
 
     /**

@@ -116,70 +116,21 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             ->method('sendMail')
             ->will($this->returnValue(true));
 
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di = new \Box_Di();
+        $di['api_request_data'] = $apiRequest;
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
+        $di['validator'] = $validatorMock;
+
+        $adminApi->setDi($di);
         $adminApi->setService($emailService);
 
         $result = $adminApi->send($data);
 
         $this->assertTrue($result);
-    }
-
-    public function testSendExceptionsProvider()
-    {
-        return array(
-            array(
-                array()
-            ),
-            array(
-                array(
-                    'to' => 'to@example.com',
-                )
-            ),
-            array(
-                array(
-                    'to'      => 'to@example.com',
-                    'to_name' => 'Recipient Name',
-                )
-            ),
-            array(
-                array(
-                    'to'      => 'to@example.com',
-                    'to_name' => 'Recipient Name',
-                    'from'    => 'from@example.com',
-                )
-            ),
-            array(
-                array(
-                    'to'        => 'to@example.com',
-                    'to_name'   => 'Recipient Name',
-                    'from'      => 'from@example.com',
-                    'from_name' => 'Sender Name',
-                )
-            ),
-            array(
-                array(
-                    'to'        => 'to@example.com',
-                    'to_name'   => 'Recipient Name',
-                    'from'      => 'from@example.com',
-                    'from_name' => 'Sender Name',
-                    'subject'   => 'Subject',
-                )
-            )
-        );
-    }
-
-    /**
-     * @dataProvider testSendExceptionsProvider
-     * @expectedException \Box_Exception
-     */
-    public function testSendExceptions($data)
-    {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
-
-        $emailService = new \Box\Mod\Email\Service();
-        $adminApi->setService($emailService);
-
-        $adminApi->send($data);
     }
 
     public function testResend()
