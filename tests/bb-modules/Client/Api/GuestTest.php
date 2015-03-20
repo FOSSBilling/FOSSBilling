@@ -19,6 +19,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
     {
         $configArr = array(
             'allow_signup' => true,
+            'required' => array(),
         );
         $data = array(
             'email' => 'test@email.com',
@@ -40,14 +41,25 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('guestCreateClient')
             ->will($this->returnValue($model));
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('checkExtraRequiredFields');
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('checkCustomFields');
+
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
+
 
         $di = new \Box_Di();
         $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
         $di['validator'] = $validatorMock;
+
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di['api_request_data'] = $apiRequest;
 
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
@@ -76,6 +88,10 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('clientAlreadyExists')
             ->will($this->returnValue(true));
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('checkExtraRequiredFields');
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('checkCustomFields');
 
         $model = new \Model_Client();
         $model->loadBean(new \RedBeanPHP\OODBBean());
@@ -83,10 +99,15 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
         $di = new \Box_Di();
         $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
         $di['validator'] = $validatorMock;
+
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di['api_request_data'] = $apiRequest;
 
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
@@ -115,66 +136,6 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $client->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'New registrations are temporary disabled');
-        $client->create($data);
-    }
-
-    public function requiredFieldsProvider()
-    {
-        return array(
-            array('email', 'Email required'),
-            array('first_name', 'First name required'),
-            array('password', 'Password required'),
-            array('password_confirm', 'Password confirmation required'),
-        );
-
-    }
-
-    /**
-     * @dataProvider requiredFieldsProvider
-     */
-    public function testCreateRequiredFields($field, $ExceptionMessage)
-    {
-        $configArr = array(
-            'allow_signup' => true,
-        );
-        $data = array(
-            'email' => 'test@email.com',
-            'first_name' => 'John',
-            'password' => 'testpaswword',
-            'password_confirm' => 'testpaswword',
-
-        );
-        unset($data[ $field ]);
-        $client = new \Box\Mod\Client\Api\Guest();
-        $di = new \Box_Di();
-        $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
-        $client->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', $ExceptionMessage);
-        $client->create($data);
-    }
-
-    public function testCreateConfigRequiredFields()
-    {
-        $fieldName = 'city';
-        $configArr = array(
-            'allow_signup' => true,
-            'required' => array($fieldName),
-        );
-        $data = array(
-            'email' => 'test@email.com',
-            'first_name' => 'John',
-            'password' => 'testpaswword',
-            'password_confirm' => 'testpaswword',
-
-        );
-        $client = new \Box\Mod\Client\Api\Guest();
-        $di = new \Box_Di();
-        $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
-        $client->setDi($di);
-
-        $exceptionMessage = sprintf('It is required that you provide details for field "%s"', ucwords(str_replace('_', ' ', $fieldName)));
-        $this->setExpectedException('\Box_Exception', $exceptionMessage);
         $client->create($data);
     }
 

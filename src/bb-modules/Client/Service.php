@@ -633,4 +633,32 @@ class Service implements InjectionAwareInterface
         return true;
 
     }
+
+    public function checkExtraRequiredFields(array $checkArr)
+    {
+        $config = $this->di['mod_config']('client');
+        $required = isset($config['required']) ? $config['required'] : array();
+        foreach($required as $field) {
+            if(!isset($checkArr[$field]) || empty($checkArr[$field])) {
+                $name = ucwords(str_replace('_', ' ', $field));
+                throw new \Box_Exception('It is required that you provide details for field ":field"', array(':field'=>$name));
+            }
+        }
+    }
+
+    public function checkCustomFields(array $checkArr)
+    {
+        $config = $this->di['mod_config']('client');
+        $customFields = isset($config['custom_fields']) ? $config['custom_fields'] : array();
+        foreach ($customFields as $cFieldName => $cField) {
+            $active   = isset($cField['active']) && $cField['active'] ? true : false;
+            $required = isset($cField['required']) && $cField['required'] ? true : false;
+            if ($active && $required) {
+                if (!isset($checkArr[$cFieldName]) || empty($checkArr[$cFieldName])) {
+                    $name = isset($cField['title']) && !empty($cField['title']) ? $cField['title'] : ucwords(str_replace('_', ' ', $cFieldName));;
+                    throw new \Box_Exception('It is required that you provide details for field ":field"', array(':field' => $name));
+                }
+            }
+        }
+    }
 }

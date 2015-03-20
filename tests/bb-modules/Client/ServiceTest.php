@@ -1211,5 +1211,63 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $service->canChangeEmail($clientModel, $email);
     }
 
+    public function testcheckExtraRequiredFields()
+    {
+        $required = array('id');
+        $data = array();
+
+        $config['required'] = $required;
+        $di = new \Box_Di();
+        $di['mod_config'] = $di->protect(function ($modName) use($config){
+            return $config;
+        });
+        $service = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+        $this->setExpectedException('Box_Exception', 'It is required that you provide details for field "Id"');
+        $service->checkExtraRequiredFields($data);
+    }
+
+    public function testcheckCustomFields()
+    {
+        $custom_field = array(
+            'custom_field_name' => array(
+                'active' => true,
+                'required' => true,
+                'title' => 'custom_field_title'
+            ),
+        );
+        $config['custom_fields'] = $custom_field;
+        $di = new \Box_Di();
+        $di['mod_config'] = $di->protect(function ($modName) use($config){
+            return $config;
+        });
+        $data = array();
+        $service = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+        $this->setExpectedException('Box_Exception', 'It is required that you provide details for field "custom_field_title"');
+        $service->checkCustomFields($data);
+
+    }
+
+    public function testcheckCustomFields_notRequired()
+    {
+        $custom_field = array(
+            'custom_field_name' => array(
+                'active' => true,
+                'required' => false,
+                'title' => 'custom_field_title'
+            ),
+        );
+        $config['custom_fields'] = $custom_field;
+        $di = new \Box_Di();
+        $di['mod_config'] = $di->protect(function ($modName) use($config){
+            return $config;
+        });
+        $data = array();
+        $service = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+        $result = $service->checkCustomFields($data);
+        $this->assertNull($result);
+    }
 }
  
