@@ -152,15 +152,15 @@ class Client implements InjectionAwareInterface
         }
 
         if(!isset($_SERVER['PHP_AUTH_USER'])) {
-            throw new Box_Exception('Authentication Failed', null, 201);
+            throw new \Box_Exception('Authentication Failed', null, 201);
         }
 
         if(!isset($_SERVER['PHP_AUTH_PW'])) {
-            throw new Box_Exception('Authentication Failed', null, 202);
+            throw new \Box_Exception('Authentication Failed', null, 202);
         }
 
         if(empty($_SERVER['PHP_AUTH_PW'])) {
-            throw new Box_Exception('Authentication Failed', null, 206);
+            throw new \Box_Exception('Authentication Failed', null, 206);
         }
 
         return array($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
