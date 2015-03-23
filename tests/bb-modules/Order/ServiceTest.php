@@ -1605,18 +1605,51 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['logger'] = new \Box_Log();
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
-            ->setMethods(array('createFromOrder', 'getOrderAddonsList'))
+            ->setMethods(array('createFromOrder', 'getOrderAddonsList', 'activateOrderAddons'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('createFromOrder')
             ->willReturn(array());
         $serviceMock->expects($this->atLeastOnce())
-            ->method('getOrderAddonsList')
-            ->willReturn(array($clientOrderModel));
+            ->method('activateOrderAddons');
 
         $serviceMock->setDi($di);
         $result = $serviceMock->activateOrder($clientOrderModel);
         $this->assertTrue($result);
+    }
+
+    public function testactivateOrderAddons()
+    {
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \RedBeanPHP\OODBBean());
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
+            ->setMethods(array('createFromOrder', 'getOrderAddonsList'))
+            ->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('createFromOrder')
+            ->willReturn(array());
+
+        $clientOrderModel = new \Model_ClientOrder();
+        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
+        $clientOrderModel->group_master = 1;
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getOrderAddonsList')
+            ->willReturn(array($clientOrderModel));
+
+        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $di = new \Box_Di();
+        $di['events_manager'] = $eventMock;
+
+        $serviceMock->setDi($di);
+        $result = $serviceMock->activateOrderAddons($clientOrderModel);
+        $this->assertTrue($result);
+
     }
 
     public function testgetOrderAddonsList()

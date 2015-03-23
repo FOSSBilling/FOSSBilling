@@ -645,9 +645,36 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('ClientOrder', 'group_id = :group_id AND group_master = 1 AND client_id = :client_id', $bindings);
     }
 
+    /**
+     * activate all addons on initial activation
+     * @see https://github.com/boxbilling/BoxBilling/issues/54
+     */
+    public function activateOrderAddons(\Model_ClientOrder $order)
+    {
+        if (!$order->group_master) {
+            return false;
+        }
+
+        $list = $this->getOrderAddonsList($order);
+        foreach ($list as $addon) {
+            try {
+                $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
+                $this->createFromOrder($addon);
+                $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
+            } catch (\Exception $e) {
+                error_log($e->getMessage());
+            }
+        }
+        return true;
+    }
+
     public function activateOrder(\Model_ClientOrder $order, $data = array())
     {
-        if ($order->status != \Model_ClientOrder::STATUS_PENDING_SETUP && $order->status != \Model_ClientOrder::STATUS_FAILED_SETUP) {
+        $statues = array(
+            \Model_ClientOrder::STATUS_PENDING_SETUP,
+            \Model_ClientOrder::STATUS_FAILED_SETUP,
+        );
+        if (!in_array($order->status, $statues)){
             if (!isset($data['force']) || !$data['force']) {
                 throw new \Box_Exception('Only pending setup or failed orders can be activated');
             }
@@ -661,20 +688,7 @@ class Service implements InjectionAwareInterface
         }
         $this->di['events_manager']->fire(array('event' => 'onAfterAdminOrderActivate', 'params' => $event_params));
 
-        // activate all addons on initial activation
-        // @see https://github.com/boxbilling/BoxBilling/issues/54
-        if ($order->group_master) {
-            $list = $this->getOrderAddonsList($order);
-            foreach ($list as $addon) {
-                try {
-                    $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
-                    $this->createFromOrder($addon);
-                    $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
-                } catch (\Exception $e) {
-                    error_log($e->getMessage());
-                }
-            }
-        }
+        $this->activateOrderAddons($order);
 
         $this->di['logger']->info('Activated order #%s', $order->id);
 
