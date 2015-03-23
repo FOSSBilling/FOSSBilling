@@ -119,7 +119,7 @@ class Client implements InjectionAwareInterface
             throw new \Box_Exception('Request limit reached', null, 1003);
 		}
 
-        // snake oil: check request is from the same domain as boxbilling is installed if present
+        // snake oil: check request is from the same domain as BoxBilling is installed if present
         $check_referer_header = isset($this->_api_config['require_referrer_header']) ? (bool)$this->_api_config['require_referrer_header'] : false;
         if($check_referer_header) {
             $url = strtolower(BB_URL);
@@ -129,9 +129,73 @@ class Client implements InjectionAwareInterface
             }
         }
 
-        $api = $this->di['api']($role);
+        if (!in_array($role, $this->allowedRoles())){
+            throw new \Box_Exception('Unknow API call', null, 701);
+        }
+        try {
+            $api = $this->di['api']($role);
+        } catch (\Exception $e) {
+            $this->_tryTokenLogin();
+        }
         $result = $api->$method($params);
         return $this->renderJson($result);
+    }
+
+    private function getAuth()
+    {
+        if(isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $auth_params = explode(":" , base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));
+            $_SERVER['PHP_AUTH_USER'] = $auth_params[0];
+            unset($auth_params[0]);
+            $_SERVER['PHP_AUTH_PW'] = implode('',$auth_params);
+        }
+
+        if(!isset($_SERVER['PHP_AUTH_USER'])) {
+            throw new Box_Exception('Authentication Failed', null, 201);
+        }
+
+        if(!isset($_SERVER['PHP_AUTH_PW'])) {
+            throw new Box_Exception('Authentication Failed', null, 202);
+        }
+
+        if(empty($_SERVER['PHP_AUTH_PW'])) {
+            throw new Box_Exception('Authentication Failed', null, 206);
+        }
+
+        return array($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
+    }
+
+    private function _tryTokenLogin()
+    {
+        list($username, $password) = $this->getAuth();
+
+        switch ($username) {
+            case 'client':
+                $model = $this->di['db']->findOne('Client', 'api_token = ?', array($password));
+                if(!$model instanceof \Model_Client) {
+                    throw new \Box_Exception('Authentication Failed', null, 204);
+                }
+                $this->di['session']->set('client_id', $model->id);
+                break;
+
+            case 'admin':
+                $model = $this->di['db']->findOne('Admin', 'api_token = ?', array($password));
+                if(!$model instanceof \Model_Admin) {
+                    throw new \Box_Exception('Authentication Failed', null, 205);
+                }
+                $this->di['session']->set('admin', $table->toSessionArray($model));
+                break;
+
+            case 'guest': // do not allow at the moment
+            default:
+                throw new \Box_Exception('Authentication Failed', null, 203);
+                break;
+        }
+    }
+
+    private function allowedRoles()
+    {
+        return array('guest', 'client', 'admin');
     }
 
     public function renderJson($data = NULL, \Exception $e = NULL)
