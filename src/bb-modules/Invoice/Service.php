@@ -751,151 +751,67 @@ class Service implements InjectionAwareInterface
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
 
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminInvoiceUpdate', 'params'=>$data));
+        $this->di['api_request_data']->setRequest($data);
 
-        if(isset($data['gateway_id'])) {
-            $model->gateway_id = $data['gateway_id'];
-        }
+        $model->gateway_id            = $this->di['api_request_data']->get('gateway_id', $model->gateway_id);
+        $model->text_1                = $this->di['api_request_data']->get('text_1', $model->text_1);
+        $model->text_2                = $this->di['api_request_data']->get('text_2', $model->text_2);
+        $model->seller_company        = $this->di['api_request_data']->get('seller_company', $model->seller_company);
+        $model->seller_company_vat    = $this->di['api_request_data']->get('seller_company_vat', $model->seller_company_vat);
+        $model->seller_company_number = $this->di['api_request_data']->get('seller_company_number', $model->seller_company_number);
+        $model->seller_address        = $this->di['api_request_data']->get('seller_address', $model->seller_address);
+        $model->seller_phone          = $this->di['api_request_data']->get('seller_phone', $model->seller_phone);
+        $model->seller_email          = $this->di['api_request_data']->get('seller_email', $model->seller_email);
+        $model->buyer_first_name      = $this->di['api_request_data']->get('buyer_first_name', $model->buyer_first_name);
+        $model->buyer_last_name       = $this->di['api_request_data']->get('buyer_last_name', $model->buyer_last_name);
+        $model->buyer_company         = $this->di['api_request_data']->get('buyer_company', $model->buyer_company);
+        $model->buyer_company_vat     = $this->di['api_request_data']->get('buyer_company_vat', $model->buyer_company_vat);
+        $model->buyer_company_number  = $this->di['api_request_data']->get('buyer_company_number', $model->buyer_company_number);
+        $model->buyer_address         = $this->di['api_request_data']->get('buyer_address', $model->buyer_address);
+        $model->buyer_city            = $this->di['api_request_data']->get('buyer_city', $model->buyer_city);
+        $model->buyer_state           = $this->di['api_request_data']->get('buyer_state', $model->buyer_state);
+        $model->buyer_country         = $this->di['api_request_data']->get('buyer_country', $model->buyer_country);
+        $model->buyer_zip             = $this->di['api_request_data']->get('buyer_zip', $model->buyer_zip);
+        $model->buyer_phone           = $this->di['api_request_data']->get('buyer_phone', $model->buyer_phone);
+        $model->buyer_email           = $this->di['api_request_data']->get('buyer_email', $model->buyer_email);
 
-        if(isset($data['text_1'])) {
-            $model->text_1 = $data['text_1'];
-        }
-
-        if(isset($data['text_2'])) {
-            $model->text_2 = $data['text_2'];
-        }
-
-        if(isset($data['seller_company'])) {
-            $model->seller_company = $data['seller_company'];
-        }
-
-        if(isset($data['seller_company_vat'])) {
-            $model->seller_company_vat = $data['seller_company_vat'];
-        }
-
-        if(isset($data['seller_company_number'])) {
-            $model->seller_company_number = $data['seller_company_number'];
-        }
-
-        if(isset($data['seller_address'])) {
-            $model->seller_address = $data['seller_address'];
-        }
-
-        if(isset($data['seller_phone'])) {
-            $model->seller_phone = $data['seller_phone'];
-        }
-
-        if(isset($data['seller_email'])) {
-            $model->seller_email = $data['seller_email'];
-        }
-
-        if(isset($data['buyer_first_name'])) {
-            $model->buyer_first_name = $data['buyer_first_name'];
-        }
-
-        if(isset($data['buyer_last_name'])) {
-            $model->buyer_last_name = $data['buyer_last_name'];
-        }
-
-        if(isset($data['buyer_company'])) {
-            $model->buyer_company = $data['buyer_company'];
-        }
-
-        if(isset($data['buyer_company_vat'])) {
-            $model->buyer_company_vat = $data['buyer_company_vat'];
-        }
-
-        if(isset($data['buyer_company_number'])) {
-            $model->buyer_company_number = $data['buyer_company_number'];
-        }
-
-        if(isset($data['buyer_address'])) {
-            $model->buyer_address = $data['buyer_address'];
-        }
-
-        if(isset($data['buyer_city'])) {
-            $model->buyer_city = $data['buyer_city'];
-        }
-
-        if(isset($data['buyer_state'])) {
-            $model->buyer_state = $data['buyer_state'];
-        }
-
-        if(isset($data['buyer_country'])) {
-            $model->buyer_country = $data['buyer_country'];
-        }
-
-        if(isset($data['buyer_zip'])) {
-            $model->buyer_zip = $data['buyer_zip'];
-        }
-
-        if(isset($data['buyer_phone'])) {
-            $model->buyer_phone = $data['buyer_phone'];
-        }
-
-        if(isset($data['buyer_email'])) {
-            $model->buyer_email = $data['buyer_email'];
-        }
-
-        if(isset($data['paid_at'])) {
-            if(empty($data['paid_at'])) {
+        $paid_at = $this->di['api_request_data']->get('paid_at', null);
+        if(empty($paid_at)) {
                 $model->paid_at = null;
-            } else {
-                $model->paid_at = date('Y-m-d H:i:s', strtotime($data['paid_at']));
-            }
+        } else {
+            $model->paid_at = date('Y-m-d H:i:s', strtotime($paid_at));
         }
 
-        if(isset($data['due_at'])) {
-            if(empty($data['due_at'])) {
-                $model->due_at = null;
-            } else {
-                $model->due_at = date('Y-m-d H:i:s', strtotime($data['due_at']));
-            }
+        $due_at = $this->di['api_request_data']->get('due_at', null);
+        if(empty($due_at)) {
+            $model->due_at = null;
+        } else {
+            $model->due_at = date('Y-m-d H:i:s', strtotime($due_at));
         }
 
-        if(isset($data['serie'])) {
-            $model->serie = $data['serie'];
-        }
-        if(isset($data['nr'])) {
-            $model->nr = $data['nr'];
+        $model->serie    = $this->di['api_request_data']->get('serie', $model->serie);
+        $model->nr       = $this->di['api_request_data']->get('nr', $model->nr);
+        $model->status   = $this->di['api_request_data']->get('status', $model->status);
+        $model->taxrate  = $this->di['api_request_data']->get('taxrate', $model->taxrate);
+        $model->taxname  = $this->di['api_request_data']->get('taxname', $model->taxname);
+        $model->approved = (int)$this->di['api_request_data']->get('approved', $model->approved);
+        $model->notes    = $this->di['api_request_data']->get('notes', $model->notes);
+
+        $created_at = $this->di['api_request_data']->get('created_at', '');
+        if(!empty($created_at)) {
+            $model->created_at = date('Y-m-d H:i:s', strtotime($created_at));
         }
 
-        if(isset($data['status'])) {
-            $model->status = $data['status'];
+        $ni = $this->di['api_request_data']->get('new_item', array());
+        if(isset($ni['title']) && !empty($ni['title'])) {
+            $invoiceItemService->addNew($model, $ni);
         }
 
-        if(isset($data['taxrate'])) {
-            $model->taxrate = $data['taxrate'];
-        }
-
-        if(isset($data['taxname'])) {
-            $model->taxname = $data['taxname'];
-        }
-
-        if(isset($data['approved'])) {
-            $model->approved = (int)$data['approved'];
-        }
-
-        if(isset($data['notes'])) {
-            $model->notes = $data['notes'];
-        }
-
-        if(isset($data['created_at'])) {
-            $model->created_at = date('Y-m-d H:i:s', strtotime($data['created_at']));
-        }
-
-        if(isset($data['new_item']) && is_array($data['new_item'])) {
-            $ni = $data['new_item'];
-            if(isset($ni['title']) && !empty($ni['title'])) {
-                $invoiceItemService->addNew($model, $ni);
-            }
-        }
-
-        if(isset($data['items']) && is_array($data['items'])) {
-            foreach($data['items'] as $id=>$d) {
-                $item = $this->di['db']->load('InvoiceItem', $id);
-                if($item instanceof \Model_InvoiceItem) {
-                    $invoiceItemService->update($item, $d);
-                }
+        $items = $this->di['api_request_data']->get('items', array());
+        foreach($items as $id=>$d) {
+            $item = $this->di['db']->load('InvoiceItem', $id);
+            if($item instanceof \Model_InvoiceItem) {
+                $invoiceItemService->update($item, $d);
             }
         }
 
