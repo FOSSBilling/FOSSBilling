@@ -84,6 +84,7 @@ class Client extends \Api_Abstract
             throw new \Box_Exception('Paid Invoice can not be modified');
         }
 
+        $updateParams = array();
         $updateParams['gateway_id'] = isset($data['gateway_id']) ? $data['gateway_id'] : null;
         return $this->getService()->updateInvoice($invoice, $updateParams);
     }

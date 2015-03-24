@@ -147,6 +147,7 @@ class Service
     public function getLanguages($deep = false)
     {
         $path = BB_PATH_LANGS;
+        $locales = array();
         if ($handle = opendir($path)) {
             while (false !== ($entry = readdir($handle))) {
                 if ($entry != ".svn" && $entry != "." && $entry != ".." && is_dir($path . DIRECTORY_SEPARATOR . $entry)) {

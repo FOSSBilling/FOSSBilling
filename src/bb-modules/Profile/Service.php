@@ -31,6 +31,7 @@ class Service implements InjectionAwareInterface
 
     public function changeAdminPassword(\Model_Admin $admin, $new_password)
     {
+        $event_params = array();
         $event_params['password'] = $new_password;
         $event_params['id']       = $admin->id;
         $this->di['events_manager']->fire(array('event' => 'onBeforeAdminStaffProfilePasswordChange', 'params' => $event_params));
