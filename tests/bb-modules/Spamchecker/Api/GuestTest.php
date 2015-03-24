@@ -34,6 +34,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase
                 array(
                     'publickey' => 1234,
                     'enabled' => true,
+                    'version' => null
                 ),
             ),
             array(
@@ -44,16 +45,19 @@ class GuestTest extends \PHPUnit_Framework_TestCase
                 array(
                     'publickey' => null,
                     'enabled' => true,
+                    'version' => null
                 ),
             ),
             array(
                 array(
                     'captcha_recaptcha_publickey' => 1234,
                     'captcha_enabled' => false,
+                    'captcha_version' => 2
                 ),
                 array(
                     'publickey' => 1234,
                     'enabled' => false,
+                    'version' => 2
                 ),
             ),
             array(
@@ -63,6 +67,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase
                 array(
                     'publickey' => null,
                     'enabled' => false,
+                    'version' => null
                 ),
             ),
         );
