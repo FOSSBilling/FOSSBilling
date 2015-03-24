@@ -17,7 +17,7 @@ class PDF_ImageAlpha extends \tFPDF
 {
 
 //Private properties 
-    var $tmpFiles = array();
+    private $tmpFiles = array();
 
     /*******************************************************************************
      *                                                                              *
