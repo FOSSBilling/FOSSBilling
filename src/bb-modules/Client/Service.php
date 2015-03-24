@@ -472,51 +472,55 @@ class Service implements InjectionAwareInterface
 
     private function createClient(array $data)
     {
-        $password = isset($data['password']) ? $data['password'] : uniqid();
+        $this->di['api_request_data']->setRequest($data);
+        $password = $this->di['api_request_data']->get('password', uniqid());
 
         $client = $this->di['db']->dispense('Client');
-        $client->auth_type = isset($data['auth_type']) ? $data['auth_type'] : NULL;
-        $client->email = strtolower(trim($data['email']));
-        $client->first_name = ucwords($data['first_name']);
-        $client->pass =  $this->di['password']->hashIt($password);
 
-        $client->aid = isset($data['aid']) ? $data['aid'] : NULL ;
-        $client->last_name = isset($data['last_name']) ? $data['last_name'] : NULL ;
-        $client->client_group_id = isset($data['group_id']) ? $data['group_id'] : NULL ;
-        $client->status = isset($data['status']) ? $data['status'] : NULL ;
-        $client->gender = isset($data['gender']) ? $data['gender'] : NULL ;
-        $client->birthday = isset($data['birthday']) ? $data['birthday'] : NULL ;
-        $client->phone_cc = isset($data['phone_cc']) ? $data['phone_cc'] : NULL ;
-        $client->phone = isset($data['phone']) ? $data['phone'] : NULL ;
-        $client->company = isset($data['company']) ? $data['company'] : NULL ;
-        $client->company_vat = isset($data['company_vat']) ? $data['company_vat'] : NULL ;
-        $client->company_number = isset($data['company_number']) ? $data['company_number'] : NULL ;
-        $client->type = isset($data['type']) ? $data['type'] : NULL ;
-        $client->address_1 = isset($data['address_1']) ? $data['address_1'] : NULL ;
-        $client->address_2 = isset($data['address_2']) ? $data['address_2'] : NULL ;
-        $client->city = isset($data['city']) ? $data['city'] : NULL ;
-        $client->state = isset($data['state']) ? $data['state'] : NULL ;
-        $client->postcode = isset($data['postcode']) ? $data['postcode'] : NULL ;
-        $client->country = isset($data['country']) ? $data['country'] : NULL ;
-        $client->document_type = isset($data['document_type']) ? $data['document_type'] : NULL ;
-        $client->document_nr = isset($data['document_nr']) ? $data['document_nr'] : NULL ;
-        $client->notes = isset($data['notes']) ? $data['notes'] : NULL ;
-        $client->lang = isset($data['lang']) ? $data['lang'] : NULL ;
-        $client->currency = isset($data['currency']) ? $data['currency'] : NULL ;
+        $client->auth_type  = $this->di['api_request_data']->get('auth_type');
+        $client->email      = strtolower(trim($this->di['api_request_data']->get('email')));
+        $client->first_name = ucwords($this->di['api_request_data']->get('first_name'));
+        $client->pass       = $this->di['password']->hashIt($password);
 
-        $client->custom_1 = isset($data['custom_1']) ? $data['custom_1'] : NULL ;
-        $client->custom_2 = isset($data['custom_2']) ? $data['custom_2'] : NULL ;
-        $client->custom_3 = isset($data['custom_3']) ? $data['custom_3'] : NULL ;
-        $client->custom_4 = isset($data['custom_4']) ? $data['custom_4'] : NULL ;
-        $client->custom_5 = isset($data['custom_5']) ? $data['custom_5'] : NULL ;
-        $client->custom_6 = isset($data['custom_6']) ? $data['custom_6'] : NULL ;
-        $client->custom_7 = isset($data['custom_7']) ? $data['custom_7'] : NULL ;
-        $client->custom_8 = isset($data['custom_8']) ? $data['custom_8'] : NULL ;
-        $client->custom_9 = isset($data['custom_9']) ? $data['custom_9'] : NULL ;
-        $client->custom_10 = isset($data['custom_10']) ? $data['custom_10'] : NULL ;
+        $client->aid             = $this->di['api_request_data']->get('aid');
+        $client->last_name       = $this->di['api_request_data']->get('last_name');
+        $client->client_group_id = $this->di['api_request_data']->get('group_id');
+        $client->status          = $this->di['api_request_data']->get('status');
+        $client->gender          = $this->di['api_request_data']->get('gender');
+        $client->birthday        = $this->di['api_request_data']->get('birthday');
+        $client->phone_cc        = $this->di['api_request_data']->get('phone_cc');
+        $client->phone           = $this->di['api_request_data']->get('phone');
+        $client->company         = $this->di['api_request_data']->get('company');
+        $client->company_vat     = $this->di['api_request_data']->get('company_vat');
+        $client->company_number  = $this->di['api_request_data']->get('company_number');
+        $client->type            = $this->di['api_request_data']->get('type');
+        $client->address_1       = $this->di['api_request_data']->get('address_1');
+        $client->address_2       = $this->di['api_request_data']->get('address_2');
+        $client->city            = $this->di['api_request_data']->get('city');
+        $client->state           = $this->di['api_request_data']->get('state');
+        $client->postcode        = $this->di['api_request_data']->get('postcode');
+        $client->country         = $this->di['api_request_data']->get('country');
+        $client->document_type   = $this->di['api_request_data']->get('document_type');
+        $client->document_nr     = $this->di['api_request_data']->get('document_nr');
+        $client->notes           = $this->di['api_request_data']->get('notes');
+        $client->lang            = $this->di['api_request_data']->get('lang');
+        $client->currency        = $this->di['api_request_data']->get('currency');
 
-        $client->ip = isset($data['ip']) ? $data['ip'] : NULL;
-        $client->created_at = isset($data['created_at']) ? date('Y-m-d H:i:s', strtotime($data['created_at'])) : date('Y-m-d H:i:s');
+        $client->custom_1  = $this->di['api_request_data']->get('custom_1');
+        $client->custom_2  = $this->di['api_request_data']->get('custom_2');
+        $client->custom_3  = $this->di['api_request_data']->get('custom_3');
+        $client->custom_4  = $this->di['api_request_data']->get('custom_4');
+        $client->custom_5  = $this->di['api_request_data']->get('custom_5');
+        $client->custom_6  = $this->di['api_request_data']->get('custom_6');
+        $client->custom_7  = $this->di['api_request_data']->get('custom_7');
+        $client->custom_8  = $this->di['api_request_data']->get('custom_8');
+        $client->custom_9  = $this->di['api_request_data']->get('custom_9');
+        $client->custom_10 = $this->di['api_request_data']->get('custom_10');
+
+        $client->ip = $this->di['api_request_data']->get('ip');
+
+        $created_at = $this->di['api_request_data']->get('created_at');
+        $client->created_at = empty($created_at) ? date('Y-m-d H:i:s', strtotime($created_at)) : date('Y-m-d H:i:s');
         $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
         return $client;

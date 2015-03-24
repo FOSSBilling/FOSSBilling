@@ -895,6 +895,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
         $di['password'] = $passwordMock;
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di['api_request_data'] = $apiRequest;
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -944,6 +947,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['logger'] = new \Box_Log();
         $di['request'] = $requestMock;
         $di['password'] = $passwordMock;
+
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di['api_request_data'] = $apiRequest;
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
