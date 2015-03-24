@@ -875,6 +875,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest(array());
+        $di['api_request_data'] = $apiRequest;
         $this->service->setDi($di);
 
         $name = 'newSuperFastServer';

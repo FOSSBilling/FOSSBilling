@@ -625,24 +625,25 @@ class Service implements InjectionAwareInterface
         $model->name = $name;
         $model->ip = $ip;
 
-        $model->hostname = isset($extras['hostname']) ? $extras['hostname'] : NULL;
-        $model->assigned_ips = isset($extras['assigned_ips']) ? $extras['assigned_ips'] : NULL;
-        $model->active = isset($extras['active']) ? $extras['active'] : 1;
+        $this->di['api_request_data']->setRequest($extras);
 
-        $model->status_url = isset($extras['status_url']) ? $extras['status_url'] : NULL;
-        $model->max_accounts = isset($extras['max_accounts']) ? $extras['max_accounts'] : NULL;
+        $model->hostname = $this->di['api_request_data']->get('hostname');
+        $model->assigned_ips = $this->di['api_request_data']->get('assigned_ips');
+        $model->active = $this->di['api_request_data']->get('active', 1);
+        $model->status_url = $this->di['api_request_data']->get('status_url');
+        $model->max_accounts = $this->di['api_request_data']->get('max_accounts');
 
-        $model->ns1 = isset($extras['ns1']) ? $extras['ns1'] : NULL;
-        $model->ns2 = isset($extras['ns2']) ? $extras['ns2'] : NULL;
-        $model->ns3 = isset($extras['ns3']) ? $extras['ns3'] : NULL;
-        $model->ns4 = isset($extras['ns4']) ? $extras['ns4'] : NULL;
+        $model->ns1 = $this->di['api_request_data']->get('ns1');
+        $model->ns2 = $this->di['api_request_data']->get('ns2');
+        $model->ns3 = $this->di['api_request_data']->get('ns3');
+        $model->ns4 = $this->di['api_request_data']->get('ns4');
 
         $model->manager = $manager;
-        $model->username = isset($extras['username']) ? $extras['username'] : NULL;
-        $model->password = isset($extras['password']) ? $extras['password'] : NULL;
-        $model->accesshash = isset($extras['accesshash']) ? $extras['accesshash'] : NULL;
-        $model->port = isset($extras['port']) ? $extras['port'] : NULL;
-        $model->secure = isset($extras['secure']) ? $extras['secure'] : 0;
+        $model->username = $this->di['api_request_data']->get('username');
+        $model->password = $this->di['api_request_data']->get('password');
+        $model->accesshash = $this->di['api_request_data']->get('accesshash');
+        $model->port = $this->di['api_request_data']->get('port');
+        $model->secure = $this->di['api_request_data']->get('secure', 0);
 
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
