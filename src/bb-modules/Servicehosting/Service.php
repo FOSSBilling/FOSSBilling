@@ -783,41 +783,28 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function updateHp(\Model_ServiceHostingHp $model, $data)
+    public function updateHp(\Model_ServiceHostingHp $model, array $data)
     {
-        if(isset($data['name'])) {
-            $model->name = $data['name'];
-        }
-        if(isset($data['bandwidth'])) {
-            $model->bandwidth = $data['bandwidth'];
-        }
-        if(isset($data['quota'])) {
-            $model->quota = $data['quota'];
-        }
-        if(isset($data['max_addon'])) {
-            $model->max_addon = $data['max_addon'];
-        }
-        if(isset($data['max_ftp'])) {
-            $model->max_ftp = $data['max_ftp'];
-        }
-        if(isset($data['max_sql'])) {
-            $model->max_sql = $data['max_sql'];
-        }
-        if(isset($data['max_pop'])) {
-            $model->max_pop = $data['max_pop'];
-        }
-        if(isset($data['max_sub'])) {
-            $model->max_sub = $data['max_sub'];
-        }
-        if(isset($data['max_park'])) {
-            $model->max_park = $data['max_park'];
-        }
+        $this->di['api_request_data']->setRequest($data);
+
+        $model->name      = $this->di['api_request_data']->get('name', $model->name);
+        $model->bandwidth = $this->di['api_request_data']->get('bandwidth', $model->bandwidth);
+        $model->quota     = $this->di['api_request_data']->get('quota', $model->quota);
+        $model->max_addon = $this->di['api_request_data']->get('max_addon', $model->max_addon);
+        $model->max_ftp   = $this->di['api_request_data']->get('max_ftp', $model->max_ftp);
+        $model->max_sql   = $this->di['api_request_data']->get('max_sql', $model->max_sql);
+        $model->max_pop   = $this->di['api_request_data']->get('max_pop', $model->max_pop);
+        $model->max_sub   = $this->di['api_request_data']->get('max_sub', $model->max_sub);
+        $model->max_park  = $this->di['api_request_data']->get('max_park', $model->max_park);
+
 
         /* add new config value to hosting plan */
         $config = json_decode($model->config, 1);
 
-        if(isset($data['config']) && is_array($data['config'])) {
-            foreach($data['config'] as $key=>$val) {
+        $inConfig = $this->di['api_request_data']->get('config');
+
+        if(is_array($inConfig)) {
+            foreach($inConfig as $key=>$val) {
                 if(isset($config[$key])) {
                     $config[$key] = $val;
                 }
@@ -827,12 +814,10 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if(isset($data['new_config_name']) &&
-            isset($data['new_config_value']) &&
-            !empty($data['new_config_name']) &&
-            !empty($data['new_config_value'])) {
-
-            $config[$data['new_config_name']] = $data['new_config_value'];
+        $newConfigName = $this->di['api_request_data']->get('new_config_name');
+        $newConfigValue = $this->di['api_request_data']->get('new_config_value');
+        if(!empty($newConfigName) && !empty($newConfigValue)) {
+            $config[$newConfigName] = $newConfigValue;
         }
 
         $model->config = json_encode($config);
