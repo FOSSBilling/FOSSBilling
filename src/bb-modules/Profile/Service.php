@@ -112,6 +112,7 @@ class Service implements InjectionAwareInterface
 
     public function updateClient(\Model_Client $client, array $data = array())
     {
+        $this->di['api_request_data']->setRequest($data);
         $event_params       = $this->di['api_request_data']->get();
         $event_params['id'] = $client->id;
         $this->di['events_manager']->fire(array('event' => 'onBeforeClientProfileUpdate', 'params' => $event_params));

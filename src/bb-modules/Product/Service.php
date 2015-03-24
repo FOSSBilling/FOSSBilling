@@ -567,6 +567,7 @@ class Service implements InjectionAwareInterface
 
     public function createPromo($code, $type, $value, $products = array(), $periods = array(), $clientGroups = array(), $data)
     {
+        $this->di['api_request_data']->setRequest($data);
         if ($this->di['db']->findOne('Promo', 'code = :code', array(':code' => $code))){
             throw new \Box_Exception('This promo code already exists.');
         }
@@ -620,6 +621,7 @@ class Service implements InjectionAwareInterface
 
     public function updatePromo(\Model_Promo $model, array $data = array())
     {
+        $this->di['api_request_data']->setRequest($data);
         $model->code            = $this->di['api_request_data']->get('code', $model->code);
         $model->type            = $this->di['api_request_data']->get('type', $model->type);
         $model->value           = $this->di['api_request_data']->get('value', $model->value);
