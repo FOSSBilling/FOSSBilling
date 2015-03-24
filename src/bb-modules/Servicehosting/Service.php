@@ -661,75 +661,33 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateServer(\Model_ServiceHostingServer $model, array $data){
+    public function updateServer(\Model_ServiceHostingServer $model, array $data)
+    {
+        $this->di['api_request_data']->setRequest($data);
 
-        if(isset($data['name'])) {
-            $model->name = $data['name'];
-        }
+        $model->name     = $this->di['api_request_data']->get('name', $model->name);
+        $model->ip       = $this->di['api_request_data']->get('ip', $model->ip);
+        $model->hostname = $this->di['api_request_data']->get('hostname', $model->hostname);
 
-        if(isset($data['ip'])) {
-            $model->ip = $data['ip'];
-        }
-
-        if(isset($data['hostname'])) {
-            $model->hostname = $data['hostname'];
-        }
-
-        if(isset($data['assigned_ips'])) {
-            $array = explode(PHP_EOL, $data['assigned_ips']);
-            $array = array_map('trim', $array);
-            $array = array_diff($array, array(''));
+        $assigned_ips = $this->di['api_request_data']->get('assigned_ips', '');
+        if (!empty($assigned_ips)) {
+            $array               = explode(PHP_EOL, $data['assigned_ips']);
+            $array               = array_map('trim', $array);
+            $array               = array_diff($array, array(''));
             $model->assigned_ips = json_encode($array);
         }
 
-        if(isset($data['active'])) {
-            $model->active = $data['active'];
-        }
-
-        if(isset($data['status_url'])) {
-            $model->status_url = $data['status_url'];
-        }
-
-        if(isset($data['max_accounts'])) {
-            $model->max_accounts = $data['max_accounts'];
-        }
-
-        if(isset($data['ns1'])) {
-            $model->ns1 = $data['ns1'];
-        }
-        if(isset($data['ns2'])) {
-            $model->ns2 = $data['ns2'];
-        }
-        if(isset($data['ns3'])) {
-            $model->ns3 = $data['ns3'];
-        }
-        if(isset($data['ns4'])) {
-            $model->ns4 = $data['ns4'];
-        }
-
-        if(isset($data['manager'])) {
-            $model->manager = $data['manager'];
-        }
-
-        if(isset($data['username'])) {
-            $model->username = $data['username'];
-        }
-
-        if(isset($data['password'])) {
-            $model->password = $data['password'];
-        }
-
-        if(isset($data['accesshash'])) {
-            $model->accesshash = $data['accesshash'];
-        }
-
-        if(isset($data['port'])) {
-            $model->port = $data['port'];
-        }
-
-        if(isset($data['secure'])) {
-            $model->secure = $data['secure'];
-        }
+        $model->active       = $this->di['api_request_data']->get('active', $model->active);
+        $model->status_url   = $this->di['api_request_data']->get('status_url', $model->status_url);
+        $model->max_accounts = $this->di['api_request_data']->get('max_accounts', $model->max_accounts);
+        $model->ns1          = $this->di['api_request_data']->get('ns1', $model->ns1);
+        $model->ns2          = $this->di['api_request_data']->get('ns2', $model->ns2);
+        $model->ns3          = $this->di['api_request_data']->get('ns3', $model->ns3);
+        $model->ns4          = $this->di['api_request_data']->get('ns4', $model->ns4);
+        $model->manager      = $this->di['api_request_data']->get('manager', $model->manager);
+        $model->accesshash   = $this->di['api_request_data']->get('accesshash', $model->accesshash);
+        $model->port         = $this->di['api_request_data']->get('port', $model->port);
+        $model->secure       = $this->di['api_request_data']->get('secure', $model->secure);
 
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
