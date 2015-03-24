@@ -125,10 +125,10 @@
 
     <target name="branch.check">
         <property environment="env"/>
+        <echo>TRAVIS_BRANCH: ${env.TRAVIS_BRANCH}</echo>
         <condition property="branch.master">
             <equals arg1="${env.TRAVIS_BRANCH}" arg2="master" />
         </condition>
-        <echo>TRAVIS_BRANCH: ${env.TRAVIS_BRANCH}</echo>
     </target>
 
     <target name="build-api" depends="clean, remove-fonts">
