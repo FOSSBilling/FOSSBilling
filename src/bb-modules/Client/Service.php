@@ -520,7 +520,7 @@ class Service implements InjectionAwareInterface
         $client->ip = $this->di['api_request_data']->get('ip');
 
         $created_at = $this->di['api_request_data']->get('created_at');
-        $client->created_at = empty($created_at) ? date('Y-m-d H:i:s', strtotime($created_at)) : date('Y-m-d H:i:s');
+        $client->created_at = !empty($created_at) ? date('Y-m-d H:i:s', strtotime($created_at)) : date('Y-m-d H:i:s');
         $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
         return $client;
