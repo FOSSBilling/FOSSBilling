@@ -195,13 +195,13 @@ class Client implements InjectionAwareInterface
                 if(!$model instanceof \Model_Admin) {
                     throw new \Box_Exception('Authentication Failed', null, 205);
                 }
-                $this->di['session']->set('admin', $table->toSessionArray($model));
+                $service = $this->di['mod_service']('Client');
+                $this->di['session']->set('admin', $service->toSessionArray($model));
                 break;
 
             case 'guest': // do not allow at the moment
             default:
                 throw new \Box_Exception('Authentication Failed', null, 203);
-                break;
         }
     }
 
