@@ -12,4 +12,6 @@
 
 
 class Model_ClientPasswordReset extends RedBean_SimpleModel
-{}
+{
+
+}

@@ -16,7 +16,7 @@ namespace Box\Mod\Servicecentovacast\Api;
  * CentovaCast management
  */
 class Admin extends \Api_Abstract
-{    
+{
     /**
      * Return centovacast servers
      * 
