@@ -15,13 +15,15 @@ use Box\InjectionAwareInterface;
 
 class Box_App {
 
-    protected $mappings = array(), $before_filters = Array(), $after_filters = Array();
-    protected $shared = array();
+    protected $mappings       = array();
+    protected $before_filters = array();
+    protected $after_filters  = array();
+    protected $shared         = array();
     protected $options;
-    protected $di = NULL;
-    protected $ext = 'phtml';
-    protected $mod = 'index';
-    protected $url = '/';
+    protected $di             = NULL;
+    protected $ext            = 'phtml';
+    protected $mod            = 'index';
+    protected $url            = '/';
 
     public $uri = NULL;
 

@@ -38,7 +38,8 @@ class Box_Period
         self::PERIOD_TRIENNIAL	=>	36,
     );
 
-    private $unit, $qty;
+    private $unit;
+    private $qty;
 
     public function __construct($code)
     {
