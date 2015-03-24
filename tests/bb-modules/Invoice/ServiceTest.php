@@ -915,6 +915,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['mod_service'] = $di->protect(function () use ($itemInvoiceServiceMock) {return $itemInvoiceServiceMock;});
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
+        $di['api_request_data'] = new \Box\Mod\Api\Request();
 
         $this->service->setDi($di);
 

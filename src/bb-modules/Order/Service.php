@@ -645,9 +645,36 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('ClientOrder', 'group_id = :group_id AND group_master = 1 AND client_id = :client_id', $bindings);
     }
 
+    /**
+     * activate all addons on initial activation
+     * @see https://github.com/boxbilling/BoxBilling/issues/54
+     */
+    public function activateOrderAddons(\Model_ClientOrder $order)
+    {
+        if (!$order->group_master) {
+            return false;
+        }
+
+        $list = $this->getOrderAddonsList($order);
+        foreach ($list as $addon) {
+            try {
+                $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
+                $this->createFromOrder($addon);
+                $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
+            } catch (\Exception $e) {
+                error_log($e->getMessage());
+            }
+        }
+        return true;
+    }
+
     public function activateOrder(\Model_ClientOrder $order, $data = array())
     {
-        if ($order->status != \Model_ClientOrder::STATUS_PENDING_SETUP && $order->status != \Model_ClientOrder::STATUS_FAILED_SETUP) {
+        $statues = array(
+            \Model_ClientOrder::STATUS_PENDING_SETUP,
+            \Model_ClientOrder::STATUS_FAILED_SETUP,
+        );
+        if (!in_array($order->status, $statues)){
             if (!isset($data['force']) || !$data['force']) {
                 throw new \Box_Exception('Only pending setup or failed orders can be activated');
             }
@@ -661,20 +688,7 @@ class Service implements InjectionAwareInterface
         }
         $this->di['events_manager']->fire(array('event' => 'onAfterAdminOrderActivate', 'params' => $event_params));
 
-        // activate all addons on initial activation
-        // @see https://github.com/boxbilling/BoxBilling/issues/54
-        if ($order->group_master) {
-            $list = $this->getOrderAddonsList($order);
-            foreach ($list as $addon) {
-                try {
-                    $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
-                    $this->createFromOrder($addon);
-                    $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
-                } catch (\Exception $e) {
-                    error_log($e->getMessage());
-                }
-            }
-        }
+        $this->activateOrderAddons($order);
 
         $this->di['logger']->info('Activated order #%s', $order->id);
 
@@ -793,73 +807,90 @@ class Service implements InjectionAwareInterface
         return TRUE;
     }
 
+    /**
+     * @param \Model_ClientOrder $order
+     * @return int
+     */
+    public function updatePeriod(\Model_ClientOrder $order)
+    {
+        $period = $this->di['api_request_data']->get('period', null);
+        if (!empty($period)) {
+            $period        = $this->di['period']($period);
+            $order->period = $period->getCode();
+            return 1;
+        }
+
+        if (!is_null($period)) {
+            $order->period = NULL;
+            return 2;
+        }
+        return 0;
+    }
+
+    /**
+     * @param \Model_ClientOrder $order
+     * @return int
+     */
+    public function updateOrderMeta(\Model_ClientOrder $order)
+    {
+        $meta = $this->di['api_request_data']->get('meta');
+
+        if (!is_array($meta)) {
+            return 0;
+        }
+
+        if (empty($meta)) {
+            $this->di['db']->exec('DELETE FROM client_order_meta WHERE client_order_id = :id;', array(':id' => $order->id));
+            return 1;
+        }
+        foreach ($meta as $k => $v) {
+            $mm = $this->di['db']->findOne('ClientOrderMeta', 'client_order_id = :id AND name = :n', array(':id' => $order->id, ':n' => $k));
+            if (!$mm) {
+                $mm                  = $this->di['db']->dispense('ClientOrderMeta');
+                $mm->client_order_id = $order->id;
+                $mm->name            = $k;
+                $mm->created_at      = date('Y-m-d H:i:s');
+            }
+            $mm->value      = $v;
+            $mm->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($mm);
+        }
+        return 2;
+    }
+
     public function updateOrder(\Model_ClientOrder $order, array $data)
     {
         $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderUpdate', 'params' => $data));
+        $this->di['api_request_data']->setRequest($data);
 
-        if (isset($data['period']) && !empty($data['period'])) {
-            $period        = $this->di['period']($data['period']);
-            $order->period = $period->getCode();
-        } else if (isset($data['period']) && empty ($data['period'])) {
-            $order->period = NULL;
+        $this->updatePeriod($order);
+
+        $created_at = $this->di['api_request_data']->get('created_at', '');
+        if (!empty($created_at)) {
+            $order->created_at = date('Y-m-d H:i:s', strtotime($created_at));
         }
 
-        if (isset($data['created_at']) && !empty($data['created_at'])) {
-            $order->created_at = date('Y-m-d H:i:s', strtotime($data['created_at']));
+        $activated_at = $this->di['api_request_data']->get('activated_at');
+        if (!empty($activated_at)) {
+            $order->activated_at = date('Y-m-d H:i:s', strtotime($activated_at));
         }
 
-        if (isset($data['activated_at']) && !empty($data['activated_at'])) {
-            $order->activated_at = date('Y-m-d H:i:s', strtotime($data['activated_at']));
+        $expires_at = $this->di['api_request_data']->get('expires_at');
+        if (!empty($expires_at)) {
+            $order->expires_at = date('Y-m-d H:i:s', strtotime($expires_at));
         }
-
-        if (isset($data['expires_at']) && !empty($data['expires_at'])) {
-            $order->expires_at = date('Y-m-d H:i:s', strtotime($data['expires_at']));
-        } else if (isset($data['expires_at']) && empty ($data['expires_at'])) {
+        if (empty($expires_at) && !is_null($expires_at)) {
             $order->expires_at = NULL;
         }
 
-        if (isset($data['invoice_option'])) {
-            $order->invoice_option = $data['invoice_option'];
-        }
+        $order->invoice_option = $this->di['api_request_data']->get('invoice_option', $order->invoice_option);
+        $order->title          = $this->di['api_request_data']->get('title', $order->title);
+        $order->price          = $this->di['api_request_data']->get('price', $order->price);
+        $order->status         = $this->di['api_request_data']->get('status', $order->status);
+        $order->notes          = $this->di['api_request_data']->get('notes', $order->notes);
+        $order->reason         = $this->di['api_request_data']->get('reason', $order->reason);
 
-        if (isset($data['title'])) {
-            $order->title = $data['title'];
-        }
-
-        if (isset($data['price'])) {
-            $order->price = $data['price'];
-        }
-
-        if (isset($data['status']) && !empty($data['status'])) {
-            $order->status = $data['status'];
-        }
-
-        if (isset($data['notes'])) {
-            $order->notes = $data['notes'];
-        }
-
-        if (isset($data['reason'])) {
-            $order->reason = $data['reason'];
-        }
-
-        if (isset($data['meta']) && is_array($data['meta'])) {
-            if (empty($data['meta'])) {
-                $this->di['db']->exec('DELETE FROM client_order_meta WHERE client_order_id = :id;', array(':id' => $order->id));
-            } else {
-                foreach ($data['meta'] as $k => $v) {
-                    $mm = $this->di['db']->findOne('ClientOrderMeta', 'client_order_id = :id AND name = :n', array(':id' => $order->id, ':n' => $k));
-                    if (!$mm) {
-                        $mm                  = $this->di['db']->dispense('ClientOrderMeta');
-                        $mm->client_order_id = $order->id;
-                        $mm->name            = $k;
-                        $mm->created_at      = date('Y-m-d H:i:s');
-                    }
-                    $mm->value      = $v;
-                    $mm->updated_at = date('Y-m-d H:i:s');
-                    $this->di['db']->store($mm);
-                }
-            }
-        }
+        $this->updateOrderMeta($order);
 
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);

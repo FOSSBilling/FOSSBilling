@@ -32,15 +32,15 @@ class Client extends \Api_Abstract
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = array(
-                'id'           => isset($item['id']) ? $item['id'] : '',
-                'client_id'    => isset($item['client_id']) ? $item['client_id'] : '',
-                'sender'       => isset($item['sender']) ? $item['sender'] : '',
-                'recipients'   => isset($item['recipients']) ? $item['recipients'] : '',
-                'subject'      => isset($item['subject']) ? $item['subject'] : '',
-                'content_html' => isset($item['content_html']) ? $item['content_html'] : '',
-                'content_text' => isset($item['content_text']) ? $item['content_text'] : '',
-                'created_at'   => isset($item['created_at']) ? $item['created_at'] : '',
-                'updated_at'   => isset($item['updated_at']) ? $item['updated_at'] : '',
+                'id'           => $item['id'],
+                'client_id'    => $item['client_id'],
+                'sender'       => $item['sender'],
+                'recipients'   => $item['recipients'],
+                'subject'      => $item['subject'],
+                'content_html' => $item['content_html'],
+                'content_text' => $item['content_text'],
+                'created_at'   => $item['created_at'],
+                'updated_at'   => $item['updated_at'],
             );
         }
 

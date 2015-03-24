@@ -321,43 +321,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         return array(
             array(
-                array( //empty array
-                ),
-                $this->never(),
-                $model,
-                $this->never(),
-
-            ),
-            array(
-                array(
-                    'code' => '' //Currency code not set
-                ),
-                $this->never(),
-                $model,
-                $this->never(),
-
-            ),
-            array(
-                array(
-                    'code' => 'EUR',
-                    //format is missing
-                ),
-                $this->never(),
-                $model,
-                $this->never(),
-
-            ),
-            array(
-                array(
-                    'code'   => 'EUR',
-                    'format' => '' //format not set
-                ),
-                $this->never(),
-                $model,
-                $this->never(),
-
-            ),
-            array(
                 array(
                     'code'   => 'EUR',
                     'format' => '€{{price}}'
@@ -397,7 +360,18 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             ->method('getAvailableCurrencies')
             ->will($this->returnValue($this->availableCurrencies));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
+
+        $di = new \Box_Di();
+        $di['validator'] = $validatorMock;
+
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di['api_request_data'] = $apiRequest;
+
         $adminApi->setService($service);
+        $adminApi->setDi($di);
         $adminApi->create($data); //Expecting \Box_Exception every time
     }
 
@@ -421,8 +395,18 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             ->method('createCurrency')
             ->will($this->returnValue($data['code']));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
+
+        $di = new \Box_Di();
+        $di['validator'] = $validatorMock;
+
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di['api_request_data'] = $apiRequest;
 
         $adminApi->setService($service);
+        $adminApi->setDi($di);
 
         $result = $adminApi->create($data);
 

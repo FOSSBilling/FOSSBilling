@@ -206,6 +206,9 @@ class ServiceInvoiceItemTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di['api_request_data'] = $apiRequest;
         $this->service->setDi($di);
 
         $invoiceModel = new \Model_Invoice();

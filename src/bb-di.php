@@ -330,4 +330,9 @@ $di['translate'] = $di->protect(function($textDomain = '') use ($di) {
     $tr->setup();
     return $tr;
 });
+$di['api_request_data'] = function() use($di) {
+    $apiRequest = new \Box\Mod\Api\Request();
+    $apiRequest->setDi($di);
+    return $apiRequest;
+};
 return $di;

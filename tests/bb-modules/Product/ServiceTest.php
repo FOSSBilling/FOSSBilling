@@ -646,6 +646,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['mod_service'] = $di->protect(function() use ($systemServiceMock) {return $systemServiceMock;});
         $di['logger'] = new \Box_Log();
 
+        $apiRequestMock = $this->getMockBuilder('\Box\Mod\Api\Request')->getMock();
+        $apiRequestMock->expects($this->atLeastOnce())
+            ->method('get');
+        $di['api_request_data'] = $apiRequestMock;
+
         $this->service->setDi($di);
         $result = $this->service->createPromo('code', 'percentage', 50, array(), array(), array(), array());
         $this->assertInternalType('int', $result);
@@ -702,6 +707,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
+
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di['api_request_data'] = $apiRequest;
 
         $this->service->setDi($di);
         $result = $this->service->updatePromo($model, $data);

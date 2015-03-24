@@ -625,24 +625,25 @@ class Service implements InjectionAwareInterface
         $model->name = $name;
         $model->ip = $ip;
 
-        $model->hostname = isset($extras['hostname']) ? $extras['hostname'] : NULL;
-        $model->assigned_ips = isset($extras['assigned_ips']) ? $extras['assigned_ips'] : NULL;
-        $model->active = isset($extras['active']) ? $extras['active'] : 1;
+        $this->di['api_request_data']->setRequest($extras);
 
-        $model->status_url = isset($extras['status_url']) ? $extras['status_url'] : NULL;
-        $model->max_accounts = isset($extras['max_accounts']) ? $extras['max_accounts'] : NULL;
+        $model->hostname = $this->di['api_request_data']->get('hostname');
+        $model->assigned_ips = $this->di['api_request_data']->get('assigned_ips');
+        $model->active = $this->di['api_request_data']->get('active', 1);
+        $model->status_url = $this->di['api_request_data']->get('status_url');
+        $model->max_accounts = $this->di['api_request_data']->get('max_accounts');
 
-        $model->ns1 = isset($extras['ns1']) ? $extras['ns1'] : NULL;
-        $model->ns2 = isset($extras['ns2']) ? $extras['ns2'] : NULL;
-        $model->ns3 = isset($extras['ns3']) ? $extras['ns3'] : NULL;
-        $model->ns4 = isset($extras['ns4']) ? $extras['ns4'] : NULL;
+        $model->ns1 = $this->di['api_request_data']->get('ns1');
+        $model->ns2 = $this->di['api_request_data']->get('ns2');
+        $model->ns3 = $this->di['api_request_data']->get('ns3');
+        $model->ns4 = $this->di['api_request_data']->get('ns4');
 
         $model->manager = $manager;
-        $model->username = isset($extras['username']) ? $extras['username'] : NULL;
-        $model->password = isset($extras['password']) ? $extras['password'] : NULL;
-        $model->accesshash = isset($extras['accesshash']) ? $extras['accesshash'] : NULL;
-        $model->port = isset($extras['port']) ? $extras['port'] : NULL;
-        $model->secure = isset($extras['secure']) ? $extras['secure'] : 0;
+        $model->username = $this->di['api_request_data']->get('username');
+        $model->password = $this->di['api_request_data']->get('password');
+        $model->accesshash = $this->di['api_request_data']->get('accesshash');
+        $model->port = $this->di['api_request_data']->get('port');
+        $model->secure = $this->di['api_request_data']->get('secure', 0);
 
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
@@ -661,75 +662,33 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateServer(\Model_ServiceHostingServer $model, array $data){
+    public function updateServer(\Model_ServiceHostingServer $model, array $data)
+    {
+        $this->di['api_request_data']->setRequest($data);
 
-        if(isset($data['name'])) {
-            $model->name = $data['name'];
-        }
+        $model->name     = $this->di['api_request_data']->get('name', $model->name);
+        $model->ip       = $this->di['api_request_data']->get('ip', $model->ip);
+        $model->hostname = $this->di['api_request_data']->get('hostname', $model->hostname);
 
-        if(isset($data['ip'])) {
-            $model->ip = $data['ip'];
-        }
-
-        if(isset($data['hostname'])) {
-            $model->hostname = $data['hostname'];
-        }
-
-        if(isset($data['assigned_ips'])) {
-            $array = explode(PHP_EOL, $data['assigned_ips']);
-            $array = array_map('trim', $array);
-            $array = array_diff($array, array(''));
+        $assigned_ips = $this->di['api_request_data']->get('assigned_ips', '');
+        if (!empty($assigned_ips)) {
+            $array               = explode(PHP_EOL, $data['assigned_ips']);
+            $array               = array_map('trim', $array);
+            $array               = array_diff($array, array(''));
             $model->assigned_ips = json_encode($array);
         }
 
-        if(isset($data['active'])) {
-            $model->active = $data['active'];
-        }
-
-        if(isset($data['status_url'])) {
-            $model->status_url = $data['status_url'];
-        }
-
-        if(isset($data['max_accounts'])) {
-            $model->max_accounts = $data['max_accounts'];
-        }
-
-        if(isset($data['ns1'])) {
-            $model->ns1 = $data['ns1'];
-        }
-        if(isset($data['ns2'])) {
-            $model->ns2 = $data['ns2'];
-        }
-        if(isset($data['ns3'])) {
-            $model->ns3 = $data['ns3'];
-        }
-        if(isset($data['ns4'])) {
-            $model->ns4 = $data['ns4'];
-        }
-
-        if(isset($data['manager'])) {
-            $model->manager = $data['manager'];
-        }
-
-        if(isset($data['username'])) {
-            $model->username = $data['username'];
-        }
-
-        if(isset($data['password'])) {
-            $model->password = $data['password'];
-        }
-
-        if(isset($data['accesshash'])) {
-            $model->accesshash = $data['accesshash'];
-        }
-
-        if(isset($data['port'])) {
-            $model->port = $data['port'];
-        }
-
-        if(isset($data['secure'])) {
-            $model->secure = $data['secure'];
-        }
+        $model->active       = $this->di['api_request_data']->get('active', $model->active);
+        $model->status_url   = $this->di['api_request_data']->get('status_url', $model->status_url);
+        $model->max_accounts = $this->di['api_request_data']->get('max_accounts', $model->max_accounts);
+        $model->ns1          = $this->di['api_request_data']->get('ns1', $model->ns1);
+        $model->ns2          = $this->di['api_request_data']->get('ns2', $model->ns2);
+        $model->ns3          = $this->di['api_request_data']->get('ns3', $model->ns3);
+        $model->ns4          = $this->di['api_request_data']->get('ns4', $model->ns4);
+        $model->manager      = $this->di['api_request_data']->get('manager', $model->manager);
+        $model->accesshash   = $this->di['api_request_data']->get('accesshash', $model->accesshash);
+        $model->port         = $this->di['api_request_data']->get('port', $model->port);
+        $model->secure       = $this->di['api_request_data']->get('secure', $model->secure);
 
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -824,41 +783,28 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function updateHp(\Model_ServiceHostingHp $model, $data)
+    public function updateHp(\Model_ServiceHostingHp $model, array $data)
     {
-        if(isset($data['name'])) {
-            $model->name = $data['name'];
-        }
-        if(isset($data['bandwidth'])) {
-            $model->bandwidth = $data['bandwidth'];
-        }
-        if(isset($data['quota'])) {
-            $model->quota = $data['quota'];
-        }
-        if(isset($data['max_addon'])) {
-            $model->max_addon = $data['max_addon'];
-        }
-        if(isset($data['max_ftp'])) {
-            $model->max_ftp = $data['max_ftp'];
-        }
-        if(isset($data['max_sql'])) {
-            $model->max_sql = $data['max_sql'];
-        }
-        if(isset($data['max_pop'])) {
-            $model->max_pop = $data['max_pop'];
-        }
-        if(isset($data['max_sub'])) {
-            $model->max_sub = $data['max_sub'];
-        }
-        if(isset($data['max_park'])) {
-            $model->max_park = $data['max_park'];
-        }
+        $this->di['api_request_data']->setRequest($data);
+
+        $model->name      = $this->di['api_request_data']->get('name', $model->name);
+        $model->bandwidth = $this->di['api_request_data']->get('bandwidth', $model->bandwidth);
+        $model->quota     = $this->di['api_request_data']->get('quota', $model->quota);
+        $model->max_addon = $this->di['api_request_data']->get('max_addon', $model->max_addon);
+        $model->max_ftp   = $this->di['api_request_data']->get('max_ftp', $model->max_ftp);
+        $model->max_sql   = $this->di['api_request_data']->get('max_sql', $model->max_sql);
+        $model->max_pop   = $this->di['api_request_data']->get('max_pop', $model->max_pop);
+        $model->max_sub   = $this->di['api_request_data']->get('max_sub', $model->max_sub);
+        $model->max_park  = $this->di['api_request_data']->get('max_park', $model->max_park);
+
 
         /* add new config value to hosting plan */
         $config = json_decode($model->config, 1);
 
-        if(isset($data['config']) && is_array($data['config'])) {
-            foreach($data['config'] as $key=>$val) {
+        $inConfig = $this->di['api_request_data']->get('config');
+
+        if(is_array($inConfig)) {
+            foreach($inConfig as $key=>$val) {
                 if(isset($config[$key])) {
                     $config[$key] = $val;
                 }
@@ -868,12 +814,10 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if(isset($data['new_config_name']) &&
-            isset($data['new_config_value']) &&
-            !empty($data['new_config_name']) &&
-            !empty($data['new_config_value'])) {
-
-            $config[$data['new_config_name']] = $data['new_config_value'];
+        $newConfigName = $this->di['api_request_data']->get('new_config_name');
+        $newConfigValue = $this->di['api_request_data']->get('new_config_value');
+        if(!empty($newConfigName) && !empty($newConfigValue)) {
+            $config[$newConfigName] = $newConfigValue;
         }
 
         $model->config = json_encode($config);

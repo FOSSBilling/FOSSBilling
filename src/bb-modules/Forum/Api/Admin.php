@@ -138,40 +138,28 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Forum id missing');
-        }
+        $required = array(
+            'id' => 'Forum id missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
 
         $model = $this->di['db']->getExistingModelById('Forum', $data['id'], 'Forum not found');
-        
-        if(isset($data['category'])) {
-            if(isset($data['update_categories']) && $data['update_categories']) {
+
+        $category = $this->di['api_request_data']->get('category');
+        if($category) {
+            if($this->di['api_request_data']->get('update_categories')) {
                 $this->di['db']->exec('UPDATE forum SET category = :cat WHERE category = :old_cat', 
-                        array('cat'=>$data['category'], 'old_cat'=>$model->category));
+                        array('cat'=>$category, 'old_cat'=>$model->category));
             }
-            $model->category = $data['category'];
+            $model->category = $category;
         }
-        
-        if(isset($data['title'])) {
-            $model->title = $data['title'];
-        }
-        
-        if(isset($data['status'])) {
-            $model->status = $data['status'];
-        }
-        
-        if(isset($data['slug'])) {
-            $model->slug = $data['slug'];
-        }
-        
-        if(isset($data['description'])) {
-            $model->description = $data['description'];
-        }
-        
-        if(isset($data['priority'])) {
-            $model->priority = $data['priority'];
-        }
-        
+
+        $model->title = $this->di['api_request_data']->get('title', $model->title);
+        $model->status = $this->di['api_request_data']->get('status', $model->status);
+        $model->slug = $this->di['api_request_data']->get('slug', $model->slug);
+        $model->description = $this->di['api_request_data']->get('description', $model->description);
+        $model->priority = $this->di['api_request_data']->get('priority', $model->priority);
+
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 

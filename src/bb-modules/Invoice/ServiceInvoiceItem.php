@@ -134,19 +134,22 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function addNew(\Model_Invoice $proforma, array $data)
     {
-        if(!isset($data['title']) || empty($data['title'])) {
+        $this->di['api_request_data']->setRequest($data);
+
+        $title = $this->di['api_request_data']->get('title', '');
+        if(empty($title)) {
             throw new \Box_Exception('Invoice item title is missing');
         }
 
-        $period = isset($data['period']) ? $data['period'] : NULL;
+        $period = $this->di['api_request_data']->get('period', 0);
         if($period) {
             $periodCheck = $this->di['period']($period);
         }
 
-        $type = isset($data['type']) ? $data['type'] : \Model_InvoiceItem::TYPE_CUSTOM;
-        $rel_id = isset($data['rel_id']) ? $data['rel_id'] : NULL;
-        $task = isset($data['task']) ? $data['task'] : \Model_InvoiceItem::TASK_VOID;
-        $status = isset($data['status']) ? $data['status'] : \Model_InvoiceItem::STATUS_PENDING_PAYMENT;
+        $type = $this->di['api_request_data']->get('type', \Model_InvoiceItem::TYPE_CUSTOM);
+        $rel_id = $this->di['api_request_data']->get('rel_id');
+        $task = $this->di['api_request_data']->get('task', \Model_InvoiceItem::TASK_VOID);
+        $status = $this->di['api_request_data']->get('status', \Model_InvoiceItem::STATUS_PENDING_PAYMENT);
 
         $pi = $this->di['db']->dispense('InvoiceItem');
         $pi->invoice_id     = $proforma->id;
@@ -156,11 +159,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->status         = $status;
         $pi->title          = $data['title'];
         $pi->period         = $period;
-        $pi->quantity       = isset($data['quantity']) ? (int)$data['quantity'] : 1;
-        $pi->unit           = isset($data['unit']) ? (string)$data['unit'] : NULL;
-        $pi->charged        = isset($data['charged']) ? (bool)$data['charged'] : 0;
-        $pi->price          = isset($data['price']) ? (float)$data['price'] : 0;
-        $pi->taxed          = isset($data['taxed']) ? (bool)$data['taxed'] : FALSE;
+        $pi->quantity       = $this->di['api_request_data']->get('quantity', 1);
+        $pi->unit           = $this->di['api_request_data']->get('unit');
+        $pi->charged        = $this->di['api_request_data']->get('charged', 0);
+        $pi->price          = $this->di['api_request_data']->get('price', 0);
+        $pi->taxed          = $this->di['api_request_data']->get('taxed', false);
         $pi->created_at     = date('Y-m-d H:i:s');
         $pi->updated_at     = date('Y-m-d H:i:s');
         $itemId = $this->di['db']->store($pi);
