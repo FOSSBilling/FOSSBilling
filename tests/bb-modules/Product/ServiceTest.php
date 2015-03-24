@@ -703,6 +703,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
 
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di['api_request_data'] = $apiRequest;
+
         $this->service->setDi($di);
         $result = $this->service->updatePromo($model, $data);
         $this->assertInternalType('bool', $result);
