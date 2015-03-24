@@ -27,6 +27,7 @@ class Guest extends \Api_Abstract
         $result = array(
             'publickey' =>  isset($config['captcha_recaptcha_publickey']) ? $config['captcha_recaptcha_publickey'] : null,
             'enabled'   =>  isset($config['captcha_enabled']) ? $config['captcha_enabled'] : false,
+            'version'   =>  isset($config['captcha_version']) ? $config['captcha_version'] : false,
         );
         return $result;
     }
