@@ -735,6 +735,7 @@ class Service implements InjectionAwareInterface
 
             case 'manual':
                 if($this->di['config']['debug']) error_log('Refunds are managed manually. No actions performed');
+                break;
             default:
                 break;
         }
