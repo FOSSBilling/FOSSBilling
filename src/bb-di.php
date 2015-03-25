@@ -335,4 +335,8 @@ $di['api_request_data'] = function() use($di) {
     $apiRequest->setDi($di);
     return $apiRequest;
 };
+
+$di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+    return isset ($array[$key]) ? $array[$key] : $default;
+});
 return $di;
