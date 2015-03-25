@@ -31,8 +31,9 @@ class Guest extends \Api_Abstract
         $status = isset($data['status']) ? $data['status'] : NULL;
         $search = isset($data['search']) ? $data['search'] : NULL;
         $cat    = isset($data['kb_article_category_id']) ? $data['kb_article_category_id'] : NULL;
+        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
 
-        $pager = $this->getService()->searchArticles($status, $search, $cat);
+        $pager = $this->getService()->searchArticles($status, $search, $cat, $per_page);
 
         foreach ($pager['list'] as $key => $item) {
             $article              = $this->di['db']->getExistingModelById('KbArticle', $item['id'], 'KB Article not found');

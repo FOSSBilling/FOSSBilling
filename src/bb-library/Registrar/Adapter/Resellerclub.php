@@ -191,8 +191,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'address-line-2'    =>  $c->getAddress2(),
             'address-line-3'    =>  $c->getAddress3(),
             'state'             =>  $c->getState(),
-//            'fax-cc'            =>  $c->getFax(),
-//            'fax'               =>  $c->getFaxCc(),
         );
 
         $params = array_merge($optional_params, $required_params);
@@ -341,7 +339,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'tech-contact-id'   =>  $tech_contact_id,
             'billing-contact-id'=>  $billing_contact_id,
             'invoice-option'    =>  'NoInvoice',
-            'protect-privacy'   =>  false, //$domain->getPrivacyEnabled(),
+            'protect-privacy'   =>  false,
         );
 
         if($tld == '.asia') {
@@ -500,7 +498,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             'mobile'                         =>  '',
         );
 
-//        $params = $this->_checkRequiredParams($optional_params, $params);
         $params = array_merge($optional_params, $params);
         $customer_id = $this->_makeRequest('customers/signup', $params, 'POST');
         return $customer_id;
@@ -788,10 +785,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             if(!isset($params[$param])) {
                 $params[$param] = $value;
             }
-
-            if(!is_bool($params[$param]) && empty($params[$param])) {
-//                throw new Registrar_Exception(sprintf('Required param "%s" can not be blank', $param));
-            }
         }
 
         return $params;
@@ -915,11 +908,11 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         if($tld == '.ru' || $tld == '.com.ru' || $tld == '.org.ru' || $tld == '.net.ru') {
-            if(strlen(trim($client->getBirthday())) == 0 || strtotime($client->getBirthday()) == false) {
+            if(strlen(trim($client->getBirthday())) === 0 || strtotime($client->getBirthday()) === false) {
                 throw new Registrar_Exception('Valid contact Birth Date is required while registering RU domain name');
             }
 
-            if(strlen(trim($client->getDocumentNr())) == 0 ) {
+            if(strlen(trim($client->getDocumentNr())) === 0 ) {
                 throw new Registrar_Exception('Valid contact Passport information is required while registering RU domain name');
             }
 
@@ -1005,7 +998,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                 'status'        => 'Active',
                 'type'          => $type,
             );
-            $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json', true);
+            $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json');
             if($result['recsonpage'] < 1) {
                 throw new Registrar_Exception('Contact not found');
             }
@@ -1020,7 +1013,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     private function getCARegistrantAgreementVersion()
     {
-        $agreement = $this->_makeRequest('contacts/dotca/registrantagreement', array(), 'GET', 'json', true);
+        $agreement = $this->_makeRequest('contacts/dotca/registrantagreement', array(), 'GET', 'json');
         return $agreement['version'];
     }
 }

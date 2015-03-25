@@ -1,3 +1,24 @@
+Release 4.16
+------------------------------------------------------------------------------
+* Compatibility with MySQL 5.6 Datetime values updated to meet MySQL STRICT_TRANS_TABLES mode rules.
+* Fixed add funds issue when admin marked invoice as paid.
+* Invoices can be downloaded as PDF in boxbilling theme
+* Added language picker for client in huraga theme
+* Updated translations:
+  * merged admin.po into messages.po 
+  * added language selector in admin area
+* Bluepay payment adapter no longer supported. Adapter file moved to boxbilling/extensions repository
+* Added direct link to "support ticket message"
+* Added new gateway - Pay with Client Balance.
+* Implemented Google Recaptcha v2 - Tough on bots Easy on humans
+* BoxBilling API improvements
+* Updated orderbutton popup style in mobile view
+* Seo module updates
+* Users must verify theirs emails after email confirmations setting is enabled
+* Compatibility with PHP7
+* Generate VAT rules for each EU country according to it's standart rate
+* Various bug fixes and improvements
+
 Release 4.15 (2015-02-19)
 ------------------------------------------------------------------------------
 * New module:

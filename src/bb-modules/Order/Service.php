@@ -289,8 +289,8 @@ class Service implements InjectionAwareInterface
         $os->client_order_id = $order->id;
         $os->status          = $order->status;
         $os->notes           = $notes;
-        $os->created_at      = date('c');
-        $os->updated_at      = date('c');
+        $os->created_at      = date('Y-m-d H:i:s');
+        $os->updated_at      = date('Y-m-d H:i:s');
         $this->di['db']->store($os);
     }
 
@@ -583,15 +583,15 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($data['created_at'])) {
-            $order->created_at = date('c', strtotime($data['created_at']));
+            $order->created_at = date('Y-m-d H:i:s', strtotime($data['created_at']));
         } else {
-            $order->created_at = date('c');
+            $order->created_at = date('Y-m-d H:i:s');
         }
 
         if (isset($data['updated_at'])) {
-            $order->updated_at = date('c', strtotime($data['updated_at']));
+            $order->updated_at = date('Y-m-d H:i:s', strtotime($data['updated_at']));
         } else {
-            $order->updated_at = date('c');
+            $order->updated_at = date('Y-m-d H:i:s');
         }
 
         $id = $this->di['db']->store($order);
@@ -603,10 +603,10 @@ class Service implements InjectionAwareInterface
                     $mm                  = $this->di['db']->dispense('ClientOrderMeta');
                     $mm->client_order_id = $id;
                     $mm->name            = $k;
-                    $mm->created_at      = date('c');
+                    $mm->created_at      = date('Y-m-d H:i:s');
                 }
                 $mm->value      = $v;
-                $mm->updated_at = date('c');
+                $mm->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($mm);
             }
         }
@@ -645,9 +645,36 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('ClientOrder', 'group_id = :group_id AND group_master = 1 AND client_id = :client_id', $bindings);
     }
 
+    /**
+     * activate all addons on initial activation
+     * @see https://github.com/boxbilling/BoxBilling/issues/54
+     */
+    public function activateOrderAddons(\Model_ClientOrder $order)
+    {
+        if (!$order->group_master) {
+            return false;
+        }
+
+        $list = $this->getOrderAddonsList($order);
+        foreach ($list as $addon) {
+            try {
+                $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
+                $this->createFromOrder($addon);
+                $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
+            } catch (\Exception $e) {
+                error_log($e->getMessage());
+            }
+        }
+        return true;
+    }
+
     public function activateOrder(\Model_ClientOrder $order, $data = array())
     {
-        if ($order->status != \Model_ClientOrder::STATUS_PENDING_SETUP && $order->status != \Model_ClientOrder::STATUS_FAILED_SETUP) {
+        $statues = array(
+            \Model_ClientOrder::STATUS_PENDING_SETUP,
+            \Model_ClientOrder::STATUS_FAILED_SETUP,
+        );
+        if (!in_array($order->status, $statues)){
             if (!isset($data['force']) || !$data['force']) {
                 throw new \Box_Exception('Only pending setup or failed orders can be activated');
             }
@@ -661,20 +688,7 @@ class Service implements InjectionAwareInterface
         }
         $this->di['events_manager']->fire(array('event' => 'onAfterAdminOrderActivate', 'params' => $event_params));
 
-        // activate all addons on initial activation
-        // @see https://github.com/boxbilling/BoxBilling/issues/54
-        if ($order->group_master) {
-            $list = $this->getOrderAddonsList($order);
-            foreach ($list as $addon) {
-                try {
-                    $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
-                    $this->createFromOrder($addon);
-                    $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
-                } catch (\Exception $e) {
-                    error_log($e->getMessage());
-                }
-            }
-        }
+        $this->activateOrderAddons($order);
 
         $this->di['logger']->info('Activated order #%s', $order->id);
 
@@ -694,7 +708,7 @@ class Service implements InjectionAwareInterface
                 }
 
                 $order->service_id = $service->id;
-                $order->updated_at = date('c');
+                $order->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($order);
             }
         }
@@ -715,14 +729,14 @@ class Service implements InjectionAwareInterface
             $from_time = (NULL === $order->expires_at) ? time() : strtotime($order->expires_at);
 
             $period            = $this->di['period']($order->period);
-            $order->expires_at = date('c', $period->getExpirationTime($from_time));
+            $order->expires_at = date('Y-m-d H:i:s', $period->getExpirationTime($from_time));
         }
 
         $order->status       = \Model_ClientOrder::STATUS_ACTIVE;
-        $order->activated_at = date('c');
+        $order->activated_at = date('Y-m-d H:i:s');
         $order->suspended_at = NULL;
         $order->canceled_at  = NULL;
-        $order->updated_at   = date('c');
+        $order->updated_at   = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
         $productModel = $this->di['db']->load('Product', $order->product_id);
@@ -786,82 +800,99 @@ class Service implements InjectionAwareInterface
     {
         if ($product->stock_control) {
             $product->quantity_in_stock = $product->quantity_in_stock - $qty;
-            $product->updated_at        = date('c');
+            $product->updated_at        = date('Y-m-d H:i:s');
             $this->di['db']->store($product);
         }
 
         return TRUE;
     }
 
+    /**
+     * @param \Model_ClientOrder $order
+     * @return int
+     */
+    public function updatePeriod(\Model_ClientOrder $order)
+    {
+        $period = $this->di['api_request_data']->get('period', null);
+        if (!empty($period)) {
+            $period        = $this->di['period']($period);
+            $order->period = $period->getCode();
+            return 1;
+        }
+
+        if (!is_null($period)) {
+            $order->period = NULL;
+            return 2;
+        }
+        return 0;
+    }
+
+    /**
+     * @param \Model_ClientOrder $order
+     * @return int
+     */
+    public function updateOrderMeta(\Model_ClientOrder $order)
+    {
+        $meta = $this->di['api_request_data']->get('meta');
+
+        if (!is_array($meta)) {
+            return 0;
+        }
+
+        if (empty($meta)) {
+            $this->di['db']->exec('DELETE FROM client_order_meta WHERE client_order_id = :id;', array(':id' => $order->id));
+            return 1;
+        }
+        foreach ($meta as $k => $v) {
+            $mm = $this->di['db']->findOne('ClientOrderMeta', 'client_order_id = :id AND name = :n', array(':id' => $order->id, ':n' => $k));
+            if (!$mm) {
+                $mm                  = $this->di['db']->dispense('ClientOrderMeta');
+                $mm->client_order_id = $order->id;
+                $mm->name            = $k;
+                $mm->created_at      = date('Y-m-d H:i:s');
+            }
+            $mm->value      = $v;
+            $mm->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($mm);
+        }
+        return 2;
+    }
+
     public function updateOrder(\Model_ClientOrder $order, array $data)
     {
         $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderUpdate', 'params' => $data));
+        $this->di['api_request_data']->setRequest($data);
 
-        if (isset($data['period']) && !empty($data['period'])) {
-            $period        = $this->di['period']($data['period']);
-            $order->period = $period->getCode();
-        } else if (isset($data['period']) && empty ($data['period'])) {
-            $order->period = NULL;
+        $this->updatePeriod($order);
+
+        $created_at = $this->di['api_request_data']->get('created_at', '');
+        if (!empty($created_at)) {
+            $order->created_at = date('Y-m-d H:i:s', strtotime($created_at));
         }
 
-        if (isset($data['created_at']) && !empty($data['created_at'])) {
-            $order->created_at = date('c', strtotime($data['created_at']));
+        $activated_at = $this->di['api_request_data']->get('activated_at');
+        if (!empty($activated_at)) {
+            $order->activated_at = date('Y-m-d H:i:s', strtotime($activated_at));
         }
 
-        if (isset($data['activated_at']) && !empty($data['activated_at'])) {
-            $order->activated_at = date('c', strtotime($data['activated_at']));
+        $expires_at = $this->di['api_request_data']->get('expires_at');
+        if (!empty($expires_at)) {
+            $order->expires_at = date('Y-m-d H:i:s', strtotime($expires_at));
         }
-
-        if (isset($data['expires_at']) && !empty($data['expires_at'])) {
-            $order->expires_at = date('c', strtotime($data['expires_at']));
-        } else if (isset($data['expires_at']) && empty ($data['expires_at'])) {
+        if (empty($expires_at) && !is_null($expires_at)) {
             $order->expires_at = NULL;
         }
 
-        if (isset($data['invoice_option'])) {
-            $order->invoice_option = $data['invoice_option'];
-        }
+        $order->invoice_option = $this->di['api_request_data']->get('invoice_option', $order->invoice_option);
+        $order->title          = $this->di['api_request_data']->get('title', $order->title);
+        $order->price          = $this->di['api_request_data']->get('price', $order->price);
+        $order->status         = $this->di['api_request_data']->get('status', $order->status);
+        $order->notes          = $this->di['api_request_data']->get('notes', $order->notes);
+        $order->reason         = $this->di['api_request_data']->get('reason', $order->reason);
 
-        if (isset($data['title'])) {
-            $order->title = $data['title'];
-        }
+        $this->updateOrderMeta($order);
 
-        if (isset($data['price'])) {
-            $order->price = $data['price'];
-        }
-
-        if (isset($data['status']) && !empty($data['status'])) {
-            $order->status = $data['status'];
-        }
-
-        if (isset($data['notes'])) {
-            $order->notes = $data['notes'];
-        }
-
-        if (isset($data['reason'])) {
-            $order->reason = $data['reason'];
-        }
-
-        if (isset($data['meta']) && is_array($data['meta'])) {
-            if (empty($data['meta'])) {
-                $this->di['db']->exec('DELETE FROM client_order_meta WHERE client_order_id = :id;', array(':id' => $order->id));
-            } else {
-                foreach ($data['meta'] as $k => $v) {
-                    $mm = $this->di['db']->findOne('ClientOrderMeta', 'client_order_id = :id AND name = :n', array(':id' => $order->id, ':n' => $k));
-                    if (!$mm) {
-                        $mm                  = $this->di['db']->dispense('ClientOrderMeta');
-                        $mm->client_order_id = $order->id;
-                        $mm->name            = $k;
-                        $mm->created_at      = date('c');
-                    }
-                    $mm->value      = $v;
-                    $mm->updated_at = date('c');
-                    $this->di['db']->store($mm);
-                }
-            }
-        }
-
-        $order->updated_at = date('c');
+        $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
         $this->di['events_manager']->fire(array('event' => 'onAfterAdminOrderUpdate', 'params' => array('id' => $order->id)));
@@ -904,13 +935,8 @@ class Service implements InjectionAwareInterface
         if (!empty($order->period)) {
             $from_time = (NULL === $order->expires_at) ? time() : strtotime($order->expires_at); // from expiration date
 
-            //@deprecated setting, moved to config
-            $systemService = $this->di['mod_service']('system');
-            $logic          = $systemService->getParamValue('order_renewal_logic');
-
-            $mod    = $this->di['mod']('order');
-            $config = $mod->getConfig();
-            $logic  = isset($config['order_renewal_logic']) ? $config['order_renewal_logic'] : $logic;
+            $config = $this->di['mod_config']('order');
+            $logic  = isset($config['order_renewal_logic']) ? $config['order_renewal_logic'] : '';
 
             if ($logic == 'from_today') {
                 $from_time = time(); //renew order from the date renewal occured
@@ -922,14 +948,14 @@ class Service implements InjectionAwareInterface
                 }
             }
             $period            = $this->di['period']($order->period);
-            $order->expires_at = date('c', $period->getExpirationTime($from_time));
+            $order->expires_at = date('Y-m-d H:i:s', $period->getExpirationTime($from_time));
         }
 
         $order->status         = \Model_ClientOrder::STATUS_ACTIVE;
         $order->suspended_at   = NULL;
         $order->unsuspended_at = NULL;
         $order->canceled_at    = NULL;
-        $order->updated_at     = date('c');
+        $order->updated_at     = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
         $this->saveStatusChange($order, 'Order renewed');
@@ -947,8 +973,8 @@ class Service implements InjectionAwareInterface
 
         $order->status       = \Model_ClientOrder::STATUS_SUSPENDED;
         $order->reason       = $reason;
-        $order->suspended_at = date('c');
-        $order->updated_at   = date('c');
+        $order->suspended_at = date('Y-m-d H:i:s');
+        $order->updated_at   = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
         $note = (NULL === $reason) ? "Order suspeded" : 'Order suspended for ' . $reason;
@@ -970,8 +996,8 @@ class Service implements InjectionAwareInterface
         $order->status         = \Model_ClientOrder::STATUS_ACTIVE;
         $order->reason         = NULL;
         $order->suspended_at   = NULL;
-        $order->unsuspended_at = date('c');
-        $order->updated_at     = date('c');
+        $order->unsuspended_at = date('Y-m-d H:i:s');
+        $order->updated_at     = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
         $this->saveStatusChange($order, 'Order unsuspended');
@@ -995,10 +1021,10 @@ class Service implements InjectionAwareInterface
 
         $order->status       = \Model_ClientOrder::STATUS_CANCELED;
         $order->reason       = $reason;
-        $order->canceled_at  = date('c');
+        $order->canceled_at  = date('Y-m-d H:i:s');
         $order->expires_at   = NULL;
         $order->suspended_at = NULL;
-        $order->updated_at   = date('c');
+        $order->updated_at   = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
         $note = (NULL === $reason) ? "Order canceled" : 'Canceled order for ' . $reason;
@@ -1021,16 +1047,16 @@ class Service implements InjectionAwareInterface
         if ($order->period) {
             $period     = $this->di['period']($order->period);
             $expires_at = $period->getExpirationTime(time());
-            $expires_at = date('c', $expires_at);
+            $expires_at = date('Y-m-d H:i:s', $expires_at);
         }
 
         $order->status       = \Model_ClientOrder::STATUS_ACTIVE;
         $order->reason       = NULL;
-        $order->activated_at = date('c');
+        $order->activated_at = date('Y-m-d H:i:s');
         $order->expires_at   = $expires_at;
         $order->suspended_at = NULL;
         $order->canceled_at  = NULL;
-        $order->updated_at   = date('c');
+        $order->updated_at   = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
         $this->saveStatusChange($order, 'Activated canceled order');
@@ -1179,7 +1205,7 @@ class Service implements InjectionAwareInterface
         $oldConfig = $order->config;
 
         $order->config     = json_encode($config);
-        $order->updated_at = date('c');
+        $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
         $this->di['logger']->info(sprintf("Order #%s config changes:\n%s\n%s", $order->id, $oldConfig, $order->config));
@@ -1217,8 +1243,8 @@ class Service implements InjectionAwareInterface
         $bean->client_order_id = $order->id;
         $bean->status          = $status;
         $bean->notes           = $notes;
-        $bean->created_at      = date('c');
-        $bean->updated_at      = date('c');
+        $bean->created_at      = date('Y-m-d H:i:s');
+        $bean->updated_at      = date('Y-m-d H:i:s');
         $id                    = $this->di['db']->store($bean);
 
         $this->di['logger']->info('Added order status history message to order #%s', $id);
@@ -1274,14 +1300,14 @@ class Service implements InjectionAwareInterface
     public function setUnpaidInvoice(\Model_ClientOrder $order, \Model_Invoice $proforma)
     {
         $order->unpaid_invoice_id = $proforma->id;
-        $order->updated_at = date('c');
+        $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
     }
 
     public function unsetUnpaidInvoice(\Model_ClientOrder $order)
     {
         $order->unpaid_invoice_id = NULL;
-        $order->updated_at = date('c');
+        $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
     }
 

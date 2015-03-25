@@ -163,10 +163,22 @@ $di['twig'] = function () use ($di) {
     return $twig;
 };
 
-$di['loggedin_client'] = function() use ($di) {
+$di['is_client_logged'] = function() use($di) {
     if(!$di['auth']->isClientLoggedIn()) {
         throw new Exception('Client is not logged in');
     }
+    return true;
+};
+
+$di['is_admin_logged'] = function() use($di) {
+    if(!$di['auth']->isAdminLoggedIn()) {
+        throw new Exception('Admin is not logged in');
+    }
+    return true;
+};
+
+$di['loggedin_client'] = function() use ($di) {
+    $di['is_client_logged'];
     $client_id = $di['session']->get('client_id');
     return $di['db']->getExistingModelById('Client', $client_id);
 };
@@ -175,9 +187,7 @@ $di['loggedin_admin'] = function() use ($di) {
         return $di['mod_service']('staff')->getCronAdmin();
     }
 
-    if(!$di['auth']->isAdminLoggedIn()) {
-        throw new Exception('Admin is not logged in');
-    }
+    $di['is_admin_logged'];
     $admin = $di['session']->get('admin');
     return $di['db']->getExistingModelById('Admin', $admin['id']);
 };
@@ -200,7 +210,7 @@ $di['api'] = $di->protect(function($role) use($di) {
             $identity = $di['mod_service']('staff')->getCronAdmin();
            break;
 
-        default :
+        default:
             throw new Exception('Unrecognized Handler type: '.$role);
     }
     $api = new Api_Handler($identity);
@@ -320,4 +330,9 @@ $di['translate'] = $di->protect(function($textDomain = '') use ($di) {
     $tr->setup();
     return $tr;
 });
+$di['api_request_data'] = function() use($di) {
+    $apiRequest = new \Box\Mod\Api\Request();
+    $apiRequest->setDi($di);
+    return $apiRequest;
+};
 return $di;

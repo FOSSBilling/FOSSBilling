@@ -82,33 +82,33 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_product_index');
     }
     
     public function get_addons(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_product_addons');
     }
 
     public function get_addon_manage(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $addon= $api->product_addon_get(array('id'=>$id));
         return $app->render('mod_product_addon_manage', array('addon'=>$addon, 'product'=>$addon));
     }
 
     public function get_cat_manage(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $cat= $api->product_category_get(array('id'=>$id));
         return $app->render('mod_product_category', array('category'=>$cat));
     }
 
     public function get_manage(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $product= $api->product_get(array('id'=>$id));
 
         $addons = array();
@@ -121,14 +121,14 @@ class Admin implements \Box\InjectionAwareInterface
     
     public function get_promo(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $promo= $api->product_promo_get(array('id'=>$id));
         return $app->render('mod_product_promo', array('promo'=>$promo));
     }
 
     public function get_promos(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_product_promos');
     }
         

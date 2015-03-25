@@ -34,42 +34,40 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function pingSitemap($api, $config)
+    public function pingSitemap($config)
     {
+        $systemService = $this->di['mod_service']('system');
+
         $key       = 'mod_seo_last_sitemap_submit';
-        $last_time = $api->system_param(array('key' => $key));
+        $last_time = $systemService->getParamValue($key);
+
         if ($last_time && (time() - strtotime($last_time)) < 86400) {
             return false;
         }
 
         $url = urldecode(BB_URL . 'sitemap.xml');
         if (isset($config['sitemap_google']) && $config['sitemap_google']) {
-            $link = "http://www.google.com/webmasters/tools/ping?sitemap=" . $url;
-            $curl = $this->di['curl']($link);
-            $curl->request();
-            error_log('Submitted sitemap to Google');
-        }
-
-        if (isset($config['sitemap_yahoo']) && $config['sitemap_yahoo']) {
-            $link = "http://search.yahooapis.com/SiteExplorerService/V1/updateNotification?appid=SitemapWriter&url=" . $url;
-            $curl = $this->di['curl']($link);
-            $curl->request();
-            error_log('Submitted sitemap to Yahoo');
+           try{
+               $link = "http://www.google.com/webmasters/sitemaps/ping?sitemap=" . $url;
+               $this->di['guzzle_client']->get($link);
+               error_log('Submitted sitemap to Google');
+           }catch (\Exception $e){
+               error_log('Exception :(');
+           }
         }
 
         if (isset($config['sitemap_bing']) && $config['sitemap_bing']) {
-            $link = "http://www.bing.com/webmaster/ping.aspx?siteMap=" . $url;
-            $curl = $this->di['curl']($link);
-            $curl->request();
+            $link = "http://www.bing.com/ping?sitemap=" . $url;
+            $this->di['guzzle_client']->get($link);
             error_log('Submitted sitemap to Bing');
         }
 
-        $api->system_update_params(array($key => date('c')));
+        $systemService->updateParams(array($key => date('Y-m-d H:i:s')));
 
         return true;
     }
 
-    public function pingRss($api, $config)
+    public function pingRss($config)
     {
         //@todo
         return false;
@@ -92,13 +90,15 @@ class Service implements InjectionAwareInterface
 
     public static function onBeforeAdminCronRun(\Box_Event $event)
     {
-        $api    = $event->getApiAdmin();
-        $config = $api->extension_config_get(array("ext" => "mod_seo"));
+        $di = $event->getDi();
+        $extensionService = $di['mod_service']('extension');
+        $config = $extensionService->getConfig("mod_seo");
 
         try {
-            $s = new self;
-            $s->pingSitemap($api, $config);
-            $s->pingRss($api, $config);
+            $seoService = $di['mod_service']('seo');
+            $seoService->setDi($di);
+            $seoService->pingSitemap( $config);
+            $seoService->pingRss($config);
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }

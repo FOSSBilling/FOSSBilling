@@ -11,4 +11,23 @@
          syntaxCheck="false"
          bootstrap="tests/bootstrap.php"
         >
+    <filter>
+        <whitelist excludeVendorFiles="true">
+            <directory suffix=".php">src</directory>
+            <exclude>
+                <file>src/rb.php</file>
+                <file>src/bb-modules/Spamchecker/recaptchalib.php</file>
+                <file>src/bb-modules/Spamchecker/akismet.curl.class.php</file>
+                <file>src/bb-library/Box/Zip.php</file>
+                <directory>src/bb-vendor</directory>
+                <directory>src/bb-data</directory>
+                <directory>src/bb-library/Registrar/includes</directory>
+                <directory>src/bb-modules/Filemanager/src</directory>
+                <directory>src/bb-modules/Servicecentovacast/ccapiclient</directory>
+                <directory>src/bb-library/php-gettext</directory>
+                <directory>src/bb-themes</directory>
+                <directory>src/install</directory>
+            </exclude>
+        </whitelist>
+    </filter>
 </phpunit>

@@ -20,7 +20,7 @@ class Admin extends \Api_Abstract
      * 
      * @optional bool $installed - return installed only extensions
      * @optional bool $active - return installed and core extensions
-     * @optional bool $has_settings - return extenssions with configuration pages only
+     * @optional bool $has_settings - return extensions with configuration pages only
      * @optional string $search - filter extensions by search keyword
      * @optional string $type - filter extensions by type
      * 

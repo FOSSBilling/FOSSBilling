@@ -101,7 +101,6 @@ class Box_TwigExtensions extends Twig_Extension implements \Box\InjectionAwareIn
             $record = $this->di['geoip']->country($value);
             return $record->country->name;
         } catch (Exception $e) {
-            //return $e->getMessage();
             return '';
         }
     }
@@ -257,14 +256,15 @@ function twig_markdown_filter(Twig_Environment $env, $value)
 
 function twig_truncate_filter(Twig_Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
 {
-    if (strlen($value) > $length) {
+    mb_internal_encoding("UTF-8");
+    if (mb_strlen($value) > $length) {
         if ($preserve) {
-            if (false !== ($breakpoint = strpos($value, ' ', $length))) {
+            if (false !== ($breakpoint = mb_strpos($value, ' ', $length))) {
                 $length = $breakpoint;
             }
         }
 
-        return substr($value, 0, $length) . $separator;
+        return mb_substr($value, 0, $length) . $separator;
     }
 
     return $value;

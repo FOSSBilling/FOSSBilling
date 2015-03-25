@@ -54,6 +54,8 @@ class Service
 
         //@core tasks
         $this->_exec($api, 'hook_batch_connect');
+        $this->di['events_manager']->fire(array('event'=>'onBeforeAdminCronRun'));
+
         $this->_exec($api, 'invoice_batch_pay_with_credits');
         $this->_exec($api, 'invoice_batch_activate_paid');
         $this->_exec($api, 'invoice_batch_send_reminders');
@@ -69,7 +71,7 @@ class Service
 
         $create = (APPLICATION_ENV == 'production');
         $ss = $this->di['mod_service']('system');
-        $ss->setParamValue('last_cron_exec', date('c'), $create);
+        $ss->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), $create);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminCronRun'));
 

@@ -41,12 +41,12 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_emails(\Box_App $app)
     {
-        $api = $app->getApiClient();
+        $this->di['is_client_logged'];
         return $app->render('mod_email_index');
     }
     public function get_email(\Box_App $app, $id)
     {
-        $api = $app->getApiClient();
+        $api = $this->di['api_client'];
         $data = array('id'=>$id);
         $email = $api->email_get($data);
         return $app->render('mod_email_email', array('email'=>$email));

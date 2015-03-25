@@ -219,7 +219,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Action to close all inqueries which have not received any replies for a
+     * Action to close all inquiries which have not received any replies for a
      * time defined in helpdesk
      *
      * Run by cron job
@@ -253,7 +253,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get paginated list of inqueries
+     * Get paginated list of inquiries
      *
      * @return array
      */
@@ -675,7 +675,7 @@ class Admin extends \Api_Abstract
      *
      * @param int $id - canned response category id
      *
-     * @optional string $title - new catefory title
+     * @optional string $title - new category title
      *
      * @return bool
      * @throws \Box_Exception

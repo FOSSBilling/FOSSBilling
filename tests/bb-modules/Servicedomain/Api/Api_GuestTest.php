@@ -29,6 +29,11 @@ class Api_GuestTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest(array());
+        $di['api_request_data'] = $apiRequest;
+
         $this->guestApi->setDi($di);
 
         $result = $this->guestApi->tlds(array());

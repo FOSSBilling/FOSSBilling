@@ -318,7 +318,7 @@ class ServicePayGateway implements InjectionAwareInterface
     /**
      * @param \Model_Invoice $model
      */
-    private function getCallbackUrl(\Model_PayGateway $pg, $model = null)
+    public function getCallbackUrl(\Model_PayGateway $pg, $model = null)
     {
         $p = array(
             'bb_gateway_id'     =>  $pg->id,

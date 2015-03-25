@@ -65,11 +65,11 @@ class Admin extends \Api_Abstract
      *
      * @optional array $config - Depending on product type, you may need to pass product configuration options
      * @optional int $quantity - Quantity of products to order. Default 1
-     * @optional float $price - Overriden unit price in default currency. Default is product price for selected period.
+     * @optional float $price - Overridden unit price in default currency. Default is product price for selected period.
      * @optional string $group_id - Order group id. Assign order to be as an addon for other order
      * @optional string $currency - Order currency. If not passed, default is used
      * @optional string $title - Order title. If not passed, product title is used
-     * @optional bool $activate - activate imediately
+     * @optional bool $activate - activate immediately
      * @optional string $invoice_option - Options: "no-invoice", "issue-invoice"; Default: no-invoice
      * @optional string $created_at - date when order was created. Default: now
      * @optional string $updated_at - date when order was updated. Default: now
@@ -320,7 +320,7 @@ class Admin extends \Api_Abstract
 
 
     /**
-     * Add order status hitory change
+     * Add order status history change
      *
      * @param int $id - Order id
      * @param string $status - order status

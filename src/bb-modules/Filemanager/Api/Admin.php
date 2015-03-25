@@ -68,7 +68,7 @@ class Admin extends \Api_Abstract
      * Move/Rename file
      *
      * @param string $path - filepath to file which is going to be moved
-     * @param string $to - new folder path. Do not iclude basename
+     * @param string $to - new folder path. Do not include basename
      *
      * @return boolean
      */

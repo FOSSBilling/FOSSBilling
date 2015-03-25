@@ -56,8 +56,6 @@ class Admin extends \Api_Abstract
     public function get_categories($data)
     {
         $table = $this->di['table']('Forum');
-        list($query, $bindings) = $table->getSearchQuery($data);
-        //$list = $q->execute();
         $list = $this->di['db']->find('Forum');
         
         $result = array();
@@ -114,8 +112,8 @@ class Admin extends \Api_Abstract
         $model->status = isset($data['status']) ? $data['status'] : \Model_Forum::STATUS_ACTIVE;
         $model->description = isset($data['description']) ? $data['description'] : NULL;
         $model->priority = $priority + 1;
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new forum "%s"', $model->title);
@@ -140,41 +138,29 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Forum id missing');
-        }
+        $required = array(
+            'id' => 'Forum id missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
 
         $model = $this->di['db']->getExistingModelById('Forum', $data['id'], 'Forum not found');
-        
-        if(isset($data['category'])) {
-            if(isset($data['update_categories']) && $data['update_categories']) {
+
+        $category = $this->di['api_request_data']->get('category');
+        if($category) {
+            if($this->di['api_request_data']->get('update_categories')) {
                 $this->di['db']->exec('UPDATE forum SET category = :cat WHERE category = :old_cat', 
-                        array('cat'=>$data['category'], 'old_cat'=>$model->category));
+                        array('cat'=>$category, 'old_cat'=>$model->category));
             }
-            $model->category = $data['category'];
+            $model->category = $category;
         }
-        
-        if(isset($data['title'])) {
-            $model->title = $data['title'];
-        }
-        
-        if(isset($data['status'])) {
-            $model->status = $data['status'];
-        }
-        
-        if(isset($data['slug'])) {
-            $model->slug = $data['slug'];
-        }
-        
-        if(isset($data['description'])) {
-            $model->description = $data['description'];
-        }
-        
-        if(isset($data['priority'])) {
-            $model->priority = $data['priority'];
-        }
-        
-        $model->updated_at = date('c');
+
+        $model->title = $this->di['api_request_data']->get('title', $model->title);
+        $model->status = $this->di['api_request_data']->get('status', $model->status);
+        $model->slug = $this->di['api_request_data']->get('slug', $model->slug);
+        $model->description = $this->di['api_request_data']->get('description', $model->description);
+        $model->priority = $this->di['api_request_data']->get('priority', $model->priority);
+
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated forum "%s"', $model->title);
@@ -199,7 +185,7 @@ class Admin extends \Api_Abstract
             $model = $this->di['db']->getExistingModelById('Forum', $id);
             if($model instanceof \Model_Forum) {
                 $model->priority = $p;
-                $model->updated_at = date('c');
+                $model->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($model);
             }
         }
@@ -330,8 +316,8 @@ class Admin extends \Api_Abstract
         $topic->title = $data['title'];
         $topic->slug = $this->di['tools']->slug($data['title']);
         $topic->status = isset($data['status']) ? $data['status'] : \Model_ForumTopic::STATUS_ACTIVE;
-        $topic->created_at = date('c');
-        $topic->updated_at = date('c');
+        $topic->created_at = date('Y-m-d H:i:s');
+        $topic->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($topic);
 
         $msg = $this->di['db']->dispense('ForumTopicMessage');
@@ -339,8 +325,8 @@ class Admin extends \Api_Abstract
         $msg->forum_topic_id = $topic->id;
         $msg->message = $data['message'];
         $msg->ip = $this->getIp();
-        $msg->created_at = date('c');
-        $msg->updated_at = date('c');
+        $msg->created_at = date('Y-m-d H:i:s');
+        $msg->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($msg);
 
         $this->di['logger']->info('Started new forum topic "%s"', $topic->title);
@@ -395,7 +381,7 @@ class Admin extends \Api_Abstract
             $model->views = $data['views'];
         }
         
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated forum topic "%s"', $model->title);
@@ -471,7 +457,7 @@ class Admin extends \Api_Abstract
             $model->message = $data['message'];
         }
 
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated forum topic message #%s', $model->id);
@@ -534,11 +520,11 @@ class Admin extends \Api_Abstract
         $msg->forum_topic_id = $topic->id;
         $msg->message = $data['message'];
         $msg->ip = $this->getIp();
-        $msg->created_at = date('c');
-        $msg->updated_at = date('c');
+        $msg->created_at = date('Y-m-d H:i:s');
+        $msg->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($msg);
 
-        $topic->updated_at = date('c');
+        $topic->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($topic);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminRepliedInForum', 'params'=>array('id'=>$topic->id, 'message_id'=>$msg->id, 'admin_id'=>$admin->id)));

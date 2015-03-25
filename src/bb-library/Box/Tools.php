@@ -254,23 +254,6 @@ class Box_Tools
            }
            return sprintf(\'<a target="_blank" href="%s">%s</a>\', $url, $url);
        ');
-
-       /*
-       $callback = create_function('$matches', '
-           $url       = array_shift($matches);
-           $url_parts = parse_url($url);
-
-           $text = parse_url($url, PHP_URL_HOST) . parse_url($url, PHP_URL_PATH);
-           $text = preg_replace("/^www./", "", $text);
-
-           $last = -(strlen(strrchr($text, "/"))) + 1;
-           if ($last < 0) {
-               $text = substr($text, 0, $last) . "&hellip;";
-           }
-
-           return sprintf(\'<a target="_blank" href="%s">%s</a>\', $url, $text);
-       ');
-       */
        return preg_replace_callback($pattern, $callback, $text);
     }
 
@@ -295,6 +278,11 @@ class Box_Tools
     	return stripslashes($string);
     }
 
+    /**
+     * @Deprecated not used anywhere
+     * @param $filename
+     * @return mixed|string
+     */
     public function get_mime_content_type($filename)
     {
         $mime_types = array(
@@ -353,7 +341,9 @@ class Box_Tools
             'ods' => 'application/vnd.oasis.opendocument.spreadsheet',
         );
 
-        $ext = strtolower(array_pop(explode('.',$filename)));
+        $ext = explode('.',$filename);
+        $ext = array_pop($ext);
+        $ext = strtolower($ext);
         if (array_key_exists($ext, $mime_types)) {
             return $mime_types[$ext];
         }

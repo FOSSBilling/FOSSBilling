@@ -70,19 +70,19 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_extension_index');
     }
 
     public function get_langs(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_extension_languages');
     }
     
     public function get_settings(\Box_App $app, $mod)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         $file = 'mod_'.$mod.'_settings';
         return $app->render($file);
     }

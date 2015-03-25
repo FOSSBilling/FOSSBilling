@@ -41,6 +41,7 @@
                     <div class="formRight">
                         <input type="radio" name="require_email_confirmation" value="1"{% if params.require_email_confirmation %} checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
                         <input type="radio" name="require_email_confirmation" value="0"{% if not params.require_email_confirmation %} checked="checked"{% endif %} /><label>{% trans 'No' %}</label>
+                        <span class="formNote">{% trans 'After enabling this feature, all existing users will have to confirm their emails if it was not done before' %}.</span>
                     </div>
                     <div class="fix"></div>
                 </div>

@@ -74,7 +74,7 @@ class Admin extends \Api_Abstract
      */
     public function order_info($data)
     {
-        list($order, $service) = $this->_getService($data);
+        list(, $service) = $this->_getService($data);
         return $this->getService()->licenseDetails($service);
     }
     
@@ -88,7 +88,7 @@ class Admin extends \Api_Abstract
      */
     public function order_reset($data)
     {
-        list($order, $service) = $this->_getService($data);
+        list(, $service) = $this->_getService($data);
         $this->getService()->licenseReset($service);
         return true;
     }
@@ -126,13 +126,13 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
-        list($order, $service) = $this->_getService($data);
+        list(, $service) = $this->_getService($data);
         
         if(isset($data['oid'])) {
             $service->oid = $data['oid'];
         }
 
-        $service->updated_at = date('c');
+        $service->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($service);
         
         $this->di['logger']->info('Updated BoxBilling license %s details', $service->id);

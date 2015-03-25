@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <dataset>
-    <admin id="1" role="admin" admin_group_id="1" email="admin@boxbilling.com" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" status="active" name="Admin" api_token="phpunit" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
-    <client id="1" aid="1" role="client" email="client@boxbilling.com" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" status="active" first_name="Demo" last_name="Client" phone_cc="1" phone="646-123-4567" company="BoxBilling" address_1="Wall Street 45" city="New York" country="US" currency="USD" postcode="123456" api_token="phpunit" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
+    <admin id="1" role="admin" admin_group_id="1" email="admin@boxbilling.com" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" status="active" name="Admin" api_token="phpunit" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
+    <client id="1" aid="1" role="client" email="client@boxbilling.com" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" status="active" first_name="Demo" last_name="Client" phone_cc="1" phone="646-123-4567" company="BoxBilling" address_1="Wall Street 45" city="New York" country="US" currency="USD" postcode="123456" api_token="phpunit" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 
-    <product id="1" product_category_id="1" product_payment_id="1" type="custom" title="Plugin config test" description="" unit="product" active="1" is_addon="0" setup="after_payment" plugin="Example" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
+    <product id="1" product_category_id="1" product_payment_id="1" type="custom" title="Plugin config test" description="" unit="product" active="1" is_addon="0" setup="after_payment" plugin="Example" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 
     <client_order id="1" client_id="1" service_type="downloadable" service_id="1" status="active"/>
     <client_order id="2" client_id="1" service_type="license" service_id="1" status="active"/>
-    <client_order id="3" client_id="1" service_type="domain" service_id="" status="pending_setup" config='{"action":"register","register_tld":".com","register_sld":"test1", "register_years":1}'/>
-    <client_order id="4" client_id="1" service_type="domain" service_id="" status="pending_setup" config='{"action":"transfer","transfer_tld":".com","transfer_sld":"test", "transfer_years":1, "transfer_code":"epp"}'/>
-    <client_order id="5" client_id="1" service_type="hosting" service_id="" status="pending_setup" config='{"server_id":"1","hosting_plan_id":"1", "sld":"mydomain", "tld":".com"}'/>
-    <client_order id="6" client_id="1" service_type="hosting" service_id="" status="pending_setup" config='{"server_id":"1","hosting_plan_id":"1", "sld":"mydomain", "tld":".com", "reseller":1}'/>
-    <client_order id="7" client_id="1" service_type="hosting" service_id="" status="pending_setup" config='{"server_id":"2","hosting_plan_id":"1", "sld":"mydomain", "tld":".com", "reseller":0}'/>
+    <client_order id="3" client_id="1" service_type="domain" status="pending_setup" config='{"action":"register","register_tld":".com","register_sld":"test1", "register_years":1}'/>
+    <client_order id="4" client_id="1" service_type="domain" status="pending_setup" config='{"action":"transfer","transfer_tld":".com","transfer_sld":"test", "transfer_years":1, "transfer_code":"epp"}'/>
+    <client_order id="5" client_id="1" service_type="hosting" status="pending_setup" config='{"server_id":"1","hosting_plan_id":"1", "sld":"mydomain", "tld":".com"}'/>
+    <client_order id="6" client_id="1" service_type="hosting" status="pending_setup" config='{"server_id":"1","hosting_plan_id":"1", "sld":"mydomain", "tld":".com", "reseller":1}'/>
+    <client_order id="7" client_id="1" service_type="hosting" status="pending_setup" config='{"server_id":"2","hosting_plan_id":"1", "sld":"mydomain", "tld":".com", "reseller":0}'/>
     <client_order id="8" client_id="1" service_type="hosting" service_id="1" status="active" config='{"server_id":"1","hosting_plan_id":"1", "sld":"mydomain", "tld":".com", "reseller":0}'/>
     <client_order id="9" client_id="1" service_type="custom" service_id="1" status="pending_setup" config=''/>
     <client_order id="10" client_id="1" service_type="custom" service_id="1" status="pending_setup" config='' product_id="1"/>
@@ -33,7 +33,7 @@
     <service_custom id="1" client_id="1" plugin="Example" plugin_config='{"param":"value"}'/>
     <service_downloadable id="1" client_id="1" filename="test.txt" />
     <service_license id="1" client_id="1" license_key="asdasdasd" ips='["123.123.123.123", "111.111.111.111"]'/>
-    <service_hosting id="1" client_id="1" service_hosting_server_id="1" service_hosting_hp_id="1" sld="phpunitdomain" tld=".com" ip="126.123.123.147" username="u1234565" pass="1456432132332" reseller="0" created_at="2011-01-01T12:00:00+00:00" updated_at="2011-01-01T12:00:00+00:00"/>
+    <service_hosting id="1" client_id="1" service_hosting_server_id="1" service_hosting_hp_id="1" sld="phpunitdomain" tld=".com" ip="126.123.123.147" username="u1234565" pass="1456432132332" reseller="0" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     <service_solusvm id="1" client_id="1"/>
     
     <setting id="1" param="license" value="testing" hash="aa"/>
@@ -44,7 +44,7 @@
     <setting id="5" param="nameserver_3" value="ns3.1freehosting.com" hash="aa"/>
     <setting id="6" param="nameserver_4" value="ns4.1freehosting.com" hash="aa"/>
 
-    <setting id="7" param="company_email" value="boxbilling@boxbilling.com" created_at="2011-10-24T15:23:43+03:00" updated_at="2011-10-24T15:23:43+03:00"/>
+    <setting id="7" param="company_email" value="boxbilling@boxbilling.com" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
     
     <extension id="1" type="mod" name="servicesolusvm" status="installed"/>
 </dataset>

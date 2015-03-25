@@ -16,7 +16,7 @@ namespace Box\Mod\Servicecentovacast\Api;
  * CentovaCast management
  */
 class Admin extends \Api_Abstract
-{    
+{
     /**
      * Return centovacast servers
      * 
@@ -54,8 +54,8 @@ class Admin extends \Api_Abstract
         $bean->extension = 'mod_servicecentovacast';
         $bean->meta_key = 'server';
         $bean->meta_value = json_encode($data);
-        $bean->created_at = date('c');
-        $bean->updated_at = date('c');
+        $bean->created_at = date('Y-m-d H:i:s');
+        $bean->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($bean);
         
         $this->di['logger']->info('Added new CentovaCast server %s', $bean->id);
@@ -89,7 +89,7 @@ class Admin extends \Api_Abstract
         $server = $this->server_get($data);
         $bean = $this->di['db']->findOne('extension_meta', 'id = :id', array('id'=>$server['id']));
         $bean->meta_value = json_encode($data);
-        $bean->updated_at = date('c');
+        $bean->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($bean);
         
         $this->di['logger']->info('Updated CentovaCast server %s', $server['id']);
@@ -149,7 +149,7 @@ class Admin extends \Api_Abstract
             $s->pass = $this->getService()->encryptPass($data['pass']);
         }
         
-        $s->updated_at = date('c');
+        $s->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($s);
         
         $this->di['logger']->info('Updated CentovaCast service %s details', $s->id);

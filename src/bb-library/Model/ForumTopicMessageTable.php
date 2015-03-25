@@ -108,12 +108,9 @@ class Model_ForumTopicMessageTable implements \Box\InjectionAwareInterface
             $seconds                 = (int)$filter['match_date'] * 24 * 60 * 60;
             $where[]                 = "(UNIX_TIMESTAMP() - ftm.created_at) < :created_at";
             $bindings[':created_at'] = $seconds;
-            //$q->andWhere('(UNIX_TIMESTAMP() - m.created_at) < ?', $seconds);
         }
         $where[]              = "ftm.message LIKE :message";
         $bindings[':message'] = "%$searchQuery%";
-
-        //$q->andWhere('m.message LIKE ?', "%$searchQuery%");
 
         if (!empty($where)) {
             $query = $query . ' WHERE ' . implode(' AND ', $where);

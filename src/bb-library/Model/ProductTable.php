@@ -60,36 +60,28 @@ class Model_ProductTable implements \Box\InjectionAwareInterface
         switch ($code) {
             case '1W':
                 return 'w';
-                break;
 
             case '1M':
                 return 'm';
-                break;
 
             case '3M':
                 return 'q';
-                break;
 
             case '6M':
                 return 'b';
-                break;
 
             case '12M':
             case '1Y':
                 return 'a';
-                break;
 
             case '2Y':
                 return 'bia';
-                break;
 
             case '3Y':
                 return 'tria';
-                break;
 
             default:
                 throw new Box_Exception('Unknown period selected ' . $code);
-                break;
         }
     }
 

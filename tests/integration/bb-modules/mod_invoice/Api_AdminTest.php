@@ -257,7 +257,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
             'notes'  => 'note',
             'serie'  => 'NEW',
             'nr'     => 4,
-            'due_at' => date('c'),
+            'due_at' => date('Y-m-d H:i:s'),
         );
         $bool = $this->api_admin->invoice_update($data);
         $this->assertTrue($bool);
@@ -465,6 +465,32 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
         $this->assertEquals(\Model_Invoice::STATUS_PAID, $array['status']);
         $this->assertEquals($balanceBefore, $balanceAfter);
+    }
+
+
+    /**
+     * After admin marks as paid deposit invoice account balance should increase.
+     */
+    public function testDepositInvoiceMarkAsPaid()
+    {
+        $id = 5;
+        $invoiceModel = $this->di['db']->load('Invoice', 5);
+        $this->assertEquals(\Model_Invoice::STATUS_UNPAID, $invoiceModel->status);
+        $invoiceItemModel = $this->di['db']->findOne('InvoiceItem', 'invoice_id = ?', array($invoiceModel->id));
+        $this->assertEquals(Model_InvoiceItem::TYPE_DEPOSIT, $invoiceItemModel->type);
+
+        $balanceBefore = $this->api_client->client_balance_get_total();
+        $this->api_admin->invoice_mark_as_paid(array('id' => $id, 'execute' => 1));
+        $balanceAfter = $this->api_client->client_balance_get_total();
+
+        $array = $this->api_admin->invoice_get(array('id' => $id));
+
+        $this->assertEquals(\Model_Invoice::STATUS_PAID, $array['status']);
+        $this->assertEquals($balanceAfter, $balanceBefore+$invoiceItemModel->price);
+
+        $accountBalance = $this->di['db']->findOne('ClientBalance', 'order by id desc');
+        $this->assertEquals($invoiceItemModel->title, $accountBalance->description);
+        $this->assertEquals($invoiceItemModel->price, $accountBalance->amount);
     }
 
     /**

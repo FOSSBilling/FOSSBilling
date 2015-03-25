@@ -107,7 +107,7 @@ class Guest extends \Api_Abstract
     /**
      * Gets period title by identifier
      * 
-     * @param string $code - Perdio code name, ie: 1M => Monthly
+     * @param string $code - Period code name, ie: 1M => Monthly
      * 
      * @return string 
      */
@@ -137,7 +137,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * If called from template file this function returnes current url
+     * If called from template file this function returns current url
      * @return string
      */
     public function current_url()

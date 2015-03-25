@@ -59,13 +59,13 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
-        $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_news_index');
     }
     
     public function get_post(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $post = $api->news_get(array('id'=>$id));
         return $app->render('mod_news_post', array('post'=>$post));
     }

@@ -57,6 +57,15 @@
             <div class="fix"></div>
         </div>
 
+        <div class="rowElem noborder">
+            <label>{% trans 'Recaptcha version' %}</label>
+            <div class="formRight">
+                <input type="radio" name="captcha_version" value="1" {% if params.captcha_version == "1" %}checked="checked"{% endif %}/><label>{% trans 'v1.0' %}</label>
+                <input type="radio" name="captcha_version" value="2" {% if params.captcha_version == "2" %}checked="checked"{% endif %}/><label>{% trans 'v2.0' %}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+
         <div class="rowElem">
             <label>{% trans 'ReCaptcha Public key' %}</label>
             <div class="formRight">

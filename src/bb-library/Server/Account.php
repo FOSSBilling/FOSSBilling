@@ -22,7 +22,15 @@ class Server_Account
     private $password   = NULL;
     private $domain     = NULL;
     private $ip         = NULL;
+
+    /**
+     * @var Server_Package
+     */
     private $package    = NULL;
+
+    /**
+     * @var Server_Client
+     */
     private $client     = NULL;
     private $reseller   = NULL;
     private $suspended  = NULL;
@@ -76,23 +84,37 @@ class Server_Account
         return $this->ip;
     }
 
+    /**
+     * @param Server_Client $param
+     * @return $this
+     */
     public function setClient(Server_Client $param)
     {
         $this->client = $param;
         return $this;
     }
 
+    /**
+     * @return Server_Client
+     */
     public function getClient()
     {
         return $this->client;
     }
 
+    /**
+     * @param Server_Package $param
+     * @return $this
+     */
     public function setPackage(Server_Package $param)
     {
         $this->package = $param;
         return $this;
     }
-    
+
+    /**
+     * @return Server_package
+     */
     public function getPackage()
     {
         return $this->package;

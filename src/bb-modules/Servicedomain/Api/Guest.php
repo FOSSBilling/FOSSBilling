@@ -19,27 +19,20 @@ namespace Box\Mod\Servicedomain\Api;
 class Guest extends \Api_Abstract
 {
     /**
-     * Get configured TLDs which can be ordered. Shows only enabled TLDS
+     * Get configured TLDs which can be ordered. Shows only enabled TLDs
      *
-     * @optional bool $allow_register - shows only these tlds which can be registered
-     * @optional bool $allow_transfer - shows only these tlds which can be transferred
+     * @optional bool $allow_register - shows only these TLDs which can be registered
+     * @optional bool $allow_transfer - shows only these TLDs which can be transferred
      *
-     * @return array - list of tlds
+     * @return array - list of TLDs
      */
-    public function tlds($data)
+    public function tlds($data = array())
     {
-        $data['hide_inactive'] = true;
-
-
-        $hide_inactive  = isset($data['hide_inactive']) ? (bool)$data['hide_inactive'] : FALSE;
-        $allow_register = isset($data['allow_register']) ? $data['allow_register'] : NULL;
-        $allow_transfer = isset($data['allow_transfer']) ? $data['allow_transfer'] : NULL;
+        $allow_register = $this->di['api_request_data']->get('allow_register');
+        $allow_transfer = $this->di['api_request_data']->get('allow_transfer');
 
         $where = array();
-
-        if ($hide_inactive) {
-            $where[] = "active = 1";
-        }
+        $where[] = "active = 1";
 
         if (NULL !== $allow_register) {
             $where[] = "allow_register = 1";

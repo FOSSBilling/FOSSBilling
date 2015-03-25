@@ -57,7 +57,6 @@ class Service implements \Box\InjectionAwareInterface
 
             default:
                 throw new \Box_Exception('Unknown item type');
-                break;
         }
         return $res;
     }

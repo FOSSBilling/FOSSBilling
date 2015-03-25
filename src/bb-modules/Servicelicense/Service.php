@@ -104,8 +104,8 @@ class Service implements InjectionAwareInterface
         $model->hosts = NULL;
         $model->paths = NULL;
         
-        $model->created_at = date('c');
-        $model->updated_at = date('c');
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         return $model;
@@ -135,7 +135,7 @@ class Service implements InjectionAwareInterface
         }
         
         $model->license_key = $plugin->generate($model, $order, $c);
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
     }
@@ -224,7 +224,7 @@ class Service implements InjectionAwareInterface
         $model->hosts = json_encode(array());
         $model->paths = json_encode(array());
         $model->versions = json_encode(array());
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Reset license %s information', $model->id);
 
@@ -337,7 +337,7 @@ class Service implements InjectionAwareInterface
         if($o instanceof \Model_ClientOrder) {
             return $o->expires_at;
         }
-        return date('c');
+        return date('Y-m-d H:i:s');
     }
 
     public function toApiArray(\Model_ServiceLicense $model, $deep = false, $identity = null)
@@ -370,7 +370,7 @@ class Service implements InjectionAwareInterface
         $allowed[] = $value;
 
         $model->{$key} = json_encode(array_unique($allowed));
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
     }
     
@@ -411,17 +411,16 @@ class Service implements InjectionAwareInterface
             $s->license_key = $data['license_key'];
         }
 
-        $fn = create_function('&$val', '$val = trim($val);');
         foreach (array('ips', 'hosts', 'paths', 'versions') as $key) {
             if(isset($data[$key])) {
                 $array = explode(PHP_EOL, $data[$key]);
-                array_walk($array, $fn);
+                $array = array_map('trim', $array);
                 $array = array_diff($array, array(''));
                 $s->{$key} = json_encode($array);
             }
         }
 
-        $s->updated_at = date('c');
+        $s->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($s);
 
         return true;
@@ -439,7 +438,7 @@ class Service implements InjectionAwareInterface
 
         /**
          * Return error code in result field if related to license error
-         * If error comes from boxbilling core use $result['error'] field
+         * If error comes from BoxBilling core use $result['error'] field
          * @since v2.7.1
          */
         if(isset($data['format']) && $data['format'] == 2) {

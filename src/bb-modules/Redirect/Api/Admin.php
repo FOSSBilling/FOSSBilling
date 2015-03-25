@@ -71,8 +71,8 @@ class Admin extends \Api_Abstract
         $bean->extension = 'mod_redirect';
         $bean->meta_key = trim($data['path'], '/');
         $bean->meta_value = trim($data['target'], '/');
-        $bean->created_at = date('c');
-        $bean->updated_at = date('c');
+        $bean->created_at = date('Y-m-d H:i:s');
+        $bean->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($bean);
         
         $id = $bean->id;
@@ -107,7 +107,7 @@ class Admin extends \Api_Abstract
             $bean->meta_value = $data['target'];
         }
         
-        $bean->updated_at = date('c');
+        $bean->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($bean);
         
         $this->di['logger']->info('Updated redirect #%s', $data['id']);

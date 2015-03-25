@@ -19,7 +19,7 @@ namespace Box\Mod\Client\Api;
 class Client extends \Api_Abstract
 {
     /**
-     * Get currencly logged in client details
+     * Get currently logged in client details
      * @deprecated moved to profile module
      */
     public function get()
@@ -47,7 +47,7 @@ class Client extends \Api_Abstract
      * @optional string $state - country state
      * @optional string $phone - Phone number
      * @optional string $phone_cc - Phone country code
-     * @optional string $document_type - Related document type, ie: passpord, driving license
+     * @optional string $document_type - Related document type, ie: passport, driving license
      * @optional string $document_nr - Related document number, ie: passport number: LC45698122
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $custom_1 - Custom field 1
@@ -65,144 +65,58 @@ class Client extends \Api_Abstract
      * @throws Exception 
      * @deprecated moved to profile module
      */
-    public function update($data)
+    public function update($data = array())
     {
         $client = $this->getIdentity();
 
-        $event_params = $data;
+        $event_params =  $this->di['api_request_data']->get();
         $event_params['id'] = $client->id;
         $this->di['events_manager']->fire(array('event'=>'onBeforeClientProfileUpdate', 'params'=>$event_params));
-        
-        $mod = $this->di['mod']('client');
-        $config = $mod->getConfig();
-        if(isset($data['email']) 
-                && $client->email != $data['email'] 
-                && isset($config['allow_change_email']) 
-                && !$config['allow_change_email']) {
-            throw new \Box_Exception('Email can not be changed');
-        }
-        
-        if(isset($data['email'])) {
-            $this->di['validator']->isEmailValid($data['email']);
 
-            if($this->getService()->emailAreadyRegistered($data['email'], $client)) {
+        $email = $this->di['api_request_data']->get('email', '');
+        if(!empty($email)) {
+            $this->di['validator']->isEmailValid($email);
+
+            $this->getService()->canChangeEmail($client, $email);
+
+            if($this->getService()->emailAreadyRegistered($email, $client)) {
                 throw new \Box_Exception('Can not change email. It is already registered.');
             }
-            
-            $client->email = strtolower(trim($data['email']));
+            $client->email = strtolower(trim($email));
         }
 
-        if(isset($data['first_name'])) {
-            $client->first_name = $data['first_name'];
-        }
+        $client->first_name     = $this->di['api_request_data']->get('first_name', $client->first_name);
+        $client->last_name      = $this->di['api_request_data']->get('last_name', $client->last_name);
+        $client->gender         = $this->di['api_request_data']->get('gender', $client->gender);
+        $client->birthday       = $this->di['api_request_data']->get('birthday', $client->birthday);
+        $client->company        = $this->di['api_request_data']->get('company', $client->company);
+        $client->company_vat    = $this->di['api_request_data']->get('company_vat', $client->company_vat);
+        $client->company_number = $this->di['api_request_data']->get('company_number', $client->company_number);
+        $client->type           = $this->di['api_request_data']->get('type', $client->type);
+        $client->address_1      = $this->di['api_request_data']->get('address_1', $client->address_1);
+        $client->address_2      = $this->di['api_request_data']->get('address_2', $client->address_2);
+        $client->phone_cc       = $this->di['api_request_data']->get('phone_cc', $client->phone_cc);
+        $client->phone          = $this->di['api_request_data']->get('phone', $client->phone);
+        $client->country        = $this->di['api_request_data']->get('country', $client->country);
+        $client->postcode       = $this->di['api_request_data']->get('postcode', $client->postcode);
+        $client->city           = $this->di['api_request_data']->get('city', $client->city);
+        $client->state          = $this->di['api_request_data']->get('state', $client->state);
+        $client->document_type  = $this->di['api_request_data']->get('document_type', 'passport');
+        $client->document_nr    = $this->di['api_request_data']->get('document_nr', '');
 
-        if(isset($data['last_name'])) {
-            $client->last_name = $data['last_name'];
-        }
+        $client->notes         = $this->di['api_request_data']->get('notes', $client->notes);
+        $client->custom_1      = $this->di['api_request_data']->get('custom_1', $client->c1);
+        $client->custom_2      = $this->di['api_request_data']->get('custom_2', $client->c2);
+        $client->custom_3      = $this->di['api_request_data']->get('custom_3', $client->c3);
+        $client->custom_4      = $this->di['api_request_data']->get('custom_4', $client->c4);
+        $client->custom_5      = $this->di['api_request_data']->get('custom_5', $client->c5);
+        $client->custom_6      = $this->di['api_request_data']->get('custom_6', $client->c6);
+        $client->custom_7      = $this->di['api_request_data']->get('custom_7', $client->c7);
+        $client->custom_8      = $this->di['api_request_data']->get('custom_8', $client->c8);
+        $client->custom_9      = $this->di['api_request_data']->get('custom_9', $client->c9);
+        $client->custom_10     = $this->di['api_request_data']->get('custom_10', $client->c10);
 
-        if(isset($data['gender'])) {
-            $client->gender = $data['gender'];
-        }
-
-        if(isset($data['birthday'])) {
-            $client->birthday = $data['birthday'];
-        }
-
-        if(isset($data['company'])) {
-            $client->company = $data['company'];
-        }
-        
-        if(isset($data['company_vat'])) {
-            $client->company_vat = $data['company_vat'];
-        }
-        
-        if(isset($data['company_number'])) {
-            $client->company_number = $data['company_number'];
-        }
-        
-        if(isset($data['type'])) {
-            $client->type = $data['type'];
-        }
-
-        if(isset($data['address_1'])) {
-            $client->address_1 = $data['address_1'];
-        }
-
-        if(isset($data['address_2'])) {
-            $client->address_2 = $data['address_2'];
-        }
-
-        if(isset($data['phone_cc'])) {
-            $client->phone_cc = $data['phone_cc'];
-        }
-
-        if(isset($data['phone'])) {
-            $client->phone = $data['phone'];
-        }
-
-        if(isset($data['country'])) {
-            $client->country = $data['country'];
-        }
-
-        if(isset($data['postcode'])) {
-            $client->postcode = $data['postcode'];
-        }
-
-        if(isset($data['city'])) {
-            $client->city = $data['city'];
-        }
-
-        if(isset($data['state'])) {
-            $client->state = $data['state'];
-        }
-
-        if(isset($data['document_type'])) {
-            $client->document_type = $data['document_type'];
-        }
-
-        if(isset($data['document_nr'])) {
-            $client->document_nr = $data['document_nr'];
-            if (!isset($data['document_type'])){
-                $client->document_type = 'passport';
-            }
-        }
-
-        if(isset($data['notes'])) {
-            $client->notes = $data['notes'];
-        }
-
-        if(isset($data['custom_1'])) {
-            $client->custom_1 = $data['custom_1'];
-        }
-        if(isset($data['custom_2'])) {
-            $client->custom_2 = $data['custom_2'];
-        }
-        if(isset($data['custom_3'])) {
-            $client->custom_3 = $data['custom_3'];
-        }
-        if(isset($data['custom_4'])) {
-            $client->custom_4 = $data['custom_4'];
-        }
-        if(isset($data['custom_5'])) {
-            $client->custom_5 = $data['custom_5'];
-        }
-        if(isset($data['custom_6'])) {
-            $client->custom_6 = $data['custom_6'];
-        }
-        if(isset($data['custom_7'])) {
-            $client->custom_7 = $data['custom_7'];
-        }
-        if(isset($data['custom_8'])) {
-            $client->custom_8 = $data['custom_8'];
-        }
-        if(isset($data['custom_9'])) {
-            $client->custom_9 = $data['custom_9'];
-        }
-        if(isset($data['custom_10'])) {
-            $client->custom_10 = $data['custom_10'];
-        }
-
-        $client->updated_at = date('c');
+        $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterClientProfileUpdate', 'params'=>array('id'=>$client->id)));
@@ -230,7 +144,7 @@ class Client extends \Api_Abstract
         $client = $this->getIdentity();
         
         $client->api_token = $this->di['tools']->generatePassword(32);
-        $client->updated_at = date('c');
+        $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
 
         $this->di['logger']->info('Generated new API key');

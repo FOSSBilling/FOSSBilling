@@ -152,7 +152,6 @@ class Service implements \Box\InjectionAwareInterface
 
         $t  = $db->findOne('EmailTemplate', 'action_code = :action', array(':action' => $data['code']));
         if (!is_object($t)) {
-            //if(BB_DEBUG) error_log('Email template '.$data['code'] . ' not found. Creating new template');
 
             list($s, $c, $desc, $enabled, $mod) = $this->_getDefaults($data);
             $t              = $db->dispense('EmailTemplate');
@@ -213,7 +212,7 @@ class Service implements \Box\InjectionAwareInterface
     {
         $code = $data['code'];
 
-        $enabled     = false;
+        $enabled     = 0;
         $subject     = isset($data['default_subject']) ? $data['default_subject'] : ucwords(str_replace('_', ' ', $code));
         $content     = isset($data['default_template']) ? $data['default_template'] : $this->_getVarsString();
         $description = isset($data['default_description']) ? $data['default_description'] : null;
@@ -230,17 +229,13 @@ class Service implements \Box\InjectionAwareInterface
             preg_match('#{%.?block subject.?%}((.*?)+){%.?endblock.?%}#', $tpl, $ms);
             if (isset($ms[1])) {
                 $subject = $ms[1];
-            } else {
-                //if(BB_DEBUG) error_log(sprintf('Default email template %s does not have subject block', $code));
             }
 
             $mc = array();
             preg_match('/{%.?block content.?%}((.*?\n)+){%.?endblock.?%}/m', $tpl, $mc);
             if (isset($mc[1])) {
                 $content = $mc[1];
-                $enabled = true;
-            } else {
-                //if(BB_DEBUG) error_log(sprintf('Default email template %s does not have content block', $code));
+                $enabled = 1;
             }
         }
 
@@ -261,8 +256,8 @@ class Service implements \Box\InjectionAwareInterface
         $queue->client_id  = $client_id;
         $queue->admin_id   = $admin_id;
         $queue->status     = 'unsent';
-        $queue->created_at = date('c');
-        $queue->updated_at = date('c');
+        $queue->created_at = date('Y-m-d H:i:s');
+        $queue->updated_at = date('Y-m-d H:i:s');
         $queue->priority   = 1;
         $queue->tries      = 0;
         try {
@@ -313,7 +308,6 @@ class Service implements \Box\InjectionAwareInterface
         $transport       = isset($settings['mailer']) ? $settings['mailer'] : 'sendmail';
 
         if (APPLICATION_ENV == 'testing') {
-            //print $mail->getSubject() . PHP_EOL . $mail->getBody();
             if (BB_DEBUG) error_log('Skipping email sending in test environment');
             return true;
         }
@@ -422,7 +416,6 @@ class Service implements \Box\InjectionAwareInterface
         if (isset($subject)) {
             // check subject syntax before saving
             // should throw exception if render fails
-            //$this->template_render(array('id' => $model->id, '_tpl' => $subject));
             $vars['_tpl'] = $subject;
             $this->di['twig']->render($subject, $vars);
             $model->subject = $subject;
@@ -431,7 +424,6 @@ class Service implements \Box\InjectionAwareInterface
         if (isset($content)) {
             // check content syntax before saving
             // should throw exception if render fails
-            //$this->template_render(array('id' => $model->id, '_tpl' => $content));
             $vars['_tpl'] = $content;
             $this->di['twig']->render($content, $vars);
 
@@ -454,11 +446,6 @@ class Service implements \Box\InjectionAwareInterface
 
         $d = array('code' => $code);
         list($s, $c) = $this->_getDefaults($d);
-       /* $new = array(
-            'id'      => $t->id,
-            'subject' => $s,
-            'content' => $c,
-        );*/
         $this->updateTemplate($t, null, null, $s, $c);
         $this->di['logger']->info('Reset email template: %s', $t->action_code);
 
@@ -605,7 +592,7 @@ class Service implements \Box\InjectionAwareInterface
             if ($queue->priority) $queue->priority--;
             $queue->status = 'unsent';
             $queue->tries++;
-            $queue->updated_at = date('c');
+            $queue->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($queue);
             if ($settings['cancel_after'] && $queue->tries > $settings['cancel_after']) $this->di['db']->trash($queue);
         }

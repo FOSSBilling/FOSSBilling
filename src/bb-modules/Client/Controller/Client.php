@@ -65,7 +65,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_client_index(\Box_App $app)
     {
-        $api = $app->getApiClient();
+        $this->di['is_client_logged'];
         return $app->render('mod_client_index');
     }
 
@@ -80,21 +80,21 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_client_logout(\Box_App $app)
     {
-        $api = $app->getApiClient();
+        $api = $this->di['api_client'];
         $api->profile_logout();
         $app->redirect('/');
     }
 
     public function get_client_page(\Box_App $app, $page)
     {
-        $api = $app->getApiClient();
+        $this->di['is_client_logged'];
         $template = 'mod_client_'.$page;
         return $app->render($template);
     }
 
     public function get_reset_password_confirm(\Box_App $app, $hash)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $data = array(
             'hash' =>  $hash,
         );

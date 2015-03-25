@@ -312,8 +312,9 @@
     </div>
     <div class="block">
         {% if invoice.status == 'unpaid' %}
-        <a class="bb-button" href="{{ ('invoice/'~invoice.hash)|link({'change_payment_method' : 1}) }}">{% trans 'Change payment method' %}</a>
+        <a class="bb-button" href="{{ ('invoice/'~invoice.hash)|link({'change_payment_method' : 1}) }}" style="margin-bottom: 10px">{% trans 'Change payment method' %}</a>
         {% endif %}
+        <a class="bb-button" href="{{ 'invoice/pdf' | link }}/{{invoice.hash}}">{% trans 'Download PDF' %}</a>
     </div>
 </div>
 

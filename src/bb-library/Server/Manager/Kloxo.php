@@ -104,13 +104,15 @@ class Server_Manager_Kloxo extends Server_Manager
 		$resourcePlan = $this->_getResourcePlan($p);
 		$dnsTemplate = $this->_getDnsTemplate($p);
 
+        $client = $a->getClient();
+
 		$params = array(
 			'action'			=>	'add',
 			'class'				=>	'client',
 			'name'				=>	$a->getUsername(),
 			'v-plan_name'		=>	$resourcePlan,
 			'v-type'			=>	$a->getReseller() ? 'reseller' : 'customer',
-			'v-contactemail'	=>	$a->getEmail(),
+			'v-contactemail'	=>	$client->getEmail(),
 			'v-send_welcome_f'	=>	'off',
 			'v-domain_name'		=>	$a->getDomain(),
 			'v-dnstemplate_name'=>	$dnsTemplate,

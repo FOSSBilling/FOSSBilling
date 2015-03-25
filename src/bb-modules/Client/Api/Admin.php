@@ -103,7 +103,7 @@ class Admin extends \Api_Abstract
      * @optional string $password - client password
      * @optional string $auth_type - client authorization type. Default null
      * @optional string $last_name - client last name
-     * @optional string $aid - alternative ID. If you import cients from other systems you can use this field to store foreign system ID
+     * @optional string $aid - alternative ID. If you import clients from other systems you can use this field to store foreign system ID
      * @optional string $group_id - client group id
      * @optional string $status - client status: "active, suspended, canceled"
      * @optional string $created_at - ISO 8601 date for client creation date
@@ -123,7 +123,7 @@ class Admin extends \Api_Abstract
      * @optional string $state - country state
      * @optional string $phone - Phone number
      * @optional string $phone_cc - Phone country code
-     * @optional string $document_type - Related document type, ie: passpord, driving license
+     * @optional string $document_type - Related document type, ie: passport, driving license
      * @optional string $document_nr - Related document number, ie: passport number: LC45698122
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $lang - Client language
@@ -214,7 +214,7 @@ class Admin extends \Api_Abstract
      * @optional string $state - country state
      * @optional string $phone - Phone number
      * @optional string $phone_cc - Phone country code
-     * @optional string $document_type - Related document type, ie: passpord, driving license
+     * @optional string $document_type - Related document type, ie: passport, driving license
      * @optional string $document_nr - Related document number, ie: passport number: LC45698122
      * @optional string $lang - Client language
      * @optional string $notes - Notes about client. Visible for admin only
@@ -231,183 +231,75 @@ class Admin extends \Api_Abstract
      * 
      * @return bool
      */
-    public function update($data)
+    public function update($data = array())
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Id required');
-        }
+        $required = array('id' => 'Id required');
+        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
 
-        $client = $this->di['db']->load('Client', $data['id']);
+        $client = $this->di['db']->load('Client', $this->di['api_request_data']->get('id'));
         if(!$client instanceof \Model_Client ) {
             throw new \Box_Exception('Client not found');
         }
-        
-        $this->di['events_manager']->fire(array('event'=>'onBeforeAdminClientUpdate', 'params'=>$data));
+
         $service = $this->di['mod_service']('client');
-        
-        $email        = isset($data['email']) ? $data['email'] : NULL ;
-        $first_name        = isset($data['first_name']) ? $data['first_name'] : NULL ;
-        $last_name        = isset($data['last_name']) ? $data['last_name'] : NULL ;
-        $aid        = isset($data['aid']) ? $data['aid'] : NULL ;
-        $gender     = isset($data['gender']) ? $data['gender'] : NULL ;
-        $birthday   = isset($data['birthday']) ? $data['birthday'] : NULL ;
-        $company   = isset($data['company']) ? $data['company'] : NULL ;
-        $company_vat   = isset($data['company_vat']) ? $data['company_vat'] : NULL ;
-        $address_1   = isset($data['address_1']) ? $data['address_1'] : NULL ;
-        $address_2   = isset($data['address_2']) ? $data['address_2'] : NULL ;
-        $phone_cc   = isset($data['phone_cc']) ? $data['phone_cc'] : NULL ;
-        $phone   = isset($data['phone']) ? $data['phone'] : NULL ;
-        $document_type      = isset($data['document_type']) ? $data['document_type'] : NULL ;
-        $document_nr      = isset($data['document_nr']) ? $data['document_nr'] : NULL ;
-        $notes      = isset($data['notes']) ? $data['notes'] : NULL ;
-        $country      = isset($data['country']) ? $data['country'] : NULL ;
-        $postcode      = isset($data['postcode']) ? $data['postcode'] : NULL ;
-        $state      = isset($data['state']) ? $data['state'] : NULL ;
-        $city      = isset($data['city']) ? $data['city'] : NULL ;
-        $currency      = isset($data['currency']) ? $data['currency'] : NULL ;
-        $status      = isset($data['status']) ? $data['status'] : NULL ;
-        $email_approved      = isset($data['email_approved']) ? $data['email_approved'] : NULL ;
-        $tax_exempt  = isset($data['tax_exempt']) ? (bool)$data['tax_exempt'] : NULL;
-        $created_at  = isset($data['created_at']) ? $data['created_at'] : NULL;
 
-        $c1      = isset($data['custom_1']) ? $data['custom_1'] : NULL ;
-        $c2      = isset($data['custom_2']) ? $data['custom_2'] : NULL ;
-        $c3      = isset($data['custom_3']) ? $data['custom_3'] : NULL ;
-        $c4      = isset($data['custom_4']) ? $data['custom_4'] : NULL ;
-        $c5      = isset($data['custom_5']) ? $data['custom_5'] : NULL ;
-        $c6      = isset($data['custom_6']) ? $data['custom_6'] : NULL ;
-        $c7      = isset($data['custom_7']) ? $data['custom_7'] : NULL ;
-        $c8      = isset($data['custom_8']) ? $data['custom_8'] : NULL ;
-        $c9      = isset($data['custom_9']) ? $data['custom_9'] : NULL ;
-        $c10     = isset($data['custom_10']) ? $data['custom_10'] : NULL ;
-
-        if($currency && $service->canChangeCurrency($client, $currency)) {
-            $client->currency = $currency;
-        }
-
-        if(isset($data['group_id'])) {
-            $client->client_group_id = $data['group_id'];
-        }
-
-        if(!is_null($email)) {
+        if(!is_null($this->di['api_request_data']->get('email'))) {
+            $email =  $this->di['api_request_data']->get('email');
             $this->di['validator']->isEmailValid($email);
             if($service->emailAreadyRegistered($email, $client)) {
                 throw new \Box_Exception('Can not change email. It is already registered.');
             }
-            $client->email = $email;
+        }
+        $this->di['validator']->isBirthdayValid($this->di['api_request_data']->get('birthday'));
+
+        if($this->di['api_request_data']->get('currency') && $service->canChangeCurrency($client, $this->di['api_request_data']->get('currency'))) {
+            $client->currency = $this->di['api_request_data']->get('currency', $client->currency);
         }
 
-        if(!is_null($aid)) {
-            $client->aid = $aid;
-        }
-        if(!is_null($first_name)) {
-            $client->first_name = $first_name;
-        }
-        if(!is_null($last_name)) {
-            $client->last_name = $last_name;
-        }
-        if(!is_null($status)) {
-            $client->status = $status;
-        }
-        if(!is_null($email_approved)) {
-            $client->email_approved = $email_approved;
-        }
-        if(!is_null($gender)) {
-            $client->gender = $gender;
-        }
-        if(!is_null($birthday)) {
-            if (strlen(trim($data['birthday'])) > 0 && strtotime($data['birthday']) == false) {
-                throw new \Box_Exception('Invalid birth date value');
-            }
-            $client->birthday = $birthday;
-        }
-        if(!is_null($phone_cc)) {
-            $client->phone_cc = $phone_cc;
-        }
-        if(!is_null($phone)) {
-            $client->phone = $phone;
-        }
-        if(!is_null($company)) {
-            $client->company = $company;
-        }
-        if(!is_null($company_vat)) {
-            $client->company_vat = $company_vat;
-        }
-        if(isset($data['company_number'])) {
-            $client->company_number = $data['company_number'];
-        }
-        if(isset($data['type'])) {
-            $client->type = $data['type'];
-        }
-        if(isset($data['lang'])) {
-            $client->lang = $data['lang'];
-        }
-        if(!is_null($address_1)) {
-            $client->address_1 = $address_1;
-        }
-        if(!is_null($address_2)) {
-            $client->address_2 = $address_2;
-        }
-        if(!is_null($city)) {
-            $client->city = $city;
-        }
-        if(!is_null($state)) {
-            $client->state = $state;
-        }
-        if(!is_null($postcode)) {
-            $client->postcode = $postcode;
-        }
-        if(!is_null($country)) {
-            $client->country = $country;
-        }
-        if(!is_null($document_type)) {
-            $client->document_type = $document_type;
-        }
-        if(!is_null($document_nr)) {
-            $client->document_nr = $document_nr;
-        }
-        if(!is_null($notes)) {
-            $client->notes = $notes;
-        }
-        if(!is_null($tax_exempt)) {
-            $client->tax_exempt = $tax_exempt;
-        }
-        if(!is_null($created_at)) {
-            $client->created_at = date('c', strtotime($created_at));
-        }
+        $this->di['events_manager']->fire(array('event'=>'onBeforeAdminClientUpdate', 'params'=>$this->di['api_request_data']->get()));
 
-        if(!is_null($c1)) {
-            $client->custom_1 = $c1;
-        }
-        if(!is_null($c2)) {
-            $client->custom_2 = $c2;
-        }
-        if(!is_null($c3)) {
-            $client->custom_3 = $c3;
-        }
-        if(!is_null($c4)) {
-            $client->custom_4 = $c4;
-        }
-        if(!is_null($c5)) {
-            $client->custom_5 = $c5;
-        }
-        if(!is_null($c6)) {
-            $client->custom_6 = $c6;
-        }
-        if(!is_null($c7)) {
-            $client->custom_7 = $c7;
-        }
-        if(!is_null($c8)) {
-            $client->custom_8 = $c8;
-        }
-        if(!is_null($c9)) {
-            $client->custom_9 = $c9;
-        }
-        if(!is_null($c10)) {
-            $client->custom_10 = $c10;
-        }
+        $client->email          = $this->di['api_request_data']->get('email', $client->email);
+        $client->first_name     = $this->di['api_request_data']->get('first_name', $client->first_name);
+        $client->last_name      = $this->di['api_request_data']->get('last_name', $client->last_name);
+        $client->aid            = $this->di['api_request_data']->get('aid', $client->aid);
+        $client->gender         = $this->di['api_request_data']->get('gender', $client->gender);
+        $client->birthday       = $this->di['api_request_data']->get('birthday', $client->birthday);
+        $client->company        = $this->di['api_request_data']->get('company', $client->company);
+        $client->company_vat    = $this->di['api_request_data']->get('company_vat', $client->company_vat);
+        $client->address_1      = $this->di['api_request_data']->get('address_1', $client->address_1);
+        $client->address_2      = $this->di['api_request_data']->get('address_2', $client->address_2);
+        $client->phone_cc       = $this->di['api_request_data']->get('phone_cc', $client->phone_cc);
+        $client->phone          = $this->di['api_request_data']->get('phone', $client->phone);
+        $client->document_type  = $this->di['api_request_data']->get('document_type', $client->document_type);
+        $client->document_nr    = $this->di['api_request_data']->get('document_nr', $client->document_nr);
+        $client->notes          = $this->di['api_request_data']->get('notes', $client->notes);
+        $client->country        = $this->di['api_request_data']->get('country', $client->country);
+        $client->postcode       = $this->di['api_request_data']->get('postcode', $client->postcode);
+        $client->state          = $this->di['api_request_data']->get('state', $client->state);
+        $client->city           = $this->di['api_request_data']->get('city', $client->city);
 
-        $client->updated_at = date('c');
+        $client->status         = $this->di['api_request_data']->get('status', $client->status);
+        $client->email_approved = $this->di['api_request_data']->get('email_approved', $client->email_approved);
+        $client->tax_exempt     = $this->di['api_request_data']->get('tax_exempt', $client->tax_exempt);
+        $client->created_at     = $this->di['api_request_data']->get('created_at', $client->created_at);
+
+        $client->custom_1      = $this->di['api_request_data']->get('custom_1', $client->c1);
+        $client->custom_2      = $this->di['api_request_data']->get('custom_2', $client->c2);
+        $client->custom_3      = $this->di['api_request_data']->get('custom_3', $client->c3);
+        $client->custom_4      = $this->di['api_request_data']->get('custom_4', $client->c4);
+        $client->custom_5      = $this->di['api_request_data']->get('custom_5', $client->c5);
+        $client->custom_6      = $this->di['api_request_data']->get('custom_6', $client->c6);
+        $client->custom_7      = $this->di['api_request_data']->get('custom_7', $client->c7);
+        $client->custom_8      = $this->di['api_request_data']->get('custom_8', $client->c8);
+        $client->custom_9      = $this->di['api_request_data']->get('custom_9', $client->c9);
+        $client->custom_10     = $this->di['api_request_data']->get('custom_10', $client->c10);
+
+        $client->client_group_id = $this->di['api_request_data']->get('group_id', $client->client_group_id);
+        $client->company_number = $this->di['api_request_data']->get('company_number', $client->company_number);
+        $client->type = $this->di['api_request_data']->get('type', $client->type);
+        $client->lang = $this->di['api_request_data']->get('lang', $client->lang);
+
+        $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminClientUpdate', 'params'=>array('id'=>$client->id)));
         
@@ -420,7 +312,7 @@ class Admin extends \Api_Abstract
      *
      * @param int $id - Client ID
      * @param string $password - new client password
-     * @param string $password_confirm - repeast same new client password
+     * @param string $password_confirm - repeat same new client password
      *
      * @return bool
      */
@@ -449,7 +341,7 @@ class Admin extends \Api_Abstract
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminClientPasswordChange', 'params'=>$data));
 
         $client->pass = $this->di['password']->hashIt($data['password']);
-        $client->updated_at = date('c');
+        $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
         
         $this->di['events_manager']->fire(array('event'=>'onAfterAdminClientPasswordChange', 'params'=>array('id'=>$client->id, 'password'=>$data['password'])));
@@ -472,11 +364,11 @@ class Admin extends \Api_Abstract
 
         foreach($pager['list'] as $key => $item){
             $pager['list'][$key] = array(
-                'id'            =>  isset($item['id']) ? $item['id'] : '',
-                'description'   =>  isset($item['description']) ? $item['description'] : '',
-                'amount'        =>  isset($item['amount']) ? $item['amount'] : '',
-                'currency'      =>  isset($item['currency']) ? $item['currency'] : '',
-                'created_at'    =>  isset($item['created_at']) ? $item['created_at'] : '',
+                'id'            =>  $item['id'],
+                'description'   =>  $item['description'],
+                'amount'        =>  $item['amount'],
+                'currency'      =>  $item['currency'],
+                'created_at'    =>  $item['created_at'],
             );
         }
 
@@ -515,7 +407,7 @@ class Admin extends \Api_Abstract
      *
      * @param int $id - Client ID
      * @param int $amount - Amount of clients currency to added to balance
-     * @param int $description - Descrition of this transaction
+     * @param int $description - Description of this transaction
      * 
      * @optional string $type - Related item type
      * @optional string $rel_id - Related item id
@@ -578,14 +470,14 @@ class Admin extends \Api_Abstract
 
         foreach($pager['list'] as $key => $item){
             $pager['list'][$key] = array(
-                'id'            =>  isset($item['id']) ? $item['id'] : '',
-                'ip'            =>  isset($item['ip']) ? $item['ip'] : '',
-                'created_at'    =>  isset($item['created_at']) ? $item['created_at'] : '',
+                'id'            =>  $item['id'],
+                'ip'            =>  $item['ip'],
+                'created_at'    =>  $item['created_at'],
                 'client'        =>  array(
-                    'id'            =>  isset($item['client_id']) ? $item['client_id'] : '',
-                    'first_name'    => isset($item['first_name']) ? $item['first_name'] : '',
-                    'last_name'     =>  isset($item['last_name']) ? $item['last_name'] : '',
-                    'email'         =>  isset($item['email']) ? $item['email'] : '',
+                    'id'            => $item['client_id'],
+                    'first_name'    => $item['first_name'],
+                    'last_name'     => $item['last_name'],
+                    'email'         => $item['email'],
                 )
             );
         }
@@ -678,7 +570,7 @@ class Admin extends \Api_Abstract
             $model->title = $data['title'];
         }
         
-        $model->updated_at = date('c');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
     }

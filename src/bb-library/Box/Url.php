@@ -53,7 +53,7 @@ class Box_Url implements Box\InjectionAwareInterface
             }
         }
 
-        if($params) {
+        if(!empty($params)) {
             $link  .= '&' . http_build_query($params);
         }
         return $link;

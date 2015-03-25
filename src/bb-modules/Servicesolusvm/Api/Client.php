@@ -100,7 +100,7 @@ class Client extends \Api_Abstract
      */
     public function info($data)
     {
-        list($order, $vps) = $this->_getService($data);
+        list(, $vps) = $this->_getService($data);
         try {
             $result = $this->getService()->info($vps->vserverid);
         } catch(\Exception $exc) {

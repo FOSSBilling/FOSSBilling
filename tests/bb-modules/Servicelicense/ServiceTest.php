@@ -497,7 +497,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
     public function testgetExpirationDate()
     {
-        $expected = '2004-02-12T15:19:21+00:00';
+        $expected = '2004-02-12 15:19:21';
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
         $clientOrderModel->expires_at = $expected;

@@ -83,33 +83,33 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
-        $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_client_index');
     }
 
     public function get_manage(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $client = $api->client_get(array('id'=>$id));
         return $app->render('mod_client_manage', array('client'=>$client));
     }
 
     public function get_group(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $model = $api->client_group_get(array('id'=>$id));
         return $app->render('mod_client_group', array('group'=>$model));
     }
     
     public function get_history(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         return $app->render('mod_client_login_history');
     }
 
     public function get_login(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $api->client_login(array('id'=>$id));
 
         $redirect_to = '/';

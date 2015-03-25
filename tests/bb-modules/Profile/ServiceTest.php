@@ -203,6 +203,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             'custom_10'      => 'string',
         );
 
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di['api_request_data'] = $apiRequest;
+
         $service = new Service();
         $service->setDi($di);
         $result = $service->updateClient($model, $data);
@@ -258,6 +262,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $data = array(
             'email' => 'email@example.com',
         );
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di['api_request_data'] = $apiRequest;
 
         $service = new Service();
         $service->setDi($di);
@@ -315,6 +322,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $data = array(
             'email' => 'email@example.com',
         );
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di['api_request_data'] = $apiRequest;
 
         $service = new Service();
         $service->setDi($di);

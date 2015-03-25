@@ -44,7 +44,7 @@ class Guest extends \Api_Abstract
      * @optional string $state - country state
      * @optional string $phone - Phone number
      * @optional string $phone_cc - Phone country code
-     * @optional string $document_type - Related document type, ie: passpord, driving license
+     * @optional string $document_type - Related document type, ie: passport, driving license
      * @optional string $document_nr - Related document number, ie: passport number: LC45698122
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $custom_1 - Custom field 1
@@ -58,78 +58,44 @@ class Guest extends \Api_Abstract
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
      */
-    public function create($data)
+    public function create($data = array())
     {
         $config = $this->di['mod_config']('client');
 
         if(isset($config['allow_signup']) && !$config['allow_signup']) {
             throw new \Box_Exception('New registrations are temporary disabled');
         }
-        
-        if(!isset($data['email'])) {
-            throw new \Box_Exception('Email required');
-        }
 
-        if(!isset($data['first_name'])) {
-            throw new \Box_Exception('First name required');
-        }
+        $required = array(
+            'email' => 'Email required',
+            'first_name' => 'First name required',
+            'password' => 'Password required',
+            'password_confirm' => 'Password confirmation required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
 
-        if(!isset($data['password'])) {
-            throw new \Box_Exception('Password required');
-        }
+        $this->getService()->checkExtraRequiredFields($this->di['api_request_data']->get());
+        $this->getService()->checkCustomFields($this->di['api_request_data']->get());
 
-        if(!isset($data['password_confirm'])) {
-            throw new \Box_Exception('Password confirmation required');
-        }
-
-        if($data['password'] != $data['password_confirm']) {
-            throw new \Box_Exception('Passwords do not match');
-        }
-
-        if(isset($config['required']) && is_array($config['required'])) {
-            foreach($config['required'] as $field) {
-                if(!isset($data[$field]) || empty($data[$field])) {
-                    $name = ucwords(str_replace('_', ' ', $field));
-                    throw new \Box_Exception('It is required that you provide details for field ":field"', array(':field'=>$name));
-                }
-            }
-        }
-
-        if (isset($config['custom_fields']) && is_array($config['custom_fields'])) {
-            foreach ($config['custom_fields'] as $cFieldName => $cField) {
-                $active   = isset($cField['active']) && $cField['active'] ? true : false;
-                $required = isset($cField['required']) && $cField['required'] ? true : false;
-                if ($active && $required) {
-                    if (!isset($data[$cFieldName]) || empty($data[$cFieldName])) {
-                        $name = isset($cField['title']) && !empty($cField['title']) ? $cField['title'] : ucwords(str_replace('_', ' ', $cFieldName));;
-                        throw new \Box_Exception('It is required that you provide details for field ":field"', array(':field' => $name));
-                    }
-                }
-            }
-        }
-
-        $this->di['validator']->isPasswordStrong($data['password']);
-        $this->di['validator']->isEmailValid($data['email']);
-
+        $this->di['validator']->isPasswordStrong($this->di['api_request_data']->get('password'));
         $service = $this->getService();
-        $email          = strtolower(trim($data['email']));
+
+        $email = $this->di['api_request_data']->get('email');
+        $this->di['validator']->isEmailValid($email);
+        $email = strtolower(trim($email));
         if($service->clientAlreadyExists($email)) {
             throw new \Box_Exception('Email is already registered. You may want to login instead of registering.');
         }
 
-        $client = $service->guestCreateClient($data);
+        $client = $service->guestCreateClient($this->di['api_request_data']->get());
 
-
-        if (isset($config['require_email_confirmation']) && (int)$config['require_email_confirmation']) {
-            if (!$client->email_approved) {
-                throw new \Box_Exception('Account has been created. Please check your mailbox and confirm email address.', null,  7777);
-            }
+        if (isset($config['require_email_confirmation']) && (int)$config['require_email_confirmation'] && !$client->email_approved) {
+            throw new \Box_Exception('Account has been created. Please check your mailbox and confirm email address.', null,  7777);
         }
 
-        if(isset($data['auto_login']) && $data['auto_login']) {
-
+        if($this->di['api_request_data']->get('auto_login', 0)) {
             try {
-                $this->login(array('email'=>$client->email, 'password' => $data['password']));
+                $this->login(array('email'=>$client->email, 'password' => $this->di['api_request_data']->get('password')));
             } catch(\Exception $e) {
                 error_log($e->getMessage());
             }
@@ -211,8 +177,8 @@ class Guest extends \Api_Abstract
         $reset->client_id   = $c->id;
         $reset->ip          = $this->ip;
         $reset->hash        = $hash;
-        $reset->created_at  = date('c');
-        $reset->updated_at  = date('c');
+        $reset->created_at  = date('Y-m-d H:i:s');
+        $reset->updated_at  = date('Y-m-d H:i:s');
         $this->di['db']->store($reset);
 
         //send email

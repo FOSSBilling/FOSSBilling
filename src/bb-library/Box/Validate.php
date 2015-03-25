@@ -82,12 +82,25 @@ class Box_Validate
         return true;
     }
 
-    public function checkRequiredParamsForArray($required, $data)
+    /**
+     * @param array $required
+     * @param array $data
+     * @throws Box_Exception
+     */
+    public function checkRequiredParamsForArray(array $required, array $data)
     {
         foreach ($required as $key => $msg) {
             if (!isset($data[$key]) || empty($data[$key])) {
                 throw new \Box_Exception($msg);
             }
         }
+    }
+
+    public function isBirthdayValid($birthday = '')
+    {
+        if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
+            throw new \Box_Exception('Invalid birth date value');
+        }
+        return true;
     }
 }

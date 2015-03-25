@@ -40,8 +40,8 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_manage(\Box_App $app, $code)
     {
-        $api = $app->getApiAdmin();
-        $guest_api = $app->getApiGuest();
+        $this->di['is_admin_logged'];
+        $guest_api = $this->di['api_guest'];
         $currency = $guest_api->currency_get(array('code'=>$code));
         return $app->render('mod_currency_manage', array('currency'=>$currency));
     }

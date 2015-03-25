@@ -86,14 +86,14 @@ class Admin implements \Box\InjectionAwareInterface
     public function get_index(\Box_App $app)
     {
         // always call this method to validate if admin is logged in
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_example_index');
     }
 
     public function get_test(\Box_App $app)
     {
         // always call this method to validate if admin is logged in
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
 
         $params = array();
         $params['youparamname'] = 'yourparamvalue';
@@ -104,7 +104,7 @@ class Admin implements \Box\InjectionAwareInterface
     public function get_user(\Box_App $app, $id)
     {
         // always call this method to validate if admin is logged in
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
 
         $params = array();
         $params['userid'] = $id;
@@ -114,7 +114,7 @@ class Admin implements \Box\InjectionAwareInterface
     public function get_api(\Box_App $app, $id)
     {
         // always call this method to validate if admin is logged in
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $list_from_controller = $api->example_get_something();
 
         $params = array();

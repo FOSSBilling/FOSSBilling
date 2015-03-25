@@ -70,12 +70,12 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
             $w = new Whois2($domain->getName());
             return $w->isAvailable();
         }
-        throw new Registrar_Exception('Email registrar can not determine wheather domain is available');
+        throw new Registrar_Exception('Email registrar can not determine whether domain is available');
     }
 
     public function isDomainCanBeTransfered(Registrar_Domain $domain)
     {
-        throw new Registrar_Exception('Email registrar can not determine wheather domain can be transferred');
+        throw new Registrar_Exception('Email registrar can not determine whether domain can be transferred');
     }
 
     public function modifyNs(Registrar_Domain $domain)
@@ -208,7 +208,6 @@ class Whois2 {
 
     public $domain="";
     protected $idn=array(224,225,226,227,228,229,230,231,232,233,234,235,240,236,237,238,239,241,242,243,244,245,246,248,254,249,250,251,252,253,255);
-    //	var $idn=array("00E0","00E1","00E2","00E3","00E4","00E5","0101","0103","0105","00E6","00E7","0107","0109","010B","010D","010F","0111","00E8","00E9","00EA","00EB","0113","0115","0117","0119","011B","014B","00F0","011D","011F","0121","0123","0125","0127","00EC","00ED","00EE","00EF","0129","012B","012D","012F","0131","0135","0137","0138","013A","013C","013E","0142","00F1","0144","0146","0148","00F2","00F3","00F4","00F5","00F6","00F8","014D","014F","0151","0153","0155","0157","0159","015B","015D","015F","0161","0163","0165","0167","00FE","00F9","00FA","00FB","00FC","0169","016B","016D","016F","0171","0173","0175","00FD","00FF","0177","017A","017C","017E");
 
     public static function getServers()
     {
@@ -289,7 +288,6 @@ class Whois2 {
                   array("dz","whois.ripe.net","no entries found"),
                   array("ecn.br","whois.nic.br","No match"),
                   array("ee","whois.eenet.ee","NOT FOUND"),
-                  //	array("edu","whois.verisign-grs.net","No match"),
                   array("edu","whois.crsnic.net","No match"),
                   array("edu.au","whois.aunic.net","No Data Found"),
                   array("edu.br","whois.nic.br","No match"),
@@ -481,7 +479,6 @@ class Whois2 {
                   array("tn","whois.ripe.net","No entries found"),
                   array("tmp.br","whois.nic.br","No match"),
                   array("to","whois.tonic.to","No match"),
-                  // array("tr","whois.ripe.net","Not found in database"),
                   array("trd.br","whois.nic.br","No match"),
                   array("tur.br","whois.nic.br","No match"),
                 array("tv","whois.nic.tv","No match for "),
@@ -545,7 +542,6 @@ class Whois2 {
         }
 
         $dom=$domainname.".".$tldname;
-//				fputs($fp, "$dom\r\n");
 
         // New IDN
         if($tldname=="de") {
@@ -606,7 +602,8 @@ class Whois2 {
         $found=false;
         $tldname=$this->get_tld();
         $servers = self::getServers();
-        for($i=0;$i<count($servers);$i++) {
+        $counted = count($servers);
+        for($i=0;$i<$counted;$i++) {
             if($servers[$i][0]==$tldname) {
                 $server=$servers[$i][1];
                 $found=true;
@@ -621,7 +618,7 @@ class Whois2 {
 
     /**
      * Returns the tld of the domain without domain name
-     * @return string $tldname the tlds name without domain name
+     * @return string $tldname the TLDs name without domain name
      * @desc Returns the tld of the domain without domain name
      */
     private function get_tld()
@@ -631,7 +628,8 @@ class Whois2 {
 
         if(count($domain)>2) {
             $domainname=$domain[0];
-            for($i=1;$i<count($domain);$i++) {
+            $counted = count($domain);
+            for($i=1;$i<$counted;$i++) {
                 if($i==1) {
                     $tldname=$domain[$i];
                 }else {
@@ -646,15 +644,16 @@ class Whois2 {
     }
 
     /**
-     * Returns all tlds which are supported by the class
-     * @return string $tlds all tlds as array
-     * @desc Returns all tlds which are supported by the class
+     * Returns all TLDs which are supported by the class
+     * @return string $tlds all TLDs as array
+     * @desc Returns all TLDs which are supported by the class
      */
     public static function getTlds()
     {
         $tlds="";
         $servers = self::getServers();
-        for($i=0;$i<count($servers);$i++) {
+        $counted = count($servers);
+        for($i=0;$i<$counted;$i++) {
             $tlds[$i]=$servers[$i][0];
         }
         return $tlds;
@@ -682,7 +681,8 @@ class Whois2 {
         $found=false;
         $tldname=$this->get_tld();
         $servers = self::getServers();
-        for($i=0;$i<count($servers);$i++) {
+        $counted = count($servers);
+        for($i=0;$i<$counted;$i++) {
             if($servers[$i][0]==$tldname) {
                 $notfound=$servers[$i][2];
             }

@@ -55,7 +55,7 @@ class Client implements \Box\InjectionAwareInterface
     
     public function get_forum(\Box_App $app, $forum)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $data = array(
             'slug'  =>  $forum,
         );
@@ -65,7 +65,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_forum_topic(\Box_App $app, $forum, $topic)
     {
-        $api = $app->getApiGuest();
+        $api = $this->di['api_guest'];
         $data = array(
             'slug'  =>  $forum,
         );

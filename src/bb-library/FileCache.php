@@ -100,5 +100,3 @@ class FileCache
         return strtolower(md5($raw . 'Iip6tPwfNi95gugl0e6'));
     }
 }
-
-class FileCacheException extends Exception{}

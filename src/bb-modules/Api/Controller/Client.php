@@ -94,31 +94,23 @@ class Client implements InjectionAwareInterface
             $this->_api_config = $this->di['config']['api'];
         }
     }
-    
-    private function _apiCall($role, $method, $params)
+
+    private function checkRateLimit()
     {
-        $this->_loadConfig();
-
-        $ips = $this->_api_config['allowed_ips'];
-        if(!empty($ips) && !in_array($this->_getIp(), $ips)) {
-            throw new \Box_Exception('Unauthorized IP', null, 1002);
-        }
-
-        $this->di['license']->check();
-
-        $service = $this->di['mod_service']('api');
-        $service->logRequest();
-
-        // Rate limit
         $rate_span  = $this->_api_config['rate_span'];
         $rate_limit = $this->_api_config['rate_limit'];
-		$requests = $service->getRequestCount(time() - $rate_span, $this->_getIp());
-		$requests_left = $rate_limit - $requests;
+        $service = $this->di['mod_service']('api');
+        $requests = $service->getRequestCount(time() - $rate_span, $this->_getIp());
+        $requests_left = $rate_limit - $requests;
         $this->_requests_left = $requests_left;
-		if ($requests_left < 0) {
+        if ($requests_left < 0) {
             throw new \Box_Exception('Request limit reached', null, 1003);
-		}
+        }
+        return true;
+    }
 
+    private function checkHttpReferer()
+    {
         // snake oil: check request is from the same domain as BoxBilling is installed if present
         $check_referer_header = isset($this->_api_config['require_referrer_header']) ? (bool)$this->_api_config['require_referrer_header'] : false;
         if($check_referer_header) {
@@ -128,15 +120,35 @@ class Client implements InjectionAwareInterface
                 throw new \Box_Exception('Invalid request. Make sure request origin is :from', array(':from'=>BB_URL), 1004);
             }
         }
+        return true;
+    }
 
-        if (!in_array($role, $this->allowedRoles())){
-            throw new \Box_Exception('Unknow API call', null, 701);
+    private function checkAllowedIps()
+    {
+        $ips = $this->_api_config['allowed_ips'];
+        if(!empty($ips) && !in_array($this->_getIp(), $ips)) {
+            throw new \Box_Exception('Unauthorized IP', null, 1002);
         }
+        return true;
+    }
+
+    private function _apiCall($role, $method, $params)
+    {
+        $this->_loadConfig();
+        $this->checkAllowedIps();
+        $this->di['license']->check();
+
+        $service = $this->di['mod_service']('api');
+        $service->logRequest();
+        $this->checkRateLimit();
+        $this->checkHttpReferer();
+        $this->isRoleAllowed($role);
         try {
             $api = $this->di['api']($role);
         } catch (\Exception $e) {
             $this->_tryTokenLogin();
         }
+        $this->di['api_request_data']->setRequest($params);
         $result = $api->$method($params);
         return $this->renderJson($result);
     }
@@ -183,19 +195,27 @@ class Client implements InjectionAwareInterface
                 if(!$model instanceof \Model_Admin) {
                     throw new \Box_Exception('Authentication Failed', null, 205);
                 }
-                $this->di['session']->set('admin', $table->toSessionArray($model));
+                $service = $this->di['mod_service']('Client');
+                $this->di['session']->set('admin', $service->toSessionArray($model));
                 break;
 
             case 'guest': // do not allow at the moment
             default:
                 throw new \Box_Exception('Authentication Failed', null, 203);
-                break;
         }
     }
 
-    private function allowedRoles()
+    /**
+     * @param string $role
+     * @throws \Box_Exception
+     */
+    private function isRoleAllowed($role)
     {
-        return array('guest', 'client', 'admin');
+        $allowed = array('guest', 'client', 'admin');
+        if (!in_array($role, $allowed)){
+            throw new \Box_Exception('Unknow API call', null, 701);
+        }
+        return true;
     }
 
     public function renderJson($data = NULL, \Exception $e = NULL)

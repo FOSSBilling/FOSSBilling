@@ -123,6 +123,14 @@
         </delete>
     </target>
 
+    <target name="branch.check">
+        <property environment="env"/>
+        <echo>TRAVIS_BRANCH: ${env.TRAVIS_BRANCH}</echo>
+        <condition property="branch.master">
+            <equals arg1="${env.TRAVIS_BRANCH}" arg2="master" />
+        </condition>
+    </target>
+
     <target name="build-api" depends="clean, remove-fonts">
         <copy todir="${source}">
             <fileset refid="shared-artifacts"/>
@@ -131,13 +139,11 @@
             <fileset refid="api-sources"/>
         </copy>
 
-        <exec executable="git" outputproperty="release" >
-            <arg line="describe --abbrev=0"/>
-        </exec>
-        <echo message="Release version: ${release}" />
+        <property environment="env"/>
+        <echo message="Release TAG: ${env.TRAVIS_TAG}" />
 
         <exec executable="sed" failonerror="true" output="${source}/bb-library/Box/Version2.php">
-            <arg line="s/0.0.1/${release}/ ${source}/bb-library/Box/Version.php" />
+            <arg line="s/0.0.1/${env.TRAVIS_TAG}/ ${source}/bb-library/Box/Version.php" />
         </exec>
         <exec executable="mv" failonerror="true">
             <arg line="${source}/bb-library/Box/Version2.php ${source}/bb-library/Box/Version.php" />
@@ -149,6 +155,11 @@
     </target>
 
     <target name="test" depends="clean, composer-dev, test-unit, test-integration, test-modules"/>
-    <target name="release" depends="clean, composer, build-api, package"/>
+    <target name="release" if="branch.master" depends="branch.check">
+        <antcall target="clean" />
+        <antcall target="composer" />
+        <antcall target="build-api" />
+        <antcall target="package" />
+    </target>
     <target name="build" depends="config, test, release"/>
 </project>

@@ -81,24 +81,25 @@ class Admin implements \Box\InjectionAwareInterface
         $app->get('/support/',          'get_index', array(), get_class($this));
         $app->get('/support/index',     'get_index', array(), get_class($this));
         $app->get('/support/ticket/:id','get_ticket', array('id'=>'[0-9]+'), get_class($this));
+        $app->get('/support/ticket/:id/message/:messageid','get_ticket', array('id'=>'[0-9]+', 'messageid' => '[0-9]+'), get_class($this));
         $app->get('/support/public-tickets', 'get_public_tickets', array(), get_class($this));
         $app->get('/support/public-ticket/:id', 'get_public_ticket', array('id'=>'[0-9]+'), get_class($this));
         $app->get('/support/helpdesks', 'get_helpdesks', array(), get_class($this));
         $app->get('/support/helpdesk/:id', 'get_helpdesk', array('id'=>'[0-9]+'), get_class($this));
-        $app->get('/support/canned-responses', 'get_canned_list', null, get_class($this));
+        $app->get('/support/canned-responses', 'get_canned_list', array(), get_class($this));
         $app->get('/support/canned/:id', 'get_canned', array('id'=>'[0-9]+'), get_class($this));
         $app->get('/support/canned-category/:id', 'get_canned_cat', array('id'=>'[0-9]+'), get_class($this));
     }
 
     public function get_index(\Box_App $app)
     {
-        $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_support_tickets');
     }
     
-    public function get_ticket(\Box_App $app, $id)
+    public function get_ticket(\Box_App $app, $id, $messageid = '')
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $ticket = $api->support_ticket_get(array('id'=>$id));
         
         $cdm = '';
@@ -120,51 +121,51 @@ class Admin implements \Box\InjectionAwareInterface
             error_log($e->getMessage());
         }
          
-        return $app->render('mod_support_ticket', array('ticket'=>$ticket, 'canned_delay_message'=>$cdm));
+        return $app->render('mod_support_ticket', array('ticket'=>$ticket, 'canned_delay_message'=>$cdm, 'request_message' => $messageid));
     }
     
     public function get_public_tickets(\Box_App $app)
     {
-        $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_support_public_tickets');
     }
     
     public function get_public_ticket(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $ticket = $api->support_public_ticket_get(array('id'=>$id));
         return $app->render('mod_support_public_ticket', array('ticket'=>$ticket));
     }
     
     public function get_helpdesk(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $helpdesk = $api->support_helpdesk_get(array('id'=>$id));
         return $app->render('mod_support_helpdesk', array('helpdesk'=>$helpdesk));
     }
     
     public function get_helpdesks(\Box_App $app)
     {
-        $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_support_helpdesks');
     }
     
     public function get_canned_list(\Box_App $app)
     {
-        $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_support_canned_responses');
     }
     
     public function get_canned(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $c = $api->support_canned_get(array('id'=>$id)); 
         return $app->render('mod_support_canned_response', array('response'=>$c));
     }
     
     public function get_canned_cat(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $c = $api->support_canned_category_get(array('id'=>$id)); 
         return $app->render('mod_support_canned_category', array('category'=>$c));
     }

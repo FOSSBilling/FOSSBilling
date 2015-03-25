@@ -93,12 +93,12 @@
                          <td colspan="2">
                             <div class="aligncenter">
                                 {% if ticket.status != 'closed' %}
-                                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btn55 mr10 api-link" ><img src="images/icons/middlenav/stop.png" alt=""><span>Close ticket</span></a>
+                                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btn55 mr10 api-link" ><img src="images/icons/middlenav/stop.png" alt=""><span>{% trans 'Close ticket' %}</span></a>
                                 {% endif %}
-                                <a href="{{ 'api/admin/support/ticket_delete'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink }}" class="btn55 mr10 api-link"><img src="images/icons/middlenav/trash.png" alt=""><span>Delete</span></a>
+                                <a href="{{ 'api/admin/support/ticket_delete'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink }}" class="btn55 mr10 api-link"><img src="images/icons/middlenav/trash.png" alt=""><span>{% trans 'Delete' %}</span></a>
 
                                 {% if task.status == 'pending' %}
-                                <a href="{{ 'api/admin/support/task_complete'|link({'id' : ticket.id }) }}" class="btn55 mr10 api-link" data-api-reload="1"><img src="images/icons/middlenav/check.png" alt="" data-api-reload="1"><span>Set Task complete</span></a>
+                                <a href="{{ 'api/admin/support/task_complete'|link({'id' : ticket.id }) }}" class="btn55 mr10 api-link" data-api-reload="1"><img src="images/icons/middlenav/check.png" alt="" data-api-reload="1"><span>{% trans 'Set Task complete' %}</span></a>
                                 {% endif %}
                             </div>
                          </td>
@@ -210,7 +210,7 @@
                 <tfoot>
                     <tr>
                         <td colspan="5">
-                            <a href="{{ 'support'|alink({'client_id' : client.id})}}#tab-new" class="btnIconLeft mr10 mt5" ><img src="images/icons/dark/help.png" alt="" class="icon"><span>New support ticket</span></a>
+                            <a href="{{ 'support'|alink({'client_id' : client.id})}}#tab-new" class="btnIconLeft mr10 mt5" ><img src="images/icons/dark/help.png" alt="" class="icon"><span>{% trans 'New support ticket' %}</span></a>
                         </td>
                     </tr>
                 </tfoot>
@@ -222,10 +222,10 @@
 
 <div class="conversation">
 {% for i, message in ticket.messages %}
-<div class="widget {{ loop.last ? 'last' : '' }}">
+<div class="widget {{ loop.last ? 'last' : '' }}" id="{{ message.id == request_message ? 'direct-msg' : ''}}">
     <div class="head" style="cursor: pointer;">
         <h5 class="no-icon"><img src="{{ message.author.email|gravatar }}?size=20" alt="{{ message.author.name }}" class="gravatar"/> {{ message.author.name }}</h5>
-        <h5 style="float:right;">{{ message.created_at|bb_datetime }}</h5>
+        <h5 style="float:right;"><a href="{{ '/support/ticket'|alink }}/{{ticket.id}}/message/{{message.id}}" style="color:inherit">{{ message.created_at|bb_datetime }}</a></h5>
     </div>
 
     <div class="body" style="display:{{ loop.last or loop.index+1 == ticket.messages|length ? 'block' : 'none' }};">
@@ -257,10 +257,10 @@
 
 
             <div class="body">
-                <a href="#"  class="btnIconLeft mr10" onclick="$('.conversation .body').toggle(); return false;"><span>Show/Hide messages</span></a>
+                <a href="#"  class="btnIconLeft mr10" id="toggleMessages" ><span>{% trans 'Show/Hide messages' %}</span></a>
 
                 {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
-                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id }) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btnIconLeft mr10 api-link" ><span>Close ticket</span></a>
+                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id }) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btnIconLeft mr10 api-link" ><span>{% trans 'Close ticket' %}</span></a>
                 {% endif %}
             </div>
         </fieldset>
@@ -301,11 +301,28 @@ $(function() {
         api.get('admin/support/ticket_update', {id:{{ticket.id}}, status: $(this).val()});
     });
 
-    $('.conversation .head').click(function(){
+    $('.conversation').on('click', '.head', function(e){
+        if( e.target !== this )
+            return;
         $(this).siblings('.body').toggle();
         return false;
     });
-    
+
+    if ($('#direct-msg').length > 0){
+        $('#direct-msg > .body').show();
+        $('html, body').animate({
+            scrollTop: $('#direct-msg').offset().top-50
+        }, 500);
+        $('#direct-msg').css("background-color", "rgb(228, 228, 228)");
+    }
+
+    var showAllMessages = false;
+    $('.api-form').on('click', '#toggleMessages', function(e) {
+        e.preventDefault();
+        showAllMessages = !showAllMessages;
+        $('.conversation .body').toggle(showAllMessages);
+
+    });
 });
 </script>
 {% endblock %}

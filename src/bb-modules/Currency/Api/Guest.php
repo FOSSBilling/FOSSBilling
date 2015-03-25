@@ -60,18 +60,19 @@ class Guest extends \Api_Abstract
      * 
      * @return string - formated string
      */
-    public function format($data)
+    public function format($data = array())
     {
-        $c = $this->get($data);
-        $price = (isset($data['price'])) ? $data['price'] : 0;
-        $convert = (isset($data['convert'])) ? (bool)$data['convert'] : true;
-        $without_currency = (isset($data['without_currency'])) ? (bool)$data['without_currency'] : false;
+        $c = $this->get($this->di['api_request_data']->get());
 
+        $price = $this->di['api_request_data']->get('price', 0);
+        $convert = $this->di['api_request_data']->get('convert', true);
+        $without_currency = (bool) $this->di['api_request_data']->get('without_currency', false);
+
+        $p = $price;
         if($convert) {
             $p = $price * $c['conversion_rate'];
-        } else {
-            $p = $price;
         }
+
         switch ($c['price_format']) {
             case 2:
                 $p = number_format($p, 2, '.', ',');
@@ -97,8 +98,8 @@ class Guest extends \Api_Abstract
 
         if($without_currency) {
             return $p;
-        } else {
-            return str_replace('{{price}}', $p, $c['format']);
         }
+
+        return str_replace('{{price}}', $p, $c['format']);
     }
 }

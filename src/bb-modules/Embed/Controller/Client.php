@@ -46,7 +46,6 @@ class Client implements \Box\InjectionAwareInterface
 
     public function get_object(\Box_App $app, $what)
     {
-        $api = $app->getApiGuest();
         $tpl = 'mod_embed_'.$what;
         return $app->render($tpl);
     }

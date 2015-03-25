@@ -185,8 +185,8 @@ class Client extends \Api_Abstract
         $topic->title      = $data['topic'];
         $topic->slug       = $this->di['tools']->slug($data['topic']);
         $topic->status     = 'active';
-        $topic->created_at = date('c');
-        $topic->updated_at = date('c');
+        $topic->created_at = date('Y-m-d H:i:s');
+        $topic->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($topic);
 
         $msg                 = $this->di['db']->dispense('ForumTopicMessage');
@@ -194,8 +194,8 @@ class Client extends \Api_Abstract
         $msg->forum_topic_id = $topic->id;
         $msg->message        = $data['message'];
         $msg->ip             = $this->getIp();
-        $msg->created_at     = date('c');
-        $msg->updated_at     = date('c');
+        $msg->created_at     = date('Y-m-d H:i:s');
+        $msg->updated_at     = date('Y-m-d H:i:s');
         $this->di['db']->store($msg);
 
         $this->di['events_manager']->fire(array('event' => 'onAfterClientCreateForumTopic', 'params' => array('id' => $topic->id)));
@@ -270,11 +270,11 @@ class Client extends \Api_Abstract
         $msg->forum_topic_id = $topic->id;
         $msg->message        = $data['message'];
         $msg->ip             = $this->getIp();
-        $msg->created_at     = date('c');
-        $msg->updated_at     = date('c');
+        $msg->created_at     = date('Y-m-d H:i:s');
+        $msg->updated_at     = date('Y-m-d H:i:s');
         $this->di['db']->store($msg);
 
-        $topic->updated_at = date('c');
+        $topic->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($topic);
 
         $this->di['events_manager']->fire(array('event' => 'onAfterClientRepliedInForum', 'params' => array('id' => $topic->id, 'message_id' => $msg->id, 'client_id' => $client->id)));
@@ -368,8 +368,8 @@ class Client extends \Api_Abstract
         $meta->rel_id     = $data['id'];
         $meta->meta_key   = 'notification';
         $meta->meta_value = 1;
-        $meta->created_at = date('c');
-        $meta->updated_at = date('c');
+        $meta->created_at = date('Y-m-d H:i:s');
+        $meta->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($meta);
 
         $this->di['logger']->info('Subscribed to forum topic %s', $data['id']);
@@ -398,7 +398,6 @@ class Client extends \Api_Abstract
         $table  = $this->di['table']('ForumTopic');
         $topics = $table->getTopicsByIds(array_values($list));
         foreach ($topics as $topic) {
-            //var_dump($topic->id);exit;
             $result[] = $table->toApiArray($topic);
         }
 
@@ -406,7 +405,7 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Check if topic is added to favoites
+     * Check if topic is added to favorites
      *
      * @param int $id - forum topic id
      * @return bool
@@ -461,8 +460,8 @@ class Client extends \Api_Abstract
         $meta->rel_id     = $data['id'];
         $meta->meta_key   = 'favorite';
         $meta->meta_value = 1;
-        $meta->created_at = date('c');
-        $meta->updated_at = date('c');
+        $meta->created_at = date('Y-m-d H:i:s');
+        $meta->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($meta);
 
         $this->di['logger']->info('Added forum topic %s to favorites', $data['id']);

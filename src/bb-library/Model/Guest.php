@@ -11,4 +11,6 @@
  */
 
 class Model_Guest
-{}
+{
+
+}

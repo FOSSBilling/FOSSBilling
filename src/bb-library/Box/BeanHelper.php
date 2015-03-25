@@ -53,7 +53,7 @@ class Box_BeanHelper extends \RedBeanPHP\BeanHelper\SimpleFacadeBeanHelper imple
 
     private function underscoreToCamelCase( $string, $first_char_caps = true)
     {
-        if( $first_char_caps == true )
+        if( $first_char_caps === true )
         {
             $string[0] = strtoupper($string[0]);
         }

@@ -64,20 +64,20 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
-        $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_kb_index');
     }
     
     public function get_post(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $post = $api->kb_article_get(array('id'=>$id));
         return $app->render('mod_kb_article', array('post'=>$post));
     }
 
     public function get_cat(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $cat = $api->kb_category_get(array('id'=>$id));
         return $app->render('mod_kb_category', array('category'=>$cat));
     }

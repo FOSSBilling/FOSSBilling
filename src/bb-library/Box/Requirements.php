@@ -88,7 +88,6 @@ class Box_Requirements implements \Box\InjectionAwareInterface
         );
         
         $data['extensions']    = array(
-            'ionCube Loader'       => extension_loaded('ionCube Loader'),
             'apc'           => extension_loaded('apc'),
             'curl'          => extension_loaded('curl'),
             'pdo_mysql'     => extension_loaded('pdo_mysql'),

@@ -185,7 +185,7 @@ class Admin extends \Api_Abstract
      */
     public function info($data)
     {
-        list($order, $vps) = $this->_getService($data);
+        list(, $vps) = $this->_getService($data);
         try {
             $result = $this->getService()->info($vps->vserverid);
         } catch(\Exception $exc) {
@@ -437,7 +437,7 @@ class Admin extends \Api_Abstract
                     throw new \Exception(sprintf('Client with alternative id %s was not found', $server['clientid']));
                 }
                 
-                list($username, $password) = $this->getService()->getSolusUserPassword($client);
+                list($username, ) = $this->getService()->getSolusUserPassword($client);
                 
                 $odata = array(
                     'client_id'     => $client->id,
@@ -454,7 +454,7 @@ class Admin extends \Api_Abstract
                 
                 // create service
                 $model = $this->di['db']->dispense('service_solusvm');
-                $model->cluster_id = 1; //for future if ever boxbilling supports multiple master servers
+                $model->cluster_id = 1; //for future if ever BoxBilling supports multiple master servers
                 $model->client_id    = $client->id;
                 $model->hostname     = $server['hostname'];
                 $model->template     = $server['template'];
@@ -470,8 +470,8 @@ class Admin extends \Api_Abstract
                 $model->consoleuser = null;
                 $model->consolepassword = null;
                 $model->mainipaddress = $server['ipaddress'];
-                $model->created_at   = date('c');
-                $model->updated_at   = date('c');
+                $model->created_at   = date('Y-m-d H:i:s');
+                $model->updated_at   = date('Y-m-d H:i:s');
                 $this->di['db']->store($model);
                 
                 //activate order
@@ -521,7 +521,7 @@ class Admin extends \Api_Abstract
                 'last_name'     => $client['lastname'],
                 'password'      => $password,
                 'notes'         => 'Imported from SolusVM server',
-                'created_at'    => date('c', strtotime($client['created'])),
+                'created_at'    => date('Y-m-d H:i:s', strtotime($client['created'])),
             );
             try {
                 $id = $this->di['api_admin']->client_create($cdata);
@@ -560,14 +560,14 @@ class Admin extends \Api_Abstract
     
     /**
      * Update existing order service
-     * This methd used to change clients data if order setup fails 
-     * or you have changed data on solusvm server and you need to sync with
-     * boxbilling database
+     * This method used to change clients data if order setup fails
+     * or you have changed data on solusVM server and you need to sync with
+     * BoxBilling database
      * @return boolean 
      */
     public function update($data)
     {
-        list($order, $vps) = $this->_getService($data);
+        list(, $vps) = $this->_getService($data);
         
         if(isset($data['plan'])) {
             $vps->plan = $data['plan'];

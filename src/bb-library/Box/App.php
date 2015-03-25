@@ -15,13 +15,15 @@ use Box\InjectionAwareInterface;
 
 class Box_App {
 
-    protected $mappings = array(), $before_filters = Array(), $after_filters = Array();
-    protected $shared = array();
+    protected $mappings       = array();
+    protected $before_filters = array();
+    protected $after_filters  = array();
+    protected $shared         = array();
     protected $options;
-    protected $di = NULL;
-    protected $ext = 'phtml';
-    protected $mod = 'index';
-    protected $url = '/';
+    protected $di             = NULL;
+    protected $ext            = 'phtml';
+    protected $mod            = 'index';
+    protected $url            = '/';
 
     public $uri = NULL;
 
@@ -111,7 +113,8 @@ class Box_App {
             $methodName = explode('|', $methodName);
         }
 
-        for ($i = 0; $i < count($methodName); $i++) {
+        $counted = count($methodName);
+        for ($i = 0; $i < $counted; $i++) {
             $method = $methodName[$i];
             if (!isset($arr_filter[$method])) {
                 $arr_filter[$method] = array();
@@ -122,7 +125,8 @@ class Box_App {
 
     protected function run_filter($arr_filter, $methodName) {
         if(isset($arr_filter[$methodName])) {
-            for ($i=0; $i < count($arr_filter[$methodName]); $i++) {
+            $counted = count($arr_filter[$methodName]);
+            for ($i=0; $i < $counted; $i++) {
                 $return = call_user_func(array($this, $arr_filter[$methodName][$i]));
 
                 if(!is_null($return)) {
@@ -237,7 +241,8 @@ class Box_App {
 
     protected function processRequest()
     {
-        for($i = 0; $i < count($this->shared); $i++) {
+        $sharedCount = count($this->shared);
+        for($i = 0; $i < $sharedCount; $i++) {
             $mapping = $this->shared[$i];
             $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url);
             if($url->match) {
@@ -246,7 +251,8 @@ class Box_App {
         }
 
         // this class mappings
-        for($i = 0; $i < count($this->mappings); $i++) {
+        $mappingsCount = count($this->mappings);
+        for($i = 0; $i < $mappingsCount; $i++) {
             $mapping = $this->mappings[$i];
             $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url);
             if($url->match) {

@@ -169,7 +169,12 @@ class GuestTest extends \PHPUnit_Framework_TestCase
 
         $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
 
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di = new \Box_Di();
+        $di['api_request_data'] = $apiRequest;
 
+        $guestApi->setDi($di);
         $guestApi->setService($service);
 
         $result = $guestApi->format($data);
@@ -227,7 +232,11 @@ class GuestTest extends \PHPUnit_Framework_TestCase
 
         $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
 
-
+        $apiRequest = new \Box\Mod\Api\Request();
+        $apiRequest->setRequest($data);
+        $di = new \Box_Di();
+        $di['api_request_data'] = $apiRequest;
+        $guestApi->setDi($di);
         $guestApi->setService($service);
 
         $result = $guestApi->format($data);

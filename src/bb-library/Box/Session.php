@@ -24,6 +24,16 @@ class Box_Session
             array($handler, 'gc')
         );
         if(php_sapi_name() !== 'cli'){
+            $currentCookieParams = session_get_cookie_params();
+            $currentCookieParams["httponly"] = true;
+
+            session_set_cookie_params(
+                $currentCookieParams["lifetime"],
+                $currentCookieParams["path"],
+                $currentCookieParams["domain"],
+                $currentCookieParams["secure"],
+                $currentCookieParams["httponly"]
+            );
             session_start();
         }
     }

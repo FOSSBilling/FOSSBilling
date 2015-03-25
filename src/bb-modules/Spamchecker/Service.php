@@ -94,7 +94,7 @@ class Service implements InjectionAwareInterface
         $config = $di['mod_config']('Spamchecker');
         if(isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
-            array_walk($blocked_ips, create_function('&$val', '$val = trim($val);'));
+            $blocked_ips = array_map('trim', $blocked_ips);
             if(in_array($di['tools']->getIpv4(), $blocked_ips)) {
                 throw new \Box_Exception('IP :ip is blocked', array(':ip'=>$di['tools']->getIpv4()), 403);
             }
@@ -143,23 +143,47 @@ class Service implements InjectionAwareInterface
         );
 
         $config = $di['mod_config']('Spamchecker');
-        
-        if(isset($config['captcha_enabled']) && $config['captcha_enabled']) {
-            
-            $privatekey = $config['captcha_recaptcha_privatekey'];
 
-            if ($privatekey == null || $privatekey == '') {
-                throw new \Box_Exception("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>https://www.google.com/recaptcha/admin/create</a>");
-            }
+        if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
+            if (isset($config['captcha_version']) && $config['captcha_version'] == 2) {
 
-            require_once BB_PATH_MODS . '/Spamchecker/recaptchalib.php';
-            $resp = recaptcha_check_answer ($privatekey,
-                                            $data['ip'],
-                                            $data["recaptcha_challenge_field"],
-                                            $data["recaptcha_response_field"]);
-            if (!$resp->is_valid) {
-                error_log($resp->error);
-                throw new \Box_Exception('Captcha verification failed.');
+                if (!isset($config['captcha_recaptcha_privatekey']) || $config['captcha_recaptcha_privatekey'] == '') {
+                    throw new \Box_Exception("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>https://www.google.com/recaptcha/admin/create</a>");
+                }
+
+                if (!isset($params['g-recaptcha-response']) || $params['g-recaptcha-response'] == '') {
+                    throw new \Box_Exception("No response received");
+                }
+
+                $postData = array(
+                    'secret'   => $config['captcha_recaptcha_privatekey'],
+                    'response' => $params['g-recaptcha-response'],
+                    'remoteip' => $di['request']->getClientAddress()
+                );
+                $request  = $di['guzzle_client']->post('https://www.google.com/recaptcha/api/siteverify', null, $postData);
+                $response = $di['guzzle_client']->send($request)->json();
+
+                if (!$response['success']) {
+                    throw new \Box_Exception('Captcha verification failed.');
+                }
+
+            } else {
+
+                $privatekey = $config['captcha_recaptcha_privatekey'];
+
+                if ($privatekey == null || $privatekey == '') {
+                    throw new \Box_Exception("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>https://www.google.com/recaptcha/admin/create</a>");
+                }
+
+                require_once BB_PATH_MODS . '/Spamchecker/recaptchalib.php';
+                $resp = recaptcha_check_answer($privatekey,
+                                               $data['ip'],
+                                               $data["recaptcha_challenge_field"],
+                                               $data["recaptcha_response_field"]);
+                if (!$resp->is_valid) {
+                    error_log($resp->error);
+                    throw new \Box_Exception('Captcha verification failed.');
+                }
             }
         }
         

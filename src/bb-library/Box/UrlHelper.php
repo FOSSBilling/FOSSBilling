@@ -37,7 +37,8 @@ class Box_UrlHelper {
             $regexedUrl = preg_replace_callback('@:[a-zA-Z_\-]+@', array($this, 'regexValue'), $url);   // replace param with regex capture
             if (preg_match('@^' . $regexedUrl . '$@', $requestUri, $paramValues)) {                            // determine match and get param values
                 array_shift($paramValues);                                                              // remove the complete text match
-                for ($i=0; $i < count($paramNames); $i++) {
+                $counted = count($paramNames);
+                for ($i=0; $i < $counted; $i++) {
                     $this->params[$paramNames[$i]] = $paramValues[$i];
                 }
                 $this->match = true;

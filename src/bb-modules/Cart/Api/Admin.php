@@ -38,7 +38,7 @@ class Admin extends \Api_Abstract
 
     /**
      * Get shopping cart contents by id
-     * @param int $id - shoppoing cart id
+     * @param int $id - shopping cart id
      * @return array - shopping cart contents
      */
     public function get($data)

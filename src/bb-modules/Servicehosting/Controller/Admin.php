@@ -57,20 +57,20 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function get_index(\Box_App $app)
     {
-        $api = $app->getApiAdmin();
+        $this->di['is_admin_logged'];
         return $app->render('mod_servicehosting_index');
     }
 
     public function get_plan(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $hp = $api->servicehosting_hp_get(array('id'=>$id));
         return $app->render('mod_servicehosting_hp', array('hp'=>$hp));
     }
 
     public function get_server(\Box_App $app, $id)
     {
-        $api = $app->getApiAdmin();
+        $api = $this->di['api_admin'];
         $server = $api->servicehosting_server_get(array('id'=>$id));
         return $app->render('mod_servicehosting_server', array('server'=>$server));
     }
