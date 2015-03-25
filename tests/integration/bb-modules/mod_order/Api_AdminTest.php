@@ -237,7 +237,9 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->api_admin->order_renew($data);
         $order = $this->api_admin->order_get($data);
 
-        $expectedExpiryDate = date('Y-m-d', ($orderExpireDate + (strtotime('+1 month') - time())));
+        $date = new DateTime(date('Y-m-d', $orderExpireDate));
+        $date->add(new DateInterval('P1M'));
+        $expectedExpiryDate = $date->format('Y-m-d');
         $this->assertEquals($expectedExpiryDate, date('Y-m-d', strtotime($order['expires_at'])) );
     }
 
