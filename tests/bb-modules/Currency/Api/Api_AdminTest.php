@@ -365,10 +365,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di = new \Box_Di();
         $di['validator'] = $validatorMock;
-
-        $apiRequest = new \Box\Mod\Api\Request();
-        $apiRequest->setRequest($data);
-        $di['api_request_data'] = $apiRequest;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $adminApi->setService($service);
         $adminApi->setDi($di);
@@ -400,10 +399,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di = new \Box_Di();
         $di['validator'] = $validatorMock;
-
-        $apiRequest = new \Box\Mod\Api\Request();
-        $apiRequest->setRequest($data);
-        $di['api_request_data'] = $apiRequest;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $adminApi->setService($service);
         $adminApi->setDi($di);

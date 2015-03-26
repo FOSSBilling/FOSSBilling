@@ -109,7 +109,6 @@ final class Api_Handler implements InjectionAwareInterface
                 throw new \Box_Exception(':type API call :method does not exist in module :module', array(':type'=>ucfirst($this->type), ':method'=>$method_name,':module'=>$mod), 740);
             }
         }
-        $this->di['api_request_data']->setRequest($arguments);
         $res = $api->{$method_name}($arguments);
         if($this->_enable_cache) $this->_cache[$cache_key] = $res;
         return $res;

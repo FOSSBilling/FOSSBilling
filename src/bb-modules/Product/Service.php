@@ -567,7 +567,6 @@ class Service implements InjectionAwareInterface
 
     public function createPromo($code, $type, $value, $products = array(), $periods = array(), $clientGroups = array(), $data)
     {
-        $this->di['api_request_data']->setRequest($data);
         if ($this->di['db']->findOne('Promo', 'code = :code', array(':code' => $code))){
             throw new \Box_Exception('This promo code already exists.');
         }
@@ -579,15 +578,15 @@ class Service implements InjectionAwareInterface
         $model->code = $code;
         $model->type = $type;
         $model->value = $value;
-        $model->active = $this->di['api_request_data']->get('active', 0);
-        $model->freesetup = $this->di['api_request_data']->get('freesetup', 0);
-        $model->once_per_client = (bool) $this->di['api_request_data']->get('once_per_client', 0);
-        $model->recurring = (bool) $this->di['api_request_data']->get('recurring', 0);
-        $model->maxuses = $this->di['api_request_data']->get('maxuses');
+        $model->active = $this->di['array_get']($data, 'active', 0);
+        $model->freesetup = $this->di['array_get']($data, 'freesetup', 0);
+        $model->once_per_client = (bool) $this->di['array_get']($data, 'once_per_client', 0);
+        $model->recurring = (bool) $this->di['array_get']($data, 'recurring', 0);
+        $model->maxuses = $this->di['array_get']($data, 'maxuses');
 
-        $start_at = $this->di['api_request_data']->get('start_at');
+        $start_at = $this->di['array_get']($data, 'start_at');
         $model->start_at = !empty($start_at) ? date('Y-m-d H:i:s', strtotime($start_at)) : NULL;
-        $end_at = $this->di['api_request_data']->get('end_at');
+        $end_at = $this->di['array_get']($data, 'end_at');
         $model->end_at = (!empty($end_at)) ? date('Y-m-d H:i:s', strtotime($end_at)) : NULL;
 
         $model->products = json_encode($products);
@@ -621,45 +620,44 @@ class Service implements InjectionAwareInterface
 
     public function updatePromo(\Model_Promo $model, array $data = array())
     {
-        $this->di['api_request_data']->setRequest($data);
-        $model->code            = $this->di['api_request_data']->get('code', $model->code);
-        $model->type            = $this->di['api_request_data']->get('type', $model->type);
-        $model->value           = $this->di['api_request_data']->get('value', $model->value);
-        $model->active          = $this->di['api_request_data']->get('active', $model->active);
-        $model->freesetup       = $this->di['api_request_data']->get('freesetup', $model->freesetup);
-        $model->once_per_client = $this->di['api_request_data']->get('once_per_client', $model->once_per_client);
-        $model->recurring       = $this->di['api_request_data']->get('recurring', $model->recurring);
-        $model->used            = $this->di['api_request_data']->get('used', $model->used);
+        $model->code            = $this->di['array_get']($data, 'code', $model->code);
+        $model->type            = $this->di['array_get']($data, 'type', $model->type);
+        $model->value           = $this->di['array_get']($data, 'value', $model->value);
+        $model->active          = $this->di['array_get']($data, 'active', $model->active);
+        $model->freesetup       = $this->di['array_get']($data, 'freesetup', $model->freesetup);
+        $model->once_per_client = $this->di['array_get']($data, 'once_per_client', $model->once_per_client);
+        $model->recurring       = $this->di['array_get']($data, 'recurring', $model->recurring);
+        $model->used            = $this->di['array_get']($data, 'used', $model->used);
 
-        $start_at = $this->di['api_request_data']->get('start_at');
+        $start_at = $this->di['array_get']($data, 'start_at');
         if(empty ($start_at) && !is_null($start_at)) {
             $model->start_at = NULL;
         } else {
             $model->start_at = date('Y-m-d H:i:s', strtotime($start_at));
         }
 
-        $end_at = $this->di['api_request_data']->get('end_at');
+        $end_at = $this->di['array_get']($data, 'end_at');
         if(empty ($end_at) && !is_null($end_at)) {
             $model->end_at = NULL;
         } else {
             $model->end_at = date('Y-m-d H:i:s', strtotime($end_at));
         }
 
-        $products = $this->di['api_request_data']->get('products');
+        $products = $this->di['array_get']($data, 'products');
         if(empty($products) && !is_null($products)) {
             $model->products = NULL;
         } else {
             $model->products = json_encode($products);
         }
 
-        $client_groups = $this->di['api_request_data']->get('client_groups');
+        $client_groups = $this->di['array_get']($data, 'client_groups');
         if(empty($client_groups) && !is_null($client_groups)) {
             $model->client_groups = NULL;
         } else {
             $model->client_groups = json_encode($client_groups);
         }
 
-        $periods = $this->di['api_request_data']->get('periods');
+        $periods = $this->di['array_get']($data, 'periods');
         if(isset($periods) && is_array($periods)) {
             $model->periods = json_encode($periods);
         }

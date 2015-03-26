@@ -57,10 +57,9 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
         $di['validator'] = $validatorMock;
 
-        $apiRequest = new \Box\Mod\Api\Request();
-        $apiRequest->setRequest($data);
-        $di['api_request_data'] = $apiRequest;
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
         $client->setService($serviceMock);
@@ -104,10 +103,9 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
         $di['validator'] = $validatorMock;
-
-        $apiRequest = new \Box\Mod\Api\Request();
-        $apiRequest->setRequest($data);
-        $di['api_request_data'] = $apiRequest;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);

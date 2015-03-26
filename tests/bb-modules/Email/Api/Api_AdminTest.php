@@ -116,11 +116,10 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             ->method('sendMail')
             ->will($this->returnValue(true));
 
-        $apiRequest = new \Box\Mod\Api\Request();
-        $apiRequest->setRequest($data);
         $di = new \Box_Di();
-        $di['api_request_data'] = $apiRequest;
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;

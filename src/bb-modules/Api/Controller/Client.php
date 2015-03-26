@@ -148,7 +148,6 @@ class Client implements InjectionAwareInterface
         } catch (\Exception $e) {
             $this->_tryTokenLogin();
         }
-        $this->di['api_request_data']->setRequest($params);
         $result = $api->$method($params);
         return $this->renderJson($result);
     }

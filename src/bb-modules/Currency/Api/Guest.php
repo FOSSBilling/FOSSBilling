@@ -62,11 +62,11 @@ class Guest extends \Api_Abstract
      */
     public function format($data = array())
     {
-        $c = $this->get($this->di['api_request_data']->get());
+        $c = $this->get($data);
 
-        $price = $this->di['api_request_data']->get('price', 0);
-        $convert = $this->di['api_request_data']->get('convert', true);
-        $without_currency = (bool) $this->di['api_request_data']->get('without_currency', false);
+        $price = $this->di['array_get']($data, 'price', 0);
+        $convert = $this->di['array_get']($data, 'convert', true);
+        $without_currency = (bool) $this->di['array_get']($data, 'without_currency', false);
 
         $p = $price;
         if($convert) {

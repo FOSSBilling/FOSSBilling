@@ -89,17 +89,17 @@ class Admin extends \Api_Abstract
             'subject' => 'Email subject is required',
             'content' => 'Email content is required',
         );
-        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
-        $client_id = $this->di['api_request_data']->get('client_id');
+        $this->di['validator']->checkRequiredParamsForArray($required,  $data);
+        $client_id = $this->di['array_get']($data, 'client_id');
         $emailService = $this->getService();
 
         return $emailService->sendMail(
-            $this->di['api_request_data']->get('to'),
-            $this->di['api_request_data']->get('from'),
-            $this->di['api_request_data']->get('subject'),
-            $this->di['api_request_data']->get('content'),
-            $this->di['api_request_data']->get('to_name'),
-            $this->di['api_request_data']->get('from_name'),
+            $this->di['array_get']($data, 'to'),
+            $this->di['array_get']($data, 'from'),
+            $this->di['array_get']($data, 'subject'),
+            $this->di['array_get']($data, 'content'),
+            $this->di['array_get']($data, 'to_name'),
+            $this->di['array_get']($data, 'from_name'),
             $client_id
         );
     }

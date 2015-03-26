@@ -811,9 +811,8 @@ class Service implements InjectionAwareInterface
      * @param \Model_ClientOrder $order
      * @return int
      */
-    public function updatePeriod(\Model_ClientOrder $order)
+    public function updatePeriod(\Model_ClientOrder $order, $period)
     {
-        $period = $this->di['api_request_data']->get('period', null);
         if (!empty($period)) {
             $period        = $this->di['period']($period);
             $order->period = $period->getCode();
@@ -831,10 +830,8 @@ class Service implements InjectionAwareInterface
      * @param \Model_ClientOrder $order
      * @return int
      */
-    public function updateOrderMeta(\Model_ClientOrder $order)
+    public function updateOrderMeta(\Model_ClientOrder $order, $meta)
     {
-        $meta = $this->di['api_request_data']->get('meta');
-
         if (!is_array($meta)) {
             return 0;
         }
@@ -861,21 +858,19 @@ class Service implements InjectionAwareInterface
     public function updateOrder(\Model_ClientOrder $order, array $data)
     {
         $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderUpdate', 'params' => $data));
-        $this->di['api_request_data']->setRequest($data);
+        $this->updatePeriod($order, $this->di['array_get']($data, 'period', null));
 
-        $this->updatePeriod($order);
-
-        $created_at = $this->di['api_request_data']->get('created_at', '');
+        $created_at = $this->di['array_get']($data, 'created_at', '');
         if (!empty($created_at)) {
             $order->created_at = date('Y-m-d H:i:s', strtotime($created_at));
         }
 
-        $activated_at = $this->di['api_request_data']->get('activated_at');
+        $activated_at = $this->di['array_get']($data, 'activated_at');
         if (!empty($activated_at)) {
             $order->activated_at = date('Y-m-d H:i:s', strtotime($activated_at));
         }
 
-        $expires_at = $this->di['api_request_data']->get('expires_at');
+        $expires_at = $this->di['array_get']($data, 'expires_at');
         if (!empty($expires_at)) {
             $order->expires_at = date('Y-m-d H:i:s', strtotime($expires_at));
         }
@@ -883,14 +878,14 @@ class Service implements InjectionAwareInterface
             $order->expires_at = NULL;
         }
 
-        $order->invoice_option = $this->di['api_request_data']->get('invoice_option', $order->invoice_option);
-        $order->title          = $this->di['api_request_data']->get('title', $order->title);
-        $order->price          = $this->di['api_request_data']->get('price', $order->price);
-        $order->status         = $this->di['api_request_data']->get('status', $order->status);
-        $order->notes          = $this->di['api_request_data']->get('notes', $order->notes);
-        $order->reason         = $this->di['api_request_data']->get('reason', $order->reason);
+        $order->invoice_option = $this->di['array_get']($data, 'invoice_option', $order->invoice_option);
+        $order->title          = $this->di['array_get']($data, 'title', $order->title);
+        $order->price          = $this->di['array_get']($data, 'price', $order->price);
+        $order->status         = $this->di['array_get']($data, 'status', $order->status);
+        $order->notes          = $this->di['array_get']($data, 'notes', $order->notes);
+        $order->reason         = $this->di['array_get']($data, 'reason', $order->reason);
 
-        $this->updateOrderMeta($order);
+        $this->updateOrderMeta($order, $this->di['array_get']($data, 'meta', null));
 
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);

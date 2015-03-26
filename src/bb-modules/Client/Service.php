@@ -472,54 +472,53 @@ class Service implements InjectionAwareInterface
 
     private function createClient(array $data)
     {
-        $this->di['api_request_data']->setRequest($data);
-        $password = $this->di['api_request_data']->get('password', uniqid());
+        $password = $this->di['array_get']($data, 'password', uniqid());
 
         $client = $this->di['db']->dispense('Client');
 
-        $client->auth_type  = $this->di['api_request_data']->get('auth_type');
-        $client->email      = strtolower(trim($this->di['api_request_data']->get('email')));
-        $client->first_name = ucwords($this->di['api_request_data']->get('first_name'));
+        $client->auth_type  = $this->di['array_get']($data, 'auth_type');
+        $client->email      = strtolower(trim($this->di['array_get']($data, 'email')));
+        $client->first_name = ucwords($this->di['array_get']($data, 'first_name'));
         $client->pass       = $this->di['password']->hashIt($password);
 
-        $client->aid             = $this->di['api_request_data']->get('aid');
-        $client->last_name       = $this->di['api_request_data']->get('last_name');
-        $client->client_group_id = $this->di['api_request_data']->get('group_id');
-        $client->status          = $this->di['api_request_data']->get('status');
-        $client->gender          = $this->di['api_request_data']->get('gender');
-        $client->birthday        = $this->di['api_request_data']->get('birthday');
-        $client->phone_cc        = $this->di['api_request_data']->get('phone_cc');
-        $client->phone           = $this->di['api_request_data']->get('phone');
-        $client->company         = $this->di['api_request_data']->get('company');
-        $client->company_vat     = $this->di['api_request_data']->get('company_vat');
-        $client->company_number  = $this->di['api_request_data']->get('company_number');
-        $client->type            = $this->di['api_request_data']->get('type');
-        $client->address_1       = $this->di['api_request_data']->get('address_1');
-        $client->address_2       = $this->di['api_request_data']->get('address_2');
-        $client->city            = $this->di['api_request_data']->get('city');
-        $client->state           = $this->di['api_request_data']->get('state');
-        $client->postcode        = $this->di['api_request_data']->get('postcode');
-        $client->country         = $this->di['api_request_data']->get('country');
-        $client->document_type   = $this->di['api_request_data']->get('document_type');
-        $client->document_nr     = $this->di['api_request_data']->get('document_nr');
-        $client->notes           = $this->di['api_request_data']->get('notes');
-        $client->lang            = $this->di['api_request_data']->get('lang');
-        $client->currency        = $this->di['api_request_data']->get('currency');
+        $client->aid             = $this->di['array_get']($data, 'aid');
+        $client->last_name       = $this->di['array_get']($data, 'last_name');
+        $client->client_group_id = $this->di['array_get']($data, 'group_id');
+        $client->status          = $this->di['array_get']($data, 'status');
+        $client->gender          = $this->di['array_get']($data, 'gender');
+        $client->birthday        = $this->di['array_get']($data, 'birthday');
+        $client->phone_cc        = $this->di['array_get']($data, 'phone_cc');
+        $client->phone           = $this->di['array_get']($data, 'phone');
+        $client->company         = $this->di['array_get']($data, 'company');
+        $client->company_vat     = $this->di['array_get']($data, 'company_vat');
+        $client->company_number  = $this->di['array_get']($data, 'company_number');
+        $client->type            = $this->di['array_get']($data, 'type');
+        $client->address_1       = $this->di['array_get']($data, 'address_1');
+        $client->address_2       = $this->di['array_get']($data, 'address_2');
+        $client->city            = $this->di['array_get']($data, 'city');
+        $client->state           = $this->di['array_get']($data, 'state');
+        $client->postcode        = $this->di['array_get']($data, 'postcode');
+        $client->country         = $this->di['array_get']($data, 'country');
+        $client->document_type   = $this->di['array_get']($data, 'document_type');
+        $client->document_nr     = $this->di['array_get']($data, 'document_nr');
+        $client->notes           = $this->di['array_get']($data, 'notes');
+        $client->lang            = $this->di['array_get']($data, 'lang');
+        $client->currency        = $this->di['array_get']($data, 'currency');
 
-        $client->custom_1  = $this->di['api_request_data']->get('custom_1');
-        $client->custom_2  = $this->di['api_request_data']->get('custom_2');
-        $client->custom_3  = $this->di['api_request_data']->get('custom_3');
-        $client->custom_4  = $this->di['api_request_data']->get('custom_4');
-        $client->custom_5  = $this->di['api_request_data']->get('custom_5');
-        $client->custom_6  = $this->di['api_request_data']->get('custom_6');
-        $client->custom_7  = $this->di['api_request_data']->get('custom_7');
-        $client->custom_8  = $this->di['api_request_data']->get('custom_8');
-        $client->custom_9  = $this->di['api_request_data']->get('custom_9');
-        $client->custom_10 = $this->di['api_request_data']->get('custom_10');
+        $client->custom_1  = $this->di['array_get']($data, 'custom_1');
+        $client->custom_2  = $this->di['array_get']($data, 'custom_2');
+        $client->custom_3  = $this->di['array_get']($data, 'custom_3');
+        $client->custom_4  = $this->di['array_get']($data, 'custom_4');
+        $client->custom_5  = $this->di['array_get']($data, 'custom_5');
+        $client->custom_6  = $this->di['array_get']($data, 'custom_6');
+        $client->custom_7  = $this->di['array_get']($data, 'custom_7');
+        $client->custom_8  = $this->di['array_get']($data, 'custom_8');
+        $client->custom_9  = $this->di['array_get']($data, 'custom_9');
+        $client->custom_10 = $this->di['array_get']($data, 'custom_10');
 
-        $client->ip = $this->di['api_request_data']->get('ip');
+        $client->ip = $this->di['array_get']($data, 'ip');
 
-        $created_at = $this->di['api_request_data']->get('created_at');
+        $created_at = $this->di['array_get']($data, 'created_at');
         $client->created_at = !empty($created_at) ? date('Y-m-d H:i:s', strtotime($created_at)) : date('Y-m-d H:i:s');
         $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);

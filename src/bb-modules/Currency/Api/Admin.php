@@ -98,22 +98,22 @@ class Admin extends \Api_Abstract
             'code' => 'Currency code is missing',
             'format' => 'Currency format is missing',
         );
-        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
+        $this->di['validator']->checkRequiredParamsForArray($required,  $data);
 
         $service = $this->getService();
 
-        if($service->getByCode($this->di['api_request_data']->get('code'))) {
+        if($service->getByCode($this->di['array_get']($data, 'code'))) {
             throw new \Box_Exception('Currency already registered');
         }
 
-        if(!array_key_exists($this->di['api_request_data']->get('code'), $service->getAvailableCurrencies())) {
+        if(!array_key_exists($this->di['array_get']($data, 'code'), $service->getAvailableCurrencies())) {
             throw new \Box_Exception('Currency code is not valid');
         }
 
-        $title          = $this->di['api_request_data']->get('title');
-        $conversionRate = $this->di['api_request_data']->get('conversion_rate', 1);
+        $title          = $this->di['array_get']($data, 'title');
+        $conversionRate = $this->di['array_get']($data, 'conversion_rate', 1);
 
-        return $service->createCurrency($this->di['api_request_data']->get('code'), $this->di['api_request_data']->get('format'), $title, $conversionRate);
+        return $service->createCurrency($this->di['array_get']($data, 'code'), $this->di['array_get']($data, 'format'), $title, $conversionRate);
     }
 
     /**

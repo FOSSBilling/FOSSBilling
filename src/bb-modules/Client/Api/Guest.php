@@ -72,30 +72,30 @@ class Guest extends \Api_Abstract
             'password' => 'Password required',
             'password_confirm' => 'Password confirmation required',
         );
-        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $this->getService()->checkExtraRequiredFields($this->di['api_request_data']->get());
-        $this->getService()->checkCustomFields($this->di['api_request_data']->get());
+        $this->getService()->checkExtraRequiredFields($data);
+        $this->getService()->checkCustomFields($data);
 
-        $this->di['validator']->isPasswordStrong($this->di['api_request_data']->get('password'));
+        $this->di['validator']->isPasswordStrong($this->di['array_get']($data, 'password'));
         $service = $this->getService();
 
-        $email = $this->di['api_request_data']->get('email');
+        $email = $this->di['array_get']($data, 'email');
         $this->di['validator']->isEmailValid($email);
         $email = strtolower(trim($email));
         if($service->clientAlreadyExists($email)) {
             throw new \Box_Exception('Email is already registered. You may want to login instead of registering.');
         }
 
-        $client = $service->guestCreateClient($this->di['api_request_data']->get());
+        $client = $service->guestCreateClient($data);
 
         if (isset($config['require_email_confirmation']) && (int)$config['require_email_confirmation'] && !$client->email_approved) {
             throw new \Box_Exception('Account has been created. Please check your mailbox and confirm email address.', null,  7777);
         }
 
-        if($this->di['api_request_data']->get('auto_login', 0)) {
+        if($this->di['array_get']($data, 'auto_login', 0)) {
             try {
-                $this->login(array('email'=>$client->email, 'password' => $this->di['api_request_data']->get('password')));
+                $this->login(array('email'=>$client->email, 'password' => $this->di['array_get']($data, 'password')));
             } catch(\Exception $e) {
                 error_log($e->getMessage());
             }

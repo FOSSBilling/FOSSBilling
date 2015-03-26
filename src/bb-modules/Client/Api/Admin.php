@@ -234,70 +234,70 @@ class Admin extends \Api_Abstract
     public function update($data = array())
     {
         $required = array('id' => 'Id required');
-        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $client = $this->di['db']->load('Client', $this->di['api_request_data']->get('id'));
+        $client = $this->di['db']->load('Client', $this->di['array_get']($data, 'id'));
         if(!$client instanceof \Model_Client ) {
             throw new \Box_Exception('Client not found');
         }
 
         $service = $this->di['mod_service']('client');
 
-        if(!is_null($this->di['api_request_data']->get('email'))) {
-            $email =  $this->di['api_request_data']->get('email');
+        if(!is_null($this->di['array_get']($data, 'email'))) {
+            $email =  $this->di['array_get']($data, 'email');
             $this->di['validator']->isEmailValid($email);
             if($service->emailAreadyRegistered($email, $client)) {
                 throw new \Box_Exception('Can not change email. It is already registered.');
             }
         }
-        $this->di['validator']->isBirthdayValid($this->di['api_request_data']->get('birthday'));
+        $this->di['validator']->isBirthdayValid($this->di['array_get']($data, 'birthday'));
 
-        if($this->di['api_request_data']->get('currency') && $service->canChangeCurrency($client, $this->di['api_request_data']->get('currency'))) {
-            $client->currency = $this->di['api_request_data']->get('currency', $client->currency);
+        if($this->di['array_get']($data, 'currency') && $service->canChangeCurrency($client, $this->di['array_get']($data, 'currency'))) {
+            $client->currency = $this->di['array_get']($data, 'currency', $client->currency);
         }
 
-        $this->di['events_manager']->fire(array('event'=>'onBeforeAdminClientUpdate', 'params'=>$this->di['api_request_data']->get()));
+        $this->di['events_manager']->fire(array('event'=>'onBeforeAdminClientUpdate', 'params'=>$data));
 
-        $client->email          = $this->di['api_request_data']->get('email', $client->email);
-        $client->first_name     = $this->di['api_request_data']->get('first_name', $client->first_name);
-        $client->last_name      = $this->di['api_request_data']->get('last_name', $client->last_name);
-        $client->aid            = $this->di['api_request_data']->get('aid', $client->aid);
-        $client->gender         = $this->di['api_request_data']->get('gender', $client->gender);
-        $client->birthday       = $this->di['api_request_data']->get('birthday', $client->birthday);
-        $client->company        = $this->di['api_request_data']->get('company', $client->company);
-        $client->company_vat    = $this->di['api_request_data']->get('company_vat', $client->company_vat);
-        $client->address_1      = $this->di['api_request_data']->get('address_1', $client->address_1);
-        $client->address_2      = $this->di['api_request_data']->get('address_2', $client->address_2);
-        $client->phone_cc       = $this->di['api_request_data']->get('phone_cc', $client->phone_cc);
-        $client->phone          = $this->di['api_request_data']->get('phone', $client->phone);
-        $client->document_type  = $this->di['api_request_data']->get('document_type', $client->document_type);
-        $client->document_nr    = $this->di['api_request_data']->get('document_nr', $client->document_nr);
-        $client->notes          = $this->di['api_request_data']->get('notes', $client->notes);
-        $client->country        = $this->di['api_request_data']->get('country', $client->country);
-        $client->postcode       = $this->di['api_request_data']->get('postcode', $client->postcode);
-        $client->state          = $this->di['api_request_data']->get('state', $client->state);
-        $client->city           = $this->di['api_request_data']->get('city', $client->city);
+        $client->email          = $this->di['array_get']($data, 'email', $client->email);
+        $client->first_name     = $this->di['array_get']($data, 'first_name', $client->first_name);
+        $client->last_name      = $this->di['array_get']($data, 'last_name', $client->last_name);
+        $client->aid            = $this->di['array_get']($data, 'aid', $client->aid);
+        $client->gender         = $this->di['array_get']($data, 'gender', $client->gender);
+        $client->birthday       = $this->di['array_get']($data, 'birthday', $client->birthday);
+        $client->company        = $this->di['array_get']($data, 'company', $client->company);
+        $client->company_vat    = $this->di['array_get']($data, 'company_vat', $client->company_vat);
+        $client->address_1      = $this->di['array_get']($data, 'address_1', $client->address_1);
+        $client->address_2      = $this->di['array_get']($data, 'address_2', $client->address_2);
+        $client->phone_cc       = $this->di['array_get']($data, 'phone_cc', $client->phone_cc);
+        $client->phone          = $this->di['array_get']($data, 'phone', $client->phone);
+        $client->document_type  = $this->di['array_get']($data, 'document_type', $client->document_type);
+        $client->document_nr    = $this->di['array_get']($data, 'document_nr', $client->document_nr);
+        $client->notes          = $this->di['array_get']($data, 'notes', $client->notes);
+        $client->country        = $this->di['array_get']($data, 'country', $client->country);
+        $client->postcode       = $this->di['array_get']($data, 'postcode', $client->postcode);
+        $client->state          = $this->di['array_get']($data, 'state', $client->state);
+        $client->city           = $this->di['array_get']($data, 'city', $client->city);
 
-        $client->status         = $this->di['api_request_data']->get('status', $client->status);
-        $client->email_approved = $this->di['api_request_data']->get('email_approved', $client->email_approved);
-        $client->tax_exempt     = $this->di['api_request_data']->get('tax_exempt', $client->tax_exempt);
-        $client->created_at     = $this->di['api_request_data']->get('created_at', $client->created_at);
+        $client->status         = $this->di['array_get']($data, 'status', $client->status);
+        $client->email_approved = $this->di['array_get']($data, 'email_approved', $client->email_approved);
+        $client->tax_exempt     = $this->di['array_get']($data, 'tax_exempt', $client->tax_exempt);
+        $client->created_at     = $this->di['array_get']($data, 'created_at', $client->created_at);
 
-        $client->custom_1      = $this->di['api_request_data']->get('custom_1', $client->c1);
-        $client->custom_2      = $this->di['api_request_data']->get('custom_2', $client->c2);
-        $client->custom_3      = $this->di['api_request_data']->get('custom_3', $client->c3);
-        $client->custom_4      = $this->di['api_request_data']->get('custom_4', $client->c4);
-        $client->custom_5      = $this->di['api_request_data']->get('custom_5', $client->c5);
-        $client->custom_6      = $this->di['api_request_data']->get('custom_6', $client->c6);
-        $client->custom_7      = $this->di['api_request_data']->get('custom_7', $client->c7);
-        $client->custom_8      = $this->di['api_request_data']->get('custom_8', $client->c8);
-        $client->custom_9      = $this->di['api_request_data']->get('custom_9', $client->c9);
-        $client->custom_10     = $this->di['api_request_data']->get('custom_10', $client->c10);
+        $client->custom_1      = $this->di['array_get']($data, 'custom_1', $client->c1);
+        $client->custom_2      = $this->di['array_get']($data, 'custom_2', $client->c2);
+        $client->custom_3      = $this->di['array_get']($data, 'custom_3', $client->c3);
+        $client->custom_4      = $this->di['array_get']($data, 'custom_4', $client->c4);
+        $client->custom_5      = $this->di['array_get']($data, 'custom_5', $client->c5);
+        $client->custom_6      = $this->di['array_get']($data, 'custom_6', $client->c6);
+        $client->custom_7      = $this->di['array_get']($data, 'custom_7', $client->c7);
+        $client->custom_8      = $this->di['array_get']($data, 'custom_8', $client->c8);
+        $client->custom_9      = $this->di['array_get']($data, 'custom_9', $client->c9);
+        $client->custom_10     = $this->di['array_get']($data, 'custom_10', $client->c10);
 
-        $client->client_group_id = $this->di['api_request_data']->get('group_id', $client->client_group_id);
-        $client->company_number = $this->di['api_request_data']->get('company_number', $client->company_number);
-        $client->type = $this->di['api_request_data']->get('type', $client->type);
-        $client->lang = $this->di['api_request_data']->get('lang', $client->lang);
+        $client->client_group_id = $this->di['array_get']($data, 'group_id', $client->client_group_id);
+        $client->company_number = $this->di['array_get']($data, 'company_number', $client->company_number);
+        $client->type = $this->di['array_get']($data, 'type', $client->type);
+        $client->lang = $this->di['array_get']($data, 'lang', $client->lang);
 
         $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);

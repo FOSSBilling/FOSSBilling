@@ -141,24 +141,24 @@ class Admin extends \Api_Abstract
         $required = array(
             'id' => 'Forum id missing',
         );
-        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
+        $this->di['validator']->checkRequiredParamsForArray($required,  $data);
 
         $model = $this->di['db']->getExistingModelById('Forum', $data['id'], 'Forum not found');
 
-        $category = $this->di['api_request_data']->get('category');
+        $category = $this->di['array_get']($data, 'category');
         if($category) {
-            if($this->di['api_request_data']->get('update_categories')) {
+            if($this->di['array_get']($data, 'update_categories')) {
                 $this->di['db']->exec('UPDATE forum SET category = :cat WHERE category = :old_cat', 
                         array('cat'=>$category, 'old_cat'=>$model->category));
             }
             $model->category = $category;
         }
 
-        $model->title = $this->di['api_request_data']->get('title', $model->title);
-        $model->status = $this->di['api_request_data']->get('status', $model->status);
-        $model->slug = $this->di['api_request_data']->get('slug', $model->slug);
-        $model->description = $this->di['api_request_data']->get('description', $model->description);
-        $model->priority = $this->di['api_request_data']->get('priority', $model->priority);
+        $model->title = $this->di['array_get']($data, 'title', $model->title);
+        $model->status = $this->di['array_get']($data, 'status', $model->status);
+        $model->slug = $this->di['array_get']($data, 'slug', $model->slug);
+        $model->description = $this->di['array_get']($data, 'description', $model->description);
+        $model->priority = $this->di['array_get']($data, 'priority', $model->priority);
 
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);

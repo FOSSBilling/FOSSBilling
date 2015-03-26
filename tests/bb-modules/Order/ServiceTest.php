@@ -1705,12 +1705,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->with($clientOrderModel);
 
-        $apiRequestMock = $this->getMockBuilder('\Box\Mod\Api\Request')->getMock();
-        $apiRequestMock->expects($this->atLeastOnce())
-            ->method('get');
-
         $di = new \Box_Di();
-        $di['api_request_data'] = $apiRequestMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $di['events_manager'] = $eventMock;
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
@@ -1729,8 +1727,19 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             'meta' => array()
 
         );
-        $this->service->setDi($di);
-        $result = $this->service->updateOrder($clientOrderModel, $data);
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
+            ->setMethods(array('updatePeriod', 'updateOrderMeta'))
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('updatePeriod')
+            ->with($clientOrderModel, $data['period']);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('updateOrderMeta')
+            ->with($clientOrderModel, $data['meta']);
+
+        $serviceMock->setDi($di);
+        $result = $serviceMock->updateOrder($clientOrderModel, $data);
         $this->assertTrue($result);
     }
 
@@ -1871,15 +1880,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testupdatePeriod()
     {
-        $di = new \Box_Di();
-        $apiRequestMock = $this->getMockBuilder('\Box\Mod\Api\Request')->getMock();
-
         $period = '1Y';
-        $apiRequestMock->expects($this->atLeastOnce())
-            ->method('get')
-            ->with('period')
-            ->willReturn($period);
-        $di['api_request_data'] = $apiRequestMock;
+        $di = new \Box_Di();
 
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
         $periodMock->expects($this->atLeastOnce())
@@ -1891,22 +1893,14 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $this->service->setDi($di);
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
-        $result = $this->service->updatePeriod($clientOrder);
+        $result = $this->service->updatePeriod($clientOrder, $period);
         $this->assertEquals(1, $result);
     }
 
     public function testupdatePeriod_isEmpty()
     {
-        $di = new \Box_Di();
-        $apiRequestMock = $this->getMockBuilder('\Box\Mod\Api\Request')->getMock();
-
         $period = '';
-        $apiRequestMock->expects($this->atLeastOnce())
-            ->method('get')
-            ->with('period')
-            ->willReturn($period);
-        $di['api_request_data'] = $apiRequestMock;
-
+        $di = new \Box_Di();
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
         $periodMock->expects($this->never())
             ->method('getCode');
@@ -1917,21 +1911,14 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $this->service->setDi($di);
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
-        $result = $this->service->updatePeriod($clientOrder);
+        $result = $this->service->updatePeriod($clientOrder, $period);
         $this->assertEquals(2, $result);
     }
 
     public function testupdatePeriod_notSet()
     {
+        $period = null;
         $di = new \Box_Di();
-        $apiRequestMock = $this->getMockBuilder('\Box\Mod\Api\Request')->getMock();
-
-        $apiRequestMock->expects($this->atLeastOnce())
-            ->method('get')
-            ->with('period')
-            ->willReturn(null);
-        $di['api_request_data'] = $apiRequestMock;
-
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
         $periodMock->expects($this->never())
             ->method('getCode');
@@ -1942,38 +1929,23 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $this->service->setDi($di);
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
-        $result = $this->service->updatePeriod($clientOrder);
+        $result = $this->service->updatePeriod($clientOrder, $period);
         $this->assertEquals(0, $result);
     }
 
     public function testupdateOrderMeta_isNotSet()
     {
-        $di = new \Box_Di();
-        $apiRequestMock = $this->getMockBuilder('\Box\Mod\Api\Request')->getMock();
-
-        $apiRequestMock->expects($this->atLeastOnce())
-            ->method('get')
-            ->with('meta')
-            ->willReturn(null);
-        $di['api_request_data'] = $apiRequestMock;
-
-        $this->service->setDi($di);
+        $meta = null;
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
-        $result = $this->service->updateOrderMeta($clientOrder);
+        $result = $this->service->updateOrderMeta($clientOrder, $meta);
         $this->assertEquals(0, $result);
     }
 
     public function testupdateOrderMeta_isEmpty()
     {
+        $meta = array();
         $di = new \Box_Di();
-        $apiRequestMock = $this->getMockBuilder('\Box\Mod\Api\Request')->getMock();
-
-        $apiRequestMock->expects($this->atLeastOnce())
-            ->method('get')
-            ->with('meta')
-            ->willReturn(array());
-        $di['api_request_data'] = $apiRequestMock;
 
         $dBMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dBMock->expects($this->atLeastOnce())
@@ -1983,22 +1955,16 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $this->service->setDi($di);
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
-        $result = $this->service->updateOrderMeta($clientOrder);
+        $result = $this->service->updateOrderMeta($clientOrder, $meta);
         $this->assertEquals(1, $result);
     }
 
     public function testupdateOrderMeta()
     {
+        $meta = array(
+            'key' => 'value',
+        );
         $di = new \Box_Di();
-        $apiRequestMock = $this->getMockBuilder('\Box\Mod\Api\Request')->getMock();
-
-        $apiRequestMock->expects($this->atLeastOnce())
-            ->method('get')
-            ->with('meta')
-            ->willReturn(array(
-                'key' => 'value',
-            ));
-        $di['api_request_data'] = $apiRequestMock;
 
         $dBMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dBMock->expects($this->atLeastOnce())
@@ -2019,7 +1985,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $this->service->setDi($di);
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
-        $result = $this->service->updateOrderMeta($clientOrder);
+        $result = $this->service->updateOrderMeta($clientOrder, $meta);
         $this->assertEquals(2, $result);
     }
 }

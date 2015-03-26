@@ -645,11 +645,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use ($systemServiceMock) {return $systemServiceMock;});
         $di['logger'] = new \Box_Log();
-
-        $apiRequestMock = $this->getMockBuilder('\Box\Mod\Api\Request')->getMock();
-        $apiRequestMock->expects($this->atLeastOnce())
-            ->method('get');
-        $di['api_request_data'] = $apiRequestMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->service->setDi($di);
         $result = $this->service->createPromo('code', 'percentage', 50, array(), array(), array(), array());
@@ -707,10 +705,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-
-        $apiRequest = new \Box\Mod\Api\Request();
-        $apiRequest->setRequest($data);
-        $di['api_request_data'] = $apiRequest;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->service->setDi($di);
         $result = $this->service->updatePromo($model, $data);
