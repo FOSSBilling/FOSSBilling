@@ -5,7 +5,12 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 {
     public function testArticle_get_list()
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $adminApi = new \Box\Mod\Kb\Api\Admin();
+        $adminApi->setDi($di);
 
         $data = array(
             'status' => 'status',
@@ -100,11 +105,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $id = rand(1, 100);
 
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('createArticle'))->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('createArticle')
             ->will($this->returnValue($id));
         $adminApi->setService($kbService);
+        $adminApi->setDi($di);
 
         $result = $adminApi->article_create($data);
         $this->assertInternalType('integer', $result);
@@ -155,6 +166,12 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $kbService->expects($this->atLeastOnce())
             ->method('updateArticle')
             ->will($this->returnValue(true));
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $adminApi->setDi($di);
+
         $adminApi->setService($kbService);
 
         $result = $adminApi->article_update($data);
@@ -386,6 +403,12 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             'description' => 'Description',
         );
 
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $adminApi->setDi($di);
+
         $result = $adminApi->category_create($data);
         $this->assertInternalType('array', $result);
     }
@@ -427,6 +450,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $adminApi->setDi($di);
 
 
