@@ -206,7 +206,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('createProduct')
             ->will($this->returnValue($newProductId));
-
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $result = $this->api->prepare($data);
@@ -324,6 +328,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('createAddon')
             ->will($this->returnValue($newAddonId));
 
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
 
@@ -550,6 +559,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -632,6 +644,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('createCategory')
             ->will($this->returnValue($newCategoryId));
 
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $result = $this->api->category_create($data);
