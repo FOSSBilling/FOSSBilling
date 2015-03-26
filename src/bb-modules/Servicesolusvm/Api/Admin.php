@@ -568,39 +568,15 @@ class Admin extends \Api_Abstract
     public function update($data)
     {
         list(, $vps) = $this->_getService($data);
-        
-        if(isset($data['plan'])) {
-            $vps->plan = $data['plan'];
-        }
-        
-        if(isset($data['template'])) {
-            $vps->template = $data['template'];
-        }
-        
-        if(isset($data['hostname'])) {
-            $vps->hostname = $data['hostname'];
-        }
-        
-        if(isset($data['mainipaddress'])) {
-            $vps->mainipaddress = $data['mainipaddress'];
-        }
-        
-        if(isset($data['custommemory'])) {
-            $vps->custommemory = $data['custommemory'];
-        }
-        
-        if(isset($data['customdiskspace'])) {
-            $vps->customdiskspace = $data['customdiskspace'];
-        }
-        
-        if(isset($data['custombandwidth'])) {
-            $vps->custombandwidth = $data['custombandwidth'];
-        }
-        
-        if(isset($data['customcpu'])) {
-            $vps->customcpu = $data['customcpu'];
-        }
-        
+
+        $vps->plan            = $this->di['array_get']($data, 'plan', $vps->plan);
+        $vps->template        = $this->di['array_get']($data, 'template', $vps->template);
+        $vps->hostname        = $this->di['array_get']($data, 'hostname', $vps->hostname);
+        $vps->mainipaddress   = $this->di['array_get']($data, 'mainipaddress', $vps->mainipaddress);
+        $vps->custommemory    = $this->di['array_get']($data, 'custommemory', $vps->custommemory);
+        $vps->customdiskspace = $this->di['array_get']($data, 'customdiskspace', $vps->customdiskspace);
+        $vps->custombandwidth = $this->di['array_get']($data, 'custombandwidth', $vps->custombandwidth);
+        $vps->customcpu       = $this->di['array_get']($data, 'customcpu', $vps->customcpu);
         $this->di['db']->store($vps);
         
         $this->di['logger']->info('Updated VPS service %s details', $vps->id);
