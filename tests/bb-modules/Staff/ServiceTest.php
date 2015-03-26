@@ -662,6 +662,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
@@ -697,7 +700,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
      */
     public function testgetSearchQuery($data, $expectedStr, $expectedParams)
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $service = new \Box\Mod\Staff\Service();
+        $service->setDi($di);
         $result  = $service->getSearchQuery($data);
         $this->assertInternalType('string', $result[0]);
         $this->assertInternalType('array', $result[1]);
@@ -953,6 +961,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use($systemServiceMock){ return $systemServiceMock; });
         $di['password'] = $passwordMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
@@ -1007,6 +1018,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function() use($systemServiceMock){ return $systemServiceMock; });
         $di['password'] = $passwordMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
@@ -1283,7 +1297,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
     public function testgetActivityAdminHistorySearchQuery($data, $expectedStr, $expectedParams)
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $service = new \Box\Mod\Staff\Service();
+        $service->setDi($di);
         $result  = $service->getActivityAdminHistorySearchQuery($data);
         $this->assertInternalType('string', $result[0]);
         $this->assertInternalType('array', $result[1]);
