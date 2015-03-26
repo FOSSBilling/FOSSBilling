@@ -44,6 +44,11 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $data   = array(
             'id' => rand(1, 100)
         );
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->clientApi->setDi($di);
         $result = $this->clientApi->checkout($data);
 
         $this->assertInternalType('array', $result);

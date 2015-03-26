@@ -152,7 +152,7 @@ class Admin extends \Api_Abstract
     public function category_get_list($data)
     {
         list($sql, $bindings) = $this->getService()->categoryGetSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getAdvancedResultSet($sql, $bindings, $per_page);
 
         foreach ($pager['list'] as $key => $item) {

@@ -32,7 +32,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);
@@ -72,7 +74,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);

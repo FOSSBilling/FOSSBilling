@@ -212,7 +212,7 @@ class Client extends \Api_Abstract
         $data['client_id'] = $this->identity->id;
 
         list($q, $params) = $service->getSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($q, $params, $per_page);
 
         foreach ($pager['list'] as $key => $item) {

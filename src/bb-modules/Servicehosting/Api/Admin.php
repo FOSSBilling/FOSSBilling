@@ -168,7 +168,7 @@ class Admin extends \Api_Abstract
         }
 
         list($sql, $params) = $this->getService()->getServersSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $result = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
         $result['list'] = $serversArr;
@@ -329,7 +329,7 @@ class Admin extends \Api_Abstract
     public function hp_get_list($data)
     {
         list ($sql, $params) = $this->getService()->getHpSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $model               = $this->di['db']->getExistingModelById('ServiceHostingHp', $item['id'], 'Post not found');

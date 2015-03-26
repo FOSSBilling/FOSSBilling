@@ -25,7 +25,7 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         list($query, $params) = $this->getService()->getSearchQuery();
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($query, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $currency            = $this->di['db']->getExistingModelById('Currency', $item['id'], 'Currency not found');

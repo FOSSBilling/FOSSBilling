@@ -182,8 +182,12 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             ->method('getSimpleResultSet')
             ->will($this->returnValue($willReturn));
 
+        $di = new \Box_Di();
         $di['db']    = $dbMock;
         $di['pager'] = $pager;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $adminApi->setDi($di);
 
         $service = new \Box\Mod\Currency\Service();

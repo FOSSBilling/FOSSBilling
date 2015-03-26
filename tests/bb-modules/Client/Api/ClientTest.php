@@ -49,6 +49,9 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $di['mod_service'] = $di->protect(function ($name) use($serviceMock) {return $serviceMock;});
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $client = new \Box\Mod\Client\Api\Client();
         $client->setDi($di);

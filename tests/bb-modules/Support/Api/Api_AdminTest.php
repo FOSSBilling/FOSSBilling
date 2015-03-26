@@ -43,6 +43,9 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
         $di          = new \Box_Di();
         $di['pager'] = $paginatorMock;
         $di['db']    = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
@@ -500,6 +503,9 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
         $di          = new \Box_Di();
         $di['pager'] = $paginatorMock;
         $di['db']    = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
@@ -766,6 +772,9 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
 
         $di          = new \Box_Di();
         $di['pager'] = $paginatorMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
@@ -946,6 +955,9 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
         $di          = new \Box_Di();
         $di['pager'] = $paginatorMock;
         $di['db']    = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);

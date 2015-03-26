@@ -184,7 +184,7 @@ class Service implements InjectionAwareInterface
 
     public function getPairs($data)
     {
-        $limit = isset($data['per_page']) ? $data['per_page'] : 30;
+        $limit =  $this->di['array_get']($data, 'per_page', 30);
         list($sql, $params) = $this->getSearchQuery($data, "SELECT c.id, CONCAT(c.first_name,  ' ', c.last_name) as full_name");
         $sql = $sql.' LIMIT '.$limit;
         return $this->di['db']->getAssoc($sql, $params);
@@ -234,7 +234,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function addFunds(\Model_Client $client, $amount, $description, array $data = null)
+    public function addFunds(\Model_Client $client, $amount, $description, array $data = array())
     {
         if(!$client->currency) {
             throw new \Box_Exception('Define clients currency before adding funds.');
@@ -251,8 +251,8 @@ class Service implements InjectionAwareInterface
         $credit = $this->di['db']->dispense('ClientBalance');
 
         $credit->client_id = $client->id;
-        $credit->type = isset($data['type']) ? $data['type'] : 'gift';
-        $credit->rel_id = isset($data['rel_id']) ? $data['rel_id'] : null;
+        $credit->type =  $this->di['array_get']($data, 'type', 'gift');
+        $credit->rel_id =  $this->di['array_get']($data, 'rel_id');
         $credit->description = $description;
         $credit->amount = $amount;
         $credit->created_at = date('Y-m-d H:i:s');
@@ -275,8 +275,8 @@ class Service implements InjectionAwareInterface
               FROM activity_client_history as ach
                 LEFT JOIN client as c on ach.client_id = c.id ';
 
-        $search = isset($data['search']) ? $data['search'] : NULL;
-        $client_id = isset($data['client_id']) ? $data['client_id'] : NULL;
+        $search =  $this->di['array_get']($data, 'search');
+        $client_id =  $this->di['array_get']($data, 'client_id');
 
         $where = array();
         $params = array();
@@ -640,7 +640,7 @@ class Service implements InjectionAwareInterface
     public function checkExtraRequiredFields(array $checkArr)
     {
         $config = $this->di['mod_config']('client');
-        $required = isset($config['required']) ? $config['required'] : array();
+        $required =  $this->di['array_get']($config, 'required', array());
         foreach($required as $field) {
             if(!isset($checkArr[$field]) || empty($checkArr[$field])) {
                 $name = ucwords(str_replace('_', ' ', $field));
@@ -652,7 +652,7 @@ class Service implements InjectionAwareInterface
     public function checkCustomFields(array $checkArr)
     {
         $config = $this->di['mod_config']('client');
-        $customFields = isset($config['custom_fields']) ? $config['custom_fields'] : array();
+        $customFields =  $this->di['array_get']($config, 'custom_fields', array());
         foreach ($customFields as $cFieldName => $cField) {
             $active   = isset($cField['active']) && $cField['active'] ? true : false;
             $required = isset($cField['required']) && $cField['required'] ? true : false;

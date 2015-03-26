@@ -37,7 +37,7 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         $table = $this->di['table']('Forum');
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         list ($sql, $params)= $table->getSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach($pager['list'] as $key => $item){
@@ -226,7 +226,7 @@ class Admin extends \Api_Abstract
     public function topic_get_list($data)
     {
         $table = $this->di['table']('ForumTopic');
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         list($sql, $params) = $table->getSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
@@ -387,7 +387,7 @@ class Admin extends \Api_Abstract
     {
         $data['orderby']    = 'created_at';
         $data['sortorder']  = 'desc';
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         list($sql, $params) = $this->getService()->getMessagesQuery($data);
 
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);

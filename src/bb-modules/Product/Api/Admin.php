@@ -28,7 +28,7 @@ class Admin extends \Api_Abstract
         $service = $this->getService();
 
         list($sql, $params) = $service->getProductSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $model               = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
@@ -416,7 +416,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
         list($sql, $params) = $service->getPromoSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $model               = $this->di['db']->getExistingModelById('Promo', $item['id'], 'Promo not found');

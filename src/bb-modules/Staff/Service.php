@@ -302,7 +302,7 @@ class Service implements InjectionAwareInterface
 
         $di = $this->getDi();
         $pager = $di['pager'];
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         return $pager->getSimpleResultSet($query, $params, $per_page);
     }
 

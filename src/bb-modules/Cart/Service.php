@@ -87,13 +87,13 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $qty = isset($data['quantity']) ? $data['quantity'] : 1;
+        $qty =  $this->di['array_get']($data, 'quantity', 1);
         // check stock
         if (!$this->isStockAvailable($product, $qty)) {
             throw new \Box_Exception("I'm afraid we are out of stock.");
         }
 
-        $addons = isset($data['addons']) ? $data['addons'] : array();
+        $addons =  $this->di['array_get']($data, 'addons', array());
         unset($data['id']);
         unset($data['addons']);
 
@@ -716,7 +716,7 @@ class Service implements InjectionAwareInterface
         $config = $this->getItemConfig($model);
         $setup = $repo->getProductSetupPrice($product, $config);
         $price = $repo->getProductPrice($product, $config);
-        $qty = isset($config['quantity']) ? $config['quantity'] : 1 ;
+        $qty =  $this->di['array_get']($config, 'quantity', 1) ;
 
         list ($discount_price, $discount_setup) = $this->getProductDiscount($model, $setup);
 
@@ -748,9 +748,6 @@ class Service implements InjectionAwareInterface
 
     public function getProductDiscount(\Model_CartProduct $cartProduct, $setup)
     {
-        $config = $this->getItemConfig($cartProduct);
-        $qty = isset($config['quantity']) ? $config['quantity'] : 1 ;
-
         $cart = $this->di['db']->load('Cart', $cartProduct->cart_id);
         $discount_price = $this->getRelatedItemsDiscount($cart, $cartProduct);
         $discount_setup = 0; // discount for setup price

@@ -39,6 +39,9 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -173,6 +176,9 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['pager'] = $pagerMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);

@@ -27,7 +27,7 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         list($sql, $params) = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
@@ -359,7 +359,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->di['mod_service']('Client', 'Balance');
         list($q, $params) = $service->getSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager =  $this->di['pager']->getSimpleResultSet($q, $params, $per_page);
 
         foreach($pager['list'] as $key => $item){
@@ -465,7 +465,7 @@ class Admin extends \Api_Abstract
     public function login_history_get_list($data)
     {
         list($q, $params) = $this->getService()->getHistorySearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager =  $this->di['pager']->getSimpleResultSet($q, $params, $per_page);
 
         foreach($pager['list'] as $key => $item){

@@ -42,6 +42,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di                = new \Box_Di();
         $di['pager']       = $pagerMock;
         $di['db'] = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setService($serviceMock);
@@ -629,6 +632,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function ($name) use($serviceMock) {return $serviceMock;});
         $di['pager'] = $pagerMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -826,6 +832,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);

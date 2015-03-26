@@ -32,7 +32,7 @@ class Guest extends \Api_Abstract
         }
 
         list($sql, $params) = $this->getService()->getProductSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $model               = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
@@ -96,7 +96,7 @@ class Guest extends \Api_Abstract
         $data['status'] = 'enabled';
         $service = $this->getService();
         list($sql, $params) = $service->getProductCategorySearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getAdvancedResultSet($sql, $params, $per_page);
         foreach($pager['list'] as $key => $item){
             $category = $this->di['db']->getExistingModelById('ProductCategory', $item['id'], 'Product category not found');

@@ -24,7 +24,7 @@ class Admin extends \Api_Abstract
     public function log_get_list($data)
     {
         $data['no_debug'] = true;
-        $per_page         = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page         = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         list($sql, $params) = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
@@ -60,7 +60,7 @@ class Admin extends \Api_Abstract
             return false;
         }
         
-        $priority = isset($data['priority']) ? (int)$data['priority'] : 6;
+        $priority = $this->di['array_get']($data, 'priority', 6);
 
         $entry = $this->di['db']->dispense('ActivitySystem');
         $entry->client_id       = $this->di['array_get']($data, 'client_id', NULL);

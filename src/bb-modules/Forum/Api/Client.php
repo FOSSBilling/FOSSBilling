@@ -27,7 +27,7 @@ class Client extends \Api_Abstract
     {
         $table = $this->di['table']('Forum');
         list($sql, $params) = $table->getSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $forum               = $this->di['db']->getExistingModelById('Forum', $item['id'], 'Forum not found');
@@ -98,7 +98,7 @@ class Client extends \Api_Abstract
     {
         $table = $this->di['table']('ForumTopic');
         list($sql, $params) = $table->getSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
 
         return $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
     }
@@ -226,7 +226,7 @@ class Client extends \Api_Abstract
         }
         $table = $this->di['table']('ForumTopicMessage');
         list($sql, $params) = $table->getSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
 
         return $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
     }

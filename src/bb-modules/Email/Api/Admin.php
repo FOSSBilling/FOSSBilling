@@ -24,7 +24,7 @@ class Admin extends \Api_Abstract
      */
     public function email_get_list($data)
     {
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         list($sql, $params) = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
@@ -162,7 +162,7 @@ class Admin extends \Api_Abstract
      */
     public function template_get_list($data)
     {
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         list($sql, $params) = $this->getService()->templateGetSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 

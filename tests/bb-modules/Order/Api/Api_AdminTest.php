@@ -65,7 +65,10 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di          = new \Box_Di();
         $di['pager'] = $paginatorMock;
-        $di['mod'] = $di->protect(function() use ($modMock) {return $modMock;});;
+        $di['mod'] = $di->protect(function() use ($modMock) {return $modMock;});
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
@@ -551,6 +554,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $di = new \Box_Di();
 
         $di['pager'] = $paginatorMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $apiMock->setDi($di);
 
         $apiMock->setService($serviceMock);

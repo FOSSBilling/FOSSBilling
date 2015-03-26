@@ -27,7 +27,7 @@ class Guest extends \Api_Abstract
     {
         $data['status'] = 'active';
         list ($sql, $params) = $this->getService()->getSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $post               = $this->di['db']->getExistingModelById('Post', $item['id'], 'Post not found');
