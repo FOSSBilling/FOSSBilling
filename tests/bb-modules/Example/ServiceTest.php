@@ -17,7 +17,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     public function testEvents()
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->service->setDi($di);

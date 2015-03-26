@@ -29,7 +29,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase
             ->willReturn(100);
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $guestApi->setDi($di);
@@ -44,7 +44,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase
         $guestApi = new \Box\Mod\Kb\Api\Guest();
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $guestApi->setDi($di);
@@ -76,7 +76,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase
         $guestApi = new \Box\Mod\Kb\Api\Guest();
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $guestApi->setDi($di);
@@ -157,7 +157,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase
         );
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $guestApi->setDi($di);
@@ -188,7 +188,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase
         $guestApi->setService($kbService);
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $guestApi->setDi($di);
@@ -220,7 +220,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase
 
         $di          = new \Box_Di();
         $di['pager'] = $pager;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $guestApi->setDi($di);
@@ -277,7 +277,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase
         );
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $guestApi->setDi($di);
@@ -302,7 +302,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase
         $guestApi->setService($kbService);
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $guestApi->setDi($di);
@@ -362,7 +362,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase
         );
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $guestApi->setDi($di);
@@ -395,7 +395,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase
         );
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $guestApi->setDi($di);

@@ -23,7 +23,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di          = new \Box_Di();
         $di['pager'] = $pager;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 
@@ -121,7 +121,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(true));
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
@@ -267,7 +267,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di = new \Box_Di();
         $di['pager'] = $pager;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 

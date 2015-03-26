@@ -37,7 +37,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     public function testgetSearchQuery($filterKey, $search, $expected)
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $service = new \Box\Mod\Activity\Service();
@@ -130,7 +130,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $di['request'] = $this->getMockBuilder('Box_Request')->getMock();;
         $di['db']        = $db;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $service->setDi($di);

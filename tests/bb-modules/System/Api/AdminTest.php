@@ -103,7 +103,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         );
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->api->setDi($di);
@@ -158,7 +158,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('renderString')
             ->will($this->returnValue('returnStringType'));
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->api->setDi($di);
@@ -188,7 +188,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->will($this->returnValue(array()));
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->api->setDi($di);
@@ -216,7 +216,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             }
             return false;
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->api->setDi($di);

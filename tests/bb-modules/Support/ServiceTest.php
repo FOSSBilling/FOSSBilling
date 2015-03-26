@@ -489,7 +489,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     public function testGetSearchQuery($data)
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->service->setDi($di);
@@ -1014,7 +1014,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     public function testHelpdeskGetSearchQuery()
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->service->setDi($di);
@@ -1416,7 +1416,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['validator']      = $validatorMock;
         $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
         $di['events_manager'] = $eventMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->service->setDi($di);
@@ -1491,7 +1491,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['mod_service']    = $di->protect(function () use ($staffServiceMock) {
             return $staffServiceMock;
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $serviceMock->setDi($di);
@@ -1555,7 +1555,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $client->id = rand(1, 100);
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $serviceMock->setDi($di);
@@ -1725,7 +1725,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     public function testPublicGetSearchQuery($data)
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->service->setDi($di);
@@ -2201,7 +2201,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->service->setDi($di);
@@ -2225,7 +2225,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     public function testCannedGetSearchQuery()
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->service->setDi($di);

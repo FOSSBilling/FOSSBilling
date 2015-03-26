@@ -57,7 +57,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
         $di['validator'] = $validatorMock;
 
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $client = new \Box\Mod\Client\Api\Guest();
@@ -103,7 +103,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
         $di['validator'] = $validatorMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 

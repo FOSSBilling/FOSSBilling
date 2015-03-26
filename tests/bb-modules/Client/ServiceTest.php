@@ -492,7 +492,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     {
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $clientBalanceService = new \Box\Mod\Client\ServiceBalance();
@@ -901,7 +901,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
         $di['password'] = $passwordMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $service = new \Box\Mod\Client\Service();
@@ -952,7 +952,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['logger'] = new \Box_Log();
         $di['request'] = $requestMock;
         $di['password'] = $passwordMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 

@@ -87,7 +87,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
                 return $paidSupportConfig;
             }
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->service->setDi($di);
@@ -298,7 +298,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
                 return $paidSupportConfig;
             }
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 
@@ -318,7 +318,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
                 return $paidSupportConfig;
             }
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 

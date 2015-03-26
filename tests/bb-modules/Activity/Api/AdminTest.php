@@ -98,7 +98,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['db'] = $databaseMock;
         $di['request'] = new \Box_Request($di);
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 
@@ -112,7 +112,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     public function testlogEmptyMParam()
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 
@@ -130,7 +130,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->will($this->returnValue(true));
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 

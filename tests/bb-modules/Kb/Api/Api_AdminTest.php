@@ -6,7 +6,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
     public function testArticle_get_list()
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $adminApi = new \Box\Mod\Kb\Api\Admin();
@@ -106,7 +106,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $id = rand(1, 100);
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 
@@ -167,7 +167,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             ->method('updateArticle')
             ->will($this->returnValue(true));
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $adminApi->setDi($di);
@@ -404,7 +404,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         );
 
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $adminApi->setDi($di);
@@ -450,7 +450,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $adminApi->setDi($di);

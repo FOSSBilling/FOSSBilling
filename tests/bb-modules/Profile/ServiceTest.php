@@ -202,7 +202,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             'custom_9'       => 'string',
             'custom_10'      => 'string',
         );
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 
@@ -261,7 +261,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $data = array(
             'email' => 'email@example.com',
         );
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 
@@ -321,7 +321,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $data = array(
             'email' => 'email@example.com',
         );
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 

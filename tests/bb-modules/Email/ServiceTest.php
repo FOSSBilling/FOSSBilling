@@ -69,7 +69,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     {
         $service = new \Box\Mod\Email\Service();
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $service->setDi($di);
@@ -300,7 +300,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
             return $api;
         };
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $service->setDi($di);
@@ -370,7 +370,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             return $systemService;
         });
         $di['tools'] = new \Box_Tools();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $serviceMock->setDi($di);
@@ -507,7 +507,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             }
         });
         $di['tools'] = new \Box_Tools();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $serviceMock->setDi($di);
@@ -574,7 +574,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             return $systemService;
         });
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $service->setDi($di);
@@ -645,7 +645,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     {
         $service = new \Box\Mod\Email\Service();
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $service->setDi($di);
@@ -935,7 +935,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['mod_service'] = $di->protect(function () use ($extension) {
             return $extension;
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $service->setDi($di);
@@ -1047,7 +1047,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
            return $modMock;
         });
         $di['license'] = $licenseMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $service->setDi($di);
@@ -1090,7 +1090,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['tools']  = $toolsMock;
         $di['crypt']  = $cryptMock;
         $di['twig']   = $twigMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $service->setDi($di);
@@ -1157,7 +1157,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             return $modMock;
         });
         $di['license'] = $licenseMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $service = new \Box\Mod\Email\Service();
