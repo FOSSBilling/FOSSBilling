@@ -62,7 +62,7 @@ class Service implements \Box\InjectionAwareInterface
         $params = array();
         
         $search = (isset($data['search']) && !empty($data['search'])) ? $data['search'] : NULL;
-        $status = isset($data['status']) ? $data['status'] : NULL;
+        $status = $this->di['array_get']($data, 'status', NULL);
         
         if(NULL !== $status) {
             $sql .= ' AND status = :status';

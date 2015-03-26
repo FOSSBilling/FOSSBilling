@@ -162,7 +162,7 @@ class Admin extends \Api_Abstract
         $order      = $this->_getOrder($data);
         $skip_event = isset($data['skip_event']) ? (bool)$data['skip_event'] : false;
 
-        $reason = isset($data['reason']) ? $data['reason'] : NULL;
+        $reason = $this->di['array_get']($data, 'reason', NULL);
 
         return $this->getService()->suspendFromOrder($order, $reason, $skip_event);
     }
@@ -198,7 +198,7 @@ class Admin extends \Api_Abstract
         $order      = $this->_getOrder($data);
         $skip_event = isset($data['skip_event']) ? (bool)$data['skip_event'] : false;
 
-        $reason = isset($data['reason']) ? $data['reason'] : NULL;
+        $reason = $this->di['array_get']($data, 'reason', NULL);
 
         return $this->getService()->cancelFromOrder($order, $reason, $skip_event);
     }
@@ -336,7 +336,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $notes = isset($data['notes']) ? $data['notes'] : null;
+        $notes = $this->di['array_get']($data, 'notes', null);
 
         return $this->getService()->orderStatusAdd($order, $data['status'], $notes);
     }

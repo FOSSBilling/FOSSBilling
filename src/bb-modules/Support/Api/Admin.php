@@ -612,7 +612,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $content = isset($data['content']) ? $data['content'] : NULL;
+        $content = $this->di['array_get']($data, 'content', NULL);
 
         return $this->getService()->cannedCreate($data['title'], $data['category_id'], $content);
     }

@@ -38,7 +38,7 @@ class Client extends \Api_Abstract
         $systemService = $this->di['mod_service']('System');
         $clientService = $this->di['mod_service']('Client');
 
-        $type = isset($data['type']) ? $data['type'] : 'info';
+        $type = $this->di['array_get']($data, 'type', 'info');
 
         return array(
             'data'      =>  $data,

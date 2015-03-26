@@ -515,13 +515,13 @@ class Service implements InjectionAwareInterface
             $order->title          = $item['title'];
             $order->currency       = $currency->code;
             $order->service_type   = $item['type'];
-            $order->unit           = isset($item['unit']) ? $item['unit'] : NULL;
-            $order->period         = isset($item['period']) ? $item['period'] : NULL;
-            $order->quantity       = isset($item['quantity']) ? $item['quantity'] : NULL;
+            $order->unit           = $this->di['array_get']($item, 'unit', NULL);
+            $order->period         = $this->di['array_get']($item, 'period', NULL);
+            $order->quantity       = $this->di['array_get']($item, 'quantity', NULL);
             $order->price          = $item['price'] * $currency->conversion_rate;
             $order->discount       = $item['discount_price'] * $currency->conversion_rate;
             $order->status         = \Model_ClientOrder::STATUS_PENDING_SETUP;
-            $order->notes          = isset($item['notes']) ? $item['notes'] : NULL;
+            $order->notes          = $this->di['array_get']($item, 'notes', NULL);
             $order->config         = json_encode($item);
             $order->created_at     = date('Y-m-d H:i:s');
             $order->updated_at     = date('Y-m-d H:i:s');

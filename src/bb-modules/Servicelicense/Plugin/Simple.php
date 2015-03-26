@@ -26,7 +26,7 @@ class Simple
     public function generate(\Model_ServiceLicense $service, \Model_ClientOrder $order, array $config)
     {
         $length = isset($config['length']) ? $config['length'] : 25;
-        $prefix = isset($config['prefix']) ? $config['prefix'] : NULL;
+        $prefix = $this->di['array_get']($config, 'prefix', NULL);
 
         $character_array = array_merge(range('A', 'Z'), range(1, 9));
         $size = count($character_array) - 1;

@@ -85,8 +85,8 @@ class Service implements InjectionAwareInterface
 
     public function getSearchQuery($filter)
     {
-        $search = isset($filter['search']) ? $filter['search'] : NULL;
-        $type = isset($filter['type']) ? $filter['type'] : NULL;
+        $search = $this->di['array_get']($filter, 'search', NULL);
+        $type = $this->di['array_get']($filter, 'type', NULL);
 
         $params = array();
         $sql="SELECT * FROM extension

@@ -97,7 +97,7 @@ class Service implements InjectionAwareInterface
         $model->validate_host = isset($c['validate_host']) ? (bool)$c['validate_host'] : FALSE;
         $model->validate_path = isset($c['validate_path']) ? (bool)$c['validate_path'] : FALSE;
         $model->validate_version = isset($c['validate_version']) ? (bool)$c['validate_version'] : FALSE;
-        $model->plugin = isset($c['plugin']) ? $c['plugin'] : 'Simple';
+        $model->plugin = $this->di['array_get']($c, 'plugin', 'Simple');
         
         $model->ips = NULL;
         $model->versions = NULL;

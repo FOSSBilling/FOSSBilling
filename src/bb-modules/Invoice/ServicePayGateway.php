@@ -43,7 +43,7 @@ class ServicePayGateway implements InjectionAwareInterface
             FROM pay_gateway
             WHERE 1 ';
 
-        $search = isset($data['search']) ? $data['search'] : NULL;
+        $search = $this->di['array_get']($data, 'search', NULL);
         $params = array();
         if($search) {
             $sql .= 'AND m.name LIKE :search';
@@ -197,7 +197,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function getActive(array $data)
     {
-        $format = isset($data['format']) ? $data['format'] : null;
+        $format = $this->di['array_get']($data, 'format', null);
 
         $gateways = $this->di['db']->find('PayGateway', 'enabled = 1 ORDER BY id desc');
         $result = array();
@@ -257,8 +257,8 @@ class ServicePayGateway implements InjectionAwareInterface
     private function _getAllowTuple(\Model_PayGateway $model)
     {
         $adapter_config = $this->getAdapterConfig($model);
-        $single = isset($adapter_config['supports_one_time_payments']) ? $adapter_config['supports_one_time_payments'] : FALSE;
-        $recurrent = isset($adapter_config['supports_subscriptions']) ? $adapter_config['supports_subscriptions'] : FALSE;
+        $single = $this->di['array_get']($adapter_config, 'supports_one_time_payments', FALSE);
+        $recurrent = $this->di['array_get']($adapter_config, 'supports_subscriptions', FALSE);
 
         return array(
             $single,

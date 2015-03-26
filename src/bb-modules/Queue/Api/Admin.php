@@ -119,7 +119,7 @@ class Admin extends \Api_Abstract
         $q->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($q);
         
-        $params = isset($data['params']) ? $data['params'] : null;
+        $params = $this->di['array_get']($data, 'params', null);
         $body   = base64_encode(json_encode($params));
         
         $msg = $this->di['db']->dispense('queue_message');

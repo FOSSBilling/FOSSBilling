@@ -310,8 +310,8 @@ class Service implements InjectionAwareInterface
     {
         $query = "SELECT * FROM admin";
 
-        $search = isset($data['search']) ? $data['search'] : NULL;
-        $status = isset($data['status']) ? $data['status'] : NULL;
+        $search = $this->di['array_get']($data, 'search', NULL);
+        $status = $this->di['array_get']($data, 'status', NULL);
         $no_cron = isset($data['no_cron']) ? (bool)$data['no_cron'] : false;
 
         $where = array();
@@ -460,7 +460,7 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Admin', 3);
 
-        $signature = isset($data['signature']) ? $data['signature'] : NULL;
+        $signature = $this->di['array_get']($data, 'signature', NULL);
 
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminStaffCreate', 'params'=>$data));
 
@@ -599,8 +599,8 @@ class Service implements InjectionAwareInterface
                 LEFT JOIN admin as a on m.admin_id = a.id
                 ';
 
-        $search = isset($data['search']) ? $data['search'] : NULL;
-        $admin_id = isset($data['admin_id']) ? $data['admin_id'] : NULL;
+        $search = $this->di['array_get']($data, 'search', NULL);
+        $admin_id = $this->di['array_get']($data, 'admin_id', NULL);
 
         $where = array();
         $params = array();

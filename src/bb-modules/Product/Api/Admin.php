@@ -107,7 +107,7 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Product type :type is not registered', array(':type'=>$data['type']), 413);
         }
 
-        $categoryId = isset($data['product_category_id']) ? $data['product_category_id'] : null;
+        $categoryId = $this->di['array_get']($data, 'product_category_id', null);
 
         return (int) $service->createProduct($data['title'], $data['type'], $categoryId);
     }
@@ -202,10 +202,10 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Title is required');
         }
         $title  = $data['title'];
-        $status = isset($data['status']) ? $data['status'] : null;
-        $setup  = isset($data['setup']) ? $data['setup'] : null;
-        $iconUrl = isset($data['icon_url']) ? $data['icon_url'] : null;
-        $description = isset($data['description']) ? $data['description'] : null;
+        $status = $this->di['array_get']($data, 'status', null);
+        $setup  = $this->di['array_get']($data, 'setup', null);
+        $iconUrl = $this->di['array_get']($data, 'icon_url', null);
+        $description = $this->di['array_get']($data, 'description', null);
 
         $service = $this->getService();
         return $service->createAddon($title, $description, $setup, $status, $iconUrl);
@@ -331,9 +331,9 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Category not found');
         }
 
-        $title          = isset($data['title']) ? $data['title'] : null;
-        $description    = isset($data['description']) ? $data['description'] : null;
-        $icon_url       = isset($data['icon_url']) ? $data['icon_url'] : null;
+        $title          = $this->di['array_get']($data, 'title', null);
+        $description    = $this->di['array_get']($data, 'description', null);
+        $icon_url       = $this->di['array_get']($data, 'icon_url', null);
 
         $service = $this->getService();
         return $service->updateCategory($model, $title, $description, $icon_url);
@@ -378,9 +378,9 @@ class Admin extends \Api_Abstract
         }
         $service = $this->getService();
 
-        $title = isset($data['title']) ? $data['title'] : null;
-        $description = isset($data['description']) ? $data['description'] : null;
-        $icon_url = isset($data['icon_url']) ? $data['icon_url'] : null;
+        $title = $this->di['array_get']($data, 'title', null);
+        $description = $this->di['array_get']($data, 'description', null);
+        $icon_url = $this->di['array_get']($data, 'icon_url', null);
 
         return (int) $service->createCategory($title, $description, $icon_url);
 

@@ -25,9 +25,9 @@ class Admin extends \Api_Abstract
      */
     public function article_get_list($data)
     {
-        $status = isset($data['status']) ? $data['status'] : null;
-        $search = isset($data['search']) ? $data['search'] : null;
-        $cat    = isset($data['cat']) ? $data['cat'] : null;
+        $status = $this->di['array_get']($data, 'status', null);
+        $search = $this->di['array_get']($data, 'search', null);
+        $cat    = $this->di['array_get']($data, 'cat', null);
 
         $pager = $this->getService()->searchArticles($status, $search, $cat);
 
@@ -84,7 +84,7 @@ class Admin extends \Api_Abstract
         $articleCategoryId = $data['kb_article_category_id'];
         $title             = $data['title'];
         $status            = isset($data['status']) ? $data['status'] : \Model_KbArticle::DRAFT;
-        $content           = isset($data['content']) ? $data['content'] : NULL;
+        $content           = $this->di['array_get']($data, 'content', NULL);
 
         return $this->getService()->createArticle($articleCategoryId, $title, $status, $content);
     }
@@ -109,12 +109,12 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Article id not passed');
         }
 
-        $articleCategoryId = isset($data['kb_article_category_id']) ? $data['kb_article_category_id'] : null;
-        $title             = isset($data['title']) ? $data['title'] : null;
-        $slug              = isset($data['slug']) ? $data['slug'] : null;
-        $status            = isset($data['status']) ? $data['status'] : null;
-        $content           = isset($data['content']) ? $data['content'] : null;
-        $views             = isset($data['views']) ? $data['views'] : null;
+        $articleCategoryId = $this->di['array_get']($data, 'kb_article_category_id', null);
+        $title             = $this->di['array_get']($data, 'title', null);
+        $slug              = $this->di['array_get']($data, 'slug', null);
+        $status            = $this->di['array_get']($data, 'status', null);
+        $content           = $this->di['array_get']($data, 'content', null);
+        $views             = $this->di['array_get']($data, 'views', null);
 
 
         return $this->getService()->updateArticle($data['id'], $articleCategoryId, $title, $slug, $status, $content, $views);
@@ -201,7 +201,7 @@ class Admin extends \Api_Abstract
         }
 
         $title       = $data['title'];
-        $description = isset($data['description']) ? $data['description'] : NULL;
+        $description = $this->di['array_get']($data, 'description', NULL);
 
         return $this->getService()->createCategory($title, $description);
     }
@@ -229,9 +229,9 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Article Category not found');
         }
 
-        $title       = isset($data['title']) ? $data['title'] : NULL;
-        $slug        = isset($data['slug']) ? $data['slug'] : NULL;
-        $description = isset($data['description']) ? $data['description'] : NULL;
+        $title       = $this->di['array_get']($data, 'title', NULL);
+        $slug        = $this->di['array_get']($data, 'slug', NULL);
+        $description = $this->di['array_get']($data, 'description', NULL);
 
         return $this->getService()->updateCategory($model, $title, $slug, $description);
     }

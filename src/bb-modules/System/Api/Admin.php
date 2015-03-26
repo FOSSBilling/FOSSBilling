@@ -75,7 +75,7 @@ class Admin extends \Api_Abstract
      */
     public function messages($data)
     {
-        $type = isset($data['type']) ? $data['type'] : 'info';
+        $type = $this->di['array_get']($data, 'type', 'info');
         return $this->getService()->getMessages($type);
     }
     
@@ -111,7 +111,7 @@ class Admin extends \Api_Abstract
             return '';
         }
         $tpl = $data['_tpl'];
-        $try_render = isset($data['_try']) ? $data['_try'] : false;
+        $try_render = $this->di['array_get']($data, '_try', false);
 
         $vars = $data;
         unset($vars['_tpl'], $vars['_try']);
@@ -125,7 +125,7 @@ class Admin extends \Api_Abstract
      */
     public function env($data)
     {
-        $ip = isset($data['ip']) ? $data['ip'] : null;
+        $ip = $this->di['array_get']($data, 'ip', null);
         return $this->getService()->getEnv($ip);
     }
 
@@ -145,7 +145,7 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('mod parameter not passed');
         }
         
-        $f = isset($data['f']) ? $data['f'] : null;
+        $f = $this->di['array_get']($data, 'f', null);
         $service = $this->di['mod_service']('Staff');
         return $service->hasPermission($this->getIdentity(), $data['mod'], $f);
     }

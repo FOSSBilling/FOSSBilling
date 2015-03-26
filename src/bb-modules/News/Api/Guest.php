@@ -51,8 +51,8 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('ID or slug is missing');
         }
 
-        $id = isset($data['id']) ? $data['id'] : NULL;
-        $slug = isset($data['slug']) ? $data['slug'] : NULL;
+        $id = $this->di['array_get']($data, 'id', NULL);
+        $slug = $this->di['array_get']($data, 'slug', NULL);
 
         if($id) {
             $model = $this->getService()->findOneActiveById($id);

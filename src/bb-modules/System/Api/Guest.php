@@ -113,7 +113,7 @@ class Guest extends \Api_Abstract
      */
     public function period_title($data)
     {
-        $code = isset($data['code']) ? $data['code'] : NULL;
+        $code = $this->di['array_get']($data, 'code', NULL);
         if($code == NULL) {
             return '-';
         }

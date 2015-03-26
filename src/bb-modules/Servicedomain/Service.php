@@ -185,7 +185,7 @@ class Service implements \Box\InjectionAwareInterface
         $model->sld              = $sld;
         $model->tld              = $tld;
         $model->period           = $years;
-        $model->transfer_code    = isset($c['transfer_code']) ? $c['transfer_code'] : NULL;
+        $model->transfer_code    = $this->di['array_get']($c, 'transfer_code', NULL);
         $model->privacy          = FALSE;
         $model->action           = $c['action'];
         $model->ns1              = (isset($c['ns1']) && !empty($c['ns1'])) ? $c['ns1'] : $ns['nameserver_1'];
@@ -842,8 +842,8 @@ class Service implements \Box\InjectionAwareInterface
         $query = "SELECT * FROM tld";
 
         $hide_inactive  = isset($data['hide_inactive']) ? (bool)$data['hide_inactive'] : FALSE;
-        $allow_register = isset($data['allow_register']) ? $data['allow_register'] : NULL;
-        $allow_transfer = isset($data['allow_transfer']) ? $data['allow_transfer'] : NULL;
+        $allow_register = $this->di['array_get']($data, 'allow_register', NULL);
+        $allow_transfer = $this->di['array_get']($data, 'allow_transfer', NULL);
 
         $where    = array();
         $bindings = array();

@@ -284,20 +284,20 @@ class Service implements InjectionAwareInterface
         
         $type = $pconfig['vtype'];
         $node = $pconfig['node'];
-        $nodegroup = isset($pconfig['nodegroup']) ? $pconfig['nodegroup'] : null;
+        $nodegroup = $this->di['array_get']($pconfig, 'nodegroup', null);
         
         $template = $model->template; 
         $hostname = $model->hostname; 
         $plan = $pconfig['plan']; 
         $ips = $pconfig['ips'];
         
-        $hvmt = isset($pconfig['hvmt']) ? $pconfig['hvmt'] : null;
-        $custommemory = isset($pconfig['custommemory']) ? $pconfig['custommemory'] : null;
-        $customdiskspace = isset($pconfig['customdiskspace']) ? $pconfig['customdiskspace'] : null;
-        $custombandwidth = isset($pconfig['custombandwidth']) ? $pconfig['custombandwidth'] : null;
-        $customcpu = isset($pconfig['customcpu']) ? $pconfig['customcpu'] : null;
-        $customextraip = isset($pconfig['customextraip']) ? $pconfig['customextraip'] : null;
-        $issuelicense = isset($pconfig['issuelicense']) ? $pconfig['issuelicense'] : null;
+        $hvmt = $this->di['array_get']($pconfig, 'hvmt', null);
+        $custommemory = $this->di['array_get']($pconfig, 'custommemory', null);
+        $customdiskspace = $this->di['array_get']($pconfig, 'customdiskspace', null);
+        $custombandwidth = $this->di['array_get']($pconfig, 'custombandwidth', null);
+        $customcpu = $this->di['array_get']($pconfig, 'customcpu', null);
+        $customextraip = $this->di['array_get']($pconfig, 'customextraip', null);
+        $issuelicense = $this->di['array_get']($pconfig, 'issuelicense', null);
         
         $result = $this->_getApi()->vserver_create($type, $node, $nodegroup, $hostname, $password, $username, $plan, $template, $ips, $hvmt, $custommemory, $customdiskspace, $custombandwidth, $customcpu, $customextraip, $issuelicense);
         

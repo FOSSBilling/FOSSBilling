@@ -70,8 +70,8 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('Product ID or slug is missing');
         }
 
-        $id = isset($data['id']) ? $data['id'] : NULL;
-        $slug = isset($data['slug']) ? $data['slug'] : NULL;
+        $id = $this->di['array_get']($data, 'id', NULL);
+        $slug = $this->di['array_get']($data, 'slug', NULL);
 
         $service = $this->getService();
         if($id) {
@@ -125,8 +125,8 @@ class Guest extends \Api_Abstract
      */
     public function get_slider($data)
     {
-        $format = isset($data['format']) ? $data['format'] : null;
-        $type = isset($data['type']) ? $data['type'] : 'hosting';
+        $format = $this->di['array_get']($data, 'format', null);
+        $type = $this->di['array_get']($data, 'type', 'hosting');
         
         $products = $this->di['db']->find('Product', 'type = :type', array(':type' => $type));
         if(count($products) <= 0) {

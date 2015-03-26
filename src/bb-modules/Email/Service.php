@@ -30,8 +30,8 @@ class Service implements \Box\InjectionAwareInterface
     {
         $query = 'SELECT * FROM activity_client_email';
 
-        $search = isset($data['search']) ? $data['search'] : NULL;
-        $client_id = isset($data['client_id']) ? $data['client_id'] : NULL;
+        $search = $this->di['array_get']($data, 'search', NULL);
+        $client_id = $this->di['array_get']($data, 'client_id', NULL);
 
         $where = array();
         $bindings = array();
@@ -194,7 +194,7 @@ class Service implements \Box\InjectionAwareInterface
             $sent    = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id']);
         } else {
             $to      = $data['to'];
-            $to_name = isset($data['to_name']) ? $data['to_name'] : null;
+            $to_name = $this->di['array_get']($data, 'to_name', null);
             $sent    = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name);
         }
 
@@ -215,7 +215,7 @@ class Service implements \Box\InjectionAwareInterface
         $enabled     = 0;
         $subject     = isset($data['default_subject']) ? $data['default_subject'] : ucwords(str_replace('_', ' ', $code));
         $content     = isset($data['default_template']) ? $data['default_template'] : $this->_getVarsString();
-        $description = isset($data['default_description']) ? $data['default_description'] : null;
+        $description = $this->di['array_get']($data, 'default_description', null);
 
         $matches = array();
         preg_match("/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i", $code, $matches);
@@ -305,7 +305,7 @@ class Service implements \Box\InjectionAwareInterface
 
         $systemService = $this->di['mod_service']('system');
         $settings        = $systemService->getEmailSettings();
-        $transport       = isset($settings['mailer']) ? $settings['mailer'] : 'sendmail';
+        $transport       = $this->di['array_get']($settings, 'mailer', 'sendmail');
 
         if (APPLICATION_ENV == 'testing') {
             if (BB_DEBUG) error_log('Skipping email sending in test environment');
@@ -352,8 +352,8 @@ class Service implements \Box\InjectionAwareInterface
     {
         $query = "SELECT * FROM email_template";
 
-        $code   = isset($data['code']) ? $data['code'] : NULL;
-        $search = isset($data['search']) ? $data['search'] : NULL;
+        $code   = $this->di['array_get']($data, 'code', NULL);
+        $search = $this->di['array_get']($data, 'search', NULL);
 
         $where    = array();
         $bindings = array();
@@ -567,7 +567,7 @@ class Service implements \Box\InjectionAwareInterface
             $activityService->logEmail($queue->subject, $queue->client_id, $queue->from, $queue->to, $queue->content);
         }
 
-        $transport = isset($settings['mailer']) ? $settings['mailer'] : 'sendmail';
+        $transport = $this->di['array_get']($settings, 'mailer', 'sendmail');
 
         try {
             $mail = $this->di['mail'];

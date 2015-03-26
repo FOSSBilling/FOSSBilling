@@ -63,8 +63,8 @@ class Admin extends \Api_Abstract
         $priority = isset($data['priority']) ? (int)$data['priority'] : 6;
 
         $entry = $this->di['db']->dispense('ActivitySystem');
-        $entry->client_id       = isset($data['client_id']) ? $data['client_id'] : NULL;
-        $entry->admin_id        = isset($data['admin_id']) ? $data['admin_id'] : NULL;
+        $entry->client_id       = $this->di['array_get']($data, 'client_id', NULL);
+        $entry->admin_id        = $this->di['array_get']($data, 'admin_id', NULL);
         $entry->priority        = $priority;
         $entry->message         = $data['m'];
         $entry->created_at      = date('Y-m-d H:i:s');
@@ -87,12 +87,12 @@ class Admin extends \Api_Abstract
             return false;
         }
 
-        $client_id    = isset($data['client_id']) ? $data['client_id'] : NULL;
-        $sender       = isset($data['sender']) ? $data['sender'] : NULL;
-        $recipients   = isset($data['recipients']) ? $data['recipients'] : NULL;
+        $client_id    = $this->di['array_get']($data, 'client_id', NULL);
+        $sender       = $this->di['array_get']($data, 'sender', NULL);
+        $recipients   = $this->di['array_get']($data, 'recipients', NULL);
         $subject      = $data['subject'];
-        $content_html = isset($data['content_html']) ? $data['content_html'] : NULL;
-        $content_text = isset($data['content_text']) ? $data['content_text'] : NULL;
+        $content_html = $this->di['array_get']($data, 'content_html', NULL);
+        $content_text = $this->di['array_get']($data, 'content_text', NULL);
 
         return $this->getService()->logEmail($subject, $client_id, $sender, $recipients, $content_html, $content_text);
     }

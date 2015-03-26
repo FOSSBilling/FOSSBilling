@@ -122,7 +122,7 @@ class Admin extends \Api_Abstract
     public function refund($data)
     {
         $model = $this->_getInvoice($data);
-        $note = isset($data['note']) ? $data['note'] : NULL;
+        $note = $this->di['array_get']($data, 'note', NULL);
 
         return $this->getService()->refundInvoice($model, $note);
     }

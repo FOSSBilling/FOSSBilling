@@ -131,14 +131,14 @@ class ServiceTransaction implements InjectionAwareInterface
         $ipn = array(
             'get'                   =>  (isset($data['get']) && is_array($data['get'])) ? $data['get'] : NULL,
             'post'                  =>  (isset($data['post']) && is_array($data['post'])) ? $data['post'] : NULL,
-            'http_raw_post_data'    =>  isset($data['http_raw_post_data']) ? $data['http_raw_post_data'] : NULL,
-            'server'                =>  isset($data['server']) ? $data['server'] : NULL,
+            'http_raw_post_data'    =>  $this->di['array_get']($data, 'http_raw_post_data', NULL),
+            'server'                =>  $this->di['array_get']($data, 'server', NULL),
         );
 
         $transaction = $this->di['db']->dispense('Transaction');
-        $transaction->gateway_id    = isset($data['bb_gateway_id']) ? $data['bb_gateway_id'] : NULL;
-        $transaction->invoice_id    = isset($data['bb_invoice_id']) ? $data['bb_invoice_id'] : NULL;
-        $transaction->txn_id        = isset($data['txn_id']) ? $data['txn_id'] : NULL;
+        $transaction->gateway_id    = $this->di['array_get']($data, 'bb_gateway_id', NULL);
+        $transaction->invoice_id    = $this->di['array_get']($data, 'bb_invoice_id', NULL);
+        $transaction->txn_id        = $this->di['array_get']($data, 'txn_id', NULL);
         $transaction->status        = 'received';
         $transaction->ip            = $this->di['request']->getClientAddress();
         $transaction->ipn           = json_encode($ipn);
@@ -204,19 +204,19 @@ class ServiceTransaction implements InjectionAwareInterface
                 LEFT JOIN invoice as i on m.invoice_id = i.id
                 WHERE 1 ';
 
-        $id           = isset($data['id']) ? $data['id'] : NULL;
-        $search       = isset($data['search']) ? $data['search'] : NULL;
-        $invoice_hash = isset($data['invoice_hash']) ? $data['invoice_hash'] : NULL;
-        $invoice_id   = isset($data['invoice_id']) ? $data['invoice_id'] : NULL;
-        $gateway_id   = isset($data['gateway_id']) ? $data['gateway_id'] : NULL;
-        $client_id    = isset($data['client_id']) ? $data['client_id'] : NULL;
-        $status       = isset($data['status']) ? $data['status'] : NULL;
-        $currency     = isset($data['currency']) ? $data['currency'] : NULL;
-        $type         = isset($data['type']) ? $data['type'] : NULL;
-        $txn_id       = isset($data['txn_id']) ? $data['txn_id'] : NULL;
+        $id           = $this->di['array_get']($data, 'id', NULL);
+        $search       = $this->di['array_get']($data, 'search', NULL);
+        $invoice_hash = $this->di['array_get']($data, 'invoice_hash', NULL);
+        $invoice_id   = $this->di['array_get']($data, 'invoice_id', NULL);
+        $gateway_id   = $this->di['array_get']($data, 'gateway_id', NULL);
+        $client_id    = $this->di['array_get']($data, 'client_id', NULL);
+        $status       = $this->di['array_get']($data, 'status', NULL);
+        $currency     = $this->di['array_get']($data, 'currency', NULL);
+        $type         = $this->di['array_get']($data, 'type', NULL);
+        $txn_id       = $this->di['array_get']($data, 'txn_id', NULL);
 
-        $date_from = isset($data['date_from']) ? $data['date_from'] : NULL;
-        $date_to   = isset($data['date_to']) ? $data['date_to'] : NULL;
+        $date_from = $this->di['array_get']($data, 'date_from', NULL);
+        $date_to   = $this->di['array_get']($data, 'date_to', NULL);
 
         $params = array();
         if ($id) {

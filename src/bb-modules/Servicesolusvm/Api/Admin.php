@@ -83,9 +83,9 @@ class Admin extends \Api_Abstract
      */
     public function get_nodes($data)
     {
-        $by = isset($data['by']) ? $data['by'] : 'name';
+        $by = $this->di['array_get']($data, 'by', 'name');
         try {
-            $type = isset($data['type']) ? $data['type'] : 'openvz';
+            $type = $this->di['array_get']($data, 'type', 'openvz');
             $nodes = $this->getService()->getNodes($type, $by);
         } catch (\Exception $exc) {
             $nodes = array();
@@ -102,7 +102,7 @@ class Admin extends \Api_Abstract
     public function get_plans($data)
     {
         try {
-            $type = isset($data['type']) ? $data['type'] : 'openvz';
+            $type = $this->di['array_get']($data, 'type', 'openvz');
             $plans = $this->getService()->getPlans($type);
         } catch (\Exception $exc) {
             $plans = array();
@@ -119,7 +119,7 @@ class Admin extends \Api_Abstract
     public function get_templates($data)
     {
         try {
-            $type = isset($data['type']) ? $data['type'] : 'openvz';
+            $type = $this->di['array_get']($data, 'type', 'openvz');
             $templates = $this->getService()->getTemplates($type);
         } catch (\Exception $exc) {
             $templates = array();
@@ -394,9 +394,9 @@ class Admin extends \Api_Abstract
      */
     public function import_servers($data)
     {
-        $nodeid = isset($data['node_id']) ? $data['node_id'] : null;
-        $period = isset($data['period']) ? $data['period'] : null;
-        $product_id = isset($data['product_id']) ? $data['product_id'] : null;
+        $nodeid = $this->di['array_get']($data, 'node_id', null);
+        $period = $this->di['array_get']($data, 'period', null);
+        $product_id = $this->di['array_get']($data, 'product_id', null);
         $selected = isset($data['servers']) ? $data['servers'] : array();
         if(empty($nodeid)) {
             throw new \Box_Exception('Node is not selected for import.', null, 235);
@@ -545,7 +545,7 @@ class Admin extends \Api_Abstract
      */
     public function test_connection($data)
     {
-        $return = isset($data['return']) ? $data['return'] : null;
+        $return = $this->di['array_get']($data, 'return', null);
         $can_connect = false;
         try {
             $this->getService()->testConnection($data);
