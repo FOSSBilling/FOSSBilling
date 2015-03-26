@@ -106,6 +106,7 @@ class Service implements InjectionAwareInterface
             'name'           => $identity->name,
             'signature'      => $identity->signature,
             'status'         => $identity->status,
+            'api_token'      => $identity->api_token,
             'created_at'     => $identity->created_at,
             'updated_at'     => $identity->updated_at,
         );
