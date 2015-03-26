@@ -21,7 +21,11 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         $di          = new \Box_Di();
         $di['pager'] = $pager;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $clientApi->setDi($di);
+        $emailService->setDi($di);
 
         $service = $emailService;
         $clientApi->setService($service);
