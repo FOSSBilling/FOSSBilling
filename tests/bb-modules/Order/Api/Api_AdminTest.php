@@ -220,6 +220,12 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $serviceMock->expects($this->atLeastOnce())->method('suspendFromOrder')
             ->will($this->returnValue(true));
 
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $apiMock->setDi($di);
+
         $apiMock->setService($serviceMock);
 
         $data   = array();
@@ -294,6 +300,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $serviceMock->expects($this->atLeastOnce())->method('cancelFromOrder')
             ->will($this->returnValue(true));
 
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $apiMock->setDi($di);
         $apiMock->setService($serviceMock);
 
         $data   = array();
@@ -572,6 +583,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $apiMock->setDi($di);
         $apiMock->setService($serviceMock);
 
