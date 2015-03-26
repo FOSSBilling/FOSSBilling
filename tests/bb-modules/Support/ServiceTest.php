@@ -488,6 +488,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetSearchQuery($data)
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->service->setDi($di);
         list($query, $bindings) = $this->service->getSearchQuery($data);
         $this->assertInternalType('string', $query);
         $this->assertInternalType('array', $bindings);
@@ -1008,6 +1013,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testHelpdeskGetSearchQuery()
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->service->setDi($di);
+
         $data = array(
             'search' => 'SearchQuery'
         );
@@ -1392,8 +1403,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($randId));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventMock->expects($this->atLeastOnce())->
-        method('fire');
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire')
+            ->will($this->returnValue(array()));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
@@ -1404,6 +1416,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['validator']      = $validatorMock;
         $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
         $di['events_manager'] = $eventMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
@@ -1476,6 +1491,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['mod_service']    = $di->protect(function () use ($staffServiceMock) {
             return $staffServiceMock;
         });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $serviceMock->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
@@ -1535,6 +1553,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $client = new \Model_Client();
         $client->loadBean(new \RedBeanPHP\OODBBean());
         $client->id = rand(1, 100);
+
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $serviceMock->setDi($di);
 
         $serviceMock->ticketCreateForClient($client, $helpdesk, $data);
     }
@@ -1700,6 +1724,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testPublicGetSearchQuery($data)
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->service->setDi($di);
+
         list($query, $bindings) = $this->service->publicgetSearchQuery($data);
         $this->assertInternalType('string', $query);
         $this->assertInternalType('array', $bindings);
@@ -2171,6 +2201,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportHelpdesk();
@@ -2191,6 +2224,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testCannedGetSearchQuery()
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->service->setDi($di);
+
         $data = array(
             'search' => 'query',
         );
