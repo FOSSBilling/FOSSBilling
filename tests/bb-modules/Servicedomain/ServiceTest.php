@@ -635,6 +635,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             }
         });
         $di['db']          = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $serviceMock->setDi($di);
 
 
@@ -1838,6 +1841,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testTldGetSearchQuery($data, $expectedQuery, $expectedBindings)
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->service->setDi($di);
         list($query, $bindings) = $this->service->tldGetSearchQuery($data);
 
         $this->assertEquals($query, $expectedQuery);
