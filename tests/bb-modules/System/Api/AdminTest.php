@@ -102,12 +102,18 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $data = array(
         );
 
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $servuceMock->expects($this->atLeastOnce())
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->api->setDi($di);
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
             ->method('getMessages')
             ->will($this->returnValue(array()));
 
-        $this->api->setService($servuceMock);
+        $this->api->setService($serviceMock);
 
         $result = $this->api->messages($data);
         $this->assertInternalType('array', $result);
@@ -151,7 +157,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $servuceMock->expects($this->atLeastOnce())
             ->method('renderString')
             ->will($this->returnValue('returnStringType'));
-
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->api->setDi($di);
         $this->api->setService($servuceMock);
 
         $result = $this->api->string_render($data);
@@ -172,12 +182,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     {
         $data = array();
 
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $servuceMock->expects($this->atLeastOnce())
+        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
+        $serviceMock->expects($this->atLeastOnce())
             ->method('getEnv')
             ->will($this->returnValue(array()));
 
-        $this->api->setService($servuceMock);
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
 
         $result = $this->api->env($data);
         $this->assertInternalType('array', $result);
@@ -200,6 +215,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
                 return $staffServiceMock;
             }
             return false;
+        });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->api->setDi($di);
 

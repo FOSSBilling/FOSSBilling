@@ -60,7 +60,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['config'] = $config;
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $result = $this->service->getCompany();

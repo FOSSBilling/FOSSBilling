@@ -130,7 +130,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $this->api->param($data);
     }
 
-    public function periods()
+    public function testPeriods()
     {
         $result = $this->api->periods();
         $this->assertInternalType('array', $result);
@@ -144,7 +144,11 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $servuceMock->expects($this->atLeastOnce())
             ->method('getPeriod')
             ->will($this->returnValue('periodTtitleValue'));
-
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->api->setDi($di);
         $this->api->setService($servuceMock);
 
         $result = $this->api->period_title($data);
@@ -155,7 +159,11 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
     {
         $data = array();
         $expected = '-';
-
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->api->setDi($di);
         $result = $this->api->period_title($data);
         $this->assertInternalType('string', $result);
         $this->assertEquals($expected, $result);
