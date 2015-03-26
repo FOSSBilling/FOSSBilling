@@ -566,10 +566,7 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Group not found');
         }
         
-        if(isset($data['title'])) {
-            $model->title = $data['title'];
-        }
-        
+        $model->title = $this->di['array_get']($data, 'title', $model->title);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;

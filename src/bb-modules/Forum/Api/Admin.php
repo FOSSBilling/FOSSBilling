@@ -361,26 +361,11 @@ class Admin extends \Api_Abstract
             $model->forum_id = $data['forum_id'];
         }
         
-        if(isset($data['title'])) {
-            $model->title = $data['title'];
-        }
-        
-        if(isset($data['status'])) {
-            $model->status = $data['status'];
-        }
-        
-        if(isset($data['slug'])) {
-            $model->slug = $data['slug'];
-        }
-        
-        if(isset($data['sticky'])) {
-            $model->sticky = $data['sticky'];
-        }
-        
-        if(isset($data['views'])) {
-            $model->views = $data['views'];
-        }
-        
+        $model->title = $this->di['array_get']($data, 'title', $model->title);
+        $model->status = $this->di['array_get']($data, 'status', $model->status);
+        $model->slug = $this->di['array_get']($data, 'slug', $model->slug);
+        $model->sticky = $this->di['array_get']($data, 'sticky', $model->sticky);
+        $model->views = $this->di['array_get']($data, 'views', $model->views);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
