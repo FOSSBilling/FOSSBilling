@@ -490,7 +490,13 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
      */
     public function testgetBalanceSearchQuery($data, $expectedStr, $expectedParams)
     {
+
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $clientBalanceService = new \Box\Mod\Client\ServiceBalance();
+        $clientBalanceService->setDi($di);
         list ($sql, $params) = $clientBalanceService->getSearchQuery($data);
         $this->assertNotEmpty($sql);
         $this->assertInternalType('string', $sql);
