@@ -143,7 +143,7 @@ class Service implements InjectionAwareInterface
         $client->last_name  = $this->di['array_get']($data, 'last_name', $client->last_name);
         $client->gender     = $this->di['array_get']($data, 'gender', $client->gender);
 
-        $birthday = $this->di['array_get']($data, 'birthday', '');
+        $birthday = $this->di['array_get']($data, 'birthday');
         if (strlen(trim($birthday)) > 0 && strtotime($birthday) === false) {
             throw new \Box_Exception('Invalid birth date value');
         }
