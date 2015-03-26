@@ -98,6 +98,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['db'] = $databaseMock;
         $di['request'] = new \Box_Request($di);
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);
@@ -108,7 +111,13 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
     public function testlogEmptyMParam()
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+
         $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity->setDi($di);
         $result = $activity->log(array());
         $this->assertEquals(false, $result, 'Empty array key m');
     }
@@ -120,8 +129,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('logEmail')
             ->will($this->returnValue(true));
 
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+
         $adminApi = new \Box\Mod\Activity\Api\Admin();
         $adminApi->setService($service);
+        $adminApi->setDi($di);
         $result = $adminApi->log_email(array('subject' => 'Proper subject'));
 
         $this->assertEquals(true, $result, 'Log_email did not returned true');
