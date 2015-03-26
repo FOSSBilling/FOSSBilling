@@ -185,23 +185,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
                 $this->atLeastOnce(),
                 false ////"isSldValid" returns false
             ),
-            array( //"owndomain_tld" is missing
-                array(
-                    'action'        => 'owndomain',
-                    'owndomain_sld' => 'example',
-                ),
-                $this->atLeastOnce(),
-                true
-            ),
-            array(
-                array(
-                    'action'        => 'owndomain',
-                    'owndomain_tld' => 'example',
-                    'owndomain_sld' => '', // owndomain_sld is empty
-                ),
-                $this->atLeastOnce(),
-                true
-            )
         );
     }
 
@@ -215,6 +198,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($isSldValidCalled)->method('isSldValid')
             ->will($this->returnValue($isSldValidReturn));
+        $validatorMock->expects($isSldValidCalled)->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
 
         $di              = new \Box_Di();
@@ -233,80 +218,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $tldModel->tld = '.com';
 
         return array(
-            array(
-                array( //"transfer_sld" is missing
-                    'action'       => 'transfer',
-                    'transfer_tld' => '.com'
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->never(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //canBeTransfered
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array(
-                array(
-                    'action'       => 'transfer',
-                    'transfer_sld' => 'example',
-                    'transfer_tld' => '.com'
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => false //"isSldValid" returns false
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //canBeTransfered
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array( //"transfer_tld" is missing
-                array(
-                    'action'       => 'transfer',
-                    'transfer_sld' => 'example',
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //canBeTransfered
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array(
-                array(
-                    'action'       => 'transfer',
-                    'transfer_sld' => '', // "transfer_sld" is empty
-                    'transfer_tld' => '.com',
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //canBeTransfered
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
             array(
                 array(
                     'action'       => 'transfer',
@@ -358,6 +269,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
             ->will($this->returnValue($isSldValidArr['returns']));
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
             ->setMethods(array('tldFindOneByTld', 'canBeTransfered'))->getMock();
@@ -382,99 +295,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $tldModel->min_years = 2;
 
         return array(
-            array(
-                array( //"register_sld" is missing
-                    'action'       => 'register',
-                    'register_tld' => '.com'
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->never(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //isDomainAvailable
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array(
-                array(
-                    'action'       => 'register',
-                    'register_sld' => 'example',
-                    'register_tld' => '.com'
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => false //"isSldValid" returns false
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //isDomainAvailable
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array( //"register_tld" is missing
-                array(
-                    'action'       => 'register',
-                    'register_sld' => 'example',
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //isDomainAvailable
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array(
-                array(
-                    'action'       => 'register',
-                    'register_sld' => '', // "register_sld" is empty
-                    'register_tld' => '.com',
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //isDomainAvailable
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array(
-                array( // "register_years" is missing
-                    'action'       => 'register',
-                    'register_sld' => 'example',
-                    'register_tld' => '.com',
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //isDomainAvailable
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
             array(
                 array(
                     'action'         => 'register',
@@ -548,6 +368,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
             ->will($this->returnValue($isSldValidArr['returns']));
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
             ->setMethods(array('tldFindOneByTld', 'isDomainAvailable'))->getMock();

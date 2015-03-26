@@ -71,13 +71,11 @@ class Service implements \Box\InjectionAwareInterface
                 throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['owndomain_sld']));
             }
 
-            if (!isset($data['owndomain_tld']) || empty($data['owndomain_tld'])) {
-                throw new \Box_Exception('Domain TLD is not valid.');
-            }
-
-            if (!isset($data['owndomain_sld']) || empty($data['owndomain_sld'])) {
-                throw new \Box_Exception('Domain name is required.');
-            }
+            $required = array(
+                'owndomain_tld' => 'Domain TLD is not valid.',
+                'owndomain_sld' => 'Domain name is required.',
+            );
+            $this->di['validator']->checkRequiredParamsForArray($required, $data);
         }
 
         if ($action == 'transfer') {
@@ -89,13 +87,11 @@ class Service implements \Box\InjectionAwareInterface
                 throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['transfer_sld']));
             }
 
-            if (!isset($data['transfer_tld']) || empty($data['transfer_tld'])) {
-                throw new \Box_Exception('Transfer domain type (tld) is required.');
-            }
-
-            if (!isset($data['transfer_sld']) || empty($data['transfer_sld'])) {
-                throw new \Box_Exception('Transfer domain name (sld) is required.');
-            }
+            $required = array(
+                'transfer_tld' => 'Transfer domain type (TLD) is required.',
+                'transfer_sld' => 'Transfer domain name (SLD) is required.',
+            );
+            $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             $tld = $this->tldFindOneByTld($data['transfer_tld']);
             if (!$tld instanceof \Model_Tld) {
@@ -121,17 +117,12 @@ class Service implements \Box\InjectionAwareInterface
                 throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['register_sld']));
             }
 
-            if (!isset($data['register_tld']) || empty($data['register_tld'])) {
-                throw new \Box_Exception('Domain registration tld parameter missing.');
-            }
-
-            if (!isset($data['register_sld']) || empty($data['register_sld'])) {
-                throw new \Box_Exception('Domain registration sld parameter missing.');
-            }
-
-            if (!isset($data['register_years']) || empty($data['register_years'])) {
-                throw new \Box_Exception('Years parameter is missing for domain configuration.');
-            }
+            $required = array(
+                'register_tld'   => 'Domain registration tld parameter missing.',
+                'register_sld'   => 'Domain registration sld parameter missing.',
+                'register_years' => 'Years parameter is missing for domain configuration.',
+            );
+            $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             $tld = $this->tldFindOneByTld($data['register_tld']);
             if (!$tld instanceof \Model_Tld) {
