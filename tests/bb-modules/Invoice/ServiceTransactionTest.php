@@ -118,7 +118,9 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $di['events_manager'] = $eventsMock;
         $di['request'] = $requestMock;
         $di['logger'] = new \Box_Log();
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $data = array(
@@ -339,6 +341,11 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
      */
     public function testgetSearchQuery($data, $expectedParams, $expectedStringPart)
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = '') use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
         $this->assertInternalType('string', $result[0]);
         $this->assertInternalType('array', $result[1]);
