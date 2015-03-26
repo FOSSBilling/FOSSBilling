@@ -160,7 +160,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->quantity       = $this->di['array_get']($data, 'quantity', 1);
         $pi->unit           = $this->di['array_get']($data, 'unit');
         $pi->charged        = $this->di['array_get']($data, 'charged', 0);
-        $pi->price          = $this->di['array_get']($data, 'price', 0);
+        $pi->price          = (double) $this->di['array_get']($data, 'price', 0);
         $pi->taxed          = $this->di['array_get']($data, 'taxed', false);
         $pi->created_at     = date('Y-m-d H:i:s');
         $pi->updated_at     = date('Y-m-d H:i:s');
