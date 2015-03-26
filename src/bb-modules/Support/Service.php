@@ -817,7 +817,7 @@ class Service implements \Box\InjectionAwareInterface
         $event_params['ip'] = $this->di['request']->getClientAddress();
         $altered            = $this->di['events_manager']->fire(array('event' => 'onBeforeGuestPublicTicketOpen', 'params' => $event_params));
 
-        $status  = $this->di['array_get']($altered, 'status', 'open');
+        $status  = isset($altered['status'])? $altered['status'] : 'open';
         $subject = isset($altered['subject']) ? $altered['subject'] : $data['subject'];
         $message = isset($altered['message']) ? $altered['message'] : $data['message'];
 
