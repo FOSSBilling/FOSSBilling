@@ -4,11 +4,12 @@ namespace Box\Mod\Order;
 
 class PdoMock extends \PDO
 {
-    public function __construct (){}
+    public function __construct() { }
 }
+
 class PdoStatmentsMock extends \PDOStatement
 {
-    public function __construct (){}
+    public function __construct() { }
 }
 
 class ServiceTest extends \PHPUnit_Framework_TestCase
@@ -101,10 +102,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['loggedin_admin'] = $admin;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ($serviceName == 'email'){
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ($serviceName == 'order'){
+            if ($serviceName == 'order') {
                 return $serviceMock;
             }
         });
@@ -163,10 +164,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['loggedin_admin'] = $admin;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ($serviceName == 'email'){
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ($serviceName == 'order'){
+            if ($serviceName == 'order') {
                 return $serviceMock;
             }
         });
@@ -225,10 +226,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['loggedin_admin'] = $admin;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ($serviceName == 'email'){
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ($serviceName == 'order'){
+            if ($serviceName == 'order') {
                 return $serviceMock;
             }
         });
@@ -285,10 +286,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['loggedin_admin'] = $admin;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ($serviceName == 'email'){
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ($serviceName == 'order'){
+            if ($serviceName == 'order') {
                 return $serviceMock;
             }
         });
@@ -345,10 +346,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['loggedin_admin'] = $admin;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ($serviceName == 'email'){
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ($serviceName == 'order'){
+            if ($serviceName == 'order') {
                 return $serviceMock;
             }
         });
@@ -405,10 +406,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['loggedin_admin'] = $admin;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ($serviceName == 'email'){
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ($serviceName == 'order'){
+            if ($serviceName == 'order') {
                 return $serviceMock;
             }
         });
@@ -465,10 +466,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['loggedin_admin'] = $admin;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ($serviceName == 'email'){
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ($serviceName == 'order'){
+            if ($serviceName == 'order') {
                 return $serviceMock;
             }
         });
@@ -525,10 +526,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['loggedin_admin'] = $admin;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ($serviceName == 'email'){
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ($serviceName == 'order'){
+            if ($serviceName == 'order') {
                 return $serviceMock;
             }
         });
@@ -583,10 +584,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['loggedin_admin'] = $admin;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ($serviceName == 'email'){
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ($serviceName == 'order'){
+            if ($serviceName == 'order') {
                 return $serviceMock;
             }
         });
@@ -641,10 +642,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['loggedin_admin'] = $admin;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ($serviceName == 'email'){
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ($serviceName == 'order'){
+            if ($serviceName == 'order') {
                 return $serviceMock;
             }
         });
@@ -701,10 +702,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['loggedin_admin'] = $admin;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ($serviceName == 'email'){
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ($serviceName == 'order'){
+            if ($serviceName == 'order') {
                 return $serviceMock;
             }
         });
@@ -761,10 +762,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['loggedin_admin'] = $admin;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ($serviceName == 'email'){
+            if ($serviceName == 'email') {
                 return $emailServiceMock;
             }
-            if ($serviceName == 'order'){
+            if ($serviceName == 'order') {
                 return $serviceMock;
             }
         });
@@ -871,7 +872,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['tools'] = $toolsMock;
         $this->service->setDi($di);
 
-        $service     = new \Model_ServiceCustom();
+        $service = new \Model_ServiceCustom();
         $service->loadBean(new \RedBeanPHP\OODBBean());
         $service->id = rand(1, 100);
 
@@ -1033,7 +1034,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testgetRelatedOrderIdByType()
     {
-        $id = 1;
+        $id    = 1;
         $model = new \Model_ClientOrder();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $model->id = $id;
@@ -1044,7 +1045,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->with('ClientOrder')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1055,7 +1056,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testgetRelatedOrderIdByType_returnNull()
     {
-        $id = 1;
+        $id    = 1;
         $model = new \Model_ClientOrder();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $model->id = $id;
@@ -1066,7 +1067,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->with('ClientOrder')
             ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1089,7 +1090,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
                 array('status')
             );
 
-        $di = new \Box_Di();
+        $di           = new \Box_Di();
         $di['logger'] = $loggerMock;
         $this->service->setDi($di);
 
@@ -1101,8 +1102,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     {
         $model = new \Model_ClientOrder();
         $model->loadBean(new \RedBeanPHP\OODBBean());
-        $model->config = '{}';
-        $model->price = 10;
+        $model->config   = '{}';
+        $model->price    = 10;
         $model->quantity = 1;
 
         $clientService = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
@@ -1141,17 +1142,17 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('decodeJ')
             ->willReturn(array());
 
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function($serviceName) use ($clientService, $supportService){
-            if ($serviceName == 'client'){
+        $di                = new \Box_Di();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($clientService, $supportService) {
+            if ($serviceName == 'client') {
                 return $clientService;
             }
-            if ($serviceName == 'support'){
+            if ($serviceName == 'support') {
                 return $supportService;
             }
         });
-        $di['db'] = $dbMock;
-        $di['tools'] = $toolsMock;
+        $di['db']          = $dbMock;
+        $di['tools']       = $toolsMock;
 
         $this->service->setDi($di);
         $result = $this->service->toApiArray($model, true, new \Model_Admin());
@@ -1239,8 +1240,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
                 '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR co.title LIKE :title)',
                 array(
                     ':first_name' => '%John%',
-                    ':last_name' => '%John%',
-                    ':title' => '%John%',
+                    ':last_name'  => '%John%',
+                    ':title'      => '%John%',
                 )
             ),
             array(
@@ -1253,7 +1254,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
                 array('meta' => array('param' => 'value')),
                 '(meta.name = :meta_name1 AND meta.value LIKE :meta_value1)',
                 array(
-                    ':meta_name1' => 'param',
+                    ':meta_name1'  => 'param',
                     ':meta_value1' => 'value%'
                 ),
             ),
@@ -1286,7 +1287,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('isPro')
             ->willReturn(false);
 
-        $di = new \Box_Di();
+        $di            = new \Box_Di();
         $di['license'] = $licenseMock;
 
         $this->service->setDi($di);
@@ -1312,10 +1313,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('getDefault')
             ->willReturn(null);
 
-        $di = new \Box_Di();
-        $di['license'] = $licenseMock;
-        $di['mod_service'] = $di->protect(function($serviceName) use($currencyServiceMock){
-            if ($serviceName == 'currency'){
+        $di                = new \Box_Di();
+        $di['license']     = $licenseMock;
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock) {
+            if ($serviceName == 'currency') {
                 return $currencyServiceMock;
             }
         });
@@ -1358,13 +1359,13 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Box_Di();
-        $di['license'] = $licenseMock;
-        $di['mod_service'] = $di->protect(function($serviceName) use($currencyServiceMock, $cartServiceMock){
-            if ($serviceName == 'currency'){
+        $di                   = new \Box_Di();
+        $di['license']        = $licenseMock;
+        $di['mod_service']    = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock) {
+            if ($serviceName == 'currency') {
                 return $currencyServiceMock;
             }
-            if ($serviceName == 'cart'){
+            if ($serviceName == 'cart') {
                 return $cartServiceMock;
             }
         });
@@ -1383,7 +1384,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
-        $modelProduct->id = 1;
+        $modelProduct->id       = 1;
         $modelProduct->is_addon = 1;
 
         $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
@@ -1409,13 +1410,13 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Box_Di();
-        $di['license'] = $licenseMock;
-        $di['mod_service'] = $di->protect(function($serviceName) use($currencyServiceMock, $cartServiceMock){
-            if ($serviceName == 'currency'){
+        $di                   = new \Box_Di();
+        $di['license']        = $licenseMock;
+        $di['mod_service']    = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock) {
+            if ($serviceName == 'currency') {
                 return $currencyServiceMock;
             }
-            if ($serviceName == 'cart'){
+            if ($serviceName == 'cart') {
                 return $cartServiceMock;
             }
         });
@@ -1459,13 +1460,13 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Box_Di();
-        $di['license'] = $licenseMock;
-        $di['mod_service'] = $di->protect(function($serviceName) use($currencyServiceMock, $cartServiceMock){
-            if ($serviceName == 'currency'){
+        $di                   = new \Box_Di();
+        $di['license']        = $licenseMock;
+        $di['mod_service']    = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock) {
+            if ($serviceName == 'currency') {
                 return $currencyServiceMock;
             }
-            if ($serviceName == 'cart'){
+            if ($serviceName == 'cart') {
                 return $cartServiceMock;
             }
         });
@@ -1491,7 +1492,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
-        $modelProduct->id = 1;
+        $modelProduct->id   = 1;
         $modelProduct->type = 'custom';
 
         $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
@@ -1536,10 +1537,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('getCode')
             ->willReturn('1Y');
 
-        $di = new \Box_Di();
-        $di['license'] = $licenseMock;
-        $di['mod_service'] = $di->protect(function ($serviceName) use($currencyServiceMock, $cartServiceMock, $productServiceMock){
-            if ($serviceName == 'currency'){
+        $di                   = new \Box_Di();
+        $di['license']        = $licenseMock;
+        $di['mod_service']    = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock, $productServiceMock) {
+            if ($serviceName == 'currency') {
                 return $currencyServiceMock;
             }
             if ($serviceName == 'cart') {
@@ -1550,9 +1551,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             }
         });
         $di['events_manager'] = $eventMock;
-        $di['db'] = $dbMock;
-        $di['period'] = $di->protect(function () use($periodMock) {return $periodMock; });
-        $di['logger'] = new \Box_Log();
+        $di['db']             = $dbMock;
+        $di['period']         = $di->protect(function () use ($periodMock) { return $periodMock; });
+        $di['logger']         = new \Box_Log();
+        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->service->setDi($di);
         $result = $this->service->createOrder($modelClient, $modelProduct, array('period' => '1Y', 'price' => '10', 'notes' => 'test'));
@@ -1573,7 +1577,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->with('ClientOrder')
             ->willReturn($clientOrderModel);
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
         $result = $this->service->getMasterOrderForClient($clientModel, 1);
@@ -1593,16 +1597,16 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
-        $clientOrderModel->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
+        $clientOrderModel->status       = \Model_ClientOrder::STATUS_PENDING_SETUP;
         $clientOrderModel->group_master = 1;
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Box_Di();
+        $di                   = new \Box_Di();
         $di['events_manager'] = $eventMock;
-        $di['logger'] = new \Box_Log();
+        $di['logger']         = new \Box_Log();
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
             ->setMethods(array('createFromOrder', 'getOrderAddonsList', 'activateOrderAddons'))
@@ -1633,7 +1637,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
-        $clientOrderModel->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
+        $clientOrderModel->status       = \Model_ClientOrder::STATUS_PENDING_SETUP;
         $clientOrderModel->group_master = 1;
         $serviceMock->expects($this->atLeastOnce())
             ->method('getOrderAddonsList')
@@ -1643,7 +1647,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Box_Di();
+        $di                   = new \Box_Di();
         $di['events_manager'] = $eventMock;
 
         $serviceMock->setDi($di);
@@ -1663,7 +1667,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->with('ClientOrder')
             ->willReturn(array(new \Model_ClientOrder()));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1683,7 +1687,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->with($productModel);
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1705,26 +1709,26 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->with($clientOrderModel);
 
-        $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+        $di                   = new \Box_Di();
+        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $di['events_manager'] = $eventMock;
-        $di['db'] = $dbMock;
-        $di['logger'] = new \Box_Log();
+        $di['db']             = $dbMock;
+        $di['logger']         = new \Box_Log();
 
         $data = array(
-            'period' => '1Y',
-            'created_at' => '2012-12-01',
-            'activated_at' => '2012-12-01',
-            'expires_at' => '2013-12-01',
+            'period'         => '1Y',
+            'created_at'     => '2012-12-01',
+            'activated_at'   => '2012-12-01',
+            'expires_at'     => '2013-12-01',
             'invoice_option' => 'issue-invoice',
-            'title' => 'Testing',
-            'price' => 10,
-            'status' => 'active',
-            'notes' => 'Empty note',
-            'reason' => 'non',
-            'meta' => array()
+            'title'          => 'Testing',
+            'price'          => 10,
+            'status'         => 'active',
+            'notes'          => 'Empty note',
+            'reason'         => 'non',
+            'meta'           => array()
 
         );
 
@@ -1748,15 +1752,15 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
         $clientOrderModel->group_master = 1;
-        $clientOrderModel->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
+        $clientOrderModel->status       = \Model_ClientOrder::STATUS_PENDING_SETUP;
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Box_Di();
+        $di                   = new \Box_Di();
         $di['events_manager'] = $eventMock;
-        $di['logger'] = new \Box_Log();
+        $di['logger']         = new \Box_Log();
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
             ->setMethods(array('renewFromOrder', 'getOrderAddonsList'))
@@ -1795,10 +1799,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->with($clientOrderModel);
 
-        $di = new \Box_Di();
-        $di['mod_config'] = $di->protect(function($name) {return array();});
-        $di['period'] = $di->protect(function () use($periodMock) {return $periodMock; });
-        $di['db'] = $dbMock;
+        $di               = new \Box_Di();
+        $di['mod_config'] = $di->protect(function ($name) { return array(); });
+        $di['period']     = $di->protect(function () use ($periodMock) { return $periodMock; });
+        $di['db']         = $dbMock;
 
         $serviceMock->setDi($di);
         $serviceMock->renewFromOrder($clientOrderModel);
@@ -1814,7 +1818,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Box_Di();
+        $di                   = new \Box_Di();
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
@@ -1838,10 +1842,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->with($clientOrderModel);
 
 
-        $di = new \Box_Di();
+        $di                   = new \Box_Di();
         $di['events_manager'] = $eventMock;
-        $di['logger'] = new \Box_Log();
-        $di['db'] = $dbMock;
+        $di['logger']         = new \Box_Log();
+        $di['db']             = $dbMock;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
             ->setMethods(array('_callOnService', 'saveStatusChange'))
@@ -1871,7 +1875,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('prepare')
             ->will($this->returnValue($pdoStatment));
 
-        $di = new \Box_Di();
+        $di        = new \Box_Di();
         $di['pdo'] = $pdoMock;
         $this->service->setDi($di);
         $this->service->rmByClient($clientModel);
@@ -1881,12 +1885,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     public function testupdatePeriod()
     {
         $period = '1Y';
-        $di = new \Box_Di();
+        $di     = new \Box_Di();
 
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
         $periodMock->expects($this->atLeastOnce())
             ->method('getCode');
-        $di['period'] = $di->protect(function () use($periodMock){
+        $di['period'] = $di->protect(function () use ($periodMock) {
             return $periodMock;
         });
 
@@ -1899,12 +1903,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testupdatePeriod_isEmpty()
     {
-        $period = '';
-        $di = new \Box_Di();
+        $period     = '';
+        $di         = new \Box_Di();
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
         $periodMock->expects($this->never())
             ->method('getCode');
-        $di['period'] = $di->protect(function () use($periodMock){
+        $di['period'] = $di->protect(function () use ($periodMock) {
             return $periodMock;
         });
 
@@ -1917,12 +1921,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testupdatePeriod_notSet()
     {
-        $period = null;
-        $di = new \Box_Di();
+        $period     = null;
+        $di         = new \Box_Di();
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
         $periodMock->expects($this->never())
             ->method('getCode');
-        $di['period'] = $di->protect(function () use($periodMock){
+        $di['period'] = $di->protect(function () use ($periodMock) {
             return $periodMock;
         });
 
@@ -1935,7 +1939,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testupdateOrderMeta_isNotSet()
     {
-        $meta = null;
+        $meta        = null;
         $clientOrder = new \Model_ClientOrder();
         $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
         $result = $this->service->updateOrderMeta($clientOrder, $meta);
@@ -1945,7 +1949,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     public function testupdateOrderMeta_isEmpty()
     {
         $meta = array();
-        $di = new \Box_Di();
+        $di   = new \Box_Di();
 
         $dBMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dBMock->expects($this->atLeastOnce())
@@ -1964,7 +1968,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $meta = array(
             'key' => 'value',
         );
-        $di = new \Box_Di();
+        $di   = new \Box_Di();
 
         $dBMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dBMock->expects($this->atLeastOnce())

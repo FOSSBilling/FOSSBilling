@@ -4,7 +4,8 @@
 namespace Box\Mod\Invoice;
 
 
-class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
+class ServiceTransactionTest extends \PHPUnit_Framework_TestCase
+{
     /**
      * @var \Box\Mod\Invoice\ServiceTransaction
      */
@@ -25,7 +26,7 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
 
     public function testproccessReceivedATransactions()
     {
-        $di = new \Box_Di();
+        $di           = new \Box_Di();
         $di['logger'] = new \Box_Log();
 
         $transactionModel = new \Model_Transaction();
@@ -59,22 +60,25 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di                   = new \Box_Di();
+        $di['db']             = $dbMock;
         $di['events_manager'] = $eventsMock;
-        $di['logger'] = new \Box_Log();
+        $di['logger']         = new \Box_Log();
+        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
-        $data = array(
-            'invoice_id' => '',
-            'txn_id' => '',
-            'txn_status' => '',
-            'gateway_id' => '',
-            'amount' => '',
-            'currency' => '',
-            'type' => '',
-            'note' => '',
-            'status' => '',
+        $data   = array(
+            'invoice_id'   => '',
+            'txn_id'       => '',
+            'txn_status'   => '',
+            'gateway_id'   => '',
+            'amount'       => '',
+            'currency'     => '',
+            'type'         => '',
+            'note'         => '',
+            'status'       => '',
             'validate_ipn' => '',
         );
         $result = $this->service->update($transactionModel, $data);
@@ -113,20 +117,20 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $requestMock->expects($this->atLeastOnce())
             ->method('getClientAddress');
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di                   = new \Box_Di();
+        $di['db']             = $dbMock;
         $di['events_manager'] = $eventsMock;
-        $di['request'] = $requestMock;
-        $di['logger'] = new \Box_Log();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+        $di['request']        = $requestMock;
+        $di['logger']         = new \Box_Log();
+        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->service->setDi($di);
 
-        $data = array(
+        $data   = array(
             'skip_validation' => false,
-            'bb_gateway_id' => 1,
-            'bb_invoice_id' => 2,
+            'bb_gateway_id'   => 1,
+            'bb_invoice_id'   => 2,
         );
         $result = $this->service->create($data);
         $this->assertInternalType('int', $result);
@@ -139,14 +143,14 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Box_Di();
+        $di                   = new \Box_Di();
         $di['events_manager'] = $eventsMock;
 
         $this->service->setDi($di);
 
         $data = array(
             'skip_validation' => false,
-            'bb_gateway_id' => 1,
+            'bb_gateway_id'   => 1,
         );
 
         $this->setExpectedException('\Box_Exception', 'Transaction invoice id is missing');
@@ -159,14 +163,14 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di = new \Box_Di();
+        $di                   = new \Box_Di();
         $di['events_manager'] = $eventsMock;
 
         $this->service->setDi($di);
 
         $data = array(
             'skip_validation' => false,
-            'bb_invoice_id' => 2,
+            'bb_invoice_id'   => 2,
         );
 
         $this->setExpectedException('\Box_Exception', 'Payment gateway id is missing');
@@ -185,16 +189,16 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
             ->method('load')
             ->will($this->onConsecutiveCalls(null));
 
-        $di = new \Box_Di();
+        $di                   = new \Box_Di();
         $di['events_manager'] = $eventsMock;
-        $di['db'] = $dbMock;
+        $di['db']             = $dbMock;
 
         $this->service->setDi($di);
 
         $data = array(
             'skip_validation' => false,
-            'bb_invoice_id' => 2,
-            'bb_gateway_id' => 1,
+            'bb_invoice_id'   => 2,
+            'bb_gateway_id'   => 1,
         );
 
 
@@ -217,16 +221,16 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
             ->method('load')
             ->will($this->onConsecutiveCalls($invoiceModel, null));
 
-        $di = new \Box_Di();
+        $di                   = new \Box_Di();
         $di['events_manager'] = $eventsMock;
-        $di['db'] = $dbMock;
+        $di['db']             = $dbMock;
 
         $this->service->setDi($di);
 
         $data = array(
             'skip_validation' => false,
-            'bb_invoice_id' => 2,
-            'bb_gateway_id' => 1,
+            'bb_invoice_id'   => 2,
+            'bb_gateway_id'   => 1,
         );
 
 
@@ -241,9 +245,9 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Box_Di();
+        $di           = new \Box_Di();
         $di['logger'] = new \Box_Log();
-        $di['db'] = $dbMock;
+        $di['db']     = $dbMock;
         $this->service->setDi($di);
 
         $transactionModel = new \Model_Transaction();
@@ -255,18 +259,18 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
 
     public function testtoApiArray()
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')
+        $dbMock          = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->will($this->returnValue($payGatewayModel));
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
-        $expected = array(
+        $expected         = array(
             'id'           => null,
             'invoice_id'   => null,
             'txn_id'       => null,
@@ -290,7 +294,7 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
         $transactionModel->gateway_id = 1;
 
-        $result = $this->service->toApiArray($transactionModel, true );
+        $result = $this->service->toApiArray($transactionModel, true);
         $this->assertInternalType('array', $result);
         $this->assertEquals($expected, $result);
     }
@@ -336,12 +340,13 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
             ),
         );
     }
+
     /**
      * @dataProvider searchQueryData
      */
     public function testgetSearchQuery($data, $expectedParams, $expectedStringPart)
     {
-        $di = new \Box_Di();
+        $di              = new \Box_Di();
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
@@ -357,22 +362,22 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
     public function testcounter()
     {
         $queryResult = array(array('status' => \Model_Transaction::STATUS_RECEIVED, 'counter' => 1));
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock      = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->will($this->returnValue($queryResult));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
         $result = $this->service->counter();
         $this->assertInternalType('array', $result);
         $expected = array(
-            'total' => 1,
-            'received' => 1,
-            'approved' => 0,
-            'error' => 0,
+            'total'     => 1,
+            'received'  => 1,
+            'approved'  => 0,
+            'error'     => 0,
             'processed' => 0
         );
         $this->assertEquals($expected, $result);
@@ -384,10 +389,10 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $this->assertInternalType('array', $result);
 
         $expected = array(
-            'received' => 'Received',
-            'approved' => 'Approved',
+            'received'  => 'Received',
+            'approved'  => 'Approved',
             'processed' => 'Processed',
-            'error' => 'Error'
+            'error'     => 'Error'
         );
         $this->assertEquals($expected, $result);
     }
@@ -398,10 +403,10 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $this->assertInternalType('array', $result);
 
         $expected = array(
-            'received' => 'Received',
-            'approved' => 'Approved/Verified',
+            'received'  => 'Received',
+            'approved'  => 'Approved/Verified',
             'processed' => 'Processed',
-            'error' => 'Error'
+            'error'     => 'Error'
         );
         $this->assertEquals($expected, $result);
     }
@@ -412,9 +417,9 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $this->assertInternalType('array', $result);
 
         $expected = array(
-            'pending' => 'Pending validation',
+            'pending'  => 'Pending validation',
             'complete' => 'Complete',
-            'unknown' => 'Unknown',
+            'unknown'  => 'Unknown',
         );
         $this->assertEquals($expected, $result);
     }
@@ -425,11 +430,11 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $this->assertInternalType('array', $result);
 
         $expected = array(
-            'payment'                  =>  'Payment',
-            'refund'                   =>  'Refund',
-            'subscription_create'      =>  'Subscription create',
-            'subscription_cancel'      =>  'Subscription cancel',
-            'unknown'                  =>  'Unknown',
+            'payment'             => 'Payment',
+            'refund'              => 'Refund',
+            'subscription_create' => 'Subscription create',
+            'subscription_cancel' => 'Subscription cancel',
+            'unknown'             => 'Unknown',
         );
         $this->assertEquals($expected, $result);
     }
@@ -468,9 +473,9 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
             ->method('fire');
 
 
-        $di = new \Box_Di();
+        $di                   = new \Box_Di();
         $di['events_manager'] = $eventMock;
-        $di['logger'] = new \Box_Log();
+        $di['logger']         = new \Box_Log();
         $serviceMock->setDi($di);
 
         $result = $serviceMock->preProcessTransaction($transactionModel);
@@ -497,9 +502,9 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
             ->method('fire');
 
 
-        $di = new \Box_Di();
+        $di                   = new \Box_Di();
         $di['events_manager'] = $eventMock;
-        $di['logger'] = new \Box_Log();
+        $di['logger']         = new \Box_Log();
         $serviceMock->setDi($di);
 
         $result = $serviceMock->preProcessTransaction($transactionModel);
@@ -524,7 +529,7 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -551,15 +556,15 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
      */
     public function testprocessTransactionWithPayment_Adapter($adapter)
     {
-        $id = 1;
+        $id               = 1;
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
         $transactionModel->gateway_id = 2;
-        $transactionModel->ipn = '{}';
+        $transactionModel->ipn        = '{}';
 
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
-        $payGatewayModel->name = substr($adapter, strpos($adapter, '\Payment_Adapter_')+1);
+        $payGatewayModel->name = substr($adapter, strpos($adapter, '\Payment_Adapter_') + 1);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -575,10 +580,10 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
             ->method('getPaymentAdapter')
             ->will($this->returnValue($paymentAdapterMock));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function() use($payGatewayService) {return $payGatewayService;});
-        $di['api_admin'] = new \Api_Handler(new \Model_Admin());
+        $di                = new \Box_Di();
+        $di['db']          = $dbMock;
+        $di['mod_service'] = $di->protect(function () use ($payGatewayService) { return $payGatewayService; });
+        $di['api_admin']   = new \Api_Handler(new \Model_Admin());
         $this->service->setDi($di);
 
         $this->setExpectedException('\Box_Exception', sprintf("Payment adapter %s does not support action %s", $payGatewayModel->name, 'processTransaction'));
@@ -599,11 +604,11 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
      */
     public function testprocessTransaction_supportProcessTransaction($adapter)
     {
-        $id = 1;
+        $id               = 1;
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
         $transactionModel->gateway_id = 2;
-        $transactionModel->ipn = '{}';
+        $transactionModel->ipn        = '{}';
 
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -625,10 +630,10 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
             ->method('getPaymentAdapter')
             ->will($this->returnValue($paymentAdapterMock));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function() use($payGatewayService) {return $payGatewayService;});
-        $di['api_system'] = new \Api_Handler(new \Model_Admin());
+        $di                = new \Box_Di();
+        $di['db']          = $dbMock;
+        $di['mod_service'] = $di->protect(function () use ($payGatewayService) { return $payGatewayService; });
+        $di['api_system']  = new \Api_Handler(new \Model_Admin());
         $this->service->setDi($di);
 
         $this->service->processTransaction($id);
@@ -643,9 +648,9 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
             ->method('getSearchQuery')
             ->will($this->returnValue(array('SqlString', array())));
 
-        $assoc = array(
+        $assoc  = array(
             array(
-                'id' => 1,
+                'id'         => 1,
                 'invoice_id' => 1,
             ),
         );
@@ -660,7 +665,7 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
             ->method('convertToModels')
             ->will($this->returnValue(array($transactionModel)));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -671,7 +676,7 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
 
     public function testdebitTransaction()
     {
-        $currency = 'EUR';
+        $currency     = 'EUR';
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
         $invoiceModel->currency = $currency;
@@ -697,7 +702,7 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 

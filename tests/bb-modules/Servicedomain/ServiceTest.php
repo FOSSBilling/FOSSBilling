@@ -404,7 +404,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $orderServiceMock->expects($this->atLeastOnce())->method('getConfig')
             ->will($this->returnValue($data));
 
-        $nameservers        = array(
+        $nameservers       = array(
             'nameserver_1' => 'ns1.example.com',
             'nameserver_2' => 'ns2.example.com',
             'nameserver_3' => 'ns3.example.com',
@@ -457,7 +457,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             }
         });
         $di['db']          = $dbMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $serviceMock->setDi($di);
@@ -602,7 +602,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         });
         $this->service->setDi($di);
 
-        $order            = new \Model_ClientOrder();
+        $order = new \Model_ClientOrder();
         $order->loadBean(new \RedBeanPHP\OODBBean());
         $order->client_id = rand(1, 100);
         $this->service->action_activate($order);
@@ -917,7 +917,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $serviceMock->setDi($di);
 
 
-        $data = array(
+        $data               = array(
             'contact' => array(
                 'first_name' => 'first_name',
                 'last_name'  => 'last_name',
@@ -1291,7 +1291,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testCanBeTransferedNotAllowedException()
     {
-        $tldModel                 = new \Model_Tld();
+        $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \RedBeanPHP\OODBBean());
         $tldModel->allow_transfer = false;
 
@@ -1400,6 +1400,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     {
         $model = new \Model_Admin();
         $model->loadBean(new \RedBeanPHP\OODBBean());
+
         return array(
             array(
                 $model,
@@ -1530,13 +1531,13 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testOnBeforeAdminCronRun()
     {
-        $di = new \Box_Di();
+        $di          = new \Box_Di();
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('batchSyncExpirationDates')
             ->willReturn(true);
-        $di['mod_service'] = $di->protect(function ($serviceName) use($serviceMock){
-                return $serviceMock;
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($serviceMock) {
+            return $serviceMock;
         });
 
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -1663,7 +1664,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testTldGetSearchQuery($data, $expectedQuery, $expectedBindings)
     {
-        $di = new \Box_Di();
+        $di              = new \Box_Di();
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
@@ -1777,7 +1778,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
-        $model     = new \Model_Tld();
+        $model = new \Model_Tld();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $model->id = rand(1, 100);
 
@@ -2168,9 +2169,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue($randId));
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $model = new \Model_Tld();
@@ -2208,7 +2212,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testRegistrarCopy()
     {
-        $newId = rand(1, 100);
+        $newId  = rand(1, 100);
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
@@ -2245,9 +2249,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $data = array(
@@ -2274,9 +2281,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $data = array(

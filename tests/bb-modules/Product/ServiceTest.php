@@ -4,7 +4,8 @@
 namespace Box\Mod\Product;
 
 
-class ServiceTest extends \PHPUnit_Framework_TestCase {
+class ServiceTest extends \PHPUnit_Framework_TestCase
+{
     /**
      * @var \Box\Mod\Product\Service
      */
@@ -12,7 +13,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
     public function setup()
     {
-        $this->service= new \Box\Mod\Product\Service();
+        $this->service = new \Box\Mod\Product\Service();
     }
 
 
@@ -28,14 +29,14 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     public function testgetPairs()
     {
         $data = array(
-            'type' => 'domain',
+            'type'          => 'domain',
             'products_only' => true,
-            'active_only' => true
+            'active_only'   => true
         );
 
         $execArray = array(
             array(
-                'id' => 1,
+                'id'    => 1,
                 'title' => 'title4test',
             ),
         );
@@ -50,7 +51,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('getAll')
             ->will($this->returnValue($execArray));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -64,10 +65,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
             ->setMethods(array(
-                'getAddonsApiArray',
-                'getStartingFromPrice',
-                'getUpgradablePairs',
-                'toProductPaymentApiArray',))
+                             'getAddonsApiArray',
+                             'getStartingFromPrice',
+                             'getUpgradablePairs',
+                             'toProductPaymentApiArray',))
             ->getMock();
 
         $serviceMock->expects($this->any())
@@ -77,9 +78,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getUpgradablePairs');
         $productPaymentArray = array(
-            'type' =>   'free',
-            \Model_ProductPayment::FREE      => array('price'=>0, 'setup'=>0),
-            \Model_ProductPayment::ONCE      => array('price'=>1, 'setup'=>10),
+            'type'                           => 'free',
+            \Model_ProductPayment::FREE      => array('price' => 0, 'setup' => 0),
+            \Model_ProductPayment::ONCE      => array('price' => 1, 'setup' => 10),
             \Model_ProductPayment::RECURRENT => array(),
         );
         $serviceMock->expects($this->atLeastOnce())
@@ -89,8 +90,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $model = new \Model_Product();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $model->product_category_id = 1;
-        $model->product_payment_id = 2;
-        $model->config = '{}';
+        $model->product_payment_id  = 2;
+        $model->config              = '{}';
 
         $modelProductCategory = new \Model_ProductCategory();
         $modelProductCategory->loadBean(new \RedBeanPHP\OODBBean());
@@ -108,10 +109,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('decodeJ')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $di['tools'] = $toolsMock;
-        $di['mod_service'] = $di->protect(function () use($serviceMock){ return $serviceMock;});
+        $di                = new \Box_Di();
+        $di['db']          = $dbMock;
+        $di['tools']       = $toolsMock;
+        $di['mod_service'] = $di->protect(function () use ($serviceMock) { return $serviceMock; });
 
         $model->setDi($di);
         $serviceMock->setDi($di);
@@ -127,11 +128,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         );
 
         $expectedArray = array(
-            'custom'              => 'Custom',
-            'license'             => 'License',
-            'downloadable'        => 'Downloadable',
-            'hosting'             => 'Hosting',
-            'domain'              => 'Domain',
+            'custom'       => 'Custom',
+            'license'      => 'License',
+            'downloadable' => 'Downloadable',
+            'hosting'      => 'Hosting',
+            'domain'       => 'Domain',
         );
 
         $expectedArray['customtest'] = 'Customtest';
@@ -143,8 +144,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->will($this->returnValue($modArray));
 
 
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function() use ($extensionServiceMock) {return $extensionServiceMock;});
+        $di                = new \Box_Di();
+        $di['mod_service'] = $di->protect(function () use ($extensionServiceMock) { return $extensionServiceMock; });
 
         $this->service->setDi($di);
         $result = $this->service->getTypes();
@@ -161,7 +162,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -173,9 +174,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     public function testgetPaymentTypes()
     {
         $expected = array(
-            'free' =>  'Free',
-            'once' =>  'One time',
-            'recurrent' =>  'Recurrent',
+            'free'      => 'Free',
+            'once'      => 'One time',
+            'recurrent' => 'Recurrent',
         );
 
         $result = $this->service->getPaymentTypes();
@@ -214,11 +215,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $toolMock->expects($this->atLeastOnce())
             ->method('slug');
 
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function() use ($systemServiceMock) {return $systemServiceMock;});
-        $di['db'] = $dbMock;
-        $di['tools'] = $toolMock;
-        $di['logger'] = new \Box_Log();
+        $di                = new \Box_Di();
+        $di['mod_service'] = $di->protect(function () use ($systemServiceMock) { return $systemServiceMock; });
+        $di['db']          = $dbMock;
+        $di['tools']       = $toolMock;
+        $di['logger']      = new \Box_Log();
 
         $this->service->setDi($di);
         $result = $this->service->createProduct('title', 'domain');
@@ -234,18 +235,16 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->getMock();
 
         $typesArr = array(
-            'free' =>  'Free',
-            'once' =>  'One time',
-            'recurrent' =>  'Recurrent',
+            'free'      => 'Free',
+            'once'      => 'One time',
+            'recurrent' => 'Recurrent',
         );
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPaymentTypes')
             ->will($this->returnValue($typesArr));
 
         $data = array(
-            'pricing' => array(
-
-            ),
+            'pricing' => array(),
         );
 
         $modelProduct = new \Model_Product();
@@ -265,43 +264,43 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->getMock();
 
         $typesArr = array(
-            'free' =>  'Free',
-            'once' =>  'One time',
-            'recurrent' =>  'Recurrent',
+            'free'      => 'Free',
+            'once'      => 'One time',
+            'recurrent' => 'Recurrent',
         );
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPaymentTypes')
             ->will($this->returnValue($typesArr));
 
         $data = array(
-            'pricing' => array(
-                'type' => \Model_ProductPayment::RECURRENT,
+            'pricing'               => array(
+                'type'                           => \Model_ProductPayment::RECURRENT,
                 \Model_ProductPayment::RECURRENT => array(
                     array(
                         '1W' => array(
-                            'setup' => '',
-                            'price' => '',
+                            'setup'   => '',
+                            'price'   => '',
                             'enabled' => true,
                         )
                     )
                 )
             ),
-            'config' => array(),
-            'product_category_id' => 1,
-            'form_id' => 10,
-            'icon_url' => 'http://www.google.com',
-            'status' => false,
-            'hidden' => 0,
-            'slug' => 'product/0',
-            'setup' => 'test',
-            'upgrades' => array(),
-            'addons' => array(),
-            'title' => 'new Title',
-            'stock_control' => false,
+            'config'                => array(),
+            'product_category_id'   => 1,
+            'form_id'               => 10,
+            'icon_url'              => 'http://www.google.com',
+            'status'                => false,
+            'hidden'                => 0,
+            'slug'                  => 'product/0',
+            'setup'                 => 'test',
+            'upgrades'              => array(),
+            'addons'                => array(),
+            'title'                 => 'new Title',
+            'stock_control'         => false,
             'allow_quantity_select' => false,
-            'quantity_in_stock' => 0,
-            'description' => 'Product description',
-            'plugin' => 'plug in',
+            'quantity_in_stock'     => 0,
+            'description'           => 'Product description',
+            'plugin'                => 'plug in',
         );
 
         $modelProductPayment = new \Model_ProductPayment();
@@ -321,10 +320,13 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('decodeJ')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $di['tools'] = $toolMock;
-        $di['logger'] = new \Box_Log();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['tools']     = $toolMock;
+        $di['logger']    = new \Box_Log();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $serviceMock->setDi($di);
 
@@ -353,8 +355,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('store');
 
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di           = new \Box_Di();
+        $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -371,11 +373,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
 
         $data = array(
-            'config' => array(
+            'config'           => array(
                 'settings' => 3,
-                'max' => '',
+                'max'      => '',
             ),
-            'new_config_name' => 'newParam',
+            'new_config_name'  => 'newParam',
             'new_config_value' => 'newValue',
         );
 
@@ -385,8 +387,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('store');
 
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di           = new \Box_Di();
+        $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -399,7 +401,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     {
         $addonsRows = array(
             array(
-                'id' => 1,
+                'id'    => 1,
                 'title' => 'testTitle',
             ),
         );
@@ -414,8 +416,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->will($this->returnValue($addonsRows));
 
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di           = new \Box_Di();
+        $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -438,7 +440,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
-            ->will($this->returnValue($newProductId ));
+            ->will($this->returnValue($newProductId));
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->will($this->onConsecutiveCalls($modelPayment, $modelProduct));
@@ -447,10 +449,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $toolMock->expects($this->atLeastOnce())
             ->method('slug');
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di           = new \Box_Di();
+        $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['tools'] = $toolMock;
+        $di['tools']  = $toolMock;
 
         $this->service->setDi($di);
 
@@ -468,8 +470,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('productHasOrders')
             ->will($this->returnValue(true));
 
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
+        $di                = new \Box_Di();
+        $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
 
         $this->service->setDi($di);
 
@@ -480,9 +482,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     public function testgetProductCategoryPairs()
     {
         $execArray = array(
-        array(
-            'id' => 1,
-            'title' => 'title4test',
+            array(
+                'id'    => 1,
+                'title' => 'title4test',
             ),
         );
 
@@ -493,14 +495,14 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue($execArray ));
+            ->will($this->returnValue($execArray));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
         $result = $this->service->getProductCategoryPairs();
-        $this->assertInternalType('array',$result);
+        $this->assertInternalType('array', $result);
         $this->assertEquals($expectArray, $result);
     }
 
@@ -514,8 +516,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('store')
             ->will($this->returnValue(1));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di           = new \Box_Di();
+        $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -546,10 +548,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('store')
             ->will($this->returnValue($newCategoryId));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function() use ($systemServiceMock) {return $systemServiceMock;});
-        $di['logger'] = new \Box_Log();
+        $di                = new \Box_Di();
+        $di['db']          = $dbMock;
+        $di['mod_service'] = $di->protect(function () use ($systemServiceMock) { return $systemServiceMock; });
+        $di['logger']      = new \Box_Log();
 
         $this->service->setDi($di);
 
@@ -572,7 +574,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('findOne')
             ->will($this->returnValue($modelProduct));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -597,8 +599,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di           = new \Box_Di();
+        $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -612,7 +614,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     {
         $data = array(
             'search' => 'keyword',
-            'id' => 1,
+            'id'     => 1,
             'status' => 'active',
         );
 
@@ -641,11 +643,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('store')
             ->will($this->returnValue($newPromoId));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function() use ($systemServiceMock) {return $systemServiceMock;});
-        $di['logger'] = new \Box_Log();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+        $di                = new \Box_Di();
+        $di['db']          = $dbMock;
+        $di['mod_service'] = $di->protect(function () use ($systemServiceMock) { return $systemServiceMock; });
+        $di['logger']      = new \Box_Log();
+        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 
@@ -659,16 +661,16 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     {
         $model = new \Model_Promo();
         $model->loadBean(new \RedBeanPHP\OODBBean());
-        $model->products ='{}';
-        $model->periods ='{}';
+        $model->products = '{}';
+        $model->periods  = '{}';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
             ->will($this->returnValue(array()));
-        
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+
+        $di          = new \Box_Di();
+        $di['db']    = $dbMock;
         $di['tools'] = $this->getMockBuilder('\Box_Tools')->getMock();;
 
         $this->service->setDi($di);
@@ -683,28 +685,28 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $data = array(
-            'code' => 'GO',
-            'type' => 'absolute',
-            'value' => 10,
-            'active' => true,
-            'freesetup' => true,
+            'code'            => 'GO',
+            'type'            => 'absolute',
+            'value'           => 10,
+            'active'          => true,
+            'freesetup'       => true,
             'once_per_client' => true,
-            'recurring' => false,
-            'maxuses' => '1',
-            'used' => '0',
-            'start_at' => '2012-01-01',
-            'end_at' => '2012-01-02',
-            'products' => 'domain',
-            'periods' => array(),
+            'recurring'       => false,
+            'maxuses'         => '1',
+            'used'            => '0',
+            'start_at'        => '2012-01-01',
+            'end_at'          => '2012-01-02',
+            'products'        => 'domain',
+            'periods'         => array(),
         );
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $di['logger'] = new \Box_Log();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['logger']    = new \Box_Log();
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
@@ -726,8 +728,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di           = new \Box_Di();
+        $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -739,9 +741,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     public function testgetProductSearchQuery()
     {
         $data = array(
-            'search' => 'keyword',
-            'type' => 'domain',
-            'status' => 'active',
+            'search'      => 'keyword',
+            'type'        => 'domain',
+            'status'      => 'active',
             'show_hidden' => true,
         );
 
@@ -758,7 +760,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
-        $modelProduct->type = 'custom';
+        $modelProduct->type  = 'custom';
         $categoryProductsArr = array(
             $modelProduct
         );
@@ -783,7 +785,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('toArray')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
@@ -800,7 +802,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -818,7 +820,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -851,7 +853,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('load')
             ->will($this->returnValue($productPaymentModel));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -890,11 +892,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $queryArr = array(
             array(
-                'id' => '1',
+                'id'     => '1',
                 'titile' => 'test',
             ),
             array(
-                'id' => '2',
+                'id'     => '2',
                 'titile' => 'Another',
             ),
         );
@@ -909,7 +911,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('getAll')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -923,15 +925,15 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $productCategoryModel = new \Model_ProductCategory();
         $productCategoryModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $productModel  = new \Model_Product();
-        $productModel ->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->will($this->returnValue(array($productModel)));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -956,20 +958,20 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $minPrice = 1;
 
-        $productPaymentModel->w_enabled = true;
-        $productPaymentModel->w_price = 2;
-        $productPaymentModel->m_enabled = true;
-        $productPaymentModel->m_price = 4;
-        $productPaymentModel->q_enabled = true;
-        $productPaymentModel->q_price = 8;
-        $productPaymentModel->b_enabled = true;
-        $productPaymentModel->b_price = $minPrice;
-        $productPaymentModel->a_enabled = true;
-        $productPaymentModel->a_price = 10;
-        $productPaymentModel->bia_enabled = true;
-        $productPaymentModel->bia_price = 12;
+        $productPaymentModel->w_enabled    = true;
+        $productPaymentModel->w_price      = 2;
+        $productPaymentModel->m_enabled    = true;
+        $productPaymentModel->m_price      = 4;
+        $productPaymentModel->q_enabled    = true;
+        $productPaymentModel->q_price      = 8;
+        $productPaymentModel->b_enabled    = true;
+        $productPaymentModel->b_price      = $minPrice;
+        $productPaymentModel->a_enabled    = true;
+        $productPaymentModel->a_price      = 10;
+        $productPaymentModel->bia_enabled  = true;
+        $productPaymentModel->bia_price    = 12;
         $productPaymentModel->tria_enabled = true;
-        $productPaymentModel->tria_price = 14;
+        $productPaymentModel->tria_price   = 14;
 
         $result = $this->service->getStartingPrice($productPaymentModel);
         $this->assertInternalType('int', $result);
@@ -979,10 +981,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     public function testgetSavePath()
     {
         $filename = 'cfg.file';
-        $config = array('path_data' => '/home');
-        $expected = $config['path_data'].'/uploads/'.md5($filename);
+        $config   = array('path_data' => '/home');
+        $expected = $config['path_data'] . '/uploads/' . md5($filename);
 
-        $di = new \Box_Di();
+        $di           = new \Box_Di();
         $di['config'] = $config;
 
         $this->service->setDi($di);
@@ -1003,8 +1005,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $toolMock->expects($this->atLeastOnce())
             ->method('unlink');
 
-        $di = new \Box_Di();
-        $di['tools'] = $toolMock;
+        $di           = new \Box_Di();
+        $di['tools']  = $toolMock;
         $di['config'] = array('path_data' => '/home');
 
         $this->service->setDi($di);
@@ -1022,8 +1024,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('fileExists')
             ->will($this->returnValue(false));
 
-        $di = new \Box_Di();
-        $di['tools'] = $toolMock;
+        $di           = new \Box_Di();
+        $di['tools']  = $toolMock;
         $di['config'] = array('path_data' => '/home');
 
         $this->service->setDi($di);

@@ -25,12 +25,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testOnAfterClientOpenTicket()
     {
-        $toApiArrayReturn = array(
+        $toApiArrayReturn   = array(
             'client' => array(
                 'id' => rand(1, 100)
             )
         );
-        $serviceMock      = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock        = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getTicketById', 'toApiArray'))->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -44,12 +44,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                = new \Box_Di();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName){
+        $di                    = new \Box_Di();
+        $di['mod_service']     = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ('email' == $serviceName) {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName){
+            if ('support' == $serviceName) {
                 return $serviceMock;
             }
         });
@@ -68,12 +68,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testOnAfterAdminOpenTicket()
     {
-        $toApiArrayReturn = array(
+        $toApiArrayReturn   = array(
             'client' => array(
                 'id' => rand(1, 100)
             )
         );
-        $serviceMock      = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock        = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getTicketById', 'toApiArray'))->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -87,12 +87,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                = new \Box_Di();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName){
+        $di                   = new \Box_Di();
+        $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ('email' == $serviceName) {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName){
+            if ('support' == $serviceName) {
                 return $serviceMock;
             }
         });
@@ -111,12 +111,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testOnAfterAdminCloseTicket()
     {
-        $toApiArrayReturn = array(
+        $toApiArrayReturn   = array(
             'client' => array(
                 'id' => rand(1, 100)
             )
         );
-        $serviceMock      = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock        = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getTicketById', 'toApiArray'))->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -130,12 +130,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                = new \Box_Di();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName){
+        $di                   = new \Box_Di();
+        $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ('email' == $serviceName) {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName){
+            if ('support' == $serviceName) {
                 return $serviceMock;
             }
         });
@@ -154,12 +154,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testOnAfterAdminReplyTicket()
     {
-        $toApiArrayReturn = array(
+        $toApiArrayReturn   = array(
             'client' => array(
                 'id' => rand(1, 100)
             )
         );
-        $serviceMock      = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock        = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getTicketById', 'toApiArray'))->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -173,12 +173,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                = new \Box_Di();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName){
+        $di                   = new \Box_Di();
+        $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ('email' == $serviceName) {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName){
+            if ('support' == $serviceName) {
                 return $serviceMock;
             }
         });
@@ -197,11 +197,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testOnAfterGuestPublicTicketOpen()
     {
-        $toApiArrayReturn = array(
+        $toApiArrayReturn    = array(
             'author_email' => 'email@example.com',
             'author_name'  => 'Name',
         );
-        $serviceMock      = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock         = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
         $supportPTicketModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -217,10 +217,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $di                = new \Box_Di();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName){
+            if ('email' == $serviceName) {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName){
+            if ('support' == $serviceName) {
                 return $serviceMock;
             }
         });
@@ -238,11 +238,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testOnAfterAdminPublicTicketOpen()
     {
-        $toApiArrayReturn = array(
+        $toApiArrayReturn    = array(
             'author_email' => 'email@example.com',
             'author_name'  => 'Name',
         );
-        $serviceMock      = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock         = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
         $supportPTicketModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -256,12 +256,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                = new \Box_Di();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName){
+        $di                   = new \Box_Di();
+        $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ('email' == $serviceName) {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName){
+            if ('support' == $serviceName) {
                 return $serviceMock;
             }
         });
@@ -280,11 +280,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testOnAfterAdminPublicTicketReply()
     {
-        $toApiArrayReturn = array(
+        $toApiArrayReturn    = array(
             'author_email' => 'email@example.com',
             'author_name'  => 'Name',
         );
-        $serviceMock      = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock         = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
         $supportPTicketModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -298,12 +298,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                = new \Box_Di();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName){
+        $di                   = new \Box_Di();
+        $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ('email' == $serviceName) {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName){
+            if ('support' == $serviceName) {
                 return $serviceMock;
             }
         });
@@ -323,11 +323,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testOnAfterAdminPublicTicketClose()
     {
-        $toApiArrayReturn = array(
+        $toApiArrayReturn    = array(
             'author_email' => 'email@example.com',
             'author_name'  => 'Name',
         );
-        $serviceMock      = $this->getMockBuilder('\Box\Mod\Support\Service')
+        $serviceMock         = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
         $supportPTicketModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -341,12 +341,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $emailServiceMock->expects($this->atLeastOnce())->method('sendTemplate')
             ->will($this->returnValue(true));
 
-        $di                = new \Box_Di();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-            if ('email' == $serviceName){
+        $di                   = new \Box_Di();
+        $di['mod_service']    = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+            if ('email' == $serviceName) {
                 return $emailServiceMock;
             }
-            if ('support' == $serviceName){
+            if ('support' == $serviceName) {
                 return $serviceMock;
             }
         });
@@ -380,7 +380,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testGetPublicTicketById()
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock             = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
         $dbMock->expects($this->atLeastOnce())
@@ -403,7 +403,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testFindOneByClient()
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock             = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
         $dbMock->expects($this->atLeastOnce())
@@ -488,7 +488,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetSearchQuery($data)
     {
-        $di = new \Box_Di();
+        $di              = new \Box_Di();
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
@@ -591,7 +591,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testCheckIfTaskAlreadyExistsTrue()
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock             = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $supportTicketModel = new \Model_SupportTicket();
         $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
         $dbMock->expects($this->atLeastOnce())
@@ -877,7 +877,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \RedBeanPHP\OODBBean());
-        $ticket->rel_id = rand(1, 100);
+        $ticket->rel_id   = rand(1, 100);
         $ticket->rel_type = 'Type';
 
         $result = $serviceMock->toApiArray($ticket, true, new \Model_Admin());
@@ -901,10 +901,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $clientServiceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service']    = $di->protect(function () use ($clientServiceMock) {
+        $di                = new \Box_Di();
+        $di['db']          = $dbMock;
+        $di['logger']      = $this->getMockBuilder('Box_Log')->getMock();
+        $di['mod_service'] = $di->protect(function () use ($clientServiceMock) {
             return $clientServiceMock;
         });
         $this->service->setDi($di);
@@ -929,10 +929,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $clientServiceMock->expects($this->never())->method('toApiArray')
             ->will($this->returnValue(array()));
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service']    = $di->protect(function () use ($clientServiceMock) {
+        $di                = new \Box_Di();
+        $di['db']          = $dbMock;
+        $di['logger']      = $this->getMockBuilder('Box_Log')->getMock();
+        $di['mod_service'] = $di->protect(function () use ($clientServiceMock) {
             return $clientServiceMock;
         });
         $this->service->setDi($di);
@@ -1013,7 +1013,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testHelpdeskGetSearchQuery()
     {
-        $di = new \Box_Di();
+        $di              = new \Box_Di();
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
@@ -1244,9 +1244,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
@@ -1416,7 +1419,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['validator']      = $validatorMock;
         $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
         $di['events_manager'] = $eventMock;
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $this->service->setDi($di);
@@ -1491,7 +1494,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['mod_service']    = $di->protect(function () use ($staffServiceMock) {
             return $staffServiceMock;
         });
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $serviceMock->setDi($di);
@@ -1554,7 +1557,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $client->loadBean(new \RedBeanPHP\OODBBean());
         $client->id = rand(1, 100);
 
-        $di = new \Box_Di();
+        $di              = new \Box_Di();
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
@@ -1572,6 +1575,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $client = new \Model_Client();
         $client->loadBean(new \RedBeanPHP\OODBBean());
         $client->id = rand(1, 100);
+
         return array(
             array(
                 $admin
@@ -1587,7 +1591,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testMessageCreateForTicket($identity)
     {
-        $randId = rand(1, 100);
+        $randId               = rand(1, 100);
         $supportTicketMessage = new \Model_SupportTicketMessage();
         $supportTicketMessage->loadBean(new \RedBeanPHP\OODBBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -1617,7 +1621,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testMessageCreateForTicketIdentityException()
     {
-        $randId = rand(1, 100);
+        $randId               = rand(1, 100);
         $supportTicketMessage = new \Model_SupportTicketMessage();
         $supportTicketMessage->loadBean(new \RedBeanPHP\OODBBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -1724,7 +1728,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testPublicGetSearchQuery($data)
     {
-        $di = new \Box_Di();
+        $di              = new \Box_Di();
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
@@ -2067,9 +2071,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportPTicket();
@@ -2165,9 +2172,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
@@ -2187,7 +2197,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testHelpdeskCreate()
     {
-        $randId = rand(1, 100);
+        $randId        = rand(1, 100);
         $helpDeskModel = new \Model_SupportHelpdesk();
         $helpDeskModel->loadBean(new \RedBeanPHP\OODBBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -2198,9 +2208,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue($randId));
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
@@ -2224,7 +2234,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testCannedGetSearchQuery()
     {
-        $di = new \Box_Di();
+        $di              = new \Box_Di();
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
@@ -2407,7 +2417,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testCannedCreate()
     {
-        $randId = rand(1, 100);
+        $randId        = rand(1, 100);
         $helpDeskModel = new \Model_SupportHelpdesk();
         $helpDeskModel->loadBean(new \RedBeanPHP\OODBBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -2454,9 +2464,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $model = new \Model_SupportPr();
@@ -2474,7 +2487,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testCannedCategoryCreate()
     {
-        $randId = rand(1, 100);
+        $randId                 = rand(1, 100);
         $supportPrCategoryModel = new \Model_SupportPrCategory();
         $supportPrCategoryModel->loadBean(new \RedBeanPHP\OODBBean());
 
@@ -2526,7 +2539,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testNoteCreate()
     {
-        $randId = rand(1, 100);
+        $randId                 = rand(1, 100);
         $supportPrCategoryModel = new \Model_SupportPrCategory();
         $supportPrCategoryModel->loadBean(new \RedBeanPHP\OODBBean());
 
