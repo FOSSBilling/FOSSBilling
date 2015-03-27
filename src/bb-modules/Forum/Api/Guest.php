@@ -175,9 +175,10 @@ class Guest extends \Api_Abstract
      */
     public function search($data)
     {
-        if (!isset($data['q']) || empty($data['q'])) {
-            throw new \Box_Exception('Enter some keywords for search');
-        }
+        $required = array(
+            'q' => 'Enter some keywords for search',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if (strlen($data['q']) < 3) {
             throw new \Box_Exception('Search keyword must be longer than 3 characters');

@@ -55,9 +55,10 @@ class Admin extends \Api_Abstract
      */
     public function get($data)
     {
-        if(!isset($data['code']) || empty($data['code'])) {
-            throw new \Box_Exception('Currency code is missing');
-        }
+        $required = array(
+            'code' => 'Currency code is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $service = $this->getService();
         $model = $service->getByCode($data['code']);
@@ -131,9 +132,10 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
-        if (!isset($data['code']) || empty($data['code'])) {
-            throw new \Box_Exception('Currency code is missing');
-        }
+        $required = array(
+            'code' => 'Currency code is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $format         = isset($data['format']) ? $data['format'] : null;
         $title          = isset($data['title']) ? $data['title'] : null;
@@ -163,9 +165,10 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
-        if (!isset($data['code']) || empty($data['code'])) {
-            throw new \Box_Exception('Currency code is missing');
-        }
+        $required = array(
+            'code' => 'Currency code is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         return $this->getService()->deleteCurrencyByCode($data['code']);
     }
@@ -181,9 +184,10 @@ class Admin extends \Api_Abstract
      */
     public function set_default($data)
     {
-        if (!isset($data['code']) || empty($data['code'])) {
-            throw new \Box_Exception('Currency code is missing');
-        }
+        $required = array(
+            'code' => 'Currency code is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $service = $this->getService();
         $model   = $service->getByCode($data['code']);

@@ -142,13 +142,11 @@ class Admin extends \Api_Abstract
      */
     public function create($data)
     {
-        if(!isset($data['email']) || empty($data['email'])) {
-            throw new \Box_Exception('Email required');
-        }
-
-        if(!isset($data['first_name'])) {
-            throw new \Box_Exception('First name is required');
-        }
+        $required = array(
+            'email'      => 'Email required',
+            'first_name' => 'First name is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $validator = $this->di['validator'];
         $validator->isEmailValid($data['email']);
@@ -539,9 +537,10 @@ class Admin extends \Api_Abstract
      */
     public function group_create($data)
     {
-        if(!isset($data['title']) || empty($data['title'])) {
-            throw new \Box_Exception('Group title is missing');
-        }
+        $required = array(
+            'title' => 'Group title is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         return $this->getService()->createGroup($data);
     }

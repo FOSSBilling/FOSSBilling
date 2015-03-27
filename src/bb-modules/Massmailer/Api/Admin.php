@@ -296,9 +296,10 @@ Order our services at {{ "order"|link }}
         $mod = $this->di['mod']('massmailer');
         $c = $mod->getConfig();
 
-        if(!isset($c['test_client_id']) || empty($c['test_client_id'])) {
-            throw new \Box_Exception('Client ID needs to be configured in mass mailer settings.');
-        }
+        $required = array(
+            'test_client_id' => 'Client ID needs to be configured in mass mailer settings.',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $c);
 
         return (int)$c['test_client_id'];
     }
