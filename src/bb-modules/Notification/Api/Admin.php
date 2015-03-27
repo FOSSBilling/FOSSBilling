@@ -44,9 +44,10 @@ class Admin extends \Api_Abstract
      */
     public function get($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Notification id is missing');
-        }
+        $required = array(
+            'id' => 'Notification ID is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $meta = $this->di['db']->load('extension_meta', $data['id']);
         if ($meta->extension != 'mod_notification' || $meta->meta_key != 'message') {
@@ -82,9 +83,10 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Notification id is missing');
-        }
+        $required = array(
+            'id' => 'Notification ID is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $meta = $this->di['db']->load('extension_meta', $data['id']);
         if ($meta->extension != 'mod_notification' || $meta->meta_key != 'message') {

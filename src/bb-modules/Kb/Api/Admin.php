@@ -48,9 +48,10 @@ class Admin extends \Api_Abstract
      */
     public function article_get($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Article id not passed');
-        }
+        $required = array(
+            'id' => 'Article id not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->findOne('KbArticle', 'id = ?', array($data['id']));
 
@@ -74,13 +75,12 @@ class Admin extends \Api_Abstract
      */
     public function article_create($data)
     {
-        if (!isset($data['kb_article_category_id'])) {
-            throw new \Box_Exception('Article category id not passed');
-        }
+        $required = array(
+            'kb_article_category_id' => 'Article category id not passed',
+            'title'                  => 'Article title not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        if (!isset($data['title'])) {
-            throw new \Box_Exception('Article title not passed');
-        }
         $articleCategoryId = $data['kb_article_category_id'];
         $title             = $data['title'];
         $status            = isset($data['status']) ? $data['status'] : \Model_KbArticle::DRAFT;
@@ -105,9 +105,10 @@ class Admin extends \Api_Abstract
      */
     public function article_update($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Article id not passed');
-        }
+        $required = array(
+            'id' => 'Article ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $articleCategoryId = $this->di['array_get']($data, 'kb_article_category_id', null);
         $title             = $this->di['array_get']($data, 'title', null);
@@ -129,9 +130,10 @@ class Admin extends \Api_Abstract
      */
     public function article_delete($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Article id is missing');
-        }
+        $required = array(
+            'id' => 'Article ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->findOne('KbArticle', 'id = ?', array($data['id']));
 
@@ -172,9 +174,10 @@ class Admin extends \Api_Abstract
      */
     public function category_get($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Category id not passed');
-        }
+        $required = array(
+            'id' => 'Category ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->findOne('KbArticleCategory', 'id = ?', array($data['id']));
 
@@ -196,9 +199,10 @@ class Admin extends \Api_Abstract
      */
     public function category_create($data)
     {
-        if (!isset($data['title'])) {
-            throw new \Box_Exception('Category title not passed');
-        }
+        $required = array(
+            'title' => 'Category title not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $title       = $data['title'];
         $description = $this->di['array_get']($data, 'description', NULL);
@@ -219,9 +223,10 @@ class Admin extends \Api_Abstract
      */
     public function category_update($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Category id not passed');
-        }
+        $required = array(
+            'id' => 'Category ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->findOne('KbArticleCategory', 'id = ?', array($data['id']));
 
@@ -245,9 +250,10 @@ class Admin extends \Api_Abstract
      */
     public function category_delete($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Category id is missing');
-        }
+        $required = array(
+            'id' => 'Category ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->findOne('KbArticleCategory', 'id = ?', array($data['id']));
 

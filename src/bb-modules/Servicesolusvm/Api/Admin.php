@@ -411,13 +411,12 @@ class Admin extends \Api_Abstract
         }
         $product = $this->di['db']->load('product', $product_id);
         $pconfig = json_decode($product->config, 1);
-        if(!isset($pconfig['node'])) {
-            throw new \Box_Exception('Product is not configured completely. Please provide solusvm node in product configuration page.');
-        }
-        
-        if(!isset($pconfig['plan'])) {
-            throw new \Box_Exception('Product is not configured completely. Please provide solusvm plan in product configuration page.');
-        }
+
+        $required = array(
+            'node'    => 'Product is not configured completely. Please provide solusvm node in product configuration page',
+            'plan'    => 'Product is not configured completely. Please provide solusvm plan in product configuration page',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $log = '';
         $servers = $this->node_virtualservers($data);

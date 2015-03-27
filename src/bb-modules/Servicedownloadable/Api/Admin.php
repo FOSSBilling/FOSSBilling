@@ -27,9 +27,10 @@ class Admin extends \Api_Abstract
      */
     public function upload($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Product id not passed');
-        }
+        $required = array(
+            'id' => 'Product ID is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('Product', $data['id']);
         if(!$model instanceof \Model_Product) {
@@ -58,9 +59,11 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
-        if(!isset($data['order_id'])) {
-            throw new \Box_Exception('Order id is required');
-        }
+        $required = array(
+            'order_id' => 'Order ID is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $order = $this->di['db']->load('ClientOrder', $data['order_id']);
         if(!$order instanceof \Model_ClientOrder ) {
             throw new \Box_Exception('Order not found');

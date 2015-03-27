@@ -36,9 +36,11 @@ class Admin extends \Api_Abstract
      */
     public function param($data)
     {
-        if(!isset ($data['key'])) {
-            throw new \Box_Exception('Parameter key is missing');
-        }
+        $required = array(
+            'key'    => 'Parameter key is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         return $this->getService()->getParamValue($data['key']);
     }
 
@@ -141,9 +143,10 @@ class Admin extends \Api_Abstract
      */
     public function is_allowed($data)
     {
-        if(!isset($data['mod'])) {
-            throw new \Box_Exception('mod parameter not passed');
-        }
+        $required = array(
+            'mod'    => 'mod key is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $f = $this->di['array_get']($data, 'f', null);
         $service = $this->di['mod_service']('Staff');

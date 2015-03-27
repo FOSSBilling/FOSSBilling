@@ -31,9 +31,11 @@ class Admin extends \Api_Abstract
      */
     public function create_form($data)
     {
-        if (!isset($data['name'])) {
-            throw new \Box_Exception('Form name was not provided');
-        }
+        $required = array(
+            'name' => 'Form name was not provided',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         if (isset($data["type"]) && (strtolower($data["type"])!= "horizontal" || strtolower($data["type"])!= "default" )){
             throw new \Box_Exception ("Form style was not found in predefined list", null, 3657);
         }
@@ -99,9 +101,10 @@ class Admin extends \Api_Abstract
 
     public function get_form($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Form id was not passed', null, 2391);
-        }
+        $required = array(
+            'id' => 'Form id was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data, null, 2391);
 
         $service = $this->getService();
         return $service->getForm($data['id']);
@@ -117,9 +120,10 @@ class Admin extends \Api_Abstract
      */
     public function get_form_fields($data)
     {
-        if (!isset($data['form_id'])) {
-            throw new \Box_Exception('Form id was not passed', null, 1822);
-        }
+        $required = array(
+            'form_id' => 'Form id was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data, null, 1822);
 
         $service = $this->getService();
         $fields = $service->getFormFields($data['form_id']);
@@ -138,9 +142,10 @@ class Admin extends \Api_Abstract
      */
     public function get_field($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Field id was not passed', null, 3547);
-        }
+        $required = array(
+            'id' => 'Field id was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data, null, 3547);
 
         $service = $this->getService();
         $field = $service->getField($data['id']);
@@ -173,9 +178,11 @@ class Admin extends \Api_Abstract
      */
     public function delete_form($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Form id was not passed', null, 9958);
-        }
+        $required = array(
+            'id' => 'Form id was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data, null, 9958);
+
         $service = $this->getService();
         $service->removeForm($data['id']);
         return true;
@@ -192,9 +199,11 @@ class Admin extends \Api_Abstract
      */
     public function delete_field($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Field id was not passed', null, 9959);
-        }
+        $required = array(
+            'id' => 'Field id was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data, null, 9959);
+
         $service = $this->getService();
         $service->removeField($data);
         return true;
@@ -233,9 +242,10 @@ class Admin extends \Api_Abstract
      */
     public function update_field($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Field id was not passed', null, 9958);
-        }
+        $required = array(
+            'id' => 'Field id was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data, null, 9958);
 
         $service = $this->getService();
         if (isset($data['options']) && !$service->isArrayUnique($data['options'])) {

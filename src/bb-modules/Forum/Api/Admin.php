@@ -74,9 +74,10 @@ class Admin extends \Api_Abstract
      */
     public function get($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Forum id missing');
-        }
+        $required = array(
+            'id' => 'Forum id was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $table = $this->di['table']('Forum');
         $model = $this->di['db']->getExistingModelById('Forum', $data['id'], 'Forum not found');
@@ -96,9 +97,10 @@ class Admin extends \Api_Abstract
      */
     public function create($data)
     {
-        if(!isset($data['title'])) {
-            throw new \Box_Exception('Forum title is missing');
-        }
+        $required = array(
+            'title' => 'Forum title was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
     	$systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Forum', 3);
@@ -204,9 +206,10 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Forum id missing');
-        }
+        $required = array(
+            'id' => 'Forum id was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $table = $this->di['table']('Forum');
         $model = $this->di['db']->getExistingModelById('Forum', $data['id'], 'Forum not found');
@@ -246,9 +249,10 @@ class Admin extends \Api_Abstract
      */
     public function topic_get($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Topic id is missing');
-        }
+        $required = array(
+            'id' => 'Topic id was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $table = $this->di['table']('ForumTopic');
         $model = $this->di['db']->getExistingModelById('ForumTopic', $data['id'], 'Forum Topic not found');
@@ -265,9 +269,10 @@ class Admin extends \Api_Abstract
      */
     public function topic_delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Topic id is missing');
-        }
+        $required = array(
+            'id' => 'Topic id was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $table = $this->di['table']('ForumTopic');
         $model = $this->di['db']->getExistingModelById('ForumTopic', $data['id'], 'Forum Topic not found');
@@ -292,17 +297,12 @@ class Admin extends \Api_Abstract
      */
     public function topic_create($data)
     {
-        if(!isset($data['forum_id'])) {
-            throw new \Box_Exception('Forum ID not passed');
-        }
-        
-        if(!isset($data['title'])) {
-            throw new \Box_Exception('Forum topic title not passed');
-        }
-        
-        if(!isset($data['message'])) {
-            throw new \Box_Exception('Forum topic message not passed');
-        }
+        $required = array(
+            'forum_id' => 'Forum ID was not passed',
+            'title'    => 'Forum topic title not passed',
+            'message'  => 'Forum topic message not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if(strlen($data['message']) < 2) {
             throw new \Box_Exception('Your message is too short');
@@ -351,9 +351,10 @@ class Admin extends \Api_Abstract
      */
     public function topic_update($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Forum topic id missing');
-        }
+        $required = array(
+            'id' => 'Forum topic id was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('ForumTopic', $data['id'], 'Forum Topic not found');
         
@@ -407,9 +408,11 @@ class Admin extends \Api_Abstract
      */
     public function message_get($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Forum Topic message ID not passed');
-        }
+        $required = array(
+            'id' => 'Forum Topic message ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $table = $this->di['table']('ForumTopicMessage');
 
         $msg = $this->di['db']->getExistingModelById('ForumTopicMessage', $data['id'], 'Forum Topic Message not found');
@@ -429,9 +432,10 @@ class Admin extends \Api_Abstract
      */
     public function message_update($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Forum Topic message ID not passed');
-        }
+        $required = array(
+            'id' => 'Forum Topic message ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('ForumTopicMessage', $data['id'], 'Forum Topic Message not found');
 
@@ -453,9 +457,10 @@ class Admin extends \Api_Abstract
      */
     public function message_delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Forum Topic message ID not passed');
-        }
+        $required = array(
+            'id' => 'Forum Topic message ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $table = $table = $this->di['table']('ForumTopicMessage');
         $model =  $this->di['db']->getExistingModelById('ForumTopicMessage', $data['id'], 'Forum Topic Message not found');
@@ -478,13 +483,11 @@ class Admin extends \Api_Abstract
      */
     public function message_create($data)
     {
-        if(!isset($data['forum_topic_id'])) {
-            throw new \Box_Exception('Forum Topic ID not passed');
-        }
-
-        if(!isset($data['message'])) {
-            throw new \Box_Exception('Topic message not passed');
-        }
+        $required = array(
+            'forum_topic_id' => 'Forum Topic ID not passed',
+            'message'        => 'Topic message not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if(strlen($data['message']) < 2) {
             throw new \Box_Exception('Your message is too short');
@@ -522,9 +525,10 @@ class Admin extends \Api_Abstract
      */
     public function points_deduct($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Message ID not passed');
-        }
+        $required = array(
+            'id' => 'Message ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
        
         $service = $service = $this->di['mod_service']('forum');
         $service->declinePointsForPost($data['id']); 
@@ -544,13 +548,11 @@ class Admin extends \Api_Abstract
      */
     public function points_update($data)
     {
-        if(!isset($data['client_id'])) {
-            throw new \Box_Exception('Client ID not passed');
-        }
-        
-        if(!isset($data['amount'])) {
-            throw new \Box_Exception('Amount not passed');
-        }
+        $required = array(
+            'client_id' => 'Client ID not passed',
+            'amount' => 'Amount not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $service = $service = $this->di['mod_service']('forum');
         $service->updateTotalPoints($data['client_id'], $data['amount']); 
@@ -568,9 +570,10 @@ class Admin extends \Api_Abstract
      */
     public function profile_get($data)
     {
-        if(!isset($data['client_id'])) {
-            throw new \Box_Exception('Client ID not passed');
-        }
+        $required = array(
+            'client_id' => 'Client ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $forumService = $this->di['mod_service']('forum');
         return $forumService->getProfile($data['client_id']);

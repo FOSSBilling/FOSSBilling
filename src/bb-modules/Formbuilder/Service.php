@@ -290,9 +290,12 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception ("Field was not found", null, 2575);
         }
         $result = $this->di['db']->toArray($field);
-        if (!isset($result['id'])) {
-            throw new \Box_Exception ("Field was not found", null, 2575);
-        }
+
+        $required = array(
+            'id' => 'Field was not found',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $result, null, 2575);
+
         if (substr($result["options"], 0, 1) == "{" || substr($result["options"], 0, 1) == "[") {
             $result['options'] = json_decode($result['options']);
         }

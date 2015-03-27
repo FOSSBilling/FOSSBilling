@@ -115,13 +115,11 @@ class Guest extends \Api_Abstract
      */
     public function login($data)
     {
-        if(!isset($data['email'])) {
-            throw new \Box_Exception('Email required');
-        }
-
-        if(!isset($data['password'])) {
-            throw new \Box_Exception('Password required');
-        }
+        $required = array(
+            'email'         => 'Email required',
+            'password' => 'Password required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $event_params = $data;
         $event_params['ip'] = $this->ip;
@@ -160,9 +158,10 @@ class Guest extends \Api_Abstract
      */
     public function reset_password($data)
     {
-        if(!isset($data['email'])) {
-            throw new \Box_Exception('Email required');
-        }
+        $required = array(
+            'email'         => 'Email required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $this->di['events_manager']->fire(array('event'=>'onBeforeGuestPasswordResetRequest', 'params'=>$data));
 
@@ -202,9 +201,10 @@ class Guest extends \Api_Abstract
      */
     public function confirm_reset($data)
     {
-        if(!isset($data['hash'])) {
-            throw new \Box_Exception('Hash required');
-        }
+        $required = array(
+            'hash'         => 'Hash required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', array($data['hash']));
         if(!$reset instanceof \Model_ClientPasswordReset) {
@@ -241,18 +241,17 @@ class Guest extends \Api_Abstract
      */
     public function is_vat($data)
     {
-        if(!isset($data['country'])) {
-            throw new \Box_Exception('Country code is required');
-        }
-        
-        if(!isset($data['vat'])) {
-            throw new \Box_Exception('Country code is required');
-        }
-        
+        $required = array(
+            'country' => 'Country code',
+            'vat'     => 'Country VAT is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $cc     = $data['country'];
         $vatnum = $data['vat'];
-        $url = 'http://isvat.appspot.com/'.rawurlencode($cc).'/'.rawurlencode($vatnum).'/';
+        $url    = 'http://isvat.appspot.com/' . rawurlencode($cc) . '/' . rawurlencode($vatnum) . '/';
         $result = $this->di['guzzle_client']->get($url);
+
         return ($result == 'true');
     }
     

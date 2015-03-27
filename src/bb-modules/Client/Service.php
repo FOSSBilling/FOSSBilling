@@ -406,9 +406,11 @@ class Service implements InjectionAwareInterface
 
     public function get($data)
     {
-        if(!isset($data['id']) && !isset($data['email'])) {
-            throw new \Box_Exception('Client ID or email is required');
-        }
+        $required = array(
+            'id'    => 'Client ID is required',
+            'email' => 'Client email is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $db = $this->di['db'];
         $client = null;

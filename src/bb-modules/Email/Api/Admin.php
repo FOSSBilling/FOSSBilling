@@ -393,9 +393,11 @@ class Admin extends \Api_Abstract
      */
     public function template_send($data)
     {
-        if (!isset($data['code'])) {
-            throw new \Box_Exception('Template code not passed');
-        }
+        $required = array(
+            'code'         => 'Template code not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
             throw new \Box_Exception('Receiver is not defined. Define to or to_client or to_staff parameter');
         }

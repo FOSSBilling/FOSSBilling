@@ -75,9 +75,10 @@ class Admin extends \Api_Abstract
      */
     public function login($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('ID required');
-        }
+        $required = array(
+            'id' => 'ID required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $db = $this->di['db'];
         $client = $db->load('Client', $data['id']);
@@ -168,9 +169,10 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Client id is missing');
-        }
+        $required = array(
+            'id' => 'Client id is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('Client', $data['id']);
         if(!$model instanceof \Model_Client) {
@@ -316,16 +318,12 @@ class Admin extends \Api_Abstract
      */
     public function change_password($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Client ID is required');
-        }
-
-        if(!isset($data['password'])) {
-            throw new \Box_Exception('Password required');
-        }
-        if(!isset($data['password_confirm'])) {
-            throw new \Box_Exception('Password confirmation required');
-        }
+        $required = array(
+            'id'               => 'ID required',
+            'password'         => 'Password required',
+            'password_confirm' => 'Password confirmation required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if($data['password'] != $data['password_confirm']) {
             throw new \Box_Exception('Passwords do not match');
@@ -382,9 +380,11 @@ class Admin extends \Api_Abstract
      */
     public function balance_delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Client ID is required');
-        }
+        $required = array(
+            'id' => 'Client ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $model = $this->di['db']->load('ClientBalance', $data['id']);
         if(!$model instanceof \Model_ClientBalance) {
             throw new \Box_Exception('Balance line not found');
@@ -414,17 +414,12 @@ class Admin extends \Api_Abstract
      */
     public function balance_add_funds($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Client ID is required');
-        }
-
-        if(!isset($data['amount'])) {
-            throw new \Box_Exception('Amount is required');
-        }
-        
-        if(!isset($data['description'])) {
-            throw new \Box_Exception('Description is required');
-        }
+        $required = array(
+            'id'          => 'Client ID required',
+            'amount'      => 'Amount is required',
+            'description' => 'Description is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $client = $this->di['db']->load('Client', $data['id']);
         if(!$client instanceof \Model_Client ) {
@@ -556,9 +551,10 @@ class Admin extends \Api_Abstract
      */
     public function group_update($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Group id is missing');
-        }
+        $required = array(
+            'id' => 'Group id is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('ClientGroup', $data['id']);
         if(!$model instanceof \Model_ClientGroup) {
@@ -581,9 +577,10 @@ class Admin extends \Api_Abstract
      */
     public function group_delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Group id is missing');
-        }
+        $required = array(
+            'id' => 'Group id is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('ClientGroup', $data['id']);
         if(!$model instanceof \Model_ClientGroup) {
@@ -602,9 +599,10 @@ class Admin extends \Api_Abstract
      */
     public function group_get($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Group id is missing');
-        }
+        $required = array(
+            'id' => 'Group id is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('ClientGroup', $data['id']);
         if(!$model instanceof \Model_ClientGroup) {

@@ -53,9 +53,10 @@ class Service implements \Box\InjectionAwareInterface
     {
         $validator = $this->di['validator'];
 
-        if (!isset($data['action'])) {
-            throw new \Box_Exception('Are you registering new domain or transferring existing? Action parameter missing.');
-        }
+        $required = array(
+            'action' => 'Are you registering new domain or transferring existing? Action parameter missing',
+        );
+        $validator->checkRequiredParamsForArray($required, $data);
 
         $action = $data['action'];
         if (!in_array($action, array('register', 'transfer', 'owndomain'))) {
@@ -407,9 +408,11 @@ class Service implements \Box\InjectionAwareInterface
 
     public function updateContacts(\Model_ServiceDomain $model, $data)
     {
-        if (!isset($data['contact'])) {
-            throw new \Box_Exception('Required field contact is missing');
-        }
+        $required = array(
+            'contact' => 'Required field contact is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $contact = $data['contact'];
         
         $required = array(

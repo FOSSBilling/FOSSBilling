@@ -39,18 +39,21 @@ class Service implements InjectionAwareInterface
     public function attachOrderConfig(\Model_Product $product, array &$data)
     {
         $c = json_decode($product->config, 1);
-        if(!isset($c['filename'])) {
-            throw new \Box_Exception('Product is not configured completely.');
-        }
+        $required = array(
+            'filename' => 'Product is not configured completely.',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $c);
+
         $data['filename'] = $c['filename'];
         return array_merge($c, $data);
     }
     
     public function validateOrderData(array &$data)
     {
-        if(!isset($data['filename'])) {
-            throw new \Box_Exception('Filename is missing in product config.');
-        }
+        $required = array(
+            'filename' => 'Filename is missing in product config',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
     }
 
     /**

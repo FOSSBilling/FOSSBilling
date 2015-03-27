@@ -757,12 +757,11 @@ class Admin extends \Api_Abstract
     public function subscription_get($data)
     {
         if (!isset($data['id']) && !isset($data['sid'])) {
-            if (!isset($data['id'])){
-                throw new \Box_Exception('Subscription id not passed');
-            }
-            if (!isset($data['sid'])){
-                throw new \Box_Exception('Subscription sid not passed');
-            }
+            $required = array(
+                'id'  => 'Subscription id not passed',
+                'sid' => 'Subscription sid not passed',
+            );
+            $this->di['validator']->checkRequiredParamsForArray($required, $data);
         }
         $model = null;
         if(isset($data['id'])) {

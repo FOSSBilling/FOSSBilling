@@ -127,9 +127,10 @@ class Admin extends \Api_Abstract
      */
     public function create($data)
     {
-        if(!isset($data['title'])) {
-            throw new \Box_Exception('Post title not passed');
-        }
+        $required = array(
+            'title' => 'Post title not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->dispense('Post');
         $model->admin_id = $this->getIdentity()->id;
@@ -154,9 +155,10 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Post id not passed');
-        }
+        $required = array(
+            'id' => 'Post ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('Post', $data['id'], 'News item not found');
         $id = $model->id;

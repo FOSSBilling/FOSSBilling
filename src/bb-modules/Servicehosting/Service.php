@@ -502,13 +502,15 @@ class Service implements InjectionAwareInterface
 
     private function _getDomainTuple($data)
     {
-        if(!isset($data['domain'])) {
-            throw new \Box_Exception('Hosting product must have domain configuration');
-        }
+        $required = array(
+            'domain' => 'Hosting product must have domain configuration',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        if(!isset($data['domain']['action'])) {
-            throw new \Box_Exception('Domain action is missing');
-        }
+        $required = array(
+            'action' => 'Domain action is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data['domain']);
 
         if($data['domain']['action'] == 'owndomain') {
             $sld = $data['domain']['owndomain_sld'];
@@ -516,23 +518,25 @@ class Service implements InjectionAwareInterface
         }
 
         if($data['domain']['action'] == 'register') {
-            if(!isset($data['domain']['register_sld'])) {
-                throw new \Box_Exception('Hosting product must have defined register_sld parameter');
-            }
-            if(!isset($data['domain']['register_tld'])) {
-                throw new \Box_Exception('Hosting product must have defined register_tld parameter');
-            }
+
+            $required = array(
+                'register_sld' => 'Hosting product must have defined register_sld parameter',
+                'register_tld' => 'Hosting product must have defined register_tld parameter',
+            );
+            $this->di['validator']->checkRequiredParamsForArray($required, $data['domain']);
+
             $sld = $data['domain']['register_sld'];
             $tld = $data['domain']['register_tld'];
         }
 
         if($data['domain']['action'] == 'transfer') {
-            if(!isset($data['domain']['transfer_sld'])) {
-                throw new \Box_Exception('Hosting product must have defined transfer_sld parameter');
-            }
-            if(!isset($data['domain']['transfer_tld'])) {
-                throw new \Box_Exception('Hosting product must have defined transfer_tld parameter');
-            }
+
+            $required = array(
+                'transfer_sld' => 'Hosting product must have defined transfer_sld parameter',
+                'transfer_tld' => 'Hosting product must have defined transfer_tld parameter',
+            );
+            $this->di['validator']->checkRequiredParamsForArray($required, $data['domain']);
+
             $sld = $data['domain']['transfer_sld'];
             $tld = $data['domain']['transfer_tld'];
         }

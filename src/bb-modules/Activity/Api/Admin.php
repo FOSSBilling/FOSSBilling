@@ -104,9 +104,10 @@ class Admin extends \Api_Abstract
      */
     public function log_delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('ID is required');
-        }
+        $required = array(
+            'id' => 'ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $database = $this->di['db'];
         $model = $database->load('ActivitySystem', $data['id']);

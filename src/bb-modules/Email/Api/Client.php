@@ -56,9 +56,11 @@ class Client extends \Api_Abstract
      */
     public function get($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Email ID is required');
-        }
+        $required = array(
+            'id'         => 'Email ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $model = $this->getService()->findOneForClientById($this->getIdentity(), $data['id']);
 
         if (!$model instanceof \Model_ActivityClientEmail) {
@@ -78,9 +80,10 @@ class Client extends \Api_Abstract
      */
     public function resend($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Email ID is required');
-        }
+        $required = array(
+            'id'         => 'Email ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->getService()->findOneForClientById($this->getIdentity(), $data['id']);
         if(!$model instanceof \Model_ActivityClientEmail) {
@@ -99,9 +102,10 @@ class Client extends \Api_Abstract
      */
     public function delete($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Email ID is required');
-        }
+        $required = array(
+            'id'         => 'Email ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->getService()->findOneForClientById($this->getIdentity(), $data['id']);
         if (!$model instanceof \Model_ActivityClientEmail) {

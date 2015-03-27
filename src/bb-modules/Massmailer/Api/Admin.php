@@ -102,9 +102,10 @@ class Admin extends \Api_Abstract
      */
     public function create($data)
     {
-        if(!isset($data['subject'])) {
-            throw new \Box_Exception('Message subject not passed');
-        }
+        $required = array(
+            'subject' => 'Message subject not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $default_content = '{% filter markdown %}
 Hi {{ c.first_name }} {{ c.last_name }},
@@ -297,9 +298,10 @@ Order our services at {{ "order"|link }}
 
     private function _getMessage($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Message id not passed');
-        }
+        $required = array(
+            'id' => 'Message ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('mod_massmailer', $data['id'], 'Message not found');
 

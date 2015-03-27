@@ -78,9 +78,10 @@ class Service implements InjectionAwareInterface
         $productService = $product->getService();
 
         if ($this->isRecurrentPricing($product)) {
-            if (!isset($data['period'])) {
-                throw new \Box_Exception('Period parameter not passed');
-            }
+            $required = array(
+                'period' => 'Period parameter not passed',
+            );
+            $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$this->isPeriodEnabledForProduct($product, $data['period'])) {
                 throw new \Box_Exception('Selected billing period is not valid');
@@ -117,9 +118,11 @@ class Service implements InjectionAwareInterface
                 $addon = $productService->getAddonById($id);
                 if ($addon instanceof \Model_Product) {
                     if ($this->isRecurrentPricing($addon)) {
-                        if (!isset($ac['period'])) {
-                            throw new \Box_Exception('Addon period parameter not passed');
-                        }
+
+                        $required = array(
+                            'period' => 'Addon period parameter not passed',
+                        );
+                        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
                         if (!$this->isPeriodEnabledForProduct($addon, $ac['period'])) {
                             throw new \Box_Exception('Selected billing period is not valid for addon');
