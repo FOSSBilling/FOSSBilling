@@ -512,6 +512,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $result = $this->service->counter();
@@ -1368,6 +1371,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['logger']         = $this->getMockBuilder('Box_Log')->getMock();
         $di['request']        = $this->getMockBuilder('Box_Request')->getMock();
         $di['events_manager'] = $eventMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();

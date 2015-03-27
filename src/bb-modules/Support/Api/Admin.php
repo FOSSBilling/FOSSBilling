@@ -689,7 +689,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
 
-        $title = (isset($data['title'])) ? $data['title'] : $model->title;
+        $title = $this->di['array_get']($data, 'title', $model->title);
 
         return $this->getService()->cannedCategoryUpdate($model, $title);
     }

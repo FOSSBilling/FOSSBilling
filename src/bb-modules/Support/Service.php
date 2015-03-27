@@ -370,9 +370,9 @@ class Service implements \Box\InjectionAwareInterface
 
         return array(
             'total'                      => array_sum($data),
-            \Model_SupportTicket::OPENED => isset($data[\Model_SupportTicket::OPENED]) ? $data[\Model_SupportTicket::OPENED] : 0,
-            \Model_SupportTicket::CLOSED => isset($data[\Model_SupportTicket::CLOSED]) ? $data[\Model_SupportTicket::CLOSED] : 0,
-            \Model_SupportTicket::ONHOLD => isset($data[\Model_SupportTicket::ONHOLD]) ? $data[\Model_SupportTicket::ONHOLD] : 0,
+            \Model_SupportTicket::OPENED => $this->di['array_get']($data, \Model_SupportTicket::OPENED, 0),
+            \Model_SupportTicket::CLOSED => $this->di['array_get']($data, \Model_SupportTicket::CLOSED, 0),
+            \Model_SupportTicket::ONHOLD => $this->di['array_get']($data, \Model_SupportTicket::ONHOLD, 0),
         );
     }
 
@@ -767,7 +767,7 @@ class Service implements \Box\InjectionAwareInterface
 
     public function ticketCreateForAdmin(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, $data, \Model_Admin $identity)
     {
-        $status = isset($data['status']) ? $data['status'] : \Model_SupportTicket::ONHOLD;
+        $status = $this->di['array_get']($data, 'status', \Model_SupportTicket::ONHOLD);
 
         $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOpenTicket', 'params' => $data));
 
@@ -805,9 +805,15 @@ class Service implements \Box\InjectionAwareInterface
         $event_params['ip'] = $this->di['request']->getClientAddress();
         $altered            = $this->di['events_manager']->fire(array('event' => 'onBeforeGuestPublicTicketOpen', 'params' => $event_params));
 
-        $status  = isset($altered['status'])? $altered['status'] : 'open';
-        $subject = isset($altered['subject']) ? $altered['subject'] : $data['subject'];
-        $message = isset($altered['message']) ? $altered['message'] : $data['message'];
+        $status = 'open';
+        $subject = $this->di['array_get']($data, 'subject');
+        $message = $this->di['array_get']($data, 'message');
+
+        if (is_array($altered)){
+            $status  = $this->di['array_get']($altered, 'status');
+            $subject = $this->di['array_get']($altered, 'subject');
+            $message = $this->di['array_get']($altered, 'message');
+        }
 
         $ticket               = $this->di['db']->dispense('SupportPTicket');
         $ticket->hash         = sha1(uniqid());

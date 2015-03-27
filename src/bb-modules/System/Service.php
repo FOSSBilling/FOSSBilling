@@ -132,9 +132,9 @@ class Service
             'tel'       =>  $this->di['array_get']($results, 'company_tel', NULL),
             'signature' =>  $this->di['array_get']($results, 'company_signature', NULL),
             'logo_url'  =>  $this->di['array_get']($results, 'company_logo', NULL),
-            'address_1' =>  isset($results['company_address_1']) ? $results['company_address_1'] : NULL,
-            'address_2' =>  isset($results['company_address_2']) ? $results['company_address_2'] : NULL,
-            'address_3' =>  isset($results['company_address_3']) ? $results['company_address_3'] : NULL,
+            'address_1' =>  $this->di['array_get']($results, 'company_address_1', NULL),
+            'address_2' =>  $this->di['array_get']($results, 'company_address_2', NULL),
+            'address_3' =>  $this->di['array_get']($results, 'company_address_3', NULL),
             'account_number'    =>  $this->di['array_get']($results, 'company_account_number', NULL),
             'number'            =>  $this->di['array_get']($results, 'company_number', NULL),
             'note'              =>  $this->di['array_get']($results, 'company_note', NULL),
@@ -261,7 +261,7 @@ class Service
             $msgs['info'][] = sprintf('BoxBilling requires %s extension to be enabled on this server for security reasons.', 'php mcrypt');
         }
 
-        return isset($msgs[$type]) ? $msgs[$type] : array();
+        return $this->di['array_get']($msgs, $type, array());
     }
 
     public function templateExists($file, $identity = null)
@@ -1554,11 +1554,11 @@ class Service
         return array(
             'mailer'              => $this->di['array_get']($res, 'mailer', 'sendmail'),
             'smtp_authentication' => (isset($res['smtp_authentication']) && $res['smtp_authentication']) ? 'login' : NULL,
-            'smtp_host'           => (isset($res['smtp_host'])) ? $res['smtp_host'] : NULL,
+            'smtp_host'           => $this->di['array_get']($res, 'smtp_host'),
             'smtp_security'       => (isset($res['smtp_security']) && $res['smtp_security'] != 'no') ? $res['smtp_security'] : NULL,
-            'smtp_port'           => (isset($res['smtp_port'])) ? $res['smtp_port'] : NULL,
-            'smtp_username'       => (isset($res['smtp_username'])) ? $res['smtp_username'] : NULL,
-            'smtp_password'       => (isset($res['smtp_password'])) ? $res['smtp_password'] : NULL,
+            'smtp_port'           => $this->di['array_get']($res, 'smtp_port'),
+            'smtp_username'       => $this->di['array_get']($res, 'smtp_username'),
+            'smtp_password'       => $this->di['array_get']($res, 'smtp_password'),
         );
     }
 
