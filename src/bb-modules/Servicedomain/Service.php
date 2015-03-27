@@ -411,27 +411,22 @@ class Service implements \Box\InjectionAwareInterface
             throw new \Box_Exception('Required field contact is missing');
         }
         $contact = $data['contact'];
-
-        $fields = array(
-            'first_name',
-            'last_name',
-            'email',
-            'company',
-            'address1',
-            'address2',
-            'country',
-            'city',
-            'state',
-            'postcode',
-            'phone_cc',
-            'phone',
-        );
-
-        foreach ($fields as $f) {
-            if (!isset($contact[$f])) {
-                throw new \Box_Exception('Required field :field is missing', array(':field' => $f));
-            }
-        }
+        
+        $required = array(
+            'first_name' => 'Required field first_name is missing',
+            'last_name'  => 'Required field last_name is missing',
+            'email'      => 'Required field email is missing',
+            'company'    => 'Required field company is missing',
+            'address1'   => 'Required field address1 is missing',
+            'address2'   => 'Required field address2 is missing',
+            'country'    => 'Required field country is missing',
+            'city'       => 'Required field city is missing',
+            'state'      => 'Required field state is missing',
+            'postcode'   => 'Required field postcode is missing',
+            'phone_cc'   => 'Required field phone_cc is missing',
+            'phone'      => 'Required field phone is missing',
+            );
+        $this->di['validator']->checkRequiredParamsForArray($required, $contact);
 
         $model->contact_first_name = $contact['first_name'];
         $model->contact_last_name  = $contact['last_name'];

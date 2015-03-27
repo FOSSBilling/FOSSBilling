@@ -130,21 +130,17 @@ class Service implements \Box\InjectionAwareInterface
         $client = $api->client_get(array('id'=>$order->client_id));
         $product = $api->product_get(array('id'=>$order->product_id));
         $pc = $product['config'];
-        
+
         $required = array(
-            'server_id',
-            'maxclients',
-            'maxbitrate',
-            'transferlimit',
-            'diskquota',
-            'template',
-            'autostart',
+            'server_id'     => 'CentovaCast product is not configured properly. Field server_id is missing',
+            'maxclients'    => 'CentovaCast product is not configured properly. Field maxclients is missing',
+            'maxbitrate'    => 'CentovaCast product is not configured properly. Field maxbitrate is missing',
+            'transferlimit' => 'CentovaCast product is not configured properly. Field transferlimit is missing',
+            'diskquota'     => 'CentovaCast product is not configured properly. Field diskquota is missing',
+            'template'      => 'CentovaCast product is not configured properly. Field template is missing',
+            'autostart'     => 'CentovaCast product is not configured properly. Field autostart is missing',
         );
-        foreach($required as $key) {
-            if(!isset($pc[$key])) {
-                throw new \Box_Exception("CentovaCast product is not configured properly. Field :field is missing", array(':field'=>$key));
-            }
-        }
+        $this->di['validator']->checkRequiredParamsForArray($required, $pc);
         
         $server         = $this->getServer($pc['server_id']);
         $username       = ( isset($oc['username']) && !empty($oc['username']) ) ? $oc['username'] : $this->_genUsername($client);

@@ -910,10 +910,14 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(true));
 
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
 
 
@@ -948,159 +952,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $serviceDomainModel = new \Model_ServiceDomain();
         $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
         $this->service->updateContacts($serviceDomainModel, array());
-    }
-
-    public function testUpdateContactsFieldNotSetExceptionProvider()
-    {
-        return array(
-            array(
-                array(
-                    'contact' => array()
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                        'address2'   => 'address2',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                        'address2'   => 'address2',
-                        'country'    => 'country',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                        'address2'   => 'address2',
-                        'country'    => 'country',
-                        'city'       => 'city',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                        'address2'   => 'address2',
-                        'country'    => 'country',
-                        'city'       => 'city',
-                        'state'      => 'state',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                        'address2'   => 'address2',
-                        'country'    => 'country',
-                        'city'       => 'city',
-                        'state'      => 'state',
-                        'postcode'   => 'postcode',
-                    )
-                )
-            ), array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                        'address2'   => 'address2',
-                        'country'    => 'country',
-                        'city'       => 'city',
-                        'state'      => 'state',
-                        'postcode'   => 'postcode',
-                        'phone_cc'   => 'phone_cc',
-                    )
-                )
-            ),
-        );
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     * @dataProvider testUpdateContactsFieldNotSetExceptionProvider
-     */
-    public function testUpdateContactsFieldNotSetException($data)
-    {
-        $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
-        $this->service->updateContacts($serviceDomainModel, $data);
     }
 
     public function testGetTransferCode()
