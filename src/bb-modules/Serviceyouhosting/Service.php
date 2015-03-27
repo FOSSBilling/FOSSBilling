@@ -479,7 +479,7 @@ class Service implements \Box\InjectionAwareInterface
         }
 
         $product_id = $this->getOrCreateProductForHostingPlan($account['plan_id']);
-        $period     = isset($periods[$account['period']]) ? $periods[$account['period']] : null;
+        $period     = $this->di['array_get']($periods, $account['period']);
 
         $odata = array(
             'client_id'      => $client_id,

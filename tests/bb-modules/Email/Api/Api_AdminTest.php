@@ -287,7 +287,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $willReturn = array(
             "list" => array(
-                'id' => 1
+                array(
+                'id' => 1,
+                )
             ),
         );
 
@@ -437,6 +439,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $adminApi->setDi($di);
         $adminApi->setService($emailService);
@@ -483,6 +488,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $di              = new \Box_Di();
         $di['db']        = $dbMock;
         $di['validator'] = $validatorMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
 
         $emailService = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('updateTemplate'))->getMock();
@@ -631,6 +639,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di         = new \Box_Di();
         $di['twig'] = $twig;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $adminApi->setDi($di);
 
         $result = $adminApi->template_render(array('id' => 5));

@@ -1369,6 +1369,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
                 return $cartServiceMock;
             }
         });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
@@ -1420,6 +1423,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
                 return $cartServiceMock;
             }
         });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
@@ -1469,6 +1475,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             if ($serviceName == 'cart') {
                 return $cartServiceMock;
             }
+        });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
         });
         $di['events_manager'] = $eventMock;
 

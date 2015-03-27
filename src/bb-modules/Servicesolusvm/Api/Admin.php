@@ -49,7 +49,7 @@ class Admin extends \Api_Abstract
      */
     public function cluster_config_update($data)
     {
-        $cluster_id = isset($data['cluster_id']) ? (int)$data['cluster_id'] : 1;
+        $cluster_id = (int) $this->di['array_get']($data, 'cluster_id', 1);
         $this->getService()->updateMasterConfig($cluster_id, $data);
         $this->di['logger']->info('Updated SolusVM API configuration');
         return true;
@@ -62,7 +62,7 @@ class Admin extends \Api_Abstract
      */
     public function cluster_config($data)
     {
-        $cluster_id = isset($data['cluster_id']) ? (int)$data['cluster_id'] : 1;
+        $cluster_id = (int) $this->di['array_get']($data, 'cluster_id', 1);
         return $this->getService()->getMasterConfig($cluster_id);
     }
     
@@ -349,7 +349,7 @@ class Admin extends \Api_Abstract
      */
     public function client_list($data)
     {
-        $skip = isset($data['skip']) ? (bool)$data['skip'] : false;
+        $skip = (bool) $this->di['array_get']($data, 'skip', false);
         $clients = $this->getService()->client_list();
         
         if($skip) {
@@ -372,8 +372,8 @@ class Admin extends \Api_Abstract
      */
     public function node_virtualservers($data)
     {
-        $skip = isset($data['skip']) ? (bool)$data['skip'] : false;
-        $node_id = isset($data['node_id']) ? $data['node_id'] : 1;
+        $skip = (bool) $this->di['array_get']($data, 'skip', false);
+        $node_id = $this->di['array_get']($data, 'node_id', 1);
         $servers = $this->getService()->node_virtualservers($node_id);
         
         if($skip) {
@@ -397,7 +397,7 @@ class Admin extends \Api_Abstract
         $nodeid = $this->di['array_get']($data, 'node_id', null);
         $period = $this->di['array_get']($data, 'period', null);
         $product_id = $this->di['array_get']($data, 'product_id', null);
-        $selected = isset($data['servers']) ? $data['servers'] : array();
+        $selected = $this->di['array_get']($data, 'servers', array());
         if(empty($nodeid)) {
             throw new \Box_Exception('Node is not selected for import.', null, 235);
         }
@@ -497,7 +497,7 @@ class Admin extends \Api_Abstract
      */
     public function import_clients($data)
     {
-        $selected = isset($data['clients']) ? $data['clients'] : array();
+        $selected = $this->di['array_get']($data, 'clients', array());
         if(empty($selected)) {
             throw new \Box_Exception('No clients selected for import.', null, 233);
         }

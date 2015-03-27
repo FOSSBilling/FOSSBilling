@@ -93,10 +93,10 @@ class Service implements InjectionAwareInterface
 
         $model = $this->di['db']->dispense('ServiceLicense');
         $model->client_id = $order->client_id;
-        $model->validate_ip = isset($c['validate_ip']) ? (bool)$c['validate_ip'] : FALSE;
-        $model->validate_host = isset($c['validate_host']) ? (bool)$c['validate_host'] : FALSE;
-        $model->validate_path = isset($c['validate_path']) ? (bool)$c['validate_path'] : FALSE;
-        $model->validate_version = isset($c['validate_version']) ? (bool)$c['validate_version'] : FALSE;
+        $model->validate_ip = (bool) $this->di['array_get']($c, 'validate_ip', false);
+        $model->validate_host = (bool) $this->di['array_get']($c, 'validate_host', false);
+        $model->validate_path = (bool) $this->di['array_get']($c, 'validate_path', false);
+        $model->validate_version = (bool) $this->di['array_get']($c, 'validate_version', false);
         $model->plugin = $this->di['array_get']($c, 'plugin', 'Simple');
         
         $model->ips = NULL;

@@ -174,8 +174,8 @@ class Service implements \Box\InjectionAwareInterface
         $systemService =  $this->di['mod_service']('system');
 
         list($subject, $content) = $this->_parse($t, $vars);
-        $from      = isset($data['from']) ? $data['from'] : $systemService->getParamValue('company_email');
-        $from_name = isset($data['from_name']) ? $data['from_name'] : $systemService->getParamValue('company_name');
+        $from      = $this->di['array_get']($data, 'from', $systemService->getParamValue('company_email'));
+        $from_name = $this->di['array_get']($data, 'from_name', $systemService->getParamValue('company_name'));
         $sent      = false;
 
         if (!$from){
@@ -213,8 +213,8 @@ class Service implements \Box\InjectionAwareInterface
         $code = $data['code'];
 
         $enabled     = 0;
-        $subject     = isset($data['default_subject']) ? $data['default_subject'] : ucwords(str_replace('_', ' ', $code));
-        $content     = isset($data['default_template']) ? $data['default_template'] : $this->_getVarsString();
+        $subject     = $this->di['array_get']($data, 'default_subject', ucwords(str_replace('_', ' ', $code)));
+        $content     = $this->di['array_get']($data, 'default_template', $this->_getVarsString());
         $description = $this->di['array_get']($data, 'default_description', null);
 
         $matches = array();
@@ -538,7 +538,7 @@ class Service implements \Box\InjectionAwareInterface
         $mod        = $this->di['mod']('email');
         $settings   = $mod->getConfig();
         $tries      = 0;
-        $time_limit = (isset($settings['time_limit']) ? $settings['time_limit'] : 5) * 60;
+        $time_limit = ($this->di['array_get']($settings, 'time_limit', 5)) * 60;
         $start      = time();
         while ($email = $this->di['db']->findOne('ModEmailQueue', ' status = \'unsent\' ORDER BY updated_at ')) {
             $this->_sendFromQueue($email);

@@ -93,7 +93,7 @@ class Service implements InjectionAwareInterface
         $model->sld = $c['sld'];
         $model->tld = $c['tld'];
         $model->ip = $server->ip;
-        $model->reseller = isset($c['reseller']) ? $c['reseller'] : FALSE;
+        $model->reseller = $this->di['array_get']($c, 'reseller', false);
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -827,15 +827,15 @@ class Service implements InjectionAwareInterface
         $model = $this->di['db']->dispense('ServiceHostingHp');
         $model->name = $name;
 
-        $model->bandwidth = isset($data['bandwidth']) ? $data['bandwidth'] : 1024 * 1024;
-        $model->quota = isset($data['quota']) ? $data['quota'] : 1024 * 1024;
+        $model->bandwidth = $this->di['array_get']($data, 'bandwidth', 1024 * 1024);
+        $model->quota     = $this->di['array_get']($data, 'quota', 1024 * 1024);
 
-        $model->max_addon = isset($data['max_addon']) ? $data['max_addon'] : 1;
-        $model->max_park = isset($data['max_park']) ? $data['max_park'] : 1;
-        $model->max_sub = isset($data['max_sub']) ? $data['max_sub'] : 1;
-        $model->max_pop = isset($data['max_pop']) ? $data['max_pop'] : 1;
-        $model->max_sql = isset($data['max_sql']) ? $data['max_sql'] : 1;
-        $model->max_ftp = isset($data['max_ftp']) ? $data['max_ftp'] : 1;
+        $model->max_addon = $this->di['array_get']($data, 'max_addon', 1);
+        $model->max_park  = $this->di['array_get']($data, 'max_park', 1);
+        $model->max_sub   = $this->di['array_get']($data, 'max_sub', 1);
+        $model->max_pop   = $this->di['array_get']($data, 'max_pop', 1);
+        $model->max_sql   = $this->di['array_get']($data, 'max_sql', 1);
+        $model->max_ftp   = $this->di['array_get']($data, 'max_ftp', 1);
 
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');

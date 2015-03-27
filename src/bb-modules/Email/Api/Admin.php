@@ -171,12 +171,12 @@ class Admin extends \Api_Abstract
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = array(
-                'id'          => isset($item['id']) ? $item['id'] : '',
-                'action_code' => isset($item['action_code']) ? $item['action_code'] : '',
-                'category'    => isset($item['category']) ? $item['category'] : '',
-                'enabled'     => isset($item['enabled']) ? $item['enabled'] : '',
-                'subject'     => isset($item['subject']) ? $item['subject'] : '',
-                'description' => isset($item['description']) ? $item['description'] : '',
+                'id'          => $this->di['array_get']($item, 'id', ''),
+                'action_code' => $this->di['array_get']($item, 'action_code', ''),
+                'category'    => $this->di['array_get']($item, 'category', ''),
+                'enabled'     => $this->di['array_get']($item, 'enabled', ''),
+                'subject'     => $this->di['array_get']($item, 'subject', ''),
+                'description' => $this->di['array_get']($item, 'description', ''),
             );
 
         }
@@ -253,8 +253,8 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $enabled  = isset($data['enabled']) ? $data['enabled'] : 0;
-        $category = isset($data['category']) ? $data['category'] : NULL;
+        $enabled  = $this->di['array_get']($data, 'enabled', 0);
+        $category = $this->di['array_get']($data, 'category');
 
         $templateModel = $this->getService()->templateCreate($data['action_code'], $data['subject'], $data['content'], $enabled, $category);
 
@@ -276,10 +276,10 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $enabled = isset($data['enabled']) ? $data['enabled'] : null;
-        $category = isset($data['category']) ? $data['category'] : null;
-        $subject = isset($data['subject']) ? $data['subject'] : null;
-        $content = isset($data['content']) ? $data['content'] : null;
+        $enabled  = $this->di['array_get']($data, 'enabled');
+        $category = $this->di['array_get']($data, 'category');
+        $subject  = $this->di['array_get']($data, 'subject');
+        $content  = $this->di['array_get']($data, 'content');
 
         $model = $this->di['db']->getExistingModelById('EmailTemplate', $data['id'], 'Email template not found');
 
@@ -314,7 +314,7 @@ class Admin extends \Api_Abstract
     {
         $t            = $this->template_get($data);
         $vars         = $t['vars'];
-        $vars['_tpl'] = isset($data['_tpl']) ? $data['_tpl'] : $t['content'];
+        $vars['_tpl'] = $this->di['array_get']($data, '_tpl', $t['content']);
 
         return $this->di['twig']->render($vars['_tpl'], $vars);
     }

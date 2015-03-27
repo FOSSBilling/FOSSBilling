@@ -505,12 +505,12 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderCreate', 'params' => $data, 'subject' => $product->type));
 
         $period         = (isset($data['period']) && !empty($data['period'])) ? $data['period'] : NULL;
-        $qty            = isset($data['quantity']) ? $data['quantity'] : 1;
+        $qty            = $this->di['array_get']($data, 'quantity', 1);
         $config         = (isset($data['config']) && is_array($data['config'])) ? $data['config'] : array();
-        $group_id       = isset($data['group_id']) ? $data['group_id'] : NULL;
-        $activate       = isset($data['activate']) ? (bool)$data['activate'] : FALSE;
-        $invoiceOption  = isset($data['invoice_option']) ? $data['invoice_option'] : 'no-invoice';
-        $skipValidation = isset($data['skip_validation']) ? (bool)$data['skip_validation'] : false;
+        $group_id       = $this->di['array_get']($data, 'group_id');
+        $activate       = (bool) $this->di['array_get']($data, 'activate', false);
+        $invoiceOption  = $this->di['array_get']($data, 'invoice_option', 'no-invoice');
+        $skipValidation = (bool) $this->di['array_get']($data, 'skip_validation', false);
 
         $cartService = $this->di['mod_service']('cart');
         // check stock

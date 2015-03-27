@@ -137,10 +137,10 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $format         = isset($data['format']) ? $data['format'] : null;
-        $title          = isset($data['title']) ? $data['title'] : null;
-        $priceFormat    = isset($data['price_format']) ? $data['price_format'] : null;
-        $conversionRate = isset($data['conversion_rate']) ? $data['conversion_rate'] : null;
+        $format         = $this->di['array_get']($data, 'format');
+        $title          = $this->di['array_get']($data, 'title');
+        $priceFormat    = $this->di['array_get']($data, 'price_format');
+        $conversionRate = $this->di['array_get']($data, 'conversion_rate');
 
         return $this->getService()->updateCurrency($data['code'], $format, $title, $priceFormat, $conversionRate);
     }
