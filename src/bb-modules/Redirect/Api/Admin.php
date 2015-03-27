@@ -99,14 +99,8 @@ class Admin extends \Api_Abstract
         
         $bean = $this->_getRedirect($data['id']);
         
-        if(isset($data['path'])) {
-            $bean->meta_key = $data['path'];
-        }
-        
-        if(isset($data['target'])) {
-            $bean->meta_value = $data['target'];
-        }
-        
+        $bean->meta_key = $this->di['array_get']($data, 'path', $bean->meta_key);
+        $bean->meta_value = $this->di['array_get']($data, 'target', $bean->meta_value);
         $bean->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($bean);
         

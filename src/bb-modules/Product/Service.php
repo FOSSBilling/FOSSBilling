@@ -280,34 +280,16 @@ class Service implements InjectionAwareInterface
             $model->config = json_encode($c);
         }
 
-        if(isset($data['product_category_id'])) {
-            $model->product_category_id = $data['product_category_id'];
-        }
-
-        if(isset($data['form_id'])) {
-            $model->form_id = $data['form_id'];
-        }
-
-        if(isset($data['icon_url'])) {
-            $model->icon_url = $data['icon_url'];
-        }
-
-        if(isset($data['status'])) {
-            $model->status = $data['status'];
-        }
-
+        $model->product_category_id = $this->di['array_get']($data, 'product_category_id', $model->product_category_id);
+        $model->form_id = $this->di['array_get']($data, 'form_id', $model->form_id);
+        $model->icon_url = $this->di['array_get']($data, 'icon_url', $model->icon_url);
+        $model->status = $this->di['array_get']($data, 'status', $model->status);
         if(isset($data['hidden'])) {
             $model->hidden = (int)$data['hidden'];
         }
 
-        if(isset($data['slug'])) {
-            $model->slug = $data['slug'];
-        }
-
-        if(isset($data['setup'])) {
-            $model->setup = $data['setup'];
-        }
-
+        $model->slug = $this->di['array_get']($data, 'slug', $model->slug);
+        $model->setup = $this->di['array_get']($data, 'setup', $model->setup);
         if(isset($data['upgrades']) && is_array($data['upgrades'])) {
             $model->upgrades = json_encode($data['upgrades']);
         } elseif(isset($data['upgrades']) && empty($data['upgrades'])) {
@@ -328,30 +310,12 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if(isset($data['title'])) {
-            $model->title = $data['title'];
-        }
-
-        if(isset($data['stock_control'])) {
-            $model->stock_control = $data['stock_control'];
-        }
-
-        if(isset($data['allow_quantity_select'])) {
-            $model->allow_quantity_select = $data['allow_quantity_select'];
-        }
-
-        if(isset($data['quantity_in_stock'])) {
-            $model->quantity_in_stock = $data['quantity_in_stock'];
-        }
-
-        if(isset($data['description'])) {
-            $model->description = $data['description'];
-        }
-
-        if(isset($data['plugin'])) {
-            $model->plugin = $data['plugin'];
-        }
-
+        $model->title = $this->di['array_get']($data, 'title', $model->title);
+        $model->stock_control = $this->di['array_get']($data, 'stock_control', $model->stock_control);
+        $model->allow_quantity_select = $this->di['array_get']($data, 'allow_quantity_select', $model->allow_quantity_select);
+        $model->quantity_in_stock = $this->di['array_get']($data, 'quantity_in_stock', $model->quantity_in_stock);
+        $model->description = $this->di['array_get']($data, 'description', $model->description);
+        $model->plugin = $this->di['array_get']($data, 'plugin', $model->plugin);
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);

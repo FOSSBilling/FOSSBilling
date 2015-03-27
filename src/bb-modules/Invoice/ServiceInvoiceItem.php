@@ -190,14 +190,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function update(\Model_InvoiceItem $item, array $data)
     {
-        if(isset($data['title'])) {
-            $item->title = $data['title'];
-        }
-
-        if(isset($data['price'])) {
-            $item->price = $data['price'];
-        }
-
+        $item->title = $this->di['array_get']($data, 'title', $item->title);
+        $item->price = $this->di['array_get']($data, 'price', $item->price);
         if(isset($data['taxed']) && !empty($data['taxed'])) {
             $item->taxed = (bool)$data['taxed'];
         } else {

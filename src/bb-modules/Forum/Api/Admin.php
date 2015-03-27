@@ -357,10 +357,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ForumTopic', $data['id'], 'Forum Topic not found');
         
-        if(isset($data['forum_id'])) {
-            $model->forum_id = $data['forum_id'];
-        }
-        
+        $model->forum_id = $this->di['array_get']($data, 'forum_id', $model->forum_id);
         $model->title = $this->di['array_get']($data, 'title', $model->title);
         $model->status = $this->di['array_get']($data, 'status', $model->status);
         $model->slug = $this->di['array_get']($data, 'slug', $model->slug);
@@ -438,10 +435,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('ForumTopicMessage', $data['id'], 'Forum Topic Message not found');
 
-        if(isset($data['message'])) {
-            $model->message = $data['message'];
-        }
-
+        $model->message = $this->di['array_get']($data, 'message', $model->message);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 

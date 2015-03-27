@@ -447,10 +447,7 @@ class Service implements InjectionAwareInterface
         $model->currency = $client->currency;
         $model->approved = 0;
 
-        if(isset($data['gateway_id'])) {
-            $model->gateway_id = $data['gateway_id'];
-        }
-
+        $model->gateway_id = $this->di['array_get']($data, 'gateway_id', $model->gateway_id);
         if(isset($data['text_1'])) {
             $model->text_1 = $data['text_1'];
         }

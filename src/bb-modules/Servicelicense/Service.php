@@ -390,10 +390,7 @@ class Service implements InjectionAwareInterface
 
     public function update(\Model_ServiceLicense $s, array $data)
     {
-        if(isset($data['plugin'])) {
-            $s->plugin = $data['plugin'];
-        }
-
+        $s->plugin = $this->di['array_get']($data, 'plugin', $s->plugin);
         if(isset($data['validate_ip'])) {
             $s->validate_ip = (bool)$data['validate_ip'];
         }

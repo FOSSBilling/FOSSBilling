@@ -578,10 +578,7 @@ class Service implements InjectionAwareInterface
             $order->price = $repo->getProductPrice($product, $config) * $rate;
         }
 
-        if (isset($data['notes'])) {
-            $order->notes = $data['notes'];
-        }
-
+        $order->notes = $this->di['array_get']($data, 'notes', $order->notes);
         if (isset($data['created_at'])) {
             $order->created_at = date('Y-m-d H:i:s', strtotime($data['created_at']));
         } else {

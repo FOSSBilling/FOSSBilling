@@ -65,18 +65,9 @@ class Admin extends \Api_Abstract
     {
         $model = $this->_getMessage($data);
 
-        if(isset($data['content'])) {
-            $model->content = $data['content'];
-        }
-
-        if(isset($data['subject'])) {
-            $model->subject = $data['subject'];
-        }
-
-        if(isset($data['status'])) {
-            $model->status = $data['status'];
-        }
-
+        $model->content = $this->di['array_get']($data, 'content', $model->content);
+        $model->subject = $this->di['array_get']($data, 'subject', $model->subject);
+        $model->status = $this->di['array_get']($data, 'status', $model->status);
         if(isset($data['filter'])) {
             $model->filter = json_encode($data['filter']);
         }

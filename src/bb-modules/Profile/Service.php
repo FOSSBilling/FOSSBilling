@@ -72,18 +72,9 @@ class Service implements InjectionAwareInterface
         $event_params['id'] = $admin->id;
         $this->di['events_manager']->fire(array('event' => 'onBeforeAdminStaffProfileUpdate', 'params' => $event_params));
 
-        if (isset($data['email'])) {
-            $admin->email = $data['email'];
-        }
-
-        if (isset($data['name'])) {
-            $admin->name = $data['name'];
-        }
-
-        if (isset($data['signature'])) {
-            $admin->signature = $data['signature'];
-        }
-
+        $admin->email = $this->di['array_get']($data, 'email', $admin->email);
+        $admin->name = $this->di['array_get']($data, 'name', $admin->name);
+        $admin->signature = $this->di['array_get']($data, 'signature', $admin->signature);
         $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 

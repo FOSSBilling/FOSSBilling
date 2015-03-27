@@ -60,26 +60,11 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function update(\Model_Subscription $model, array $data)
     {
-        if(isset($data['status'])) {
-            $model->status = $data['status'];
-        }
-
-        if(isset($data['sid'])) {
-            $model->sid = $data['sid'];
-        }
-
-        if(isset($data['period'])) {
-            $model->period = $data['period'];
-        }
-
-        if(isset($data['amount'])) {
-            $model->amount = $data['amount'];
-        }
-
-        if(isset($data['currency'])) {
-            $model->currency = $data['currency'];
-        }
-
+        $model->status = $this->di['array_get']($data, 'status', $model->status);
+        $model->sid = $this->di['array_get']($data, 'sid', $model->sid);
+        $model->period = $this->di['array_get']($data, 'period', $model->period);
+        $model->amount = $this->di['array_get']($data, 'amount', $model->amount);
+        $model->currency = $this->di['array_get']($data, 'currency', $model->currency);
         $model->updated_at = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($model);
 

@@ -787,38 +787,14 @@ class Service implements \Box\InjectionAwareInterface
 
     public function tldUpdate(\Model_Tld $model, $data)
     {
-        if (isset($data['tld_registrar_id'])) {
-            $model->tld_registrar_id = $data['tld_registrar_id'];
-        }
-
-        if (isset($data['price_registration'])) {
-            $model->price_registration = $data['price_registration'];
-        }
-
-        if (isset($data['price_renew'])) {
-            $model->price_renew = $data['price_renew'];
-        }
-
-        if (isset($data['price_transfer'])) {
-            $model->price_transfer = $data['price_transfer'];
-        }
-
-        if (isset($data['min_years'])) {
-            $model->min_years = $data['min_years'];
-        }
-
-        if (isset($data['allow_register'])) {
-            $model->allow_register = $data['allow_register'];
-        }
-
-        if (isset($data['allow_transfer'])) {
-            $model->allow_transfer = $data['allow_transfer'];
-        }
-
-        if (isset($data['active'])) {
-            $model->active = $data['active'];
-        }
-
+        $model->tld_registrar_id = $this->di['array_get']($data, 'tld_registrar_id', $model->tld_registrar_id);
+        $model->price_registration = $this->di['array_get']($data, 'price_registration', $model->price_registration);
+        $model->price_renew = $this->di['array_get']($data, 'price_renew', $model->price_renew);
+        $model->price_transfer = $this->di['array_get']($data, 'price_transfer', $model->price_transfer);
+        $model->min_years = $this->di['array_get']($data, 'min_years', $model->min_years);
+        $model->allow_register = $this->di['array_get']($data, 'allow_register', $model->allow_register);
+        $model->allow_transfer = $this->di['array_get']($data, 'allow_transfer', $model->allow_transfer);
+        $model->active = $this->di['array_get']($data, 'active', $model->active);
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
@@ -1031,14 +1007,8 @@ class Service implements \Box\InjectionAwareInterface
 
     public function registrarUpdate(\Model_TldRegistrar $model, $data)
     {
-        if (isset($data['title'])) {
-            $model->name = $data['title'];
-        }
-
-        if (isset($data['test_mode'])) {
-            $model->test_mode = $data['test_mode'];
-        }
-
+        $model->name = $this->di['array_get']($data, 'title', $model->name);
+        $model->test_mode = $this->di['array_get']($data, 'test_mode', $model->test_mode);
         if (isset($data['config']) && is_array($data['config'])) {
             $model->config = json_encode($data['config']);
         }
@@ -1110,10 +1080,7 @@ class Service implements \Box\InjectionAwareInterface
             $s->locked = (bool)$data['locked'];
         }
 
-        if (isset($data['transfer_code'])) {
-            $s->transfer_code = $data['transfer_code'];
-        }
-
+        $s->transfer_code = $this->di['array_get']($data, 'transfer_code', $s->transfer_code);
         $s->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($s);
