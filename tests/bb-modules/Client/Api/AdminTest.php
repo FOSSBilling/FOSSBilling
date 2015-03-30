@@ -121,6 +121,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $di['mod_service'] = $di->protect(function ($name) use ($serviceMock) { return $serviceMock; });
         $di['session']     = $sessionMock;
         $di['logger']      = new \Box_Log();
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -128,14 +133,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $data   = array('id' => 1);
         $result = $admin_Client->login($data);
         $this->assertInternalType('array', $result);
-    }
-
-    public function testloginMissingIdException()
-    {
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $data         = array();
-        $this->setExpectedException('\Box_Exception', 'ID required');
-        $result = $admin_Client->login($data);
     }
 
     public function testloginClientNotFound()
@@ -146,6 +143,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -239,21 +241,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['logger']         = new \Box_Log();
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
         $admin_Client->setService($serviceMock);
         $result = $admin_Client->delete($data);
         $this->assertTrue($result);
-    }
-
-    public function testdeleteIdException()
-    {
-        $data = array();
-
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $this->setExpectedException('\Box_Exception', 'Client id is missing');
-        $admin_Client->delete($data);
     }
 
     public function testdeleteClientNotFoundException()
@@ -265,6 +263,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             ->method('load')->will($this->returnValue(null));
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -512,6 +515,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $di['events_manager'] = $eventMock;
         $di['logger']         = new \Box_Log();
         $di['password']       = $passwordMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -521,34 +529,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    public function testchange_passwordMissingId()
-    {
-        $data         = array();
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $this->setExpectedException('\Box_Exception', 'Client ID is required');
-        $admin_Client->change_password($data);
-    }
-
-    public function testchange_passwordMissingPassword()
-    {
-        $data         = array(
-            'id' => 1,
-        );
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $this->setExpectedException('\Box_Exception', 'Password required');
-        $admin_Client->change_password($data);
-    }
-
-    public function testchange_passwordMissingConfirmPass()
-    {
-        $data         = array(
-            'id'       => 1,
-            'password' => 'strongPass',
-        );
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $this->setExpectedException('\Box_Exception', 'Password confirmation required');
-        $admin_Client->change_password($data);
-    }
 
     public function testchange_passwordPasswordMismatch()
     {
@@ -558,6 +538,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             'password_confirm' => 'NotIdentical',
         );
         $admin_Client = new \Box\Mod\Client\Api\Admin();
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $admin_Client->setDi($di);
+
         $this->setExpectedException('\Box_Exception', 'Passwords do not match');
         $admin_Client->change_password($data);
     }
@@ -579,6 +567,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
 
@@ -646,22 +639,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
 
         $result = $admin_Client->balance_delete($data);
         $this->assertTrue($result);
-    }
-
-    public function testbalance_deleteMissingId()
-    {
-        $data = array();
-
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-
-        $this->setExpectedException('\Box_Exception', 'Client ID is required');
-        $admin_Client->balance_delete($data);
     }
 
     public function testbalance_deleteBalanceNotFound()
@@ -674,6 +662,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -706,46 +699,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function ($name) use ($serviceMock) { return $serviceMock; });
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
 
         $result = $admin_Client->balance_add_funds($data);
         $this->assertTrue($result);
-    }
-
-    public function testbalance_add_fundsMissingId()
-    {
-        $data = array();
-
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-
-        $this->setExpectedException('\Box_Exception', 'Client ID is required');
-        $admin_Client->balance_add_funds($data);
-    }
-
-    public function testbalance_add_fundsMsssingAmount()
-    {
-        $data = array(
-            'id' => 1,
-        );
-
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-
-        $this->setExpectedException('\Box_Exception', 'Amount is required');
-        $admin_Client->balance_add_funds($data);
-    }
-
-    public function testbalance_add_fundsMissingDescription()
-    {
-        $data = array(
-            'id'     => 1,
-            'amount' => '1.00',
-        );
-
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-
-        $this->setExpectedException('\Box_Exception', 'Description is required');
-        $admin_Client->balance_add_funds($data);
     }
 
     public function testbalance_add_fundsClientNotFound()
@@ -766,6 +730,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -911,22 +880,18 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
 
         $result = $admin_Client->group_update($data);
 
         $this->assertTrue($result);
-    }
-
-    public function testgroup_updateMissingId()
-    {
-        $data['id'] = null;
-
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-
-        $this->setExpectedException('\Box_Exception', 'Group id is missing');
-        $admin_Client->group_update($data);
     }
 
     public function testgroup_updateGroupNotFound()
@@ -943,6 +908,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -972,6 +942,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -980,16 +955,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $result = $admin_Client->group_delete($data);
 
         $this->assertTrue($result);
-    }
-
-    public function testgroup_deleteMissingId()
-    {
-        $data['id'] = null;
-
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-
-        $this->setExpectedException('\Box_Exception', 'Group id is missing');
-        $admin_Client->group_delete($data);
     }
 
     public function testgroup_deleteGroupNotFound()
@@ -1005,6 +970,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -1029,6 +999,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -1036,16 +1011,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $result = $admin_Client->group_get($data);
 
         $this->assertInternalType('array', $result);
-    }
-
-    public function testgroup_getMissingId()
-    {
-        $data['id'] = null;
-
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-
-        $this->setExpectedException('\Box_Exception', 'Group id is missing');
-        $admin_Client->group_get($data);
     }
 
     public function testgroup_getGroupNotFound()
@@ -1061,6 +1026,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);

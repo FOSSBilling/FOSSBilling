@@ -177,31 +177,19 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('update')
             ->will($this->returnValue(array()));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
         $result = $this->api->update($data);
 
         $this->assertInternalType('array', $result);
     }
 
-    public function testupdateIdMissing()
-    {
-        $data = array(
-            'type' => 'extensioTYpe',
-        );
-
-        $this->setExpectedException('\Box_Exception', 'Extension id was not passed');
-        $this->api->update($data);
-    }
-
-    public function testupdateTypeMissing()
-    {
-        $data = array(
-            'id' => 'extensionId',
-        );
-
-        $this->setExpectedException('\Box_Exception', 'Extension type was not passed');
-        $this->api->update($data);
-    }
 
     public function testupdateExtensionNotFound()
     {
@@ -214,6 +202,12 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('findExtension')
             ->will($this->returnValue(null));
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
         $this->setExpectedException('\Box_Exception', 'Extension not found');
@@ -232,33 +226,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('activateExistingExtension')
             ->will($this->returnValue(array()));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
 
         $result = $this->api->activate($data);
         $this->assertInternalType('array', $result);
-    }
-
-    public function missingFieldProvider()
-    {
-        return array(
-            array('id', 'Extension id was not passed'),
-            array('type', 'Extension type was not passed'),
-        );
-    }
-
-    /**
-     * @dataProvider missingFieldProvider
-     */
-    public function testactivateMissingParams($missingField, $exceptionMessage)
-    {
-        $data = array(
-            'id' => 'extensionId',
-            'type' => 'extensioTYpe',
-        );
-        unset($data[ $missingField ]);
-
-        $this->setExpectedException('\Box_Exception', $exceptionMessage);
-        $this->api->activate($data);
     }
 
     public function testdeactivate()
@@ -286,6 +264,12 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -319,6 +303,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -358,6 +347,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -402,27 +396,18 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 
         $result = $this->api->install($data);
         $this->assertInternalType('array', $result);
         $this->assertEquals($expected, $result);
-    }
-
-    /**
-     * @dataProvider missingFieldProvider
-     */
-    public function testinstallMissingParams($missingField, $exceptionMessage)
-    {
-        $data = array(
-            'id' => 'extensionId',
-            'type' => 'extensioTYpe',
-        );
-        unset($data[ $missingField ]);
-
-        $this->setExpectedException('\Box_Exception', $exceptionMessage);
-        $this->api->activate($data);
     }
 
     public function testconfig_get()
@@ -436,19 +421,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('getConfig')
             ->will($this->returnValue(array()));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
         $result = $this->api->config_get($data);
 
         $this->assertInternalType('array', $result);
-    }
-
-    public function testconfig_getMissingExtException()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Parameter ext was not passed');
-        $this->api->config_get($data);
     }
 
     public function testconfig_save()
@@ -465,18 +448,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->never())
             ->method('getConfig');
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
         $result = $this->api->config_save($data);
 
         $this->assertTrue($result);
-    }
-
-    public function testconfig_saveMissingExtException()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Parameter ext was not passed');
-        $this->api->config_get($data);
     }
 
 

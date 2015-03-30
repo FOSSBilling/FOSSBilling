@@ -456,6 +456,12 @@ class AdminTest extends \PHPUnit_Framework_TestCase
     public function testTemplate_sendToNotSetException()
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
         $adminApi->template_send(array('code' => 'code'));
     }
 
@@ -609,6 +615,13 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $emailService->expects($this->atLeastOnce())
             ->method('sendTemplate')
             ->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
 
         $adminApi->setService($emailService);
 

@@ -81,52 +81,19 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             ->method('changeClientPassword')
             ->will($this->returnValue(true));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->clientApi->setDi($di);
+
         $this->clientApi->setService($service);
         $this->clientApi->setIdentity(new \Model_Client());
 
         $data   = array(
             'password'         => '16047a3e69f5245756d73b419348f0c7',
             'password_confirm' => '16047a3e69f5245756d73b419348f0c7'
-        );
-        $result = $this->clientApi->change_password($data);
-        $this->assertTrue($result);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testChange_passwordNotSetException()
-    {
-        $service = $this->getMockBuilder('\Box\Mod\Profile\Service')->getMock();
-        $service->expects($this->never())
-            ->method('changeClientPassword')
-            ->will($this->returnValue(true));
-
-        $this->clientApi->setService($service);
-        $this->clientApi->setIdentity(new \Model_Client());
-
-        $data   = array(
-            'password_confirm' => '16047a3e69f5245756d73b419348f0c7'
-        );
-        $result = $this->clientApi->change_password($data);
-        $this->assertTrue($result);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testChange_passwordConfirmNotSetException()
-    {
-        $service = $this->getMockBuilder('\Box\Mod\Profile\Service')->getMock();
-        $service->expects($this->never())
-            ->method('changeClientPassword')
-            ->will($this->returnValue(true));
-
-        $this->clientApi->setService($service);
-        $this->clientApi->setIdentity(new \Model_Client());
-
-        $data   = array(
-            'password' => '16047a3e69f5245756d73b419348f0c7'
         );
         $result = $this->clientApi->change_password($data);
         $this->assertTrue($result);
@@ -143,6 +110,11 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(true));
 
         $di = new \Box_Di();
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $this->clientApi->setDi($di);
         $this->clientApi->setService($service);
         $this->clientApi->setIdentity(new \Model_Client());

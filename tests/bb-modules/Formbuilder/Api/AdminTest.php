@@ -48,23 +48,30 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $this->api->setService($serviceMock);
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $result = $this->api->create_form($data);
         $this->assertInternalType('int', $result);
         $this->assertEquals($createdFormId, $result);
     }
 
-    public function testcreate_formMissingName()
-    {
-        $data = array();
-        $this->setExpectedException('\Box_Exception', 'Form name was not provided');
-        $this->api->create_form($data);
-    }
     public function testcreate_formTypeIsNotInList()
     {
         $data = array(
             'name' => 'testName',
             'type' => 'custom',
         );
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
         $this->setExpectedException('\Box_Exception', 'Form style was not found in predefined list', 3657);
         $this->api->create_form($data);
     }
@@ -139,17 +146,16 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('getForm')
             ->will($this->returnValue(array()));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
         $result = $this->api->get_form($data);
         $this->assertInternalType('array', $result);
-    }
-
-    public function testget_formMissingFormId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Form id was not passed', 2391);
-        $this->api->get_form($data);
     }
 
     public function testget_form_fields()
@@ -161,19 +167,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('getFormFields')
             ->will($this->returnValue(array()));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
         $result = $this->api->get_form_fields($data);
         $this->assertInternalType('array', $result);
     }
-
-    public function testget_form_fieldsMissingFormId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Form id was not passed', 1822);
-        $this->api->get_form_fields($data);
-    }
-
 
     public function testget_field()
     {
@@ -184,18 +188,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('getField')
             ->will($this->returnValue(array()));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
 
         $result = $this->api->get_field($data);
         $this->assertInternalType('array', $result);
-    }
-
-    public function testget_fieldMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Field id was not passed', 3547);
-        $this->api->get_field($data);
     }
 
     public function testget_forms()
@@ -220,20 +223,18 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('removeForm')
             ->will($this->returnValue(array()));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
 
         $result = $this->api->delete_form($data);
         $this->assertTrue($result);
     }
-
-    public function testdelete_formMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Form id was not passed', 9958);
-        $this->api->delete_form($data);
-    }
-
 
     public function testdelete_field()
     {
@@ -244,18 +245,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('removeField')
             ->will($this->returnValue(array()));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
 
         $result = $this->api->delete_field($data);
         $this->assertTrue($result);
-    }
-
-    public function testdelete_fieldMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Field id was not passed', 9959);
-        $this->api->delete_field($data);
     }
 
     public function testupdate_field()
@@ -273,6 +273,13 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('isArrayUnique')
             ->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
 

@@ -846,6 +846,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di = new \Box_Di();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(function($name) use($serviceHostingServiceMock) {return $serviceHostingServiceMock;} );
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willThrowException(new \Box_Exception('Period parameter not passed'));
+        $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
@@ -883,6 +888,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di = new \Box_Di();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(function($name) use($serviceHostingServiceMock) {return $serviceHostingServiceMock;} );
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willReturn(null);
+        $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 

@@ -63,28 +63,6 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
         $this->assertInternalType('array', $result);
     }
 
-    public function testchange_password_PasswordRequired()
-    {
-        $client = new \Box\Mod\Client\Api\Client();
-
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Password required');
-        $client->change_password($data);
-    }
-
-    public function testchange_password_PasswordConfirmationRequired()
-    {
-        $client = new \Box\Mod\Client\Api\Client();
-
-        $data = array(
-            'password' => '1234'
-        );
-
-        $this->setExpectedException('\Box_Exception', 'Password confirmation required');
-        $client->change_password($data);
-    }
-
     public function testchange_password_PasswordDoNotMatch()
     {
         $client = new \Box\Mod\Client\Api\Client();
@@ -93,6 +71,12 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
             'password' => '1234',
             'password_confirm' => '1234567'
         );
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $client->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'Passwords do not match.');
         $client->change_password($data);

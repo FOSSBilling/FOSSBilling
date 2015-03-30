@@ -136,10 +136,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     {
         return array(
             array(
-                array( //action parameter is missing
-                ),
-            ),
-            array(
                 array(
                     'action' => 'NonExistingAction'
                 ),
@@ -198,7 +194,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($isSldValidCalled)->method('isSldValid')
             ->will($this->returnValue($isSldValidReturn));
-        $validatorMock->expects($isSldValidCalled)->method('checkRequiredParamsForArray')
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
 
@@ -942,16 +938,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $result = $serviceMock->updateContacts($serviceDomainModel, $data);
 
         $this->assertTrue($result);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testUpdateContactsContactNotSetException()
-    {
-        $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
-        $this->service->updateContacts($serviceDomainModel, array());
     }
 
     public function testGetTransferCode()

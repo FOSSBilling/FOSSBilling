@@ -29,17 +29,17 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
             ->method('getForm')
             ->will($this->returnValue(array()));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
         $this->assertInternalType('array', $result);
     }
 
-    public function testgetMissingFormId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Form id was not passed');
-        $this->api->get($data);
-    }
 }
  

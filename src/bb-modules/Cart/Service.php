@@ -122,7 +122,7 @@ class Service implements InjectionAwareInterface
                         $required = array(
                             'period' => 'Addon period parameter not passed',
                         );
-                        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+                        $this->di['validator']->checkRequiredParamsForArray($required, $ac);
 
                         if (!$this->isPeriodEnabledForProduct($addon, $ac['period'])) {
                             throw new \Box_Exception('Selected billing period is not valid for addon');

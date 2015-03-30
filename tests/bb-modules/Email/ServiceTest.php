@@ -303,6 +303,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $service->setDi($di);
 
         $result = $service->sendTemplate($data);
@@ -356,6 +361,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
             return $api;
         };
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $cryptMock = $this->getMockBuilder('\Box_Crypt')
             ->disableOriginalConstructor()
@@ -494,6 +504,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             return $api;
         };
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+
         $di['db']          = $db;
         $di['twig']        = $twig;
         $di['crypt']       = $cryptMock;
@@ -515,34 +531,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $result = $serviceMock->sendTemplate($data);
 
         $this->assertTrue($result);
-    }
-
-    public function testSendTemplateExceptionProvider()
-    {
-        return array(
-            array(
-                array(
-                    'to' => 'example@example.com', //"code" is not set
-                ),
-            ),
-            array(
-                array(
-                    'code' => 'mod_email_test', //"To" is not set
-                )
-            )
-        );
-    }
-
-    /**
-     *
-     * @dataProvider testSendTemplateExceptionProvider
-     * @expectedException \Box_Exception
-     */
-    public function testSendTemplateException($data)
-    {
-        $service = new \Box\Mod\Email\Service();
-
-        $service->sendTemplate($data); //Expecting \Box_Exception
     }
 
     public function testResend()

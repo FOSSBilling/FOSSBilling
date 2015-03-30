@@ -166,19 +166,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             method('trash');
 
         $di['db'] = $databaseMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);
 
         $result = $activity->log_delete(array('id' => 1));
         $this->assertEquals(true, $result);
-    }
-
-    public function testlog_deleteMissingIdException()
-    {
-        $this->setExpectedException('Box_Exception', 'ID is required');
-        $activity = new \Box\Mod\Activity\Api\Admin();
-        $activity->log_delete(array());
     }
 
     public function testlog_deleteModelException()
@@ -191,6 +189,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             will($this->returnValue(new \StdClass()));
 
         $di['db'] = $databaseMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);

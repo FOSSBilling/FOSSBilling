@@ -23,6 +23,13 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             ->method('saveFile')
             ->will($this->returnValue(true));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->adminApi->setDi($di);
+
         $this->adminApi->setService($serviceMock);
 
         $data   = array(
@@ -33,48 +40,19 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testSave_filePathNotSet()
-    {
-        $serviceMock = $this->getMockBuilder('Box\Mod\Filemanager\Service')->setMethods(array('saveFile'))->getMock();
-        $serviceMock->expects($this->never())
-            ->method('saveFile')
-            ->will($this->returnValue(true));
-
-        $this->adminApi->setService($serviceMock);
-
-        $data = array(
-            'data' => 'Content'
-        );
-        $this->adminApi->save_file($data);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testSave_fileContentNotSet()
-    {
-        $serviceMock = $this->getMockBuilder('Box\Mod\Filemanager\Service')->setMethods(array('saveFile'))->getMock();
-        $serviceMock->expects($this->never())
-            ->method('saveFile')
-            ->will($this->returnValue(true));
-
-        $this->adminApi->setService($serviceMock);
-
-        $data = array(
-            'path' => 'tests',
-        );
-        $this->adminApi->save_file($data);
-    }
-
     public function testNew_item()
     {
         $serviceMock = $this->getMockBuilder('Box\Mod\Filemanager\Service')->setMethods(array('create'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('create')
             ->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
 
@@ -86,49 +64,19 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testNew_itemPathNotSet()
-    {
-        $serviceMock = $this->getMockBuilder('Box\Mod\Filemanager\Service')->setMethods(array('create'))->getMock();
-        $serviceMock->expects($this->never())
-            ->method('create')
-            ->will($this->returnValue(true));
-
-        $this->adminApi->setService($serviceMock);
-
-        $data = array(
-            'type' => 'dir'
-        );
-        $this->adminApi->new_item($data);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testNew_itemTypeNotSet()
-    {
-        $serviceMock = $this->getMockBuilder('Box\Mod\Filemanager\Service')->setMethods(array('create'))->getMock();
-        $serviceMock->expects($this->never())
-            ->method('create')
-            ->will($this->returnValue(true));
-
-        $this->adminApi->setService($serviceMock);
-
-        $data = array(
-            'path' => 'tests',
-        );
-
-        $this->adminApi->new_item($data);
-    }
-
     public function testMove_file()
     {
         $serviceMock = $this->getMockBuilder('Box\Mod\Filemanager\Service')->setMethods(array('move'))->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('move')
             ->will($this->returnValue(true));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->adminApi->setDi($di);
 
         $this->adminApi->setService($serviceMock);
 
@@ -139,44 +87,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $result = $this->adminApi->move_file($data);
         $this->assertTrue($result);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testMove_filePathNotSet()
-    {
-        $serviceMock = $this->getMockBuilder('Box\Mod\Filemanager\Service')->setMethods(array('move'))->getMock();
-        $serviceMock->expects($this->never())
-            ->method('move')
-            ->will($this->returnValue(true));
-
-        $this->adminApi->setService($serviceMock);
-
-        $data = array(
-            'to' => 'src'
-        );
-
-        $this->adminApi->move_file($data);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testMove_fileToDirectoryNotSet()
-    {
-        $serviceMock = $this->getMockBuilder('Box\Mod\Filemanager\Service')->setMethods(array('move'))->getMock();
-        $serviceMock->expects($this->never())
-            ->method('move')
-            ->will($this->returnValue(true));
-
-        $this->adminApi->setService($serviceMock);
-
-        $data = array(
-            'path' => 'tests',
-        );
-
-        $this->adminApi->move_file($data);
     }
 
     public function testGet_list()

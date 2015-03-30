@@ -752,15 +752,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $this->assertInstanceOf('\Model_Client', $result);
     }
 
-    public function testgetIdOrEmailNotProvided()
-    {
-        $service = new \Box\Mod\Client\Service();
-
-        $data = array();
-        $this->setExpectedException('\Box_Exception', 'Client ID or email is required');
-        $service->get($data);
-    }
-
     public function testgetClientNotFound()
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
