@@ -302,6 +302,12 @@ $di['license_server'] = function () use ($di) {
     return $server;
 };
 
+$di['solusvm'] = $di->protect(function ($config) use($di) {
+    $solusVM = new \Box\Mod\Servicesolusvm\SolusVM($config);
+    $solusVM->setDi($di);
+    return $solusVM;
+});
+
 $di['service_boxbilling'] = $di->protect(function ($config) use($di) {
     $service = new \Box\Mod\Serviceboxbillinglicense\ServiceBoxbilling($config);
     return $service;

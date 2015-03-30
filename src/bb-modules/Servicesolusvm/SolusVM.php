@@ -2,13 +2,25 @@
 
 namespace Box\Mod\Servicesolusvm;
 
-class SolusVM {
+class SolusVM implements \Box\InjectionAwareInterface{
 
     protected $api_host = null; // SolusVM Controlpanel URL
     protected $api_ID = array(); // API ID
     protected $api_key = array(); // API KEY
 
     protected $_parameters = array();
+
+    protected $di;
+
+    public function setDi($di)
+    {
+        $this->di = $di;
+    }
+
+    public function getDi()
+    {
+        return $this->di;
+    }
 
     public function __construct(array $c)
     {

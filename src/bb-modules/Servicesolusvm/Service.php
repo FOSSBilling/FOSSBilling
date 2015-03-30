@@ -585,13 +585,14 @@ class Service implements InjectionAwareInterface
         $this->_getApi()->listnodegroups();
         return true;
     }
-    
+
     private function _getApi()
     {
-        if(APPLICATION_ENV == 'testing') {
+        if (APPLICATION_ENV == 'testing') {
             return new \Vps_SolusvmMock($this->getMasterConfig(1));
         }
-        return new SolusVM($this->getMasterConfig(1));
+
+        return $this->di['solusvm']($this->getMasterConfig(1));
     }
 
     public function toApiArray($model, $deep = false, $identity = null)
