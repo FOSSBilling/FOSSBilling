@@ -47,17 +47,18 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('loadTheme')
             ->will($this->returnValue(array()));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
         $this->api->setService($systemServiceMock);
 
         $result = $this->api->get($data);
         $this->assertInternalType('array', $result);
-    }
-    public function testgetMissingCodeParam()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Theme code is missing');
-        $this->api->get($data);
     }
 
     public function testselect_NotAdminTheme()
@@ -81,11 +82,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('setParamValue')
             ->with($this->equalTo('theme'));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
         $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();
 
         $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use($systemServiceMock) { return $systemServiceMock;});
         $di['logger'] = $loggerMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -116,11 +123,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('setParamValue')
             ->with($this->equalTo('admin_theme'));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
         $loggerMock = $this->getMockBuilder('\Box_Log')->getMock();
 
         $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use($systemServiceMock) { return $systemServiceMock;});
         $di['logger'] = $loggerMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -128,14 +141,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $result = $this->api->select($data);
         $this->assertTrue($result);
 
-    }
-
-    public function testselectMissingCodeParam()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Theme code is missing');
-        $this->api->select($data);
     }
 
     public function testpreset_delete()
@@ -154,34 +159,19 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('deletePreset');
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $result = $this->api->preset_delete($data);
         $this->assertInternalType('bool', $result);
         $this->assertTrue($result);
-    }
-
-    public function presetTestData()
-    {
-        return array(
-            array('code', 'Theme code is missing'),
-            array('preset', 'Theme preset name is missing'),
-        );
-    }
-
-    /**
-     * @dataProvider presetTestData
-     */
-    public function testpreset_deleteMissingParams($field, $exceptionMessage)
-    {
-        $data = array(
-            'code' => 'themeCode',
-            'preset' => 'themePreset',
-        );
-        unset ($data[ $field ]);
-
-        $this->setExpectedException('\Box_Exception', $exceptionMessage);
-        $this->api->preset_delete($data);
     }
 
     public function testpreset_select()
@@ -200,28 +190,20 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('setCurrentThemePreset');
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
 
         $result = $this->api->preset_select($data);
         $this->assertInternalType('bool', $result);
         $this->assertTrue($result);
     }
-
-    /**
-     * @dataProvider presetTestData
-     */
-    public function testpreset_selectMissingParams($field, $exceptionMessage)
-    {
-        $data = array(
-            'code' => 'themeCode',
-            'preset' => 'themePreset',
-        );
-        unset ($data[ $field ]);
-
-        $this->setExpectedException('\Box_Exception', $exceptionMessage);
-        $this->api->preset_select($data);
-    }
-
-
 }
  
