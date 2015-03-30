@@ -116,18 +116,19 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
             ->method('getPublicParamValue')
             ->will($this->returnValue('paramValue'));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($servuceMock);
 
         $result = $this->api->param($data);
         $this->assertInternalType('string', $result);
-    }
-
-    public function testparamMissingKeyParam()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Parameter key is missing');
-        $this->api->param($data);
     }
 
     public function testPeriods()
