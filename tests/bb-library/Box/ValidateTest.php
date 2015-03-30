@@ -162,4 +162,46 @@ class Box_ValidateTest extends PHPUnit_Framework_TestCase
         $v->checkRequiredParamsForArray($required, $data, array(), 54321);
     }
 
+    public function testcheckRequiredParamsForArray_KeyValueIsZero()
+    {
+        $data     = array(
+            'amount' => 0
+        );
+        $required = array(
+            'amount'  => 'amount must be set',
+        );
+
+        $v = new Box_Validate();
+        $v->checkRequiredParamsForArray($required, $data);
+    }
+
+    public function testcheckRequiredParamsForArray_EmptyString()
+    {
+        $data     = array(
+            'message' => ''
+        );
+        $required = array(
+            'message'  => 'message must be set',
+        );
+
+        $v = new Box_Validate();
+        $this->setExpectedException('\Box_Exception', $required['message']);
+        $v->checkRequiredParamsForArray($required, $data);
+    }
+
+
+    public function testcheckRequiredParamsForArray_EmptyStringFilledWithSpaces()
+    {
+        $data     = array(
+            'message' => '    '
+        );
+        $required = array(
+            'message'  => 'message must be set',
+        );
+
+        $v = new Box_Validate();
+        $this->setExpectedException('\Box_Exception', $required['message']);
+        $v->checkRequiredParamsForArray($required, $data);
+    }
+
 }

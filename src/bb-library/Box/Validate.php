@@ -92,7 +92,16 @@ class Box_Validate
     public function checkRequiredParamsForArray(array $required, array $data, array $variables = NULL, $code = 0)
     {
         foreach ($required as $key => $msg) {
-            if (!isset($data[$key]) || empty($data[$key])) {
+
+            if(!isset($data[$key])){
+                throw new \Box_Exception($msg, $variables, $code);
+            }
+
+            if (is_string($data[$key]) && strlen(trim($data[$key])) === 0){
+                throw new \Box_Exception($msg, $variables, $code);
+            }
+
+            if (!is_numeric($data[$key]) && empty($data[$key])){
                 throw new \Box_Exception($msg, $variables, $code);
             }
         }
