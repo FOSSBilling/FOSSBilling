@@ -24,29 +24,16 @@ class SolusVM implements \Box\InjectionAwareInterface{
 
     public function __construct(array $c)
     {
-        if(!isset($c['id'])) {
-            throw new \Exception('API ID is missing');
-        }
+        $required = array(
+            'id'        => 'API ID is missing',
+            'key'       => 'API key is missing',
+            'ipaddress' => 'API ip address is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $c);
 
-        if(!isset($c['key'])) {
-            throw new \Exception('API key is missing');
-        }
-
-        if(!isset($c['ipaddress'])) {
-            throw new \Exception('API ip address is missing');
-        }
-
-        if(!isset($c['usertype'])) {
-            $c['usertype'] = 'admin';
-        }
-
-        if(!isset($c['secure'])) {
-            $c['secure'] = false;
-        }
-
-        if(!isset($c['port'])) {
-            $c['port'] = null;
-        }
+        $c['usertype'] = $this->di['array_get']($c, 'usertype', 'admin');
+        $c['secure']   = $this->di['array_get']($c, 'secure', false);
+        $c['port']     = $this->di['array_get']($c, 'port', null);
 
         if ($c['secure']) {
             if ($c["port"]) {
