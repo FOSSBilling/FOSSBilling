@@ -22,7 +22,7 @@ class SolusVM implements \Box\InjectionAwareInterface{
         return $this->di;
     }
 
-    public function __construct(array $c)
+    public function setConfig(array $c)
     {
         $required = array(
             'id'        => 'API ID is missing',
