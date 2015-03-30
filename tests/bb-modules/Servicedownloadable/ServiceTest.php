@@ -4,7 +4,8 @@
 namespace Box\Mod\Servicedownloadable;
 
 
-class ServiceTest extends \PHPUnit_Framework_TestCase {
+class ServiceTest extends \PHPUnit_Framework_TestCase
+{
     /**
      * @var \Box\Mod\Servicedownloadable\Service
      */
@@ -12,7 +13,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
     public function setup()
     {
-        $this->service= new \Box\Mod\Servicedownloadable\Service();
+        $this->service = new \Box\Mod\Servicedownloadable\Service();
     }
 
     public function testgetDi()
@@ -21,18 +22,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $this->service->setDi($di);
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
-    }
-
-    public function testattachOrderConfigMissingFilename()
-    {
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
-        $productModel->config = '{}';
-
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Product is not configured completely.');
-        $this->service->attachOrderConfig($productModel, $data);
     }
 
     public function testattachOrderConfig()
@@ -45,17 +34,17 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $expected = array_merge(json_decode($productModel->config, 1), $data);
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $this->service->setDi($di);
         $result = $this->service->attachOrderConfig($productModel, $data);
         $this->assertInternalType('array', $result);
         $this->assertEquals($expected, $result);
-    }
-
-    public function testvalidateOrderData()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Filename is missing in product config.');
-        $this->service->validateOrderData($data);
     }
 
     public function testaction_create()
@@ -75,9 +64,14 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->will($this->returnValue(1));
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->service->setDi($di);
         $result = $this->service->action_create($clientOrderModel);
@@ -97,9 +91,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
+        $di                = new \Box_Di();
+        $di['db']          = $dbMock;
+        $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
 
         $this->service->setDi($di);
         $this->service->action_delete($clientOrderModel);
@@ -114,7 +108,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -127,14 +121,14 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $model = new \Model_ServiceDownloadable();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
-        $model->filename = 'config.cfg';
+        $model->filename  = 'config.cfg';
         $model->downloads = 1;
 
-        $filePath = 'path/to/location'.md5($model->filename);
+        $filePath = 'path/to/location' . md5($model->filename);
 
         $expected = array(
-            'path' => $filePath,
-            'filename' => $model->filename,
+            'path'      => $filePath,
+            'filename'  => $model->filename,
             'downloads' => 1,
         );
 
@@ -143,8 +137,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('getSavePath')
             ->will($this->returnValue($filePath));
 
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function() use ($productServiceMock) {return $productServiceMock;});
+        $di                = new \Box_Di();
+        $di['mod_service'] = $di->protect(function () use ($productServiceMock) { return $productServiceMock; });
 
         $this->service->setDi($di);
         $result = $this->service->toApiArray($model, null, new \Model_Admin());
@@ -157,11 +151,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $productModel = new  \Model_Product();
         $productModel->loadBean(new \RedBeanPHP\OODBBean());
         $successfullyUploadedFileCount = 0;
-        $requestMock = $this->getMockBuilder('\Box_Request')->getMock();
+        $requestMock                   = $this->getMockBuilder('\Box_Request')->getMock();
         $requestMock->expects($this->atLeastOnce())
             ->method('hasFiles')
             ->will($this->returnValue($successfullyUploadedFileCount));
-        $di = new \Box_Di();
+        $di            = new \Box_Di();
         $di['request'] = $requestMock;
         $this->service->setDi($di);
 
@@ -176,8 +170,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $productModel->loadBean(new \RedBeanPHP\OODBBean());
         $successfullyUploadedFileCount = 1;
 
-        $file = array(
-            'name' => 'test',
+        $file     = array(
+            'name'     => 'test',
             'tmp_name' => '12345',
         );
         $fileMock = new \Box_RequestFile($file);
@@ -200,11 +194,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function() use ($productServiceMock) {return $productServiceMock;});
-        $di['db'] = $dbMock;
-        $di['logger'] = new \Box_Log();
-        $di['request'] = $requestMock;
+        $di                = new \Box_Di();
+        $di['mod_service'] = $di->protect(function () use ($productServiceMock) { return $productServiceMock; });
+        $di['db']          = $dbMock;
+        $di['logger']      = new \Box_Log();
+        $di['request']     = $requestMock;
         $this->service->setDi($di);
 
         $result = $this->service->uploadProductFile($productModel);
@@ -222,8 +216,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $successfullyUploadedFileCount = 1;
 
-        $file = array(
-            'name' => 'test',
+        $file     = array(
+            'name'     => 'test',
             'tmp_name' => '12345',
         );
         $fileMock = new \Box_RequestFile($file);
@@ -244,11 +238,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function() use ($productServiceMock) {return $productServiceMock;});
-        $di['db'] = $dbMock;
-        $di['logger'] = new \Box_Log();
-        $di['request'] = $requestMock;
+        $di                = new \Box_Di();
+        $di['mod_service'] = $di->protect(function () use ($productServiceMock) { return $productServiceMock; });
+        $di['db']          = $dbMock;
+        $di['logger']      = new \Box_Log();
+        $di['request']     = $requestMock;
 
         $this->service->setDi($di);
         $result = $this->service->updateProductFile($serviceDownloadableModel, $orderModel);
@@ -265,11 +259,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $serviceDownloadableModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $successfullyUploadedFileCount = 0;
-        $requestMock = $this->getMockBuilder('\Box_Request')->getMock();
+        $requestMock                   = $this->getMockBuilder('\Box_Request')->getMock();
         $requestMock->expects($this->atLeastOnce())
             ->method('hasFiles')
             ->will($this->returnValue($successfullyUploadedFileCount));
-        $di = new \Box_Di();
+        $di            = new \Box_Di();
         $di['request'] = $requestMock;
         $this->service->setDi($di);
 
@@ -281,10 +275,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     {
         $serviceDownloadableModel = new \Model_ServiceDownloadable();
         $serviceDownloadableModel->loadBean(new \RedBeanPHP\OODBBean());
-        $serviceDownloadableModel->filename = 'config.cfg';
+        $serviceDownloadableModel->filename  = 'config.cfg';
         $serviceDownloadableModel->downloads = 1;
 
-        $filePath = 'path/to/location'.md5($serviceDownloadableModel->filename);
+        $filePath = 'path/to/location' . md5($serviceDownloadableModel->filename);
 
         $productServiceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
         $productServiceMock->expects($this->atLeastOnce())
@@ -300,11 +294,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $di['tools'] = $toolsMock;
-        $di['logger'] = new \Box_Log();
-        $di['mod_service'] = $di->protect(function() use ($productServiceMock) {return $productServiceMock;});
+        $di                = new \Box_Di();
+        $di['db']          = $dbMock;
+        $di['tools']       = $toolsMock;
+        $di['logger']      = new \Box_Log();
+        $di['mod_service'] = $di->protect(function () use ($productServiceMock) { return $productServiceMock; });
 
         $this->service->setDi($di);
 
@@ -317,10 +311,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     {
         $serviceDownloadableModel = new \Model_ServiceDownloadable();
         $serviceDownloadableModel->loadBean(new \RedBeanPHP\OODBBean());
-        $serviceDownloadableModel->filename = 'config.cfg';
+        $serviceDownloadableModel->filename  = 'config.cfg';
         $serviceDownloadableModel->downloads = 1;
 
-        $filePath = 'path/to/location'.md5($serviceDownloadableModel->filename);
+        $filePath = 'path/to/location' . md5($serviceDownloadableModel->filename);
 
         $productServiceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
         $productServiceMock->expects($this->atLeastOnce())
@@ -332,23 +326,15 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('fileExists');
 
 
-        $di = new \Box_Di();
-        $di['tools'] = $toolsMock;
-        $di['mod_service'] = $di->protect(function() use ($productServiceMock) {return $productServiceMock;});
+        $di                = new \Box_Di();
+        $di['tools']       = $toolsMock;
+        $di['mod_service'] = $di->protect(function () use ($productServiceMock) { return $productServiceMock; });
 
         $this->service->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'File can not be downloaded at the moment. Please contact support', 404);
         $this->service->sendFile($serviceDownloadableModel);
     }
-
-
-
-
-
-
-
-
 
 
 }
