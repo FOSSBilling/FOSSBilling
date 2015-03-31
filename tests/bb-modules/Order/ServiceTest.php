@@ -44,6 +44,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $result = $this->service->counter();
@@ -412,6 +415,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             if ($serviceName == 'order') {
                 return $serviceMock;
             }
+        });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
         });
         $serviceMock->setDi($di);
         $eventMock->expects($this->atLeastOnce())
@@ -999,6 +1005,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['mod_service'] = $di->protect(function () use ($systemService) {
             return $systemService;
         });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
@@ -1266,6 +1275,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testgetSearchQuery($data, $expectedStr, $expectedParams)
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->service->setDi($di);
+
         $result = $this->service->getSearchQuery($data);
         $this->assertInternalType('string', $result[0]);
         $this->assertInternalType('array', $result[1]);
@@ -1812,6 +1827,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['mod_config'] = $di->protect(function ($name) { return array(); });
         $di['period']     = $di->protect(function () use ($periodMock) { return $periodMock; });
         $di['db']         = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $serviceMock->setDi($di);
         $serviceMock->renewFromOrder($clientOrderModel);
