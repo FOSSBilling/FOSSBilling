@@ -53,6 +53,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->service->setDi($di);
 
@@ -519,6 +522,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
         $di['logger'] = new \Box_Log();
+        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->service->setDi($di);
 
@@ -617,6 +623,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             'id'     => 1,
             'status' => 'active',
         );
+
+        $di                = new \Box_Di();
+        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->service->setDi($di);
 
         list($sql, $params) = $this->service->getPromoSearchQuery($data);
 
@@ -747,6 +759,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             'show_hidden' => true,
         );
 
+        $di                = new \Box_Di();
+        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->service->setDi($di);
+
         list($sql, $params) = $this->service->getProductSearchQuery($data);
 
         $this->assertInternalType('string', $sql);
@@ -787,6 +805,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
+        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $serviceMock->setDi($di);
         $result = $serviceMock->toProductCategoryApiArray($model);
