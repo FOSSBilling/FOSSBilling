@@ -1340,3 +1340,9 @@ li.plupload_droptext { background: transparent; text-align: center; vertical-ali
 .moreFields div.radio span{
     padding: 0;
 }
+
+.truncate{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
