@@ -22,6 +22,24 @@ class SolusVM implements \Box\InjectionAwareInterface{
         return $this->di;
     }
 
+    public function getSecureUrl(array $config)
+    {
+        $cport = "5656";
+        if ($config["port"]) {
+            $cport = $config["port"];
+        }
+        return "https://" . $config['ipaddress'] . ":" . $cport . "/api/" . $config['usertype'] . "/command.php";
+    }
+
+    public function getUrl(array $config)
+    {
+        $cport = "5353";
+        if ($config["port"]) {
+            $cport = $config["port"];
+        }
+        return "http://" . $config['ipaddress'] . ":" . $cport . "/api/" . $config['usertype'] . "/command.php";
+    }
+
     public function setConfig(array $c)
     {
         $required = array(
@@ -35,20 +53,10 @@ class SolusVM implements \Box\InjectionAwareInterface{
         $c['secure']   = $this->di['array_get']($c, 'secure', false);
         $c['port']     = $this->di['array_get']($c, 'port', null);
 
+        $url = $this->getUrl($c);
+
         if ($c['secure']) {
-            if ($c["port"]) {
-                $cport = $c["port"];
-            } else {
-                $cport = "5656";
-            }
-            $url = "https://" . $c['ipaddress'] . ":" . $cport . "/api/" . $c['usertype'] . "/command.php";
-        } else {
-            if ($c["port"]) {
-                $cport = $c["port"];
-            } else {
-                $cport = "5353";
-            }
-            $url = "http://" . $c['ipaddress'] . ":" . $cport . "/api/" . $c['usertype'] . "/command.php";
+            $url = $this->getSecureUrl($url);
         }
 
         $this->api_host = $url;
