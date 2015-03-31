@@ -32,7 +32,7 @@ class Client extends \Api_Abstract
         } else {
             list($query, $bindings) = $this->getService()->getSearchQuery($data);
         }
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getAdvancedResultSet($query, $bindings, $per_page);
 
         foreach ($pager['list'] as $key => $item) {

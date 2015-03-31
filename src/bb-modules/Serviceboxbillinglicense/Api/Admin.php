@@ -128,10 +128,7 @@ class Admin extends \Api_Abstract
     {
         list(, $service) = $this->_getService($data);
         
-        if(isset($data['oid'])) {
-            $service->oid = $data['oid'];
-        }
-
+        $service->oid = $this->di['array_get']($data, 'oid', $service->oid);
         $service->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($service);
         

@@ -32,7 +32,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);
@@ -72,7 +74,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['pager'] = $paginatorMock;
         $di['mod_service'] = $di->protect(function() use ($service) {return $service;});
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $api = new \Api_Handler(new \Model_Admin());
         $api->setDi($di);
@@ -98,6 +102,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['db'] = $databaseMock;
         $di['request'] = new \Box_Request($di);
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);
@@ -108,7 +115,13 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
     public function testlogEmptyMParam()
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+
         $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity->setDi($di);
         $result = $activity->log(array());
         $this->assertEquals(false, $result, 'Empty array key m');
     }
@@ -120,8 +133,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('logEmail')
             ->will($this->returnValue(true));
 
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+
         $adminApi = new \Box\Mod\Activity\Api\Admin();
         $adminApi->setService($service);
+        $adminApi->setDi($di);
         $result = $adminApi->log_email(array('subject' => 'Proper subject'));
 
         $this->assertEquals(true, $result, 'Log_email did not returned true');
@@ -147,19 +166,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             method('trash');
 
         $di['db'] = $databaseMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);
 
         $result = $activity->log_delete(array('id' => 1));
         $this->assertEquals(true, $result);
-    }
-
-    public function testlog_deleteMissingIdException()
-    {
-        $this->setExpectedException('Box_Exception', 'ID is required');
-        $activity = new \Box\Mod\Activity\Api\Admin();
-        $activity->log_delete(array());
     }
 
     public function testlog_deleteModelException()
@@ -172,6 +189,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             will($this->returnValue(new \StdClass()));
 
         $di['db'] = $databaseMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $activity = new \Box\Mod\Activity\Api\Admin();
         $activity->setDi($di);

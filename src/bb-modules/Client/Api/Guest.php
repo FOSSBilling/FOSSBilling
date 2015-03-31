@@ -72,30 +72,30 @@ class Guest extends \Api_Abstract
             'password' => 'Password required',
             'password_confirm' => 'Password confirmation required',
         );
-        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $this->getService()->checkExtraRequiredFields($this->di['api_request_data']->get());
-        $this->getService()->checkCustomFields($this->di['api_request_data']->get());
+        $this->getService()->checkExtraRequiredFields($data);
+        $this->getService()->checkCustomFields($data);
 
-        $this->di['validator']->isPasswordStrong($this->di['api_request_data']->get('password'));
+        $this->di['validator']->isPasswordStrong($this->di['array_get']($data, 'password'));
         $service = $this->getService();
 
-        $email = $this->di['api_request_data']->get('email');
+        $email = $this->di['array_get']($data, 'email');
         $this->di['validator']->isEmailValid($email);
         $email = strtolower(trim($email));
         if($service->clientAlreadyExists($email)) {
             throw new \Box_Exception('Email is already registered. You may want to login instead of registering.');
         }
 
-        $client = $service->guestCreateClient($this->di['api_request_data']->get());
+        $client = $service->guestCreateClient($data);
 
         if (isset($config['require_email_confirmation']) && (int)$config['require_email_confirmation'] && !$client->email_approved) {
             throw new \Box_Exception('Account has been created. Please check your mailbox and confirm email address.', null,  7777);
         }
 
-        if($this->di['api_request_data']->get('auto_login', 0)) {
+        if($this->di['array_get']($data, 'auto_login', 0)) {
             try {
-                $this->login(array('email'=>$client->email, 'password' => $this->di['api_request_data']->get('password')));
+                $this->login(array('email'=>$client->email, 'password' => $this->di['array_get']($data, 'password')));
             } catch(\Exception $e) {
                 error_log($e->getMessage());
             }
@@ -115,13 +115,11 @@ class Guest extends \Api_Abstract
      */
     public function login($data)
     {
-        if(!isset($data['email'])) {
-            throw new \Box_Exception('Email required');
-        }
-
-        if(!isset($data['password'])) {
-            throw new \Box_Exception('Password required');
-        }
+        $required = array(
+            'email'         => 'Email required',
+            'password' => 'Password required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $event_params = $data;
         $event_params['ip'] = $this->ip;
@@ -160,9 +158,10 @@ class Guest extends \Api_Abstract
      */
     public function reset_password($data)
     {
-        if(!isset($data['email'])) {
-            throw new \Box_Exception('Email required');
-        }
+        $required = array(
+            'email'         => 'Email required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $this->di['events_manager']->fire(array('event'=>'onBeforeGuestPasswordResetRequest', 'params'=>$data));
 
@@ -202,9 +201,10 @@ class Guest extends \Api_Abstract
      */
     public function confirm_reset($data)
     {
-        if(!isset($data['hash'])) {
-            throw new \Box_Exception('Hash required');
-        }
+        $required = array(
+            'hash'         => 'Hash required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', array($data['hash']));
         if(!$reset instanceof \Model_ClientPasswordReset) {
@@ -241,18 +241,17 @@ class Guest extends \Api_Abstract
      */
     public function is_vat($data)
     {
-        if(!isset($data['country'])) {
-            throw new \Box_Exception('Country code is required');
-        }
-        
-        if(!isset($data['vat'])) {
-            throw new \Box_Exception('Country code is required');
-        }
-        
+        $required = array(
+            'country' => 'Country code',
+            'vat'     => 'Country VAT is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $cc     = $data['country'];
         $vatnum = $data['vat'];
-        $url = 'http://isvat.appspot.com/'.rawurlencode($cc).'/'.rawurlencode($vatnum).'/';
+        $url    = 'http://isvat.appspot.com/' . rawurlencode($cc) . '/' . rawurlencode($vatnum) . '/';
         $result = $this->di['guzzle_client']->get($url);
+
         return ($result == 'true');
     }
     

@@ -141,10 +141,7 @@ class Admin extends \Api_Abstract
     {
         list($order, $s) = $this->_getService($data);
         
-        if(isset($data['username'])) {
-            $s->username = $data['username'];
-        }
-        
+        $s->username = $this->di['array_get']($data, 'username', $s->username);
         if(isset($data['pass'])) {
             $s->pass = $this->getService()->encryptPass($data['pass']);
         }

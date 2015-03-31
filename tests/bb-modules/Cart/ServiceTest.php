@@ -846,6 +846,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di = new \Box_Di();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(function($name) use($serviceHostingServiceMock) {return $serviceHostingServiceMock;} );
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willThrowException(new \Box_Exception('Period parameter not passed'));
+        $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
@@ -883,6 +888,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di = new \Box_Di();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(function($name) use($serviceHostingServiceMock) {return $serviceHostingServiceMock;} );
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willReturn(null);
+        $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
@@ -920,6 +930,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di = new \Box_Di();
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(function($name) use($serviceHostingServiceMock) {return $serviceHostingServiceMock;} );
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
@@ -970,6 +983,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(function($name) use($serviceHostingServiceMock) {return $serviceHostingServiceMock;} );
         $di['logger'] = new \Box_Log();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $serviceMock->setDi($di);
         $productModel->setDi($di);
         $productDomainModel->setDi($di);
@@ -1024,6 +1040,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['mod_service'] = $di->protect(function($name) use($serviceLicenseServiceMock) {return $serviceLicenseServiceMock;} );
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
@@ -1078,6 +1097,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['mod_service'] = $di->protect(function($name) use($serviceCustomServiceMock) {return $serviceCustomServiceMock;} );
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
@@ -1162,7 +1184,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $discountPrice = 25;
 
-        $config = array();
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1186,9 +1207,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('getItemPromoDiscount')
             ->willReturn($discountPrice);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getItemConfig')
-            ->willReturn($config);
 
         $serviceMock->setDi($di);
         $setupPrice = 0;
@@ -1211,7 +1229,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $promoModel = new \Model_Promo();
         $promoModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $config = array();
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1228,9 +1245,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('getRelatedItemsDiscount')
             ->willReturn(0);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getItemConfig')
-            ->willReturn($config);
 
         $serviceMock->setDi($di);
         $setupPrice = 0;
@@ -1254,7 +1268,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $promoModel->loadBean(new \RedBeanPHP\OODBBean());
         $promoModel->freesetup = 1;
 
-        $config = array('quantity' => 2);
         $discountPrice = 25;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -1279,9 +1292,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('getItemPromoDiscount')
             ->willReturn($discountPrice);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getItemConfig')
-            ->willReturn($config);
 
         $serviceMock->setDi($di);
         $setupPrice = 25;

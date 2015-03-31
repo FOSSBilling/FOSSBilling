@@ -123,14 +123,6 @@
         </delete>
     </target>
 
-    <target name="branch.check">
-        <property environment="env"/>
-        <echo>TRAVIS_BRANCH: ${env.TRAVIS_BRANCH}</echo>
-        <condition property="branch.master">
-            <equals arg1="${env.TRAVIS_BRANCH}" arg2="master" />
-        </condition>
-    </target>
-
     <target name="build-api" depends="clean, remove-fonts">
         <copy todir="${source}">
             <fileset refid="shared-artifacts"/>
@@ -155,11 +147,6 @@
     </target>
 
     <target name="test" depends="clean, composer-dev, test-unit, test-integration, test-modules"/>
-    <target name="release" if="branch.master" depends="branch.check">
-        <antcall target="clean" />
-        <antcall target="composer" />
-        <antcall target="build-api" />
-        <antcall target="package" />
-    </target>
-    <target name="build" depends="config, test, release"/>
+    <target name="release" depends="clean, composer, build-api, package" />
+    <target name="build" depends="config, test"/>
 </project>

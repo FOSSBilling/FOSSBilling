@@ -259,19 +259,19 @@ class Service implements \Box\InjectionAwareInterface
                 JOIN support_ticket_message stm ON stm.support_ticket_id = st.id
                 LEFT JOIN client c ON st.client_id = c.id";
 
-        $search     = isset($data['search']) ? $data['search'] : NULL;
-        $id         = isset($data['id']) ? $data['id'] : NULL;
-        $status     = isset($data['status']) ? $data['status'] : NULL;
-        $client     = isset($data['client']) ? $data['client'] : NULL;
-        $client_id  = isset($data['client_id']) ? $data['client_id'] : NULL;
-        $order_id   = isset($data['order_id']) ? $data['order_id'] : NULL;
-        $subject    = isset($data['subject']) ? $data['subject'] : NULL;
-        $content    = isset($data['content']) ? $data['content'] : NULL;
-        $helpdesk   = isset($data['support_helpdesk_id']) ? $data['support_helpdesk_id'] : NULL;
-        $created_at = isset($data['created_at']) ? $data['created_at'] : NULL;
-        $date_from  = isset($data['date_from']) ? $data['date_from'] : NULL;
-        $date_to    = isset($data['date_to']) ? $data['date_to'] : NULL;
-        $priority   = isset($data['priority']) ? $data['priority'] : NULL;
+        $search     = $this->di['array_get']($data, 'search', NULL);
+        $id         = $this->di['array_get']($data, 'id', NULL);
+        $status     = $this->di['array_get']($data, 'status', NULL);
+        $client     = $this->di['array_get']($data, 'client', NULL);
+        $client_id  = $this->di['array_get']($data, 'client_id', NULL);
+        $order_id   = $this->di['array_get']($data, 'order_id', NULL);
+        $subject    = $this->di['array_get']($data, 'subject', NULL);
+        $content    = $this->di['array_get']($data, 'content', NULL);
+        $helpdesk   = $this->di['array_get']($data, 'support_helpdesk_id', NULL);
+        $created_at = $this->di['array_get']($data, 'created_at', NULL);
+        $date_from  = $this->di['array_get']($data, 'date_from', NULL);
+        $date_to    = $this->di['array_get']($data, 'date_to', NULL);
+        $priority   = $this->di['array_get']($data, 'priority', NULL);
 
         $where    = array();
         $bindings = array();
@@ -370,9 +370,9 @@ class Service implements \Box\InjectionAwareInterface
 
         return array(
             'total'                      => array_sum($data),
-            \Model_SupportTicket::OPENED => isset($data[\Model_SupportTicket::OPENED]) ? $data[\Model_SupportTicket::OPENED] : 0,
-            \Model_SupportTicket::CLOSED => isset($data[\Model_SupportTicket::CLOSED]) ? $data[\Model_SupportTicket::CLOSED] : 0,
-            \Model_SupportTicket::ONHOLD => isset($data[\Model_SupportTicket::ONHOLD]) ? $data[\Model_SupportTicket::ONHOLD] : 0,
+            \Model_SupportTicket::OPENED => $this->di['array_get']($data, \Model_SupportTicket::OPENED, 0),
+            \Model_SupportTicket::CLOSED => $this->di['array_get']($data, \Model_SupportTicket::CLOSED, 0),
+            \Model_SupportTicket::ONHOLD => $this->di['array_get']($data, \Model_SupportTicket::ONHOLD, 0),
         );
     }
 
@@ -617,7 +617,7 @@ class Service implements \Box\InjectionAwareInterface
     {
         $query = "SELECT * FROM support_helpdesk";
 
-        $search = isset($data['search']) ? $data['search'] : NULL;
+        $search = $this->di['array_get']($data, 'search', NULL);
 
         $where    = array();
         $bindings = array();
@@ -704,22 +704,10 @@ class Service implements \Box\InjectionAwareInterface
 
     public function ticketUpdate(\Model_SupportTicket $model, $data)
     {
-        if (isset($data['support_helpdesk_id'])) {
-            $model->support_helpdesk_id = $data['support_helpdesk_id'];
-        }
-
-        if (isset($data['status'])) {
-            $model->status = $data['status'];
-        }
-
-        if (isset($data['subject'])) {
-            $model->subject = $data['subject'];
-        }
-
-        if (isset($data['priority'])) {
-            $model->priority = $data['priority'];
-        }
-
+        $model->support_helpdesk_id = $this->di['array_get']($data, 'support_helpdesk_id', $model->support_helpdesk_id);
+        $model->status = $this->di['array_get']($data, 'status', $model->status);
+        $model->subject = $this->di['array_get']($data, 'subject', $model->subject);
+        $model->priority = $this->di['array_get']($data, 'priority', $model->priority);
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
@@ -779,7 +767,7 @@ class Service implements \Box\InjectionAwareInterface
 
     public function ticketCreateForAdmin(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, $data, \Model_Admin $identity)
     {
-        $status = isset($data['status']) ? $data['status'] : \Model_SupportTicket::ONHOLD;
+        $status = $this->di['array_get']($data, 'status', \Model_SupportTicket::ONHOLD);
 
         $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOpenTicket', 'params' => $data));
 
@@ -817,9 +805,15 @@ class Service implements \Box\InjectionAwareInterface
         $event_params['ip'] = $this->di['request']->getClientAddress();
         $altered            = $this->di['events_manager']->fire(array('event' => 'onBeforeGuestPublicTicketOpen', 'params' => $event_params));
 
-        $status  = isset($altered['status']) ? $altered['status'] : 'open';
-        $subject = isset($altered['subject']) ? $altered['subject'] : $data['subject'];
-        $message = isset($altered['message']) ? $altered['message'] : $data['message'];
+        $status = 'open';
+        $subject = $this->di['array_get']($data, 'subject');
+        $message = $this->di['array_get']($data, 'message');
+
+        if (is_array($altered)){
+            $status  = $this->di['array_get']($altered, 'status');
+            $subject = $this->di['array_get']($altered, 'subject');
+            $message = $this->di['array_get']($altered, 'message');
+        }
 
         $ticket               = $this->di['db']->dispense('SupportPTicket');
         $ticket->hash         = sha1(uniqid());
@@ -867,10 +861,10 @@ class Service implements \Box\InjectionAwareInterface
     public function ticketCreateForClient(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, array $data)
     {
         //@todo validate task params
-        $rel_id        = isset($data['rel_id']) ? $data['rel_id'] : NULL;
-        $rel_type      = isset($data['rel_type']) ? $data['rel_type'] : NULL;
-        $rel_task      = isset($data['rel_task']) ? $data['rel_task'] : NULL;
-        $rel_new_value = isset($data['rel_new_value']) ? $data['rel_new_value'] : NULL;
+        $rel_id        = $this->di['array_get']($data, 'rel_id', NULL);
+        $rel_type      = $this->di['array_get']($data, 'rel_type', NULL);
+        $rel_task      = $this->di['array_get']($data, 'rel_task', NULL);
+        $rel_new_value = $this->di['array_get']($data, 'rel_new_value', NULL);
         $rel_status    = isset($data['rel_task']) ? \Model_SupportTicket::REL_STATUS_PENDING : \Model_SupportTicket::REL_STATUS_COMPLETE;
 
         // check if support ticket with same uncompleted task already exists
@@ -992,14 +986,14 @@ class Service implements \Box\InjectionAwareInterface
         LEFT JOIN support_p_ticket_message sptm
         ON spt.id = sptm.support_p_ticket_id";
 
-        $search = isset($data['search']) ? $data['search'] : NULL;
+        $search = $this->di['array_get']($data, 'search', NULL);
 
-        $id      = isset($data['id']) ? $data['id'] : NULL;
-        $status  = isset($data['status']) ? $data['status'] : NULL;
-        $name    = isset($data['name']) ? $data['name'] : NULL;
-        $email   = isset($data['email']) ? $data['email'] : NULL;
-        $subject = isset($data['subject']) ? $data['subject'] : NULL;
-        $content = isset($data['content']) ? $data['content'] : NULL;
+        $id      = $this->di['array_get']($data, 'id', NULL);
+        $status  = $this->di['array_get']($data, 'status', NULL);
+        $name    = $this->di['array_get']($data, 'name', NULL);
+        $email   = $this->di['array_get']($data, 'email', NULL);
+        $subject = $this->di['array_get']($data, 'subject', NULL);
+        $content = $this->di['array_get']($data, 'content', NULL);
 
         $where    = array();
         $bindings = array();
@@ -1229,14 +1223,8 @@ class Service implements \Box\InjectionAwareInterface
 
     public function publicTicketUpdate(\Model_SupportPTicket $model, $data)
     {
-        if (isset($data['subject'])) {
-            $model->subject = $data['subject'];
-        }
-
-        if (isset($data['status'])) {
-            $model->status = $data['status'];
-        }
-
+        $model->subject = $this->di['array_get']($data, 'subject', $model->subject);
+        $model->status = $this->di['array_get']($data, 'status', $model->status);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
@@ -1290,26 +1278,11 @@ class Service implements \Box\InjectionAwareInterface
 
     public function helpdeskUpdate(\Model_SupportHelpdesk $model, $data)
     {
-        if (isset ($data['name'])) {
-            $model->name = $data['name'];
-        }
-
-        if (isset ($data['email'])) {
-            $model->email = $data['email'];
-        }
-
-        if (isset ($data['can_reopen'])) {
-            $model->can_reopen = $data['can_reopen'];
-        }
-
-        if (isset ($data['close_after'])) {
-            $model->close_after = $data['close_after'];
-        }
-
-        if (isset ($data['signature'])) {
-            $model->signature = $data['signature'];
-        }
-
+        $model->name = $this->di['array_get']($data, 'name', $model->name);
+        $model->email = $this->di['array_get']($data, 'email', $model->email);
+        $model->can_reopen = $this->di['array_get']($data, 'can_reopen', $model->can_reopen);
+        $model->close_after = $this->di['array_get']($data, 'close_after', $model->close_after);
+        $model->signature = $this->di['array_get']($data, 'signature', $model->signature);
         $model->updated_at = date('Y-m-d H:i:s');
         $id                = $this->di['db']->store($model);
 
@@ -1322,10 +1295,10 @@ class Service implements \Box\InjectionAwareInterface
     {
         $model              = $this->di['db']->dispense('SupportHelpdesk');
         $model->name        = $data['name'];
-        $model->email       = isset($data['email']) ? $data['email'] : NULL;
-        $model->can_reopen  = isset($data['can_reopen']) ? $data['can_reopen'] : NULL;
-        $model->close_after = isset($data['close_after']) ? $data['close_after'] : NULL;
-        $model->signature   = isset($data['signature']) ? $data['signature'] : NULL;
+        $model->email       = $this->di['array_get']($data, 'email', NULL);
+        $model->can_reopen  = $this->di['array_get']($data, 'can_reopen', NULL);
+        $model->close_after = $this->di['array_get']($data, 'close_after', NULL);
+        $model->signature   = $this->di['array_get']($data, 'signature', NULL);
         $model->created_at  = date('Y-m-d H:i:s');
         $model->updated_at  = date('Y-m-d H:i:s');
         $id                 = $this->di['db']->store($model);
@@ -1341,7 +1314,7 @@ class Service implements \Box\InjectionAwareInterface
                 LEFT JOIN support_pr_category spc
                 ON spc.id = sp.support_pr_category_id";
 
-        $search = isset($data['search']) ? $data['search'] : NULL;
+        $search = $this->di['array_get']($data, 'search', NULL);
 
         $where    = array();
         $bindings = array();
@@ -1443,18 +1416,9 @@ class Service implements \Box\InjectionAwareInterface
 
     public function cannedUpdate(\Model_SupportPr $model, $data)
     {
-        if (isset($data['category_id'])) {
-            $model->support_pr_category_id = $data['category_id'];
-        }
-
-        if (isset($data['title'])) {
-            $model->title = $data['title'];
-        }
-
-        if (isset($data['content'])) {
-            $model->content = $data['content'];
-        }
-
+        $model->support_pr_category_id = $this->di['array_get']($data, 'category_id', $model->support_pr_category_id);
+        $model->title = $this->di['array_get']($data, 'title', $model->title);
+        $model->content = $this->di['array_get']($data, 'content', $model->content);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 

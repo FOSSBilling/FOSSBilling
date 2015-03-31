@@ -30,13 +30,11 @@ class Admin extends \Api_Abstract
      */
     public function save_file($data)
     {
-        if (!isset($data['path'])) {
-            throw new \Box_Exception('path parameter is missing');
-        }
-
-        if (!isset($data['data'])) {
-            throw new \Box_Exception('Data parameter is missing');
-        }
+        $required = array(
+            'path' => 'Path parameter is missing',
+            'data' => 'Data parameter is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $content = empty($data['data']) ? PHP_EOL : $data['data'];
 
@@ -53,13 +51,11 @@ class Admin extends \Api_Abstract
      */
     public function new_item($data)
     {
-        if (!isset($data['path'])) {
-            throw new \Box_Exception('Path parameter is missing');
-        }
-
-        if (!isset($data['type'])) {
-            throw new \Box_Exception('Type parameter is missing');
-        }
+        $required = array(
+            'path' => 'Path parameter is missing',
+            'type' => 'Type parameter is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         return $this->getService()->create($data['path'], $data['type']);
     }
@@ -74,13 +70,11 @@ class Admin extends \Api_Abstract
      */
     public function move_file($data)
     {
-        if (!isset($data['path'])) {
-            throw new \Box_Exception('Path parameter is missing');
-        }
-
-        if (!isset($data['to'])) {
-            throw new \Box_Exception('To parameter is missing');
-        }
+        $required = array(
+            'path' => 'Path parameter is missing',
+            'to'   => 'To parameter is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         return $this->getService()->move($data['path'], $data['to']);
     }

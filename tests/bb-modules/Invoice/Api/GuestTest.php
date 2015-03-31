@@ -100,7 +100,9 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $this->api->setIdentity(new \Model_Admin());
@@ -224,16 +226,15 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('generatePDF');
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
 
-        $this->api->pdf($data);
-    }
-
-    public function testpdfMissingHash()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Invoice hash is missing');
         $this->api->pdf($data);
     }
 }

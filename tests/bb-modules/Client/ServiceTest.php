@@ -292,6 +292,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $database;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
 
         $clientService = new \Box\Mod\Client\Service();
@@ -490,7 +493,13 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
      */
     public function testgetBalanceSearchQuery($data, $expectedStr, $expectedParams)
     {
+
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $clientBalanceService = new \Box\Mod\Client\ServiceBalance();
+        $clientBalanceService->setDi($di);
         list ($sql, $params) = $clientBalanceService->getSearchQuery($data);
         $this->assertNotEmpty($sql);
         $this->assertInternalType('string', $sql);
@@ -519,6 +528,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $database;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
@@ -619,6 +631,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
     public function testgetHistorySearchQuery($data, $expectedStr, $expectedParams)
     {
         $clientService = new \Box\Mod\Client\Service();
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $clientService->setDi($di);
         list ($sql, $params) = $clientService->getHistorySearchQuery($data);
         $this->assertNotEmpty($sql);
         $this->assertInternalType('string', $sql);
@@ -733,15 +750,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $data = array($fieldName => $fieldValue);
         $result = $service->get($data);
         $this->assertInstanceOf('\Model_Client', $result);
-    }
-
-    public function testgetIdOrEmailNotProvided()
-    {
-        $service = new \Box\Mod\Client\Service();
-
-        $data = array();
-        $this->setExpectedException('\Box_Exception', 'Client ID or email is required');
-        $service->get($data);
     }
 
     public function testgetClientNotFound()
@@ -895,10 +903,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
         $di['password'] = $passwordMock;
-        $apiRequest = new \Box\Mod\Api\Request();
-        $apiRequest->setRequest($data);
-        $di['api_request_data'] = $apiRequest;
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
@@ -947,10 +954,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['logger'] = new \Box_Log();
         $di['request'] = $requestMock;
         $di['password'] = $passwordMock;
-
-        $apiRequest = new \Box\Mod\Api\Request();
-        $apiRequest->setRequest($data);
-        $di['api_request_data'] = $apiRequest;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
@@ -1228,6 +1234,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di['mod_config'] = $di->protect(function ($modName) use($config){
             return $config;
         });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
         $this->setExpectedException('Box_Exception', 'It is required that you provide details for field "Id"');
@@ -1247,6 +1256,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['mod_config'] = $di->protect(function ($modName) use($config){
             return $config;
+        });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
         });
         $data = array();
         $service = new \Box\Mod\Client\Service();
@@ -1269,6 +1281,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['mod_config'] = $di->protect(function ($modName) use($config){
             return $config;
+        });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
         });
         $data = array();
         $service = new \Box\Mod\Client\Service();

@@ -4,7 +4,8 @@
 namespace Box\Mod\Servicehosting\Api;
 
 
-class AdminTest extends \PHPUnit_Framework_TestCase {
+class AdminTest extends \PHPUnit_Framework_TestCase
+{
 
     /**
      * @var \Box\Mod\Servicehosting\Api\Admin
@@ -13,7 +14,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
     public function setup()
     {
-        $this->api= new \Box\Mod\Servicehosting\Api\Admin();
+        $this->api = new \Box\Mod\Servicehosting\Api\Admin();
     }
 
     public function testgetDi()
@@ -31,7 +32,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         );
 
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
-        $apiMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
+        $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
             ->setMethods(array('_getService'))
             ->getMock();
 
@@ -49,7 +50,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('load')
             ->will($this->returnValue(new \Model_ServiceHostingHp));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
 
         $apiMock->setDi($di);
@@ -75,7 +76,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         );
 
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
-        $apiMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
+        $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
             ->setMethods(array('_getService'))
             ->getMock();
 
@@ -87,7 +88,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('load');
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
 
         $apiMock->setDi($di);
@@ -99,7 +100,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     public function testchange_username()
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
-        $apiMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
+        $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
             ->setMethods(array('_getService'))
             ->getMock();
 
@@ -122,7 +123,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     public function testchange_ip()
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
-        $apiMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
+        $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
             ->setMethods(array('_getService'))
             ->getMock();
 
@@ -145,7 +146,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     public function testchange_domain()
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
-        $apiMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
+        $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
             ->setMethods(array('_getService'))
             ->getMock();
 
@@ -168,7 +169,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     public function testchange_password()
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
-        $apiMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
+        $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
             ->setMethods(array('_getService'))
             ->getMock();
 
@@ -191,7 +192,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     public function testsync()
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
-        $apiMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
+        $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
             ->setMethods(array('_getService'))
             ->getMock();
 
@@ -214,7 +215,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     public function testupdate()
     {
         $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
-        $apiMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
+        $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
             ->setMethods(array('_getService'))
             ->getMock();
 
@@ -277,9 +278,12 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('find')
             ->will($this->returnValue(array()));
 
-        $di = new \Box_Di();
-        $di['pager'] = $pagerMock;
-        $di['db'] = $dbMock;
+        $di              = new \Box_Di();
+        $di['pager']     = $pagerMock;
+        $di['db']        = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -291,8 +295,8 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
     public function testserver_create()
     {
         $data = array(
-            'name' => 'test',
-            'ip' => '1.1.1.1',
+            'name'    => 'test',
+            'ip'      => '1.1.1.1',
             'manager' => 'ServerManagerCode',
         );
 
@@ -303,37 +307,20 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('createServer')
             ->will($this->returnValue($newServerId));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
 
         $result = $this->api->server_create($data);
         $this->assertInternalType('int', $result);
         $this->assertEquals($newServerId, $result);
-    }
-
-    public function server_createProvider()
-    {
-        return array(
-            array('name', 'Server name is missing'),
-            array('ip', 'Server IP is missing'),
-            array('manager', 'Server manager is missing'),
-        );
-    }
-
-    /**
-     * @dataProvider server_createProvider
-     */
-    public function testserver_createExceptions($fieldName, $exceptionMessage)
-    {
-        $data = array(
-            'name' => 'test',
-            'ip' => '1.1.1.1',
-            'manager' => 'ServerManagerCode',
-        );
-
-        unset ($data[ $fieldName ]);
-
-        $this->setExpectedException('\Box_Exception', $exceptionMessage);
-        $this->api->server_create($data);
     }
 
     public function testserver_get()
@@ -350,8 +337,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('load')
             ->will($this->returnValue(new \Model_ServiceHostingServer));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -368,20 +361,18 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('load');
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'Server not found');
-        $this->api->server_get($data);
-    }
-
-    public function testserver_getMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Server id is missing');
         $this->api->server_get($data);
     }
 
@@ -399,8 +390,15 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('load')
             ->will($this->returnValue(new \Model_ServiceHostingServer));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
+
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -417,21 +415,18 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load');
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'Server not found');
-        $this->api->server_delete($data);
-    }
-
-    public function testserver_deleteMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Server id is missing');
         $this->api->server_delete($data);
     }
 
@@ -448,9 +443,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->will($this->returnValue(new \Model_ServiceHostingServer));
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -468,23 +468,20 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('load');
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'Server not found');
         $this->api->server_update($data);
     }
-
-    public function testserver_updateMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Server id is missing');
-        $this->api->server_update($data);
-    }
-
 
     public function testserver_test_connection()
     {
@@ -499,9 +496,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->will($this->returnValue(new \Model_ServiceHostingServer));
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -518,21 +520,18 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load');
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'Server not found');
-        $this->api->server_test_connection($data);
-    }
-
-    public function testserver_test_connectionMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Server id is missing');
         $this->api->server_test_connection($data);
     }
 
@@ -561,8 +560,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->will($this->returnValue(array('list' => array())));
 
 
-        $di = new \Box_Di();
-        $di['pager'] = $pagerMock;
+        $di              = new \Box_Di();
+        $di['pager']     = $pagerMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -588,9 +590,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->will($this->returnValue($model));
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -610,20 +617,18 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('load');
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'Hosting plan not found');
-        $this->api->hp_delete($data);
-    }
-
-    public function testhp_deleteMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Hosting plan id is missing');
         $this->api->hp_delete($data);
     }
 
@@ -645,8 +650,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('load')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -664,21 +675,18 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load');
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'Hosting plan not found');
-        $this->api->hp_get($data);
-    }
-
-    public function testhp_getMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Hosting plan id is missing');
         $this->api->hp_get($data);
     }
 
@@ -700,8 +708,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('load')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -721,8 +735,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('load');
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
@@ -730,13 +750,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->api->hp_update($data);
     }
 
-    public function testhp_updateMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Hosting plan id is missing');
-        $this->api->hp_update($data);
-    }
     public function testhp_create()
     {
         $data = array(
@@ -750,27 +763,20 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('createHp')
             ->will($this->returnValue($newHpId));
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
 
         $result = $this->api->hp_create($data);
         $this->assertInternalType('int', $result);
         $this->assertEquals($newHpId, $result);
-    }
-
-    public function testhp_createMissingName()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Hosting plan name is missing');
-        $this->api->hp_create($data);
-    }
-
-    public function testhp_createEmptyName()
-    {
-        $data = array('name' => '');
-
-        $this->setExpectedException('\Box_Exception', 'Hosting plan name can not be empty');
-        $this->api->hp_create($data);
     }
 
     public function test_getService()
@@ -780,21 +786,26 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         );
 
         $clientOrderModel = new \Model_ClientOrder();
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock           = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->will($this->returnValue($clientOrderModel));
 
 
-        $model = new \Model_ServiceHosting();
+        $model            = new \Model_ServiceHosting();
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue($model));
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
-        $di['db'] = $dbMock;
+        $di                = new \Box_Di();
+        $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
+        $di['db']          = $dbMock;
+        $di['validator']   = $validatorMock;
 
         $this->api->setDi($di);
 
@@ -811,21 +822,27 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         );
 
         $clientOrderModel = new \Model_ClientOrder();
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock           = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->will($this->returnValue($clientOrderModel));
 
 
-        $model = null;
+        $model            = null;
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->will($this->returnValue($model));
 
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
-        $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di                = new \Box_Di();
+        $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
+        $di['db']          = $dbMock;
+        $di['validator']   = $validatorMock;
 
         $this->api->setDi($di);
 
@@ -840,13 +857,19 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         );
 
         $clientOrderModel = null;
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock           = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->will($this->returnValue($clientOrderModel));
 
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
@@ -854,16 +877,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->api->_getService($data);
 
     }
-
-    public function test_getServiceMissingOrderId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Order id is required');
-        $this->api->_getService($data);
-    }
-
-
 
 }
  

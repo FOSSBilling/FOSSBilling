@@ -134,7 +134,7 @@ class Theme
     public function getCurrentPreset()
     {
         $array = $this->getSettingsData();
-        return isset($array['current']) ? $array['current'] : 'Default';
+        return isset($array['current'])? $array['current'] :  'Default';
     }
 
     public function getPresetFromSettingsDataFile($preset)

@@ -17,18 +17,18 @@ use Box\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    const CUSTOM            = 'custom';
-    const LICENSE           = 'license';
-    const ADDON             = 'addon';
-    const DOMAIN            = 'domain';
-    const DOWNLOADABLE      = 'downloadable';
-    const HOSTING           = 'hosting';
-    const MEMBERSHIP        = 'membership';
-    const VPS               = 'vps';
+    const CUSTOM = 'custom';
+    const LICENSE = 'license';
+    const ADDON = 'addon';
+    const DOMAIN = 'domain';
+    const DOWNLOADABLE = 'downloadable';
+    const HOSTING = 'hosting';
+    const MEMBERSHIP = 'membership';
+    const VPS = 'vps';
 
-    const SETUP_AFTER_ORDER     = 'after_order';
-    const SETUP_AFTER_PAYMENT   = 'after_payment';
-    const SETUP_MANUAL          = 'manual';
+    const SETUP_AFTER_ORDER = 'after_order';
+    const SETUP_AFTER_PAYMENT = 'after_payment';
+    const SETUP_MANUAL = 'manual';
 
     /**
      * @var \Box_Di
@@ -57,55 +57,56 @@ class Service implements InjectionAwareInterface
                 FROM product
                 WHERE 1';
 
-        $type = isset($data['type']) ? $data['type'] : null;
-        $products_only = isset($data['products_only']) ? $data['products_only'] : true;
-        $active_only = isset($data['active_only']) ? $data['active_only'] : true;
+        $type          = $this->di['array_get']($data, 'type', null);
+        $products_only = $this->di['array_get']($data, 'products_only', true);
+        $active_only   = $this->di['array_get']($data, 'active_only', true);
 
         $params = array();
-        if($products_only) {
+        if ($products_only) {
             $sql .= ' AND is_addon = 0';
         }
 
-        if($active_only) {
+        if ($active_only) {
             $sql .= ' AND active = 1';
         }
 
-        if($type) {
+        if ($type) {
             $sql .= ' AND type = :type';
             $params['type'] = $type;
         }
 
-        $rows = $this->di['db']->getAll($sql, $params);
+        $rows   = $this->di['db']->getAll($sql, $params);
         $result = array();
         foreach ($rows as $record) {
-            $result[ $record['id'] ] = $record['title'];
+            $result[$record['id']] = $record['title'];
         }
+
         return $result;
     }
 
     public function toApiArray(\Model_Product $model, $deep = true, $identity = null)
     {
-        $repo = $model->getTable();
-        $addons = $this->getAddonsApiArray($model);
-        $config = $this->di['tools']->decodeJ($model->config, 1);
-        $pricing = $repo->getPricingArray($model);
+        $repo          = $model->getTable();
+        $addons        = $this->getAddonsApiArray($model);
+        $config        = $this->di['tools']->decodeJ($model->config, 1);
+        $pricing       = $repo->getPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
 
         $result = array(
             'id'                    => $model->id,
-            'product_category_id'          => $model->product_category_id,
-            'type'          => $model->type,
-            'title'         => $model->title,
-            'form_id'       => $model->form_id,
-            'slug'          => $model->slug,
-            'description'   => $model->description,
-            'unit'          => $model->unit,
-            'priority'      => $model->priority,
-            'created_at'    => $model->created_at,
-            'updated_at'    => $model->updated_at,
-            'pricing'       => $pricing,
-            'config'        => $config,
-            'addons'        => $addons,
+            'product_category_id'   => $model->product_category_id,
+            'type'                  => $model->type,
+            'title'                 => $model->title,
+            'form_id'               => $model->form_id,
+            'slug'                  => $model->slug,
+            'description'           => $model->description,
+            'unit'                  => $model->unit,
+            'priority'              => $model->priority,
+            'created_at'            => $model->created_at,
+            'updated_at'            => $model->updated_at,
+            'pricing'               => $pricing,
+            'config'                => $config,
+            'addons'                => $addons,
 
             'price_starting_from'   => $starting_from,
             'icon_url'              => $model->icon_url,
@@ -116,16 +117,16 @@ class Service implements InjectionAwareInterface
             'stock_control'         => $model->stock_control,
         );
 
-        if($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Model_Admin) {
             $result['upgrades'] = $this->getUpgradablePairs($model);
-            $result['status'] = $model->status;
-            $result['hidden'] = $model->hidden;
-            $result['setup'] = $model->setup;
-            if($model->product_category_id) {
-                $productCategory = $this->di['db']->load('ProductCategory', $model->product_category_id);
+            $result['status']   = $model->status;
+            $result['hidden']   = $model->hidden;
+            $result['setup']    = $model->setup;
+            if ($model->product_category_id) {
+                $productCategory    = $this->di['db']->load('ProductCategory', $model->product_category_id);
                 $result['category'] = array(
-                    'id' =>  $productCategory->id,
-                    'title' =>  $productCategory->title,
+                    'id'    => $productCategory->id,
+                    'title' => $productCategory->title,
                 );
             }
         }
@@ -164,9 +165,9 @@ class Service implements InjectionAwareInterface
     public function getPaymentTypes()
     {
         return array(
-            \Model_ProductPayment::FREE      =>  'Free',
-            \Model_ProductPayment::ONCE      =>  'One time',
-            \Model_ProductPayment::RECURRENT =>  'Recurrent',
+            \Model_ProductPayment::FREE      => 'Free',
+            \Model_ProductPayment::ONCE      => 'One time',
+            \Model_ProductPayment::RECURRENT => 'Recurrent',
         );
     }
 
@@ -174,22 +175,22 @@ class Service implements InjectionAwareInterface
     {
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Product', 5);
-        $sql="SELECT MAX(priority) FROM product GROUP BY priority ORDER BY priority DESC LIMIT 1";
+        $sql      = "SELECT MAX(priority) FROM product GROUP BY priority ORDER BY priority DESC LIMIT 1";
         $priority = $this->di['db']->getCell($sql);
 
-        $modelPayment = $this->di['db']->dispense('ProductPayment');
+        $modelPayment       = $this->di['db']->dispense('ProductPayment');
         $modelPayment->type = \Model_ProductPayment::FREE;
-        $paymentId = $this->di['db']->store($modelPayment);
+        $paymentId          = $this->di['db']->store($modelPayment);
 
-        $model = $this->di['db']->dispense('Product');
-        $model->product_payment_id = $paymentId;
+        $model                      = $this->di['db']->dispense('Product');
+        $model->product_payment_id  = $paymentId;
         $model->product_category_id = $categoryId;
-        $model->status = \Model_Product::STATUS_DISABLED;
-        $model->title = $title;
-        $model->slug = $this->di['tools']->slug($title);
-        $model->type = $type;
-        $model->setup = self::SETUP_AFTER_PAYMENT;
-        $model->priority = $priority + 10;
+        $model->status              = \Model_Product::STATUS_DISABLED;
+        $model->title               = $title;
+        $model->slug                = $this->di['tools']->slug($title);
+        $model->type                = $type;
+        $model->setup               = self::SETUP_AFTER_PAYMENT;
+        $model->priority            = $priority + 10;
 
         $model->updated_at = date('Y-m-d H:i:s');
         $model->created_at = date('Y-m-d H:i:s');
@@ -197,217 +198,186 @@ class Service implements InjectionAwareInterface
         // try save with slug
         try {
             $productId = $this->di['db']->store($model);
-        } catch(\Exception $e) {
-            $model->slug = $this->di['tools']->slug($title) .'-'. rand(1,9999);
+        } catch (\Exception $e) {
+            $model->slug = $this->di['tools']->slug($title) . '-' . rand(1, 9999);
         }
         $productId = $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new product #%s', $model->id);
-        return (int) $productId;
+
+        return (int)$productId;
     }
 
     public function updateProduct(\Model_Product $model, $data)
     {
         //pricing
-        if(isset($data['pricing'])) {
+        if (isset($data['pricing'])) {
             $types = $this->getPaymentTypes();
 
-            if(!isset($data['pricing']['type']) || !array_key_exists($data['pricing']['type'], $types) ) {
+            if (!isset($data['pricing']['type']) || !array_key_exists($data['pricing']['type'], $types)) {
                 throw new \Box_Exception('Pricing type is required');
             }
             $productPayment = $this->di['db']->load('ProductPayment', $model->product_payment_id);
 
-            $pricing = $data['pricing'];
+            $pricing              = $data['pricing'];
             $productPayment->type = $data['pricing']['type'];
 
-            if($data['pricing']['type'] == \Model_ProductPayment::ONCE) {
+            if ($data['pricing']['type'] == \Model_ProductPayment::ONCE) {
                 $productPayment->once_setup_price = $data['pricing']['once']['setup'];
-                $productPayment->once_price = $data['pricing']['once']['price'];
+                $productPayment->once_price       = $data['pricing']['once']['price'];
             }
 
-            if($data['pricing']['type'] == \Model_ProductPayment::RECURRENT) {
+            if ($data['pricing']['type'] == \Model_ProductPayment::RECURRENT) {
 
-                if(isset($pricing['recurrent']['1W'])) {
-                    $productPayment->w_setup_price   = $pricing['recurrent']['1W']['setup'];
-                    $productPayment->w_price         = $pricing['recurrent']['1W']['price'];
-                    $productPayment->w_enabled       = $pricing['recurrent']['1W']['enabled'];
+                if (isset($pricing['recurrent']['1W'])) {
+                    $productPayment->w_setup_price = $pricing['recurrent']['1W']['setup'];
+                    $productPayment->w_price       = $pricing['recurrent']['1W']['price'];
+                    $productPayment->w_enabled     = $pricing['recurrent']['1W']['enabled'];
                 }
 
-                if(isset($pricing['recurrent']['1M'])) {
-                    $productPayment->m_setup_price   = $pricing['recurrent']['1M']['setup'];
-                    $productPayment->m_price         = $pricing['recurrent']['1M']['price'];
-                    $productPayment->m_enabled       = $pricing['recurrent']['1M']['enabled'];
+                if (isset($pricing['recurrent']['1M'])) {
+                    $productPayment->m_setup_price = $pricing['recurrent']['1M']['setup'];
+                    $productPayment->m_price       = $pricing['recurrent']['1M']['price'];
+                    $productPayment->m_enabled     = $pricing['recurrent']['1M']['enabled'];
                 }
 
-                if(isset($pricing['recurrent']['3M'])) {
-                    $productPayment->q_setup_price   = $pricing['recurrent']['3M']['setup'];
-                    $productPayment->q_price         = $pricing['recurrent']['3M']['price'];
-                    $productPayment->q_enabled       = $pricing['recurrent']['3M']['enabled'];
+                if (isset($pricing['recurrent']['3M'])) {
+                    $productPayment->q_setup_price = $pricing['recurrent']['3M']['setup'];
+                    $productPayment->q_price       = $pricing['recurrent']['3M']['price'];
+                    $productPayment->q_enabled     = $pricing['recurrent']['3M']['enabled'];
                 }
 
-                if(isset($pricing['recurrent']['6M'])) {
-                    $productPayment->b_setup_price   = $pricing['recurrent']['6M']['setup'];
-                    $productPayment->b_price         = $pricing['recurrent']['6M']['price'];
-                    $productPayment->b_enabled       = $pricing['recurrent']['6M']['enabled'];
+                if (isset($pricing['recurrent']['6M'])) {
+                    $productPayment->b_setup_price = $pricing['recurrent']['6M']['setup'];
+                    $productPayment->b_price       = $pricing['recurrent']['6M']['price'];
+                    $productPayment->b_enabled     = $pricing['recurrent']['6M']['enabled'];
                 }
 
-                if(isset($pricing['recurrent']['1Y'])) {
-                    $productPayment->a_setup_price   = $pricing['recurrent']['1Y']['setup'];
-                    $productPayment->a_price         = $pricing['recurrent']['1Y']['price'];
-                    $productPayment->a_enabled       = $pricing['recurrent']['1Y']['enabled'];
+                if (isset($pricing['recurrent']['1Y'])) {
+                    $productPayment->a_setup_price = $pricing['recurrent']['1Y']['setup'];
+                    $productPayment->a_price       = $pricing['recurrent']['1Y']['price'];
+                    $productPayment->a_enabled     = $pricing['recurrent']['1Y']['enabled'];
                 }
 
-                if(isset($pricing['recurrent']['2Y'])) {
-                    $productPayment->bia_setup_price   = $pricing['recurrent']['2Y']['setup'];
-                    $productPayment->bia_price         = $pricing['recurrent']['2Y']['price'];
-                    $productPayment->bia_enabled       = $pricing['recurrent']['2Y']['enabled'];
+                if (isset($pricing['recurrent']['2Y'])) {
+                    $productPayment->bia_setup_price = $pricing['recurrent']['2Y']['setup'];
+                    $productPayment->bia_price       = $pricing['recurrent']['2Y']['price'];
+                    $productPayment->bia_enabled     = $pricing['recurrent']['2Y']['enabled'];
                 }
 
-                if(isset($pricing['recurrent']['3Y'])) {
-                    $productPayment->tria_setup_price   = $pricing['recurrent']['3Y']['setup'];
-                    $productPayment->tria_price         = $pricing['recurrent']['3Y']['price'];
-                    $productPayment->tria_enabled       = $pricing['recurrent']['3Y']['enabled'];
+                if (isset($pricing['recurrent']['3Y'])) {
+                    $productPayment->tria_setup_price = $pricing['recurrent']['3Y']['setup'];
+                    $productPayment->tria_price       = $pricing['recurrent']['3Y']['price'];
+                    $productPayment->tria_enabled     = $pricing['recurrent']['3Y']['enabled'];
                 }
             }
 
             $this->di['db']->store($productPayment);
-            
+
         }
 
-        if(isset($data['config']) && is_array($data['config'])) {
-            $current = $this->di['tools']->decodeJ($model->config);
-            $c = array_merge($current, $data['config']);
+        if (isset($data['config']) && is_array($data['config'])) {
+            $current       = $this->di['tools']->decodeJ($model->config);
+            $c             = array_merge($current, $data['config']);
             $model->config = json_encode($c);
         }
 
-        if(isset($data['product_category_id'])) {
-            $model->product_category_id = $data['product_category_id'];
-        }
-
-        if(isset($data['form_id'])) {
-            $model->form_id = $data['form_id'];
-        }
-
-        if(isset($data['icon_url'])) {
-            $model->icon_url = $data['icon_url'];
-        }
-
-        if(isset($data['status'])) {
-            $model->status = $data['status'];
-        }
-
-        if(isset($data['hidden'])) {
+        $model->product_category_id = $this->di['array_get']($data, 'product_category_id', $model->product_category_id);
+        $model->form_id             = $this->di['array_get']($data, 'form_id', $model->form_id);
+        $model->icon_url            = $this->di['array_get']($data, 'icon_url', $model->icon_url);
+        $model->status              = $this->di['array_get']($data, 'status', $model->status);
+        if (isset($data['hidden'])) {
             $model->hidden = (int)$data['hidden'];
         }
 
-        if(isset($data['slug'])) {
-            $model->slug = $data['slug'];
-        }
-
-        if(isset($data['setup'])) {
-            $model->setup = $data['setup'];
-        }
-
-        if(isset($data['upgrades']) && is_array($data['upgrades'])) {
+        $model->slug  = $this->di['array_get']($data, 'slug', $model->slug);
+        $model->setup = $this->di['array_get']($data, 'setup', $model->setup);
+        if (isset($data['upgrades']) && is_array($data['upgrades'])) {
             $model->upgrades = json_encode($data['upgrades']);
-        } elseif(isset($data['upgrades']) && empty($data['upgrades'])) {
+        } elseif (isset($data['upgrades']) && empty($data['upgrades'])) {
             $model->upgrades = NULL;
         }
 
-        if(isset($data['addons']) && is_array($data['addons'])) {
+        if (isset($data['addons']) && is_array($data['addons'])) {
             $addons = array();
-            foreach($data['addons'] as $addon=>$on) {
-                if($on) {
+            foreach ($data['addons'] as $addon => $on) {
+                if ($on) {
                     $addons[] = $addon;
                 }
             }
-            if(empty ($addons)) {
+            if (empty ($addons)) {
                 $model->addons = NULL;
             } else {
                 $model->addons = json_encode($addons);
             }
         }
 
-        if(isset($data['title'])) {
-            $model->title = $data['title'];
-        }
-
-        if(isset($data['stock_control'])) {
-            $model->stock_control = $data['stock_control'];
-        }
-
-        if(isset($data['allow_quantity_select'])) {
-            $model->allow_quantity_select = $data['allow_quantity_select'];
-        }
-
-        if(isset($data['quantity_in_stock'])) {
-            $model->quantity_in_stock = $data['quantity_in_stock'];
-        }
-
-        if(isset($data['description'])) {
-            $model->description = $data['description'];
-        }
-
-        if(isset($data['plugin'])) {
-            $model->plugin = $data['plugin'];
-        }
-
-        $model->updated_at = date('Y-m-d H:i:s');
+        $model->title                 = $this->di['array_get']($data, 'title', $model->title);
+        $model->stock_control         = $this->di['array_get']($data, 'stock_control', $model->stock_control);
+        $model->allow_quantity_select = $this->di['array_get']($data, 'allow_quantity_select', $model->allow_quantity_select);
+        $model->quantity_in_stock     = $this->di['array_get']($data, 'quantity_in_stock', $model->quantity_in_stock);
+        $model->description           = $this->di['array_get']($data, 'description', $model->description);
+        $model->plugin                = $this->di['array_get']($data, 'plugin', $model->plugin);
+        $model->updated_at            = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated product #%s configuration', $model->id);
+
         return true;
     }
 
     public function updatePriority($data)
     {
-        foreach($data['priority'] as $id => $p) {
+        foreach ($data['priority'] as $id => $p) {
             $model = $this->di['db']->load('Product', $id);
-            if($model instanceof \Model_Product) {
-                $model->priority = $p;
+            if ($model instanceof \Model_Product) {
+                $model->priority   = $p;
                 $model->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($model);
             }
         }
 
         $this->di['logger']->info('Changed product priorities');
+
         return true;
     }
 
     public function updateConfig(\Model_Product $model, $data)
     {
         /* add new config value */
-        $config =json_decode($model->config, 1);
+        $config = json_decode($model->config, 1);
 
-        if(isset($data['config']) && is_array($data['config'])) {
-            foreach($data['config'] as $key=>$val) {
+        if (isset($data['config']) && is_array($data['config'])) {
+            foreach ($data['config'] as $key => $val) {
                 $config[$key] = $val;
-                if(isset($config[$key]) && empty ($val)) {
+                if (isset($config[$key]) && empty ($val)) {
                     unset ($config[$key]);
                 }
             }
         }
 
-        if(isset($data['new_config_name']) &&
+        if (isset($data['new_config_name']) &&
             isset($data['new_config_value']) &&
             !empty($data['new_config_name']) &&
-            !empty($data['new_config_value'])) {
+            !empty($data['new_config_value'])
+        ) {
 
             $config[$data['new_config_name']] = $data['new_config_value'];
         }
 
-        $model->config = json_encode($config);
+        $model->config     = json_encode($config);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated product #%s configuration', $model->id);
+
         return true;
     }
 
     public function getAddons()
     {
-        $sql = 'SELECT id, title
+        $sql    = 'SELECT id, title
                 FROM product
                 WHERE is_addon =1
                 ORDER by id asc';
@@ -417,26 +387,27 @@ class Service implements InjectionAwareInterface
         foreach ($addons as $addon) {
             $result[$addon['id']] = $addon['title'];
         }
+
         return $result;
     }
 
-    public function createAddon($title, $description=null, $setup=null, $status=null, $iconUrl=null)
+    public function createAddon($title, $description = null, $setup = null, $status = null, $iconUrl = null)
     {
-        $modelPayment = $this->di['db']->dispense('ProductPayment');
+        $modelPayment       = $this->di['db']->dispense('ProductPayment');
         $modelPayment->type = \Model_ProductPayment::FREE;
-        $paymentId = $this->di['db']->store($modelPayment);
+        $paymentId          = $this->di['db']->store($modelPayment);
 
-        $model = $this->di['db']->dispense('Product');
-        $model->product_payment_id = $paymentId;
+        $model                      = $this->di['db']->dispense('Product');
+        $model->product_payment_id  = $paymentId;
         $model->product_category_id = NULL;
-        $model->status = (isset($status)) ? $status : \Model_Product::STATUS_DISABLED;
-        $model->title = $title;
-        $model->slug = $this->di['tools']->slug($title);
-        $model->type = self::CUSTOM;
-        $model->setup = (isset($setup)) ? $setup : self::SETUP_AFTER_PAYMENT;
-        $model->is_addon = 1;
+        $model->status              = (isset($status)) ? $status : \Model_Product::STATUS_DISABLED;
+        $model->title               = $title;
+        $model->slug                = $this->di['tools']->slug($title);
+        $model->type                = self::CUSTOM;
+        $model->setup               = (isset($setup)) ? $setup : self::SETUP_AFTER_PAYMENT;
+        $model->is_addon            = 1;
 
-        $model->icon_url = $iconUrl;
+        $model->icon_url    = $iconUrl;
         $model->description = $description;
 
         $model->updated_at = date('Y-m-d H:i:s');
@@ -445,24 +416,26 @@ class Service implements InjectionAwareInterface
         // try save with slug
         try {
             $productId = $this->di['db']->store($model);
-        } catch(\Exception $e) {
-            $model->slug = $this->di['tools']->slug($title) .'-'. rand(1,9999);
-            $productId = $this->di['db']->store($model);
+        } catch (\Exception $e) {
+            $model->slug = $this->di['tools']->slug($title) . '-' . rand(1, 9999);
+            $productId   = $this->di['db']->store($model);
         }
 
         $this->di['logger']->info('Created new addon #%s', $productId);
+
         return $productId;
     }
 
     public function deleteProduct(\Model_Product $product)
     {
         $orderService = $this->di['mod_service']('order');
-        if($orderService->productHasOrders($product)) {
+        if ($orderService->productHasOrders($product)) {
             throw new \Box_Exception('Can not remove product which has active orders.');
         }
         $id = $product->id;
         $this->di['db']->trash($product);
         $this->di['logger']->info('Deleted product #%s', $id);
+
         return true;
     }
 
@@ -471,11 +444,12 @@ class Service implements InjectionAwareInterface
         $sql = 'SELECT id, title
                 FROM product_category';
 
-        $rows = $this->di['db']->getAll($sql);
+        $rows   = $this->di['db']->getAll($sql);
         $result = array();
         foreach ($rows as $record) {
-            $result[ $record['id'] ] = $record['title'];
+            $result[$record['id']] = $record['title'];
         }
+
         return $result;
     }
 
@@ -498,28 +472,30 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_ProductCategory', 2);
 
-        $model = $this->di['db']->dispense('ProductCategory');
-        $model->title = $title;
+        $model              = $this->di['db']->dispense('ProductCategory');
+        $model->title       = $title;
         $model->description = $description;
-        $model->icon_url = $icon_url;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $model->created_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($model);
+        $model->icon_url    = $icon_url;
+        $model->updated_at  = date('Y-m-d H:i:s');
+        $model->created_at  = date('Y-m-d H:i:s');
+        $id                 = $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new product category #%s', $id);
+
         return $id;
     }
 
     public function removeProductCategory(\Model_ProductCategory $category)
     {
         $model = $this->di['db']->findOne('Product', 'product_category_id = :category_id', array(':category_id' => $category->id));
-        if($model instanceof \Model_Product) {
+        if ($model instanceof \Model_Product) {
             throw new \Box_Exception('Can not remove product category with products');
         }
         $id = $category->id;
         $this->di['db']->trash($category);
 
         $this->di['logger']->info('Deleted product category #%s', $id);
+
         return true;
     }
 
@@ -529,26 +505,26 @@ class Service implements InjectionAwareInterface
                 FROM promo
                 WHERE 1';
 
-        $search     = isset($data['search']) ? $data['search'] : NULL;
-        $id         = isset($data['id']) ? $data['id'] : NULL;
-        $status     = isset($data['status']) ? $data['status'] : NULL;
+        $search = $this->di['array_get']($data, 'search', null);
+        $id     = $this->di['array_get']($data, 'id', null);
+        $status = $this->di['array_get']($data, 'status', null);
 
         $params = array();
-        if($id) {
+        if ($id) {
             $sql .= ' AND id = :id';
             $params['id'] = $id;
         }
 
-        if($search) {
+        if ($search) {
             $sql .= ' AND code like %:search%';
             $params['search'] = $search;
         }
 
-        switch($status) {
+        switch ($status) {
             case 'active':
                 $sql .= ' AND start_at <= :start_at AND end_at >= :end_at';
                 $params['start_at'] = time();
-                $params['end_at'] = time();
+                $params['end_at']   = time();
                 break;
             case 'not-started':
                 $sql .= ' AND start_at <= :start_at';
@@ -567,38 +543,38 @@ class Service implements InjectionAwareInterface
 
     public function createPromo($code, $type, $value, $products = array(), $periods = array(), $clientGroups = array(), $data)
     {
-        $this->di['api_request_data']->setRequest($data);
-        if ($this->di['db']->findOne('Promo', 'code = :code', array(':code' => $code))){
+        if ($this->di['db']->findOne('Promo', 'code = :code', array(':code' => $code))) {
             throw new \Box_Exception('This promo code already exists.');
         }
 
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Promo', 2);
 
-        $model = $this->di['db']->dispense('Promo');
-        $model->code = $code;
-        $model->type = $type;
-        $model->value = $value;
-        $model->active = $this->di['api_request_data']->get('active', 0);
-        $model->freesetup = $this->di['api_request_data']->get('freesetup', 0);
-        $model->once_per_client = (bool) $this->di['api_request_data']->get('once_per_client', 0);
-        $model->recurring = (bool) $this->di['api_request_data']->get('recurring', 0);
-        $model->maxuses = $this->di['api_request_data']->get('maxuses');
+        $model                  = $this->di['db']->dispense('Promo');
+        $model->code            = $code;
+        $model->type            = $type;
+        $model->value           = $value;
+        $model->active          = $this->di['array_get']($data, 'active', 0);
+        $model->freesetup       = $this->di['array_get']($data, 'freesetup', 0);
+        $model->once_per_client = (bool)$this->di['array_get']($data, 'once_per_client', 0);
+        $model->recurring       = (bool)$this->di['array_get']($data, 'recurring', 0);
+        $model->maxuses         = $this->di['array_get']($data, 'maxuses');
 
-        $start_at = $this->di['api_request_data']->get('start_at');
+        $start_at        = $this->di['array_get']($data, 'start_at');
         $model->start_at = !empty($start_at) ? date('Y-m-d H:i:s', strtotime($start_at)) : NULL;
-        $end_at = $this->di['api_request_data']->get('end_at');
-        $model->end_at = (!empty($end_at)) ? date('Y-m-d H:i:s', strtotime($end_at)) : NULL;
+        $end_at          = $this->di['array_get']($data, 'end_at');
+        $model->end_at   = (!empty($end_at)) ? date('Y-m-d H:i:s', strtotime($end_at)) : NULL;
 
-        $model->products = json_encode($products);
-        $model->periods = json_encode($periods);
+        $model->products      = json_encode($products);
+        $model->periods       = json_encode($periods);
         $model->client_groups = json_encode($clientGroups);
 
         $model->updated_at = date('Y-m-d H:i:s');
         $model->created_at = date('Y-m-d H:i:s');
-        $promoId = $this->di['db']->store($model);
+        $promoId           = $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new promo code %s', $model->code);
+
         return $promoId;
     }
 
@@ -608,59 +584,59 @@ class Service implements InjectionAwareInterface
         $products = $this->getProductTitlesByIds($products);
 
         $clientGroups = json_decode($model->client_groups, 1);
-        $clientGroups = $this->di['tools']->getPairsForTableByIds('client_group',$clientGroups);
+        $clientGroups = $this->di['tools']->getPairsForTableByIds('client_group', $clientGroups);
 
-        $result = $this->di['db']->toArray($model);
-        $result['applies_to'] = $products;
-        $result['cgroups'] = $clientGroups;
-        $result['products'] = json_decode($model->products, 1);
-        $result['periods'] = json_decode($model->periods, 1);
+        $result                  = $this->di['db']->toArray($model);
+        $result['applies_to']    = $products;
+        $result['cgroups']       = $clientGroups;
+        $result['products']      = json_decode($model->products, 1);
+        $result['periods']       = json_decode($model->periods, 1);
         $result['client_groups'] = json_decode($model->client_groups, 1);
+
         return $result;
     }
 
     public function updatePromo(\Model_Promo $model, array $data = array())
     {
-        $this->di['api_request_data']->setRequest($data);
-        $model->code            = $this->di['api_request_data']->get('code', $model->code);
-        $model->type            = $this->di['api_request_data']->get('type', $model->type);
-        $model->value           = $this->di['api_request_data']->get('value', $model->value);
-        $model->active          = $this->di['api_request_data']->get('active', $model->active);
-        $model->freesetup       = $this->di['api_request_data']->get('freesetup', $model->freesetup);
-        $model->once_per_client = $this->di['api_request_data']->get('once_per_client', $model->once_per_client);
-        $model->recurring       = $this->di['api_request_data']->get('recurring', $model->recurring);
-        $model->used            = $this->di['api_request_data']->get('used', $model->used);
+        $model->code            = $this->di['array_get']($data, 'code', $model->code);
+        $model->type            = $this->di['array_get']($data, 'type', $model->type);
+        $model->value           = $this->di['array_get']($data, 'value', $model->value);
+        $model->active          = $this->di['array_get']($data, 'active', $model->active);
+        $model->freesetup       = $this->di['array_get']($data, 'freesetup', $model->freesetup);
+        $model->once_per_client = $this->di['array_get']($data, 'once_per_client', $model->once_per_client);
+        $model->recurring       = $this->di['array_get']($data, 'recurring', $model->recurring);
+        $model->used            = $this->di['array_get']($data, 'used', $model->used);
 
-        $start_at = $this->di['api_request_data']->get('start_at');
-        if(empty ($start_at) && !is_null($start_at)) {
+        $start_at = $this->di['array_get']($data, 'start_at');
+        if (empty ($start_at) && !is_null($start_at)) {
             $model->start_at = NULL;
         } else {
             $model->start_at = date('Y-m-d H:i:s', strtotime($start_at));
         }
 
-        $end_at = $this->di['api_request_data']->get('end_at');
-        if(empty ($end_at) && !is_null($end_at)) {
+        $end_at = $this->di['array_get']($data, 'end_at');
+        if (empty ($end_at) && !is_null($end_at)) {
             $model->end_at = NULL;
         } else {
             $model->end_at = date('Y-m-d H:i:s', strtotime($end_at));
         }
 
-        $products = $this->di['api_request_data']->get('products');
-        if(empty($products) && !is_null($products)) {
+        $products = $this->di['array_get']($data, 'products');
+        if (empty($products) && !is_null($products)) {
             $model->products = NULL;
         } else {
             $model->products = json_encode($products);
         }
 
-        $client_groups = $this->di['api_request_data']->get('client_groups');
-        if(empty($client_groups) && !is_null($client_groups)) {
+        $client_groups = $this->di['array_get']($data, 'client_groups');
+        if (empty($client_groups) && !is_null($client_groups)) {
             $model->client_groups = NULL;
         } else {
             $model->client_groups = json_encode($client_groups);
         }
 
-        $periods = $this->di['api_request_data']->get('periods');
-        if(isset($periods) && is_array($periods)) {
+        $periods = $this->di['array_get']($data, 'periods');
+        if (isset($periods) && is_array($periods)) {
             $model->periods = json_encode($periods);
         }
 
@@ -668,6 +644,7 @@ class Service implements InjectionAwareInterface
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Update promo code %s', $model->code);
+
         return true;
     }
 
@@ -680,19 +657,21 @@ class Service implements InjectionAwareInterface
         $this->di['db']->trash($model);
 
         $this->di['logger']->info('Removed promo code %s', $id);
+
         return true;
     }
 
     public function getProductSearchQuery(array $data)
     {
-        $sql         = 'SELECT m.*
+        $sql = 'SELECT m.*
                 FROM product as m
                   LEFT JOIN product_payment as pp on m.product_payment_id = pp.id
                 WHERE m.is_addon = 0';
-        $type        = isset($data['type']) ? $data['type'] : NULL;
-        $search      = isset($data['search']) ? $data['search'] : NULL;
-        $status      = isset($data['status']) ? $data['status'] : NULL;
-        $show_hidden = isset($data['show_hidden']) ? $data['show_hidden'] : TRUE;
+
+        $type        = $this->di['array_get']($data, 'type', null);
+        $search      = $this->di['array_get']($data, 'search', null);
+        $status      = $this->di['array_get']($data, 'status', null);
+        $show_hidden = $this->di['array_get']($data, 'show_hidden', true);
 
         $params = array();
         if ($type) {
@@ -732,7 +711,7 @@ class Service implements InjectionAwareInterface
                 $type = $p->type;
             }
             $products[]    = $pa;
-            $startingPrice = isset($pa['price_starting_from']) ? $pa['price_starting_from'] : 0;
+            $startingPrice = $this->di['array_get']($pa, 'price_starting_from', 0);;
 
             if (0 == $min_price) {
                 $min_price = $startingPrice;
@@ -781,13 +760,15 @@ class Service implements InjectionAwareInterface
         ";
 
         $params = array();
+
         return array($sql, $params);
     }
 
     public function getStartingFromPrice(\Model_Product $model)
     {
-        if($model->product_payment_id) {
+        if ($model->product_payment_id) {
             $productPaymentModel = $this->di['db']->load('ProductPayment', $model->product_payment_id);
+
             return $this->getStartingPrice($productPaymentModel);
         }
 
@@ -796,20 +777,22 @@ class Service implements InjectionAwareInterface
 
     public function getUpgradablePairs(\Model_Product $model)
     {
-        $ids = json_decode($model->upgrades, 1);
+        $ids  = json_decode($model->upgrades, 1);
         $pids = $this->getProductTitlesByIds($ids);
         unset($pids[$model->id]);
+
         return $pids;
     }
 
 
     public function canUpgradeTo(\Model_Product $model, \Model_Product $new)
     {
-        if($model->id == $new->id) {
+        if ($model->id == $new->id) {
             return false;
         }
 
         $pairs = $this->getUpgradablePairs($model);
+
         return array_key_exists($new->id, $pairs);
     }
 
@@ -839,64 +822,65 @@ class Service implements InjectionAwareInterface
 
     public function toProductPaymentApiArray(\Model_ProductPayment $model)
     {
-        $periods = array();
-        $periods['1W'] = array('price'=>$model->w_price, 'setup'=>$model->w_setup_price, 'enabled'=>$model->w_enabled);
-        $periods['1M'] = array('price'=>$model->m_price, 'setup'=>$model->m_setup_price, 'enabled'=>$model->m_enabled);
-        $periods['3M'] = array('price'=>$model->q_price, 'setup'=>$model->q_setup_price, 'enabled'=>$model->q_enabled);
-        $periods['6M'] = array('price'=>$model->b_price, 'setup'=>$model->b_setup_price, 'enabled'=>$model->b_enabled);
-        $periods['1Y'] = array('price'=>$model->a_price, 'setup'=>$model->a_setup_price, 'enabled'=>$model->a_enabled);
-        $periods['2Y'] = array('price'=>$model->bia_price, 'setup'=>$model->bia_setup_price, 'enabled'=>$model->bia_enabled);
-        $periods['3Y'] = array('price'=>$model->tria_price, 'setup'=>$model->tria_setup_price, 'enabled'=>$model->tria_enabled);
+        $periods       = array();
+        $periods['1W'] = array('price' => $model->w_price, 'setup' => $model->w_setup_price, 'enabled' => $model->w_enabled);
+        $periods['1M'] = array('price' => $model->m_price, 'setup' => $model->m_setup_price, 'enabled' => $model->m_enabled);
+        $periods['3M'] = array('price' => $model->q_price, 'setup' => $model->q_setup_price, 'enabled' => $model->q_enabled);
+        $periods['6M'] = array('price' => $model->b_price, 'setup' => $model->b_setup_price, 'enabled' => $model->b_enabled);
+        $periods['1Y'] = array('price' => $model->a_price, 'setup' => $model->a_setup_price, 'enabled' => $model->a_enabled);
+        $periods['2Y'] = array('price' => $model->bia_price, 'setup' => $model->bia_setup_price, 'enabled' => $model->bia_enabled);
+        $periods['3Y'] = array('price' => $model->tria_price, 'setup' => $model->tria_setup_price, 'enabled' => $model->tria_enabled);
 
         return array(
-            'type' =>   $model->type,
-            \Model_ProductPayment::FREE      => array('price'=>0, 'setup'=>0),
-            \Model_ProductPayment::ONCE      => array('price'=>$model->once_price, 'setup'=>$model->once_setup_price),
+            'type'                           => $model->type,
+            \Model_ProductPayment::FREE      => array('price' => 0, 'setup' => 0),
+            \Model_ProductPayment::ONCE      => array('price' => $model->once_price, 'setup' => $model->once_setup_price),
             \Model_ProductPayment::RECURRENT => $periods,
         );
     }
 
     public function getStartingPrice(\Model_ProductPayment $model)
     {
-        if($model->type == 'free') {
+        if ($model->type == 'free') {
             return 0;
         }
 
-        if($model->type == 'once') {
+        if ($model->type == 'once') {
             return $model->once_price;
         }
 
-        if($model->type == 'recurrent') {
+        if ($model->type == 'recurrent') {
             $p = array();
 
-            if($model->w_enabled) {
+            if ($model->w_enabled) {
                 $p[] = $model->w_price;
             }
 
-            if($model->m_enabled) {
+            if ($model->m_enabled) {
                 $p[] = $model->m_price;
             }
 
-            if($model->q_enabled) {
+            if ($model->q_enabled) {
                 $p[] = $model->q_price;
 
             }
 
-            if($model->b_enabled) {
+            if ($model->b_enabled) {
                 $p[] = $model->b_price;
             }
 
-            if($model->a_enabled) {
+            if ($model->a_enabled) {
                 $p[] = $model->a_price;
             }
 
-            if($model->bia_enabled) {
+            if ($model->bia_enabled) {
                 $p[] = $model->bia_price;
             }
 
-            if($model->tria_enabled) {
+            if ($model->tria_enabled) {
                 $p[] = $model->tria_price;
             }
+
             return min($p);
         }
 
@@ -905,22 +889,25 @@ class Service implements InjectionAwareInterface
 
     public function getSavePath($filename = null)
     {
-        $path = $this->di['config']['path_data'].'/uploads/';
-        if(null !== $filename) {
+        $path = $this->di['config']['path_data'] . '/uploads/';
+        if (null !== $filename) {
             $path .= md5($filename);
         }
+
         return $path;
     }
 
     public function removeOldFile($config)
     {
-        if(isset($config['filename'])) {
+        if (isset($config['filename'])) {
             $f = $this->getSavePath($config['filename']);
-            if($this->di['tools']->fileExists($f)) {
+            if ($this->di['tools']->fileExists($f)) {
                 $this->di['tools']->unlink($f);
+
                 return true;
             }
         }
+
         return false;
     }
 
@@ -931,22 +918,22 @@ class Service implements InjectionAwareInterface
 
     public function getProductDiscount(\Model_Product $product, \Model_Promo $promo, array $config = null)
     {
-        if(!$this->isPromoLinkedToProduct($promo, $product)) {
+        if (!$this->isPromoLinkedToProduct($promo, $product)) {
             return 0;
         }
 
         // check if promo code aplies to specific period only
-        if(isset($config['period'])) {
+        if (isset($config['period'])) {
             $periods = $this->getPeriods($promo);
-            if(!empty($periods) && !in_array($config['period'], $periods)) {
+            if (!empty($periods) && !in_array($config['period'], $periods)) {
                 return 0;
             }
         }
 
-        $repo = $product->getTable();
+        $repo  = $product->getTable();
         $price = $repo->getProductPrice($product, $config);
 
-        if ($price == 0){
+        if ($price == 0) {
             return 0;
         }
 
@@ -980,12 +967,12 @@ class Service implements InjectionAwareInterface
 
     public function isPromoLinkedToProduct(\Model_Promo $promo, \Model_Product $product)
     {
-        if($product->is_addon) {
+        if ($product->is_addon) {
             return false;
         }
 
         $products = $this->getProducts($promo);
-        if(empty($products)) {
+        if (empty($products)) {
             return true;
         }
 
@@ -1006,10 +993,11 @@ class Service implements InjectionAwareInterface
     private function getAddonsApiArray(\Model_Product $model)
     {
         $addons = array();
-        foreach($this->getProductAddons($model) as $addon) {
-            $d = $this->toAddonArray($addon);
+        foreach ($this->getProductAddons($model) as $addon) {
+            $d        = $this->toAddonArray($addon);
             $addons[] = $d;
         }
+
         return $addons;
     }
 
@@ -1029,25 +1017,25 @@ class Service implements InjectionAwareInterface
     public function toAddonArray(\Model_Product $model, $deep = true)
     {
         $productPayment = $this->di['db']->load('ProductPayment', $model->product_payment_id);
-        $pricing = $this->toProductPaymentApiArray($productPayment);
+        $pricing        = $this->toProductPaymentApiArray($productPayment);
 
         $config = $this->di['tools']->decodeJ($model->config);
 
         return array(
-            'id'            => $model->id,
-            'type'          => $model->type,
-            'title'         => $model->title,
-            'slug'          => $model->slug,
-            'description'   => $model->description,
-            'unit'          => $model->unit,
-            'plugin'        => $model->plugin,
+            'id'                    => $model->id,
+            'type'                  => $model->type,
+            'title'                 => $model->title,
+            'slug'                  => $model->slug,
+            'description'           => $model->description,
+            'unit'                  => $model->unit,
+            'plugin'                => $model->plugin,
             'allow_quantity_select' => $model->allow_quantity_select,
-            'created_at'    => $model->created_at,
-            'updated_at'    => $model->updated_at,
-            'icon_url'      => $model->icon_url,
+            'created_at'            => $model->created_at,
+            'updated_at'            => $model->updated_at,
+            'icon_url'              => $model->icon_url,
 
-            'pricing'       => $pricing,
-            'config'        => $config,
+            'pricing'               => $pricing,
+            'config'                => $config,
         );
     }
 

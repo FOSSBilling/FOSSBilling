@@ -88,9 +88,11 @@ class Guest extends \Api_Abstract
      */
     public function param($data)
     {
-        if(!isset ($data['key'])) {
-            throw new \Box_Exception('Parameter key is missing');
-        }
+        $required = array(
+            'key'    => 'Parameter key is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         return $this->getService()->getPublicParamValue($data['key']);
     }
 
@@ -113,7 +115,7 @@ class Guest extends \Api_Abstract
      */
     public function period_title($data)
     {
-        $code = isset($data['code']) ? $data['code'] : NULL;
+        $code = $this->di['array_get']($data, 'code', NULL);
         if($code == NULL) {
             return '-';
         }

@@ -83,10 +83,10 @@ class ServiceBalance implements InjectionAwareInterface
               FROM client_balance as m
                 LEFT JOIN client as c on c.id = m.client_id';
 
-        $id         = isset($data['id']) ? $data['id'] : NULL;
-        $client_id  = isset($data['client_id']) ? $data['client_id'] : NULL;
-        $date_from  = isset($data['date_from']) ? $data['date_from'] : NULL;
-        $date_to    = isset($data['date_to']) ? $data['date_to'] : NULL;
+        $id         = $this->di['array_get']($data, 'id', NULL);
+        $client_id  = $this->di['array_get']($data, 'client_id', NULL);
+        $date_from  = $this->di['array_get']($data, 'date_from', NULL);
+        $date_to    = $this->di['array_get']($data, 'date_to', NULL);
 
         $where = array();
         $params = array();
@@ -139,8 +139,8 @@ class ServiceBalance implements InjectionAwareInterface
 
         $credit = $this->di['db']->dispense('ClientBalance');
         $credit->client_id = $client->id;
-        $credit->type = isset($data['type']) ? $data['type'] : 'default';
-        $credit->rel_id = isset($data['rel_id']) ? $data['rel_id'] : null;
+        $credit->type = $this->di['array_get']($data, 'type', 'default');
+        $credit->rel_id = $this->di['array_get']($data, 'rel_id', null);
         $credit->description = $description;
         $credit->amount = -$amount;
         $credit->created_at = date('Y-m-d H:i:s');

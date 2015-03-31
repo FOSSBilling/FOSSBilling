@@ -28,8 +28,8 @@ class Guest extends \Api_Abstract
      */
     public function tlds($data = array())
     {
-        $allow_register = $this->di['api_request_data']->get('allow_register');
-        $allow_transfer = $this->di['api_request_data']->get('allow_transfer');
+        $allow_register = $this->di['array_get']($data, 'allow_register');
+        $allow_transfer = $this->di['array_get']($data, 'allow_transfer');
 
         $where = array();
         $where[] = "active = 1";
@@ -64,9 +64,10 @@ class Guest extends \Api_Abstract
      */
     public function pricing($data)
     {
-        if (!isset($data['tld'])) {
-            throw new \Box_Exception('Tld is required');
-        }
+        $required = array(
+            'tld' => 'TLD is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$model instanceof \Model_Tld) {
@@ -87,13 +88,11 @@ class Guest extends \Api_Abstract
      */
     public function check($data)
     {
-        if (!isset($data['tld'])) {
-            throw new \Box_Exception('Tld is required');
-        }
-
-        if (!isset($data['sld'])) {
-            throw new \Box_Exception('Sld is required');
-        }
+        $required = array(
+            'tld' => 'TLD is missing',
+            'sld' => 'SLD is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $sld       = $data['sld'];
         $validator = $this->di['validator'];
@@ -124,13 +123,11 @@ class Guest extends \Api_Abstract
      */
     public function can_be_transferred($data)
     {
-        if (!isset($data['tld'])) {
-            throw new \Box_Exception('Tld is required');
-        }
-
-        if (!isset($data['sld'])) {
-            throw new \Box_Exception('Sld is required');
-        }
+        $required = array(
+            'tld' => 'TLD is missing',
+            'sld' => 'SLD is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$tld instanceof \Model_Tld) {

@@ -28,9 +28,11 @@ class Guest extends \Api_Abstract
      */
     public function get($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Form id was not passed');
-        }
+        $required = array(
+            'id' => 'Form id was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+       
         $service = $this->getService();
         return $service->getForm($data['id']);
     }

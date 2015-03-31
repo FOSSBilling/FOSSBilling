@@ -136,10 +136,10 @@ class Service implements InjectionAwareInterface
         $di = $event->getDi();
         $params      = $event->getParameters();
         $data = array(
-            'ip'                        =>  isset($params['ip']) ? $params['ip'] : NULL,
-            'email'                     =>  isset($params['email']) ? $params['email'] : NULL,
-            'recaptcha_challenge_field' =>  isset($params['recaptcha_challenge_field']) ? $params['recaptcha_challenge_field'] : NULL,
-            'recaptcha_response_field'  =>  isset($params['recaptcha_response_field']) ? $params['recaptcha_response_field'] : NULL,
+            'ip'                        =>  $this->di['array_get']($params, 'ip', NULL),
+            'email'                     =>  $this->di['array_get']($params, 'email', NULL),
+            'recaptcha_challenge_field' =>  $this->di['array_get']($params, 'recaptcha_challenge_field', NULL),
+            'recaptcha_response_field'  =>  $this->di['array_get']($params, 'recaptcha_response_field', NULL),
         );
 
         $config = $di['mod_config']('Spamchecker');

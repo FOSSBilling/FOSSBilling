@@ -101,9 +101,9 @@ class Service implements \Box\InjectionAwareInterface
         
         $params = array();
         
-        $search = isset($data['search']) ? $data['search'] : NULL;
-        $name = isset($data['name']) ? $data['name'] : NULL;
-        $mod = isset($data['mod']) ? $data['mod'] : NULL;
+        $search = $this->di['array_get']($data, 'search', NULL);
+        $name = $this->di['array_get']($data, 'name', NULL);
+        $mod = $this->di['array_get']($data, 'mod', NULL);
         
         if($mod) {
             $sql .= " AND mod = :mod ";

@@ -53,9 +53,10 @@ class Service implements \Box\InjectionAwareInterface
     {
         $validator = $this->di['validator'];
 
-        if (!isset($data['action'])) {
-            throw new \Box_Exception('Are you registering new domain or transferring existing? Action parameter missing.');
-        }
+        $required = array(
+            'action' => 'Are you registering new domain or transferring existing? Action parameter missing',
+        );
+        $validator->checkRequiredParamsForArray($required, $data);
 
         $action = $data['action'];
         if (!in_array($action, array('register', 'transfer', 'owndomain'))) {
@@ -71,13 +72,11 @@ class Service implements \Box\InjectionAwareInterface
                 throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['owndomain_sld']));
             }
 
-            if (!isset($data['owndomain_tld']) || empty($data['owndomain_tld'])) {
-                throw new \Box_Exception('Domain TLD is not valid.');
-            }
-
-            if (!isset($data['owndomain_sld']) || empty($data['owndomain_sld'])) {
-                throw new \Box_Exception('Domain name is required.');
-            }
+            $required = array(
+                'owndomain_tld' => 'Domain TLD is not valid.',
+                'owndomain_sld' => 'Domain name is required.',
+            );
+            $this->di['validator']->checkRequiredParamsForArray($required, $data);
         }
 
         if ($action == 'transfer') {
@@ -89,13 +88,11 @@ class Service implements \Box\InjectionAwareInterface
                 throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['transfer_sld']));
             }
 
-            if (!isset($data['transfer_tld']) || empty($data['transfer_tld'])) {
-                throw new \Box_Exception('Transfer domain type (tld) is required.');
-            }
-
-            if (!isset($data['transfer_sld']) || empty($data['transfer_sld'])) {
-                throw new \Box_Exception('Transfer domain name (sld) is required.');
-            }
+            $required = array(
+                'transfer_tld' => 'Transfer domain type (TLD) is required.',
+                'transfer_sld' => 'Transfer domain name (SLD) is required.',
+            );
+            $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             $tld = $this->tldFindOneByTld($data['transfer_tld']);
             if (!$tld instanceof \Model_Tld) {
@@ -121,17 +118,12 @@ class Service implements \Box\InjectionAwareInterface
                 throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['register_sld']));
             }
 
-            if (!isset($data['register_tld']) || empty($data['register_tld'])) {
-                throw new \Box_Exception('Domain registration tld parameter missing.');
-            }
-
-            if (!isset($data['register_sld']) || empty($data['register_sld'])) {
-                throw new \Box_Exception('Domain registration sld parameter missing.');
-            }
-
-            if (!isset($data['register_years']) || empty($data['register_years'])) {
-                throw new \Box_Exception('Years parameter is missing for domain configuration.');
-            }
+            $required = array(
+                'register_tld'   => 'Domain registration tld parameter missing.',
+                'register_sld'   => 'Domain registration sld parameter missing.',
+                'register_years' => 'Years parameter is missing for domain configuration.',
+            );
+            $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             $tld = $this->tldFindOneByTld($data['register_tld']);
             if (!$tld instanceof \Model_Tld) {
@@ -185,7 +177,7 @@ class Service implements \Box\InjectionAwareInterface
         $model->sld              = $sld;
         $model->tld              = $tld;
         $model->period           = $years;
-        $model->transfer_code    = isset($c['transfer_code']) ? $c['transfer_code'] : NULL;
+        $model->transfer_code    = $this->di['array_get']($c, 'transfer_code', NULL);
         $model->privacy          = FALSE;
         $model->action           = $c['action'];
         $model->ns1              = (isset($c['ns1']) && !empty($c['ns1'])) ? $c['ns1'] : $ns['nameserver_1'];
@@ -416,31 +408,28 @@ class Service implements \Box\InjectionAwareInterface
 
     public function updateContacts(\Model_ServiceDomain $model, $data)
     {
-        if (!isset($data['contact'])) {
-            throw new \Box_Exception('Required field contact is missing');
-        }
-        $contact = $data['contact'];
-
-        $fields = array(
-            'first_name',
-            'last_name',
-            'email',
-            'company',
-            'address1',
-            'address2',
-            'country',
-            'city',
-            'state',
-            'postcode',
-            'phone_cc',
-            'phone',
+        $required = array(
+            'contact' => 'Required field contact is missing',
         );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        foreach ($fields as $f) {
-            if (!isset($contact[$f])) {
-                throw new \Box_Exception('Required field :field is missing', array(':field' => $f));
-            }
-        }
+        $contact = $data['contact'];
+        
+        $required = array(
+            'first_name' => 'Required field first_name is missing',
+            'last_name'  => 'Required field last_name is missing',
+            'email'      => 'Required field email is missing',
+            'company'    => 'Required field company is missing',
+            'address1'   => 'Required field address1 is missing',
+            'address2'   => 'Required field address2 is missing',
+            'country'    => 'Required field country is missing',
+            'city'       => 'Required field city is missing',
+            'state'      => 'Required field state is missing',
+            'postcode'   => 'Required field postcode is missing',
+            'phone_cc'   => 'Required field phone_cc is missing',
+            'phone'      => 'Required field phone is missing',
+            );
+        $this->di['validator']->checkRequiredParamsForArray($required, $contact);
 
         $model->contact_first_name = $contact['first_name'];
         $model->contact_last_name  = $contact['last_name'];
@@ -796,38 +785,14 @@ class Service implements \Box\InjectionAwareInterface
 
     public function tldUpdate(\Model_Tld $model, $data)
     {
-        if (isset($data['tld_registrar_id'])) {
-            $model->tld_registrar_id = $data['tld_registrar_id'];
-        }
-
-        if (isset($data['price_registration'])) {
-            $model->price_registration = $data['price_registration'];
-        }
-
-        if (isset($data['price_renew'])) {
-            $model->price_renew = $data['price_renew'];
-        }
-
-        if (isset($data['price_transfer'])) {
-            $model->price_transfer = $data['price_transfer'];
-        }
-
-        if (isset($data['min_years'])) {
-            $model->min_years = $data['min_years'];
-        }
-
-        if (isset($data['allow_register'])) {
-            $model->allow_register = $data['allow_register'];
-        }
-
-        if (isset($data['allow_transfer'])) {
-            $model->allow_transfer = $data['allow_transfer'];
-        }
-
-        if (isset($data['active'])) {
-            $model->active = $data['active'];
-        }
-
+        $model->tld_registrar_id = $this->di['array_get']($data, 'tld_registrar_id', $model->tld_registrar_id);
+        $model->price_registration = $this->di['array_get']($data, 'price_registration', $model->price_registration);
+        $model->price_renew = $this->di['array_get']($data, 'price_renew', $model->price_renew);
+        $model->price_transfer = $this->di['array_get']($data, 'price_transfer', $model->price_transfer);
+        $model->min_years = $this->di['array_get']($data, 'min_years', $model->min_years);
+        $model->allow_register = $this->di['array_get']($data, 'allow_register', $model->allow_register);
+        $model->allow_transfer = $this->di['array_get']($data, 'allow_transfer', $model->allow_transfer);
+        $model->active = $this->di['array_get']($data, 'active', $model->active);
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
@@ -842,8 +807,8 @@ class Service implements \Box\InjectionAwareInterface
         $query = "SELECT * FROM tld";
 
         $hide_inactive  = isset($data['hide_inactive']) ? (bool)$data['hide_inactive'] : FALSE;
-        $allow_register = isset($data['allow_register']) ? $data['allow_register'] : NULL;
-        $allow_transfer = isset($data['allow_transfer']) ? $data['allow_transfer'] : NULL;
+        $allow_register = $this->di['array_get']($data, 'allow_register', NULL);
+        $allow_transfer = $this->di['array_get']($data, 'allow_transfer', NULL);
 
         $where    = array();
         $bindings = array();
@@ -1040,14 +1005,8 @@ class Service implements \Box\InjectionAwareInterface
 
     public function registrarUpdate(\Model_TldRegistrar $model, $data)
     {
-        if (isset($data['title'])) {
-            $model->name = $data['title'];
-        }
-
-        if (isset($data['test_mode'])) {
-            $model->test_mode = $data['test_mode'];
-        }
-
+        $model->name = $this->di['array_get']($data, 'title', $model->name);
+        $model->test_mode = $this->di['array_get']($data, 'test_mode', $model->test_mode);
         if (isset($data['config']) && is_array($data['config'])) {
             $model->config = json_encode($data['config']);
         }
@@ -1119,10 +1078,7 @@ class Service implements \Box\InjectionAwareInterface
             $s->locked = (bool)$data['locked'];
         }
 
-        if (isset($data['transfer_code'])) {
-            $s->transfer_code = $data['transfer_code'];
-        }
-
+        $s->transfer_code = $this->di['array_get']($data, 'transfer_code', $s->transfer_code);
         $s->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($s);

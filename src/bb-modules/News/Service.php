@@ -43,8 +43,8 @@ class Service
 
         $params = array();
 
-        $search = isset($data['search']) ? $data['search'] : NULL;
-        $status = isset($data['status']) ? $data['status'] : NULL;
+        $search = $this->di['array_get']($data, 'search', NULL);
+        $status = $this->di['array_get']($data, 'status', NULL);
 
         if(NULL !== $status) {
             $sql .= ' AND status = :status';

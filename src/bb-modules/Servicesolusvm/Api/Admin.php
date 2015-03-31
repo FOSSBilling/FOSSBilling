@@ -49,7 +49,7 @@ class Admin extends \Api_Abstract
      */
     public function cluster_config_update($data)
     {
-        $cluster_id = isset($data['cluster_id']) ? (int)$data['cluster_id'] : 1;
+        $cluster_id = (int) $this->di['array_get']($data, 'cluster_id', 1);
         $this->getService()->updateMasterConfig($cluster_id, $data);
         $this->di['logger']->info('Updated SolusVM API configuration');
         return true;
@@ -62,7 +62,7 @@ class Admin extends \Api_Abstract
      */
     public function cluster_config($data)
     {
-        $cluster_id = isset($data['cluster_id']) ? (int)$data['cluster_id'] : 1;
+        $cluster_id = (int) $this->di['array_get']($data, 'cluster_id', 1);
         return $this->getService()->getMasterConfig($cluster_id);
     }
     
@@ -83,9 +83,9 @@ class Admin extends \Api_Abstract
      */
     public function get_nodes($data)
     {
-        $by = isset($data['by']) ? $data['by'] : 'name';
+        $by = $this->di['array_get']($data, 'by', 'name');
         try {
-            $type = isset($data['type']) ? $data['type'] : 'openvz';
+            $type = $this->di['array_get']($data, 'type', 'openvz');
             $nodes = $this->getService()->getNodes($type, $by);
         } catch (\Exception $exc) {
             $nodes = array();
@@ -102,7 +102,7 @@ class Admin extends \Api_Abstract
     public function get_plans($data)
     {
         try {
-            $type = isset($data['type']) ? $data['type'] : 'openvz';
+            $type = $this->di['array_get']($data, 'type', 'openvz');
             $plans = $this->getService()->getPlans($type);
         } catch (\Exception $exc) {
             $plans = array();
@@ -119,7 +119,7 @@ class Admin extends \Api_Abstract
     public function get_templates($data)
     {
         try {
-            $type = isset($data['type']) ? $data['type'] : 'openvz';
+            $type = $this->di['array_get']($data, 'type', 'openvz');
             $templates = $this->getService()->getTemplates($type);
         } catch (\Exception $exc) {
             $templates = array();
@@ -349,7 +349,7 @@ class Admin extends \Api_Abstract
      */
     public function client_list($data)
     {
-        $skip = isset($data['skip']) ? (bool)$data['skip'] : false;
+        $skip = (bool) $this->di['array_get']($data, 'skip', false);
         $clients = $this->getService()->client_list();
         
         if($skip) {
@@ -372,8 +372,8 @@ class Admin extends \Api_Abstract
      */
     public function node_virtualservers($data)
     {
-        $skip = isset($data['skip']) ? (bool)$data['skip'] : false;
-        $node_id = isset($data['node_id']) ? $data['node_id'] : 1;
+        $skip = (bool) $this->di['array_get']($data, 'skip', false);
+        $node_id = $this->di['array_get']($data, 'node_id', 1);
         $servers = $this->getService()->node_virtualservers($node_id);
         
         if($skip) {
@@ -394,10 +394,10 @@ class Admin extends \Api_Abstract
      */
     public function import_servers($data)
     {
-        $nodeid = isset($data['node_id']) ? $data['node_id'] : null;
-        $period = isset($data['period']) ? $data['period'] : null;
-        $product_id = isset($data['product_id']) ? $data['product_id'] : null;
-        $selected = isset($data['servers']) ? $data['servers'] : array();
+        $nodeid = $this->di['array_get']($data, 'node_id', null);
+        $period = $this->di['array_get']($data, 'period', null);
+        $product_id = $this->di['array_get']($data, 'product_id', null);
+        $selected = $this->di['array_get']($data, 'servers', array());
         if(empty($nodeid)) {
             throw new \Box_Exception('Node is not selected for import.', null, 235);
         }
@@ -411,13 +411,12 @@ class Admin extends \Api_Abstract
         }
         $product = $this->di['db']->load('product', $product_id);
         $pconfig = json_decode($product->config, 1);
-        if(!isset($pconfig['node'])) {
-            throw new \Box_Exception('Product is not configured completely. Please provide solusvm node in product configuration page.');
-        }
-        
-        if(!isset($pconfig['plan'])) {
-            throw new \Box_Exception('Product is not configured completely. Please provide solusvm plan in product configuration page.');
-        }
+
+        $required = array(
+            'node'    => 'Product is not configured completely. Please provide solusvm node in product configuration page',
+            'plan'    => 'Product is not configured completely. Please provide solusvm plan in product configuration page',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $log = '';
         $servers = $this->node_virtualservers($data);
@@ -497,7 +496,7 @@ class Admin extends \Api_Abstract
      */
     public function import_clients($data)
     {
-        $selected = isset($data['clients']) ? $data['clients'] : array();
+        $selected = $this->di['array_get']($data, 'clients', array());
         if(empty($selected)) {
             throw new \Box_Exception('No clients selected for import.', null, 233);
         }
@@ -545,7 +544,7 @@ class Admin extends \Api_Abstract
      */
     public function test_connection($data)
     {
-        $return = isset($data['return']) ? $data['return'] : null;
+        $return = $this->di['array_get']($data, 'return', null);
         $can_connect = false;
         try {
             $this->getService()->testConnection($data);
@@ -568,39 +567,15 @@ class Admin extends \Api_Abstract
     public function update($data)
     {
         list(, $vps) = $this->_getService($data);
-        
-        if(isset($data['plan'])) {
-            $vps->plan = $data['plan'];
-        }
-        
-        if(isset($data['template'])) {
-            $vps->template = $data['template'];
-        }
-        
-        if(isset($data['hostname'])) {
-            $vps->hostname = $data['hostname'];
-        }
-        
-        if(isset($data['mainipaddress'])) {
-            $vps->mainipaddress = $data['mainipaddress'];
-        }
-        
-        if(isset($data['custommemory'])) {
-            $vps->custommemory = $data['custommemory'];
-        }
-        
-        if(isset($data['customdiskspace'])) {
-            $vps->customdiskspace = $data['customdiskspace'];
-        }
-        
-        if(isset($data['custombandwidth'])) {
-            $vps->custombandwidth = $data['custombandwidth'];
-        }
-        
-        if(isset($data['customcpu'])) {
-            $vps->customcpu = $data['customcpu'];
-        }
-        
+
+        $vps->plan            = $this->di['array_get']($data, 'plan', $vps->plan);
+        $vps->template        = $this->di['array_get']($data, 'template', $vps->template);
+        $vps->hostname        = $this->di['array_get']($data, 'hostname', $vps->hostname);
+        $vps->mainipaddress   = $this->di['array_get']($data, 'mainipaddress', $vps->mainipaddress);
+        $vps->custommemory    = $this->di['array_get']($data, 'custommemory', $vps->custommemory);
+        $vps->customdiskspace = $this->di['array_get']($data, 'customdiskspace', $vps->customdiskspace);
+        $vps->custombandwidth = $this->di['array_get']($data, 'custombandwidth', $vps->custombandwidth);
+        $vps->customcpu       = $this->di['array_get']($data, 'customcpu', $vps->customcpu);
         $this->di['db']->store($vps);
         
         $this->di['logger']->info('Updated VPS service %s details', $vps->id);

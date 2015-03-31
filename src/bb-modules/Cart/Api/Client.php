@@ -27,7 +27,7 @@ class Client extends \Api_Abstract
      */
     public function checkout($data)
     {
-        $gateway_id = isset($data['gateway_id']) ? (int)$data['gateway_id'] : null;
+        $gateway_id =  $this->di['array_get']($data, 'gateway_id');
         $cart = $this->getService()->getSessionCart();
         $client = $this->getIdentity();
         return $this->getService()->checkoutCart($cart, $client, $gateway_id);

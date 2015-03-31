@@ -105,21 +105,21 @@ class Service implements InjectionAwareInterface
         $bean->form_id = $formId;
         $bean->name = $name;
         $bean->label = $label;
-        $bean->hide_label = isset($field['hide_label']) ? $field['hide_label'] : null;
-        $bean->description = isset($field['description']) ? $field['description'] : null;
+        $bean->hide_label = $this->di['array_get']($field, 'hide_label', null);
+        $bean->description = $this->di['array_get']($field, 'description', null);
         $bean->type = $field['type'];
-        $bean->default_value = isset($field['default_value']) ? $field['default_value'] : null;
-        $bean->required = isset($field['required']) ? $field['required'] : null;
-        $bean->hidden = isset($field['hidden']) ? $field['hidden'] : null;
-        $bean->readonly = isset($field['readonly']) ? $field['readonly'] : null;
-        $bean->options = isset($field['options']) ? $field['options'] : null;
-        $bean->prefix = isset($field['prefix']) ? $field['prefix'] : null;
-        $bean->suffix = isset($field['suffix']) ? $field['suffix'] : null;
-        $bean->show_initial = isset($field['show_initial']) ? $field['show_initial'] : null;
-        $bean->show_middle = isset($field['show_middle']) ? $field['show_middle'] : null;
-        $bean->show_prefix = isset($field['show_prefix']) ? $field['show_prefix'] : null;
-        $bean->show_suffix = isset ($field['show_suffix']) ? $field['show_suffix'] : null;
-        $bean->text_size = isset($field['text_size']) ? $field['text_size'] : null;
+        $bean->default_value = $this->di['array_get']($field, 'default_value', null);
+        $bean->required = $this->di['array_get']($field, 'required', null);
+        $bean->hidden = $this->di['array_get']($field, 'hidden', null);
+        $bean->readonly = $this->di['array_get']($field, 'readonly', null);
+        $bean->options = $this->di['array_get']($field, 'options', null);
+        $bean->prefix = $this->di['array_get']($field, 'prefix', null);
+        $bean->suffix = $this->di['array_get']($field, 'suffix', null);
+        $bean->show_initial = $this->di['array_get']($field, 'show_initial', null);
+        $bean->show_middle = $this->di['array_get']($field, 'show_middle', null);
+        $bean->show_prefix = $this->di['array_get']($field, 'show_prefix', null);
+        $bean->show_suffix = $this->di['array_get']($field, 'show_suffix', null);
+        $bean->text_size = $this->di['array_get']($field, 'text_size', null);
         $bean->created_at = date('Y-m-d H:i:s');
         $bean->updated_at = date('Y-m-d H:i:s');
 
@@ -204,20 +204,20 @@ class Service implements InjectionAwareInterface
         $bean->id = $fieldId;
         $bean->name = $name;
         $bean->label = $label;
-        $bean->hide_label = isset($field['hide_label']) ? $field['hide_label'] : null;
-        $bean->description = isset($field['description']) ? $field['description'] : null;
-        $bean->default_value = isset($field['default_value']) ? $field['default_value'] : null;
-        $bean->required = isset($field['required']) ? $field['required'] : null;
-        $bean->hidden = isset($field['hidden']) ? $field['hidden'] : null;
-        $bean->readonly = isset($field['readonly']) ? $field['readonly'] : null;
+        $bean->hide_label = $this->di['array_get']($field, 'hide_label', null);
+        $bean->description = $this->di['array_get']($field, 'description', null);
+        $bean->default_value = $this->di['array_get']($field, 'default_value', null);
+        $bean->required = $this->di['array_get']($field, 'required', null);
+        $bean->hidden = $this->di['array_get']($field, 'hidden', null);
+        $bean->readonly = $this->di['array_get']($field, 'readonly', null);
         $bean->options = $field['options'];
-        $bean->prefix = isset($field['prefix']) ? $field['prefix'] : null;
-        $bean->suffix = isset ($field['suffix']) ? $field['suffix'] : null;
-        $bean->show_initial = isset($field['show_initial']) ? $field['show_initial'] : null;
-        $bean->show_middle = isset($field['show_middle']) ? $field['show_middle'] : null;
-        $bean->show_prefix = isset($field['show_prefix']) ? $field['show_prefix'] : null;
-        $bean->show_suffix = isset($field['show_suffix']) ? $field['show_suffix'] : null;
-        $bean->text_size = isset($field['text_size']) ? $field['text_size'] : null;
+        $bean->prefix = $this->di['array_get']($field, 'prefix', null);
+        $bean->suffix = $this->di['array_get']($field, 'suffix', null);
+        $bean->show_initial = $this->di['array_get']($field, 'show_initial', null);
+        $bean->show_middle = $this->di['array_get']($field, 'show_middle', null);
+        $bean->show_prefix = $this->di['array_get']($field, 'show_prefix', null);
+        $bean->show_suffix = $this->di['array_get']($field, 'show_suffix', null);
+        $bean->text_size = $this->di['array_get']($field, 'text_size', null);
         $bean->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($bean);
@@ -290,9 +290,12 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception ("Field was not found", null, 2575);
         }
         $result = $this->di['db']->toArray($field);
-        if (!isset($result['id'])) {
-            throw new \Box_Exception ("Field was not found", null, 2575);
-        }
+
+        $required = array(
+            'id' => 'Field was not found',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $result, null, 2575);
+
         if (substr($result["options"], 0, 1) == "{" || substr($result["options"], 0, 1) == "[") {
             $result['options'] = json_decode($result['options']);
         }

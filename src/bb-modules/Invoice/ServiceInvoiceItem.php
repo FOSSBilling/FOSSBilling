@@ -134,22 +134,20 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function addNew(\Model_Invoice $proforma, array $data)
     {
-        $this->di['api_request_data']->setRequest($data);
-
-        $title = $this->di['api_request_data']->get('title', '');
+        $title = $this->di['array_get']($data, 'title', '');
         if(empty($title)) {
             throw new \Box_Exception('Invoice item title is missing');
         }
 
-        $period = $this->di['api_request_data']->get('period', 0);
+        $period = $this->di['array_get']($data, 'period', 0);
         if($period) {
             $periodCheck = $this->di['period']($period);
         }
 
-        $type = $this->di['api_request_data']->get('type', \Model_InvoiceItem::TYPE_CUSTOM);
-        $rel_id = $this->di['api_request_data']->get('rel_id');
-        $task = $this->di['api_request_data']->get('task', \Model_InvoiceItem::TASK_VOID);
-        $status = $this->di['api_request_data']->get('status', \Model_InvoiceItem::STATUS_PENDING_PAYMENT);
+        $type = $this->di['array_get']($data, 'type', \Model_InvoiceItem::TYPE_CUSTOM);
+        $rel_id = $this->di['array_get']($data, 'rel_id');
+        $task = $this->di['array_get']($data, 'task', \Model_InvoiceItem::TASK_VOID);
+        $status = $this->di['array_get']($data, 'status', \Model_InvoiceItem::STATUS_PENDING_PAYMENT);
 
         $pi = $this->di['db']->dispense('InvoiceItem');
         $pi->invoice_id     = $proforma->id;
@@ -159,11 +157,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->status         = $status;
         $pi->title          = $data['title'];
         $pi->period         = $period;
-        $pi->quantity       = $this->di['api_request_data']->get('quantity', 1);
-        $pi->unit           = $this->di['api_request_data']->get('unit');
-        $pi->charged        = $this->di['api_request_data']->get('charged', 0);
-        $pi->price          = $this->di['api_request_data']->get('price', 0);
-        $pi->taxed          = $this->di['api_request_data']->get('taxed', false);
+        $pi->quantity       = $this->di['array_get']($data, 'quantity', 1);
+        $pi->unit           = $this->di['array_get']($data, 'unit');
+        $pi->charged        = $this->di['array_get']($data, 'charged', 0);
+        $pi->price          = (double) $this->di['array_get']($data, 'price', 0);
+        $pi->taxed          = $this->di['array_get']($data, 'taxed', false);
         $pi->created_at     = date('Y-m-d H:i:s');
         $pi->updated_at     = date('Y-m-d H:i:s');
         $itemId = $this->di['db']->store($pi);
@@ -192,14 +190,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function update(\Model_InvoiceItem $item, array $data)
     {
-        if(isset($data['title'])) {
-            $item->title = $data['title'];
-        }
-
-        if(isset($data['price'])) {
-            $item->price = $data['price'];
-        }
-
+        $item->title = $this->di['array_get']($data, 'title', $item->title);
+        $item->price = $this->di['array_get']($data, 'price', $item->price);
         if(isset($data['taxed']) && !empty($data['taxed'])) {
             $item->taxed = (bool)$data['taxed'];
         } else {

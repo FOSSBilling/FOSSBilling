@@ -116,17 +116,17 @@
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-index">
         {{ mf.table_search }}
-        <table class="tableStatic wide">
+        <table class="tableStatic wide" style="table-layout: fixed">
             <thead>
                 <tr>
-                    <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
-                    <td>{% trans 'ID' %}</td>
-                    <td width="25%" colspan="2">{% trans 'Client' %}</td>
-                    <td width="40%">{% trans 'Title' %}</td>
-                    <td>{% trans 'Amount' %}</td>
+                    <td style="width: 3%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
+                    <td style="width: 5%">{% trans 'ID' %}</td>
+                    <td width="13%">{% trans 'Client' %}</td>
+                    <td width="45%">{% trans 'Title' %}</td>
+                    <td style="width: 7%">{% trans 'Amount' %}</td>
                     <td>{% trans 'Period' %}</td>
                     <td>{% trans 'Status' %}</td>
-                    <td style="width: 14%">&nbsp;</td>
+                    <td style="width: 10%">&nbsp;</td>
                 </tr>
             </thead>
 
@@ -136,9 +136,15 @@
                 <tr>
                     <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ order.id }}"/></td>
                     <td>{{order.id}}</td>
-                    <td><a href="{{ 'client/manage'|alink }}/{{ order.client_id }}"><img src="{{ order.client.email|gravatar }}?size=20" alt="{{ order.client.email }}" /></a></td>
-                    <td><a href="{{ 'client/manage'|alink }}/{{ order.client_id }}">{{order.client.first_name}} {{order.client.last_name}}</a></td>
-                    <td>{{order.title|truncate(30) }}</td>
+                    <td class="truncate">
+                        <span style="float: left;">
+                            <a href="{{ 'client/manage'|alink }}/{{ order.client_id }}"><img src="{{ order.client.email|gravatar }}?size=20" alt="{{ order.client.email }}" /></a>
+                        </span>
+                        <span style="margin-left: 10px;">
+                            <a href="{{ 'client/manage'|alink }}/{{ order.client_id }}">{{order.client.first_name|truncate('1', null, '.')}} {{order.client.last_name}}</a>
+                        </span>
+                    </td>
+                    <td class="truncate">{{order.title }}</td>
                     <td>{{ mf.currency_format( order.total, order.currency) }}</td>
                     <td>{{ mf.period_name(order.period) }}</td>
                     <td>{{ mf.status_name(order.status) }}</td>

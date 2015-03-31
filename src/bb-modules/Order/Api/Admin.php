@@ -46,7 +46,7 @@ class Admin extends \Api_Abstract
         $data['hide_addons'] = (isset($orderConfig['show_addons']) && $orderConfig['show_addons']) ? 0 : 1;
         list($sql, $params) = $this->getService()->getSearchQuery($data);
         $paginator = $this->di['pager'];
-        $per_page  = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page  = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $resultSet = $paginator->getAdvancedResultSet($sql, $params, $per_page);
 
         foreach ($resultSet['list'] as $key => $result) {
@@ -162,7 +162,7 @@ class Admin extends \Api_Abstract
         $order      = $this->_getOrder($data);
         $skip_event = isset($data['skip_event']) ? (bool)$data['skip_event'] : false;
 
-        $reason = isset($data['reason']) ? $data['reason'] : NULL;
+        $reason = $this->di['array_get']($data, 'reason', NULL);
 
         return $this->getService()->suspendFromOrder($order, $reason, $skip_event);
     }
@@ -198,7 +198,7 @@ class Admin extends \Api_Abstract
         $order      = $this->_getOrder($data);
         $skip_event = isset($data['skip_event']) ? (bool)$data['skip_event'] : false;
 
-        $reason = isset($data['reason']) ? $data['reason'] : NULL;
+        $reason = $this->di['array_get']($data, 'reason', NULL);
 
         return $this->getService()->cancelFromOrder($order, $reason, $skip_event);
     }
@@ -314,7 +314,7 @@ class Admin extends \Api_Abstract
         $data['client_order_id'] = $order->id;
 
         list($sql, $bindings) = $this->getService()->getOrderStatusSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         return $this->di['pager']->getSimpleResultSet($sql, $bindings, $per_page);
     }
 
@@ -336,7 +336,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $notes = isset($data['notes']) ? $data['notes'] : null;
+        $notes = $this->di['array_get']($data, 'notes', null);
 
         return $this->getService()->orderStatusAdd($order, $data['status'], $notes);
     }

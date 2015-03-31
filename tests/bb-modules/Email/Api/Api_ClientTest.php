@@ -21,7 +21,11 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         $di          = new \Box_Di();
         $di['pager'] = $pager;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $clientApi->setDi($di);
+        $emailService->setDi($di);
 
         $service = $emailService;
         $clientApi->setService($service);
@@ -54,23 +58,19 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(array()));
         $clientApi->setService($service);
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $clientApi->setDi($di);
+
         $client     = new \Model_Client();
         $client->loadBean(new \RedBeanPHP\OODBBean());
         $client->id = rand(1, 100);
         $clientApi->setIdentity($client);
 
         $result = $clientApi->get(array('id' => 1));
-        $this->assertInternalType('array', $result);
-
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testGetIdNotSetException()
-    {
-        $clientApi = new \Box\Mod\Email\Api\Client();
-        $result    = $clientApi->get(array());
         $this->assertInternalType('array', $result);
 
     }
@@ -91,6 +91,13 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $client->loadBean(new \RedBeanPHP\OODBBean());
         $client->id = 5;
         $clientApi->setIdentity($client);
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $clientApi->setDi($di);
 
         $clientApi->setService($service);
 
@@ -119,21 +126,17 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $client->id = 5;
         $clientApi->setIdentity($client);
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $clientApi->setDi($di);
+
         $clientApi->setService($service);
 
         $result = $clientApi->resend(array('id' => 1));
         $this->assertTrue($result);
-
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testResendIdNotSetException()
-    {
-        $clientApi = new \Box\Mod\Email\Api\Client();
-        $result    = $clientApi->resend(array());
-        $this->assertInternalType('array', $result);
 
     }
 
@@ -154,6 +157,13 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $client->id = 5;
 
         $clientApi->setIdentity($client);
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $clientApi->setDi($di);
 
         $clientApi->setService($service);
 
@@ -183,21 +193,17 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $client->id = 5;
         $clientApi->setIdentity($client);
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $clientApi->setDi($di);
+
         $clientApi->setService($service);
 
         $result = $clientApi->delete(array('id' => 1));
         $this->assertTrue($result);
-
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testDeleteIdNotSetException()
-    {
-        $clientApi = new \Box\Mod\Email\Api\Client();
-        $result    = $clientApi->delete(array());
-        $this->assertInternalType('array', $result);
 
     }
 
@@ -218,6 +224,13 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $client->id = 5;
 
         $clientApi->setIdentity($client);
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $clientApi->setDi($di);
 
         $clientApi->setService($service);
 

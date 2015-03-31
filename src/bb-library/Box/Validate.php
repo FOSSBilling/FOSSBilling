@@ -83,15 +83,26 @@ class Box_Validate
     }
 
     /**
-     * @param array $required
-     * @param array $data
+     * @param array $required - Array with required keys and messages to show if the key is not found
+     * @param array $data - Array to search for keys
+     * @param array $variables - Array of variables for message placeholders (:placeholder)
+     * @param integer $code - Exception code
      * @throws Box_Exception
      */
-    public function checkRequiredParamsForArray(array $required, array $data)
+    public function checkRequiredParamsForArray(array $required, array $data, array $variables = NULL, $code = 0)
     {
         foreach ($required as $key => $msg) {
-            if (!isset($data[$key]) || empty($data[$key])) {
-                throw new \Box_Exception($msg);
+
+            if(!isset($data[$key])){
+                throw new \Box_Exception($msg, $variables, $code);
+            }
+
+            if (is_string($data[$key]) && strlen(trim($data[$key])) === 0){
+                throw new \Box_Exception($msg, $variables, $code);
+            }
+
+            if (!is_numeric($data[$key]) && empty($data[$key])){
+                throw new \Box_Exception($msg, $variables, $code);
             }
         }
     }

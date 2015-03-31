@@ -25,7 +25,7 @@ class Admin extends \Api_Abstract
     {
         $data['no_cron'] = true;
         list($sql, $params) = $this->getService()->getSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach($pager['list'] as $key => $item){
             $staff = $this->di['db']->getExistingModelById('Admin', $item['id'], 'Admin is not found');
@@ -216,7 +216,7 @@ class Admin extends \Api_Abstract
     public function group_get_list($data)
     {
         list($sql, $params) = $this->getService()->getAdminGroupSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $model               = $this->di['db']->getExistingModelById('AdminGroup', $item['id'], 'Post not found');
@@ -311,7 +311,7 @@ class Admin extends \Api_Abstract
     public function login_history_get_list($data)
     {
         list($sql, $params) = $this->getService()->getActivityAdminHistorySearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $activity = $this->di['db']->getExistingModelById('ActivityAdminHistory', $item['id'], sprintf('Staff activity item #%s not found', $item['id']));
@@ -424,18 +424,9 @@ class Admin extends \Api_Abstract
         
         $admin = $this->getIdentity();
 
-        if(isset($data['email'])) {
-            $admin->email = $data['email'];
-        }
-        
-        if(isset($data['name'])) {
-            $admin->name = $data['name'];
-        }
-        
-        if(isset($data['signature'])) {
-            $admin->signature = $data['signature'];
-        }
-        
+        $admin->email = $this->di['array_get']($data, 'email', $admin->email);
+        $admin->name = $this->di['array_get']($data, 'name', $admin->name);
+        $admin->signature = $this->di['array_get']($data, 'signature', $admin->signature);
         $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
@@ -483,12 +474,11 @@ class Admin extends \Api_Abstract
      */
     public function profile_change_password($data)
     {
-        if(!isset($data['password'])) {
-            throw new \Box_Exception('Password required');
-        }
-        if(!isset($data['password_confirm'])) {
-            throw new \Box_Exception('Password confirmation required');
-        }
+        $required = array(
+            'password'         => 'Password required',
+            'password_confirm' => 'Password confirmation required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if($data['password'] != $data['password_confirm']) {
             throw new \Box_Exception('Passwords do not match');

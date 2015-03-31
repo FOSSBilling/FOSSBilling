@@ -31,7 +31,10 @@ class ServiceBalanceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->with($clientBalance);
         $di['db'] = $dbMock;
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        
         $service = new \Box\Mod\Client\ServiceBalance();
         $service->setDi($di);
 

@@ -39,6 +39,9 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -83,6 +86,11 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
         $this->assertInternalType('array', $result);
@@ -104,6 +112,11 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
             ->method('toApiArray')
             ->will($this->returnValue(array()));
 
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
         $this->assertInternalType('array', $result);
@@ -121,7 +134,11 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('findOneActiveBySlug')
             ->will($this->returnValue($model ));
-
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $this->setExpectedException('\Box_Exception', 'Product not found');
@@ -159,6 +176,9 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['pager'] = $pagerMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -187,6 +207,9 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->api->setDi($di);
 
@@ -206,7 +229,9 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->api->setDi($di);
 
         $arr = array(
@@ -237,7 +262,9 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->api->setDi($di);
 
         $arr = array(

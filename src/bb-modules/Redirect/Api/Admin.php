@@ -37,9 +37,10 @@ class Admin extends \Api_Abstract
      */
     public function get($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Redirect id not passed');
-        }
+        $required = array(
+            'id' => 'Redirect ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $bean = $this->_getRedirect($data['id']);
         return array(
@@ -59,13 +60,11 @@ class Admin extends \Api_Abstract
      */
     public function create($data)
     {
-        if(!isset($data['path'])) {
-            throw new \Box_Exception('Redirect path not passed');
-        }
-        
-        if(!isset($data['target'])) {
-            throw new \Box_Exception('Redirect target not passed');
-        }
+        $required = array(
+            'path'   => 'Redirect path not passed',
+            'target' => 'Redirect target not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $bean = $this->di['db']->dispense('extension_meta');
         $bean->extension = 'mod_redirect';
@@ -93,20 +92,15 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Redirect id not passed');
-        }
+        $required = array(
+            'id' => 'Redirect ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $bean = $this->_getRedirect($data['id']);
         
-        if(isset($data['path'])) {
-            $bean->meta_key = $data['path'];
-        }
-        
-        if(isset($data['target'])) {
-            $bean->meta_value = $data['target'];
-        }
-        
+        $bean->meta_key = $this->di['array_get']($data, 'path', $bean->meta_key);
+        $bean->meta_value = $this->di['array_get']($data, 'target', $bean->meta_value);
         $bean->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($bean);
         
@@ -122,9 +116,10 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Redirect id not passed');
-        }
+        $required = array(
+            'id' => 'Redirect ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $bean = $this->_getRedirect($data['id']);
         $this->di['db']->trash($bean);

@@ -5,7 +5,12 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 {
     public function testArticle_get_list()
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $adminApi = new \Box\Mod\Kb\Api\Admin();
+        $adminApi->setDi($di);
 
         $data = array(
             'status' => 'status',
@@ -46,6 +51,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $di                   = new \Box_Di();
         $di['loggedin_admin'] = $admin;
         $di['db']             = $db;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('toApiArray'))->getMock();
@@ -58,14 +68,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertInternalType('array', $result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testArticle_getIdNotSetException()
-    {
-        $adminApi = new \Box\Mod\Kb\Api\Admin();
-        $adminApi->article_get(array());
-    }
 
     /**
      * @expectedException \Box_Exception
@@ -85,6 +87,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
         $adminApi->article_get($data);
     }
@@ -100,41 +107,26 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $id = rand(1, 100);
 
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('createArticle'))->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('createArticle')
             ->will($this->returnValue($id));
         $adminApi->setService($kbService);
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
 
         $result = $adminApi->article_create($data);
         $this->assertInternalType('integer', $result);
         $this->assertEquals($result, $id);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testArticle_createCategoryNotSetException()
-    {
-        $adminApi = new \Box\Mod\Kb\Api\Admin();
-
-        $data = array(
-            'title' => 'Title',
-        );
-        $adminApi->article_create($data);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testArticle_createTitleNotSetException()
-    {
-        $adminApi = new \Box\Mod\Kb\Api\Admin();
-
-        $data = array(
-            'kb_article_category_id' => rand(1, 100),
-        );
-        $adminApi->article_create($data);
     }
 
     public function testArticle_update()
@@ -155,26 +147,22 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $kbService->expects($this->atLeastOnce())
             ->method('updateArticle')
             ->will($this->returnValue(true));
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+
+        $adminApi->setDi($di);
+
         $adminApi->setService($kbService);
 
         $result = $adminApi->article_update($data);
-        $this->assertTrue($result);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testArticle_updateIdNotSetException()
-    {
-        $adminApi = new \Box\Mod\Kb\Api\Admin();
-
-        $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('updateArticle'))->getMock();
-        $kbService->expects($this->never())
-            ->method('updateArticle')
-            ->will($this->returnValue(true));
-        $adminApi->setService($kbService);
-
-        $result = $adminApi->article_update(array());
         $this->assertTrue($result);
     }
 
@@ -193,6 +181,13 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+
         $adminApi->setDi($di);
 
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('rm'))->getMock();
@@ -205,31 +200,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testArticle_deleteIdNotSetException()
-    {
-        $adminApi = new \Box\Mod\Kb\Api\Admin();
-
-        $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->never())
-            ->method('findOne')
-            ->will($this->returnValue(new \Model_KbArticle()));
-
-        $di       = new \Box_Di();
-        $di['db'] = $db;
-        $adminApi->setDi($di);
-
-        $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('rm'))->getMock();
-        $kbService->expects($this->never())
-            ->method('rm')
-            ->will($this->returnValue(true));
-        $adminApi->setService($kbService);
-
-        $result = $adminApi->article_delete(array());
-        $this->assertTrue($result);
-    }
 
     /**
      * @expectedException \Box_Exception
@@ -245,6 +215,12 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('rm'))->getMock();
@@ -276,6 +252,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di          = new \Box_Di();
         $di['pager'] = $pager;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $adminApi->setDi($di);
 
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('categoryGetSearchQuery'))->getMock();
@@ -300,6 +279,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('categoryToApiArray'))->getMock();
@@ -329,6 +313,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willThrowException(new \Box_Exception('Category ID not passed'));
+        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
         $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('categoryToApiArray'))->getMock();
@@ -354,6 +343,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(false));
 
         $di       = new \Box_Di();
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $di['db'] = $db;
         $adminApi->setDi($di);
 
@@ -386,24 +380,16 @@ class AdminTest extends \PHPUnit_Framework_TestCase
             'description' => 'Description',
         );
 
-        $result = $adminApi->category_create($data);
-        $this->assertInternalType('array', $result);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testCategory_createTitleNotSetException()
-    {
-        $adminApi = new \Box\Mod\Kb\Api\Admin();
-
-        $kbService = $this->getMockBuilder('Box\Mod\Kb\Service')->setMethods(array('createCategory'))->getMock();
-        $kbService->expects($this->never())
-            ->method('createCategory')
-            ->will($this->returnValue(array()));
-        $adminApi->setService($kbService);
-
-        $data = array();
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $adminApi->setDi($di);
 
         $result = $adminApi->category_create($data);
         $this->assertInternalType('array', $result);
@@ -427,6 +413,16 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+
         $adminApi->setDi($di);
 
 
@@ -462,6 +458,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willThrowException(new \Box_Exception('Category ID not passed'));
+        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
 
@@ -492,6 +493,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
 
@@ -524,6 +530,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
         $data   = array(
@@ -554,6 +565,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->willThrowException(new \Box_Exception('Category ID not passed'));
+        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
         $data   = array();
@@ -583,6 +599,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $di       = new \Box_Di();
         $di['db'] = $db;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
         $data   = array(

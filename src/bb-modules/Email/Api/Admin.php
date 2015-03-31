@@ -24,7 +24,7 @@ class Admin extends \Api_Abstract
      */
     public function email_get_list($data)
     {
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         list($sql, $params) = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
@@ -55,9 +55,10 @@ class Admin extends \Api_Abstract
      */
     public function email_get($data)
     {
-        if (!isset($data['id']) || empty($data['id'])) {
-            throw new \Box_Exception('Email ID is required');
-        }
+        $required = array(
+            'id' => 'Email ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $service = $this->getService();
         $model = $service->getEmailById($data['id']);
@@ -89,17 +90,17 @@ class Admin extends \Api_Abstract
             'subject' => 'Email subject is required',
             'content' => 'Email content is required',
         );
-        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
-        $client_id = $this->di['api_request_data']->get('client_id');
+        $this->di['validator']->checkRequiredParamsForArray($required,  $data);
+        $client_id = $this->di['array_get']($data, 'client_id');
         $emailService = $this->getService();
 
         return $emailService->sendMail(
-            $this->di['api_request_data']->get('to'),
-            $this->di['api_request_data']->get('from'),
-            $this->di['api_request_data']->get('subject'),
-            $this->di['api_request_data']->get('content'),
-            $this->di['api_request_data']->get('to_name'),
-            $this->di['api_request_data']->get('from_name'),
+            $this->di['array_get']($data, 'to'),
+            $this->di['array_get']($data, 'from'),
+            $this->di['array_get']($data, 'subject'),
+            $this->di['array_get']($data, 'content'),
+            $this->di['array_get']($data, 'to_name'),
+            $this->di['array_get']($data, 'from_name'),
             $client_id
         );
     }
@@ -114,9 +115,10 @@ class Admin extends \Api_Abstract
      */
     public function email_resend($data)
     {
-        if (!isset($data['id']) || empty($data['id'])) {
-            throw new \Box_Exception('Email ID is required');
-        }
+        $required = array(
+            'id' => 'Email ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', array($data['id']));
 
@@ -137,9 +139,10 @@ class Admin extends \Api_Abstract
      */
     public function email_delete($data)
     {
-        if (!isset($data['id']) || empty($data['id'])) {
-            throw new \Box_Exception('Email ID is required');
-        }
+        $required = array(
+            'id' => 'Email ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', array($data['id']));
 
@@ -162,18 +165,18 @@ class Admin extends \Api_Abstract
      */
     public function template_get_list($data)
     {
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         list($sql, $params) = $this->getService()->templateGetSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = array(
-                'id'          => isset($item['id']) ? $item['id'] : '',
-                'action_code' => isset($item['action_code']) ? $item['action_code'] : '',
-                'category'    => isset($item['category']) ? $item['category'] : '',
-                'enabled'     => isset($item['enabled']) ? $item['enabled'] : '',
-                'subject'     => isset($item['subject']) ? $item['subject'] : '',
-                'description' => isset($item['description']) ? $item['description'] : '',
+                'id'          => $this->di['array_get']($item, 'id', ''),
+                'action_code' => $this->di['array_get']($item, 'action_code', ''),
+                'category'    => $this->di['array_get']($item, 'category', ''),
+                'enabled'     => $this->di['array_get']($item, 'enabled', ''),
+                'subject'     => $this->di['array_get']($item, 'subject', ''),
+                'description' => $this->di['array_get']($item, 'description', ''),
             );
 
         }
@@ -191,9 +194,10 @@ class Admin extends \Api_Abstract
      */
     public function template_get($data)
     {
-        if (!isset($data['id'])  || empty($data['id'])) {
-            throw new \Box_Exception('Email template ID is required');
-        }
+        $required = array(
+            'id' => 'Email ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('EmailTemplate', $data['id'], 'Email template not found');
 
@@ -210,9 +214,10 @@ class Admin extends \Api_Abstract
      */
     public function template_delete($data)
     {
-        if (!isset($data['id'])  || empty($data['id'])) {
-            throw new \Box_Exception('Email ID is required');
-        }
+        $required = array(
+            'id' => 'Email ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->findOne('EmailTemplate', 'id = ?', array($data['id']));
 
@@ -241,22 +246,18 @@ class Admin extends \Api_Abstract
      */
     public function template_create($data)
     {
-        if (!isset($data['action_code'])) {
-            throw new \Box_Exception('Email template code is required');
-        }
+        $required = array(
+            'action_code' => 'Email template code is required',
+            'subject'     => 'Email template subject is required',
+            'content'     => 'Email template content is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        if (!isset($data['subject'])) {
-            throw new \Box_Exception('Email template subject is required');
-        }
-
-        if (!isset($data['content'])) {
-            throw new \Box_Exception('Email template content is required');
-        }
-
-        $enabled  = isset($data['enabled']) ? $data['enabled'] : 0;
-        $category = isset($data['category']) ? $data['category'] : NULL;
+        $enabled  = $this->di['array_get']($data, 'enabled', 0);
+        $category = $this->di['array_get']($data, 'category');
 
         $templateModel = $this->getService()->templateCreate($data['action_code'], $data['subject'], $data['content'], $enabled, $category);
+
         return $templateModel->id;
     }
 
@@ -270,14 +271,15 @@ class Admin extends \Api_Abstract
      */
     public function template_update($data)
     {
-        if (!isset($data['id'])  || empty($data['id'])) {
-            throw new \Box_Exception('Email template ID is required');
-        }
+        $required = array(
+            'id' => 'Email ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $enabled = isset($data['enabled']) ? $data['enabled'] : null;
-        $category = isset($data['category']) ? $data['category'] : null;
-        $subject = isset($data['subject']) ? $data['subject'] : null;
-        $content = isset($data['content']) ? $data['content'] : null;
+        $enabled  = $this->di['array_get']($data, 'enabled');
+        $category = $this->di['array_get']($data, 'category');
+        $subject  = $this->di['array_get']($data, 'subject');
+        $content  = $this->di['array_get']($data, 'content');
 
         $model = $this->di['db']->getExistingModelById('EmailTemplate', $data['id'], 'Email template not found');
 
@@ -293,9 +295,11 @@ class Admin extends \Api_Abstract
      */
     public function template_reset($data)
     {
-        if (!isset($data['code']) || empty($data['code'])) {
-            throw new \Box_Exception('Email template code was not passed');
-        }
+        $required = array(
+            'code' => 'Email template code was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         return $this->getService()->resetTemplateByCode($data['code']);
     }
 
@@ -310,7 +314,7 @@ class Admin extends \Api_Abstract
     {
         $t            = $this->template_get($data);
         $vars         = $t['vars'];
-        $vars['_tpl'] = isset($data['_tpl']) ? $data['_tpl'] : $t['content'];
+        $vars['_tpl'] = $this->di['array_get']($data, '_tpl', $t['content']);
 
         return $this->di['twig']->render($vars['_tpl'], $vars);
     }
@@ -389,9 +393,11 @@ class Admin extends \Api_Abstract
      */
     public function template_send($data)
     {
-        if (!isset($data['code'])) {
-            throw new \Box_Exception('Template code not passed');
-        }
+        $required = array(
+            'code'         => 'Template code not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
             throw new \Box_Exception('Receiver is not defined. Define to or to_client or to_staff parameter');
         }

@@ -85,8 +85,8 @@ class Service implements InjectionAwareInterface
 
     public function getSearchQuery($filter)
     {
-        $search = isset($filter['search']) ? $filter['search'] : NULL;
-        $type = isset($filter['type']) ? $filter['type'] : NULL;
+        $search = $this->di['array_get']($filter, 'search', NULL);
+        $type = $this->di['array_get']($filter, 'type', NULL);
 
         $params = array();
         $sql="SELECT * FROM extension
@@ -113,9 +113,9 @@ class Service implements InjectionAwareInterface
         list($sql, $params) = $this->getSearchQuery($filter);
         $installed = $this->di['db']->getAll($sql, $params);
 
-        $has_settings       = isset($filter['has_settings']) ? (bool)$filter['has_settings'] : NULL;
-        $only_installed     = isset($filter['installed']) ? (bool)$filter['installed'] : NULL;
-        $installed_and_core = isset($filter['active']) ? (bool)$filter['active'] : NULL;
+        $has_settings       = $this->di['array_get']($filter, 'has_settings');
+        $only_installed     = $this->di['array_get']($filter, 'installed');
+        $installed_and_core = $this->di['array_get']($filter, 'active');
         $search             = isset($filter['search']) ? strtolower($filter['search']) : NULL;
         $result             = array();
 

@@ -154,10 +154,10 @@ class Admin extends \Api_Abstract
     public function tld_get_list($data)
     {
         list($sql, $params) = $this->getService()->tldGetSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
-        $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
-        foreach($pager['list'] as $key => $tldArr){
-            $tld = $this->di['db']->getExistingModelById('Tld', $tldArr['id'], sprintf('Tld #%s not found', $tldArr['id']));
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $pager    = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+        foreach ($pager['list'] as $key => $tldArr) {
+            $tld                 = $this->di['db']->getExistingModelById('Tld', $tldArr['id'], sprintf('Tld #%s not found', $tldArr['id']));
             $pager['list'][$key] = $this->getService()->tldToApiArray($tld);
         }
 
@@ -174,9 +174,10 @@ class Admin extends \Api_Abstract
      */
     public function tld_get($data)
     {
-        if (!isset($data['tld'])) {
-            throw new \Box_Exception('TLD is missing');
-        }
+        $required = array(
+            'tld' => 'TLD is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $tld = $data['tld'];
         if ($tld[0] != '.') {
@@ -201,9 +202,10 @@ class Admin extends \Api_Abstract
      */
     public function tld_delete($data)
     {
-        if (!isset($data['tld'])) {
-            throw new \Box_Exception('TLD is missing');
-        }
+        $required = array(
+            'tld' => 'TLD is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
 
@@ -228,28 +230,17 @@ class Admin extends \Api_Abstract
      */
     public function tld_create($data)
     {
-        if (!isset($data['tld'])) {
-            throw new \Box_Exception('TLD is missing');
-        }
+        $required = array(
+            'tld'                => 'TLD is missing',
+            'tld_registrar_id'   => 'TLD registrar id is missing',
+            'price_registration' => 'Registration price is missing',
+            'price_renew'        => 'Renewal price is missing',
+            'price_transfer'     => 'Transfer price is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if ($this->getService()->tldAlreadyRegistered($data['tld'])) {
             throw new \Box_Exception('Tld already registered');
-        }
-
-        if (!isset($data['tld_registrar_id'])) {
-            throw new \Box_Exception('TLD registrar id is missing');
-        }
-
-        if (!isset($data['price_registration'])) {
-            throw new \Box_Exception('Registration price is missing');
-        }
-
-        if (!isset($data['price_renew'])) {
-            throw new \Box_Exception('Renewal price is missing');
-        }
-
-        if (!isset($data['price_transfer'])) {
-            throw new \Box_Exception('Transfer price is missing');
         }
 
         return $this->getService()->tldCreate($data);
@@ -270,9 +261,10 @@ class Admin extends \Api_Abstract
      */
     public function tld_update($data)
     {
-        if (!isset($data['tld'])) {
-            throw new \Box_Exception('TLD is missing');
-        }
+        $required = array(
+            'tld' => 'TLD is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$model instanceof \Model_Tld) {
@@ -290,8 +282,8 @@ class Admin extends \Api_Abstract
     public function registrar_get_list($data)
     {
         list($sql, $params) = $this->getService()->registrarGetSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
-        $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $pager    = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
         $registrars = $this->di['db']->find('TldRegistrar', 'ORDER By name ASC');
 
@@ -334,9 +326,10 @@ class Admin extends \Api_Abstract
      */
     public function registrar_install($data)
     {
-        if (!isset($data['code'])) {
-            throw new \Box_Exception('Registrar code not passed');
-        }
+        $required = array(
+            'code' => 'registrar code is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $code = $data['code'];
         if (!in_array($code, $this->getService()->registrarGetAvailable())) {
@@ -355,9 +348,10 @@ class Admin extends \Api_Abstract
      */
     public function registrar_delete($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Registrar id not passed');
-        }
+        $required = array(
+            'id' => 'Registrar ID is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('TldRegistrar', $data['id']);
         if (!$model instanceof \Model_TldRegistrar) {
@@ -376,9 +370,10 @@ class Admin extends \Api_Abstract
      */
     public function registrar_copy($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Registrar id not passed');
-        }
+        $required = array(
+            'id' => 'Registrar ID is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('TldRegistrar', $data['id']);
 
@@ -398,9 +393,10 @@ class Admin extends \Api_Abstract
      */
     public function registrar_get($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Registrar id is missing');
-        }
+        $required = array(
+            'id' => 'Registrar ID is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $registrar = $this->di['db']->load('TldRegistrar', $data['id']);
 
@@ -433,9 +429,10 @@ class Admin extends \Api_Abstract
      */
     public function registrar_update($data)
     {
-        if (!isset($data['id'])) {
-            throw new \Box_Exception('Registrar id is missing');
-        }
+        $required = array(
+            'id' => 'Registrar ID is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('TldRegistrar', $data['id']);
 
@@ -448,9 +445,10 @@ class Admin extends \Api_Abstract
 
     protected function _getService($data)
     {
-        if (!isset($data['order_id'])){
-            throw new \Box_Exception('Order id is missing');
-        }
+        $required = array(
+            'order_id' => 'Order ID is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $orderId = $data['order_id'];
 

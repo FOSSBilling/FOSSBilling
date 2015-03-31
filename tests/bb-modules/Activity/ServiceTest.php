@@ -36,7 +36,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testgetSearchQuery($filterKey, $search, $expected)
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $service = new \Box\Mod\Activity\Service();
+        $service->setDi($di);
         $result  = $service->getSearchQuery($filterKey);
         $this->assertInternalType('string', $result[0]);
         $this->assertInternalType('array', $result[1]);
@@ -124,7 +129,10 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(array()));
 
         $di['request'] = $this->getMockBuilder('Box_Request')->getMock();;
-        $di['db'] = $db;
+        $di['db']        = $db;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $service->setDi($di);
 
         $result = $service->logEvent($data);

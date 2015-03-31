@@ -44,7 +44,7 @@ class Admin extends \Api_Abstract
         //@todo enable when extensions are available
         return array();
         /*
-        $type = isset($data['type']) ? $data['type'] : null;
+        $type = $this->di['array_get']($data, 'type', null);
         try {
             $list = $this->di['extension']->getLatest($type);
         } catch(\Exception $e) {
@@ -136,13 +136,11 @@ class Admin extends \Api_Abstract
      */
     public function activate($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Extension id was not passed');
-        }
-        
-        if(!isset($data['type'])) {
-            throw new \Box_Exception('Extension type was not passed');
-        }
+        $required = array(
+            'id'         => 'Extension ID was not passed',
+            'type' => 'Extension type was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $service = $this->getService();
         $result = $service->activateExistingExtension($data);
@@ -205,13 +203,11 @@ class Admin extends \Api_Abstract
      */
     public function install($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Extension id was not passed');
-        }
-        
-        if(!isset($data['type'])) {
-            throw new \Box_Exception('Extension type was not passed');
-        }
+        $required = array(
+            'id'         => 'Extension ID was not passed',
+            'type' => 'Extension type was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminInstallExtension', 'params'=>$data));
 
@@ -244,9 +240,11 @@ class Admin extends \Api_Abstract
      */
     public function config_get($data)
     {
-        if(!isset($data['ext'])) {
-            throw new \Box_Exception('Parameter ext was not passed');
-        }
+        $required = array(
+            'ext' => 'Parameter ext was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $service = $this->getService();
         $config = $service->getConfig($data['ext']);
         return $config;
@@ -267,22 +265,21 @@ class Admin extends \Api_Abstract
      */
     public function config_save($data)
     {
-        if (!isset($data['ext'])) {
-            throw new \Box_Exception('Parameter ext was not passed');
-        }
+        $required = array(
+            'ext'         => 'Parameter ext was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         return $this->getService()->setConfig($data);
     }
     
     private function _getExtension($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Extension id was not passed');
-        }
-        
-        if(!isset($data['type'])) {
-            throw new \Box_Exception('Extension type was not passed');
-        }
+        $required = array(
+            'id'         => 'Extension ID was not passed',
+            'type' => 'Extension type was not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $service = $this->getService();
         $ext = $service->findExtension($data['type'], $data['id']);

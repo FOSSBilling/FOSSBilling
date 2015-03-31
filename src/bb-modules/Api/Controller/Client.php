@@ -132,6 +132,18 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
+    private function isRoleLoggedIn($role)
+    {
+        if ($role == 'client'){
+            $this->di['is_client_logged'];
+
+        }
+        if ($role == 'admin'){
+            $this->di['is_admin_logged'];
+        }
+        return true;
+    }
+
     private function _apiCall($role, $method, $params)
     {
         $this->_loadConfig();
@@ -143,12 +155,14 @@ class Client implements InjectionAwareInterface
         $this->checkRateLimit();
         $this->checkHttpReferer();
         $this->isRoleAllowed($role);
-        try {
-            $api = $this->di['api']($role);
-        } catch (\Exception $e) {
+
+        try{
+            $this->isRoleLoggedIn($role);
+        }catch (\Exception $e){
             $this->_tryTokenLogin();
         }
-        $this->di['api_request_data']->setRequest($params);
+
+        $api = $this->di['api']($role);
         $result = $api->$method($params);
         return $this->renderJson($result);
     }
@@ -195,8 +209,13 @@ class Client implements InjectionAwareInterface
                 if(!$model instanceof \Model_Admin) {
                     throw new \Box_Exception('Authentication Failed', null, 205);
                 }
-                $service = $this->di['mod_service']('Client');
-                $this->di['session']->set('admin', $service->toSessionArray($model));
+                $sessionAdminArray = array(
+                    'id'        =>  $model->id,
+                    'email'     =>  $model->email,
+                    'name'      =>  $model->name,
+                    'role'      =>  $model->role,
+                );
+                $this->di['session']->set('admin', $sessionAdminArray);
                 break;
 
             case 'guest': // do not allow at the moment

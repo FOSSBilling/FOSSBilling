@@ -136,10 +136,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     {
         return array(
             array(
-                array( //action parameter is missing
-                ),
-            ),
-            array(
                 array(
                     'action' => 'NonExistingAction'
                 ),
@@ -185,23 +181,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
                 $this->atLeastOnce(),
                 false ////"isSldValid" returns false
             ),
-            array( //"owndomain_tld" is missing
-                array(
-                    'action'        => 'owndomain',
-                    'owndomain_sld' => 'example',
-                ),
-                $this->atLeastOnce(),
-                true
-            ),
-            array(
-                array(
-                    'action'        => 'owndomain',
-                    'owndomain_tld' => 'example',
-                    'owndomain_sld' => '', // owndomain_sld is empty
-                ),
-                $this->atLeastOnce(),
-                true
-            )
         );
     }
 
@@ -215,6 +194,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($isSldValidCalled)->method('isSldValid')
             ->will($this->returnValue($isSldValidReturn));
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
 
         $di              = new \Box_Di();
@@ -233,80 +214,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $tldModel->tld = '.com';
 
         return array(
-            array(
-                array( //"transfer_sld" is missing
-                    'action'       => 'transfer',
-                    'transfer_tld' => '.com'
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->never(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //canBeTransfered
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array(
-                array(
-                    'action'       => 'transfer',
-                    'transfer_sld' => 'example',
-                    'transfer_tld' => '.com'
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => false //"isSldValid" returns false
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //canBeTransfered
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array( //"transfer_tld" is missing
-                array(
-                    'action'       => 'transfer',
-                    'transfer_sld' => 'example',
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //canBeTransfered
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array(
-                array(
-                    'action'       => 'transfer',
-                    'transfer_sld' => '', // "transfer_sld" is empty
-                    'transfer_tld' => '.com',
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //canBeTransfered
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
             array(
                 array(
                     'action'       => 'transfer',
@@ -358,6 +265,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
             ->will($this->returnValue($isSldValidArr['returns']));
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
             ->setMethods(array('tldFindOneByTld', 'canBeTransfered'))->getMock();
@@ -382,99 +291,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $tldModel->min_years = 2;
 
         return array(
-            array(
-                array( //"register_sld" is missing
-                    'action'       => 'register',
-                    'register_tld' => '.com'
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->never(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //isDomainAvailable
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array(
-                array(
-                    'action'       => 'register',
-                    'register_sld' => 'example',
-                    'register_tld' => '.com'
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => false //"isSldValid" returns false
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //isDomainAvailable
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array( //"register_tld" is missing
-                array(
-                    'action'       => 'register',
-                    'register_sld' => 'example',
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //isDomainAvailable
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array(
-                array(
-                    'action'       => 'register',
-                    'register_sld' => '', // "register_sld" is empty
-                    'register_tld' => '.com',
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //isDomainAvailable
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
-            array(
-                array( // "register_years" is missing
-                    'action'       => 'register',
-                    'register_sld' => 'example',
-                    'register_tld' => '.com',
-                ),
-                array( //isSldValidArr
-                    'called'  => $this->atLeastOnce(),
-                    'returns' => true
-                ),
-                array( //tldFindOneByTldArr
-                    'called'  => $this->never(),
-                    'returns' => $tldModel
-                ),
-                array( //isDomainAvailable
-                    'called'  => $this->never(),
-                    'returns' => true
-                )
-            ),
             array(
                 array(
                     'action'         => 'register',
@@ -548,6 +364,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
             ->will($this->returnValue($isSldValidArr['returns']));
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
             ->setMethods(array('tldFindOneByTld', 'isDomainAvailable'))->getMock();
@@ -582,7 +400,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $orderServiceMock->expects($this->atLeastOnce())->method('getConfig')
             ->will($this->returnValue($data));
 
-        $nameservers        = array(
+        $nameservers       = array(
             'nameserver_1' => 'ns1.example.com',
             'nameserver_2' => 'ns2.example.com',
             'nameserver_3' => 'ns3.example.com',
@@ -635,6 +453,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             }
         });
         $di['db']          = $dbMock;
+        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $serviceMock->setDi($di);
 
 
@@ -777,7 +598,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         });
         $this->service->setDi($di);
 
-        $order            = new \Model_ClientOrder();
+        $order = new \Model_ClientOrder();
         $order->loadBean(new \RedBeanPHP\OODBBean());
         $order->client_id = rand(1, 100);
         $this->service->action_activate($order);
@@ -1085,14 +906,18 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(true));
 
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
 
 
-        $data = array(
+        $data               = array(
             'contact' => array(
                 'first_name' => 'first_name',
                 'last_name'  => 'last_name',
@@ -1113,169 +938,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $result = $serviceMock->updateContacts($serviceDomainModel, $data);
 
         $this->assertTrue($result);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testUpdateContactsContactNotSetException()
-    {
-        $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
-        $this->service->updateContacts($serviceDomainModel, array());
-    }
-
-    public function testUpdateContactsFieldNotSetExceptionProvider()
-    {
-        return array(
-            array(
-                array(
-                    'contact' => array()
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                        'address2'   => 'address2',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                        'address2'   => 'address2',
-                        'country'    => 'country',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                        'address2'   => 'address2',
-                        'country'    => 'country',
-                        'city'       => 'city',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                        'address2'   => 'address2',
-                        'country'    => 'country',
-                        'city'       => 'city',
-                        'state'      => 'state',
-                    )
-                )
-            ),
-            array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                        'address2'   => 'address2',
-                        'country'    => 'country',
-                        'city'       => 'city',
-                        'state'      => 'state',
-                        'postcode'   => 'postcode',
-                    )
-                )
-            ), array(
-                array(
-                    'contact' => array(
-                        'first_name' => 'first_name',
-                        'last_name'  => 'last_name',
-                        'email'      => 'email',
-                        'company'    => 'company',
-                        'address1'   => 'address1',
-                        'address2'   => 'address2',
-                        'country'    => 'country',
-                        'city'       => 'city',
-                        'state'      => 'state',
-                        'postcode'   => 'postcode',
-                        'phone_cc'   => 'phone_cc',
-                    )
-                )
-            ),
-        );
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     * @dataProvider testUpdateContactsFieldNotSetExceptionProvider
-     */
-    public function testUpdateContactsFieldNotSetException($data)
-    {
-        $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
-        $this->service->updateContacts($serviceDomainModel, $data);
     }
 
     public function testGetTransferCode()
@@ -1466,7 +1128,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testCanBeTransferedNotAllowedException()
     {
-        $tldModel                 = new \Model_Tld();
+        $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \RedBeanPHP\OODBBean());
         $tldModel->allow_transfer = false;
 
@@ -1575,6 +1237,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     {
         $model = new \Model_Admin();
         $model->loadBean(new \RedBeanPHP\OODBBean());
+
         return array(
             array(
                 $model,
@@ -1705,13 +1368,13 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testOnBeforeAdminCronRun()
     {
-        $di = new \Box_Di();
+        $di          = new \Box_Di();
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('batchSyncExpirationDates')
             ->willReturn(true);
-        $di['mod_service'] = $di->protect(function ($serviceName) use($serviceMock){
-                return $serviceMock;
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($serviceMock) {
+            return $serviceMock;
         });
 
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
@@ -1838,6 +1501,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testTldGetSearchQuery($data, $expectedQuery, $expectedBindings)
     {
+        $di              = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->service->setDi($di);
         list($query, $bindings) = $this->service->tldGetSearchQuery($data);
 
         $this->assertEquals($query, $expectedQuery);
@@ -1947,7 +1615,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $this->service->setDi($di);
 
-        $model     = new \Model_Tld();
+        $model = new \Model_Tld();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $model->id = rand(1, 100);
 
@@ -2338,9 +2006,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue($randId));
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $model = new \Model_Tld();
@@ -2378,7 +2049,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testRegistrarCopy()
     {
-        $newId = rand(1, 100);
+        $newId  = rand(1, 100);
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
@@ -2415,9 +2086,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $data = array(
@@ -2444,9 +2118,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['logger']    = $this->getMockBuilder('Box_Log')->getMock();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $data = array(

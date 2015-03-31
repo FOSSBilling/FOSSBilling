@@ -87,6 +87,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
                 return $paidSupportConfig;
             }
         });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $this->setExpectedException('\Box_Exception', $paidSupportConfig['error_msg']);
@@ -295,6 +298,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
                 return $paidSupportConfig;
             }
         });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->service->setDi($di);
         $result = $this->service->getErrorMessage();
@@ -311,6 +317,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             if ($serviceName== 'Paidsupport'){
                 return $paidSupportConfig;
             }
+        });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
         });
 
         $this->service->setDi($di);

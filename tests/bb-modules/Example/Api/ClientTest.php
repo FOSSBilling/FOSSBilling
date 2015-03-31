@@ -53,6 +53,9 @@ class ClientTest extends \PHPUnit_Framework_TestCase {
             return -1;
         });
         $di['loggedin_client'] = $modelClient;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->api->setDi($di);
 
         $result = $this->api->get_info($data);

@@ -18,7 +18,7 @@ class Admin extends \Api_Abstract
     {
         $mod = $this->di['mod']('wysiwyg');
         $config = $mod->getConfig();
-        return isset($config['editor']) ? $config['editor'] : 'markitup';
+        return $this->di['array_get']($config, 'editor', 'markitup');
     }
 
     public function editors()

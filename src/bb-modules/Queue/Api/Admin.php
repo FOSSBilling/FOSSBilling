@@ -29,7 +29,7 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         list($sql, $params) = $this->getService()->getSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = $this->getService()->toApiArray($item);
@@ -61,9 +61,10 @@ class Admin extends \Api_Abstract
      */
     public function message_delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Queue message id is missing');
-        }
+        $required = array(
+            'id' => 'Queue message ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $msg = $this->di['db']->load('queue_message', $data['id']);
         if(!$msg) {
@@ -90,13 +91,11 @@ class Admin extends \Api_Abstract
      */
     public function message_add($data)
     {
-        if(!isset($data['queue'])){
-            throw new \Box_Exception('Queue name not provided');
-        }
-        
-        if(!isset($data['mod'])){
-            throw new \Box_Exception('Module name not provided');
-        }
+        $required = array(
+            'queue' => 'Queue name not provided',
+            'mod'   => 'Module name not provided',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $mod = $this->di['mod']($data['mod']);
         $service = $mod->getService();
@@ -119,7 +118,7 @@ class Admin extends \Api_Abstract
         $q->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($q);
         
-        $params = isset($data['params']) ? $data['params'] : null;
+        $params = $this->di['array_get']($data, 'params', null);
         $body   = base64_encode(json_encode($params));
         
         $msg = $this->di['db']->dispense('queue_message');
@@ -154,9 +153,10 @@ class Admin extends \Api_Abstract
      */
     public function execute($data)
     {
-        if(!isset($data['queue'])){
-            throw new \Box_Exception('Queue name not provided');
-        }
+        $required = array(
+            'queue' => 'Queue name not provided',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $q = $this->di['db']->findOne('queue', 'name = :name', array('name'=>$data['queue']));
         if(!$q) {
@@ -234,9 +234,10 @@ class Admin extends \Api_Abstract
     
     private function _getQueue($data)
     {
-        if(!isset($data['queue'])){
-            throw new \Box_Exception('Queue name not provided');
-        }
+        $required = array(
+            'queue' => 'Queue name not provided',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $q = $this->di['db']->findOne('queue', 'name = :name', array('name'=>$data['queue']));
         if(!$q) {

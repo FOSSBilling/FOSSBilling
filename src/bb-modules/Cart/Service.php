@@ -78,22 +78,23 @@ class Service implements InjectionAwareInterface
         $productService = $product->getService();
 
         if ($this->isRecurrentPricing($product)) {
-            if (!isset($data['period'])) {
-                throw new \Box_Exception('Period parameter not passed');
-            }
+            $required = array(
+                'period' => 'Period parameter not passed',
+            );
+            $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$this->isPeriodEnabledForProduct($product, $data['period'])) {
                 throw new \Box_Exception('Selected billing period is not valid');
             }
         }
 
-        $qty = isset($data['quantity']) ? $data['quantity'] : 1;
+        $qty =  $this->di['array_get']($data, 'quantity', 1);
         // check stock
         if (!$this->isStockAvailable($product, $qty)) {
             throw new \Box_Exception("I'm afraid we are out of stock.");
         }
 
-        $addons = isset($data['addons']) ? $data['addons'] : array();
+        $addons =  $this->di['array_get']($data, 'addons', array());
         unset($data['id']);
         unset($data['addons']);
 
@@ -117,9 +118,11 @@ class Service implements InjectionAwareInterface
                 $addon = $productService->getAddonById($id);
                 if ($addon instanceof \Model_Product) {
                     if ($this->isRecurrentPricing($addon)) {
-                        if (!isset($ac['period'])) {
-                            throw new \Box_Exception('Addon period parameter not passed');
-                        }
+
+                        $required = array(
+                            'period' => 'Addon period parameter not passed',
+                        );
+                        $this->di['validator']->checkRequiredParamsForArray($required, $ac);
 
                         if (!$this->isPeriodEnabledForProduct($addon, $ac['period'])) {
                             throw new \Box_Exception('Selected billing period is not valid for addon');
@@ -515,13 +518,13 @@ class Service implements InjectionAwareInterface
             $order->title          = $item['title'];
             $order->currency       = $currency->code;
             $order->service_type   = $item['type'];
-            $order->unit           = isset($item['unit']) ? $item['unit'] : NULL;
-            $order->period         = isset($item['period']) ? $item['period'] : NULL;
-            $order->quantity       = isset($item['quantity']) ? $item['quantity'] : NULL;
+            $order->unit           = $this->di['array_get']($item, 'unit', NULL);
+            $order->period         = $this->di['array_get']($item, 'period', NULL);
+            $order->quantity       = $this->di['array_get']($item, 'quantity', NULL);
             $order->price          = $item['price'] * $currency->conversion_rate;
             $order->discount       = $item['discount_price'] * $currency->conversion_rate;
             $order->status         = \Model_ClientOrder::STATUS_PENDING_SETUP;
-            $order->notes          = isset($item['notes']) ? $item['notes'] : NULL;
+            $order->notes          = $this->di['array_get']($item, 'notes', NULL);
             $order->config         = json_encode($item);
             $order->created_at     = date('Y-m-d H:i:s');
             $order->updated_at     = date('Y-m-d H:i:s');
@@ -716,7 +719,7 @@ class Service implements InjectionAwareInterface
         $config = $this->getItemConfig($model);
         $setup = $repo->getProductSetupPrice($product, $config);
         $price = $repo->getProductPrice($product, $config);
-        $qty = isset($config['quantity']) ? $config['quantity'] : 1 ;
+        $qty =  $this->di['array_get']($config, 'quantity', 1) ;
 
         list ($discount_price, $discount_setup) = $this->getProductDiscount($model, $setup);
 
@@ -748,9 +751,6 @@ class Service implements InjectionAwareInterface
 
     public function getProductDiscount(\Model_CartProduct $cartProduct, $setup)
     {
-        $config = $this->getItemConfig($cartProduct);
-        $qty = isset($config['quantity']) ? $config['quantity'] : 1 ;
-
         $cart = $this->di['db']->load('Cart', $cartProduct->cart_id);
         $discount_price = $this->getRelatedItemsDiscount($cart, $cartProduct);
         $discount_setup = 0; // discount for setup price

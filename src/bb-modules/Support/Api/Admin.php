@@ -28,7 +28,7 @@ class Admin extends \Api_Abstract
     public function ticket_get_list($data)
     {
         list($sql, $bindings) = $this->getService()->getSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager =  $this->di['pager']->getAdvancedResultSet($sql, $bindings, $per_page);
         foreach($pager['list'] as $key => $ticketArr){
             $ticket = $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
@@ -260,7 +260,7 @@ class Admin extends \Api_Abstract
     public function public_ticket_get_list($data)
     {
         list($sql, $bindings) = $this->getService()->publicGetSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager =  $this->di['pager']->getAdvancedResultSet($sql, $bindings, $per_page);
 
         foreach($pager['list'] as $key => $ticketArr){
@@ -416,7 +416,7 @@ class Admin extends \Api_Abstract
     public function helpdesk_get_list($data)
     {
         list($sql, $bindings) = $this->getService()->helpdeskGetSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         return $this->di['pager']->getSimpleResultSet($sql, $bindings, $per_page);
     }
 
@@ -527,7 +527,7 @@ class Admin extends \Api_Abstract
     {
         list($sql, $bindings) = $this->getService()->cannedGetSearchQuery($data);
 
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $bindings, $per_page);
         foreach($pager['list'] as $key => $item){
             $staff = $this->di['db']->getExistingModelById('SupportPr', $item['id'], 'Canned response not found');
@@ -612,7 +612,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $content = isset($data['content']) ? $data['content'] : NULL;
+        $content = $this->di['array_get']($data, 'content', NULL);
 
         return $this->getService()->cannedCreate($data['title'], $data['category_id'], $content);
     }
@@ -689,7 +689,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
 
-        $title = (isset($data['title'])) ? $data['title'] : $model->title;
+        $title = $this->di['array_get']($data, 'title', $model->title);
 
         return $this->getService()->cannedCategoryUpdate($model, $title);
     }

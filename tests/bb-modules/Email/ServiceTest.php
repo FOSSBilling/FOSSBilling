@@ -68,7 +68,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     public function testGetSearchQuery($data, $query, $bindings)
     {
         $service = new \Box\Mod\Email\Service();
-
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $service->setDi($di);
         $result = $service->getSearchQuery($data);
 
         $this->assertInternalType('string', $result[0]);
@@ -296,6 +300,14 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
             return $api;
         };
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $service->setDi($di);
 
         $result = $service->sendTemplate($data);
@@ -349,6 +361,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
             return $api;
         };
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $cryptMock = $this->getMockBuilder('\Box_Crypt')
             ->disableOriginalConstructor()
@@ -363,6 +380,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             return $systemService;
         });
         $di['tools'] = new \Box_Tools();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $serviceMock->setDi($di);
 
         $result = $serviceMock->sendTemplate($data);
@@ -484,6 +504,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             return $api;
         };
 
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+
         $di['db']          = $db;
         $di['twig']        = $twig;
         $di['crypt']       = $cryptMock;
@@ -497,39 +523,14 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             }
         });
         $di['tools'] = new \Box_Tools();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $serviceMock->setDi($di);
 
         $result = $serviceMock->sendTemplate($data);
 
         $this->assertTrue($result);
-    }
-
-    public function testSendTemplateExceptionProvider()
-    {
-        return array(
-            array(
-                array(
-                    'to' => 'example@example.com', //"code" is not set
-                ),
-            ),
-            array(
-                array(
-                    'code' => 'mod_email_test', //"To" is not set
-                )
-            )
-        );
-    }
-
-    /**
-     *
-     * @dataProvider testSendTemplateExceptionProvider
-     * @expectedException \Box_Exception
-     */
-    public function testSendTemplateException($data)
-    {
-        $service = new \Box\Mod\Email\Service();
-
-        $service->sendTemplate($data); //Expecting \Box_Exception
     }
 
     public function testResend()
@@ -561,6 +562,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             return $systemService;
         });
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $service->setDi($di);
 
         $model               = new \Model_ActivityClientEmail();
@@ -628,7 +632,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     public function testTemplateGetSearchQuery($data, $query, $bindings)
     {
         $service = new \Box\Mod\Email\Service();
-
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $service->setDi($di);
         $result = $service->templateGetSearchQuery($data);
 
         $this->assertInternalType('string', $result[0]);
@@ -915,6 +923,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['mod_service'] = $di->protect(function () use ($extension) {
             return $extension;
         });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $service->setDi($di);
 
 
@@ -1024,6 +1035,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
            return $modMock;
         });
         $di['license'] = $licenseMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $service->setDi($di);
 
 
@@ -1064,6 +1078,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di['tools']  = $toolsMock;
         $di['crypt']  = $cryptMock;
         $di['twig']   = $twigMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $service->setDi($di);
 
         $result = $service->resetTemplateByCode('mod_email_test');
@@ -1128,7 +1145,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             return $modMock;
         });
         $di['license'] = $licenseMock;
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $service = new \Box\Mod\Email\Service();
         $service->setDi($di);
 

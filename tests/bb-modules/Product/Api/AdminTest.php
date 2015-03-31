@@ -41,6 +41,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -80,20 +83,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
         $this->assertInternalType('array', $result);
     }
-
-    public function testget_MissingId()
-    {
-        $data = array();
-        $this->setExpectedException('\Box_Exception', 'Product id not passed');
-        $this->api->get($data);
-    }
-
 
     public function testget_ProductNotFound()
     {
@@ -106,6 +106,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->setExpectedException('\Box_Exception', 'Product not found');
@@ -125,24 +130,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->assertInternalType('array', $result);
     }
 
-    public function testprepareMissingTitle()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Title is required');
-        $this->api->prepare($data);
-
-    }
-
-    public function testprepareMissingType()
-    {
-        $data = array('title' => 'testTitle');
-
-        $this->setExpectedException('\Box_Exception', 'type');
-        $this->api->prepare($data);
-
-    }
-
     public function testprepareDomainProductAlreadyCreated()
     {
         $data = array(
@@ -154,6 +141,13 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getMainDomainProduct')
             ->will($this->returnValue(new \Model_ProductDomain));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
 
@@ -177,6 +171,13 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getTypes')
             ->will($this->returnValue($typeArray));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
 
@@ -206,7 +207,16 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('createProduct')
             ->will($this->returnValue($newProductId));
-
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $result = $this->api->prepare($data);
@@ -214,7 +224,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->assertEquals($newProductId, $result);
     }
 
-    public function testpudate()
+    public function testupdate()
     {
         $data = array('id' => 1);
         $model = new \Model_Product();
@@ -232,7 +242,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
-
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -285,6 +299,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -307,14 +326,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->assertInternalType('array', $result);
     }
 
-    public function testaddon_createMissingTitle()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Title is required');
-        $this->api->addon_create($data);
-    }
-
     public function testaddon_create()
     {
         $data = array('title' => 'Title4test');
@@ -324,20 +335,22 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('createAddon')
             ->will($this->returnValue($newAddonId));
 
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
 
         $result = $this->api->addon_create($data);
         $this->assertInternalType('int', $result);
         $this->assertEquals($newAddonId, $result);
-    }
-
-    public function testaddon_getMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Addon id is required');
-        $this->api->addon_get($data);
     }
 
     public function testaddon_getNotFound()
@@ -353,7 +366,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
-
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'Addon not found');
@@ -380,20 +397,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $result = $this->api->addon_get($data);
         $this->assertInternalType('array', $result);
-    }
-
-    public function testaddon_updateMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Addon id is required');
-        $this->api->addon_update($data);
     }
 
     public function testaddon_updateNotFound()
@@ -409,7 +423,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
-
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $this->api->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'Addon not found');
@@ -440,6 +458,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $apiMock->setDi($di);
 
@@ -481,6 +504,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -503,14 +531,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->assertInternalType('array', $result);
     }
 
-    public function testcategory_updateMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Category id is missing');
-        $this->api->category_update($data);
-    }
-
     public function testcategory_updateNotFound()
     {
         $data = array('id' => 1);
@@ -524,6 +544,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
@@ -550,6 +575,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -557,14 +590,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $result = $this->api->category_update($data);
         $this->assertInternalType('bool', $result);
         $this->assertTrue($result);
-    }
-
-    public function testcategory_getMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Category id is missing');
-        $this->api->category_get($data);
     }
 
     public function testcategory_getNotFound()
@@ -580,6 +605,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
@@ -606,20 +636,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 
         $result = $this->api->category_get($data);
         $this->assertInternalType('array', $result);
-    }
-
-    public function testcategory_createTitleIsMissing()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Category title is missing');
-        $this->api->category_create($data);
     }
 
     public function testcategory_create()
@@ -632,19 +659,21 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->method('createCategory')
             ->will($this->returnValue($newCategoryId));
 
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $result = $this->api->category_create($data);
         $this->assertInternalType('int', $result);
         $this->assertEquals($newCategoryId, $result);
-    }
-
-    public function testcategory_deleteMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Category id is missing');
-        $this->api->category_delete($data);
     }
 
     public function testcategory_deleteNotFound()
@@ -660,6 +689,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
@@ -686,6 +720,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
@@ -711,46 +750,14 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['pager'] = $pagerMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
         $result = $this->api->promo_get_list(array());
         $this->assertInternalType('array', $result);
-    }
-
-    public function testpromo_createExceptionsData()
-    {
-        return array(
-            array(
-                'code',
-                'Promo code is missing'
-            ),
-            array(
-                'type',
-                'Promo type is missing'
-            ),
-            array(
-                'value',
-                'Promo value is missing'
-            ),
-        );
-    }
-
-    /**
-     * @dataProvider testpromo_createExceptionsData
-     */
-    public function testpromo_createExceptions($fieldName, $exceptionMessage)
-    {
-        $data = array(
-            'code' => 'test',
-            'type' => 'addon',
-            'value' => '10',
-        );
-
-        unset ($data[ $fieldName ]);
-
-        $this->setExpectedException('\Box_Exception', $exceptionMessage);
-        $this->api->promo_create($data);
     }
 
     public function testpromo_create()
@@ -768,6 +775,13 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('createPromo')
             ->will($this->returnValue($newPromoId));
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
+        $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
 
@@ -797,6 +811,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
@@ -818,6 +837,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -829,14 +853,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $result = $this->api->promo_get($data);
         $this->assertInternalType('array', $result);
-    }
-
-    public function testpromo_updateMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Promo id is missing');
-        $this->api->promo_update($data);
     }
 
     public function testpromo_updateNotFound()
@@ -852,6 +868,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
@@ -879,20 +900,17 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->promo_update($data);
         $this->assertInternalType('bool', $result);
         $this->assertTrue($result);
-    }
-
-    public function testpromo_deleteMissingId()
-    {
-        $data = array();
-
-        $this->setExpectedException('\Box_Exception', 'Promo id is missing');
-        $this->api->promo_delete($data);
     }
 
     public function testpromo_deleteNotFound()
@@ -908,6 +926,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
 
@@ -933,6 +956,11 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
             ->will($this->returnValue(true));
 
         $di = new \Box_Di();
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+        $di['validator'] = $validatorMock;
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);

@@ -62,6 +62,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
             'id'    =>  'branding',
         );
         $api = new \Box\Mod\Extension\Api\Admin();
+        $api->setDi($this->di);
         $api->setService($serviceMock);
         $arr = $api->update($data);
         $this->assertEquals($arr, $versions);

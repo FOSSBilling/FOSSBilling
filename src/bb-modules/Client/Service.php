@@ -184,7 +184,7 @@ class Service implements InjectionAwareInterface
 
     public function getPairs($data)
     {
-        $limit = isset($data['per_page']) ? $data['per_page'] : 30;
+        $limit =  $this->di['array_get']($data, 'per_page', 30);
         list($sql, $params) = $this->getSearchQuery($data, "SELECT c.id, CONCAT(c.first_name,  ' ', c.last_name) as full_name");
         $sql = $sql.' LIMIT '.$limit;
         return $this->di['db']->getAssoc($sql, $params);
@@ -234,7 +234,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function addFunds(\Model_Client $client, $amount, $description, array $data = null)
+    public function addFunds(\Model_Client $client, $amount, $description, array $data = array())
     {
         if(!$client->currency) {
             throw new \Box_Exception('Define clients currency before adding funds.');
@@ -251,8 +251,8 @@ class Service implements InjectionAwareInterface
         $credit = $this->di['db']->dispense('ClientBalance');
 
         $credit->client_id = $client->id;
-        $credit->type = isset($data['type']) ? $data['type'] : 'gift';
-        $credit->rel_id = isset($data['rel_id']) ? $data['rel_id'] : null;
+        $credit->type =  $this->di['array_get']($data, 'type', 'gift');
+        $credit->rel_id =  $this->di['array_get']($data, 'rel_id');
         $credit->description = $description;
         $credit->amount = $amount;
         $credit->created_at = date('Y-m-d H:i:s');
@@ -275,8 +275,8 @@ class Service implements InjectionAwareInterface
               FROM activity_client_history as ach
                 LEFT JOIN client as c on ach.client_id = c.id ';
 
-        $search = isset($data['search']) ? $data['search'] : NULL;
-        $client_id = isset($data['client_id']) ? $data['client_id'] : NULL;
+        $search =  $this->di['array_get']($data, 'search');
+        $client_id =  $this->di['array_get']($data, 'client_id');
 
         $where = array();
         $params = array();
@@ -472,54 +472,53 @@ class Service implements InjectionAwareInterface
 
     private function createClient(array $data)
     {
-        $this->di['api_request_data']->setRequest($data);
-        $password = $this->di['api_request_data']->get('password', uniqid());
+        $password = $this->di['array_get']($data, 'password', uniqid());
 
         $client = $this->di['db']->dispense('Client');
 
-        $client->auth_type  = $this->di['api_request_data']->get('auth_type');
-        $client->email      = strtolower(trim($this->di['api_request_data']->get('email')));
-        $client->first_name = ucwords($this->di['api_request_data']->get('first_name'));
+        $client->auth_type  = $this->di['array_get']($data, 'auth_type');
+        $client->email      = strtolower(trim($this->di['array_get']($data, 'email')));
+        $client->first_name = ucwords($this->di['array_get']($data, 'first_name'));
         $client->pass       = $this->di['password']->hashIt($password);
 
-        $client->aid             = $this->di['api_request_data']->get('aid');
-        $client->last_name       = $this->di['api_request_data']->get('last_name');
-        $client->client_group_id = $this->di['api_request_data']->get('group_id');
-        $client->status          = $this->di['api_request_data']->get('status');
-        $client->gender          = $this->di['api_request_data']->get('gender');
-        $client->birthday        = $this->di['api_request_data']->get('birthday');
-        $client->phone_cc        = $this->di['api_request_data']->get('phone_cc');
-        $client->phone           = $this->di['api_request_data']->get('phone');
-        $client->company         = $this->di['api_request_data']->get('company');
-        $client->company_vat     = $this->di['api_request_data']->get('company_vat');
-        $client->company_number  = $this->di['api_request_data']->get('company_number');
-        $client->type            = $this->di['api_request_data']->get('type');
-        $client->address_1       = $this->di['api_request_data']->get('address_1');
-        $client->address_2       = $this->di['api_request_data']->get('address_2');
-        $client->city            = $this->di['api_request_data']->get('city');
-        $client->state           = $this->di['api_request_data']->get('state');
-        $client->postcode        = $this->di['api_request_data']->get('postcode');
-        $client->country         = $this->di['api_request_data']->get('country');
-        $client->document_type   = $this->di['api_request_data']->get('document_type');
-        $client->document_nr     = $this->di['api_request_data']->get('document_nr');
-        $client->notes           = $this->di['api_request_data']->get('notes');
-        $client->lang            = $this->di['api_request_data']->get('lang');
-        $client->currency        = $this->di['api_request_data']->get('currency');
+        $client->aid             = $this->di['array_get']($data, 'aid');
+        $client->last_name       = $this->di['array_get']($data, 'last_name');
+        $client->client_group_id = $this->di['array_get']($data, 'group_id');
+        $client->status          = $this->di['array_get']($data, 'status');
+        $client->gender          = $this->di['array_get']($data, 'gender');
+        $client->birthday        = $this->di['array_get']($data, 'birthday');
+        $client->phone_cc        = $this->di['array_get']($data, 'phone_cc');
+        $client->phone           = $this->di['array_get']($data, 'phone');
+        $client->company         = $this->di['array_get']($data, 'company');
+        $client->company_vat     = $this->di['array_get']($data, 'company_vat');
+        $client->company_number  = $this->di['array_get']($data, 'company_number');
+        $client->type            = $this->di['array_get']($data, 'type');
+        $client->address_1       = $this->di['array_get']($data, 'address_1');
+        $client->address_2       = $this->di['array_get']($data, 'address_2');
+        $client->city            = $this->di['array_get']($data, 'city');
+        $client->state           = $this->di['array_get']($data, 'state');
+        $client->postcode        = $this->di['array_get']($data, 'postcode');
+        $client->country         = $this->di['array_get']($data, 'country');
+        $client->document_type   = $this->di['array_get']($data, 'document_type');
+        $client->document_nr     = $this->di['array_get']($data, 'document_nr');
+        $client->notes           = $this->di['array_get']($data, 'notes');
+        $client->lang            = $this->di['array_get']($data, 'lang');
+        $client->currency        = $this->di['array_get']($data, 'currency');
 
-        $client->custom_1  = $this->di['api_request_data']->get('custom_1');
-        $client->custom_2  = $this->di['api_request_data']->get('custom_2');
-        $client->custom_3  = $this->di['api_request_data']->get('custom_3');
-        $client->custom_4  = $this->di['api_request_data']->get('custom_4');
-        $client->custom_5  = $this->di['api_request_data']->get('custom_5');
-        $client->custom_6  = $this->di['api_request_data']->get('custom_6');
-        $client->custom_7  = $this->di['api_request_data']->get('custom_7');
-        $client->custom_8  = $this->di['api_request_data']->get('custom_8');
-        $client->custom_9  = $this->di['api_request_data']->get('custom_9');
-        $client->custom_10 = $this->di['api_request_data']->get('custom_10');
+        $client->custom_1  = $this->di['array_get']($data, 'custom_1');
+        $client->custom_2  = $this->di['array_get']($data, 'custom_2');
+        $client->custom_3  = $this->di['array_get']($data, 'custom_3');
+        $client->custom_4  = $this->di['array_get']($data, 'custom_4');
+        $client->custom_5  = $this->di['array_get']($data, 'custom_5');
+        $client->custom_6  = $this->di['array_get']($data, 'custom_6');
+        $client->custom_7  = $this->di['array_get']($data, 'custom_7');
+        $client->custom_8  = $this->di['array_get']($data, 'custom_8');
+        $client->custom_9  = $this->di['array_get']($data, 'custom_9');
+        $client->custom_10 = $this->di['array_get']($data, 'custom_10');
 
-        $client->ip = $this->di['api_request_data']->get('ip');
+        $client->ip = $this->di['array_get']($data, 'ip');
 
-        $created_at = $this->di['api_request_data']->get('created_at');
+        $created_at = $this->di['array_get']($data, 'created_at');
         $client->created_at = !empty($created_at) ? date('Y-m-d H:i:s', strtotime($created_at)) : date('Y-m-d H:i:s');
         $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
@@ -641,7 +640,7 @@ class Service implements InjectionAwareInterface
     public function checkExtraRequiredFields(array $checkArr)
     {
         $config = $this->di['mod_config']('client');
-        $required = isset($config['required']) ? $config['required'] : array();
+        $required =  $this->di['array_get']($config, 'required', array());
         foreach($required as $field) {
             if(!isset($checkArr[$field]) || empty($checkArr[$field])) {
                 $name = ucwords(str_replace('_', ' ', $field));
@@ -653,7 +652,7 @@ class Service implements InjectionAwareInterface
     public function checkCustomFields(array $checkArr)
     {
         $config = $this->di['mod_config']('client');
-        $customFields = isset($config['custom_fields']) ? $config['custom_fields'] : array();
+        $customFields =  $this->di['array_get']($config, 'custom_fields', array());
         foreach ($customFields as $cFieldName => $cField) {
             $active   = isset($cField['active']) && $cField['active'] ? true : false;
             $required = isset($cField['required']) && $cField['required'] ? true : false;

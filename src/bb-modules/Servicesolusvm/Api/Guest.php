@@ -24,7 +24,7 @@ class Guest extends \Api_Abstract
     public function get_templates($data)
     {
         try {
-            $type = isset($data['type']) ? $data['type'] : 'openvz';
+            $type = $this->di['array_get']($data, 'type', 'openvz');
             $templates = $this->getService()->getTemplates($type);
         } catch (\Exception $exc) {
             $templates = array();

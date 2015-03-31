@@ -27,7 +27,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
         list ($sql, $params) = $service->getSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $post               = $this->di['db']->getExistingModelById('Post', $item['id'], 'Post not found');
@@ -73,38 +73,38 @@ class Admin extends \Api_Abstract
         $required = array(
             'id' => 'Post id not passed',
         );
-        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
+        $this->di['validator']->checkRequiredParamsForArray($required,  $data);
 
         $model = $this->di['db']->getExistingModelById('Post', $data['id'], 'News item not found');
 
-        $model->content = $this->di['api_request_data']->get('content', $model->content);
-        $model->title = $this->di['api_request_data']->get('title', $model->title);
-        $model->slug = $this->di['api_request_data']->get('slug', $model->slug);
-        $model->image = $this->di['api_request_data']->get('image', $model->image);
-        $model->section = $this->di['api_request_data']->get('section', $model->section);
-        $model->status = $this->di['api_request_data']->get('status', $model->status);
+        $model->content = $this->di['array_get']($data, 'content', $model->content);
+        $model->title = $this->di['array_get']($data, 'title', $model->title);
+        $model->slug = $this->di['array_get']($data, 'slug', $model->slug);
+        $model->image = $this->di['array_get']($data, 'image', $model->image);
+        $model->section = $this->di['array_get']($data, 'section', $model->section);
+        $model->status = $this->di['array_get']($data, 'status', $model->status);
 
-        $publish_at = $this->di['api_request_data']->get('publish_at', 0);
+        $publish_at = $this->di['array_get']($data, 'publish_at', 0);
         if($publish_at) {
             $model->publish_at = date('Y-m-d H:i:s', strtotime($publish_at));
         }
 
-        $published_at = $this->di['api_request_data']->get('published_at', 0);
+        $published_at = $this->di['array_get']($data, 'published_at', 0);
         if($published_at) {
             $model->published_at = date('Y-m-d H:i:s', strtotime($published_at));
         }
 
-        $expires_at = $this->di['api_request_data']->get('expires_at', 0);
+        $expires_at = $this->di['array_get']($data, 'expires_at', 0);
         if($expires_at) {
             $model->expires_at = date('Y-m-d H:i:s', strtotime($expires_at));
         }
 
-        $created_at = $this->di['api_request_data']->get('created_at', 0);
+        $created_at = $this->di['array_get']($data, 'created_at', 0);
         if($created_at) {
             $model->created_at = date('Y-m-d H:i:s', strtotime($created_at));
         }
 
-        $updated_at = $this->di['api_request_data']->get('updated_at', 0);
+        $updated_at = $this->di['array_get']($data, 'updated_at', 0);
         if($created_at) {
             $model->updated_at = date('Y-m-d H:i:s', strtotime($updated_at));
         }
@@ -127,9 +127,10 @@ class Admin extends \Api_Abstract
      */
     public function create($data)
     {
-        if(!isset($data['title'])) {
-            throw new \Box_Exception('Post title not passed');
-        }
+        $required = array(
+            'title' => 'Post title not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->dispense('Post');
         $model->admin_id = $this->getIdentity()->id;
@@ -154,9 +155,10 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Post id not passed');
-        }
+        $required = array(
+            'id' => 'Post ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('Post', $data['id'], 'News item not found');
         $id = $model->id;

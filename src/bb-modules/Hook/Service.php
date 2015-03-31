@@ -132,13 +132,11 @@ class Service implements InjectionAwareInterface
      */
     private function connect($data)
     {
-        if(!isset($data['event'])) {
-            throw new \Box_Exception('Hook event not passed');
-        }
-
-        if(!isset($data['mod'])) {
-            throw new \Box_Exception('Param mod not passed');
-        }
+        $required = array(
+            'event' => 'Hook event not passed',
+            'mod'   => 'Param mod not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $event = $data['event'];
         $mod = $data['mod'];

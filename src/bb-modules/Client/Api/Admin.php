@@ -27,7 +27,7 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         list($sql, $params) = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
@@ -75,9 +75,10 @@ class Admin extends \Api_Abstract
      */
     public function login($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('ID required');
-        }
+        $required = array(
+            'id' => 'ID required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $db = $this->di['db'];
         $client = $db->load('Client', $data['id']);
@@ -142,13 +143,11 @@ class Admin extends \Api_Abstract
      */
     public function create($data)
     {
-        if(!isset($data['email']) || empty($data['email'])) {
-            throw new \Box_Exception('Email required');
-        }
-
-        if(!isset($data['first_name'])) {
-            throw new \Box_Exception('First name is required');
-        }
+        $required = array(
+            'email'      => 'Email required',
+            'first_name' => 'First name is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $validator = $this->di['validator'];
         $validator->isEmailValid($data['email']);
@@ -170,9 +169,10 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Client id is missing');
-        }
+        $required = array(
+            'id' => 'Client id is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('Client', $data['id']);
         if(!$model instanceof \Model_Client) {
@@ -234,70 +234,70 @@ class Admin extends \Api_Abstract
     public function update($data = array())
     {
         $required = array('id' => 'Id required');
-        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $client = $this->di['db']->load('Client', $this->di['api_request_data']->get('id'));
+        $client = $this->di['db']->load('Client', $this->di['array_get']($data, 'id'));
         if(!$client instanceof \Model_Client ) {
             throw new \Box_Exception('Client not found');
         }
 
         $service = $this->di['mod_service']('client');
 
-        if(!is_null($this->di['api_request_data']->get('email'))) {
-            $email =  $this->di['api_request_data']->get('email');
+        if(!is_null($this->di['array_get']($data, 'email'))) {
+            $email =  $this->di['array_get']($data, 'email');
             $this->di['validator']->isEmailValid($email);
             if($service->emailAreadyRegistered($email, $client)) {
                 throw new \Box_Exception('Can not change email. It is already registered.');
             }
         }
-        $this->di['validator']->isBirthdayValid($this->di['api_request_data']->get('birthday'));
+        $this->di['validator']->isBirthdayValid($this->di['array_get']($data, 'birthday'));
 
-        if($this->di['api_request_data']->get('currency') && $service->canChangeCurrency($client, $this->di['api_request_data']->get('currency'))) {
-            $client->currency = $this->di['api_request_data']->get('currency', $client->currency);
+        if($this->di['array_get']($data, 'currency') && $service->canChangeCurrency($client, $this->di['array_get']($data, 'currency'))) {
+            $client->currency = $this->di['array_get']($data, 'currency', $client->currency);
         }
 
-        $this->di['events_manager']->fire(array('event'=>'onBeforeAdminClientUpdate', 'params'=>$this->di['api_request_data']->get()));
+        $this->di['events_manager']->fire(array('event'=>'onBeforeAdminClientUpdate', 'params'=>$data));
 
-        $client->email          = $this->di['api_request_data']->get('email', $client->email);
-        $client->first_name     = $this->di['api_request_data']->get('first_name', $client->first_name);
-        $client->last_name      = $this->di['api_request_data']->get('last_name', $client->last_name);
-        $client->aid            = $this->di['api_request_data']->get('aid', $client->aid);
-        $client->gender         = $this->di['api_request_data']->get('gender', $client->gender);
-        $client->birthday       = $this->di['api_request_data']->get('birthday', $client->birthday);
-        $client->company        = $this->di['api_request_data']->get('company', $client->company);
-        $client->company_vat    = $this->di['api_request_data']->get('company_vat', $client->company_vat);
-        $client->address_1      = $this->di['api_request_data']->get('address_1', $client->address_1);
-        $client->address_2      = $this->di['api_request_data']->get('address_2', $client->address_2);
-        $client->phone_cc       = $this->di['api_request_data']->get('phone_cc', $client->phone_cc);
-        $client->phone          = $this->di['api_request_data']->get('phone', $client->phone);
-        $client->document_type  = $this->di['api_request_data']->get('document_type', $client->document_type);
-        $client->document_nr    = $this->di['api_request_data']->get('document_nr', $client->document_nr);
-        $client->notes          = $this->di['api_request_data']->get('notes', $client->notes);
-        $client->country        = $this->di['api_request_data']->get('country', $client->country);
-        $client->postcode       = $this->di['api_request_data']->get('postcode', $client->postcode);
-        $client->state          = $this->di['api_request_data']->get('state', $client->state);
-        $client->city           = $this->di['api_request_data']->get('city', $client->city);
+        $client->email          = $this->di['array_get']($data, 'email', $client->email);
+        $client->first_name     = $this->di['array_get']($data, 'first_name', $client->first_name);
+        $client->last_name      = $this->di['array_get']($data, 'last_name', $client->last_name);
+        $client->aid            = $this->di['array_get']($data, 'aid', $client->aid);
+        $client->gender         = $this->di['array_get']($data, 'gender', $client->gender);
+        $client->birthday       = $this->di['array_get']($data, 'birthday', $client->birthday);
+        $client->company        = $this->di['array_get']($data, 'company', $client->company);
+        $client->company_vat    = $this->di['array_get']($data, 'company_vat', $client->company_vat);
+        $client->address_1      = $this->di['array_get']($data, 'address_1', $client->address_1);
+        $client->address_2      = $this->di['array_get']($data, 'address_2', $client->address_2);
+        $client->phone_cc       = $this->di['array_get']($data, 'phone_cc', $client->phone_cc);
+        $client->phone          = $this->di['array_get']($data, 'phone', $client->phone);
+        $client->document_type  = $this->di['array_get']($data, 'document_type', $client->document_type);
+        $client->document_nr    = $this->di['array_get']($data, 'document_nr', $client->document_nr);
+        $client->notes          = $this->di['array_get']($data, 'notes', $client->notes);
+        $client->country        = $this->di['array_get']($data, 'country', $client->country);
+        $client->postcode       = $this->di['array_get']($data, 'postcode', $client->postcode);
+        $client->state          = $this->di['array_get']($data, 'state', $client->state);
+        $client->city           = $this->di['array_get']($data, 'city', $client->city);
 
-        $client->status         = $this->di['api_request_data']->get('status', $client->status);
-        $client->email_approved = $this->di['api_request_data']->get('email_approved', $client->email_approved);
-        $client->tax_exempt     = $this->di['api_request_data']->get('tax_exempt', $client->tax_exempt);
-        $client->created_at     = $this->di['api_request_data']->get('created_at', $client->created_at);
+        $client->status         = $this->di['array_get']($data, 'status', $client->status);
+        $client->email_approved = $this->di['array_get']($data, 'email_approved', $client->email_approved);
+        $client->tax_exempt     = $this->di['array_get']($data, 'tax_exempt', $client->tax_exempt);
+        $client->created_at     = $this->di['array_get']($data, 'created_at', $client->created_at);
 
-        $client->custom_1      = $this->di['api_request_data']->get('custom_1', $client->c1);
-        $client->custom_2      = $this->di['api_request_data']->get('custom_2', $client->c2);
-        $client->custom_3      = $this->di['api_request_data']->get('custom_3', $client->c3);
-        $client->custom_4      = $this->di['api_request_data']->get('custom_4', $client->c4);
-        $client->custom_5      = $this->di['api_request_data']->get('custom_5', $client->c5);
-        $client->custom_6      = $this->di['api_request_data']->get('custom_6', $client->c6);
-        $client->custom_7      = $this->di['api_request_data']->get('custom_7', $client->c7);
-        $client->custom_8      = $this->di['api_request_data']->get('custom_8', $client->c8);
-        $client->custom_9      = $this->di['api_request_data']->get('custom_9', $client->c9);
-        $client->custom_10     = $this->di['api_request_data']->get('custom_10', $client->c10);
+        $client->custom_1      = $this->di['array_get']($data, 'custom_1', $client->c1);
+        $client->custom_2      = $this->di['array_get']($data, 'custom_2', $client->c2);
+        $client->custom_3      = $this->di['array_get']($data, 'custom_3', $client->c3);
+        $client->custom_4      = $this->di['array_get']($data, 'custom_4', $client->c4);
+        $client->custom_5      = $this->di['array_get']($data, 'custom_5', $client->c5);
+        $client->custom_6      = $this->di['array_get']($data, 'custom_6', $client->c6);
+        $client->custom_7      = $this->di['array_get']($data, 'custom_7', $client->c7);
+        $client->custom_8      = $this->di['array_get']($data, 'custom_8', $client->c8);
+        $client->custom_9      = $this->di['array_get']($data, 'custom_9', $client->c9);
+        $client->custom_10     = $this->di['array_get']($data, 'custom_10', $client->c10);
 
-        $client->client_group_id = $this->di['api_request_data']->get('group_id', $client->client_group_id);
-        $client->company_number = $this->di['api_request_data']->get('company_number', $client->company_number);
-        $client->type = $this->di['api_request_data']->get('type', $client->type);
-        $client->lang = $this->di['api_request_data']->get('lang', $client->lang);
+        $client->client_group_id = $this->di['array_get']($data, 'group_id', $client->client_group_id);
+        $client->company_number = $this->di['array_get']($data, 'company_number', $client->company_number);
+        $client->type = $this->di['array_get']($data, 'type', $client->type);
+        $client->lang = $this->di['array_get']($data, 'lang', $client->lang);
 
         $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);
@@ -318,16 +318,12 @@ class Admin extends \Api_Abstract
      */
     public function change_password($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Client ID is required');
-        }
-
-        if(!isset($data['password'])) {
-            throw new \Box_Exception('Password required');
-        }
-        if(!isset($data['password_confirm'])) {
-            throw new \Box_Exception('Password confirmation required');
-        }
+        $required = array(
+            'id'               => 'ID required',
+            'password'         => 'Password required',
+            'password_confirm' => 'Password confirmation required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if($data['password'] != $data['password_confirm']) {
             throw new \Box_Exception('Passwords do not match');
@@ -359,7 +355,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->di['mod_service']('Client', 'Balance');
         list($q, $params) = $service->getSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager =  $this->di['pager']->getSimpleResultSet($q, $params, $per_page);
 
         foreach($pager['list'] as $key => $item){
@@ -384,9 +380,11 @@ class Admin extends \Api_Abstract
      */
     public function balance_delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Client ID is required');
-        }
+        $required = array(
+            'id' => 'Client ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $model = $this->di['db']->load('ClientBalance', $data['id']);
         if(!$model instanceof \Model_ClientBalance) {
             throw new \Box_Exception('Balance line not found');
@@ -416,17 +414,12 @@ class Admin extends \Api_Abstract
      */
     public function balance_add_funds($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Client ID is required');
-        }
-
-        if(!isset($data['amount'])) {
-            throw new \Box_Exception('Amount is required');
-        }
-        
-        if(!isset($data['description'])) {
-            throw new \Box_Exception('Description is required');
-        }
+        $required = array(
+            'id'          => 'Client ID required',
+            'amount'      => 'Amount is required',
+            'description' => 'Description is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $client = $this->di['db']->load('Client', $data['id']);
         if(!$client instanceof \Model_Client ) {
@@ -465,7 +458,7 @@ class Admin extends \Api_Abstract
     public function login_history_get_list($data)
     {
         list($q, $params) = $this->getService()->getHistorySearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager =  $this->di['pager']->getSimpleResultSet($q, $params, $per_page);
 
         foreach($pager['list'] as $key => $item){
@@ -539,9 +532,10 @@ class Admin extends \Api_Abstract
      */
     public function group_create($data)
     {
-        if(!isset($data['title']) || empty($data['title'])) {
-            throw new \Box_Exception('Group title is missing');
-        }
+        $required = array(
+            'title' => 'Group title is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         return $this->getService()->createGroup($data);
     }
@@ -557,19 +551,17 @@ class Admin extends \Api_Abstract
      */
     public function group_update($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Group id is missing');
-        }
+        $required = array(
+            'id' => 'Group id is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('ClientGroup', $data['id']);
         if(!$model instanceof \Model_ClientGroup) {
             throw new \Box_Exception('Group not found');
         }
         
-        if(isset($data['title'])) {
-            $model->title = $data['title'];
-        }
-        
+        $model->title = $this->di['array_get']($data, 'title', $model->title);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
@@ -585,9 +577,10 @@ class Admin extends \Api_Abstract
      */
     public function group_delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Group id is missing');
-        }
+        $required = array(
+            'id' => 'Group id is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('ClientGroup', $data['id']);
         if(!$model instanceof \Model_ClientGroup) {
@@ -606,9 +599,10 @@ class Admin extends \Api_Abstract
      */
     public function group_get($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Group id is missing');
-        }
+        $required = array(
+            'id' => 'Group id is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('ClientGroup', $data['id']);
         if(!$model instanceof \Model_ClientGroup) {

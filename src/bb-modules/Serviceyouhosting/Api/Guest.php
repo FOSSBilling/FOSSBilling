@@ -47,8 +47,8 @@ class Guest extends \Api_Abstract
             throw new \Exception('Event name is missing');
         }
 
-        $account_id = isset($data['yh_account_id']) ? $data['yh_account_id'] : null;
-        $client_id  = isset($data['yh_client_id']) ? $data['yh_client_id'] : null;
+        $account_id = $this->di['array_get']($data, 'yh_account_id', null);
+        $client_id  = $this->di['array_get']($data, 'yh_client_id', null);
 
         $service      = $this->getService();
         $orderService = $this->di['mod_service']('order');

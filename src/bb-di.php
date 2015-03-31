@@ -302,6 +302,13 @@ $di['license_server'] = function () use ($di) {
     return $server;
 };
 
+$di['solusvm'] = $di->protect(function ($config) use($di) {
+    $solusVM = new \Box\Mod\Servicesolusvm\SolusVM();
+    $solusVM->setDi($di);
+    $solusVM->setConfig($config);
+    return $solusVM;
+});
+
 $di['service_boxbilling'] = $di->protect(function ($config) use($di) {
     $service = new \Box\Mod\Serviceboxbillinglicense\ServiceBoxbilling($config);
     return $service;
@@ -330,9 +337,7 @@ $di['translate'] = $di->protect(function($textDomain = '') use ($di) {
     $tr->setup();
     return $tr;
 });
-$di['api_request_data'] = function() use($di) {
-    $apiRequest = new \Box\Mod\Api\Request();
-    $apiRequest->setDi($di);
-    return $apiRequest;
-};
+$di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+    return isset ($array[$key]) ? $array[$key] : $default;
+});
 return $di;

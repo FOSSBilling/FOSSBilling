@@ -28,6 +28,7 @@ script: ant
 notifications:
   email: false
 
+before_deploy: ant release
 deploy:
   provider: releases
   api-key:

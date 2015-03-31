@@ -28,7 +28,7 @@ class Admin extends \Api_Abstract
         $service = $this->getService();
 
         list($sql, $params) = $service->getProductSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $model               = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
@@ -85,13 +85,11 @@ class Admin extends \Api_Abstract
      */
     public function prepare($data)
     {
-        if(!isset($data['title'])) {
-            throw new \Box_Exception('Title is required');
-        }
-
-        if(!isset($data['type'])) {
-            throw new \Box_Exception('type');
-        }
+        $required = array(
+            'title' => 'Notification is required',
+            'type' => 'Type is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $service = $this->getService();
         //allow having only one domain product
@@ -107,7 +105,7 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Product type :type is not registered', array(':type'=>$data['type']), 413);
         }
 
-        $categoryId = isset($data['product_category_id']) ? $data['product_category_id'] : null;
+        $categoryId = $this->di['array_get']($data, 'product_category_id', null);
 
         return (int) $service->createProduct($data['title'], $data['type'], $categoryId);
     }
@@ -198,14 +196,16 @@ class Admin extends \Api_Abstract
      */
     public function addon_create($data)
     {
-        if(!isset($data['title'])) {
-            throw new \Box_Exception('Title is required');
-        }
+        $required = array(
+            'title' => 'Notification is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $title  = $data['title'];
-        $status = isset($data['status']) ? $data['status'] : null;
-        $setup  = isset($data['setup']) ? $data['setup'] : null;
-        $iconUrl = isset($data['icon_url']) ? $data['icon_url'] : null;
-        $description = isset($data['description']) ? $data['description'] : null;
+        $status = $this->di['array_get']($data, 'status', null);
+        $setup  = $this->di['array_get']($data, 'setup', null);
+        $iconUrl = $this->di['array_get']($data, 'icon_url', null);
+        $description = $this->di['array_get']($data, 'description', null);
 
         $service = $this->getService();
         return $service->createAddon($title, $description, $setup, $status, $iconUrl);
@@ -221,9 +221,10 @@ class Admin extends \Api_Abstract
      */
     public function addon_get($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Addon id is required');
-        }
+        $required = array(
+            'id' => 'Addon ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('Product', $data['id']);
         if(!$model instanceof \Model_Product || !$model->is_addon) {
@@ -261,9 +262,10 @@ class Admin extends \Api_Abstract
      */
     public function addon_update($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Addon id is required');
-        }
+        $required = array(
+            'id' => 'Addon ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('Product', $data['id']);
         if(!$model instanceof \Model_Product || !$model->is_addon) {
@@ -323,17 +325,19 @@ class Admin extends \Api_Abstract
      */
     public function category_update($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Category id is missing');
-        }
+        $required = array(
+            'id' => 'Category ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $model = $this->di['db']->load('ProductCategory', $data['id']);
         if(!$model instanceof \Model_ProductCategory) {
             throw new \Box_Exception('Category not found');
         }
 
-        $title          = isset($data['title']) ? $data['title'] : null;
-        $description    = isset($data['description']) ? $data['description'] : null;
-        $icon_url       = isset($data['icon_url']) ? $data['icon_url'] : null;
+        $title          = $this->di['array_get']($data, 'title', null);
+        $description    = $this->di['array_get']($data, 'description', null);
+        $icon_url       = $this->di['array_get']($data, 'icon_url', null);
 
         $service = $this->getService();
         return $service->updateCategory($model, $title, $description, $icon_url);
@@ -348,9 +352,10 @@ class Admin extends \Api_Abstract
      */
     public function category_get($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Category id is missing');
-        }
+        $required = array(
+            'id' => 'Category ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('ProductCategory', $data['id']);
         if(!$model instanceof \Model_ProductCategory) {
@@ -373,14 +378,16 @@ class Admin extends \Api_Abstract
      */
     public function category_create($data)
     {
-        if(!isset($data['title'])) {
-            throw new \Box_Exception('Category title is missing');
-        }
+        $required = array(
+            'title' => 'Category title is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
         $service = $this->getService();
 
-        $title = isset($data['title']) ? $data['title'] : null;
-        $description = isset($data['description']) ? $data['description'] : null;
-        $icon_url = isset($data['icon_url']) ? $data['icon_url'] : null;
+        $title = $this->di['array_get']($data, 'title', null);
+        $description = $this->di['array_get']($data, 'description', null);
+        $icon_url = $this->di['array_get']($data, 'icon_url', null);
 
         return (int) $service->createCategory($title, $description, $icon_url);
 
@@ -395,9 +402,10 @@ class Admin extends \Api_Abstract
      */
     public function category_delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Category id is missing');
-        }
+        $required = array(
+            'id' => 'Category ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('ProductCategory', $data['id']);
         if(!$model instanceof \Model_ProductCategory) {
@@ -416,7 +424,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
         list($sql, $params) = $service->getPromoSearchQuery($data);
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $model               = $this->di['db']->getExistingModelById('Promo', $item['id'], 'Promo not found');
@@ -448,15 +456,12 @@ class Admin extends \Api_Abstract
      */
     public function promo_create($data)
     {
-        if(!isset($data['code'])) {
-            throw new \Box_Exception('Promo code is missing');
-        }
-        if(!isset($data['type'])) {
-            throw new \Box_Exception('Promo type is missing');
-        }
-        if(!isset($data['value'])) {
-            throw new \Box_Exception('Promo value is missing');
-        }
+        $required = array(
+            'code'  => 'Promo code is missing',
+            'type'  => 'Promo type is missing',
+            'value' => 'Promo value is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $products = array();
         if(isset($data['products']) && is_array($data['products'])) {
@@ -485,9 +490,10 @@ class Admin extends \Api_Abstract
      */
     public function promo_get($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Promo id is missing');
-        }
+         $required = array(
+            'id' => 'Promo ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
         $model = $this->di['db']->load('Promo', $data['id']);
         if(!$model instanceof \Model_Promo) {
@@ -523,9 +529,10 @@ class Admin extends \Api_Abstract
      */
     public function promo_update($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Promo id is missing');
-        }
+        $required = array(
+            'id' => 'Promo ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('Promo', $data['id']);
         if(!$model instanceof \Model_Promo) {
@@ -546,9 +553,10 @@ class Admin extends \Api_Abstract
      */
     public function promo_delete($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Promo id is missing');
-        }
+        $required = array(
+            'id' => 'Promo ID is required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('Promo', $data['id']);
         if(!$model instanceof \Model_Promo) {
@@ -559,9 +567,10 @@ class Admin extends \Api_Abstract
     
     private function _getProduct($data)
     {
-        if(!isset($data['id'])) {
-            throw new \Box_Exception('Product id not passed');
-        }
+        $required = array(
+            'id' => 'Product ID not passed',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->load('Product', $data['id']);
         if(!$model instanceof \Model_Product) {

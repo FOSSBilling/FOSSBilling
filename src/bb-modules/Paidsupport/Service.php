@@ -112,7 +112,7 @@ class Service implements InjectionAwareInterface
     public function getErrorMessage()
     {
         $config = $this->di['mod_config']('Paidsupport');
-        $errorMessage = isset($config['error_msg']) ? $config['error_msg'] : '';
+        $errorMessage = $this->di['array_get']($config, 'error_msg', '');
         return strlen(trim($errorMessage)) > 0 ? $errorMessage : 'Configure paid support module!';
     }
 

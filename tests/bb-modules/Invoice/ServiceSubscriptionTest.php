@@ -48,6 +48,9 @@ class ServiceSubscriptionTest extends \PHPUnit_Framework_TestCase
         $di['db']             = $dbMock;
         $di['logger']         = new \Box_Log();
         $di['events_manager'] = $eventsMock;
+        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $data = array(
@@ -77,9 +80,12 @@ class ServiceSubscriptionTest extends \PHPUnit_Framework_TestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = new \Box_Log();
+        $di              = new \Box_Di();
+        $di['db']        = $dbMock;
+        $di['logger']    = new \Box_Log();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $result = $this->service->update($subscriptionModel, $data);
@@ -212,6 +218,11 @@ class ServiceSubscriptionTest extends \PHPUnit_Framework_TestCase
      */
     public function testgetSearchQuery($data, $expectedSqlPart, $expectedParams)
     {
+        $di              = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
 
         $this->assertInternalType('array', $result);
@@ -281,7 +292,7 @@ class ServiceSubscriptionTest extends \PHPUnit_Framework_TestCase
             ->method('getCell')
             ->will($this->returnValue($period));
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -301,7 +312,7 @@ class ServiceSubscriptionTest extends \PHPUnit_Framework_TestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di = new \Box_Di();
+        $di       = new \Box_Di();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 

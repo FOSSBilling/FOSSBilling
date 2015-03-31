@@ -25,7 +25,7 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         list($query, $params) = $this->getService()->getSearchQuery();
-        $per_page = isset($data['per_page']) ? $data['per_page'] : $this->di['pager']->getPer_page();
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($query, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $currency            = $this->di['db']->getExistingModelById('Currency', $item['id'], 'Currency not found');
@@ -55,9 +55,10 @@ class Admin extends \Api_Abstract
      */
     public function get($data)
     {
-        if(!isset($data['code']) || empty($data['code'])) {
-            throw new \Box_Exception('Currency code is missing');
-        }
+        $required = array(
+            'code' => 'Currency code is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $service = $this->getService();
         $model = $service->getByCode($data['code']);
@@ -98,22 +99,22 @@ class Admin extends \Api_Abstract
             'code' => 'Currency code is missing',
             'format' => 'Currency format is missing',
         );
-        $this->di['validator']->checkRequiredParamsForArray($required,  $this->di['api_request_data']->get());
+        $this->di['validator']->checkRequiredParamsForArray($required,  $data);
 
         $service = $this->getService();
 
-        if($service->getByCode($this->di['api_request_data']->get('code'))) {
+        if($service->getByCode($this->di['array_get']($data, 'code'))) {
             throw new \Box_Exception('Currency already registered');
         }
 
-        if(!array_key_exists($this->di['api_request_data']->get('code'), $service->getAvailableCurrencies())) {
+        if(!array_key_exists($this->di['array_get']($data, 'code'), $service->getAvailableCurrencies())) {
             throw new \Box_Exception('Currency code is not valid');
         }
 
-        $title          = $this->di['api_request_data']->get('title');
-        $conversionRate = $this->di['api_request_data']->get('conversion_rate', 1);
+        $title          = $this->di['array_get']($data, 'title');
+        $conversionRate = $this->di['array_get']($data, 'conversion_rate', 1);
 
-        return $service->createCurrency($this->di['api_request_data']->get('code'), $this->di['api_request_data']->get('format'), $title, $conversionRate);
+        return $service->createCurrency($this->di['array_get']($data, 'code'), $this->di['array_get']($data, 'format'), $title, $conversionRate);
     }
 
     /**
@@ -131,14 +132,15 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
-        if (!isset($data['code']) || empty($data['code'])) {
-            throw new \Box_Exception('Currency code is missing');
-        }
+        $required = array(
+            'code' => 'Currency code is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $format         = isset($data['format']) ? $data['format'] : null;
-        $title          = isset($data['title']) ? $data['title'] : null;
-        $priceFormat    = isset($data['price_format']) ? $data['price_format'] : null;
-        $conversionRate = isset($data['conversion_rate']) ? $data['conversion_rate'] : null;
+        $format         = $this->di['array_get']($data, 'format');
+        $title          = $this->di['array_get']($data, 'title');
+        $priceFormat    = $this->di['array_get']($data, 'price_format');
+        $conversionRate = $this->di['array_get']($data, 'conversion_rate');
 
         return $this->getService()->updateCurrency($data['code'], $format, $title, $priceFormat, $conversionRate);
     }
@@ -163,9 +165,10 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
-        if (!isset($data['code']) || empty($data['code'])) {
-            throw new \Box_Exception('Currency code is missing');
-        }
+        $required = array(
+            'code' => 'Currency code is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         return $this->getService()->deleteCurrencyByCode($data['code']);
     }
@@ -181,9 +184,10 @@ class Admin extends \Api_Abstract
      */
     public function set_default($data)
     {
-        if (!isset($data['code']) || empty($data['code'])) {
-            throw new \Box_Exception('Currency code is missing');
-        }
+        $required = array(
+            'code' => 'Currency code is missing',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $service = $this->getService();
         $model   = $service->getByCode($data['code']);

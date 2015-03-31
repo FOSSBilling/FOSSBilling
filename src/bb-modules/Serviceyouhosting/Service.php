@@ -98,7 +98,7 @@ class Service implements \Box\InjectionAwareInterface
             $check_data = array(
                 'type'      => $data['domain_type'],
                 'domain'    => $domain,
-                'subdomain' => isset($data['subdomain']) ? $data['subdomain'] : null,
+                'subdomain' => $this->di['array_get']($data, 'subdomain', null),
             );
             $this->getApi()->call('Account.check', $check_data);
         }
@@ -479,7 +479,7 @@ class Service implements \Box\InjectionAwareInterface
         }
 
         $product_id = $this->getOrCreateProductForHostingPlan($account['plan_id']);
-        $period     = isset($periods[$account['period']]) ? $periods[$account['period']] : null;
+        $period     = $this->di['array_get']($periods, $account['period']);
 
         $odata = array(
             'client_id'      => $client_id,

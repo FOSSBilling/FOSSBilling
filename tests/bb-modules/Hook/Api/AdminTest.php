@@ -40,6 +40,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $di = new \Box_Di();
         $di['pager'] = $paginatorMock;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -64,7 +67,9 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $di['config'] = $configMock;
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventManager;
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
         $this->api->setDi($di);
         $result = $this->api->call($data);
@@ -87,6 +92,12 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('batchConnect')
             ->will($this->returnValue(1));
+
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
         $result = $this->api->batch_connect(array());

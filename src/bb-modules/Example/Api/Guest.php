@@ -38,7 +38,7 @@ class Guest extends \Api_Abstract
      */
     public function top_songs($data)
     {
-        $limit = isset($data['limit']) ? $data['limit'] : 10;
+        $limit = $this->di['array_get']($data, 'limit', 10);
         $feed = "http://ax.itunes.apple.com/WebObjects/MZStoreServices.woa/ws/RSS/topsongs/limit=$limit/xml";
         $top_songs = $this->di['tools']->file_get_contents($feed);
         $xml = simplexml_load_string($top_songs);

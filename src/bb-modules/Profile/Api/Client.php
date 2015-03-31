@@ -92,13 +92,11 @@ class Client extends \Api_Abstract
      */
     public function change_password($data)
     {
-        if (!isset($data['password'])) {
-            throw new \Box_Exception('Password required');
-        }
-
-        if (!isset($data['password_confirm'])) {
-            throw new \Box_Exception('Password confirmation required');
-        }
+        $required = array(
+            'password'         => 'Password required',
+            'password_confirm' => 'Password confirmation required',
+        );
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if ($data['password'] != $data['password_confirm']) {
             throw new \Box_Exception('Passwords do not match.');
