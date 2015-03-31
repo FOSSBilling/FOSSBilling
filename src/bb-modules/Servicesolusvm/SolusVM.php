@@ -22,22 +22,73 @@ class SolusVM implements \Box\InjectionAwareInterface{
         return $this->di;
     }
 
+
+    /**
+     * SolusVM Controlpanel URL
+     * @return string
+     */
+    public function getApiHost()
+    {
+        return $this->api_host;
+    }
+
+    /**
+     * @param null $api_host
+     */
+    public function setApiHost($api_host)
+    {
+        $this->api_host = $api_host;
+    }
+
+    /**
+     * @return array
+     */
+    public function getApiID()
+    {
+        return $this->api_ID;
+    }
+
+    /**
+     * @param array $api_ID
+     */
+    public function setApiID($api_ID)
+    {
+        $this->api_ID = $api_ID;
+    }
+
+    /**
+     * @return array
+     */
+    public function getApiKey()
+    {
+        return $this->api_key;
+    }
+
+    /**
+     * @param array $api_key
+     */
+    public function setApiKey($api_key)
+    {
+        $this->api_key = $api_key;
+    }
+
+    public function buildUrl(array $config)
+    {
+        return $config['protocol'] ."://". $config['ipaddress'] . ":" . $config['port'] . "/api/" . $config['usertype'] . "/command.php";
+    }
+
     public function getSecureUrl(array $config)
     {
-        $cport = "5656";
-        if ($config["port"]) {
-            $cport = $config["port"];
-        }
-        return "https://" . $config['ipaddress'] . ":" . $cport . "/api/" . $config['usertype'] . "/command.php";
+        $config['port'] = $this->di['array_get']($config, 'port', 5656);
+        $config['protocol'] = 'https';
+        return $this->buildUrl($config);
     }
 
     public function getUrl(array $config)
     {
-        $cport = "5353";
-        if ($config["port"]) {
-            $cport = $config["port"];
-        }
-        return "http://" . $config['ipaddress'] . ":" . $cport . "/api/" . $config['usertype'] . "/command.php";
+        $config['port'] = $this->di['array_get']($config, 'port', 5353);
+        $config['protocol'] = 'http';
+        return $this->buildUrl($config);
     }
 
     public function setConfig(array $c)
@@ -56,12 +107,12 @@ class SolusVM implements \Box\InjectionAwareInterface{
         $url = $this->getUrl($c);
 
         if ($c['secure']) {
-            $url = $this->getSecureUrl($url);
+            $url = $this->getSecureUrl($c);
         }
 
-        $this->api_host = $url;
-        $this->api_ID = $c['id'];
-        $this->api_key = $c['key'];
+        $this->setApiHost($url);
+        $this->setApiID($c['id']);
+        $this->setApiKey($c['key']);
     }
 
     /**
