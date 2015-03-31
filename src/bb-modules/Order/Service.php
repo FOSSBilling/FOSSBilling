@@ -48,11 +48,11 @@ class Service implements InjectionAwareInterface
 
         return array(
             'total'                                  => array_sum($data),
-            \Model_ClientOrder::STATUS_PENDING_SETUP => isset($data[\Model_ClientOrder::STATUS_PENDING_SETUP]) ? $data[\Model_ClientOrder::STATUS_PENDING_SETUP] : 0,
-            \Model_ClientOrder::STATUS_FAILED_SETUP  => isset($data[\Model_ClientOrder::STATUS_FAILED_SETUP]) ? $data[\Model_ClientOrder::STATUS_FAILED_SETUP] : 0,
-            \Model_ClientOrder::STATUS_ACTIVE        => isset($data[\Model_ClientOrder::STATUS_ACTIVE]) ? $data[\Model_ClientOrder::STATUS_ACTIVE] : 0,
-            \Model_ClientOrder::STATUS_SUSPENDED     => isset($data[\Model_ClientOrder::STATUS_SUSPENDED]) ? $data[\Model_ClientOrder::STATUS_SUSPENDED] : 0,
-            \Model_ClientOrder::STATUS_CANCELED      => isset($data[\Model_ClientOrder::STATUS_CANCELED]) ? $data[\Model_ClientOrder::STATUS_CANCELED] : 0,
+            \Model_ClientOrder::STATUS_PENDING_SETUP => $this->di['array_get']($data, \Model_ClientOrder::STATUS_PENDING_SETUP, 0),
+            \Model_ClientOrder::STATUS_FAILED_SETUP  => $this->di['array_get']($data, \Model_ClientOrder::STATUS_FAILED_SETUP, 0),
+            \Model_ClientOrder::STATUS_ACTIVE        => $this->di['array_get']($data, \Model_ClientOrder::STATUS_ACTIVE, 0),
+            \Model_ClientOrder::STATUS_SUSPENDED     => $this->di['array_get']($data, \Model_ClientOrder::STATUS_SUSPENDED, 0),
+            \Model_ClientOrder::STATUS_CANCELED      => $this->di['array_get']($data, \Model_ClientOrder::STATUS_CANCELED, 0),
         );
     }
 
@@ -307,7 +307,7 @@ class Service implements InjectionAwareInterface
         $systemService        = $this->di['mod_service']('system');
         $days_until_expiration = $systemService->getParamValue('invoice_issue_days_before_expire', 14);
 
-        $client_id = isset($data['client_id']) ? $data['client_id'] : NULL;
+        $client_id = $this->di['array_get']($data, 'client_id', NULL); 
 
         $query = "SELECT *
                 FROM client_order
@@ -370,22 +370,22 @@ class Service implements InjectionAwareInterface
                 LEFT JOIN client c ON c.id = co.client_id
                 LEFT JOIN client_order_meta meta ON meta.client_order_id = co.id";
 
-        $search      = isset($data['search']) ? $data['search'] : FALSE;
-        $hide_addons = isset($data['hide_addons']) ? $data['hide_addons'] : NULL;
-        $id          = isset($data['id']) ? $data['id'] : NULL;
-        $product_id  = isset($data['product_id']) ? $data['product_id'] : NULL;
-        $status      = isset($data['status']) ? $data['status'] : NULL;
-        $title       = isset($data['title']) ? $data['title'] : NULL;
-        $period      = isset($data['period']) ? $data['period'] : NULL;
-        $type        = isset($data['type']) ? $data['type'] : NULL;
-        $created_at  = isset($data['created_at']) ? $data['created_at'] : NULL;
-        $date_from   = isset($data['date_from']) ? $data['date_from'] : NULL;
-        $date_to     = isset($data['date_to']) ? $data['date_to'] : NULL;
+        $search      = $this->di['array_get']($data, 'search', FALSE); 
+        $hide_addons = $this->di['array_get']($data, 'hide_addons', NULL); 
+        $id          = $this->di['array_get']($data, 'id', NULL); 
+        $product_id  = $this->di['array_get']($data, 'product_id', NULL); 
+        $status      = $this->di['array_get']($data, 'status', NULL); 
+        $title       = $this->di['array_get']($data, 'title', NULL); 
+        $period      = $this->di['array_get']($data, 'period', NULL); 
+        $type        = $this->di['array_get']($data, 'type', NULL); 
+        $created_at  = $this->di['array_get']($data, 'created_at', NULL); 
+        $date_from   = $this->di['array_get']($data, 'date_from', NULL); 
+        $date_to     = $this->di['array_get']($data, 'date_to', NULL); 
         $ids         = (isset($data['ids']) && is_array($data['ids'])) ? $data['ids'] : null;
         $meta        = (isset($data['meta']) && is_array($data['meta'])) ? $data['meta'] : null;
 
-        $client_id      = isset($data['client_id']) ? $data['client_id'] : NULL;
-        $invoice_option = isset($data['invoice_option']) ? $data['invoice_option'] : NULL;
+        $client_id      = $this->di['array_get']($data, 'client_id', NULL); 
+        $invoice_option = $this->di['array_get']($data, 'invoice_option', NULL); 
 
         $where    = array();
         $bindings = array();
@@ -928,7 +928,7 @@ class Service implements InjectionAwareInterface
             $from_time = (NULL === $order->expires_at) ? time() : strtotime($order->expires_at); // from expiration date
 
             $config = $this->di['mod_config']('order');
-            $logic  = isset($config['order_renewal_logic']) ? $config['order_renewal_logic'] : '';
+            $logic  = $this->di['array_get']($config, 'order_renewal_logic', ''); 
 
             if ($logic == 'from_today') {
                 $from_time = time(); //renew order from the date renewal occured
@@ -1130,7 +1130,7 @@ class Service implements InjectionAwareInterface
         $mod = $this->di['mod']('order');
         $c   = $mod->getConfig();
 
-        $reason = isset($c['batch_suspend_reason']) ? $c['batch_suspend_reason'] : null;
+        $reason = $this->di['array_get']($c, 'batch_suspend_reason', null); 
 
         $list = $this->getExpiredOrders();
 
@@ -1159,7 +1159,7 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $reason = isset($config['batch_cancel_suspended_reason']) ? $config['batch_cancel_suspended_reason'] : null;
+        $reason = $this->di['array_get']($config, 'batch_cancel_suspended_reason', null); 
         $days   = isset($config['batch_cancel_suspended_after_days']) ? (int)$config['batch_cancel_suspended_after_days'] : 7;
 
         if ($days < 0) {
@@ -1209,7 +1209,7 @@ class Service implements InjectionAwareInterface
     {
         $query = "SELECT * FROM client_order_status";
 
-        $oid = isset($data['client_order_id']) ? $data['client_order_id'] : NULL;
+        $oid = $this->di['array_get']($data, 'client_order_id', NULL); 
 
         $where    = array();
         $bindings = array();
