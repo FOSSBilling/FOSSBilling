@@ -141,6 +141,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testgetSearchQuery($data, $expectedStr, $expectedParams)
     {
+        $di = new \Box_Di();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
         $this->assertInternalType('string', $result[0]);
         $this->assertInternalType('array', $result[1]);

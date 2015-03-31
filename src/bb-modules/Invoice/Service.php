@@ -47,19 +47,19 @@ class Service implements InjectionAwareInterface
 
         $params = array();
 
-        $search     = isset($data['search']) ? $data['search'] : NULL;
-        $order_id = isset($data['order_id']) ? $data['order_id'] : NULL;
-        $id = isset($data['id']) ? $data['id'] : NULL;
-        $id_nr = isset($data['nr']) ? $data['nr'] : NULL;
-        $client_id = isset($data['client_id']) ? $data['client_id'] : NULL;
-        $client = isset($data['client']) ? $data['client'] : NULL;
-        $created_at = isset($data['created_at']) ? $data['created_at'] : NULL;
-        $date_from = isset($data['date_from']) ? $data['date_from'] : NULL;
-        $date_to = isset($data['date_to']) ? $data['date_to'] : NULL;
-        $paid_at = isset($data['paid_at']) ? $data['paid_at'] : NULL;
-        $status = isset($data['status']) ? $data['status'] : NULL;
-        $approved = isset($data['approved']) ? $data['approved'] : NULL;
-        $currency = isset($data['currency']) ? $data['currency'] : NULL;
+        $search     = $this->di['array_get']($data, 'search', NULL);
+        $order_id   = $this->di['array_get']($data, 'order_id', NULL);
+        $id         = $this->di['array_get']($data, 'id', NULL);
+        $id_nr      = $this->di['array_get']($data, 'nr', NULL);
+        $client_id  = $this->di['array_get']($data, 'client_id', NULL);
+        $client     = $this->di['array_get']($data, 'client', NULL);
+        $created_at = $this->di['array_get']($data, 'created_at', NULL);
+        $date_from  = $this->di['array_get']($data, 'date_from', NULL);
+        $date_to    = $this->di['array_get']($data, 'date_to', NULL);
+        $paid_at    = $this->di['array_get']($data, 'paid_at', NULL);
+        $status     = $this->di['array_get']($data, 'status', NULL);
+        $approved   = $this->di['array_get']($data, 'approved', NULL);
+        $currency   = $this->di['array_get']($data, 'currency', NULL);
         
         if($order_id) {
             $sql .= ' AND pi.type = :item_type AND pi.rel_id = :order_id';
