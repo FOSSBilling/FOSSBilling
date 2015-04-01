@@ -5,18 +5,27 @@ namespace Box\Mod\Servicesolusvm;
 class SolusVM implements \Box\InjectionAwareInterface{
 
     protected $api_host = null; // SolusVM Controlpanel URL
-    protected $api_ID = array(); // API ID
-    protected $api_key = array(); // API KEY
+    protected $api_ID = ''; // API ID
+    protected $api_key = ''; // API KEY
 
     protected $_parameters = array();
 
+    /**
+     * @var \Box_Di
+     */
     protected $di;
 
+    /**
+     * @param \Box_Di $di
+     */
     public function setDi($di)
     {
         $this->di = $di;
     }
 
+    /**
+     * @return \Box_Di
+     */
     public function getDi()
     {
         return $this->di;
@@ -33,7 +42,7 @@ class SolusVM implements \Box\InjectionAwareInterface{
     }
 
     /**
-     * @param null $api_host
+     * @param string $api_host
      */
     public function setApiHost($api_host)
     {
@@ -41,7 +50,7 @@ class SolusVM implements \Box\InjectionAwareInterface{
     }
 
     /**
-     * @return array
+     * @return string
      */
     public function getApiID()
     {
@@ -49,7 +58,7 @@ class SolusVM implements \Box\InjectionAwareInterface{
     }
 
     /**
-     * @param array $api_ID
+     * @param string $api_ID
      */
     public function setApiID($api_ID)
     {
@@ -57,7 +66,7 @@ class SolusVM implements \Box\InjectionAwareInterface{
     }
 
     /**
-     * @return array
+     * @return string
      */
     public function getApiKey()
     {
@@ -65,7 +74,7 @@ class SolusVM implements \Box\InjectionAwareInterface{
     }
 
     /**
-     * @param array $api_key
+     * @param string $api_key
      */
     public function setApiKey($api_key)
     {
