@@ -282,8 +282,10 @@ class Service implements InjectionAwareInterface
             $model->config = json_encode($c);
         }
 
+        $form_id = $this->di['array_get']($data, 'form_id', $model->form_id);
+
         $model->product_category_id = $this->di['array_get']($data, 'product_category_id', $model->product_category_id);
-        $model->form_id             = $this->di['array_get']($data, 'form_id', $model->form_id);
+        $model->form_id             = empty($form_id) ? null: $form_id;
         $model->icon_url            = $this->di['array_get']($data, 'icon_url', $model->icon_url);
         $model->status              = $this->di['array_get']($data, 'status', $model->status);
         if (isset($data['hidden'])) {
