@@ -312,7 +312,7 @@ class Service implements InjectionAwareInterface
 
         $search = $this->di['array_get']($data, 'search', NULL);
         $status = $this->di['array_get']($data, 'status', NULL);
-        $no_cron = isset($data['no_cron']) ? (bool)$data['no_cron'] : false;
+        $no_cron = (bool) $this->di['array_get']($data, 'no_cron', false);
 
         $where = array();
         $bindings = array();
