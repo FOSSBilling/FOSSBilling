@@ -1,3 +1,7 @@
+Release 4.17
+------------------------------------------------------------------------------
+* Send email notification to helpdesk email address (created new mod_support_helpdesk_ticket_open email template)
+
 Release 4.16
 ------------------------------------------------------------------------------
 * Compatibility with MySQL 5.6 Datetime values updated to meet MySQL STRICT_TRANS_TABLES mode rules.
