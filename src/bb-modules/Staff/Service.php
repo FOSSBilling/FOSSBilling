@@ -158,11 +158,22 @@ class Service implements InjectionAwareInterface
             $supportTicketService = $di['mod_service']('support');
             $ticketModel = $supportTicketService->getTicketById($params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true, $di['loggedin_admin']);
+
+            $helpdeskModel = $di['db']->load('SupportHelpdesk', $ticketModel->support_helpdesk_id);
+            $emailService = $di['mod_service']('email');
+            if (!empty($helpdeskModel->email)) {
+                $email           = array();
+                $email['to']     = $helpdeskModel->email;
+                $email['code']   = 'mod_support_helpdesk_ticket_open';
+                $email['ticket'] = $ticket;
+                $emailService->sendTemplate($email);
+                return true;
+            }
+
             $email = array();
             $email['to_staff']  = true;
             $email['code']      = 'mod_staff_ticket_open';
             $email['ticket']    = $ticket;
-            $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch(\Exception $exc) {
             error_log($exc->getMessage());

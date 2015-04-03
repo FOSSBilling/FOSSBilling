@@ -170,7 +170,6 @@ class Service implements \Box\InjectionAwareInterface
 
         // do not send inactive template
         if (!$t->enabled) {
-            error_log('Email was not sent. Email template '.$t->action_code.' is not enabled');
             return false;
         }
         $systemService =  $this->di['mod_service']('system');
