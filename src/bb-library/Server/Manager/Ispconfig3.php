@@ -50,7 +50,11 @@ class Server_Manager_Ispconfig3 extends Server_Manager
     public function getLoginUrl()
     {
         $host     = $this->_config['host'];
-        return 'http://'.$host.':8080';
+        $port = '';
+        if (isset($this->_config['port'])) {
+            $port = ':'.$this->_config['port'];
+        }
+        return 'http://'.$host.$port;
     }
 
     public function getResellerLoginUrl()
@@ -66,7 +70,7 @@ class Server_Manager_Ispconfig3 extends Server_Manager
     
     public function synchronizeAccount(Server_Account $a)
     {
-        $this->getLog()->info('Synchronizing account with server '.$a->getUsername());
+        throw new Server_Exception('Server manager does not support sync');
         return $a;
     }
 
@@ -133,11 +137,11 @@ class Server_Manager_Ispconfig3 extends Server_Manager
 
         $result = $this->_request('client_delete', $params);
 		
-		$pa['origin'] = $a->getDomain().'.'; 
+		$pa['origin'] = $a->getDomain();
 		$info = $this->_request('test', $pa);
 		
 		$this->_request('dns_zone_delete', $info);
-		
+		$this->_request('sites_web_domain_delete', $info);
 
         return (bool) $result;
     }
@@ -224,9 +228,6 @@ class Server_Manager_Ispconfig3 extends Server_Manager
         $site_params['type'] 			= 'vhost';	// harcoded in ISPConfig vhost
         $site_params['vhost_type'] 		= 'name';	// harcoded in ISPConfig vhost
 
-        $site_params['system_user'] 	= 1;//1; force to the admin
-        $site_params['system_group'] 	= 1; //as added by the admin
-
         $site_params['client_group_id'] = $client->getid() + 1;	 //always will be this 	groupd id + 1
         $site_params['server_id'] 		= $this->getServerId();
 
@@ -276,7 +277,7 @@ class Server_Manager_Ispconfig3 extends Server_Manager
         $dns_domain_params['active'] = 'Y';
         $this->_request('dns_zone_add', $dns_domain_params);
 		
-		$pa['origin'] = $a->getDomain().'.'; 
+		$pa['origin'] = $a->getDomain();
 		$info = $this->_request('test', $pa);
 		
         //Adding the DNS record A
@@ -524,10 +525,10 @@ class Server_Manager_Ispconfig3 extends Server_Manager
         $host     = $this->_config['host'];
         $username = $this->_config['username'];
         $password = $this->_config['password'];
+        $port = !empty($this->_config['port']) ? ':'.$this->_config['port'].'/' : '';
         $host = ($usessl) ? 'https://'.$host : 'http://'.$host;
-
-        $soap_location = $host.':8080/remote/index.php';
-        $soap_uri = $host.':8080/remote/';
+        $soap_location = $host.$port.'remote/index.php';
+        $soap_uri = $host.$port.'remote/';
 
         if(!$this->_c instanceof SoapClient ) {
             // Create the SOAP Client
