@@ -109,7 +109,91 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $di                = new \Box_Di();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
 
+        $this->service->setDi($di);
+
+        $result = $this->service->action_activate($clientOrderModel);
+        $this->assertTrue($result);
+    }
+
+    public function testaction_activateLicenseCollision()
+    {
+        $clientOrderModel = new \Model_ClientOrder();
+        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->plugin = 'Simple';
+
+        $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getConfig')
+            ->will($this->returnValue(array('iterations' =>3)));
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getOrderService')
+            ->will($this->returnValue($serviceLicenseModel));
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store');
+        $dbMock->expects($this->at(0))
+            ->method('findOne')
+            ->will($this->returnValue($serviceLicenseModel));
+        $dbMock->expects($this->at(1))
+            ->method('findOne')
+            ->will($this->returnValue($serviceLicenseModel));
+        $dbMock->expects($this->at(2))
+            ->method('findOne')
+            ->will($this->returnValue(null));
+
+        $di                = new \Box_Di();
+        $di['db']          = $dbMock;
+        $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+        $this->service->setDi($di);
+
+        $result = $this->service->action_activate($clientOrderModel);
+        $this->assertTrue($result);
+    }
+
+    /**
+     * @expectedException \Box_Exception
+     */
+    public function testaction_activateLicenseCollisionMaxIterationsException()
+    {
+        $clientOrderModel = new \Model_ClientOrder();
+        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $serviceLicenseModel = new \Model_ServiceLicense();
+        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->plugin = 'Simple';
+
+        $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getConfig')
+            ->will($this->returnValue(array()));
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getOrderService')
+            ->will($this->returnValue($serviceLicenseModel));
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->never())
+            ->method('store');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->will($this->returnValue($serviceLicenseModel));
+
+        $di                = new \Box_Di();
+        $di['db']          = $dbMock;
+        $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $result = $this->service->action_activate($clientOrderModel);
@@ -135,7 +219,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $di                = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $this->setExpectedException('\Box_Exception', sprintf('License plugin %s was not found', $serviceLicenseModel->plugin));
@@ -157,7 +243,9 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $di                = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($orderServiceMock) { return $orderServiceMock; });
-
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
         $this->service->setDi($di);
 
         $this->setExpectedException('\Box_Exception', 'Could not activate order. Service was not created');
