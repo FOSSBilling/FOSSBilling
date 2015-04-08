@@ -187,23 +187,37 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
 
         $title = $this->getInvoiceTitle($invoice);
 
-        $form = '<form action=":callbackUrl" method="POST" class="api_form">
-                  <script
-                    src="https://checkout.stripe.com/checkout.js" class="stripe-button"
-                    data-key=":key"
-                    data-amount=":amount"
-                    data-currency=":currency"
-                    data-name=":name"
-                    data-description=":description"
-                    data-email=":email"
-                    data-image=":image"
-                    data-panel-label=":label">
+        $form = '<form action=":callbackUrl" method="POST" class="api_form" data-api-redirect=":redirectUrl">
+                <div class="loading" style="display:none;"><span>{% trans \'Loading ...\' %}</span></div>
+                 <script src="https://checkout.stripe.com/checkout.js"></script>
+                  <script>
+                    var handler = StripeCheckout.configure({
+                        key: \':key\',
+                        image: ":image",
+                        label: ":label",
+                        allowRememberMe: false,
+                        token: handleStripeToken
+                    });
 
+                    function handleStripeToken(token, args){
+                        form = $(".api_form");
+                        form.append($(\'<input type="hidden" name="stripeToken" />\').val(token.id));
+                        form.append($(\'<input type="hidden" name="stripeTokenType" />\').val("card"));
+                        form.submit();
+
+                    }
                   </script>
                   <script>
                     $(document).ready ( function(){
-                        $(".stripe-button-el").click();
+                        handler.open({
+                               name: ":name",
+                               description: ":description" ,
+                               amount: ":amount" ,
+                               email: ":email" ,
+                               currency: ":currency"
+                        });
                     });
+
                   </script>
                 </form>';
 
@@ -218,7 +232,8 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             ':image' => $company['logo_url'],
             ':email' => $invoice->buyer_email,
             ':label' => __('Pay now'),
-            ':callbackUrl' => $payGatewayService->getCallbackUrl($payGateway, $invoice)
+            ':callbackUrl' => $payGatewayService->getCallbackUrl($payGateway, $invoice),
+            ':redirectUrl' => $this->di['tools']->url('invoice/'.$invoice->hash)
         );
         return strtr($form, $bindings);
     }
