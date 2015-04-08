@@ -66,10 +66,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
-        $msg = $this->di['db']->load('queue_message', $data['id']);
-        if(!$msg) {
-            throw new \Box_Exception('Queue message not found');
-        }
+        $msg = $this->di['db']->getExistingModelById('queue_message', $data['id'], 'Queue message not found');
         
         $this->di['db']->trash($msg);
         return true;

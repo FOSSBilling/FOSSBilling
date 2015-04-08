@@ -109,13 +109,9 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $database = $this->di['db'];
-        $model = $database->load('ActivitySystem', $data['id']);
-        if(!$model instanceof \Model_ActivitySystem) {
-            throw new \Box_Exception('Event not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ActivitySystem', $data['id'], 'Event not found');
 
-        $database->trash($model);
+        $this->di['db']->trash($model);
         return true;
     }
 

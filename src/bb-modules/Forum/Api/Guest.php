@@ -129,7 +129,7 @@ class Guest extends \Api_Abstract
 
         $model = FALSE;
         if ($id) {
-            $model = $this->di['db']->load('ForumTopic', $id);
+            $model = $this->di['db']->getExistingModelById('ForumTopic', $id, 'Forum topic not found');
         } else {
             $model = $this->di['db']->findOne('ForumTopic', 'slug = :slug', array(':slug' => $slug));
         }

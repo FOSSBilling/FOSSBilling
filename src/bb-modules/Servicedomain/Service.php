@@ -185,7 +185,7 @@ class Service implements \Box\InjectionAwareInterface
         $model->ns3              = (isset($c['ns3']) && !empty($c['ns1'])) ? $c['ns3'] : $ns['nameserver_3'];
         $model->ns4              = (isset($c['ns4']) && !empty($c['ns1'])) ? $c['ns4'] : $ns['nameserver_4'];
 
-        $client = $this->di['db']->load('Client', $model->client_id);
+        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
 
         $model->contact_first_name = $client->first_name;
         $model->contact_last_name  = $client->last_name;

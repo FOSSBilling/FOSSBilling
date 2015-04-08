@@ -227,10 +227,7 @@ class Service implements InjectionAwareInterface
 
     public function getForm($formId)
     {
-        $formModel = $this->di['db']->load('Form', $formId);
-        if (!$formModel instanceof \Model_Form) {
-            throw new \Box_Exception('Form not found', null, 9632);
-        }
+        $formModel = $this->di['db']->getExistingModelById('Form', $formId);
         $result = $this->di['db']->toArray($formModel);
 
         $result['style'] = json_decode($result['style'], true);
@@ -285,10 +282,8 @@ class Service implements InjectionAwareInterface
 
     public function getField($fieldId)
     {
-        $field = $this->di['db']->load('FormField', $fieldId);
-        if (!$field instanceof \Model_FormField){
-            throw new \Box_Exception ("Field was not found", null, 2575);
-        }
+        $field = $this->di['db']->getExistingModelById('FormField', $fieldId, "Field was not found");
+
         $result = $this->di['db']->toArray($field);
 
         $required = array(
@@ -334,11 +329,7 @@ class Service implements InjectionAwareInterface
 
     public function removeField($data)
     {
-        $fieldModel = $this->di['db']->load('FormField', $data['id']);
-        if (!$fieldModel instanceof \Model_FormField){
-            throw new \Box_Exception ("Field was not found", null, 1641);
-        }
-
+        $fieldModel = $this->di['db']->getExistingModelById('FormField', $data['id'], "Field was not found");
         $this->di['db']->trash($fieldModel);
         $this->di['logger']->info('Deleted custom field %s', $data['id']);
         return true;

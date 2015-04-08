@@ -924,7 +924,7 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception('Invoices are not generated for 0 amount orders');
         }
 
-        $client = $this->di['db']->load('Client', $order->client_id);
+        $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
 
         // generate proforma
         $proforma = $this->di['db']->dispense('Invoice');

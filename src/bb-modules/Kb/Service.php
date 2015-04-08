@@ -106,7 +106,7 @@ class Service
             'updated_at' => $model->updated_at,
         );
 
-        $cat = $this->di['db']->load('KbArticleCategory', $model->kb_article_category_id);
+        $cat = $this->di['db']->getExistingModelById('KbArticleCategory', $model->kb_article_category_id, 'Knowledge Base category not found');
         $data['category'] = array(
             'id'    => $cat->id,
             'slug'  => $cat->slug,
@@ -333,7 +333,7 @@ class Service
 
     public function findCategoryById($id)
     {
-        return $this->di['db']->load('KbArticleCategory', $id);
+        return $this->di['db']->getExistingModelById('KbArticleCategory', $id, 'Knowledge base category not found');
     }
 
     public function findCategoryBySlug($slug)

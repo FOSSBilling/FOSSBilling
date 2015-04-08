@@ -238,8 +238,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             return TRUE;
         }
 
-        $invoice = $this->di['db']->load('Invoice', $item->invoice_id);
-        $client = $this->di['db']->load('Client', $invoice->client_id);
+        $invoice = $this->di['db']->getExistingModelById('Invoice', $item->invoice_id, 'Invoice not found');
+        $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
 
         $credit = $this->di['db']->dispense('ClientBalance');
         $credit->client_id = $client->id;

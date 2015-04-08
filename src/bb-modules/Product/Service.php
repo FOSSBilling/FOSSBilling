@@ -217,7 +217,7 @@ class Service implements InjectionAwareInterface
             if (!isset($data['pricing']['type']) || !array_key_exists($data['pricing']['type'], $types)) {
                 throw new \Box_Exception('Pricing type is required');
             }
-            $productPayment = $this->di['db']->load('ProductPayment', $model->product_payment_id);
+            $productPayment = $this->di['db']->getExistingModelById('ProductPayment', $model->product_payment_id, 'Product payment not found');
 
             $pricing              = $data['pricing'];
             $productPayment->type = $data['pricing']['type'];

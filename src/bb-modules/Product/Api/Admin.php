@@ -330,10 +330,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ProductCategory', $data['id']);
-        if(!$model instanceof \Model_ProductCategory) {
-            throw new \Box_Exception('Category not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
 
         $title          = $this->di['array_get']($data, 'title', null);
         $description    = $this->di['array_get']($data, 'description', null);
@@ -357,10 +354,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ProductCategory', $data['id']);
-        if(!$model instanceof \Model_ProductCategory) {
-            throw new \Box_Exception('Category not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
         return $this->getService()->toProductCategoryApiArray($model);
     }
 
@@ -407,10 +401,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ProductCategory', $data['id']);
-        if(!$model instanceof \Model_ProductCategory) {
-            throw new \Box_Exception('Category not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
         $service = $this->getService();
         return $service->removeProductCategory($model);
     }
@@ -495,10 +486,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
-        $model = $this->di['db']->load('Promo', $data['id']);
-        if(!$model instanceof \Model_Promo) {
-            throw new \Box_Exception('Promo not found');
-        }
+        $model = $this->di['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
 
         return $this->getService()->toPromoApiArray($model, true, $this->getIdentity());
     }
@@ -534,10 +522,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('Promo', $data['id']);
-        if(!$model instanceof \Model_Promo) {
-            throw new \Box_Exception('Promo not found');
-        }
+        $model = $this->di['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
 
         $service = $this->getService();
         return $service->updatePromo($model, $data);
@@ -558,10 +543,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('Promo', $data['id']);
-        if(!$model instanceof \Model_Promo) {
-            throw new \Box_Exception('Promo not found');
-        }
+        $model = $this->di['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
         return $this->getService()->deletePromo($model);
     }
     
@@ -572,10 +554,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('Product', $data['id']);
-        if(!$model instanceof \Model_Product) {
-            throw new \Box_Exception('Product not found');
-        }
+        $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
         return $model;
     }
 }

@@ -80,11 +80,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $db = $this->di['db'];
-        $client = $db->load('Client', $data['id']);
-        if(!$client instanceof \Model_Client ) {
-            throw new \Box_Exception('Client not found');
-        }
+        $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
         $service = $this->di['mod_service']('client');
         $result = $service->toSessionArray($client);
@@ -174,10 +170,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('Client', $data['id']);
-        if(!$model instanceof \Model_Client) {
-            throw new \Box_Exception('Client not found');
-        }
+        $model = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
         
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminClientDelete', 'params'=>array('id'=>$model->id)));
 
@@ -236,10 +229,7 @@ class Admin extends \Api_Abstract
         $required = array('id' => 'Id required');
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $client = $this->di['db']->load('Client', $this->di['array_get']($data, 'id'));
-        if(!$client instanceof \Model_Client ) {
-            throw new \Box_Exception('Client not found');
-        }
+        $client = $this->di['db']->getExistingModelById('Client', $this->di['array_get']($data, 'id'), 'Client not found');
 
         $service = $this->di['mod_service']('client');
 
@@ -329,10 +319,7 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Passwords do not match');
         }
 
-        $client = $this->di['db']->load('Client', $data['id']);
-        if(!$client instanceof \Model_Client ) {
-            throw new \Box_Exception('Client not found');
-        }
+        $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminClientPasswordChange', 'params'=>$data));
 
@@ -385,10 +372,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ClientBalance', $data['id']);
-        if(!$model instanceof \Model_ClientBalance) {
-            throw new \Box_Exception('Balance line not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ClientBalance', $data['id'], 'Balance line not found');
         
         $id = $model->id;
         $client_id = $model->client_id;
@@ -421,10 +405,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $client = $this->di['db']->load('Client', $data['id']);
-        if(!$client instanceof \Model_Client ) {
-            throw new \Box_Exception('Client not found');
-        }
+        $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
         $service = $this->di['mod_service']('client');
         $service->addFunds($client, $data['amount'], $data['description'], $data);
@@ -556,10 +537,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ClientGroup', $data['id']);
-        if(!$model instanceof \Model_ClientGroup) {
-            throw new \Box_Exception('Group not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
         
         $model->title = $this->di['array_get']($data, 'title', $model->title);
         $model->updated_at = date('Y-m-d H:i:s');
@@ -582,10 +560,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ClientGroup', $data['id']);
-        if(!$model instanceof \Model_ClientGroup) {
-            throw new \Box_Exception('Group not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
         return $this->getService()->deleteGroup($model);
     }
 
@@ -604,10 +579,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ClientGroup', $data['id']);
-        if(!$model instanceof \Model_ClientGroup) {
-            throw new \Box_Exception('Group not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
         
         return $this->di['db']->toArray($model);
     }

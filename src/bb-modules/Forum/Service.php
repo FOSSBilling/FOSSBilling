@@ -163,20 +163,17 @@ class Service implements InjectionAwareInterface
         $meta->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($meta);
     }
-    
+
     public function declinePointsForPost($post_id)
     {
-        $post = $this->di['db']->load('forum_topic_message', $post_id);
-        if(!$post) {
-            throw new \Box_Exception('Message not found');
-        }
-        
+        $post = $this->di['db']->getExistingModelById('forum_topic_message', $post_id, 'Message not found');
+
         $minus_points = -$post->points;
-        
-        $post->points = null;
+
+        $post->points     = null;
         $post->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($post);
-        
+
         $this->updateTotalPoints($post->client_id, $minus_points, true);
     }
     

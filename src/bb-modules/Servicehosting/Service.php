@@ -76,15 +76,9 @@ class Service implements InjectionAwareInterface
         $c = $orderService->getConfig($order);
         $this->validateOrderData($c);
 
-        $server = $this->di['db']->load('ServiceHostingServer', $c['server_id']);
-        if(!$server instanceof \Model_ServiceHostingServer) {
-            throw new \Box_Exception('Server from order configuration was not found');
-        }
+        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $c['server_id'], 'Server from order configuration was not found');
 
-        $hp = $this->di['db']->load('ServiceHostingHp', $c['hosting_plan_id']);
-        if(!$hp instanceof \Model_ServiceHostingHp) {
-            throw new \Box_Exception('Hosting plan from order configuration was not found');
-        }
+        $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $c['hosting_plan_id'], 'Hosting plan from order configuration was not found');
 
         $model = $this->di['db']->dispense('ServiceHosting');
         $model->client_id = $order->client_id;
