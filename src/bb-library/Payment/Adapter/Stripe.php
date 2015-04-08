@@ -98,12 +98,19 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
 
     public function logError(Exception $e, Model_Transaction $tx)
     {
-        $body = $e->getJsonBody();
-        $err  = $body['error'];
+        $body           = $e->getJsonBody();
+        $err            = $body['error'];
         $tx->txn_status = $err ['type'];
-        $tx->error = $err['message'];
-        $tx->error_code = $this->di['array_get']($err, 'code', -1);
-        error_log(json_encode($e->getJsonBody()));
+        $tx->error      = $err['message'];
+        $tx->status     = 'processed';
+        $tx->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($tx);
+
+
+        if ($this->di['config']['debug']){
+            error_log(json_encode($e->getJsonBody()));
+        }
+        throw new Exception($tx->error);
     }
 
     public function processTransaction($api_admin, $id, $data, $gateway_id)
