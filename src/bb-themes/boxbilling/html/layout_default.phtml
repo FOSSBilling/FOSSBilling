@@ -28,7 +28,9 @@
 </head>
 
 <body>
-
+{% if guest.extension_is_on({"mod":"cookieconsent"}) %}
+    {% include 'mod_cookieconsent_index.phtml' ignore missing%}
+{% endif %}
 <div class="header">
     <div class="container_16">
         <div class="grid_4" >
