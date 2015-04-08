@@ -1,6 +1,7 @@
 Release 4.17
 ------------------------------------------------------------------------------
 * Send email notification to helpdesk email address (created new mod_support_helpdesk_ticket_open email template)
+* Added `Cookieconsent` extension for displaying notification about cookies which is required by EU cookie law 
 
 Release 4.16
 ------------------------------------------------------------------------------
