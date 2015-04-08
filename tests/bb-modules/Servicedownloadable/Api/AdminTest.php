@@ -24,28 +24,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testuploadProductNotFound()
-    {
-        $data['id'] = 1;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load');
-
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-
-        $di              = new \Box_Di();
-        $di['db']        = $dbMock;
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Product not found');
-        $this->api->upload($data);
-    }
-
     public function testuploadFileNotUploaded()
     {
         $data['id'] = 1;
@@ -53,7 +31,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -82,7 +60,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -102,27 +80,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    public function testupdateProductNotFound()
-    {
-        $data['order_id'] = 1;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load');
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-
-        $di              = new \Box_Di();
-        $di['db']        = $dbMock;
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Order not found');
-        $this->api->update($data);
-    }
-
     public function testupdateOrderNotActivated()
     {
         $data['order_id'] = 1;
@@ -130,7 +87,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
@@ -170,7 +127,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())

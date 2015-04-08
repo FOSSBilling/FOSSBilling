@@ -155,7 +155,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
             ->method('store')
             ->will($this->returnValue(rand(1, 100)));
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($product));
         $serviceCustomModel = new \Model_ServiceCustom();
         $serviceCustomModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -550,7 +550,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ClientOrder()));
 
         $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
@@ -573,36 +573,11 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
     /**
      * @expectedException \Box_Exception
      */
-    public function testGetServiceCustomByOrderIdOrderNotFoundException()
-    {
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue(null));
-
-        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
-        $orderService->expects($this->never())
-            ->method('getOrderService')
-            ->will($this->returnValue(new \Model_ServiceCustom()));
-
-        $di                = new \Box_Di();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(function () use ($orderService) {
-            return $orderService;
-        });
-        $this->service->setDi($di);
-
-        $this->service->getServiceCustomByOrderId(rand(1, 100));
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testGetServiceCustomByOrderIdOrderServiceNotFoundException()
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ClientOrder()));
 
         $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();

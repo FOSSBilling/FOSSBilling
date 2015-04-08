@@ -73,7 +73,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $hostingPlansModel->loadBean(new \RedBeanPHP\OODBBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->onConsecutiveCalls($hostingServerModel, $hostingPlansModel));
 
         $servhostingModel = new \Model_ServiceHosting();
@@ -392,7 +392,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $hostingPlansModel->loadBean(new \RedBeanPHP\OODBBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->onConsecutiveCalls($hostingServerModel, $hostingPlansModel));
 
         $servhostingModel = new \Model_ServiceHosting();

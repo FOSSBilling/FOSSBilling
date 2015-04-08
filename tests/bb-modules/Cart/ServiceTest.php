@@ -685,7 +685,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($promo));
 
         $client = new \Model_Client();
@@ -699,41 +699,6 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $serviceMock->setDi($di);
 
         $result = $serviceMock->checkoutCart($cart, $client);
-
-        $this->assertInternalType('array', $result);
-        $this->assertArrayHasKey('gateway_id', $result);
-        $this->assertArrayHasKey('invoice_hash', $result);
-        $this->assertArrayHasKey('order_id', $result);
-        $this->assertArrayHasKey('orders', $result);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testCheckoutCartPromoNotFoundException()
-    {
-        $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
-        $cart->promo_id = rand(1, 100);
-
-        $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
-
-        $dbMock = $this->getMockBuilder('Box_Database')->getMock();
-
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue(null));
-
-        $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
-
-        $di           = new \Box_Di();
-        $di['db']     = $dbMock;
-        $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $this->service->setDi($di);
-
-        $result = $this->service->checkoutCart($cart, $client);
 
         $this->assertInternalType('array', $result);
         $this->assertArrayHasKey('gateway_id', $result);
@@ -762,7 +727,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $dbMock = $this->getMockBuilder('Box_Database')->getMock();
 
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_Promo()));
 
         $client = new \Model_Client();
