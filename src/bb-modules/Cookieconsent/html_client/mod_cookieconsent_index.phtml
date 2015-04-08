@@ -1,0 +1,16 @@
+<div id="close-cookie-consent-block" style="display:none; z-index: 101; opacity: 0.8; top: 0; left: 0; right: 0; margin-bottom: 5px; background: #fde073; text-align: center; line-height: 2.5; overflow: hidden; -webkit-box-shadow: 0 0 5px black; -moz-box-shadow: 0 0 5px black; box-shadow: 0 0 5px black;">
+        {{ guest.cookieconsent_message }}
+    <button id="close-cookie-consent-btn" style="padding: 5px; cursor: pointer; background: rgba(0, 0, 0, 0); float:right; border: 0; -webkit-appearance: none; font-size: 20px; font-weight: bold; line-height: 0.8em; color: #000; text-shadow: 0 1px 0 #FFF; opacity: .4; filter: alpha(opacity=20);">Close &times;</button>
+</div>
+
+<script type="text/javascript">
+    $(function () {
+        if (localStorage.getItem("cookie-consent") != 1) {
+            $('#close-cookie-consent-block').show();
+        }
+        $('#close-cookie-consent-btn').click(function () {
+            localStorage.setItem('cookie-consent', 1);
+            $('#close-cookie-consent-block').hide();
+        });
+    });
+</script>
