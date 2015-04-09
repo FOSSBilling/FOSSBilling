@@ -86,6 +86,14 @@
     border: 0;
     margin: 10px;
 }
+.logo-Stripe{
+   background: transparent url("../img/gateway_logos/stripe.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:65px;
+    height: 30px;
+    border: 0;
+    margin: 10px;
+}
 .logo-WebMoney{
    background: transparent url("../img/gateway_logos/webmoney.jpg") no-repeat scroll 0% 0%;
     background-size: contain;
