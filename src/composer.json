@@ -27,7 +27,8 @@
         "dflydev/markdown": "1.0.*@dev",
         "ircmaxell/password-compat": "v1.0.4",
         "phpmailer/phpmailer": "5.2.4",
-        "mustangostang/spyc": "0.5.1"
+        "mustangostang/spyc": "0.5.1",
+        "stripe/stripe-php": "2.1.1"
     },
     "suggest": {
         "ext-gettext": "*"

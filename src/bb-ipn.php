@@ -45,7 +45,7 @@ try {
     $output = $service->createAndProcess($ipn);
     $res = array('result'=>$output, 'error'=>null);
 } catch(Exception $e) {
-    $res = array('result'=>null, 'error'=>$e->getMessage());
+    $res = array('result'=>null, 'error'=> array('message' => $e->getMessage()));
     $output = false;
 }
 

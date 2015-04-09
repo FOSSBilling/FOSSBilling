@@ -1,4 +1,10 @@
 var bb = {
+    event: function(name, params){
+        var event = new CustomEvent(name, { detail: params });
+        // Dispatch/Trigger/Fire the event
+        document.dispatchEvent(event);
+    },
+
     post: function(url, params, jsonp) {
         $.ajax({
             type: "POST",
@@ -12,6 +18,7 @@ var bb = {
             success: function(data) {
                 if(data.error) {
                     $('.wait').hide();
+                    bb.event('bb_ajax_post_message_error', data);
                     bb.msg(data.error.message, 'error');
                 } else {
                     if(typeof jsonp === 'function') {
