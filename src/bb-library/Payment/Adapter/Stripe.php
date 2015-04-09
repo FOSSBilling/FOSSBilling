@@ -214,7 +214,8 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
                     }
                   </script>
                   <script>
-                    $(document).ready ( function(){
+
+                    function openHandler(){
                         handler.open({
                                name: ":name",
                                description: ":description" ,
@@ -222,7 +223,15 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
                                email: ":email" ,
                                currency: ":currency"
                         });
+                    };
+                    $(document).ready ( function(){
+                        openHandler();
                     });
+
+                    document.addEventListener("bb_ajax_post_message_error", function(e) {
+                        openHandler();
+                    });
+
 
                   </script>
                 </form>';
