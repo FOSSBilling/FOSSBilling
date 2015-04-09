@@ -43,7 +43,6 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
     {
         return array(
             'supports_one_time_payments'   =>  true,
-            'supports_subscriptions'     =>  true,
             'description'     =>  ' You authenticate to the Stripe API by providing one of your API keys in the request. You can manage your API keys from your account.',
             'form'  => array(
                 'test_api_key' => array('text', array(
@@ -180,7 +179,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
     /**
      * @param string $url
      */
-    private function _generateForm(Model_Invoice $invoice)
+    protected function _generateForm(Model_Invoice $invoice)
     {
         $pubKey = $this->config['pub_key'];
         if ($this->config['test_mode']){
