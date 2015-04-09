@@ -1,6 +1,7 @@
 Release 4.17
 ------------------------------------------------------------------------------
 * Send email notification to helpdesk email address (created new mod_support_helpdesk_ticket_open email template)
+* Added Stripe payment adapter
 
 Release 4.16
 ------------------------------------------------------------------------------
