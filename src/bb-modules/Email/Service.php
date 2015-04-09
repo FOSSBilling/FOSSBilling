@@ -152,7 +152,7 @@ class Service implements \Box\InjectionAwareInterface
         $db = $this->di['db'];
 
         $t  = $db->findOne('EmailTemplate', 'action_code = :action', array(':action' => $data['code']));
-        if (!is_object($t)) {
+        if (!$t instanceof \Model_EmailTemplate) {
 
             list($s, $c, $desc, $enabled, $mod) = $this->_getDefaults($data);
             $t              = $db->dispense('EmailTemplate');
