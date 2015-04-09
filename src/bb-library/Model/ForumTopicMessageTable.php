@@ -253,15 +253,8 @@ class Model_ForumTopicMessageTable implements \Box\InjectionAwareInterface
 
     public function toApiArray(Model_ForumTopicMessage $model, $deep = false, $identity = null)
     {
-        $topic = null;
-        $forum = null;
         $topic = $this->di['db']->load('ForumTopic', $model->forum_topic_id);
-
-        if ($topic instanceof Model_ForumTopic) {
-            if ($topic->Forum instanceof Model_Forum) {
-                $topic = $this->di['db']->load('Forum', $topic->forum_id);
-            }
-        }
+        $forum = $this->di['db']->load('Forum', $topic->forum_id);
 
         $data = array(
             'id'             => $model->id,
@@ -272,17 +265,9 @@ class Model_ForumTopicMessageTable implements \Box\InjectionAwareInterface
             'author'         => $this->getAuthorDetails($model),
         );
 
-        if ($forum) {
-            $data['forum_slug'] = $forum->slug;
-        } else {
-            $data['forum_slug'] = null;
-        }
+        $data['forum_slug']       = ($forum) ? $forum->slug : null;
+        $data['forum_topic_slug'] = ($topic) ? $topic->slug : null;
 
-        if ($topic) {
-            $data['forum_topic_slug'] = $topic->slug;
-        } else {
-            $data['forum_topic_slug'] = null;
-        }
 
         if ($identity instanceof Model_Admin) {
             $data['ip'] = $model->ip;
