@@ -181,7 +181,7 @@ class Payment_Adapter_StripeTest extends PHPUnit_Framework_TestCase {
             )
         );
 
-        $exceptionMock = $this->getMockBuilder('\Stripe\Error\Card')->disableOriginalConstructor()->getMock();
+        $exceptionMock = $this->getMockBuilder('Stripe\\Error\\Card')->disableOriginalConstructor()->getMock();
         $exceptionMock->expects($this->atLeastOnce())
             ->method('getJsonBody')
             ->willReturn($bodyArr);
