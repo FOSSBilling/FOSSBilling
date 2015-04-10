@@ -223,8 +223,8 @@ class Service implements InjectionAwareInterface
             $productPayment->type = $data['pricing']['type'];
 
             if ($data['pricing']['type'] == \Model_ProductPayment::ONCE) {
-                $productPayment->once_setup_price = $data['pricing']['once']['setup'];
-                $productPayment->once_price       = $data['pricing']['once']['price'];
+                $productPayment->once_setup_price = (float)$data['pricing']['once']['setup'];
+                $productPayment->once_price       = (float)$data['pricing']['once']['price'];
             }
 
             if ($data['pricing']['type'] == \Model_ProductPayment::RECURRENT) {
