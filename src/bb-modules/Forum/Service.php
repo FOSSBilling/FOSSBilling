@@ -288,7 +288,7 @@ class Service implements InjectionAwareInterface
 
         $mod = $di['mod']('forum');
         $config = $mod->getConfig();
-        $points = isset($config['points']) ? $config['points'] : 0 ;
+        $points = $di['array_get']($config, 'points', 0);
         $points_forums = isset($config['points_forums']) ? $config['points_forums'] : array() ;
         
         if(isset($config['forum_points_enable']) 
