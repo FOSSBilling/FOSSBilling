@@ -50,11 +50,23 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('ID or slug is missing');
         }
 
-        $id      = $this->di['array_get']($data, 'id', NULL);
-        $service = $this->getService();
-        $model   = $this->di['db']->getExistingModelById('Post', $id, 'News item not found');
+        $id   = $this->di['array_get']($data, 'id');
+        $slug = $this->di['array_get']($data, 'slug');
 
-        return $service->toApiArray($model, 'admin');
+        $model = null;
+        if ($id) {
+            $model = $this->di['db']->load('Post', $id);
+        } else {
+            if (!empty($slug)) {
+                $model = $this->di['db']->findOne('Post', 'slug = :slug', array('slug' => $slug));
+            }
+        }
+
+        if (!$model instanceof \Model_Post) {
+            throw new \Box_Exception('News item not found');
+        }
+
+        return $this->getService()->toApiArray($model, 'admin');
     }
 
     /**
