@@ -399,20 +399,11 @@ class Service implements InjectionAwareInterface
 
     public function update(\Model_ServiceLicense $s, array $data)
     {
-        $s->plugin = $this->di['array_get']($data, 'plugin', $s->plugin);
-        if(isset($data['validate_ip'])) {
-            $s->validate_ip = (bool)$data['validate_ip'];
-        }
-        if(isset($data['validate_host'])) {
-            $s->validate_host = (bool)$data['validate_host'];
-        }
-        if(isset($data['validate_path'])) {
-            $s->validate_path = (bool)$data['validate_path'];
-        }
-        if(isset($data['validate_version'])) {
-            $s->validate_version = (bool)$data['validate_version'];
-        }
-
+        $s->plugin           = $this->di['array_get']($data, 'plugin', $s->plugin);
+        $s->validate_ip      = (bool)$this->di['array_get']($data, 'validate_ip', $s->validate_ip);
+        $s->validate_host    = (bool)$this->di['array_get']($data, 'validate_host', $s->validate_host);
+        $s->validate_path    = (bool)$this->di['array_get']($data, 'validate_path', $s->validate_path);
+        $s->validate_version = (bool)$this->di['array_get']($data, 'validate_version', $s->validate_version);
         if(isset($data['license_key']) && !empty($data['license_key'])) {
             $s->license_key = $data['license_key'];
         }

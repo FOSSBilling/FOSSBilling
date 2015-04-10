@@ -41,8 +41,8 @@ class Model_ForumTopicMessageTable implements \Box\InjectionAwareInterface
         $search         = (isset($data['q']) && !empty($data['q'])) ? $data['q'] : NULL;
         $search2        = (isset($data['search']) && !empty($data['search'])) ? $data['search'] : NULL;
         $forum_topic_id = (isset($data['forum_topic_id']) && !empty($data['forum_topic_id'])) ? $data['forum_topic_id'] : NULL;
-        $forum_id       = isset($data['forum_id']) ? $data['forum_id'] : NULL;
-        $client_id      = isset($data['client_id']) ? $data['client_id'] : NULL;
+        $forum_id       = $this->di['array_get']($data, 'forum_id', NULL); 
+        $client_id      = $this->di['array_get']($data, 'client_id', NULL); 
 
         $where = $bindings = array();
 

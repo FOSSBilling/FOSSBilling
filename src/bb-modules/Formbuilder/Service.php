@@ -85,9 +85,9 @@ class Service implements InjectionAwareInterface
         $formId = $field['form_id'];
         $types = $this->getFormFieldsTypes();
         $type = $field["type"];
-        $label = isset($field['label']) ? $field['label'] : $types[$type] . " " . $field_number;
-        $name = isset($field['name']) ? $field['name'] : ($this->slugify("new_" . $type) . "_" . $field_number);
 
+        $label = $this->di['array_get']($field, 'label', $types[$type] . " " . $field_number);
+        $name  = $this->di['array_get']($field, 'name', ($this->slugify("new_" . $type) . "_" . $field_number));
 
         if ($type == "select" || $type == "checkbox" || $type == "radio") {
             $field['options'] = '{"First option":"1", "Second option": "2", "Third option":"3"}';

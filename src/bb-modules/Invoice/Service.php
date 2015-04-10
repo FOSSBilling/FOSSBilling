@@ -448,14 +448,8 @@ class Service implements InjectionAwareInterface
         $model->approved = 0;
 
         $model->gateway_id = $this->di['array_get']($data, 'gateway_id', $model->gateway_id);
-        if(isset($data['text_1'])) {
-            $model->text_1 = $data['text_1'];
-        }
-
-        if(isset($data['text_2'])) {
-            $model->text_2 = $data['text_2'];
-        }
-
+        $model->text_1 = $this->di['array_get']($data, 'text_1', $model->text_1);
+        $model->text_2 = $this->di['array_get']($data, 'text_2', $model->text_2);
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $invoiceId = $this->di['db']->store($model);;

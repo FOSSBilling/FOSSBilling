@@ -1050,34 +1050,19 @@ class Service implements \Box\InjectionAwareInterface
 
     public function updateDomain(\Model_ServiceDomain $s, $data)
     {
-        if (isset($data['ns1'])) {
-            $s->ns1 = $data['ns1'];
-        }
+        $s->ns1 = $this->di['array_get']($data, 'ns1', $s->ns1);
+        $s->ns2 = $this->di['array_get']($data, 'ns2', $s->ns2);
+        $s->ns3 = $this->di['array_get']($data, 'ns3', $s->ns3);
+        $s->ns4 = $this->di['array_get']($data, 'ns4', $s->ns4);
 
-        if (isset($data['ns2'])) {
-            $s->ns2 = $data['ns2'];
-        }
+        $s->period  = (int)$this->di['array_get']($data, 'period', $s->period);
+        $s->privacy = (bool)$this->di['array_get']($data, 'privacy', $s->privacy);
+        $s->locked  = (bool)$this->di['array_get']($data, 'locked', $s->locked);
 
-        if (isset($data['ns3'])) {
-            $s->ns3 = $data['ns3'];
-        }
 
-        if (isset($data['ns4'])) {
-            $s->ns4 = $data['ns4'];
-        }
-
-        if (isset($data['period'])) {
-            $s->period = (int)$data['period'];
-        }
-
-        if (isset($data['privacy'])) {
-            $s->privacy = (bool)$data['privacy'];
-        }
-
-        if (isset($data['locked'])) {
-            $s->locked = (bool)$data['locked'];
-        }
-
+        $s->period = (int)$this->di['array_get']($data, 'period', $s->period);
+        $s->privacy = (bool)$this->di['array_get']($data, 'privacy', $s->privacy);
+        $s->locked = (bool)$this->di['array_get']($data, 'locked', $s->locked);
         $s->transfer_code = $this->di['array_get']($data, 'transfer_code', $s->transfer_code);
         $s->updated_at = date('Y-m-d H:i:s');
 

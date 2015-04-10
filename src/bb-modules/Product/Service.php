@@ -285,15 +285,12 @@ class Service implements InjectionAwareInterface
         $form_id = $this->di['array_get']($data, 'form_id', $model->form_id);
 
         $model->product_category_id = $this->di['array_get']($data, 'product_category_id', $model->product_category_id);
-        $model->form_id             = empty($form_id) ? null: $form_id;
+        $model->form_id             = empty($form_id) ? null : $form_id;
         $model->icon_url            = $this->di['array_get']($data, 'icon_url', $model->icon_url);
         $model->status              = $this->di['array_get']($data, 'status', $model->status);
-        if (isset($data['hidden'])) {
-            $model->hidden = (int)$data['hidden'];
-        }
-
-        $model->slug  = $this->di['array_get']($data, 'slug', $model->slug);
-        $model->setup = $this->di['array_get']($data, 'setup', $model->setup);
+        $model->hidden              = (int)$this->di['array_get']($data, 'hidden', $model->hidden);
+        $model->slug                = $this->di['array_get']($data, 'slug', $model->slug);
+        $model->setup               = $this->di['array_get']($data, 'setup', $model->setup);
         if (isset($data['upgrades']) && is_array($data['upgrades'])) {
             $model->upgrades = json_encode($data['upgrades']);
         } elseif (isset($data['upgrades']) && empty($data['upgrades'])) {
