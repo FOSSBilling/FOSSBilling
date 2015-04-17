@@ -386,6 +386,12 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             ->method('getConfig')
             ->will($this->returnValue($confArr));
 
+        $model = new \Model_ServiceHosting();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getOrderService')
+            ->will($this->returnValue($model));
+
         $hostingServerModel = new \Model_ServiceHostingServer();
         $hostingServerModel->loadBean(new \RedBeanPHP\OODBBean());
         $hostingPlansModel = new \Model_ServiceHostingHp();
@@ -413,8 +419,22 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 
-        $this->service->setDi($di);
-        $this->service->action_uncancel($orderModel);
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
+            ->setMethods(array('_getAM'))
+            ->getMock();
+
+        $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
+        $serverManagerMock->expects($this->atLeastOnce())
+            ->method('createAccount');
+        $AMresultArray = array($serverManagerMock, new \Server_Account());
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('_getAM')
+            ->will($this->returnValue($AMresultArray));
+
+
+        $serviceMock->setDi($di);
+        $serviceMock->action_uncancel($orderModel);
     }
 
     public function testaction_delete()
