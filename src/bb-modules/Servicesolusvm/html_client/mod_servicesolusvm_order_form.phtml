@@ -29,7 +29,7 @@
         <label>{% trans 'OS template' %} </label>
             <div class="controls">
             <select name="template">
-                {% for t in guest.servicesolusvm_get_templates %}
+                {% for t in guest.servicesolusvm_get_templates({"type" : product.config.vtype}) %}
                 <option value="{{t}}">{{ t|title }}</option>
                 {% endfor %}
             </select>

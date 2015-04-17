@@ -578,8 +578,15 @@ class Service implements InjectionAwareInterface
     public function getTemplates($type)
     {
         $templates = $this->_getApi()->listtemplates($type);
-        $list      = explode(',', $templates['templates']);
-        $res       = array();
+        $list = explode(',', $templates['templates']);
+        if($type == 'kvm' && isset($templates['templateskvm'])) {
+            $list = explode(',', $templates['templateskvm']);
+        }
+        if($type == 'xen hvm' && isset($templates['templateshvm'])) {
+            $list = explode(',', $templates['templateshvm']);
+        }
+
+        $res = array();
         foreach ($list as $p) {
             $res[$p] = $p;
         }
