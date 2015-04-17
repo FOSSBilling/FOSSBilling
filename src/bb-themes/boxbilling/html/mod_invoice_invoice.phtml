@@ -44,7 +44,13 @@
             <div class="box">
                 <div class="block" style="text-align: right;">
                     <h2>{% trans 'Invoice' %} {{ invoice.serie_nr }}</h2>
-                    <p>{{ invoice.created_at|bb_date }}</p>
+                    <p>
+                        {% if invoice.paid_at %}
+                        {{ invoice.paid_at | bb_date }}
+                        {% else %}
+                        {{ invoice.created_at | bb_date }}
+                        {% endif %}
+                    </p>
 
                     <h2 class="invoice_{{invoice.status }}">{% if invoice.status == 'unpaid' %}{% trans 'Unpaid' %}{% else %}{% trans 'Paid' %}{% endif %}</h2>
                 </div>

@@ -1222,8 +1222,9 @@ class Service implements InjectionAwareInterface
         }
 
         $localeDateFormat = $this->di['config']['locale_date_format'];
+        $invoiceDate = strftime($localeDateFormat, strtotime( $this->di['array_get']($invoice, 'due_at', $invoice['created_at']) ));
         $invoice_info = __("Invoice number: ") . $invoice['nr'] . "\n" .
-            __("Invoice date: ") . strftime($localeDateFormat, strtotime($invoice['created_at'])) . "\n" .
+            __("Invoice date: ") . $invoiceDate . "\n" .
             __("Due date: ") . strftime($localeDateFormat, strtotime($invoice['due_at'])) . "\n" .
             __("Invoice status: ") . $invoice['status'];
         $pdf->SetFont('DejaVu', 'B', $font_size);
