@@ -215,6 +215,10 @@ class Service implements InjectionAwareInterface
     public function action_uncancel(\Model_ClientOrder $order)
     {
         $this->action_create($order);
+        $orderService = $this->di['mod_service']('order');
+        $model = $orderService->getOrderService($order);
+        list($adapter, $account) = $this->_getAM($model);
+        $adapter->createAccount($account);
         return true;
     }
 
@@ -237,13 +241,13 @@ class Service implements InjectionAwareInterface
 
     public function changeAccountPlan(\Model_ClientOrder $order, \Model_ServiceHosting $model, \Model_ServiceHostingHp $hp)
     {
+        $model->service_hosting_hp_id = $hp->id;
         if($this->_performOnService($order)){
             $package = $this->getServerPackage($hp);
             list($adapter, $account) = $this->_getAM($model);
             $adapter->changeAccountPackage($account, $package);
         }
 
-        $model->service_hosting_hp_id = $hp->id;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Changed hosting plan of account #%s', $model->id);
