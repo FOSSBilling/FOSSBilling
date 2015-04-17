@@ -19,8 +19,8 @@
 /**
  *
  * Plesk server manager
- * Min version: 9.0
- * @see http://download1.parallels.com/Plesk/PP10/10.1.1/Doc/en-US/online/plesk-api-rpc/index.htm
+ * Min version: 12.0
+ * @see http://download1.parallels.com/Plesk/Doc/en-US/online/plesk-api-rpc/
  *
  */
 class Server_Manager_Plesk extends Server_Manager
@@ -29,8 +29,7 @@ class Server_Manager_Plesk extends Server_Manager
         if (!extension_loaded('curl')) {
             throw new Server_Exception('cURL extension is not enabled');
         }
-        
-        $this->_config['version'] = '1.6.0.0';
+
 	}
 
     public static function getForm()
@@ -42,11 +41,11 @@ class Server_Manager_Plesk extends Server_Manager
 
 	public function getLoginUrl()
 	{
-		if ($this->_config['secure']) {
-        	return 'http://'.$this->_config['host'] . ':8443/enterprise/control/agent.php';
-		} else {
-			return 'https://'.$this->_config['host'] . ':8443/enterprise/control/agent.php';
-		}
+        $protocol = 'https://';
+		if (!$this->_config['secure']) {
+            $protocol = 'http://';
+        }
+        return $protocol.$this->_config['host'] . ':8443/enterprise/control/agent.php';
 	}
 
     public function getResellerLoginUrl()
@@ -64,30 +63,15 @@ class Server_Manager_Plesk extends Server_Manager
     		),
     	);
 
-    	$params = array(
-    		'client'	=>	array(
-    			'get'	=>	array(
-    				'filter'	=>	'',
-    				'dataset'	=>	array(
-    					'stat'	=>	'',
-    				),
-    			),
-    		),
-    	);
+        $response = $this->_makeRequest($params);
 
-    	$response = $this->_makeRequest($params);
-
-    	if (isset($response->client->get->result->status) && $response->client->get->result->status == 'error') {
+        if (isset($response->server->get->result->status) && $response->server->get->result->status == 'error') {
     		throw new Server_Exception('Plesk error: ' . $response->client->get->result->errcode . ' - ' .
     									   $response->client->get->result->errtext);
     	}
 
-    	if (isset($response->system->status) && $response->system->status == 'error') {
-    		throw new Server_Exception('Plesk error: ' . $response->system->errcode . ' - ' .
-    									   $response->system->errtext);
-    	}
 
-    	if (isset($response->client->get->result->status) && $response->client->get->result->status == 'ok') {
+    	if (isset($response->server->get->result->status) && $response->server->get->result->status == 'ok') {
     			return true;
     	}
 
@@ -130,18 +114,11 @@ class Server_Manager_Plesk extends Server_Manager
     	} else {
             $client->setId((string)$id);
     	}
-
-    	$this->_setPermissions($a);
-    	$this->_setLimits($a);
+        $this->setSubscription($a);
 
     	if ($a->getReseller()) {
     		$this->_setIp($a);
     		$this->_changeIpType($a);
-    	}
-
-    	$domainId = $this->_addDomain($a);
-    	if (!$domainId) {
-    		throw new Server_Exception('Failed to add domain');
     	}
 
     	if ($a->getReseller()) {
@@ -151,13 +128,302 @@ class Server_Manager_Plesk extends Server_Manager
     	return true;
     }
 
+    public function setSubscription(Server_Account $a)
+    {
+        $p = $a->getPackage();
+        $params = array (
+            'webspace'	=>	array(
+                'add'	=>	array(
+                    'gen_setup'	=>	array(
+                        'name' => $a->getDomain(),
+                        'owner-login'	=>	$a->getUsername(),
+                        'htype'			=>	'vrt_hst',
+                        'ip_address' => $a->getIp()
+                    ),
+                    'hosting' => array(
+                        'vrt_hst'	=>	array(
+                            'property1'	=>	array(
+                                'name'	=>	'ftp_login',
+                                'value'	=>	$a->getUsername(),
+                            ),
+                            'property2'	=>	array(
+                                'name'	=>	'ftp_password',
+                                'value'	=>	$a->getPassword(),
+                            ),
+                            'property3'	=>	array(
+                                'name'	=>	'php',
+                                'value'	=>	$p->getHasPhp(),
+                            ),
+                            'property4'	=>	array(
+                                'name'	=>	'ssl',
+                                'value'	=>	$p->getHasSsl(),
+                            ),
+                            'property5'	=>	array(
+                                'name'	=>	'cgi',
+                                'value'	=>	$p->getHasCgi(),
+                            ),
+                            'ip_address' => $a->getIp(),
+                        ),
+                    ),
+                    'limits'	=>	array(
+                        //The max_db node is optional. Specifies the maximum number of MySQL databases available for the client. Data type: string.
+                        'limit1'	=>	array(
+                            'name'	=>	'max_db',
+                            'value'	=>	$p->getMaxSql() ? $p->getMaxSql() : 0,
+                        ),	//The max_maillists node is optional. Specifies the maximum number of mailing lists available for the client. Data type: string.
+                        'limit2'	=>	array(
+                            'name'	=>	'max_maillists',
+                            'value'	=>	$p->getMaxEmailLists() ? $p->getMaxEmailLists() : 0,
+                        ),	//The max_box node is optional. Specifies the maximum number of mailboxes allowed for the client. Data type: string.
+                        'limit3' =>	array(
+                            'name'	=>	'max_box',
+                            'value'	=>	$p->getMaxPop() ? $p->getMaxPop() : 0,
+                        ),	//The max_traffic node is optional. Specifies the limit (in bytes) on the traffic for the client. Data type: string.
+                        'limit4' =>	array(
+                            'name'	=>	'max_traffic',
+                            'value'	=>	$p->getBandwidth() ? $p->getBandwidth() * 1024 * 1024: 0,
+                        ),	//The disk_space node is optional. Specifies the limit on disk space (in bytes) for the client. Data type: string.
+                        'limit5' =>	array(
+                            'name'	=>	'disk_space',
+                            'value'	=>	$p->getQuota() ? $p->getQuota() * 1024 * 1024 : 0,
+                        ),	//The max_subdom node is optional. Specifies the maximum number of subdomains available for the client. Data type: string.
+                        'limit6' =>	array(
+                            'name'	=>	'max_subdom',
+                            'value'	=>	$p->getMaxSubdomains() ? $p->getMaxSubdomains() : 0,
+                        ),	//The max_dom node is optional. Specifies the limit on the number of domains for the client. Data type: string.
+                        'limit7' => array(
+                            'name'	=>	'max_subftp_users',
+                            'value'	=>	$p->getMaxFtp() ? $p->getMaxFtp() : 0,
+                        ),
+                    ),
+                    'permissions'	=>	array(
+                        //The manage_subdomains node is optional. It allows/disallows the client to manage subdomains. Data type: Boolean.
+                        'permission1'	=>	array(
+                            'name'	=>	'manage_subdomains',
+                            'value'	=>	$p->getMaxSubdomains() ? 'true' : 'false',
+                        ),	//The change_limits node is optional. It allows/disallows the client to change the domain limits. Data type: Boolean.
+                        'permission3'	=>	array(
+                            'name'	=>	'manage_dns',
+                            'value'	=>	'true'
+                        ),	//The manage_crontab node is optional. It allows/disallows the client to manage the task scheduler. Data type: Boolean.
+                        'permission4'	=>	array(
+                            'name'	=>	'manage_crontab',
+                            'value'	=>	$p->getHasCron() ? 'true' : 'false',
+                        ),	//The manage_anonftp node is optional. It allows/disallows the client to manage Anonymous FTP. Data type: Boolean.
+                        'permission5'	=>	array(
+                            'name'	=>	'manage_anonftp',
+                            'value'	=>	$p->getHasAnonymousFtp() ? 'true' : 'false',
+                        ),	//The manage_sh_access node is optional. It allows/disallows the client to use shell access and provide it to users. Data type: Boolean.
+                        'permission6'	=>	array(
+                            'name'	=>	'manage_sh_access',
+                            'value'	=>	$p->getHasShell() ? 'true' : 'false',
+                        ),	//The manage_maillists node is optional. It allows/disallows the client to manage mailing lists. Data type: Boolean.
+                        'permission7'	=>	array(
+                            'name'	=>	'manage_maillists',
+                            'value'	=>	$p->getMaxEmailLists() ? 'true' : 'false',
+                        ),
+                        'permission8'	=>	array(
+                            'name'	=>	'remote_access_interface',
+                            'value'	=>	'true'
+                        ),	//The create_domains node is optional. It allows/disallows the client to create domains. Data type: Boolean.
+                        'permission9'	=>	array(
+                            'name'	=>	'create_domains',
+                            'value'	=>	'true',
+                        ),	//The manage_phosting node is optional. It allows/disallows the client to manage physical hosting. Data type: Boolean.
+                        'permission10'	=>	array(
+                            'name'	=>	'manage_phosting',
+                            'value'	=>	'true',
+                        ),	//The manage_quota node is optional. It allows/disallows the client to change the hard disk limit. Data type: Boolean.
+                        'permission11'	=>	array(
+                            'name'	=>	'manage_quota',
+                            'value'	=>	$a->getReseller() ? 'true' : 'false',
+                        ),	//The manage_not_chroot_shell node is optional. It allows/disallows the client to manage shell without changing the mount point of the UNIX root. Data type: Boolean.
+                        'permission12'	=>	array(
+                            'name'	=>	'manage_not_chroot_shell',
+                            'value'	=>	$p->getHasShell() ? 'true' : 'false',
+                        ),	//The manage_domain_aliases node is optional. It allows/disallows the client to manage domain aliases. Is used in Plesk for UNIX only. Data type: Boolean. Supported in API RPC 1.4.0.0 and higher.
+                        'permission13'	=>	array(
+                            'name'	=>	'manage_domain_aliases',
+                            'value'	=>	'true',
+                        ),	//The manage_subftp node is optional. It allows/disallows the client to manage additional FTP accounts (with access to the specified domain folders only) created on domains. Data type: Boolean. Supported beginning with version 1.4.1.0 of API RPC.
+                        'permission14'	=>	array(
+                            'name'	=>	'manage_subftp',
+                            'value'	=>	$p->getMaxFtp() ? 'true' : 'false',
+                        ),	//The manage_spamfilter node is optional. It allows/disallows Plesk Client to manage spam filter settings. Data type: Boolean. Makes sense for Plesk for UNIX only. The feature is supported by API RPC 1.4.2.0 and later.
+                        'permission15'	=>	array(
+                            'name'	=>	'manage_spamfilter',
+                            'value'	=>	$p->getHasSpamFilter() ? 'true' : 'false',
+                        ),
+                        'permission16'	=>	array(
+                            'name'	=>	'create_clients',
+                            'value'	=>	$a->getReseller() ? 'true' : 'false',
+                        ),
+                    ),
+                ),
+            ),
+        );
+
+        $response = $this->_makeRequest($params);
+        if (isset($response->system->status) && $response->system->status == 'error') {
+            throw new Server_Exception('Plesk error: ' . $response->system->errcode . ' - ' .
+                $response->system->errtext);
+        }
+
+    }
+
+    public function createServicePlan(Server_Account $a)
+    {
+        
+    }
+
+    public function updateSubscription(Server_Account $a)
+    {
+        $p      = $a->getPackage();
+        $params = array(
+            'webspace' => array(
+                'set' => array(
+                    'filter' => array(
+                        'name' => $a->getDomain(),
+                    ),
+                    'values' => array(
+                        'limits'      => array(
+                            //The max_db node is optional. Specifies the maximum number of MySQL databases available for the client. Data type: string.
+                            'limit1' => array(
+                                'name'  => 'max_db',
+                                'value' => $p->getMaxSql() ? $p->getMaxSql() : 0,
+                            ),    //The max_maillists node is optional. Specifies the maximum number of mailing lists available for the client. Data type: string.
+                            'limit2' => array(
+                                'name'  => 'max_maillists',
+                                'value' => $p->getMaxEmailLists() ? $p->getMaxEmailLists() : 0,
+                            ),    //The max_box node is optional. Specifies the maximum number of mailboxes allowed for the client. Data type: string.
+                            'limit3' => array(
+                                'name'  => 'max_box',
+                                'value' => $p->getMaxPop() ? $p->getMaxPop() : 0,
+                            ),    //The max_traffic node is optional. Specifies the limit (in bytes) on the traffic for the client. Data type: string.
+                            'limit4' => array(
+                                'name'  => 'max_traffic',
+                                'value' => $p->getBandwidth() ? $p->getBandwidth() * 1024 * 1024 : 0,
+                            ),    //The disk_space node is optional. Specifies the limit on disk space (in bytes) for the client. Data type: string.
+                            'limit5' => array(
+                                'name'  => 'disk_space',
+                                'value' => $p->getQuota() ? $p->getQuota() * 1024 * 1024 : 0,
+                            ),    //The max_subdom node is optional. Specifies the maximum number of subdomains available for the client. Data type: string.
+                            'limit6' => array(
+                                'name'  => 'max_subdom',
+                                'value' => $p->getMaxSubdomains() ? $p->getMaxSubdomains() : 0,
+                            ),    //The max_dom node is optional. Specifies the limit on the number of domains for the client. Data type: string.
+                            'limit7' => array(
+                                'name'  => 'max_subftp_users',
+                                'value' => $p->getMaxFtp() ? $p->getMaxFtp() : 0,
+                            ),
+                        ),
+                        'hosting'     => array(
+                            'vrt_hst' => array(
+                                'property1'  => array(
+                                    'name'  => 'ftp_login',
+                                    'value' => $a->getUsername(),
+                                ),
+                                'property2'  => array(
+                                    'name'  => 'ftp_password',
+                                    'value' => $a->getPassword(),
+                                ),
+                                'ip_address' => $a->getIp(),
+                            ),
+                        ),
+                        'permissions' => array(
+                            //The manage_subdomains node is optional. It allows/disallows the client to manage subdomains. Data type: Boolean.
+                            'permission1'  => array(
+                                'name'  => 'manage_subdomains',
+                                'value' => $p->getMaxSubdomains() ? 'true' : 'false',
+                            ),    //The change_limits node is optional. It allows/disallows the client to change the domain limits. Data type: Boolean.
+                            'permission3'  => array(
+                                'name'  => 'manage_dns',
+                                'value' => 'true'
+                            ),    //The manage_crontab node is optional. It allows/disallows the client to manage the task scheduler. Data type: Boolean.
+                            'permission4'  => array(
+                                'name'  => 'manage_crontab',
+                                'value' => $p->getHasCron() ? 'true' : 'false',
+                            ),    //The manage_anonftp node is optional. It allows/disallows the client to manage Anonymous FTP. Data type: Boolean.
+                            'permission5'  => array(
+                                'name'  => 'manage_anonftp',
+                                'value' => $p->getHasAnonymousFtp() ? 'true' : 'false',
+                            ),    //The manage_sh_access node is optional. It allows/disallows the client to use shell access and provide it to users. Data type: Boolean.
+                            'permission6'  => array(
+                                'name'  => 'manage_sh_access',
+                                'value' => $p->getHasShell() ? 'true' : 'false',
+                            ),    //The manage_maillists node is optional. It allows/disallows the client to manage mailing lists. Data type: Boolean.
+                            'permission7'  => array(
+                                'name'  => 'manage_maillists',
+                                'value' => $p->getMaxEmailLists() ? 'true' : 'false',
+                            ),
+                            'permission9'  => array(
+                                'name'  => 'create_domains',
+                                'value' => 'true',
+                            ),    //The manage_phosting node is optional. It allows/disallows the client to manage physical hosting. Data type: Boolean.
+                            'permission10' => array(
+                                'name'  => 'manage_phosting',
+                                'value' => 'true',
+                            ),    //The manage_quota node is optional. It allows/disallows the client to change the hard disk limit. Data type: Boolean.
+                            'permission11' => array(
+                                'name'  => 'manage_quota',
+                                'value' => $a->getReseller() ? 'true' : 'false',
+                            ),    //The manage_not_chroot_shell node is optional. It allows/disallows the client to manage shell without changing the mount point of the UNIX root. Data type: Boolean.
+                            'permission12' => array(
+                                'name'  => 'manage_not_chroot_shell',
+                                'value' => $p->getHasShell() ? 'true' : 'false',
+                            ),    //The manage_domain_aliases node is optional. It allows/disallows the client to manage domain aliases. Is used in Plesk for UNIX only. Data type: Boolean. Supported in API RPC 1.4.0.0 and higher.
+                            'permission13' => array(
+                                'name'  => 'manage_domain_aliases',
+                                'value' => 'true',
+                            ),    //The manage_subftp node is optional. It allows/disallows the client to manage additional FTP accounts (with access to the specified domain folders only) created on domains. Data type: Boolean. Supported beginning with version 1.4.1.0 of API RPC.
+                            'permission14' => array(
+                                'name'  => 'manage_subftp',
+                                'value' => $p->getMaxFtp() ? 'true' : 'false',
+                            ),    //The manage_spamfilter node is optional. It allows/disallows Plesk Client to manage spam filter settings. Data type: Boolean. Makes sense for Plesk for UNIX only. The feature is supported by API RPC 1.4.2.0 and later.
+                            'permission15' => array(
+                                'name'  => 'manage_spamfilter',
+                                'value' => $p->getHasSpamFilter() ? 'true' : 'false',
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        );
+
+        $response = $this->_makeRequest($params);
+        if (isset($response->system->status) && $response->system->status == 'error') {
+            throw new Server_Exception('Plesk error: ' . $response->system->errcode . ' - ' .
+                $response->system->errtext);
+        }
+    }
+
+    public function deleteSubscription(Server_Account $a)
+    {
+        $params = array (
+            'webspace'	=>	array(
+                'del'	=>	array(
+                    'filter' => array(
+                        'name' => $a->getDomain(),
+                    ),
+                ),
+            ),
+        );
+
+        $response = $this->_makeRequest($params);
+        if (isset($response->system->status) && $response->system->status == 'error') {
+            throw new Server_Exception('Plesk error: ' . $response->system->errcode . ' - ' .
+                $response->system->errtext);
+        }
+
+    }
+
     public function suspendAccount(Server_Account $a, $suspend = true)
     {
     	if ($a->getReseller()) {
     		$type = 'reseller';
     		$genInfo = 'gen-info';
     	} else {
-    		$type = 'client';
+    		$type = 'customer';
     		$genInfo = 'gen_info';
     	}
 
@@ -205,7 +471,7 @@ class Server_Manager_Plesk extends Server_Manager
     	if ($a->getReseller()) {
     		$type = 'reseller';
     	} else {
-    		$type = 'client';
+    		$type = 'customer';
     	}
 		$params = array(
     		$type	=>	array(
@@ -246,13 +512,8 @@ class Server_Manager_Plesk extends Server_Manager
             $client->setId($id);
     	}
 
-		$this->_setPermissions($a);
-    	$this->_setLimits($a);
-
-    	$domainId = $this->_modifyDomain($a);
-    	if (!$domainId) {
-    		throw new Server_Exception('Failed to add domain');
-    	}
+        $a->setPackage($p);
+        $this->updateSubscription($a);
 
     	if ($a->getReseller()) {
     		$this->_addNs($a, $domainId);
@@ -267,7 +528,7 @@ class Server_Manager_Plesk extends Server_Manager
     		$type = 'reseller';
     		$genInfo = 'gen-info';
     	} else {
-    		$type = 'client';
+    		$type = 'customer';
     		$genInfo = 'gen_info';
     	}
 
@@ -328,9 +589,9 @@ class Server_Manager_Plesk extends Server_Manager
     		'Content-Type: text/xml'
     	);
 
-    	$xml = $this->_arrayToXml($params, new SimpleXMLElement('<packet version="' . $this->_config['version'] . '"></packet>'))
+    	$xml = $this->_arrayToXml($params, new SimpleXMLElement('<packet />'))
     				->asXML();
-
+        error_log($xml);
     	$ch = curl_init ();
     	curl_setopt ($ch, CURLOPT_SSL_VERIFYHOST, 0);
     	curl_setopt ($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -338,9 +599,8 @@ class Server_Manager_Plesk extends Server_Manager
     	curl_setopt ($ch, CURLOPT_URL, $this->getLoginUrl());
     	curl_setopt ($ch, CURLOPT_RETURNTRANSFER, true);
     	curl_setopt ($ch, CURLOPT_TIMEOUT, 60);
+        curl_setopt ($ch, CURLOPT_POST, count($xml));
     	curl_setopt ($ch, CURLOPT_POSTFIELDS, $xml);
-    	//debug
-    	//curl_setopt($ch, CURLOPT_VERBOSE, true);
 
 		$result = curl_exec($ch);
 
@@ -352,7 +612,7 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     private function _arrayToXml(array $arr, SimpleXMLElement $xml) {
-    	$numbers = array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    	$numbers = array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17);
     	foreach ($arr as $k => $v) {
         	if (is_array($v)) {
 				$this->_arrayToXml($v, $xml->addChild(str_replace($numbers, '', $k)));
@@ -385,7 +645,7 @@ class Server_Manager_Plesk extends Server_Manager
     		$type = 'reseller';
     		$genInfo = 'gen-info';
     	} else {
-    		$type = 'client';
+    		$type = 'customer';
     		$genInfo = 'gen_info';
     	}
 
@@ -406,7 +666,6 @@ class Server_Manager_Plesk extends Server_Manager
     					'address'			=>	$client->getAddress1(),
     					'city'				=>	$client->getCity(),
     					'state'				=>	$client->getState(),
-    					'pcode'				=>	$client->getZip(),
     					'country'			=>	$client->getCountry(),
     				),
     			),
@@ -464,12 +723,12 @@ class Server_Manager_Plesk extends Server_Manager
         if ($a->getReseller()) {
     		$type = 'reseller';
     	} else {
-    		$type = 'client';
+    		$type = 'customer';
     	}
 
         $client = $a->getClient();
     	$params = array(
-    		'client'	=>	array(
+    		'customer'	=>	array(
     			'ippool_add_ip'	=>	array(
     				'client_id'		=>	$client->getId(),
     				'ip_address'	=>	$a->getIp(),
@@ -493,281 +752,6 @@ class Server_Manager_Plesk extends Server_Manager
    			return true;
    		} else {
    			return false;
-   		}
-    }
-
-    private function _setLimits(Server_Account $a) {
-    	if ($a->getReseller()) {
-    		$type = 'reseller';
-    	} else {
-    		$type = 'client';
-    	}
-
-    	$p = $a->getPackage();
-
-    	$params = array(
-    		$type	=>	array(
-    			'set'	=>	array(
-    				'filter'	=>	array(
-    					'login'	=>	$a->getUsername(),
-    				),
-    				'values'	=>	array(
-    					'limits'	=>	array(
-    							//The max_db node is optional. Specifies the maximum number of MySQL databases available for the client. Data type: string.
-    						'1limit'	=>	array(
-    							'name'	=>	'max_db',
-    							'value'	=>	$p->getMaxSql() ? $p->getMaxSql() : 0,
-    						),	//The max_maillists node is optional. Specifies the maximum number of mailing lists available for the client. Data type: string.
-    						'2limit'	=>	array(
-    							'name'	=>	'max_maillists',
-    							'value'	=>	$p->getMaxEmailLists() ? $p->getMaxEmailLists() : 0,
-    						),	//The max_box node is optional. Specifies the maximum number of mailboxes allowed for the client. Data type: string.
-    						'3limit' =>	array(
-    							'name'	=>	'max_box',
-    							'value'	=>	$p->getMaxPop() ? $p->getMaxPop() : 0,
-    						),	//The max_traffic node is optional. Specifies the limit (in bytes) on the traffic for the client. Data type: string.
-    						'4limit' =>	array(
-    							'name'	=>	'max_traffic',
-    							'value'	=>	$p->getBandwidth() ? $p->getBandwidth() * 1024 * 1024: 0,
-    						),	//The disk_space node is optional. Specifies the limit on disk space (in bytes) for the client. Data type: string.
-    						'5limit' =>	array(
-    							'name'	=>	'disk_space',
-    							'value'	=>	$p->getQuota() ? $p->getQuota() * 1024 * 1024 : 0,
-    						),	//The max_subdom node is optional. Specifies the maximum number of subdomains available for the client. Data type: string.
-    						'6limit' =>	array(
-    							'name'	=>	'max_subdom',
-    							'value'	=>	$p->getMaxSubdomains() ? $p->getMaxSubdomains() : 0,
-    						),	//The max_dom node is optional. Specifies the limit on the number of domains for the client. Data type: string.
-    						'7limit' =>	array(
-    							'name'	=>	'max_dom',
-    							'value'	=>	$p->getMaxDomains() ? $p->getMaxDomains() : -1,
-    						),
-    						'8limit' => array(
-    							'name'	=>	'max_subftp_users',
-    							'value'	=>	$p->getMaxFtp() ? $p->getMaxFtp() : 0,
-    						),
-    					),
-    				),
-    			),
-    		),
-    	);
-
-        $response = $this->_makeRequest($params);
-
-        if (isset($response->system->status) && $response->system->status == 'error') {
-    		throw new Server_Exception('Plesk error: ' . $response->system->errcode . ' - ' .
-    									   $response->system->errtext);
-   		}
-
-    	if (isset($response->{$type}->set->result->status) && $response->{$type}->set->result->status == 'error') {
-    		throw new Server_Exception('Plesk error: ' . $response->{$type}->set->result->errcode . ' - ' .
-    									   $response->{$type}->set->result->errtext);
-   		}
-
-   		if (isset($response->{$type}->set->result->status) && $response->{$type}->set->result->status == 'ok') {
-   			return true;
-   		} else {
-   			return false;
-   		}
-    }
-
-    private function _setPermissions(Server_Account $a) {
-    	if ($a->getReseller()) {
-    		$type = 'reseller';
-    	} else {
-    		$type = 'client';
-    	}
-
-    	$p = $a->getPackage();
-
-    	$params = array(
-    		$type	=>	array(
-    			'set'	=>	array(
-    				'filter'	=>	array(
-    					'login'	=>	$a->getUsername(),
-    				),
-    				'values'	=>	array(
-						'permissions'	=>	array(
-    							//The manage_subdomains node is optional. It allows/disallows the client to manage subdomains. Data type: Boolean.
-    						'1permission'	=>	array(
-    							'name'	=>	'manage_subdomains',
-    							'value'	=>	$p->getMaxSubdomains() ? 'true' : 'false',
-    						),	//The change_limits node is optional. It allows/disallows the client to change the domain limits. Data type: Boolean.
-    						'2permission'	=>	array(
-    							'name'	=>	'change_limits',
-    							'value'	=>	$a->getReseller() ? 'true' : 'false',
-    						),	//The manage_dns node is optional. It allows/disallows the client to manage DNS settings. Data type: Boolean.
-    						'3permission'	=>	array(
-    							'name'	=>	'manage_dns',
-    							'value'	=>	'true'
-    						),	//The manage_crontab node is optional. It allows/disallows the client to manage the task scheduler. Data type: Boolean.
-    						'4permission'	=>	array(
-    							'name'	=>	'manage_crontab',
-    							'value'	=>	$p->getHasCron() ? 'true' : 'false',
-    						),	//The manage_anonftp node is optional. It allows/disallows the client to manage Anonymous FTP. Data type: Boolean.
-    						'5permission'	=>	array(
-    							'name'	=>	'manage_anonftp',
-    							'value'	=>	$p->getHasAnonymousFtp() ? 'true' : 'false',
-    						),	//The manage_sh_access node is optional. It allows/disallows the client to use shell access and provide it to users. Data type: Boolean.
-    						'6permission'	=>	array(
-    							'name'	=>	'manage_sh_access',
-    							'value'	=>	$p->getHasShell() ? 'true' : 'false',
-    						),	//The manage_maillists node is optional. It allows/disallows the client to manage mailing lists. Data type: Boolean.
-    						'7permission'	=>	array(
-    							'name'	=>	'manage_maillists',
-    							'value'	=>	$p->getMaxEmailLists() ? 'true' : 'false',
-    						),
-    						'8permission'	=>	array(
-    							'name'	=>	'remote_access_interface',
-    							'value'	=>	'true'
-    						),	//The create_domains node is optional. It allows/disallows the client to create domains. Data type: Boolean.
-    						'9permission'	=>	array(
-    							'name'	=>	'create_domains',
-    							'value'	=>	'true',
-    						),	//The manage_phosting node is optional. It allows/disallows the client to manage physical hosting. Data type: Boolean.
-    						'10permission'	=>	array(
-    							'name'	=>	'manage_phosting',
-    							'value'	=>	'true',
-    						),	//The manage_quota node is optional. It allows/disallows the client to change the hard disk limit. Data type: Boolean.
-    						'11permission'	=>	array(
-    							'name'	=>	'manage_quota',
-    							'value'	=>	$a->getReseller() ? 'true' : 'false',
-    						),	//The manage_not_chroot_shell node is optional. It allows/disallows the client to manage shell without changing the mount point of the UNIX root. Data type: Boolean.
-    						'12permission'	=>	array(
-    							'name'	=>	'manage_not_chroot_shell',
-    							'value'	=>	$p->getHasShell() ? 'true' : 'false',
-    						),	//The manage_domain_aliases node is optional. It allows/disallows the client to manage domain aliases. Is used in Plesk for UNIX only. Data type: Boolean. Supported in API RPC 1.4.0.0 and higher.
-    						'13permission'	=>	array(
-    							'name'	=>	'manage_domain_aliases',
-    							'value'	=>	'true',
-    						),	//The manage_subftp node is optional. It allows/disallows the client to manage additional FTP accounts (with access to the specified domain folders only) created on domains. Data type: Boolean. Supported beginning with version 1.4.1.0 of API RPC.
-    						'14permission'	=>	array(
-    							'name'	=>	'manage_subftp',
-    							'value'	=>	$p->getMaxFtp() ? 'true' : 'false',
-    						),	//The manage_spamfilter node is optional. It allows/disallows Plesk Client to manage spam filter settings. Data type: Boolean. Makes sense for Plesk for UNIX only. The feature is supported by API RPC 1.4.2.0 and later.
-    						'15permission'	=>	array(
-    							'name'	=>	'manage_spamfilter',
-    							'value'	=>	$p->getHasSpamFilter() ? 'true' : 'false',
-    						),
-    						'16permission'	=>	array(
-    							'name'	=>	'create_clients',
-    							'value'	=>	$a->getReseller() ? 'true' : 'false',
-    						),
-    					),
-    				),
-    			),
-    		),
-    	);
-
-        $response = $this->_makeRequest($params);
-
-        if (isset($response->system->status) && $response->system->status == 'error') {
-    		throw new Server_Exception('Plesk error: ' . $response->system->errcode . ' - ' .
-    									   $response->system->errtext);
-   		}
-
-    	if (isset($response->{$type}->set->result->status) && $response->{$type}->set->result->status == 'error') {
-    		throw new Server_Exception('Plesk error: ' . $response->{$type}->set->result->errcode . ' - ' .
-    									   $response->{$type}->set->result->errtext);
-   		}
-
-   		if (isset($response->{$type}->set->result->status) && $response->{$type}->set->result->status == 'ok') {
-   			return true;
-   		} else {
-   			return false;
-   		}
-    }
-
-    private function _addDomain(Server_Account $a) {
-    	$p = $a->getPackage();
-        $client = $a->getClient();
-    	$params = array(
-    		'domain'	=>	array(
-    			'add'	=>	array(
-    				'gen_setup'	=>	array(
-    					'name'			=>	$a->getDomain(),	//The name node is required. It holds the domain name. Data type: domainName (string, 1 to 255 characters long).
-    					'status'		=>	0,					//The status node is required. It holds the current status of the specified domain. Data type: objectStatus (bitmask, plesk_common.xsd). Allowed values: 0 (active) | 4 (under backup/restore) | 16 (disabled by Plesk Administrator) | 64 (disabled by Plesk Client) | 256 (expired).
-    					'owner-id'		=>	$client->getId(),		//The client_id node is required. It holds the identifier of Plesk Client who owns this domain account. Data type: id_type (integer).
-    					'htype'			=>	'vrt_hst',			//The htype node is required. It specifies the type of hosting set on the domain. Data type: DomainHType (string). Allowed values: vrt_hst | std_fwd | frm_fwd | none.
-    					'ip_address'	=>	$a->getIp(),
-    					//'owner-login'	=>	$a->getUsername(),
-    				),
-    				'hosting'	=>	array(
-    					'vrt_hst'	=>	array(
-    						'property1'	=>	array(
-    							'name'	=>	'ftp_login',
-    							'value'	=>	$a->getUsername(),
-    						),
-    						'property2'	=>	array(
-    							'name'	=>	'ftp_password',
-    							'value'	=>	$a->getPassword(),
-    						),
-    						'property3'	=>	array(
-    							'name'	=>	'php',
-    							'value'	=>	$p->getHasPhp(),
-    						),
-    						'property4'	=>	array(
-    							'name'	=>	'ssl',
-    							'value'	=>	$p->getHasSsl(),
-    						),
-    						'property5'	=>	array(
-    							'name'	=>	'cgi',
-    							'value'	=>	$p->getHasCgi(),
-    						),
-    						'ip_address' => $a->getIp(),
-    					),
-    				),
-					'limits'	=>	array(
-    						//The max_db node is optional. Specifies the maximum number of MySQL databases available for the client. Data type: string.
-    					'1limit'	=>	array(
-    						'name'	=>	'max_db',
-    						'value'	=>	$p->getMaxSql() ? $p->getMaxSql() : 0,
-    					),	//The max_maillists node is optional. Specifies the maximum number of mailing lists available for the client. Data type: string.
-    					'2limit'	=>	array(
-    						'name'	=>	'max_maillists',
-    						'value'	=>	$p->getMaxEmailLists() ? $p->getMaxEmailLists() : 0,
-    					),	//The max_box node is optional. Specifies the maximum number of mailboxes allowed for the client. Data type: string.
-    					'3limit' =>	array(
-    						'name'	=>	'max_box',
-    						'value'	=>	$p->getMaxPop() ? $p->getMaxPop() : 0,
-    					),	//The max_traffic node is optional. Specifies the limit (in bytes) on the traffic for the client. Data type: string.
-    					'4limit' =>	array(
-    						'name'	=>	'max_traffic',
-    						'value'	=>	$p->getBandwidth() ? $p->getBandwidth() * 1024 * 1024: 0,
-    					),	//The disk_space node is optional. Specifies the limit on disk space (in bytes) for the client. Data type: string.
-    					'5limit' =>	array(
-    						'name'	=>	'disk_space',
-    						'value'	=>	$p->getQuota() ? $p->getQuota() * 1024 * 1024 : 0,
-    					),	//The max_subdom node is optional. Specifies the maximum number of subdomains available for the client. Data type: string.
-    					'6limit' =>	array(
-    						'name'	=>	'max_subdom',
-    						'value'	=>	$p->getMaxSubdomains() ? $p->getMaxSubdomains() : 0,
-    					),	//The max_dom node is optional. Specifies the limit on the number of domains for the client. Data type: string.
-    					'7limit' => array(
-    						'name'	=>	'max_subftp_users',
-    						'value'	=>	$p->getMaxFtp() ? $p->getMaxFtp() : 0,
-    					),
-    				),
-    			),
-    		),
-    	);
-
-        $response = $this->_makeRequest($params);
-
-        if (isset($response->system->status) && $response->system->status == 'error') {
-    		throw new Server_Exception('Plesk error: ' . $response->system->errcode . ' - ' .
-    									   $response->system->errtext);
-   		}
-
-    	if (isset($response->domain->add->result->status) && $response->domain->add->result->status == 'error') {
-    		throw new Server_Exception('Plesk error: ' . $response->domain->add->result->errcode . ' - ' .
-    									   $response->domain->add->result->errtext);
-   		}
-
-   		if (isset($response->domain->add->result->status) && $response->domain->add->result->status == 'ok') {
-   			return (string)$response->domain->add->result->id;
-   		} else {
-   			return 0;
    		}
     }
 
@@ -891,12 +875,11 @@ class Server_Manager_Plesk extends Server_Manager
     		$type = 'reseller';
     		$genInfo = 'gen-info';
     	} else {
-    		$type = 'client';
+    		$type = 'customer';
     		$genInfo = 'gen_info';
     	}
 
         $client = $a->getClient();
-        $p = $a->getPackage();
     	$params = array(
     		$type	=>	array(
     			'set'		=>	array(
@@ -916,7 +899,6 @@ class Server_Manager_Plesk extends Server_Manager
     						'address'			=>	$client->getAddress1(),
     						'city'				=>	$client->getCity(),
     						'state'				=>	$client->getState(),
-    						'pcode'				=>	$client->getZip(),
     						'country'			=>	$client->getCountry(),
     					),
     				),
@@ -943,70 +925,6 @@ class Server_Manager_Plesk extends Server_Manager
    		return 0;
     }
 
-    private function _modifyDomain(Server_Account $a) {
-    	$p = $a->getPackage();
-        $client = $a->getClient();
-    	$params = array(
-    		'domain'	=>	array(
-    			'set'	=>	array(
-    				'filter'	=>	array(
-    					'domain-name'	=>	$a->getDomain(),
-    				),
-    				'values'	=>	array(
-    					'gen_setup'	=>	array(
-    						'name'			=>	$a->getDomain(),	//The name node is required. It holds the domain name. Data type: domainName (string, 1 to 255 characters long).
-    						'status'		=>	0,					//The status node is required. It holds the current status of the specified domain. Data type: objectStatus (bitmask, plesk_common.xsd). Allowed values: 0 (active) | 4 (under backup/restore) | 16 (disabled by Plesk Administrator) | 64 (disabled by Plesk Client) | 256 (expired).
-    						'owner-id'		=>	$client->getId(),		//The client_id node is required. It holds the identifier of Plesk Client who owns this domain account. Data type: id_type (integer).
-    						'ip_address'	=>	$a->getIp(),		//The dns_ip_address node is optional. It holds the domain's IP address shown in the DNS record. Data type: ip_address (string, pattern: ([01]?\p{Nd}{1,2}|2([0-4]\p{Nd}|5[0-5]))(\.([01]?\p{Nd}{1,2}|2([0-4]\p{Nd}|5[0-5]))){3}).
-    					),
-    					'hosting'	=>	array(
-	    					'vrt_hst'	=>	array(
-    							'property1'	=>	array(
-    								'name'	=>	'ftp_login',
-    								'value'	=>	$a->getUsername(),
-    							),
-    							'property2'	=>	array(
-    								'name'	=>	'ftp_password',
-    								'value'	=>	$a->getPassword(),
-    							),
-    							'property3'	=>	array(
-	    							'name'	=>	'php',
-    								'value'	=>	$p->getHasPhp(),
-    							),
-    							'property4'	=>	array(
-	    							'name'	=>	'ssl',
-    								'value'	=>	$p->getHasSsl(),
-    							),
-    							'property5'	=>	array(
-	    							'name'	=>	'cgi',
-    								'value'	=>	$p->getHasCgi(),
-    							),
-    							'ip_address'	=>	$a->getIp(),
-    						),
-	    				),
-	    			),
-    			),
-    		),
-    	);
-
-        $response = $this->_makeRequest($params);
-
-        if (isset($response->system->status) && $response->system->status == 'error') {
-    		throw new Server_Exception('Plesk error: ' . $response->system->errcode . ' - ' .
-    									   $response->system->errtext);
-   		}
-
-    	if (isset($response->domain->set->result->status) && $response->domain->set->result->status == 'error') {
-    		throw new Server_Exception('Plesk error: ' . $response->domain->set->result->errcode . ' - ' .
-    									   $response->domain->set->result->errtext);
-   		}
-
-   		if (isset($response->domain->set->result->status) && $response->domain->set->result->status == 'ok') {
-   			return (string)$response->domain->set->result->id;
-   		} else {
-   			return 0;
-   		}
-    }
 
     private function _changeIpType(Server_Account $a) {
         $client = $a->getClient();
