@@ -16,7 +16,6 @@
  * @license   http://www.boxbilling.com/LICENSE.txt
  * @version   $Id$
  */
-
 class BBPatch_22 extends BBPatchAbstract
 {
     public function patch()

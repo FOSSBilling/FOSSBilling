@@ -67,7 +67,7 @@ class Box_AppClient extends Box_App
     {
         try {
             $template = $this->getTwig()->loadTemplate($fileName.'.'.$ext);
-        } catch (Twig_Error_Loader $e) {
+        } catch (\Twig_Error_Loader $e) {
             error_log($e->getMessage());
             throw new \Box_Exception('Page not found', null, 404);
         }

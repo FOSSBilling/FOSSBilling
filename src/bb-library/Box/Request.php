@@ -526,7 +526,7 @@ class Box_Request implements \Box\InjectionAwareInterface
         $data = array();
         $keys = implode('|', array_keys($needed_parts));
 
-        preg_match_all('@(' . $keys . ')=(?:([\'"])([^\2]+?)\2|([^\s,]+))@', $digest, $matches, PREG_SET_ORDER);
+        preg_match_all('@(' . $keys . ')=(?:([\'"])([^\2]+?)\2|([^\s,]+))@', $digest, (array) $matches, PREG_SET_ORDER);
 
         foreach ($matches as $m) {
             $data[$m[1]] = $m[3] ? $m[3] : $m[4];
