@@ -814,6 +814,66 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $this->assertInternalType('array', $result);
     }
 
+
+    public function testtoProductCategoryApiArray_StartingFromValue_NotZero()
+    {
+        $model = new \Model_ProductCategory();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+
+        $modelProduct = new \Model_Product();
+        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->type  = 'custom';
+        $categoryProductsArr = array(
+            $modelProduct,
+            $modelProduct,
+            $modelProduct,
+            $modelProduct,
+        );
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
+            ->setMethods(array('getCategoryProducts', 'toApiArray'))
+            ->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getCategoryProducts')
+            ->will($this->returnValue($categoryProductsArr));
+
+        $min = 1;
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->willReturnOnConsecutiveCalls(
+                    array(
+                    'price_starting_from' => 4,
+                    ),
+                    array(
+                        'price_starting_from' => 5,
+                    ),
+                    array(
+                        'price_starting_from' => 2,
+                    ),
+                    array(
+                        'price_starting_from' => $min,
+                    )
+            );
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('toArray')
+            ->will($this->returnValue(array()));
+
+        $di       = new \Box_Di();
+        $di['db'] = $dbMock;
+        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+
+        $serviceMock->setDi($di);
+        $result = $serviceMock->toProductCategoryApiArray($model);
+        $this->assertInternalType('array', $result);
+        $this->assertEquals($min, $result['price_starting_from']);
+    }
+
     public function testfindOneActiveById()
     {
         $model = new \Model_Product();
