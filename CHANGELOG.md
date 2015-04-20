@@ -4,6 +4,7 @@ Release 4.17
 * Added `Cookieconsent` extension for displaying notification about cookies which is required by EU cookie law 
 * Added Stripe payment adapter
 * updated Plesk server manager to Plesk 12
+* updated mod_email_queue and queue tables columns. Remove MySql reserved words.
 
 Release 4.16
 ------------------------------------------------------------------------------
