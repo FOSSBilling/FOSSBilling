@@ -107,7 +107,7 @@ class Admin extends \Api_Abstract
         if(!$q) {
             $q = $this->di['db']->dispense('queue');
             $q->name        = $data['queue'];
-            $q->mod         = $data['mod'];
+            $q->module      = $data['mod'];
             $q->created_at  = date('Y-m-d H:i:s');
         }
         $q->timeout = $interval;
@@ -208,7 +208,7 @@ class Admin extends \Api_Abstract
     {
         $lsql = "UPDATE queue_message SET log = :log, updated_at = :u WHERE id = :id;";
         $dsql = "DELETE FROM queue_message WHERE id = :id;";
-        $mod = $this->di['mod']($q->mod);
+        $mod = $this->di['mod']($q->module);
         $service = $mod->getService();
         
         $msgs = $this->receiveQueueMessages($q->id, $max, $interval);

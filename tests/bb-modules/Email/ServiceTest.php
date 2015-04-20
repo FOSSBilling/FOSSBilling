@@ -982,8 +982,8 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $queueModel->tries = 10;
         $queueModel->subject = 'subject';
         $queueModel->client_id = 1;
-        $queueModel->from = 'sender@example.com';
-        $queueModel->to = 'receiver@example.com';
+        $queueModel->sender = 'sender@example.com';
+        $queueModel->recipient = 'receiver@example.com';
         $queueModel->content = 'content';
         $queueModel->from_name = 'From Name';
         $queueModel->to_name = 'To Name';
