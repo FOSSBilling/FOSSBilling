@@ -94,8 +94,8 @@ class Admin extends \Api_Abstract
         $service = $this->getService();
         //allow having only one domain product
         if($data['type'] == 'domain') {
-
-            if($service->getMainDomainProduct() instanceof \Model_ProductDomain) {
+            $model = $service->getMainDomainProduct();
+            if($model instanceof \Model_Product) {
                 throw new \Box_Exception('You have already created domain product.', null, 413);
             }
         }
