@@ -765,6 +765,10 @@ class Service implements InjectionAwareInterface
 
     public function getStartingFromPrice(\Model_Product $model)
     {
+        if ($model->type == self::DOMAIN){
+            return $this->getStartingDomainPrice();
+        }
+
         if ($model->product_payment_id) {
             $productPaymentModel = $this->di['db']->load('ProductPayment', $model->product_payment_id);
 
@@ -836,6 +840,15 @@ class Service implements InjectionAwareInterface
             \Model_ProductPayment::ONCE      => array('price' => $model->once_price, 'setup' => $model->once_setup_price),
             \Model_ProductPayment::RECURRENT => $periods,
         );
+    }
+
+    public function getStartingDomainPrice()
+    {
+        $sql = 'SELECT min(price_registration)
+                FROM tld
+                WHERE active = 1';
+
+        return (double) $this->di['db']->getCell($sql);
     }
 
     public function getStartingPrice(\Model_ProductPayment $model)

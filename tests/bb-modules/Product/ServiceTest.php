@@ -954,6 +954,28 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(null, $result);
     }
 
+    public function testgetStartingFromPrice_DomainType()
+    {
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->type = Service::DOMAIN;
+        $productModel->product_payment_id = 1;
+
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
+            ->setMethods(array('getStartingDomainPrice', 'getStartingPrice'))
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getStartingDomainPrice')
+            ->willReturn('10.00');
+        $serviceMock->expects($this->never())
+            ->method('getStartingPrice');
+
+        $result = $serviceMock->getStartingFromPrice($productModel);
+        $this->assertNotNull($result);
+
+    }
+
     public function testgetUpgradablePairs()
     {
         $productModel = new \Model_Product();
@@ -1169,6 +1191,46 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $result = $this->service->canUpgradeTo($productModel, $newProductModel);
         $this->assertFalse($result);
+    }
+
+    public function testgetStartingDomainPrice()
+    {
+        $di = new \Box_Di();
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $sqlQuery = 'SELECT min(price_registration)
+                FROM tld
+                WHERE active = 1';
+        $amount = '10.00';
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getCell')
+            ->with($sqlQuery)
+            ->willReturn($amount);
+
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+        $result = $this->service->getStartingDomainPrice();
+        $this->assertEquals($amount, $result);
+    }
+
+    public function testgetStartingDomainPrice_noActiveTld()
+    {
+        $di = new \Box_Di();
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $sqlQuery = 'SELECT min(price_registration)
+                FROM tld
+                WHERE active = 1';
+        $amount = null;
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getCell')
+            ->with($sqlQuery)
+            ->willReturn($amount);
+
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+        $result = $this->service->getStartingDomainPrice();
+        $this->assertEquals((double) $amount, $result);
     }
 }
  

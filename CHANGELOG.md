@@ -5,6 +5,7 @@ Release 4.17
 * Added Stripe payment adapter
 * updated Plesk server manager to Plesk 12
 * updated mod_email_queue and queue tables columns. Remove MySql reserved words.
+* updated domain product type startingFromPrice value calculation.
 
 Release 4.16
 ------------------------------------------------------------------------------
