@@ -36,9 +36,11 @@ class Box_Pagination implements InjectionAwareInterface
         return $this->per_page;
     }
 
-    public function getSimpleResultSet($q, $values, $per_page = 100)
+    public function getSimpleResultSet($q, $values, $per_page = 100, $page = null)
     {
-        $page = $this->di['request']->getQuery('page', "int", 1);
+        if (is_null($page)){
+            $page = $this->di['request']->getQuery('page', "int", 1);
+        }
         $per_page = $this->di['request']->getQuery('per_page', "int", $per_page);
 
         $offset = ($page - 1) * $per_page;

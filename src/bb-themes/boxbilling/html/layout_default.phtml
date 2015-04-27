@@ -145,7 +145,7 @@
                 <h2>{% trans 'Popular articles' %}</h2>
                 <div class="block">
                     <ul>
-                        {% for i, article in guest.kb_article_get_list({"per_page":4}).list %}
+                        {% for i, article in guest.kb_article_get_list({"per_page":4, "page" : 1}).list %}
                             <li><a href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{article.title|truncate(30)}}</a></li>
                         {% endfor %}
                     </ul>
@@ -160,7 +160,7 @@
                 <h2>{% trans 'Recent posts' %}</h2>
                 <div class="block">
                     <ul>
-                        {% set posts = guest.news_get_list({"per_page": 4}) %}
+                        {% set posts = guest.news_get_list({"per_page": 4, "page" : 1}) %}
                         {% for i, post in posts.list %}
                         <li>
                             <a href="{{ '/news'|link }}/{{post.slug}}">{{post.title|truncate(30)}}</a>
