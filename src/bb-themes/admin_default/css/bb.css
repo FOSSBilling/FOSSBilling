@@ -287,6 +287,13 @@ div.bull.task.pending_payment {
     display: none;
 }
 
+.hover-row:hover{
+    background-color: #E4E4E4 !important;
+    transition: background-color .2s ease-in-out;
+    -moz-transition: background-color .2s ease-in-out;
+    -webkit-transition: background-color .2s ease-in-out;
+}
+
 /* flags */
 .flag {
     display: inline-block;
