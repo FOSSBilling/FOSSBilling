@@ -43,47 +43,34 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             throw new Registrar_Exception('CURL extension is not enabled');
         }
 
-        if(!$this->isKeyValueNotEmpty($options, 'userid')) {
-            throw new Registrar_Exception('Domain registrar "Resellerclub" is not configured properly. Please update configuration parameter "Resellerclub Username" at "Configuration -> Domain registration".');
+        if(isset($options['userid']) && !empty($options['userid'])) {
+            $this->config['userid'] = $options['userid'];
+            unset($options['userid']);
+        } else {
+            throw new Registrar_Exception('Domain registrar "ResellerClub" is not configured properly. Please update configuration parameter "ResellerClub Reseller ID" at "Configuration -> Domain registration".');
         }
 
-        $this->config['userid'] = $options['userid'];
-        unset($options['userid']);
-
-        if($this->isKeyValueNotEmpty($options, 'password')){
-            $this->config['password'] = $options['password'];
-            unset($options['password']);
-        }
-
-        if($this->isKeyValueNotEmpty($options, 'api-key')) {
+        if(isset($options['api-key']) && !empty($options['api-key'])) {
             $this->config['api-key'] = $options['api-key'];
             unset($options['api-key']);
-        }
-
-        if (!isset($this->config['api-key']) && !isset($this->config['password'])){
-            throw new Registrar_Exception('Domain registrar "Resellerclub" is not configured properly. Please update configuration parameter "Resellerclub Password or API key" at "Configuration -> Domain registration".');
+        } else {
+            throw new Registrar_Exception('Domain registrar "ResellerClub" is not configured properly. Please update configuration parameter "ResellerClub API Key" at "Configuration -> Domain registration".');
         }
     }
     
     public static function getConfig()
     {
         return array(
-            'label'     =>  'Manages domains on Resellerclub via API. ResellerClub requires your server IP in order to work. Login to the ResellerClub control panel (the url will be in the email you received when you signed up with them) and then go to Settings > API and enter the IP address of the server where BoxBilling is installed to authorize it for API access.',
+            'label'     =>  'Manages domains on ResellerClub via API. ResellerClub requires your server IP in order to work. Login to the ResellerClub control panel (the url will be in the email you received when you signed up with them) and then go to Settings > API and enter the IP address of the server where BoxBilling is installed to authorize it for API access.',
             'form'  => array(
                 'userid' => array('text', array(
-                            'label' => 'Reseller ID. You can get this at ResellerClub control panel Settings > Personal information > Primary profile > Reseller ID', 
-                            'description'=>'Resellerclub Username'
-                        ),
-                     ),
-                'password' => array('password', array(
-                            'label' => 'Resellerclub Pasword', 
-                            'description'=>'Resellerclub Password',
-                            'required' => false,
+                            'label' => 'Reseller ID. You can get this at ResellerClub control panel Settings > Personal information > Primary profile > Reseller ID',
+                            'description'=> 'ResellerClub Reseller ID'
                         ),
                      ),
                 'api-key' => array('password', array(
-                            'label' => 'Resellerclub API Key',
-                            'description'=> 'You can get this at ResellerClub control panel, go to Settings -> API. (Preferred)',
+                            'label' => 'ResellerClub API Key',
+                            'description'=> 'You can get this at ResellerClub control panel, go to Settings -> API',
                             'required' => false,
                         ),
                      ),
@@ -676,17 +663,10 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      */
     public function includeAuthorizationParams(array $params)
     {
-        $params['auth-userid'] = $this->config['userid'];
-
-        if (isset($this->config['api-key'])){
-            $params['api-key'] = $this->config['api-key'];
-        }
-
-        if (!isset($params['api-key'])){
-            $params['auth-password'] = $this->config['password'];
-        }
-
-        return $params;
+        return array_merge($params, array(
+            'auth-userid' => $this->config['userid'],
+            'api-key' => $this->config['api-key'],
+        ));
     }
 
     /**
