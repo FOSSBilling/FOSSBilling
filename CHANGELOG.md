@@ -1,3 +1,7 @@
+Release 4.17
+------------------------------------------------------------------------------
+* ResellerClub password authentication is deprecated, using API key instead 
+
 Release 4.16
 ------------------------------------------------------------------------------
 * Compatibility with MySQL 5.6 Datetime values updated to meet MySQL STRICT_TRANS_TABLES mode rules.
