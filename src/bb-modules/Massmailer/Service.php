@@ -170,7 +170,11 @@ class Service implements \Box\InjectionAwareInterface
                 error_log('Skip email sending. Application ENV: '.APPLICATION_ENV);
             return true;
         }
-        $mail->send('sendmail');
+
+        $emailSettings = $this->di['mod_config']('email');
+        $transport     = $this->di['array_get']($emailSettings, 'mailer', 'sendmail');
+
+        $mail->send($transport, $emailSettings);
 
         return true;
     }
