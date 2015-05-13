@@ -137,6 +137,31 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
         $client->create($data);
     }
 
+    public function testCreatePasswordsDoNotMatchException()
+    {
+        $configArr = array(
+            'allow_signup' => true,
+        );
+        $data = array(
+            'email' => 'test@email.com',
+            'first_name' => 'John',
+            'password' => 'testpaswword',
+            'password_confirm' => 'wrongpaswword',
+        );
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
+        $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
+
+        $client = new \Box\Mod\Client\Api\Guest();
+        $di = new \Box_Di();
+        $di['mod_config'] = $di->protect(function ($name) use($configArr) { return $configArr;  });
+        $di['validator'] = $validatorMock;
+        $client->setDi($di);
+
+        $this->setExpectedException('\Box_Exception', 'Passwords do not match.');
+        $client->create($data);
+    }
+
     public function testlogin()
     {
         $data = array(
