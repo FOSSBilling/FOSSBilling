@@ -250,7 +250,7 @@ function twig_size_filter($value)
 
 function twig_markdown_filter(Twig_Environment $env, $value)
 {
-    $markdownParser = new dflydev\markdown\MarkdownExtraParser();
+    $markdownParser = new \Michelf\MarkdownExtra;
     return $markdownParser->transform($value);
 }
 
