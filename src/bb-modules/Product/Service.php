@@ -217,14 +217,14 @@ class Service implements InjectionAwareInterface
             if (!isset($data['pricing']['type']) || !array_key_exists($data['pricing']['type'], $types)) {
                 throw new \Box_Exception('Pricing type is required');
             }
-            $productPayment = $this->di['db']->load('ProductPayment', $model->product_payment_id);
+            $productPayment = $this->di['db']->getExistingModelById('ProductPayment', $model->product_payment_id, 'Product payment not found');
 
             $pricing              = $data['pricing'];
             $productPayment->type = $data['pricing']['type'];
 
             if ($data['pricing']['type'] == \Model_ProductPayment::ONCE) {
-                $productPayment->once_setup_price = $data['pricing']['once']['setup'];
-                $productPayment->once_price       = $data['pricing']['once']['price'];
+                $productPayment->once_setup_price = (float)$data['pricing']['once']['setup'];
+                $productPayment->once_price       = (float)$data['pricing']['once']['price'];
             }
 
             if ($data['pricing']['type'] == \Model_ProductPayment::RECURRENT) {
@@ -285,15 +285,12 @@ class Service implements InjectionAwareInterface
         $form_id = $this->di['array_get']($data, 'form_id', $model->form_id);
 
         $model->product_category_id = $this->di['array_get']($data, 'product_category_id', $model->product_category_id);
-        $model->form_id             = empty($form_id) ? null: $form_id;
+        $model->form_id             = empty($form_id) ? null : $form_id;
         $model->icon_url            = $this->di['array_get']($data, 'icon_url', $model->icon_url);
         $model->status              = $this->di['array_get']($data, 'status', $model->status);
-        if (isset($data['hidden'])) {
-            $model->hidden = (int)$data['hidden'];
-        }
-
-        $model->slug  = $this->di['array_get']($data, 'slug', $model->slug);
-        $model->setup = $this->di['array_get']($data, 'setup', $model->setup);
+        $model->hidden              = (int)$this->di['array_get']($data, 'hidden', $model->hidden);
+        $model->slug                = $this->di['array_get']($data, 'slug', $model->slug);
+        $model->setup               = $this->di['array_get']($data, 'setup', $model->setup);
         if (isset($data['upgrades']) && is_array($data['upgrades'])) {
             $model->upgrades = json_encode($data['upgrades']);
         } elseif (isset($data['upgrades']) && empty($data['upgrades'])) {
@@ -768,6 +765,10 @@ class Service implements InjectionAwareInterface
 
     public function getStartingFromPrice(\Model_Product $model)
     {
+        if ($model->type == self::DOMAIN){
+            return $this->getStartingDomainPrice();
+        }
+
         if ($model->product_payment_id) {
             $productPaymentModel = $this->di['db']->load('ProductPayment', $model->product_payment_id);
 
@@ -839,6 +840,15 @@ class Service implements InjectionAwareInterface
             \Model_ProductPayment::ONCE      => array('price' => $model->once_price, 'setup' => $model->once_setup_price),
             \Model_ProductPayment::RECURRENT => $periods,
         );
+    }
+
+    public function getStartingDomainPrice()
+    {
+        $sql = 'SELECT min(price_registration)
+                FROM tld
+                WHERE active = 1';
+
+        return (double) $this->di['db']->getCell($sql);
     }
 
     public function getStartingPrice(\Model_ProductPayment $model)

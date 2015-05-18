@@ -44,7 +44,13 @@
             <div class="box">
                 <div class="block" style="text-align: right;">
                     <h2>{% trans 'Invoice' %} {{ invoice.serie_nr }}</h2>
-                    <p>{{ invoice.created_at|bb_date }}</p>
+                    <p>
+                        {% if invoice.paid_at %}
+                        {{ invoice.paid_at | bb_date }}
+                        {% else %}
+                        {{ invoice.created_at | bb_date }}
+                        {% endif %}
+                    </p>
 
                     <h2 class="invoice_{{invoice.status }}">{% if invoice.status == 'unpaid' %}{% trans 'Unpaid' %}{% else %}{% trans 'Paid' %}{% endif %}</h2>
                 </div>
@@ -218,10 +224,28 @@
     {% if invoice.status == 'unpaid' %}
         
         {% if invoice.gateway_id and not request.change_payment_method %}
-
+        {% set payment = guest.invoice_payment({"gateway_id" : invoice.gateway_id, "hash":invoice.hash, "auto_redirect":request.auto_redirect }) %}
         <div class="grid_12 alpha omega">
             <div class="box">
-                {{ guest.invoice_payment({"gateway_id":invoice.gateway_id, "hash":invoice.hash, "auto_redirect":request.auto_redirect}).result|raw }}
+                {% if payment.type == 'html' %}
+                    {{ payment.result|raw }}
+                {% endif %}
+                    {% if payment.type == 'form' %}
+                    <h2>{% trans 'Redirecting to payment gateway..' %}</h2>
+                    <form name="payment_form" action="{{payment.service_url}}" method="post">
+                        {% for key, value in payment.result %}
+                        <input type="hidden" name="{{key}}" value="{{value}}" />
+                        {% endfor %}
+                        <input class="btn btn-primary" type="submit" value="{% trans 'Please click here to continue if this page does not redirect automatically in 5 seconds' %}" id="payment_button"/>
+                    </form>
+
+                    <script type="text/javascript">
+                        $(document).ready(function(){
+                            document.getElementById('payment_button').style.display = 'none';
+                            document.forms["payment_form"].submit();
+                        });
+                    </script>
+                    {% endif %}
             </div>
         </div>
 

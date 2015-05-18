@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="{{ constant('BB_URL') }}bb-modules/mod_servicesolusvm/resources/style.css" type="text/css">
+<link rel="stylesheet" href="{{ constant('BB_URL') }}bb-modules/Servicesolusvm/resources/style.css" type="text/css">
 
 {% set periods = guest.system_periods %}
 {% set pricing = product.pricing %}
@@ -47,6 +47,7 @@
             <div class="clear"></div>
         </div>
         <div class="clear"></div>
+    <input type="hidden" name="_url" value="/order" />
     <input type="hidden" name="period" value="1M" />
 </form>
 
@@ -73,6 +74,7 @@ $(function() {
                 $('#product_desc').html('');
             }
             $('#vps-order').attr('action', '{{"order"|link}}/' + obj[ui.value-1].slug);
+            $('#vps-order input[name=_url]').val('/order/'+obj[ui.value-1].slug);
             
             var pricing = obj[ui.value-1].pricing;
             if(pricing.type == 'free') {

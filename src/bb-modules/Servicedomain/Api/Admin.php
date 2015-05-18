@@ -353,10 +353,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('TldRegistrar', $data['id']);
-        if (!$model instanceof \Model_TldRegistrar) {
-            throw new \Box_Exception('Registrar not found');
-        }
+        $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarRm($model);
     }
@@ -375,11 +372,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('TldRegistrar', $data['id']);
-
-        if (!$model instanceof \Model_TldRegistrar) {
-            throw new \Box_Exception('Registrar not found');
-        }
+        $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarCopy($model);
     }
@@ -398,11 +391,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $registrar = $this->di['db']->load('TldRegistrar', $data['id']);
-
-        if (!$registrar instanceof \Model_TldRegistrar) {
-            throw new \Box_Exception('Registrar not found');
-        }
+        $registrar = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarToApiArray($registrar);
     }
@@ -434,11 +423,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('TldRegistrar', $data['id']);
-
-        if (!$model instanceof \Model_TldRegistrar) {
-            throw new \Box_Exception('Registrar not found');
-        }
+        $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
         return $this->getService()->registrarUpdate($model, $data);
     }
@@ -452,10 +437,7 @@ class Admin extends \Api_Abstract
 
         $orderId = $data['order_id'];
 
-        $order = $this->di['db']->load('ClientOrder', $orderId);
-        if (!$order instanceof \Model_ClientOrder) {
-            throw new \Box_Exception('Order not found');
-        }
+        $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
 
         $orderService = $this->di['mod_service']('order');
         $s            = $orderService->getOrderService($order);

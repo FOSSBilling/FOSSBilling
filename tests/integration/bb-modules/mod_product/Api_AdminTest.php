@@ -203,4 +203,18 @@ class Api_Admin_ProductTest extends ApiTestCase
         $this->assertArrayHasKey('applies_to', $item);
         $this->assertInternalType('array', $item['applies_to']);
     }
+
+
+    public function testCreateTwoDomainProducts()
+    {
+        $data = array(
+            'title'                 => 'Two domain product check_',
+            'type'                  => Model_ProductTable::DOMAIN,
+        );
+
+        $this->setExpectedException('\Box_Exception', 'You have already created domain product.', 413);
+        for($i = 0; $i< 2; $i++){
+            $id = $this->api_admin->product_prepare($data);
+        }
+    }
 }

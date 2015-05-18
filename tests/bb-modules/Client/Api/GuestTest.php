@@ -306,7 +306,7 @@ class GuestTest extends \PHPUnit_Framework_TestCase {
             ->method('findOne')->will($this->returnValue($modelPasswordReset));
 
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')->will($this->returnValue($modelClient));
+            ->method('getExistingModelById')->will($this->returnValue($modelClient));
 
         $dbMock->expects($this->atLeastOnce())
             ->method('store')->will($this->returnValue(1));

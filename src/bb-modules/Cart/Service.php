@@ -422,10 +422,7 @@ class Service implements InjectionAwareInterface
     public function checkoutCart(\Model_Cart $cart, \Model_Client $client, $gateway_id = null)
     {
         if ($cart->promo_id) {
-            $promo = $this->di['db']->load('Promo', $cart->promo_id);
-            if(!$promo instanceof \Model_Promo){
-                throw new \Box_Exception('Promo not found');
-            }
+            $promo = $this->di['db']->getExistingModelById('Promo', $cart->promo_id, 'Promo not found');
             if (!$this->isClientAbleToUsePromo($client, $promo)) {
                 throw new \Box_Exception('You have already used this promo code. Please remove promo code and checkout again.', null, 9874);
             }

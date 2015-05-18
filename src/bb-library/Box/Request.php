@@ -528,7 +528,7 @@ class Box_Request implements \Box\InjectionAwareInterface
 
         preg_match_all('@(' . $keys . ')=(?:([\'"])([^\2]+?)\2|([^\s,]+))@', $digest, $matches, PREG_SET_ORDER);
 
-        foreach ($matches as $m) {
+        foreach ((array) $matches as $m) {
             $data[$m[1]] = $m[3] ? $m[3] : $m[4];
             unset($needed_parts[$m[1]]);
         }

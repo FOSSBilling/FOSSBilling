@@ -31,10 +31,7 @@ class Admin extends \Api_Abstract
         }
 
         list($order, $s) = $this->_getService($data);
-        $plan = $this->di['db']->load('ServiceHostingHp', $data['plan_id']);
-        if(!$plan instanceof \Model_ServiceHostingHp) {
-            throw new \Box_Exception('Hosting plan not found');
-        }
+        $plan = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['plan_id'], 'Hosting plan not found');
         
         $service = $this->getService();
         return (bool) $service->changeAccountPlan($order, $s, $plan);
@@ -226,10 +223,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ServiceHostingServer', $data['id']);
-        if(!$model instanceof \Model_ServiceHostingServer) {
-            throw new \Box_Exception('Server not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
         return $service->toHostingServerApiArray($model, true, $this->getIdentity());
     }
@@ -248,10 +242,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ServiceHostingServer', $data['id']);
-        if(!$model instanceof \Model_ServiceHostingServer) {
-            throw new \Box_Exception('Server not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         return (bool) $this->getService()->deleteServer($model);
     }
 
@@ -282,10 +273,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ServiceHostingServer', $data['id']);
-        if(!$model instanceof \Model_ServiceHostingServer) {
-            throw new \Box_Exception('Server not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
         return (bool) $service->updateServer($model, $data);
     }
@@ -305,10 +293,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ServiceHostingServer', $data['id']);
-        if(!$model instanceof \Model_ServiceHostingServer) {
-            throw new \Box_Exception('Server not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
         return (bool) $this->getService()->testConnection($model);
     }
@@ -356,10 +341,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ServiceHostingHp', $data['id']);
-        if(!$model instanceof \Model_ServiceHostingHp) {
-            throw new \Box_Exception('Hosting plan not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
         return (bool) $this->getService()->deleteHp($model);
     }
@@ -379,10 +361,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ServiceHostingHp', $data['id']);
-        if(!$model instanceof \Model_ServiceHostingHp) {
-            throw new \Box_Exception('Hosting plan not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
         return $this->getService()->toHostingHpApiArray($model, true, $this->getIdentity());
     }
@@ -404,10 +383,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('ServiceHostingHp', $data['id']);
-        if(!$model instanceof \Model_ServiceHostingHp) {
-            throw new \Box_Exception('Hosting plan not found');
-        }
+        $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
         $service = $this->getService();
         return (bool) $service->updateHp($model, $data);
@@ -439,10 +415,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
         
-        $order = $this->di['db']->load('ClientOrder', $data['order_id']);
-        if(!$order instanceof \Model_ClientOrder ) {
-            throw new \Box_Exception('Order not found');
-        }
+        $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
         $orderSerivce = $this->di['mod_service']('order');
         $s = $orderSerivce->getOrderService($order);
         if(!$s instanceof \Model_ServiceHosting) {

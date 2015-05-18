@@ -119,6 +119,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
+        $iterations = $this->di['array_get']($c, 'iterations', 10);
         $model = $orderService->getOrderService($order);
         if(!$model instanceof \Model_ServiceLicense) {
             throw new \Box_Exception('Could not activate order. Service was not created');
@@ -133,8 +134,16 @@ class Service implements InjectionAwareInterface
         if(!method_exists($plugin, 'generate')) {
             throw new \Box_Exception('License plugin do not have generate method');
         }
-        
-        $model->license_key = $plugin->generate($model, $order, $c);
+
+        $i = 0;
+        do {
+            $licenseKey = $plugin->generate($model, $order, $c);
+            if ($i++ >= $iterations) {
+                throw new \Box_Exception('Maximum number of iterations reached while generating license key');
+            }
+        } while (null !== $this->di['db']->findOne('ServiceLicense', 'license_key = :license_key', array(':license_key' => $licenseKey)));
+
+        $model->license_key = $licenseKey;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
@@ -390,20 +399,11 @@ class Service implements InjectionAwareInterface
 
     public function update(\Model_ServiceLicense $s, array $data)
     {
-        $s->plugin = $this->di['array_get']($data, 'plugin', $s->plugin);
-        if(isset($data['validate_ip'])) {
-            $s->validate_ip = (bool)$data['validate_ip'];
-        }
-        if(isset($data['validate_host'])) {
-            $s->validate_host = (bool)$data['validate_host'];
-        }
-        if(isset($data['validate_path'])) {
-            $s->validate_path = (bool)$data['validate_path'];
-        }
-        if(isset($data['validate_version'])) {
-            $s->validate_version = (bool)$data['validate_version'];
-        }
-
+        $s->plugin           = $this->di['array_get']($data, 'plugin', $s->plugin);
+        $s->validate_ip      = (bool)$this->di['array_get']($data, 'validate_ip', $s->validate_ip);
+        $s->validate_host    = (bool)$this->di['array_get']($data, 'validate_host', $s->validate_host);
+        $s->validate_path    = (bool)$this->di['array_get']($data, 'validate_path', $s->validate_path);
+        $s->validate_version = (bool)$this->di['array_get']($data, 'validate_version', $s->validate_version);
         if(isset($data['license_key']) && !empty($data['license_key'])) {
             $s->license_key = $data['license_key'];
         }

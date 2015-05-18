@@ -16,6 +16,20 @@
  * @license   http://www.boxbilling.com/LICENSE.txt
  * @version   $Id$
  */
+class BBPatch_23 extends BBPatchAbstract
+{
+    public function patch()
+    {
+        $q = "ALTER TABLE mod_email_queue CHANGE `from` sender varchar(255) ;";
+        $this->execSql($q);
+
+        $q = "ALTER TABLE mod_email_queue CHANGE `to` recipient varchar(255);";
+        $this->execSql($q);
+
+        $q = "ALTER TABLE queue CHANGE `mod` module varchar(255);";
+        $this->execSql($q);
+    }
+}
 
 class BBPatch_22 extends BBPatchAbstract
 {

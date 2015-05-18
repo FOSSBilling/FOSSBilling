@@ -199,7 +199,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         // use http_raw_post_data instead of post due to encoding
         parse_str($data['http_raw_post_data'], $post);
 		$req = 'cmd=_notify-validate';
-		foreach ($post as $key => $value) {
+		foreach ((array) $post as $key => $value) {
 			$value = urlencode(stripslashes($value));
 			$req .= "&$key=$value";
 		}

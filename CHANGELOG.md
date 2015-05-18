@@ -1,6 +1,16 @@
 Release 4.17
 ------------------------------------------------------------------------------
-* ResellerClub password authentication is deprecated, using API key instead 
+* Added Stripe payment adapter
+* Send email notification to helpdesk email address (created new mod_support_helpdesk_ticket_open email template)
+* Added `Cookieconsent` extension for displaying notification about cookies which is required by EU cookie law 
+* Updated Plesk server manager to Plesk 12
+* Updated mod_email_queue and queue tables columns. Removed MySql reserved words.
+* Updated domain product type startingFromPrice value calculation.
+* Updated SolusVM module
+* Updated Ispconfig3 server manager
+* Implemented license collision protection
+* Updated ResellerClub and all of it's derived registrars to cope with changed authentication logic (from now on only API key is supported)
+* Various bug fixes and improvements
 
 Release 4.16
 ------------------------------------------------------------------------------

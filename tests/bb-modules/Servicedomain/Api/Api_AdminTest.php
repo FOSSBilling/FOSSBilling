@@ -564,7 +564,7 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($registrar));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -625,41 +625,6 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testRegistrar_deleteRegistarNotFoundException()
-    {
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue(null));
-
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
-        $serviceMock->expects($this->never())->method('registrarRm')
-            ->will($this->returnValue(true));
-
-        $di       = new \Box_Di();
-        $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-        $di['validator'] = $validatorMock;
-        $this->adminApi->setDi($di);
-
-        $this->adminApi->setService($serviceMock);
-
-        $data = array(
-            'id' => rand(1, 100)
-        );
-
-        $result = $this->adminApi->registrar_delete($data);
-
-        $this->assertTrue($result);
-    }
-
     public function testRegistrar_copy()
     {
         $registrar = new \Model_TldRegistrar();
@@ -667,7 +632,7 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($registrar));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -728,42 +693,6 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testRegistrar_copyRegistarNotFoundException()
-    {
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue(null));
-
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
-        $serviceMock->expects($this->never())->method('registrarCopy')
-            ->will($this->returnValue(true));
-
-        $di       = new \Box_Di();
-        $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-        $di['validator'] = $validatorMock;
-        $this->adminApi->setDi($di);
-
-        $this->adminApi->setService($serviceMock);
-
-        $data = array(
-            'id' => rand(1, 100)
-        );
-
-        $result = $this->adminApi->registrar_copy($data);
-
-        $this->assertTrue($result);
-    }
-
-
     public function testRegistrar_get()
     {
         $registrar = new \Model_TldRegistrar();
@@ -771,7 +700,7 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($registrar));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -832,41 +761,6 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertInternalType('array', $result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testRegistrar_getRegistarNotFoundException()
-    {
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue(null));
-
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
-        $serviceMock->expects($this->never())->method('registrarToApiArray')
-            ->will($this->returnValue(true));
-
-        $di       = new \Box_Di();
-        $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-        $di['validator'] = $validatorMock;
-        $this->adminApi->setDi($di);
-
-        $this->adminApi->setService($serviceMock);
-
-        $data = array(
-            'id' => rand(1, 100)
-        );
-
-        $result = $this->adminApi->registrar_get($data);
-
-        $this->assertInternalType('array', $result);
-    }
-
     public function testBatch_sync_expiration_dates()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -887,7 +781,7 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($registrar));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -948,41 +842,6 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
-    public function testRegistrar_updateRegistarNotFoundException()
-    {
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue(null));
-
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
-        $serviceMock->expects($this->never())->method('registrarUpdate')
-            ->will($this->returnValue(true));
-
-        $di       = new \Box_Di();
-        $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-        $di['validator'] = $validatorMock;
-        $this->adminApi->setDi($di);
-
-        $this->adminApi->setService($serviceMock);
-
-        $data = array(
-            'id' => rand(1, 100)
-        );
-
-        $result = $this->adminApi->registrar_update($data);
-
-        $this->assertTrue($result);
-    }
-
     public function testGetService()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -993,7 +852,7 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ClientOrder()));
 
         $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
@@ -1063,47 +922,6 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
     /**
      * @expectedException \Box_Exception
      */
-    public function testGetServiceOrderNotFoundException()
-    {
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
-        $serviceMock->expects($this->never())->method('updateDomain')
-            ->will($this->returnValue(true));
-
-        $this->adminApi->setService($serviceMock);
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue(null));
-
-        $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
-        $orderService->expects($this->never())
-            ->method('getOrderService')
-            ->will($this->returnValue(new \Model_ServiceDomain()));
-
-        $di                = new \Box_Di();
-        $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(function () use ($orderService) {
-            return $orderService;
-        });
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->willReturn(null);
-        $di['validator'] = $validatorMock;
-        $this->adminApi->setDi($di);
-
-        $data   = array(
-            'order_id' => rand(1, 100)
-        );
-        $result = $this->adminApi->update($data);
-
-        $this->assertTrue($result);
-    }
-
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testGetServiceOrderNotActivatedException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -1114,7 +932,7 @@ class Api_AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ClientOrder()));
 
         $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();

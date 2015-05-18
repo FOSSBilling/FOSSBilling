@@ -73,7 +73,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
@@ -93,28 +93,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
         $this->assertInternalType('array', $result);
-    }
-
-    public function testget_ProductNotFound()
-    {
-        $data = array('id' => 111);
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue(null));
-
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Product not found');
-        $this->api->get($data);
     }
 
     public function testget_types()
@@ -232,7 +210,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
@@ -289,7 +267,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
@@ -353,30 +331,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->assertEquals($newAddonId, $result);
     }
 
-    public function testaddon_getNotFound()
-    {
-        $data = array('id' => 1);
-
-        $model = null;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue($model));
-
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-        $di['validator'] = $validatorMock;
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Addon not found');
-        $this->api->addon_get($data);
-    }
-
     public function testaddon_get()
     {
         $data = array('id' => 1);
@@ -408,30 +362,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $result = $this->api->addon_get($data);
         $this->assertInternalType('array', $result);
-    }
-
-    public function testaddon_updateNotFound()
-    {
-        $data = array('id' => 1);
-
-        $model = null;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue($model));
-
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-        $di['validator'] = $validatorMock;
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Addon not found');
-        $this->api->addon_update($data);
     }
 
     public function testaddon_update()
@@ -494,7 +424,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
@@ -531,31 +461,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->assertInternalType('array', $result);
     }
 
-    public function testcategory_updateNotFound()
-    {
-        $data = array('id' => 1);
-
-        $model = null;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue($model));
-
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Category not found');
-        $this->api->category_update($data);
-    }
-
     public function testcategory_update()
     {
         $data = array('id' => 1);
@@ -565,7 +470,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
@@ -592,31 +497,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->assertTrue($result);
     }
 
-    public function testcategory_getNotFound()
-    {
-        $data = array('id' => 1);
-
-        $model = null;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue($model));
-
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Category not found');
-        $this->api->category_get($data);
-    }
-
     public function testcategory_get()
     {
         $data = array('id' => 1);
@@ -626,7 +506,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
@@ -676,31 +556,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->assertEquals($newCategoryId, $result);
     }
 
-    public function testcategory_deleteNotFound()
-    {
-        $data = array('id' => 1);
-
-        $model = null;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue($model));
-
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Category not found');
-        $this->api->category_delete($data);
-    }
-
     public function testcategory_delete()
     {
         $data = array('id' => 1);
@@ -710,7 +565,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
@@ -798,31 +653,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->api->promo_get($data);
     }
 
-    public function testpromo_getNotFound()
-    {
-        $data = array('id' => 1);
-
-        $model = null;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue($model));
-
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Promo not found');
-        $this->api->promo_get($data);
-    }
-
     public function testpromo_get()
     {
         $data = array('id' => 1);
@@ -832,7 +662,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $di = new \Box_Di();
@@ -855,32 +685,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->assertInternalType('array', $result);
     }
 
-    public function testpromo_updateNotFound()
-    {
-        $data = array('id' => 1);
-
-        $model = null;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue($model));
-
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-
-        $this->setExpectedException('\Box_Exception', 'Promo not found');
-        $this->api->promo_update($data);
-    }
-
     public function testpromo_update()
     {
         $data = array('id' => 1);
@@ -890,7 +694,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();
@@ -913,32 +717,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
         $this->assertTrue($result);
     }
 
-    public function testpromo_deleteNotFound()
-    {
-        $data = array('id' => 1);
-
-        $model = null;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue($model));
-
-        $di = new \Box_Di();
-        $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-
-        $this->setExpectedException('\Box_Exception', 'Promo not found');
-        $this->api->promo_delete($data);
-    }
-
     public function testpromo_delete()
     {
         $data = array('id' => 1);
@@ -947,7 +725,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')->getMock();

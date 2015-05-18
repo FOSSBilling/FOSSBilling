@@ -102,7 +102,7 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->onConsecutiveCalls($invoiceModel, $payGatewayModel));
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
@@ -174,67 +174,6 @@ class ServiceTransactionTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->setExpectedException('\Box_Exception', 'Payment gateway id is missing');
-        $this->service->create($data);
-    }
-
-    public function testcreate_InvoiceNotFound()
-    {
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
-
-        $dbMock = $this->getMockBuilder('\Box_Database')
-            ->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->onConsecutiveCalls(null));
-
-        $di                   = new \Box_Di();
-        $di['events_manager'] = $eventsMock;
-        $di['db']             = $dbMock;
-
-        $this->service->setDi($di);
-
-        $data = array(
-            'skip_validation' => false,
-            'bb_invoice_id'   => 2,
-            'bb_gateway_id'   => 1,
-        );
-
-
-        $this->setExpectedException('\Box_Exception', 'Invoice was not found');
-        $this->service->create($data);
-    }
-
-    public function testcreate_GatewayNotFound()
-    {
-        $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
-        $eventsMock->expects($this->atLeastOnce())
-            ->method('fire');
-
-        $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
-
-        $dbMock = $this->getMockBuilder('\Box_Database')
-            ->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->onConsecutiveCalls($invoiceModel, null));
-
-        $di                   = new \Box_Di();
-        $di['events_manager'] = $eventsMock;
-        $di['db']             = $dbMock;
-
-        $this->service->setDi($di);
-
-        $data = array(
-            'skip_validation' => false,
-            'bb_invoice_id'   => 2,
-            'bb_gateway_id'   => 1,
-        );
-
-
-        $this->setExpectedException('\Box_Exception', 'Gateway was not found');
         $this->service->create($data);
     }
 

@@ -349,7 +349,7 @@ class ServiceInvoiceItemTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->onConsecutiveCalls($invoiceModel, $clientModel));
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')

@@ -101,25 +101,25 @@ class Admin extends \Api_Abstract
             'title' => 'Forum title was not passed',
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        
-    	$systemService = $this->di['mod_service']('system');
+
+        $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Forum', 3);
-        
+
         $priority = $this->di['db']->getCell("SELECT MAX(priority) FROM forum GROUP BY priority ORDER BY priority DESC LIMIT 1");
-        
-        $model = $this->di['db']->dispense('Forum');
-        $model->category = isset($data['category']) ? $data['category'] : NULL;
-        $model->title = $data['title'];
-        $model->slug = $this->di['tools']->slug($data['title']);
-        $model->status = isset($data['status']) ? $data['status'] : \Model_Forum::STATUS_ACTIVE;
-        $model->description = isset($data['description']) ? $data['description'] : NULL;
-        $model->priority = $priority + 1;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
+
+        $model              = $this->di['db']->dispense('Forum');
+        $model->category    = $this->di['array_get']($data, 'category', NULL);
+        $model->title       = $data['title'];
+        $model->slug        = $this->di['tools']->slug($data['title']);
+        $model->status      = isset($data['status']) ? $data['status'] : \Model_Forum::STATUS_ACTIVE;
+        $model->description = $this->di['array_get']($data, 'description', NULL);
+        $model->priority    = $priority + 1;
+        $model->created_at  = date('Y-m-d H:i:s');
+        $model->updated_at  = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new forum "%s"', $model->title);
-        
+
         return $model->id;
     }
     

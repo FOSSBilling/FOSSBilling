@@ -103,4 +103,11 @@ class Api_Guest_ProductTest extends BBDbApiTestCase
         $this->assertArrayNotHasKey('setup', $item);
         $this->assertArrayNotHasKey('category', $item);
     }
+
+    public function testProduct_StartingFromPrice_DomainType()
+    {
+        $array = $this->api_guest->product_get(array('id' => 10));
+        $this->assertTrue($array['price_starting_from'] > 0);
+    }
+
 }

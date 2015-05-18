@@ -163,16 +163,11 @@ class ServicePayGateway implements InjectionAwareInterface
             $model->accepted_currencies = json_encode($data['accepted_currencies']);
         }
 
-        $model->enabled = $this->di['array_get']($data, 'enabled', $model->enabled);
-        if(isset($data['allow_single'])) {
-            $model->allow_single = (bool)$data['allow_single'];
-        }
-
-        if(isset($data['allow_recurrent'])) {
-            $model->allow_recurrent = (bool)$data['allow_recurrent'];
-        }
-
-        $model->test_mode = $this->di['array_get']($data, 'test_mode', $model->test_mode);        $this->di['db']->store($model);
+        $model->enabled         = $this->di['array_get']($data, 'enabled', $model->enabled);
+        $model->allow_single    = (bool)$this->di['array_get']($data, 'allow_single', $model->allow_single);
+        $model->allow_recurrent = (bool)$this->di['array_get']($data, 'allow_recurrent', $model->allow_recurrent);
+        $model->test_mode       = $this->di['array_get']($data, 'test_mode', $model->test_mode);
+        $this->di['db']->store($model);
         $this->di['logger']->info('Updated payment gateway %s', $model->gateway);
         return true;
     }

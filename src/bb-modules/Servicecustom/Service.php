@@ -63,7 +63,7 @@ class Service implements \Box\InjectionAwareInterface
      */
     public function action_create(\Model_ClientOrder $order)
     {
-        $product = $this->di['db']->load('Product', $order->product_id);
+        $product = $this->di['db']->getExistingModelById('Product', $order->product_id, 'Product not found');
 
         $model                = $this->di['db']->dispense('ServiceCustom');
         $model->client_id     = $order->client_id;
@@ -254,11 +254,7 @@ class Service implements \Box\InjectionAwareInterface
 
     public function getServiceCustomByOrderId($orderId)
     {
-        $order = $this->di['db']->load('ClientOrder', $orderId);
-
-        if(!$order instanceof \Model_ClientOrder ) {
-            throw new \Box_Exception('Order not found');
-        }
+        $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
 
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);

@@ -152,7 +152,7 @@ class Service implements \Box\InjectionAwareInterface
         $db = $this->di['db'];
 
         $t  = $db->findOne('EmailTemplate', 'action_code = :action', array(':action' => $data['code']));
-        if (!is_object($t)) {
+        if (!$t instanceof \Model_EmailTemplate) {
 
             list($s, $c, $desc, $enabled, $mod) = $this->_getDefaults($data);
             $t              = $db->dispense('EmailTemplate');
@@ -248,8 +248,8 @@ class Service implements \Box\InjectionAwareInterface
         $db                = $this->di['db'];
 
         $queue             = $db->dispense('ModEmailQueue');
-        $queue->to         = $to;
-        $queue->from       = $from;
+        $queue->recipient  = $to;
+        $queue->sender     = $from;
         $queue->subject    = $subject;
         $queue->content    = $content;
         $queue->to_name    = $to_name;
@@ -565,7 +565,7 @@ class Service implements \Box\InjectionAwareInterface
 
         if (isset($settings['log_enabled']) && $settings['log_enabled']) {
             $activityService =  $this->di['mod_service']('activity');
-            $activityService->logEmail($queue->subject, $queue->client_id, $queue->from, $queue->to, $queue->content);
+            $activityService->logEmail($queue->subject, $queue->client_id, $queue->sender, $queue->recipient, $queue->content);
         }
 
         $transport = $this->di['array_get']($settings, 'mailer', 'sendmail');
@@ -574,8 +574,8 @@ class Service implements \Box\InjectionAwareInterface
             $mail = $this->di['mail'];
             $mail->setSubject($queue->subject);
             $mail->setBodyHtml($queue->content);
-            $mail->setFrom($queue->from, $queue->from_name);
-            $mail->addTo($queue->to, $queue->to_name);
+            $mail->setFrom($queue->sender, $queue->from_name);
+            $mail->addTo($queue->recipient, $queue->to_name);
 
             if (APPLICATION_ENV != 'production') {
                 error_log('Skip email sending. Application ENV: '.APPLICATION_ENV);

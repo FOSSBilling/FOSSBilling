@@ -159,7 +159,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $databaseMock = $this->getMockBuilder('Box_Database')->getMock();
         $databaseMock->expects($this->atLeastOnce())->
-            method('load')->
+            method('getExistingModelById')->
             will($this->returnValue(new \Model_ActivitySystem()));
 
         $databaseMock->expects($this->atLeastOnce())->
@@ -177,28 +177,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase {
 
         $result = $activity->log_delete(array('id' => 1));
         $this->assertEquals(true, $result);
-    }
-
-    public function testlog_deleteModelException()
-    {
-        $this->setExpectedException('Box_Exception', 'Event not found');
-
-        $databaseMock = $this->getMockBuilder('Box_Database')->getMock();
-        $databaseMock->expects($this->atLeastOnce())->
-            method('load')->
-            will($this->returnValue(new \StdClass()));
-
-        $di['db'] = $databaseMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-        $di['validator'] = $validatorMock;
-
-        $activity = new \Box\Mod\Activity\Api\Admin();
-        $activity->setDi($di);
-
-        $result = $activity->log_delete(array('id' => 1));
     }
 
     public function testBatch_delete()

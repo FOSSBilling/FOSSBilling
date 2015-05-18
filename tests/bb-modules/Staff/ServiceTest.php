@@ -655,6 +655,129 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $service->onAfterGuestPublicTicketClose($eventMock);
     }
 
+    public function testonAfterClientOpenTicket_mod_staff_ticket_open()
+    {
+        $di = new \Box_Di();
+
+        $ticketModel = new \Model_SupportTicket();
+        $ticketModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $supportServiceMock = $this->getMockBuilder('\Box\Mod\Support\Service')->getMock();
+        $supportServiceMock->expects($this->atLeastOnce())
+            ->method('getTicketById')
+            ->will($this->returnValue($ticketModel));
+
+        $supportTicketArray = array();
+        $supportServiceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->willReturn($supportTicketArray);
+
+        $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
+
+        $emailConfig = array(
+            'to_staff' => true,
+            'code' => 'mod_staff_ticket_open',
+            'ticket' => $supportTicketArray,
+        );
+        $emailServiceMock->expects($this->once())
+            ->method('sendTemplate')
+            ->with($emailConfig)
+            ->willReturn(true);
+
+
+        $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $emailServiceMock) {
+            if ($name == 'support') {
+                return $supportServiceMock;
+            }
+            if ($name == 'email') {
+                return $emailServiceMock;
+            }
+        });
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturn(null);
+        $di['db'] = $dbMock;
+        $di['loggedin_admin'] = new \Model_Admin();
+
+        $eventMock = $this->getMockBuilder('\Box_Event')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $eventMock->expects($this->atLeastOnce())
+            ->method('getDi')
+            ->willReturn($di);
+
+        $eventMock->expects($this->atLeastOnce())
+            ->method('getparameters');
+
+        $service = new \Box\Mod\Staff\Service();
+        $service->onAfterClientOpenTicket($eventMock);
+    }
+
+    public function testonAfterClientOpenTicket_mod_support_helpdesk_ticket_open()
+    {
+        $di = new \Box_Di();
+
+        $ticketModel = new \Model_SupportTicket();
+        $ticketModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $supportServiceMock = $this->getMockBuilder('\Box\Mod\Support\Service')->getMock();
+        $supportServiceMock->expects($this->atLeastOnce())
+            ->method('getTicketById')
+            ->will($this->returnValue($ticketModel));
+
+        $supportTicketArray = array();
+        $supportServiceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->willReturn($supportTicketArray);
+
+        $helpdeskModel = new \Model_SupportHelpdesk();
+        $helpdeskModel->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdeskModel->email = 'helpdesk@support.com';
+
+        $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
+        $emailConfig = array(
+            'to' => $helpdeskModel->email,
+            'code' => 'mod_support_helpdesk_ticket_open',
+            'ticket' => $supportTicketArray,
+        );
+        $emailServiceMock->expects($this->once())
+            ->method('sendTemplate')
+            ->with($emailConfig)
+            ->willReturn(true);
+
+
+        $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $emailServiceMock) {
+            if ($name == 'support') {
+                return $supportServiceMock;
+            }
+            if ($name == 'email') {
+                return $emailServiceMock;
+            }
+        });
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturn($helpdeskModel);
+        $di['db'] = $dbMock;
+        $di['loggedin_admin'] = new \Model_Admin();
+
+        $eventMock = $this->getMockBuilder('\Box_Event')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $eventMock->expects($this->atLeastOnce())
+            ->method('getDi')
+            ->willReturn($di);
+
+        $eventMock->expects($this->atLeastOnce())
+            ->method('getparameters');
+
+        $service = new \Box\Mod\Staff\Service();
+        $service->onAfterClientOpenTicket($eventMock);
+    }
+
     public function testgetList()
     {
         $pagerMock = $this->getMockBuilder('\Box_Pagination')->getMock();

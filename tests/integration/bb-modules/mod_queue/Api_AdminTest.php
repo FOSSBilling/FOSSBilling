@@ -66,7 +66,7 @@ class Box_Mod_Queue_Api_AdminTest extends BBModTestCase
 
         $this->assertArrayHasKey('id', $item);
         $this->assertArrayHasKey('name', $item);
-        $this->assertArrayHasKey('mod', $item);
+        $this->assertArrayHasKey('module', $item);
         $this->assertArrayHasKey('timeout', $item);
         $this->assertArrayHasKey('iteration', $item);
         $this->assertArrayHasKey('timeout', $item);

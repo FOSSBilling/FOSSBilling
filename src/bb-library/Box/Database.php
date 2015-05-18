@@ -99,14 +99,22 @@ class Box_Database implements InjectionAwareInterface
      * @param string $modelName
      * @param integer $id
      */
-    public function load($modelName,$id)
+    public function load($modelName, $id)
     {
+        /* If RedBean finds the bean it will return
+         * the OODB Bean object; if it cannot find the bean
+         * RedBean will return a new bean of type $modelName and with
+         * primary key ID 0. In the latter case it acts basically the
+         * same as dispense().
+         */
+
         $type = $this->_getTypeFromModelName($modelName);
         $bean = $this->orm->load($type, $id);
-        if($type == $modelName) return $bean;
-        if($bean && $bean->id) {
+        if ($type == $modelName) return $bean;
+        if ($bean && $bean->id) {
             return $bean->box();
         }
+
         return null;
     }
 
@@ -159,12 +167,6 @@ class Box_Database implements InjectionAwareInterface
      */
     public function getExistingModelById($modelName, $id, $message = "Model not found")
     {
-        /*If RedBean finds the bean it will return
-	    * the OODB Bean object; if it cannot find the bean
-        * RedBean will return a new bean of type $modelName and with
-        * primary key ID 0. In the latter case it acts basically the
-        * same as dispense().*/
-
         $model = $this->load($modelName, (int)$id);
         if (null === $model) {
             throw new \Box_Exception($message);

@@ -76,15 +76,9 @@ class Service implements InjectionAwareInterface
         $c = $orderService->getConfig($order);
         $this->validateOrderData($c);
 
-        $server = $this->di['db']->load('ServiceHostingServer', $c['server_id']);
-        if(!$server instanceof \Model_ServiceHostingServer) {
-            throw new \Box_Exception('Server from order configuration was not found');
-        }
+        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $c['server_id'], 'Server from order configuration was not found');
 
-        $hp = $this->di['db']->load('ServiceHostingHp', $c['hosting_plan_id']);
-        if(!$hp instanceof \Model_ServiceHostingHp) {
-            throw new \Box_Exception('Hosting plan from order configuration was not found');
-        }
+        $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $c['hosting_plan_id'], 'Hosting plan from order configuration was not found');
 
         $model = $this->di['db']->dispense('ServiceHosting');
         $model->client_id = $order->client_id;
@@ -221,6 +215,10 @@ class Service implements InjectionAwareInterface
     public function action_uncancel(\Model_ClientOrder $order)
     {
         $this->action_create($order);
+        $orderService = $this->di['mod_service']('order');
+        $model = $orderService->getOrderService($order);
+        list($adapter, $account) = $this->_getAM($model);
+        $adapter->createAccount($account);
         return true;
     }
 
@@ -243,13 +241,13 @@ class Service implements InjectionAwareInterface
 
     public function changeAccountPlan(\Model_ClientOrder $order, \Model_ServiceHosting $model, \Model_ServiceHostingHp $hp)
     {
+        $model->service_hosting_hp_id = $hp->id;
         if($this->_performOnService($order)){
             $package = $this->getServerPackage($hp);
             list($adapter, $account) = $this->_getAM($model);
             $adapter->changeAccountPackage($account, $package);
         }
 
-        $model->service_hosting_hp_id = $hp->id;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Changed hosting plan of account #%s', $model->id);

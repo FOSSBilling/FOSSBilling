@@ -311,7 +311,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($modelProductPayment));
 
         $dbMock->expects($this->atLeastOnce())
@@ -814,6 +814,66 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $this->assertInternalType('array', $result);
     }
 
+
+    public function testtoProductCategoryApiArray_StartingFromValue_NotZero()
+    {
+        $model = new \Model_ProductCategory();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+
+        $modelProduct = new \Model_Product();
+        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->type  = 'custom';
+        $categoryProductsArr = array(
+            $modelProduct,
+            $modelProduct,
+            $modelProduct,
+            $modelProduct,
+        );
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
+            ->setMethods(array('getCategoryProducts', 'toApiArray'))
+            ->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getCategoryProducts')
+            ->will($this->returnValue($categoryProductsArr));
+
+        $min = 1;
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->willReturnOnConsecutiveCalls(
+                    array(
+                    'price_starting_from' => 4,
+                    ),
+                    array(
+                        'price_starting_from' => 5,
+                    ),
+                    array(
+                        'price_starting_from' => 2,
+                    ),
+                    array(
+                        'price_starting_from' => $min,
+                    )
+            );
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('toArray')
+            ->will($this->returnValue(array()));
+
+        $di       = new \Box_Di();
+        $di['db'] = $dbMock;
+        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+
+        $serviceMock->setDi($di);
+        $result = $serviceMock->toProductCategoryApiArray($model);
+        $this->assertInternalType('array', $result);
+        $this->assertEquals($min, $result['price_starting_from']);
+    }
+
     public function testfindOneActiveById()
     {
         $model = new \Model_Product();
@@ -892,6 +952,28 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $result = $this->service->getStartingFromPrice($productModel);
 
         $this->assertEquals(null, $result);
+    }
+
+    public function testgetStartingFromPrice_DomainType()
+    {
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->type = Service::DOMAIN;
+        $productModel->product_payment_id = 1;
+
+
+        $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
+            ->setMethods(array('getStartingDomainPrice', 'getStartingPrice'))
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getStartingDomainPrice')
+            ->willReturn('10.00');
+        $serviceMock->expects($this->never())
+            ->method('getStartingPrice');
+
+        $result = $serviceMock->getStartingFromPrice($productModel);
+        $this->assertNotNull($result);
+
     }
 
     public function testgetUpgradablePairs()
@@ -1109,6 +1191,46 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $result = $this->service->canUpgradeTo($productModel, $newProductModel);
         $this->assertFalse($result);
+    }
+
+    public function testgetStartingDomainPrice()
+    {
+        $di = new \Box_Di();
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $sqlQuery = 'SELECT min(price_registration)
+                FROM tld
+                WHERE active = 1';
+        $amount = '10.00';
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getCell')
+            ->with($sqlQuery)
+            ->willReturn($amount);
+
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+        $result = $this->service->getStartingDomainPrice();
+        $this->assertEquals($amount, $result);
+    }
+
+    public function testgetStartingDomainPrice_noActiveTld()
+    {
+        $di = new \Box_Di();
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $sqlQuery = 'SELECT min(price_registration)
+                FROM tld
+                WHERE active = 1';
+        $amount = null;
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getCell')
+            ->with($sqlQuery)
+            ->willReturn($amount);
+
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+        $result = $this->service->getStartingDomainPrice();
+        $this->assertEquals((double) $amount, $result);
     }
 }
  

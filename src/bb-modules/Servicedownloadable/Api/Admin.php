@@ -32,10 +32,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model = $this->di['db']->load('Product', $data['id']);
-        if(!$model instanceof \Model_Product) {
-            throw new \Box_Exception('Product not found');
-        }
+        $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         if(!isset($_FILES['file_data'])) {
             throw new \Box_Exception('File was not uploaded');
@@ -64,10 +61,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $order = $this->di['db']->load('ClientOrder', $data['order_id']);
-        if(!$order instanceof \Model_ClientOrder ) {
-            throw new \Box_Exception('Order not found');
-        }
+        $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
 
         $orderService = $this->di['mod_service']('order');
         $serviceDownloadable = $orderService->getOrderService($order);

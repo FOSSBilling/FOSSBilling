@@ -45,7 +45,7 @@ class Service implements \Box\InjectionAwareInterface
         CREATE TABLE IF NOT EXISTS `queue` (
         `id` bigint(20) NOT NULL AUTO_INCREMENT,
         `name` varchar(100) DEFAULT NULL,
-        `mod` varchar(255) DEFAULT NULL,
+        `module` varchar(255) DEFAULT NULL,
         `timeout` bigint(20) DEFAULT NULL,
         `iteration` int(10) DEFAULT NULL,
         `created_at` varchar(35) DEFAULT NULL,
@@ -75,8 +75,8 @@ class Service implements \Box\InjectionAwareInterface
         
         $this->di['db']->exec($sql);
         $columns = $this->di['db']->getColumns('queue');
-        if(!array_key_exists('mod', $columns)) {
-            $this->di['db']->exec('ALTER TABLE  `queue` ADD  `mod` VARCHAR( 255 ) NULL AFTER  `name`;');
+        if(!array_key_exists('module', $columns)) {
+            $this->di['db']->exec('ALTER TABLE  `queue` ADD  `module` VARCHAR( 255 ) NULL AFTER  `name`;');
         }
         
         if(!array_key_exists('iteration', $columns)) {

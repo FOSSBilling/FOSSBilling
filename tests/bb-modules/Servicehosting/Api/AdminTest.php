@@ -47,7 +47,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ServiceHostingHp));
 
         $di       = new \Box_Di();
@@ -67,34 +67,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $this->setExpectedException('\Box_Exception', 'plan_id is missing');
         $this->api->change_plan($data);
-    }
-
-    public function testchange_planHostingPlanNotFound()
-    {
-        $data = array(
-            'plan_id' => 1,
-        );
-
-        $getServiceReturnValue = array(new \Model_ClientOrder(), new \Model_ServiceHosting);
-        $apiMock               = $this->getMockBuilder('\Box\Mod\Servicehosting\Api\Admin')
-            ->setMethods(array('_getService'))
-            ->getMock();
-
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getService')
-            ->will($this->returnValue($getServiceReturnValue));
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load');
-
-        $di       = new \Box_Di();
-        $di['db'] = $dbMock;
-
-        $apiMock->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Hosting plan not found');
-        $apiMock->change_plan($data);
     }
 
     public function testchange_username()
@@ -334,7 +306,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ServiceHostingServer));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -353,29 +325,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertInternalType('array', $result);
     }
 
-    public function testserver_getServerNotFound()
-    {
-        $data['id'] = 1;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load');
-
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-
-        $di              = new \Box_Di();
-        $di['db']        = $dbMock;
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Server not found');
-        $this->api->server_get($data);
-    }
-
     public function testserver_delete()
     {
         $data['id'] = 1;
@@ -387,7 +336,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ServiceHostingServer));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -408,28 +357,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    public function testserver_deleteServerNotFound()
-    {
-        $data['id'] = 1;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load');
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-
-        $di              = new \Box_Di();
-        $di['db']        = $dbMock;
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Server not found');
-        $this->api->server_delete($data);
-    }
-
     public function testserver_update()
     {
         $data['id'] = 1;
@@ -441,7 +368,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ServiceHostingServer));
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -460,29 +387,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    public function testserver_updateServerNotFound()
-    {
-        $data['id'] = 1;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load');
-
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-
-        $di              = new \Box_Di();
-        $di['db']        = $dbMock;
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Server not found');
-        $this->api->server_update($data);
-    }
-
     public function testserver_test_connection()
     {
         $data['id'] = 1;
@@ -494,7 +398,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue(new \Model_ServiceHostingServer));
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -511,28 +415,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $result = $this->api->server_test_connection($data);
         $this->assertInternalType('bool', $result);
         $this->assertTrue($result);
-    }
-
-    public function testserver_test_connectionServerNotFound()
-    {
-        $data['id'] = 1;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load');
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-
-        $di              = new \Box_Di();
-        $di['db']        = $dbMock;
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Server not found');
-        $this->api->server_test_connection($data);
     }
 
     public function testhp_get_pairs()
@@ -588,7 +470,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -607,31 +489,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    public function testhp_deleteHostingPlanNotFound()
-    {
-        $data = array(
-            'id' => 1,
-        );
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load');
-
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-
-        $di              = new \Box_Di();
-        $di['db']        = $dbMock;
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Hosting plan not found');
-        $this->api->hp_delete($data);
-    }
-
     public function testhp_get()
     {
         $data = array(
@@ -647,7 +504,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -666,30 +523,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertInternalType('array', $result);
     }
 
-    public function testhp_getHostingPlanNotFound()
-    {
-        $data = array(
-            'id' => 1,
-        );
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load');
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-
-        $di              = new \Box_Di();
-        $di['db']        = $dbMock;
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Hosting plan not found');
-        $this->api->hp_get($data);
-    }
-
     public function testhp_update()
     {
         $data = array(
@@ -705,7 +538,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -725,30 +558,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    public function testhp_updateHostingPlanNotFound()
-    {
-        $data = array(
-            'id' => 1,
-        );
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load');
-
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-
-        $di              = new \Box_Di();
-        $di['db']        = $dbMock;
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Hosting plan not found');
-        $this->api->hp_update($data);
-    }
 
     public function testhp_create()
     {
@@ -788,7 +597,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $clientOrderModel = new \Model_ClientOrder();
         $dbMock           = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($clientOrderModel));
 
 
@@ -824,7 +633,7 @@ class AdminTest extends \PHPUnit_Framework_TestCase
         $clientOrderModel = new \Model_ClientOrder();
         $dbMock           = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($clientOrderModel));
 
 
@@ -848,34 +657,6 @@ class AdminTest extends \PHPUnit_Framework_TestCase
 
         $this->setExpectedException('\Box_Exception', 'Order is not activated');
         $this->api->_getService($data);
-    }
-
-    public function test_getServiceOrderNotFound()
-    {
-        $data = array(
-            'order_id' => 1,
-        );
-
-        $clientOrderModel = null;
-        $dbMock           = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->will($this->returnValue($clientOrderModel));
-
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-
-        $di              = new \Box_Di();
-        $di['db']        = $dbMock;
-        $di['validator'] = $validatorMock;
-
-        $this->api->setDi($di);
-
-        $this->setExpectedException('\Box_Exception', 'Order not found');
-        $this->api->_getService($data);
-
     }
 
 }

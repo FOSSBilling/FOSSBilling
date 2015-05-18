@@ -47,19 +47,19 @@ class Service implements InjectionAwareInterface
 
         $params = array();
 
-        $search     = isset($data['search']) ? $data['search'] : NULL;
-        $order_id = isset($data['order_id']) ? $data['order_id'] : NULL;
-        $id = isset($data['id']) ? $data['id'] : NULL;
-        $id_nr = isset($data['nr']) ? $data['nr'] : NULL;
-        $client_id = isset($data['client_id']) ? $data['client_id'] : NULL;
-        $client = isset($data['client']) ? $data['client'] : NULL;
-        $created_at = isset($data['created_at']) ? $data['created_at'] : NULL;
-        $date_from = isset($data['date_from']) ? $data['date_from'] : NULL;
-        $date_to = isset($data['date_to']) ? $data['date_to'] : NULL;
-        $paid_at = isset($data['paid_at']) ? $data['paid_at'] : NULL;
-        $status = isset($data['status']) ? $data['status'] : NULL;
-        $approved = isset($data['approved']) ? $data['approved'] : NULL;
-        $currency = isset($data['currency']) ? $data['currency'] : NULL;
+        $search     = $this->di['array_get']($data, 'search', NULL);
+        $order_id   = $this->di['array_get']($data, 'order_id', NULL);
+        $id         = $this->di['array_get']($data, 'id', NULL);
+        $id_nr      = $this->di['array_get']($data, 'nr', NULL);
+        $client_id  = $this->di['array_get']($data, 'client_id', NULL);
+        $client     = $this->di['array_get']($data, 'client', NULL);
+        $created_at = $this->di['array_get']($data, 'created_at', NULL);
+        $date_from  = $this->di['array_get']($data, 'date_from', NULL);
+        $date_to    = $this->di['array_get']($data, 'date_to', NULL);
+        $paid_at    = $this->di['array_get']($data, 'paid_at', NULL);
+        $status     = $this->di['array_get']($data, 'status', NULL);
+        $approved   = $this->di['array_get']($data, 'approved', NULL);
+        $currency   = $this->di['array_get']($data, 'currency', NULL);
         
         if($order_id) {
             $sql .= ' AND pi.type = :item_type AND pi.rel_id = :order_id';
@@ -448,14 +448,8 @@ class Service implements InjectionAwareInterface
         $model->approved = 0;
 
         $model->gateway_id = $this->di['array_get']($data, 'gateway_id', $model->gateway_id);
-        if(isset($data['text_1'])) {
-            $model->text_1 = $data['text_1'];
-        }
-
-        if(isset($data['text_2'])) {
-            $model->text_2 = $data['text_2'];
-        }
-
+        $model->text_1 = $this->di['array_get']($data, 'text_1', $model->text_1);
+        $model->text_2 = $this->di['array_get']($data, 'text_2', $model->text_2);
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $invoiceId = $this->di['db']->store($model);;
@@ -924,7 +918,7 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception('Invoices are not generated for 0 amount orders');
         }
 
-        $client = $this->di['db']->load('Client', $order->client_id);
+        $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
 
         // generate proforma
         $proforma = $this->di['db']->dispense('Invoice');
@@ -1228,8 +1222,9 @@ class Service implements InjectionAwareInterface
         }
 
         $localeDateFormat = $this->di['config']['locale_date_format'];
+        $invoiceDate = strftime($localeDateFormat, strtotime( $this->di['array_get']($invoice, 'due_at', $invoice['created_at']) ));
         $invoice_info = __("Invoice number: ") . $invoice['nr'] . "\n" .
-            __("Invoice date: ") . strftime($localeDateFormat, strtotime($invoice['created_at'])) . "\n" .
+            __("Invoice date: ") . $invoiceDate . "\n" .
             __("Due date: ") . strftime($localeDateFormat, strtotime($invoice['due_at'])) . "\n" .
             __("Invoice status: ") . $invoice['status'];
         $pdf->SetFont('DejaVu', 'B', $font_size);

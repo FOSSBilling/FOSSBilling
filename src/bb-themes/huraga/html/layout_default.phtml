@@ -39,6 +39,10 @@
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
+{% if guest.extension_is_on({"mod":"cookieconsent"}) %}
+    {% include 'mod_cookieconsent_index.phtml' ignore missing%}
+{% endif %}
+
 {% block body %}
 {% if not client %}
 <script type="text/javascript">$(function(){bb.redirect('{{ "login"|link }}');});</script>

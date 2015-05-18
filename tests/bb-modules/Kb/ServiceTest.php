@@ -238,7 +238,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($category));
         $di       = new \Box_Di();
         $di['db'] = $db;
@@ -613,7 +613,7 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
         $model = new \Model_KbArticleCategory();
         $db    = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
-            ->method('load')
+            ->method('getExistingModelById')
             ->will($this->returnValue($model));
 
         $di       = new \Box_Di();

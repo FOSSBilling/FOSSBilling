@@ -1,0 +1,7 @@
+{
+    "id":           "cookieconsent",
+	"type":         "mod",
+    "name":         "Cookie Consent",
+    "description":  "Show cookie consent message to comply with European Cookie Law",
+    "version":      "1.0.0"
+}
