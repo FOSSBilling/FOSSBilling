@@ -81,20 +81,16 @@
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"order"}) %}
-            {% set count_orders = admin.order_get_statuses.failed_setup %}
-        	<li class="iOrders"><a href="{{ 'order'|alink({'status' : 'failed_setup'}) }}" title=""><span>{% trans 'Orders' %}</span></a>{% if count_orders %}<span class="numberMiddle">{{ count_orders }}</span>{% endif %}</li>
+        	<li class="iOrders"><a href="{{ 'order'|alink({'status' : 'failed_setup'}) }}" title=""><span>{% trans 'Orders' %}</span></a></li>
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"invoice"}) %}
-            {% set count_invoices = admin.invoice_get_statuses.unpaid %}
-        	<li class="iInvoices"><a href="{{ 'invoice'|alink({'status' : 'unpaid'}) }}" title=""><span>{% trans 'Invoices' %}</span></a>{% if count_invoices %}<span class="numberMiddle">{{ count_invoices }}</span>{% endif %}</li>
+            <li class="iInvoices"><a href="{{ 'invoice'|alink({'status' : 'unpaid'}) }}" title=""><span>{% trans 'Invoices' %}</span></a></li>
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"support"}) %}
-            {% set count_tickets = admin.support_ticket_get_statuses.open %}
-            {% set count_ptickets = admin.support_public_ticket_get_statuses.open %}
-        	<li class="iSpeech"><a href="{{ 'support/public-tickets'|alink({'status' : 'open'}) }}" title=""><span>{% trans 'Inquiries' %}</span></a>{% if count_ptickets %}<span class="numberMiddle">{{ count_ptickets }}</span>{% endif %}</li>
-        	<li class="iMes"><a href="{{ 'support'|alink({'status' : 'open'}) }}" title=""><span>{% trans 'Tickets' %}</span></a>{% if count_tickets %}<span class="numberMiddle">{{ count_tickets }}</span>{% endif %}</li>
+            <li class="iSpeech"><a href="{{ 'support/public-tickets'|alink({'status' : 'open'}) }}" title=""><span>{% trans 'Inquiries' %}</span></a></li>
+        	<li class="iMes"><a href="{{ 'support'|alink({'status' : 'open'}) }}" title=""><span>{% trans 'Tickets' %}</span></a></li>
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"client"}) %}

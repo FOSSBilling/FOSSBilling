@@ -235,7 +235,6 @@ $(function() {
 
 	//===== Global ajax methods =====//
     $('.loading').ajaxStart(function() {
-        //bb.msg('Loading...');
         $(this).show();
     }).ajaxStop(function() {
         $(this).hide();
@@ -297,4 +296,71 @@ $(function() {
         bb.reload();
         return false;
     }).val(bb.cookieRead('BBLANG'));
+
+    var invoiceElem = $('.iInvoices');
+    if (invoiceElem) {
+        nonGlobalAjaxCall('admin/invoice/get_statuses', function (result) {
+            var count = result.unpaid;
+            if (count > 0) {
+                appendRedNotificatioNumber(invoiceElem, count);
+            }
+        });
+    }
+
+    var orderElem = $('.iOrders');
+    if (orderElem){
+        nonGlobalAjaxCall('admin/order/get_statuses', function(result){
+            var count = result.failed_setup;
+            if (count > 0) {
+                appendRedNotificatioNumber(orderElem, count);
+            }
+        });
+    }
+
+    var pubTicketsElem = $('.iSpeech');
+    if (pubTicketsElem){
+        nonGlobalAjaxCall('admin/support/public_ticket_get_statuses', function(result){
+            var count = result.open ;
+            if (count > 0) {
+                appendRedNotificatioNumber(pubTicketsElem, count);
+            }
+        });
+    }
+
+    var ticketsElem = $('.iMes');
+    if (ticketsElem){
+        nonGlobalAjaxCall('admin/support/ticket_get_statuses', function(result){
+            var count = result.open ;
+            if (count > 0) {
+                appendRedNotificatioNumber(ticketsElem, count);
+            }
+        });
+    }
+
+    function appendRedNotificatioNumber(elem, count){
+        $('<span>', {'class': 'numberMiddle', 'text': count}).hide().appendTo(elem).fadeIn();
+    }
+
+    function nonGlobalAjaxCall (url, jsonp){
+        $.ajax({
+            type: "POST",
+            url: bb.restUrl(url),
+            dataType: 'json',
+            global: false,
+            error: function(jqXHR, textStatus, e) {
+                bb.msg(e, 'error');
+            },
+            success: function(data) {
+                if(data.error) {
+                    bb.msg(data.error.message, 'error');
+                } else {
+                    if(typeof jsonp === 'function') {
+                        return jsonp(data.result);
+                    } else if(window.hasOwnProperty('console')) {
+                        console.log(data.result);
+                    }
+                }
+            }
+        });
+    }
 });
