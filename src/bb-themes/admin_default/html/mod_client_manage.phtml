@@ -606,6 +606,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            {% include "partial_pagination.phtml" with {'list': emails} %}
         </div>
 
         <div class="tab_content nopadding" id="tab-transactions">
