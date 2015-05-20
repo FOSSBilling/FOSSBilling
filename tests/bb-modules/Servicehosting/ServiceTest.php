@@ -1268,12 +1268,28 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
 
+        $tldArray = array('tld' => '.com');
+        $serviceDomainServiceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
+        $serviceDomainServiceMock->expects($this->atLeastOnce())
+            ->method('tldToApiArray')
+            ->willReturn($tldArray);
+        $di['mod_service'] = $di->protect(function() use ($serviceDomainServiceMock) {return $serviceDomainServiceMock;});
+
+        $tldModel = new \Model_Tld();
+        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->willReturn(array($tldModel));
+        $di['db'] = $dbMock;
+
         $this->service->setDi($di);
         $model = new \Model_Product();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $result = $this->service->getFreeTlds($model);
         $this->assertInternalType('array', $result);
-        $this->assertEmpty($result);
+
     }
 
     public function testgetFreeTlds()

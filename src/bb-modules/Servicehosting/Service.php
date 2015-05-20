@@ -943,6 +943,15 @@ class Service implements InjectionAwareInterface
         foreach ($freeTlds as $tld){
             $result[] = array('tld' => $tld);
         }
+
+        if (empty ($result)) {
+            $query = 'active = 1 and allow_register = 1';
+            $tlds   = $this->di['db']->find('Tld', $query, array());
+            $serviceDomainService = $this->di['mod_service']('Servicedomain');
+            foreach ($tlds as $model) {
+                $result[] = $serviceDomainService->tldToApiArray($model);
+            }
+        }
         return $result;
     }
 }
