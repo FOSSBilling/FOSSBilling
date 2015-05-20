@@ -314,7 +314,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
        
         $data['merchant_order_id']  = $invoice['id'];
         
-        $data['return_url']         = $this->config['redirect_url'];
+        $data['return_url']         = $this->config['return_url'];
         $data['x_receipt_link_url'] = $this->config['redirect_url'];
         $data['fixed']              = 'Y';
         $data['skip_landing']       = 1;
@@ -368,7 +368,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
        
         $data['merchant_order_id']  = $invoice['id'];
         
-        $data['return_url']         = $this->config['redirect_url'];
+        $data['return_url']         = $this->config['return_url'];
         $data['x_receipt_link_url'] = $this->config['redirect_url'];
         $data['fixed']              = 'Y';
         $data['skip_landing']       = 1;
