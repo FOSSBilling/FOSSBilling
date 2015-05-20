@@ -1,3 +1,7 @@
+Release 4.18
+------------------------------------------------------------------------------
+* Select TLDs for free domain registration on shared hosting product
+
 Release 4.17
 ------------------------------------------------------------------------------
 * Added Stripe payment adapter

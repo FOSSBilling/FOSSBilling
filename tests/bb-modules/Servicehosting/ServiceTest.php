@@ -1254,7 +1254,51 @@ class ServiceTest extends \PHPUnit_Framework_TestCase {
         $this->assertFalse($result[1]);
     }
 
+    public function testgetFreeTlds_FreeTldsAreNotSet()
+    {
+        $config  = array();
+        $di = new \Box_Di();
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())
+            ->method('decodeJ')
+            ->willReturn($config);
+        $di['tools'] = $toolsMock;
 
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+
+        $this->service->setDi($di);
+        $model = new \Model_Product();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $result = $this->service->getFreeTlds($model);
+        $this->assertInternalType('array', $result);
+        $this->assertEmpty($result);
+    }
+
+    public function testgetFreeTlds()
+    {
+        $config  = array(
+            'free_tlds' => array('.com'),
+        );
+        $di = new \Box_Di();
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())
+            ->method('decodeJ')
+            ->willReturn($config);
+        $di['tools'] = $toolsMock;
+
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
+            return isset ($array[$key]) ? $array[$key] : $default;
+        });
+
+        $this->service->setDi($di);
+        $model = new \Model_Product();
+        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $result = $this->service->getFreeTlds($model);
+        $this->assertInternalType('array', $result);
+        $this->assertNotEmpty($result);
+    }
 
 
 

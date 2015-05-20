@@ -34,6 +34,18 @@
         </div>
         <div class="fix"></div>
     </div>
+    <div class="rowElem free-tlds-row">
+        <label>{% trans 'Select free tlds' %}</label>
+        <div class="formRight">
+            {% set tlds = guest.serviceDomain_tlds({"allow_register":1}) %}
+            <select name="config[free_tlds][]" multiple="multiple" class="multiple" size="{{tlds|length}}">
+                {% for id,tld in tlds %}
+                <option value="{{tld.tld}}" {% if tld.tld in product.config.free_tlds %}selected="selected"{% endif %}>{{tld.tld }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="fix"></div>
+    </div>
     <div class="rowElem">
         <label>{% trans 'Free domain transfer' %}:</label>
         <div class="formRight">
@@ -112,3 +124,22 @@
         </tr>
     </tfoot>
 </table>
+
+<script>
+    var free_domain_radios = $('input:radio[name="config[free_domain]"]');
+    var freeTldsRow = $('.free-tlds-row');
+
+    free_domain_radios.on('click', function(){
+        if ($(this).val() == 1){
+            freeTldsRow.fadeIn('slow');
+        }
+        if ($(this).val() == 0){
+            freeTldsRow.fadeOut('slow');
+        }
+    });
+
+    if (free_domain_radios.filter('[value=0]:checked').length > 0){
+        freeTldsRow.hide();
+    }
+
+</script>

@@ -930,4 +930,19 @@ class Service implements InjectionAwareInterface
         }
         return array('product'=>$d, 'config'=> $dc);
     }
+
+    /**
+     * @param \Model_Product $product
+     * @return array
+     */
+    public function getFreeTlds(\Model_Product $product)
+    {
+        $config = $this->di['tools']->decodeJ($product->config);
+        $freeTlds = $this->di['array_get']($config, 'free_tlds', array());
+        $result = array();
+        foreach ($freeTlds as $tld){
+            $result[] = array('tld' => $tld);
+        }
+        return $result;
+    }
 }
