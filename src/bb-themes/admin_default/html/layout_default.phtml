@@ -81,23 +81,23 @@
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"order"}) %}
-        	<li class="iOrders"><a href="{{ 'order'|alink({'status' : 'failed_setup'}) }}" title=""><span>{% trans 'Orders' %}</span></a></li>
+        	<li><a href="{{ 'order'|alink({'status' : 'failed_setup'}) }}" title=""><span><i class="sprite-23 sprite-23-basket2"></i>{% trans 'Orders' %}</span></a></li>
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"invoice"}) %}
-            <li class="iInvoices"><a href="{{ 'invoice'|alink({'status' : 'unpaid'}) }}" title=""><span>{% trans 'Invoices' %}</span></a></li>
+            <li><a href="{{ 'invoice'|alink({'status' : 'unpaid'}) }}" title=""><span><i class="sprite-23 sprite-23-money"></i>{% trans 'Invoices' %}</span></a></li>
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"support"}) %}
-            <li class="iSpeech"><a href="{{ 'support/public-tickets'|alink({'status' : 'open'}) }}" title=""><span>{% trans 'Inquiries' %}</span></a></li>
-        	<li class="iMes"><a href="{{ 'support'|alink({'status' : 'open'}) }}" title=""><span>{% trans 'Tickets' %}</span></a></li>
+            <li><a href="{{ 'support/public-tickets'|alink({'status' : 'open'}) }}" title=""><span><i class="sprite-23 sprite-23-speech"></i>{% trans 'Inquiries' %}</span></a></li>
+        	<li><a href="{{ 'support'|alink({'status' : 'open'}) }}" title=""><span><i class="sprite-23 sprite-23-dialog"></i>{% trans 'Tickets' %}</span></a></li>
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"client"}) %}
-            <li class="iUser"><a href="{{ 'client'|alink }}" title=""><span>{% trans 'Clients' %}</span></a></li>
+            <li><a href="{{ 'client'|alink }}" title=""><span><i class="sprite-23 sprite-23-user"></i>{% trans 'Clients' %}</span></a></li>
             {% endif %}
             
-        	<li class="iHome"><a href="{{ 'index'|alink }}" title=""><span>{% trans 'Dashboard' %}</span></a></li>
+        	<li><a href="{{ 'index'|alink }}" title=""><span><i class="sprite-23 sprite-23-home"></i>{% trans 'Dashboard' %}</span></a></li>
         </ul>
     </div>
     <div class="fix"></div>

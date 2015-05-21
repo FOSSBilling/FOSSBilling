@@ -238,18 +238,13 @@ input[type=submit], input[type=reset], input[type=button], button, .button { fon
 
 .middleNav { float: right; margin-right: 1px; }
 .middleNav ul { margin-top: 25px; }
-.middleNav ul li { height: 55px;  text-align: center; display: block; float: left; margin-left: 25px; position: relative; }
+.middleNav ul li { height: 55px;  text-align: center; display: block; float: left; margin-left: 25px; position: relative; min-width:64px;}
 .middleNav ul li:first-child { margin: 0; }
 .middleNav ul li a { display: block; border: 1px solid #d5d5d5; background: url(../images/middlebg.png) repeat-x 0 0; -moz-border-radius: 2px; -webkit-border-radius: 2px; -khtml-border-radius: 2px; border-radius: 2px; color: #595858; font-size: 12px; position: relative; -moz-box-shadow: 0 2px 1px #fff; -webkit-box-shadow: 0 2px 1px #fff; box-shadow: 0 2px 1px #fff; }
 .middleNav ul li a span { display: block; padding: 34px 10px 0 10px; }
+.middleNav ul li a span i { margin-top: -26px; margin-bottom: 4px; }
 
-.middleNav ul li.iHome a span { background: url(../images/icons/middlenav/home.png) no-repeat 50% 8px; }
-.middleNav ul li.iMes a span { background: url(../images/icons/middlenav/dialog.png) no-repeat 50% 8px; }
-.middleNav ul li.iSpeech a span { background: url(../images/icons/middlenav/speech.png) no-repeat 50% 8px; }
 .middleNav ul li.iStat a span { background: url(../images/icons/middlenav/graph.png) no-repeat 50% 8px; }
-.middleNav ul li.iUser a span { background: url(../images/icons/middlenav/users.png) no-repeat 50% 8px; }
-.middleNav ul li.iOrders a span { background: url(../images/icons/middlenav/basket2.png) no-repeat 50% 8px; }
-.middleNav ul li.iInvoices a span { background: url(../images/icons/middlenav/money.png) no-repeat 50% 8px; }
 .middleNav ul li.iTransactions a span { background: url(../images/icons/middlenav/transfer.png) no-repeat 50% 8px; }
 .middleNav ul li.iPlugin a span { background: url(../images/icons/middlenav/electroPlug.png) no-repeat 50% 8px; }
 .middleNav ul li.iMegaphone a span { background: url(../images/icons/middlenav/megaphone.png) no-repeat 50% 8px; }

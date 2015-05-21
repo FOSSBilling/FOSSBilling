@@ -1,0 +1,42 @@
+.sprite-23 {
+    background-image: url(../sprites/dark-icons-23-sprite.png);
+    background-repeat: no-repeat;
+    display: block;
+    margin: 0 auto;
+}
+
+.sprite-23-basket2 {
+    width: 23px;
+    height: 23px;
+    background-position: -5px -5px;
+}
+
+.sprite-23-dialog {
+    width: 23px;
+    height: 23px;
+    background-position: -38px -5px;
+}
+
+.sprite-23-home {
+    width: 23px;
+    height: 23px;
+    background-position: -5px -38px;
+}
+
+.sprite-23-money {
+    width: 23px;
+    height: 23px;
+    background-position: -38px -38px;
+}
+
+.sprite-23-speech {
+    width: 23px;
+    height: 23px;
+    background-position: -71px -5px;
+}
+
+.sprite-23-user {
+    width: 23px;
+    height: 23px;
+    background-position: -71px -38px;
+}
