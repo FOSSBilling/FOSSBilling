@@ -267,22 +267,15 @@ input[type=submit], input[type=reset], input[type=button], button, .button { fon
 .leftNav ul li { position: relative; }
 .leftNav ul li a { color: #494949; font-size: 15px; display: block; background: #efefef url(../images/leftNavBg.png) repeat-x 0 0; border: 1px solid #d5d5d5; margin-top: 1px; }
 .leftNav ul li a:hover, .leftNav ul li a.active { background: url(../images/darkBg.jpg) repeat-x; color: #fff; border: 1px solid #3c4049; }
-.leftNav ul li a span { padding: 9px 0 9px 35px; display: block; }
+.leftNav ul li a span { padding: 9px 0 9px 0px; display: block; }
+.leftNav ul li a span i{ margin: -3px 10px; }
 
 
 /* Left navigation icons */
 
 .leftNav ul li.home a span { background: url(../images/icons/dark/home.png) no-repeat 10px; }
-.leftNav ul li.graphs span { background: url(../images/icons/dark/graph.png) no-repeat 10px; }
-.leftNav ul li.settings a span { background: url(../images/icons/dark/cog3.png) no-repeat 10px; }
-.leftNav ul li.invoices a span { background: url(../images/icons/dark/money.png) no-repeat 10px; }
 .leftNav ul li.transactions a span { background: url(../images/icons/dark/transfer.png) no-repeat 10px; }
-.leftNav ul li.orders a span { background: url(../images/icons/dark/basket.png) no-repeat 10px; }
-.leftNav ul li.contacts a span { background: url(../images/icons/dark/users.png) no-repeat 10px; }
-.leftNav ul li.support a span { background: url(../images/icons/dark/dialog.png) no-repeat 10px; }
-.leftNav ul li.iPlugin a span { background: url(../images/icons/dark/electroPlug.png) no-repeat 10px; }
 .leftNav ul li.dash a span { background-image: url(../images/icons/dark/download.png); }
-.leftNav ul li.graphs a span { background-image: url(../images/icons/dark/graph.png); }
 .leftNav ul li.forms a span { background-image: url(../images/icons/dark/pencil.png); }
 .leftNav ul li.gallery a span { background-image: url(../images/icons/dark/preview.png); }
 .leftNav ul li.typo span { background-image: url(../images/icons/dark/create.png); }
@@ -291,11 +284,8 @@ input[type=submit], input[type=reset], input[type=button], button, .button { fon
 .leftNav ul li.errors a span { background-image: url(../images/icons/dark/alert.png); }
 .leftNav ul li.files a span { background-image: url(../images/icons/dark/files.png); }
 .leftNav ul li.login a span { background-image: url(../images/icons/dark/user.png); }
-.leftNav ul li.pic a span { background-image: url(../images/icons/dark/blocks.png); }
 .leftNav ul li.widgets a span { background-image: url(../images/icons/dark/full.png); }
-.leftNav ul li.contacts a span { background-image: url(../images/icons/dark/users.png); }
 
-.leftNav ul li a span { background-position: 10px; background-repeat: no-repeat; }
 
 
 /* Left navigation subnav */
