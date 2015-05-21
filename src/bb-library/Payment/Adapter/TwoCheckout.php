@@ -271,7 +271,6 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         $data['mode']               = '2CO';
         
         foreach($invoice['lines'] as $i=>$item) {
-            $data['li_'.$i.'_id']			= $invoice['id'];
             $data['li_'.$i.'_type']         = 'product';
             $data['li_'.$i.'_name']         = $item['title'];
             $data['li_'.$i.'_product_id']   = $item['id'];
@@ -290,11 +289,8 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
        
         $data['merchant_order_id']  = $invoice['id'];
         
-        $data['return_url']         = $this->config['redirect_url'];
         $data['x_receipt_link_url'] = $this->config['redirect_url'];
-        $data['fixed']              = 'Y';
-        $data['skip_landing']       = 1;
-        
+
         return $data;
     }
 
