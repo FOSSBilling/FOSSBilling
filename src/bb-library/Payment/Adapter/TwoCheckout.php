@@ -119,22 +119,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
             throw new Payment_Exception('2Checkout IPN is not valid');
         }
 
-        $types = array(
-            'ORDER_CREATED',
-            'SHIP_STATUS_CHANGED',
-            'INVOICE_STATUS_CHANGED',
-            'REFUND_ISSUED',
-            'FRAUD_STATUS_CHANGED',
-            'RECURRING_INSTALLMENT_SUCCESS',
-            'RECURRING_STOPPED',
-            'RECURRING_INSTALLMENT_FAILED',
-            'RECURRING_COMPLETE',
-            'RECURRING_RESTARTED',
-        );
-
-        if (in_array($ipn['message_type'], $types)) {
-            $api_admin->invoice_transaction_update(array('id' => $id, 'type' => $ipn['message_type']));
-        }
+        $api_admin->invoice_transaction_update(array('id' => $id, 'type' => 'ORDER CREATED'));
 
         $invoice_id = null;
         if($tx['invoice_id']) {
