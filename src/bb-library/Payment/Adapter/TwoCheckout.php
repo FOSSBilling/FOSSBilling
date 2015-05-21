@@ -127,8 +127,6 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         } elseif(isset($ipn['bb_invoice_id'])) {
             $invoice_id = $ipn['bb_invoice_id'];
             $api_admin->invoice_transaction_update(array('id'=>$id, 'invoice_id'=>$invoice_id));
-        } elseif(!isset($ipn['bb_invoice_id']) && isset($ipn['order_number'])) {
-            $invoice_id = R::getCell('SELECT invoice_id FROM transaction WHERE txn_id = :id AND invoice_id IS NOT NULL', array('id'=>$ipn['order_number']));
         }
         
         if(!$invoice_id) {
