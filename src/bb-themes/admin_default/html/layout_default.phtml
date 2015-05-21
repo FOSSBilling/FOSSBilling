@@ -50,19 +50,19 @@
             <div class="userNav">
                 <ul>
                     <li class="loading" style="display:none;"><img src="images/loader.gif" alt="" /><span>{% trans 'Loading ...' %}</span></li>
-                    <li class="dd"><img src="images/icons/topnav/register.png" alt="" /><span>{% trans 'New' %}</span>
+                    <li class="dd"><span><i class="sprite-topnav sprite-topnav-register" style="margin-right: 5px;"></i>{% trans 'New' %}</span>
                         {% include "partial_menu_top.phtml" %}
                     </li>
                     {% if admin.system_is_allowed({"mod":"system"}) %}
-                    <li class="dd"><img src="images/icons/topnav/settings.png" alt="" /><span>{% trans 'Settings' %}</span>
+                    <li class="dd"><span><i class="sprite-topnav sprite-topnav-settings" style="margin-right: 5px;"></i>{% trans 'Settings' %}</span>
                         <ul class="menu_body">
                             <li><a href="{{ 'system'|alink }}" title="">{% trans 'All settings' %}</a></li>
                             <li><a href="{{ 'theme'|alink }}/{{ guest.extension_theme.code }}" title="">{% trans 'Theme settings' %}</a></li>
                         </ul>
                     </li>
                     {% endif %}
-                    <li><a href="{{ '/'|link }}" title="" target="_blank"><img src="images/icons/topnav/mainWebsite.png" alt=""/><span>{% trans 'Visit site' %}</span></a></li>
-                    <li><a href="{{ 'api/admin/profile/logout'|link }}" title="" class="api-link" data-api-redirect="{{ 'staff/login'|alink }}"><img src="images/icons/topnav/logout.png" alt="" /><span>{% trans 'Logout' %}</span></a></li>
+                    <li><a href="{{ '/'|link }}" title="" target="_blank"><span><i class="sprite-topnav sprite-topnav-mainWebsite" style="margin-right: 5px;"></i>{% trans 'Visit site' %}</span></a></li>
+                    <li><a href="{{ 'api/admin/profile/logout'|link }}" title="" class="api-link" data-api-redirect="{{ 'staff/login'|alink }}"><span><i class="sprite-topnav sprite-topnav-logout" style="margin-right: 5px;"></i>{% trans 'Logout' %}</span></a></li>
                 </ul>
             </div>
             <div class="fix"></div>
