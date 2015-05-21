@@ -1,0 +1,59 @@
+.sprite-topnav {
+    background-image: url(../sprites/topnav-sprite.png);
+    background-repeat: no-repeat;
+    display: inline-block;
+}
+
+.sprite-topnav-contactAdmin {
+    width: 11px;
+    height: 10px;
+    background-position: -1px -1px;
+}
+
+.sprite-topnav-help {
+    width: 10px;
+    height: 10px;
+    background-position: -14px -1px;
+}
+
+.sprite-topnav-logout {
+    width: 11px;
+    height: 11px;
+    background-position: -26px -1px;
+}
+
+.sprite-topnav-mainWebsite {
+    width: 10px;
+    height: 10px;
+    background-position: -1px -14px;
+}
+
+.sprite-topnav-messages {
+    width: 11px;
+    height: 11px;
+    background-position: -13px -14px;
+}
+
+.sprite-topnav-profile {
+    width: 11px;
+    height: 11px;
+    background-position: -26px -14px;
+}
+
+.sprite-topnav-register {
+    width: 10px;
+    height: 10px;
+    background-position: -1px -27px;
+}
+
+.sprite-topnav-settings {
+    width: 10px;
+    height: 11px;
+    background-position: -39px -1px;
+}
+
+.sprite-topnav-tasks {
+    width: 11px;
+    height: 11px;
+    background-position: -13px -27px;
+}

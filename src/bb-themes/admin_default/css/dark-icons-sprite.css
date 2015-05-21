@@ -1,0 +1,1800 @@
+.sprite {
+    background-image: url(../sprites/dark-icons-sprite.png);
+    background-repeat: no-repeat;
+    display: inline-block;
+    margin: 0 auto;
+}
+
+.sprite-abacus {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -5px;
+}
+
+.sprite-add {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -5px;
+}
+
+.sprite-addressBook {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -5px;
+}
+
+.sprite-adminUser {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -5px;
+}
+
+.sprite-adminUser2 {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -5px;
+}
+
+.sprite-airplane {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -5px;
+}
+
+.sprite-alarm {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -5px;
+}
+
+.sprite-alert {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -5px;
+}
+
+.sprite-alert2 {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -5px;
+}
+
+.sprite-android {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -5px;
+}
+
+.sprite-archive {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -5px;
+}
+
+.sprite-arrowDown {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -5px;
+}
+
+.sprite-arrowLeft {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -5px;
+}
+
+.sprite-arrowRight {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -5px;
+}
+
+.sprite-arrowUp {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -5px;
+}
+
+.sprite-bag {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -5px;
+}
+
+.sprite-baloons {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -5px;
+}
+
+.sprite-bandaid {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -29px;
+}
+
+.sprite-basket {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -29px;
+}
+
+.sprite-basket2 {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -29px;
+}
+
+.sprite-battery {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -29px;
+}
+
+.sprite-batteryFull {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -29px;
+}
+
+.sprite-bell {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -29px;
+}
+
+.sprite-bell2 {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -29px;
+}
+
+.sprite-bigBrush {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -29px;
+}
+
+.sprite-blackberry {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -29px;
+}
+
+.sprite-block {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -29px;
+}
+
+.sprite-blocks {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -29px;
+}
+
+.sprite-bluetooth {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -29px;
+}
+
+.sprite-bluetooth2 {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -29px;
+}
+
+.sprite-bluray {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -29px;
+}
+
+.sprite-book {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -29px;
+}
+
+.sprite-bookLarge {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -29px;
+}
+
+.sprite-books {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -29px;
+}
+
+.sprite-bright {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -53px;
+}
+
+.sprite-bubbles {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -53px;
+}
+
+.sprite-bubbles2 {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -53px;
+}
+
+.sprite-building {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -53px;
+}
+
+.sprite-bullsEye {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -53px;
+}
+
+.sprite-buzz {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -53px;
+}
+
+.sprite-calc {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -53px;
+}
+
+.sprite-camera {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -53px;
+}
+
+.sprite-camera2 {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -53px;
+}
+
+.sprite-car {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -53px;
+}
+
+.sprite-cart {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -53px;
+}
+
+.sprite-cart2 {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -53px;
+}
+
+.sprite-cart3 {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -53px;
+}
+
+.sprite-cart4 {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -53px;
+}
+
+.sprite-cashRegister {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -53px;
+}
+
+.sprite-cassette {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -53px;
+}
+
+.sprite-cat {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -53px;
+}
+
+.sprite-cd {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -77px;
+}
+
+.sprite-chair {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -77px;
+}
+
+.sprite-chart {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -77px;
+}
+
+.sprite-chart2 {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -77px;
+}
+
+.sprite-chart3 {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -77px;
+}
+
+.sprite-chart4 {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -77px;
+}
+
+.sprite-chart5 {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -77px;
+}
+
+.sprite-chart6 {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -77px;
+}
+
+.sprite-chart7 {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -77px;
+}
+
+.sprite-chart8 {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -77px;
+}
+
+.sprite-check {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -77px;
+}
+
+.sprite-chemical {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -77px;
+}
+
+.sprite-chrome {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -77px;
+}
+
+.sprite-clipboard {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -77px;
+}
+
+.sprite-clock {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -77px;
+}
+
+.sprite-close {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -77px;
+}
+
+.sprite-cloud {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -77px;
+}
+
+.sprite-cloudDownload {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -101px;
+}
+
+.sprite-cloudUpload {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -101px;
+}
+
+.sprite-cog {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -101px;
+}
+
+.sprite-cog2 {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -101px;
+}
+
+.sprite-cog3 {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -101px;
+}
+
+.sprite-cog4 {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -101px;
+}
+
+.sprite-companies {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -101px;
+}
+
+.sprite-computer {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -101px;
+}
+
+.sprite-coverflow {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -101px;
+}
+
+.sprite-create {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -101px;
+}
+
+.sprite-cup {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -101px;
+}
+
+.sprite-cut {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -101px;
+}
+
+.sprite-dayCalendar {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -101px;
+}
+
+.sprite-delicious {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -101px;
+}
+
+.sprite-denied {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -101px;
+}
+
+.sprite-dialog {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -101px;
+}
+
+.sprite-digg {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -101px;
+}
+
+.sprite-digg2 {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -125px;
+}
+
+.sprite-doc {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -125px;
+}
+
+.sprite-docs {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -125px;
+}
+
+.sprite-download {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -125px;
+}
+
+.sprite-download2 {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -125px;
+}
+
+.sprite-download3 {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -125px;
+}
+
+.sprite-dribbble {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -125px;
+}
+
+.sprite-dribbble2 {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -125px;
+}
+
+.sprite-drive {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -125px;
+}
+
+.sprite-dropbox {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -125px;
+}
+
+.sprite-dropper {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -125px;
+}
+
+.sprite-drupal {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -125px;
+}
+
+.sprite-dvd {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -125px;
+}
+
+.sprite-electricity {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -125px;
+}
+
+.sprite-electroPlug {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -125px;
+}
+
+.sprite-excelDoc {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -125px;
+}
+
+.sprite-exit {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -125px;
+}
+
+.sprite-expengine {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -149px;
+}
+
+.sprite-expose {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -149px;
+}
+
+.sprite-facebook {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -149px;
+}
+
+.sprite-fax {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -149px;
+}
+
+.sprite-femaleContour {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -149px;
+}
+
+.sprite-femaleSymbol {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -149px;
+}
+
+.sprite-files {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -149px;
+}
+
+.sprite-filmCamera {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -149px;
+}
+
+.sprite-filmStrip {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -149px;
+}
+
+.sprite-filmStrip2 {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -149px;
+}
+
+.sprite-firefox {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -149px;
+}
+
+.sprite-flag {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -149px;
+}
+
+.sprite-flag2 {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -149px;
+}
+
+.sprite-flagFinished {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -149px;
+}
+
+.sprite-folder {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -149px;
+}
+
+.sprite-footprints {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -149px;
+}
+
+.sprite-fountainPen {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -149px;
+}
+
+.sprite-frames {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -173px;
+}
+
+.sprite-full {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -173px;
+}
+
+.sprite-full2 {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -173px;
+}
+
+.sprite-fullscreen {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -173px;
+}
+
+.sprite-globe {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -173px;
+}
+
+.sprite-globe2 {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -173px;
+}
+
+.sprite-gmaps {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -173px;
+}
+
+.sprite-goBack {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -173px;
+}
+
+.sprite-goFull {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -173px;
+}
+
+.sprite-graph {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -173px;
+}
+
+.sprite-hd {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -173px;
+}
+
+.sprite-hd2 {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -173px;
+}
+
+.sprite-hd3 {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -173px;
+}
+
+.sprite-headphones {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -173px;
+}
+
+.sprite-heart {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -173px;
+}
+
+.sprite-help {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -173px;
+}
+
+.sprite-home {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -173px;
+}
+
+.sprite-home2 {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -197px;
+}
+
+.sprite-icecream {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -197px;
+}
+
+.sprite-ichat {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -197px;
+}
+
+.sprite-image {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -197px;
+}
+
+.sprite-image2 {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -197px;
+}
+
+.sprite-imageList {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -197px;
+}
+
+.sprite-images {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -197px;
+}
+
+.sprite-images2 {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -197px;
+}
+
+.sprite-imagesList {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -197px;
+}
+
+.sprite-inbox {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -197px;
+}
+
+.sprite-inbox2 {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -197px;
+}
+
+.sprite-incoming {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -197px;
+}
+
+.sprite-info {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -197px;
+}
+
+.sprite-ipad {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -197px;
+}
+
+.sprite-iphone {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -197px;
+}
+
+.sprite-ipodClassic {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -197px;
+}
+
+.sprite-ipodNano {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -197px;
+}
+
+.sprite-joomla {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -221px;
+}
+
+.sprite-key {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -221px;
+}
+
+.sprite-ladyPurse {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -221px;
+}
+
+.sprite-lamp {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -221px;
+}
+
+.sprite-laptop {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -221px;
+}
+
+.sprite-lastFM {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -221px;
+}
+
+.sprite-lemonadeStand {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -221px;
+}
+
+.sprite-lightBulb {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -221px;
+}
+
+.sprite-like {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -221px;
+}
+
+.sprite-link {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -221px;
+}
+
+.sprite-link2 {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -221px;
+}
+
+.sprite-linux {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -221px;
+}
+
+.sprite-list {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -221px;
+}
+
+.sprite-loading {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -221px;
+}
+
+.sprite-locked {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -221px;
+}
+
+.sprite-locked2 {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -221px;
+}
+
+.sprite-logoff {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -221px;
+}
+
+.sprite-macos {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -245px;
+}
+
+.sprite-magicMouse {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -245px;
+}
+
+.sprite-magnify {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -245px;
+}
+
+.sprite-mail {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -245px;
+}
+
+.sprite-maleContour {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -245px;
+}
+
+.sprite-maleSymbol {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -245px;
+}
+
+.sprite-map {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -245px;
+}
+
+.sprite-medicalCase {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -245px;
+}
+
+.sprite-megaphone {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -245px;
+}
+
+.sprite-microphone {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -245px;
+}
+
+.sprite-mightyMouse {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -245px;
+}
+
+.sprite-mobile {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -245px;
+}
+
+.sprite-mobyPicture {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -245px;
+}
+
+.sprite-money {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -245px;
+}
+
+.sprite-money2 {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -245px;
+}
+
+.sprite-monitor {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -245px;
+}
+
+.sprite-monthCalendar {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -245px;
+}
+
+.sprite-mouse {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -269px;
+}
+
+.sprite-music {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -269px;
+}
+
+.sprite-myspace {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -269px;
+}
+
+.sprite-notebook {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -269px;
+}
+
+.sprite-outgoing {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -269px;
+}
+
+.sprite-pacman {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -269px;
+}
+
+.sprite-paintBrush {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -269px;
+}
+
+.sprite-pants {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -269px;
+}
+
+.sprite-paperclip {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -269px;
+}
+
+.sprite-paypal {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -269px;
+}
+
+.sprite-paypal2 {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -269px;
+}
+
+.sprite-paypal3 {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -269px;
+}
+
+.sprite-pdfDoc {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -269px;
+}
+
+.sprite-pencil {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -269px;
+}
+
+.sprite-phone {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -269px;
+}
+
+.sprite-phone2 {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -269px;
+}
+
+.sprite-phone3 {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -269px;
+}
+
+.sprite-photos {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -293px;
+}
+
+.sprite-piggyBank {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -293px;
+}
+
+.sprite-pin {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -293px;
+}
+
+.sprite-planeSuitcase {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -293px;
+}
+
+.sprite-play {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -293px;
+}
+
+.sprite-play2 {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -293px;
+}
+
+.sprite-plixi {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -293px;
+}
+
+.sprite-podium {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -293px;
+}
+
+.sprite-postcard {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -293px;
+}
+
+.sprite-power {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -293px;
+}
+
+.sprite-powerBattery {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -293px;
+}
+
+.sprite-ppDoc {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -293px;
+}
+
+.sprite-presentation {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -293px;
+}
+
+.sprite-preview {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -293px;
+}
+
+.sprite-priceTag {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -293px;
+}
+
+.sprite-priceTags {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -293px;
+}
+
+.sprite-printer {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -293px;
+}
+
+.sprite-radio {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -317px;
+}
+
+.sprite-record {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -317px;
+}
+
+.sprite-recycle {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -317px;
+}
+
+.sprite-refresh {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -317px;
+}
+
+.sprite-refresh2 {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -317px;
+}
+
+.sprite-refresh3 {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -317px;
+}
+
+.sprite-refresh4 {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -317px;
+}
+
+.sprite-repeat {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -317px;
+}
+
+.sprite-robot {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -317px;
+}
+
+.sprite-rss {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -317px;
+}
+
+.sprite-ruler {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -317px;
+}
+
+.sprite-ruler2 {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -317px;
+}
+
+.sprite-runningMan {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -317px;
+}
+
+.sprite-safari {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -317px;
+}
+
+.sprite-scanLabel {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -317px;
+}
+
+.sprite-sd {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -317px;
+}
+
+.sprite-sd2 {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -317px;
+}
+
+.sprite-sd3 {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -341px;
+}
+
+.sprite-settings {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -341px;
+}
+
+.sprite-settings2 {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -341px;
+}
+
+.sprite-shirt {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -341px;
+}
+
+.sprite-shoppingBag {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -341px;
+}
+
+.sprite-shuffle {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -341px;
+}
+
+.sprite-signPost {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -341px;
+}
+
+.sprite-signal {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -341px;
+}
+
+.sprite-skype {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -341px;
+}
+
+.sprite-smallBrush {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -341px;
+}
+
+.sprite-socks {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -341px;
+}
+
+.sprite-sound {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -341px;
+}
+
+.sprite-speech {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -341px;
+}
+
+.sprite-speech2 {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -341px;
+}
+
+.sprite-star {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -341px;
+}
+
+.sprite-stats {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -341px;
+}
+
+.sprite-stop {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -341px;
+}
+
+.sprite-stopWatch {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -365px;
+}
+
+.sprite-strategy {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -365px;
+}
+
+.sprite-strategy2 {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -365px;
+}
+
+.sprite-stumble {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -365px;
+}
+
+.sprite-suitcase {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -365px;
+}
+
+.sprite-switcher {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -365px;
+}
+
+.sprite-table {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -365px;
+}
+
+.sprite-tag {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -365px;
+}
+
+.sprite-tags {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -365px;
+}
+
+.sprite-timer {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -365px;
+}
+
+.sprite-transfer {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -365px;
+}
+
+.sprite-trash {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -365px;
+}
+
+.sprite-travelSuitcase {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -365px;
+}
+
+.sprite-tree {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -365px;
+}
+
+.sprite-trolly {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -365px;
+}
+
+.sprite-truck {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -365px;
+}
+
+.sprite-tumbler {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -365px;
+}
+
+.sprite-tv {
+    width: 14px;
+    height: 14px;
+    background-position: -5px -389px;
+}
+
+.sprite-twitter {
+    width: 14px;
+    height: 14px;
+    background-position: -29px -389px;
+}
+
+.sprite-twitter2 {
+    width: 14px;
+    height: 14px;
+    background-position: -53px -389px;
+}
+
+.sprite-umbrella {
+    width: 14px;
+    height: 14px;
+    background-position: -77px -389px;
+}
+
+.sprite-underConstruction {
+    width: 14px;
+    height: 14px;
+    background-position: -101px -389px;
+}
+
+.sprite-unlocked {
+    width: 14px;
+    height: 14px;
+    background-position: -125px -389px;
+}
+
+.sprite-upload {
+    width: 14px;
+    height: 14px;
+    background-position: -149px -389px;
+}
+
+.sprite-user {
+    width: 14px;
+    height: 14px;
+    background-position: -173px -389px;
+}
+
+.sprite-user2 {
+    width: 14px;
+    height: 14px;
+    background-position: -197px -389px;
+}
+
+.sprite-userComment {
+    width: 14px;
+    height: 14px;
+    background-position: -221px -389px;
+}
+
+.sprite-users {
+    width: 14px;
+    height: 14px;
+    background-position: -245px -389px;
+}
+
+.sprite-users2 {
+    width: 14px;
+    height: 14px;
+    background-position: -269px -389px;
+}
+
+.sprite-vault {
+    width: 14px;
+    height: 14px;
+    background-position: -293px -389px;
+}
+
+.sprite-vcard {
+    width: 14px;
+    height: 14px;
+    background-position: -317px -389px;
+}
+
+.sprite-view {
+    width: 14px;
+    height: 14px;
+    background-position: -341px -389px;
+}
+
+.sprite-vimeo {
+    width: 14px;
+    height: 14px;
+    background-position: -365px -389px;
+}
+
+.sprite-vimeo2 {
+    width: 14px;
+    height: 14px;
+    background-position: -389px -389px;
+}
+
+.sprite-walkingMan {
+    width: 14px;
+    height: 14px;
+    background-position: -413px -5px;
+}
+
+.sprite-wifi {
+    width: 14px;
+    height: 14px;
+    background-position: -413px -29px;
+}
+
+.sprite-wifi2 {
+    width: 14px;
+    height: 14px;
+    background-position: -413px -53px;
+}
+
+.sprite-windows {
+    width: 14px;
+    height: 14px;
+    background-position: -413px -77px;
+}
+
+.sprite-wordDoc {
+    width: 14px;
+    height: 14px;
+    background-position: -413px -101px;
+}
+
+.sprite-wordpress {
+    width: 14px;
+    height: 14px;
+    background-position: -413px -125px;
+}
+
+.sprite-wordpress2 {
+    width: 14px;
+    height: 14px;
+    background-position: -413px -149px;
+}
+
+.sprite-youtube {
+    width: 14px;
+    height: 14px;
+    background-position: -413px -173px;
+}
+
+.sprite-zip {
+    width: 14px;
+    height: 14px;
+    background-position: -413px -197px;
+}
+
+.sprite-zipFiles {
+    width: 14px;
+    height: 14px;
+    background-position: -413px -221px;
+}
