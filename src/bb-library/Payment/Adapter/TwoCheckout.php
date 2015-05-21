@@ -122,15 +122,11 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         $api_admin->invoice_transaction_update(array('id' => $id, 'type' => 'ORDER CREATED'));
 
         $invoice_id = null;
-        if($tx['invoice_id']) {
+        if(isset($tx['invoice_id'])) {
             $invoice_id = $tx['invoice_id'];
-        } elseif($ipn['bb_invoice_id']) {
+        } elseif(isset($ipn['bb_invoice_id'])) {
             $invoice_id = $ipn['bb_invoice_id'];
             $api_admin->invoice_transaction_update(array('id'=>$id, 'invoice_id'=>$invoice_id));
-        } elseif(!isset($ipn['bb_invoice_id']) && isset($ipn['sale_id'])) {
-            $invoice_id = R::getCell('SELECT invoice_id FROM transaction WHERE txn_id = :id AND invoice_id IS NOT NULL', array('id'=>$ipn['sale_id']));
-        } elseif(!isset($ipn['bb_invoice_id']) && isset($ipn['order_number'])) {
-            $invoice_id = R::getCell('SELECT invoice_id FROM transaction WHERE txn_id = :id AND invoice_id IS NOT NULL', array('id'=>$ipn['order_number']));
         }
         
         if(!$invoice_id) {
@@ -260,11 +256,6 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         } elseif(isset($ipn['order_number']) && isset($ipn['total']) && isset($ipn['key'])) {
             $md5_hash  = $ipn["key"];
             $check_key = strtoupper(md5($secret.$ipn['order_number'].$ipn["total"]));
-
-        // The following code would be applicable to orders placed using our Plug and Play cart and our proprietary third party set of parameters.  
-        } elseif(isset($ipn['invoice_id']) && isset($ipn['sale_id']) && $ipn["md5_hash"]) {
-            $md5_hash  = $ipn["md5_hash"];
-            $check_key = strtoupper(md5($ipn["sale_id"] . $vendorNumber . $ipn["invoice_id"] . $secret));
         }
         
         error_log(sprintf('Returned MD5 Hash %s should be equal to %s', $md5_hash, $check_key));
@@ -280,7 +271,6 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         $data['mode']               = '2CO';
         
         foreach($invoice['lines'] as $i=>$item) {
-            $data['li_'.$i.'_id']			= $invoice['id'];
             $data['li_'.$i.'_type']         = 'product';
             $data['li_'.$i.'_name']         = $item['title'];
             $data['li_'.$i.'_product_id']   = $item['id'];
@@ -299,11 +289,8 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
        
         $data['merchant_order_id']  = $invoice['id'];
         
-        $data['return_url']         = $this->config['redirect_url'];
         $data['x_receipt_link_url'] = $this->config['redirect_url'];
-        $data['fixed']              = 'Y';
-        $data['skip_landing']       = 1;
-        
+
         return $data;
     }
 
@@ -332,7 +319,6 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         }
         
         foreach($invoice['lines'] as $i => $item) {
-        	$data['li_' . $i . '_id']			= $invoice['id'];
         	$data['li_' . $i . '_type']			= 'product';
         	$data['li_' . $i . '_name'] 		= $item['title'];
         	$data['li_' . $i . '_quantity']		= $item['quantity'];
@@ -353,10 +339,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
        
         $data['merchant_order_id']  = $invoice['id'];
         
-        $data['return_url']         = $this->config['redirect_url'];
         $data['x_receipt_link_url'] = $this->config['redirect_url'];
-        $data['fixed']              = 'Y';
-        $data['skip_landing']       = 1;
 
         return $data;
     }
