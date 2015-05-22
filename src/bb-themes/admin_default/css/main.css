@@ -1331,3 +1331,10 @@ li.plupload_droptext { background: transparent; text-align: center; vertical-ali
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.ajax-loader{
+    background: url('../images/loader.gif');
+    width: 16px;
+    height:11px;
+    display: inline-block;
+}

@@ -298,6 +298,7 @@ $(function() {
     }).val(bb.cookieRead('BBLANG'));
 
     requestNotificationStats();
+    requestDashboardStats();
 
 
 });
@@ -371,4 +372,25 @@ function nonGlobalAjaxCall (url, jsonp){
             }
         }
     });
+}
+
+function requestDashboardStats() {
+    if ($('.mod_stats').length > 0){
+        nonGlobalAjaxCall('admin/stats/get_summary', function(result){
+            elems = ['clients', 'orders', 'invoices', 'tickets'];
+
+            elems.forEach(function (element, index, array){
+                var dynamicName = eval("'."+element+"-stats td a'");
+                var elem = $(dynamicName);
+                elem.hide().removeClass('ajax-loader');
+                elem.eq(0).text(eval("result."+element+"_today"));
+                elem.eq(1).text(eval("result."+element+"_yesterday"));
+                elem.eq(2).text(eval("result."+element+"_this_month"));
+                elem.eq(3).text(eval("result."+element+"_last_month"));
+                elem.eq(4).text(eval("result."+element+"_total"));
+                elem.fadeIn('slow');
+            });
+
+        });
+    }
 }

@@ -13,9 +13,8 @@
 {% if admin.system_is_allowed({"mod":"stats"}) %}
 <div class="widget">
     <div class="head"><h5><i class="sprite sprite-chart8" style="margin: 0 15px 0 -15px"></i>{{ guest.system_company.name }} {% trans 'Statistics' %}</h5></div>
-    {% set stats = admin.stats_get_summary %}
     {% set income = admin.stats_get_summary_income %}
-    <table cellpadding="0" cellspacing="0" width="100%" class="tableStatic">
+    <table cellpadding="0" cellspacing="0" width="100%" class="tableStatic mod_stats">
         <thead>
             <tr>
                 <td width="10%">{% trans 'Metric' %}</td>
@@ -36,37 +35,37 @@
                 <td align="center"><a href="{{ 'invoice'|alink }}" title="" class="webStatsLink">{{ mf.currency_format(income.last_month) }}</a></td>
                 <td align="center"><a href="{{ 'invoice'|alink }}" title="" class="webStatsLink">{{ mf.currency_format(income.total) }}</a></td>
             </tr>
-            <tr>
+            <tr class="clients-stats">
                 <td>{% trans 'Clients' %}</td>
-                <td align="center"><a href="{{ 'client'|alink({'created_at' : "now"|date('Y-m-d')}) }}" title="" class="webStatsLink">{{ stats.clients_today }}</a></td>
-                <td align="center"><a href="{{ 'client'|alink({'created_at' : "yesterday"|date('Y-m-d')}) }}" title="" class="webStatsLink">{{ stats.clients_yesterday }}</a></td>
-                <td align="center"><a href="{{ 'client'|alink }}" title="" class="webStatsLink">{{ stats.clients_this_month }}</a></td>
-                <td align="center"><a href="{{ 'client'|alink }}" title="" class="webStatsLink">{{ stats.clients_last_month }}</a></td>
-                <td align="center"><a href="{{ 'client'|alink }}" title="" class="webStatsLink">{{ stats.clients_total }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'client'|alink({'created_at' : "now"|date('Y-m-d')}) }}" title="" >{{ stats.clients_today }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'client'|alink({'created_at' : "yesterday"|date('Y-m-d')}) }}" title="" >{{ stats.clients_yesterday }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'client'|alink }}" title="" >{{ stats.clients_this_month }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'client'|alink }}" title="" >{{ stats.clients_last_month }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'client'|alink }}" title="" >{{ stats.clients_total }}</a></td>
             </tr>
-            <tr>
+            <tr class="orders-stats">
                 <td>{% trans 'Orders' %}</td>
-                <td align="center"><a href="{{ 'order'|alink({'created_at' : "now"|date('Y-m-d')}) }}" title="" class="webStatsLink">{{ stats.orders_today }}</a></td>
-                <td align="center"><a href="{{ 'order'|alink({'created_at' : "yesterday"|date('Y-m-d')}) }}" title="" class="webStatsLink">{{ stats.orders_yesterday }}</a></td>
-                <td align="center"><a href="{{ 'order'|alink }}" title="" class="webStatsLink">{{ stats.orders_this_month }}</a></td>
-                <td align="center"><a href="{{ 'order'|alink }}" title="" class="webStatsLink">{{ stats.orders_last_month }}</a></td>
-                <td align="center"><a href="{{ 'order'|alink }}" title="" class="webStatsLink">{{ stats.orders_total }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'order'|alink({'created_at' : "now"|date('Y-m-d')}) }}" title="" class="webStatsLink">{{ stats.orders_today }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'order'|alink({'created_at' : "yesterday"|date('Y-m-d')}) }}" title="" class="webStatsLink">{{ stats.orders_yesterday }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'order'|alink }}" title="" >{{ stats.orders_this_month }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'order'|alink }}" title="" >{{ stats.orders_last_month }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'order'|alink }}" title="" >{{ stats.orders_total }}</a></td>
             </tr>
-            <tr>
+            <tr class="invoices-stats">
                 <td>{% trans 'Invoices' %}</td>
-                <td align="center"><a href="{{ 'invoice'|alink({'created_at' : "now"|date('Y-m-d')}) }}" title="" class="webStatsLink">{{ stats.invoices_today }}</a></td>
-                <td align="center"><a href="{{ 'invoice'|alink({'created_at' : "yesterday"|date('Y-m-d')}) }}" title="" class="webStatsLink">{{ stats.invoices_yesterday }}</a></td>
-                <td align="center"><a href="{{ 'invoice'|alink }}" title="" class="webStatsLink">{{ stats.invoices_this_month }}</a></td>
-                <td align="center"><a href="{{ 'invoice'|alink }}" title="" class="webStatsLink">{{ stats.invoices_last_month }}</a></td>
-                <td align="center"><a href="{{ 'invoice'|alink }}" title="" class="webStatsLink">{{ stats.invoices_total }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'invoice'|alink({'created_at' : "now"|date('Y-m-d')}) }}" title="" class="webStatsLink">{{ stats.invoices_today }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'invoice'|alink({'created_at' : "yesterday"|date('Y-m-d')}) }}" title="" class="webStatsLink">{{ stats.invoices_yesterday }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'invoice'|alink }}" title="" >{{ stats.invoices_this_month }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'invoice'|alink }}" title="" >{{ stats.invoices_last_month }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'invoice'|alink }}" title="" >{{ stats.invoices_total }}</a></td>
             </tr>
-            <tr>
+            <tr class="tickets-stats">
                 <td>{% trans 'Tickets' %}</td>
-                <td align="center"><a href="{{ 'support'|alink({'created_at' : "now"|date('Y-m-d')}) }}" title="" class="webStatsLink">{{ stats.tickets_today }}</a></td>
-                <td align="center"><a href="{{ 'support'|alink({'created_at' : "yesterday"|date('Y-m-d')}) }}" title="" class="webStatsLink">{{ stats.tickets_yesterday }}</a></td>
-                <td align="center"><a href="{{ 'support'|alink }}" title="" class="webStatsLink">{{ stats.tickets_this_month }}</a></td>
-                <td align="center"><a href="{{ 'support'|alink }}" title="" class="webStatsLink">{{ stats.tickets_last_month }}</a></td>
-                <td align="center"><a href="{{ 'support'|alink }}" title="" class="webStatsLink">{{ stats.tickets_total }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'support'|alink({'created_at' : "now"|date('Y-m-d')}) }}" title="" >{{ stats.tickets_today }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'support'|alink({'created_at' : "yesterday"|date('Y-m-d')}) }}" title="" >{{ stats.tickets_yesterday }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'support'|alink }}" title="" >{{ stats.tickets_this_month }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'support'|alink }}" title="" >{{ stats.tickets_last_month }}</a></td>
+                <td align="center"><a class="ajax-loader webStatsLink" href="{{ 'support'|alink }}" title="" >{{ stats.tickets_total }}</a></td>
             </tr>
         </tbody>
     </table>
