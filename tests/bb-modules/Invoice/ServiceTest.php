@@ -1256,35 +1256,47 @@ class ServiceTest extends \PHPUnit_Framework_TestCase
 
     public function testdoBatchPaidInvoiceActivation()
     {
-        $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
-
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('findAllPaid'))
-            ->getMock();
-        $serviceMock->expects($this->once())
-            ->method('findAllPaid')
-            ->will($this->returnValue(array($invoiceModel)));
-
         $itemInvoiceServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')->getMock();
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
-            ->method('executeTask');
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('find')
-            ->will($this->returnValue(array($invoiceItemModel)));
+            ->method('executeTask')
+            ->with($invoiceItemModel);
+        $itemInvoiceServiceMock->expects($this->atLeastOnce())
+            ->method('getAllNotExecutePaidItems')
+            ->willReturn(array($invoiceItemModel));
 
         $di                = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($itemInvoiceServiceMock) { return $itemInvoiceServiceMock; });
-        $di['db']          = $dbMock;
         $di['logger']      = new \Box_Log();
 
-        $serviceMock->setDi($di);
-        $result = $serviceMock->doBatchPaidInvoiceActivation();
+        $this->service->setDi($di);
+        $result = $this->service->doBatchPaidInvoiceActivation();
+        $this->assertInternalType('bool', $result);
+        $this->assertTrue($result);
+    }
+
+    public function testdoBatchPaidInvoiceActivationException()
+    {
+        $invoiceItemModel = new \Model_InvoiceItem();
+        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        $itemInvoiceServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')->getMock();
+        $itemInvoiceServiceMock->expects($this->atLeastOnce())
+            ->method('executeTask')
+            ->with($invoiceItemModel)
+            ->willThrowException(new \Box_Exception('tesitng exception..'));
+        $itemInvoiceServiceMock->expects($this->atLeastOnce())
+            ->method('getAllNotExecutePaidItems')
+            ->willReturn(array($invoiceItemModel));
+
+        $di                = new \Box_Di();
+        $di['mod_service'] = $di->protect(function () use ($itemInvoiceServiceMock) { return $itemInvoiceServiceMock; });
+        $di['logger']      = new \Box_Log();
+
+        $this->service->setDi($di);
+        $result = $this->service->doBatchPaidInvoiceActivation();
         $this->assertInternalType('bool', $result);
         $this->assertTrue($result);
     }

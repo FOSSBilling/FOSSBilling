@@ -419,5 +419,28 @@ class ServiceInvoiceItemTest extends \PHPUnit_Framework_TestCase
         $expected = 0;
         $this->assertEquals($expected, $result);
     }
+
+    public function testgetAllNotExecutePaidItems()
+    {
+        $di = new \Box_Di();
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getAll')
+            ->willReturn(array());
+
+        $model = new \Model_InvoiceItem();
+        $models = array($model);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('convertToModels')
+            ->with('InvoiceItem')
+            ->willReturn($models);
+
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $result = $this->service->getAllNotExecutePaidItems();
+        $this->assertInternalType('array', $result);
+    }
 }
  
