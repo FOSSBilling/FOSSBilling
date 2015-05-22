@@ -49,12 +49,6 @@ try {
     $output = false;
 }
 
-// print transaction output if available
-if(!is_bool($output)) {
-    print $output;
-    exit;
-}
-
 // redirect to invoice if gateways requires
 if(isset($_GET['bb_redirect']) && isset($_GET['bb_invoice_hash'])) {
     $url = $di['url']->link('invoice/'.$_GET['bb_invoice_hash']);
