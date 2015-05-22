@@ -351,10 +351,12 @@ function appendRedNotificatioNumber(elem, count){
     $('<span>', {'class': 'numberMiddle', 'text': count}).hide().appendTo(elem).fadeIn();
 }
 
-function nonGlobalAjaxCall (url, jsonp){
+function nonGlobalAjaxCall (url, params, jsonp){
+    jsonp = arguments[arguments.length - 1];
     $.ajax({
         type: "POST",
         url: bb.restUrl(url),
+        data: params,
         dataType: 'json',
         global: false,
         error: function(jqXHR, textStatus, e) {
