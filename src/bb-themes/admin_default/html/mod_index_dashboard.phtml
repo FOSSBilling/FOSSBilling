@@ -284,11 +284,12 @@
 <script type="text/javascript">
 
 $(function() {
-    setPlotDataData('graph-income', {{ admin.stats_get_income({'date_from':request.date_from, 'date_to':request.date_to}) | json_encode }} );
-    setPlotDataData('graph-orders', {{ admin.stats_get_orders({'date_from':request.date_from, 'date_to':request.date_to}) | json_encode }} );
-    setPlotDataData('graph-invoice', {{ admin.stats_get_invoices({'date_from':request.date_from, 'date_to':request.date_to}) | json_encode }} );
-    setPlotDataData('graph-clients', {{ admin.stats_get_clients({'date_from':request.date_from, 'date_to':request.date_to}) | json_encode }} );
-    setPlotDataData('graph-tickets', {{ admin.stats_get_tickets({'date_from':request.date_from, 'date_to':request.date_to}) | json_encode }} );
+    var params = '{{ {'date_from':request.date_from, 'date_to':request.date_to}|json_encode }}';
+    nonGlobalAjaxCall('admin/stats/get_income', params, function(result){ setPlotDataData('graph-income', result);});
+    nonGlobalAjaxCall('admin/stats/get_orders', params, function(result){ setPlotDataData('graph-orders', result);});
+    nonGlobalAjaxCall('admin/stats/get_invoices', params, function(result){ setPlotDataData('graph-invoice', result);});
+    nonGlobalAjaxCall('admin/stats/get_clients', params, function(result){ setPlotDataData('graph-clients', result);});
+    nonGlobalAjaxCall('admin/stats/get_tickets', params, function(result){ setPlotDataData('graph-tickets', result);});
 });
 
 function setPlotDataData(id, result) {
