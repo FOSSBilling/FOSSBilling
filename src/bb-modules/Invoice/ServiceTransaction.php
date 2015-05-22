@@ -87,9 +87,8 @@ class ServiceTransaction implements InjectionAwareInterface
             if(!isset($data['bb_gateway_id'])) {
                 throw new \Box_Exception('Payment gateway id is missing');
             }
-            $invoice = $this->di['db']->getExistingModelById('Invoice', $data['bb_invoice_id'], 'Invoice was not found');
-
-            $gateway = $this->di['db']->getExistingModelById('PayGateway', $data['bb_gateway_id'], 'Gateway was not found');
+            $this->di['db']->getExistingModelById('Invoice', $data['bb_invoice_id'], 'Invoice was not found');
+            $this->di['db']->getExistingModelById('PayGateway', $data['bb_gateway_id'], 'Gateway was not found');
         }
 
         $ipn = array(
