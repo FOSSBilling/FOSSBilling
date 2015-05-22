@@ -81,20 +81,20 @@
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"order"}) %}
-        	<li><a href="{{ 'order'|alink({'status' : 'failed_setup'}) }}" title=""><span><i class="sprite-23 sprite-23-basket2"></i>{% trans 'Orders' %}</span></a></li>
+        	<li class="order-block"><a href="{{ 'order'|alink({'status' : 'failed_setup'}) }}" title=""><span><i class="sprite-23 sprite-23-basket2"></i>{% trans 'Orders' %}</span></a></li>
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"invoice"}) %}
-            <li><a href="{{ 'invoice'|alink({'status' : 'unpaid'}) }}" title=""><span><i class="sprite-23 sprite-23-money"></i>{% trans 'Invoices' %}</span></a></li>
+            <li class="invoice-block"><a href="{{ 'invoice'|alink({'status' : 'unpaid'}) }}" title=""><span><i class="sprite-23 sprite-23-money"></i>{% trans 'Invoices' %}</span></a></li>
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"support"}) %}
-            <li><a href="{{ 'support/public-tickets'|alink({'status' : 'open'}) }}" title=""><span><i class="sprite-23 sprite-23-speech"></i>{% trans 'Inquiries' %}</span></a></li>
-        	<li><a href="{{ 'support'|alink({'status' : 'open'}) }}" title=""><span><i class="sprite-23 sprite-23-dialog"></i>{% trans 'Tickets' %}</span></a></li>
+            <li class="public-ticket-block"><a href="{{ 'support/public-tickets'|alink({'status' : 'open'}) }}" title=""><span><i class="sprite-23 sprite-23-speech"></i>{% trans 'Inquiries' %}</span></a></li>
+        	<li class="support-block"><a href="{{ 'support'|alink({'status' : 'open'}) }}" title=""><span><i class="sprite-23 sprite-23-dialog"></i>{% trans 'Tickets' %}</span></a></li>
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"client"}) %}
-            <li><a href="{{ 'client'|alink }}" title=""><span><i class="sprite-23 sprite-23-user"></i>{% trans 'Clients' %}</span></a></li>
+            <li class="client-block"><a href="{{ 'client'|alink }}" title=""><span><i class="sprite-23 sprite-23-user"></i>{% trans 'Clients' %}</span></a></li>
             {% endif %}
             
         	<li><a href="{{ 'index'|alink }}" title=""><span><i class="sprite-23 sprite-23-home"></i>{% trans 'Dashboard' %}</span></a></li>

@@ -297,7 +297,15 @@ $(function() {
         return false;
     }).val(bb.cookieRead('BBLANG'));
 
-    var invoiceElem = $('.iInvoices');
+    requestNotificationStats();
+
+
+});
+function requestNotificationStats(){
+    if ($('.middleNav').length == 0) {
+        return 0;
+    }
+    var invoiceElem = $('.invoice-block');
     if (invoiceElem) {
         nonGlobalAjaxCall('admin/invoice/get_statuses', function (result) {
             var count = result.unpaid;
@@ -307,7 +315,7 @@ $(function() {
         });
     }
 
-    var orderElem = $('.iOrders');
+    var orderElem = $('.order-block');
     if (orderElem){
         nonGlobalAjaxCall('admin/order/get_statuses', function(result){
             var count = result.failed_setup;
@@ -317,7 +325,7 @@ $(function() {
         });
     }
 
-    var pubTicketsElem = $('.iSpeech');
+    var pubTicketsElem = $('.public-ticket-block');
     if (pubTicketsElem){
         nonGlobalAjaxCall('admin/support/public_ticket_get_statuses', function(result){
             var count = result.open ;
@@ -327,7 +335,7 @@ $(function() {
         });
     }
 
-    var ticketsElem = $('.iMes');
+    var ticketsElem = $('.support-block');
     if (ticketsElem){
         nonGlobalAjaxCall('admin/support/ticket_get_statuses', function(result){
             var count = result.open ;
@@ -336,31 +344,31 @@ $(function() {
             }
         });
     }
+}
 
-    function appendRedNotificatioNumber(elem, count){
-        $('<span>', {'class': 'numberMiddle', 'text': count}).hide().appendTo(elem).fadeIn();
-    }
+function appendRedNotificatioNumber(elem, count){
+    $('<span>', {'class': 'numberMiddle', 'text': count}).hide().appendTo(elem).fadeIn();
+}
 
-    function nonGlobalAjaxCall (url, jsonp){
-        $.ajax({
-            type: "POST",
-            url: bb.restUrl(url),
-            dataType: 'json',
-            global: false,
-            error: function(jqXHR, textStatus, e) {
-                bb.msg(e, 'error');
-            },
-            success: function(data) {
-                if(data.error) {
-                    bb.msg(data.error.message, 'error');
-                } else {
-                    if(typeof jsonp === 'function') {
-                        return jsonp(data.result);
-                    } else if(window.hasOwnProperty('console')) {
-                        console.log(data.result);
-                    }
+function nonGlobalAjaxCall (url, jsonp){
+    $.ajax({
+        type: "POST",
+        url: bb.restUrl(url),
+        dataType: 'json',
+        global: false,
+        error: function(jqXHR, textStatus, e) {
+            bb.msg(e, 'error');
+        },
+        success: function(data) {
+            if(data.error) {
+                bb.msg(data.error.message, 'error');
+            } else {
+                if(typeof jsonp === 'function') {
+                    return jsonp(data.result);
+                } else if(window.hasOwnProperty('console')) {
+                    console.log(data.result);
                 }
             }
-        });
-    }
-});
+        }
+    });
+}
