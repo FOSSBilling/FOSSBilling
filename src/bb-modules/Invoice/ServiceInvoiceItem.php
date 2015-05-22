@@ -311,7 +311,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $sql = 'SELECT invoice_item.*
                 FROM invoice_item
                   left join invoice on invoice_item.invoice_id = invoice.id
-                WHERE (invoice_item.status != :item_status or invoice_item.status is null) and invoice.status = :invoice_status';
+                WHERE invoice_item.status != :item_status and invoice.status = :invoice_status';
         $bindings = array(
             ':item_status' => \Model_InvoiceItem::STATUS_EXECUTED,
             ':invoice_status' => \Model_Invoice::STATUS_PAID,
