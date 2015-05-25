@@ -173,8 +173,8 @@ class Server_Manager_Ispconfig3 extends Server_Manager
             'telephone'     => $client->getTelephone(),
             'mobile'        => $client->getTelephone(),
             'fax'           => $client->getTelephone(),
-            'email'         => $a->getEmail(),
-            'internet'      => $a->getWww(),
+            'email'         => $client->getEmail(),
+            'internet'      => $client->getWww(),
             'icq'           => '',
             'notes'         => $a->getNote(),
         );

@@ -227,7 +227,7 @@ class Server_Manager_Virtualmin extends Server_Manager
      */
     private function _getUrl()
     {
-    	$url = $this->_config['ssl'] ? 'https://' : 'http://';
+    	$url = (isset($this->_config['ssl']) && $this->_config['ssl'])  ? 'https://' : 'http://';
     	$url .= $this->_config['host'] . ' : ' . $this->_config['port'] . '/virtual-server/remote.cgi';
 
     	return $url;
@@ -292,9 +292,9 @@ class Server_Manager_Virtualmin extends Server_Manager
     		'max-aliasdoms'	=>	($p->getMaxDomains() == 'unlimited') ? 'UNLIMITED' : (int)$p->getMaxDomains(),
     		'max-realdoms'	=>	($p->getMaxDomains() == 'unlimited') ? 'UNLIMITED' : (int)$p->getMaxDomains(),
     		'max-quota'		=>	($p->getQuota() == 'unlimited') ? 'UNLIMITED' : (int)$p->getQuota() * 1024,
-    		'max-mailboxes'	=>	(int)$p->getPop(),
+    		'max-mailboxes'	=>	(int)$p->getMaxPop(),
     		'max-aliases'	=>	(int)$p->getMaxDomains() ? $p->getMaxDomains() : 1,
-    		'max-dbs'		=>	($p->getMaxDb() == 'unlimited') ? 'UNLIMITED' : (int)$p->getMaxDb(),
+    		'max-dbs'		=>	($p->getMaxSql() == 'unlimited') ? 'UNLIMITED' : (int)$p->getMaxSql(),
     		'max-bw'		=>	($p->getBandwidth() == 'unlimited') ? 'UNLIMITED' : (int)$p->getBandwidth() * 1024 * 1024,
     		'allow1'		=>	'dns',		//BIND DNS domain
     		'allow2'		=>	'web',		//Apache website
@@ -670,9 +670,9 @@ class Server_Manager_Virtualmin extends Server_Manager
     		'max-aliasdoms'	=>	($p->getMaxDomains() == 'unlimited') ? 'UNLIMITED' : $p->getMaxDomains(),
     		'max-realdoms'	=>	($p->getMaxDomains() == 'unlimited') ? 'UNLIMITED' : $p->getMaxDomains(),
     		'max-quota'		=>	($p->getQuota() == 'unlimited') ? 'UNLIMITED' : (int)$p->getQuota() * 1024,
-    		'max-mailboxes'	=>	(int)$p->getPop(),
+    		'max-mailboxes'	=>	(int)$p->getMaxPop(),
     		'max-aliases'	=>	(int)$p->getMaxDomains() ? $p->getMaxDomains() : 1,
-    		'max-dbs'		=>	($p->getMaxDb() == 'unlimited') ? 'UNLIMITED' : (int)$p->getMaxDb(),
+    		'max-dbs'		=>	($p->getMaxSql() == 'unlimited') ? 'UNLIMITED' : (int)$p->getMaxSql(),
     		'max-bw'		=>	($p->getBandwidth() == 'unlimited') ? 'UNLIMITED' : (int)$p->getBandwidth() * 1024 * 1024,
     		'allow1'		=>	'dns',		//BIND DNS domain
     		'allow2'		=>	'web',		//Apache website
