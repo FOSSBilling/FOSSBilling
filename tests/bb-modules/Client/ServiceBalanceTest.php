@@ -3,7 +3,7 @@
 
 namespace Box\Tests\Mod\Client;
 
-class ServiceBalanceTest extends \PHPUnit_Framework_TestCase
+class ServiceBalanceTest extends \BBTestCase
 {
 
     public function testgetDi()

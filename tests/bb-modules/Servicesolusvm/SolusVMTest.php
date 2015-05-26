@@ -3,7 +3,7 @@
 
 namespace Box\Mod\Servicesolusvm;
 
-class SolusVMTest extends \PHPUnit_Framework_TestCase {
+class SolusVMTest extends \BBTestCase {
 
     public function testgetDi()
     {

@@ -2,7 +2,7 @@
 namespace Box\Tests\Mod\Email\Api;
 
 
-class ClientTest extends \PHPUnit_Framework_TestCase
+class ClientTest extends \BBTestCase
 {
     public function testGet_list()
     {

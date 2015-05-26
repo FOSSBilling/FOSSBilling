@@ -2,7 +2,7 @@
 
 namespace Box\Tests\Mod\Activity\Api;
 
-class AdminTest extends \PHPUnit_Framework_TestCase {
+class AdminTest extends \BBTestCase {
 
     public function test_log_get_list()
     {

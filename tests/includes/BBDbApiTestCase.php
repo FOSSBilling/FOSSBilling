@@ -39,4 +39,17 @@ abstract class BBDbApiTestCase extends BBDatabaseTestCase
         $this->api_system = $this->di['api_system'];
         //$this->api_admin->hook_batch_connect();
     }
+
+    protected function tearDown()
+    {
+        parent::tearDown();
+        
+        $refl = new ReflectionObject($this);
+        foreach ($refl->getProperties() as $prop) {
+            if (!$prop->isStatic() && 0 !== strpos($prop->getDeclaringClass()->getName(), 'PHPUnit_')) {
+                $prop->setAccessible(true);
+                $prop->setValue($this, null);
+            }
+        }
+    }
 }

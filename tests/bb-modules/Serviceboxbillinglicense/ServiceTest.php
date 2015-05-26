@@ -4,7 +4,7 @@ namespace Box\Tests\Mod\Serviceboxbillinglicense;
 
 use Box\Mod\Serviceboxbillinglicense\Service;
 
-class ServiceTest extends \PHPUnit_Framework_TestCase
+class ServiceTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Serviceboxbillinglicense\Service

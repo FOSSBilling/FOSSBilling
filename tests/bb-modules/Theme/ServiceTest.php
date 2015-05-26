@@ -4,7 +4,7 @@
 namespace Box\Mod\Theme;
 
 
-class ServiceTest extends \PHPUnit_Framework_TestCase {
+class ServiceTest extends \BBTestCase {
     /**
      * @var \Box\Mod\Theme\Service
      */

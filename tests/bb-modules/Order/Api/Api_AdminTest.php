@@ -1,6 +1,6 @@
 <?php
 
-class AdminTest extends \PHPUnit_Framework_TestCase
+class AdminTest extends \BBTestCase
 {
 
     /**

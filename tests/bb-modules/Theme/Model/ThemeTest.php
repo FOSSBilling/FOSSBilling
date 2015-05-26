@@ -4,7 +4,7 @@
 namespace Box\Mod\Theme\Model;
 
 
-class ThemeTest extends \PHPUnit_Framework_TestCase {
+class ThemeTest extends \BBTestCase {
 
     private $existingTheme = 'huraga';
 

@@ -4,7 +4,7 @@
 namespace Box\Mod\Cron;
 
 
-class ServiceTest extends \PHPUnit_Framework_TestCase {
+class ServiceTest extends \BBTestCase {
 
     public function testgetDi()
     {
