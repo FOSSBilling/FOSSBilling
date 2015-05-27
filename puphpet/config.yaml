@@ -60,6 +60,7 @@ server:
     install: '1'
     packages:
         - ant
+        - npm
 firewall:
     install: '1'
     rules: null
