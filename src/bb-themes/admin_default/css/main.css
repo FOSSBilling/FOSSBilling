@@ -1331,3 +1331,7 @@ li.plupload_droptext { background: transparent; text-align: center; vertical-ali
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.dark-sprite-icon {
+    margin: auto 0;
+    display: inline-block;
+}
