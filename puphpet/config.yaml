@@ -60,7 +60,6 @@ server:
     install: '1'
     packages:
         - ant
-        - npm
 firewall:
     install: '1'
     rules: null
@@ -183,7 +182,7 @@ ruby:
         0igyHxSEMlUd:
             version: ''
 nodejs:
-    install: '0'
+    install: '1'
     npm_packages: {  }
 python:
     install: '1'
