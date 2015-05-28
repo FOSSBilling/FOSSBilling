@@ -1,0 +1,13 @@
+{
+  "name": "BoxBilling ",
+  "version": "0.1.0",
+  "author": "BoxBilling inc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/boxbilling/boxbilling"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-spritesmith": "^4.6.1"
+  }
+}
