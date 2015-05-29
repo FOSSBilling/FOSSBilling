@@ -2,7 +2,7 @@
 namespace Box\Tests\Mod\Cart;
 
 
-class ServiceTest extends \PHPUnit_Framework_TestCase
+class ServiceTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Cart\Service

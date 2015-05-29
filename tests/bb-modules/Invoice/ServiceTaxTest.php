@@ -4,7 +4,7 @@
 namespace Box\Mod\Invoice;
 
 
-class ServiceTaxTest extends \PHPUnit_Framework_TestCase
+class ServiceTaxTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Invoice\ServiceTax

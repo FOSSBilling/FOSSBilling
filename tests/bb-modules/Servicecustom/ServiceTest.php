@@ -3,7 +3,7 @@ namespace Box\Tests\Mod\Servicecustom;
 
 use RedBeanPHP\SimpleModel;
 
-class ServiceTest extends \PHPUnit_Framework_TestCase
+class ServiceTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Servicecustom\Service

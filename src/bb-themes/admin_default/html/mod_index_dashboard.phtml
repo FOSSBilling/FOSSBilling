@@ -12,7 +12,7 @@
 
 {% if admin.system_is_allowed({"mod":"stats"}) %}
 <div class="widget">
-    <div class="head"><h5><i class="sprite sprite-chart8" style="margin: 0 15px 0 -15px"></i>{{ guest.system_company.name }} {% trans 'Statistics' %}</h5></div>
+    <div class="head"><h5><i class="dark-sprite-icon sprite-chart8" style="margin: 0 15px 0 -15px"></i>{{ guest.system_company.name }} {% trans 'Statistics' %}</h5></div>
     {% set income = admin.stats_get_summary_income %}
     <table cellpadding="0" cellspacing="0" width="100%" class="tableStatic mod_stats">
         <thead>
@@ -142,7 +142,7 @@
 {% if admin.system_is_allowed({"mod":"stats"}) %}
 <div class="widget">
     <div class="head">
-        <h5><i class="sprite sprite-dropper" style="margin: 0 15px 0 -15px"></i>{% trans 'Define date interval for graphs' %}</h5>
+        <h5><i class="dark-sprite-icon sprite-dropper" style="margin: 0 15px 0 -15px"></i>{% trans 'Define date interval for graphs' %}</h5>
     </div>
     <form method="get" action="" class="mainForm">
         <input type="hidden" name="_url" value="{{ request._url }}" />
@@ -164,7 +164,7 @@
 
 <div class="widget">
     <div class="head">
-        <h5><i class="sprite sprite-graph" style="margin: 0 15px 0 -15px"></i>{% trans 'Income' %}</h5>
+        <h5><i class="dark-sprite-icon sprite-graph" style="margin: 0 15px 0 -15px"></i>{% trans 'Income' %}</h5>
     </div>
     <div class="body">
         <div id="graph-income" style="width: 100%; height: 200px;"></div>
@@ -173,7 +173,7 @@
 
 <div class="widget">
     <div class="head">
-        <h5><i class="sprite sprite-graph" style="margin: 0 15px 0 -15px"></i>{% trans 'Orders' %}</h5>
+        <h5><i class="dark-sprite-icon sprite-graph" style="margin: 0 15px 0 -15px"></i>{% trans 'Orders' %}</h5>
     </div>
     <div class="body">
         <div id="graph-orders" style="width: 100%; height: 200px;"></div>
@@ -182,7 +182,7 @@
 
 <div class="widget">
     <div class="head">
-        <h5><i class="sprite sprite-graph" style="margin: 0 15px 0 -15px"></i>{% trans 'Invoices' %}</h5>
+        <h5><i class="dark-sprite-icon sprite-graph" style="margin: 0 15px 0 -15px"></i>{% trans 'Invoices' %}</h5>
     </div>
     <div class="body">
         <div id="graph-invoice" style="width: 100%; height: 200px;"></div>
@@ -191,7 +191,7 @@
 
 <div class="widget">
     <div class="head">
-        <h5><i class="sprite sprite-graph" style="margin: 0 15px 0 -15px"></i>{% trans 'Clients' %}</h5>
+        <h5><i class="dark-sprite-icon sprite-graph" style="margin: 0 15px 0 -15px"></i>{% trans 'Clients' %}</h5>
     </div>
     <div class="body">
         <div id="graph-clients" style="width: 100%; height: 200px;"></div>
@@ -200,7 +200,7 @@
 
 <div class="widget">
     <div class="head">
-        <h5><i class="sprite sprite-graph" style="margin: 0 15px 0 -15px"></i>{% trans 'Support tickets' %}</h5>
+        <h5><i class="dark-sprite-icon sprite-graph" style="margin: 0 15px 0 -15px"></i>{% trans 'Support tickets' %}</h5>
     </div>
     <div class="body">
         <div id="graph-tickets" style="width: 100%; height: 200px;"></div>

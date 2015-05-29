@@ -1,59 +1,65 @@
-.sprite-topnav {
-    background-image: url(../sprites/topnav-sprite.png);
-    background-repeat: no-repeat;
-    display: inline-block;
-}
+/*
+Icon classes can be used entirely standalone. They are named after their original file names.
 
+```html
+<!-- `display: block` sprite -->
+<div class="icon-home"></div>
+
+<!-- `display: inline-block` sprite -->
+<img class="icon-home" />
+```
+*/
 .sprite-topnav-contactAdmin {
-    width: 11px;
-    height: 10px;
-    background-position: -1px -1px;
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: -22px 0px;
+  width: 11px;
+  height: 10px;
 }
-
 .sprite-topnav-help {
-    width: 10px;
-    height: 10px;
-    background-position: -14px -1px;
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: 0px -22px;
+  width: 10px;
+  height: 10px;
 }
-
 .sprite-topnav-logout {
-    width: 11px;
-    height: 11px;
-    background-position: -26px -1px;
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: 0px 0px;
+  width: 11px;
+  height: 11px;
 }
-
 .sprite-topnav-mainWebsite {
-    width: 10px;
-    height: 10px;
-    background-position: -1px -14px;
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: -10px -22px;
+  width: 10px;
+  height: 10px;
 }
-
 .sprite-topnav-messages {
-    width: 11px;
-    height: 11px;
-    background-position: -13px -14px;
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: -11px 0px;
+  width: 11px;
+  height: 11px;
 }
-
 .sprite-topnav-profile {
-    width: 11px;
-    height: 11px;
-    background-position: -26px -14px;
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: 0px -11px;
+  width: 11px;
+  height: 11px;
 }
-
 .sprite-topnav-register {
-    width: 10px;
-    height: 10px;
-    background-position: -1px -27px;
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: -20px -22px;
+  width: 10px;
+  height: 10px;
 }
-
 .sprite-topnav-settings {
-    width: 10px;
-    height: 11px;
-    background-position: -39px -1px;
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: -22px -10px;
+  width: 10px;
+  height: 11px;
 }
-
 .sprite-topnav-tasks {
-    width: 11px;
-    height: 11px;
-    background-position: -13px -27px;
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: -11px -11px;
+  width: 11px;
+  height: 11px;
 }

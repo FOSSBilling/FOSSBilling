@@ -4,7 +4,7 @@
 namespace Box\Mod\Invoice;
 
 
-class ServicePayGatewayTest extends \PHPUnit_Framework_TestCase {
+class ServicePayGatewayTest extends \BBTestCase {
 
     /**
      * @var \Box\Mod\Invoice\ServicePayGateway

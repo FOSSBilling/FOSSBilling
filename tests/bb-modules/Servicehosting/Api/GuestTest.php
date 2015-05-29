@@ -1,7 +1,7 @@
 <?php
 namespace Box\Mod\Servicehosting\Api;
 
-class GuestTest extends \PHPUnit_Framework_TestCase
+class GuestTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Servicehosting\Api\Guest

@@ -3,7 +3,7 @@
 namespace Box\Mod\Spamchecker\Api;
 
 
-class GuestTest extends \PHPUnit_Framework_TestCase
+class GuestTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Spamchecker\Api\Guest

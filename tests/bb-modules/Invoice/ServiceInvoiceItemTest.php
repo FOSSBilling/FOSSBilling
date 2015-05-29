@@ -4,7 +4,7 @@
 namespace Box\Mod\Invoice;
 
 
-class ServiceInvoiceItemTest extends \PHPUnit_Framework_TestCase
+class ServiceInvoiceItemTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Invoice\ServiceInvoiceItem

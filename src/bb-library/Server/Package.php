@@ -162,4 +162,9 @@ class Server_Package
     {
         return $this->maxpop;
     }
+
+    public function getMaxQuota()
+    {
+        return $this->quota;
+    }
 }

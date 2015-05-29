@@ -1,42 +1,47 @@
-.sprite-23 {
-    background-image: url(../sprites/dark-icons-23-sprite.png);
-    background-repeat: no-repeat;
-    display: block;
-    margin: 0 auto;
-}
+/*
+Icon classes can be used entirely standalone. They are named after their original file names.
 
+```html
+<!-- `display: block` sprite -->
+<div class="icon-home"></div>
+
+<!-- `display: inline-block` sprite -->
+<img class="icon-home" />
+```
+*/
 .sprite-23-basket2 {
-    width: 23px;
-    height: 23px;
-    background-position: -5px -5px;
+  background-image: url(../sprites/dark-icons-23-sprite.png);
+  background-position: 0px 0px;
+  width: 23px;
+  height: 23px;
 }
-
 .sprite-23-dialog {
-    width: 23px;
-    height: 23px;
-    background-position: -38px -5px;
+  background-image: url(../sprites/dark-icons-23-sprite.png);
+  background-position: -23px 0px;
+  width: 23px;
+  height: 23px;
 }
-
 .sprite-23-home {
-    width: 23px;
-    height: 23px;
-    background-position: -5px -38px;
+  background-image: url(../sprites/dark-icons-23-sprite.png);
+  background-position: 0px -23px;
+  width: 23px;
+  height: 23px;
 }
-
 .sprite-23-money {
-    width: 23px;
-    height: 23px;
-    background-position: -38px -38px;
+  background-image: url(../sprites/dark-icons-23-sprite.png);
+  background-position: -23px -23px;
+  width: 23px;
+  height: 23px;
 }
-
 .sprite-23-speech {
-    width: 23px;
-    height: 23px;
-    background-position: -71px -5px;
+  background-image: url(../sprites/dark-icons-23-sprite.png);
+  background-position: -46px 0px;
+  width: 23px;
+  height: 23px;
 }
-
 .sprite-23-user {
-    width: 23px;
-    height: 23px;
-    background-position: -71px -38px;
+  background-image: url(../sprites/dark-icons-23-sprite.png);
+  background-position: -46px -23px;
+  width: 23px;
+  height: 23px;
 }

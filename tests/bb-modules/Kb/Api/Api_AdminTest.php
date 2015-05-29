@@ -1,7 +1,7 @@
 <?php
 namespace Box\Tests\Mod\Kb\Api;
 
-class AdminTest extends \PHPUnit_Framework_TestCase
+class AdminTest extends \BBTestCase
 {
     public function testArticle_get_list()
     {

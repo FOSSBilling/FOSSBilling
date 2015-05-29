@@ -3,7 +3,7 @@
 namespace Box\Tests\Mod\Filemanager\Api;
 
 
-class AdminTest extends \PHPUnit_Framework_TestCase
+class AdminTest extends \BBTestCase
 {
 
     /**
