@@ -1,6 +1,7 @@
 Release 4.18
 ------------------------------------------------------------------------------
 * Select TLDs for free domain registration on shared hosting product
+* Add grunt task runner for developers (creates minified js and css files in admin_default theme)
 
 Release 4.17
 ------------------------------------------------------------------------------

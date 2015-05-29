@@ -49,6 +49,15 @@ Install vagrant-hostmanager plugin
     
 to update /etc/hosts file 
 
+Using Grunt
+===========
+To create minified js and css files run:
+`./node_modules/.bin/grunt` from project root directory
+
+If you want to use not minified versions of admin_default:
+JS https://github.com/boxbilling/boxbilling/blob/334784d97379f2632f24d97bf557dffb4f0965c1/src/bb-themes/admin_default/html/layout_default.phtml#L17-L24
+CSS https://github.com/boxbilling/boxbilling/blob/2636cae130a94cdd827fb5f4acf46b0cdfebbb30/src/bb-themes/admin_default/html/partial_styles.phtml
+
 ----
 ##### Virtual Machine Specifications #####
 
