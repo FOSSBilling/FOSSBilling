@@ -113,8 +113,9 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-cssmin');
     grunt.loadNpmTasks('grunt-contrib-uglify');
 
-    // Default task(s).
-    grunt.registerTask('default');
+    // Grunt task(s).
+    grunt.registerTask('default', ['create-sprites', 'css', 'js']);
+
     grunt.registerTask('create-sprites', ['sprite']);
     grunt.registerTask('css', ['concat_css', 'cssmin', 'clean:css']);
     grunt.registerTask('js', ['concat:default','uglify', 'clean:js']);
