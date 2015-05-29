@@ -42,6 +42,11 @@ module.exports = function(grunt) {
                 src: [
                     "src/bb-themes/admin_default/css/min-temp.css"
                 ]
+            },
+            js: {
+                src: [
+                    "src/bb-themes/admin_default/js/boxbilling.js"
+                ]
             }
         },
 
@@ -72,6 +77,31 @@ module.exports = function(grunt) {
                 ]
             }
         },
+
+        concat: {
+            default: {
+                src: [
+                    'src/bb-themes/admin_default/js/jquery.min.js',
+                    'src/bb-themes/admin_default/js/ui/jquery.alerts.js',
+                    'src/bb-themes/admin_default/js/ui/jquery.tipsy.js',
+                    'src/bb-themes/admin_default/js/jquery.collapsible.min.js',
+                    'src/bb-themes/admin_default/js/forms/forms.js',
+                    'src/bb-themes/admin_default/js/jquery.ToTop.js',
+                    'src/bb-themes/admin_default/js/jquery.scrollTo-min.js',
+                    'src/bb-themes/admin_default/js/jquery-ui.js',
+                    'src/bb-themes/admin_default/js/bb-admin.js',
+                ],
+                dest: 'src/bb-themes/admin_default/js/boxbilling.js'
+            },
+        },
+
+        uglify: {
+            js: {
+                files: {
+                    'src/bb-themes/admin_default/js/boxbilling.min.js': ['src/bb-themes/admin_default/js/boxbilling.js'],
+                }
+            }
+        },
     });
 
     // Load packages
@@ -81,11 +111,13 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-concat-css');
     grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-contrib-cssmin');
+    grunt.loadNpmTasks('grunt-contrib-uglify');
 
     // Default task(s).
     grunt.registerTask('default');
     grunt.registerTask('create-sprites', ['sprite']);
     grunt.registerTask('css', ['concat_css', 'cssmin', 'clean:css']);
+    grunt.registerTask('js', ['concat:default','uglify', 'clean:js']);
 
 
 
