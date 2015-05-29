@@ -1334,4 +1334,9 @@ li.plupload_droptext { background: transparent; text-align: center; vertical-ali
 .dark-sprite-icon {
     margin: auto 0;
     display: inline-block;
+    background-repeat: no-repeat;
+}
+.sprite-topnav {
+    background-repeat: no-repeat;
+    display: inline-block;
 }

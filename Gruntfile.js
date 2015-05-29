@@ -14,6 +14,16 @@ module.exports = function(grunt) {
                         return '.sprite-' + item.name;
                     }
                 }
+            },
+            topnav: {
+                src: 'src/bb-themes/admin_default/images/icons/topnav/*.png',
+                dest: 'src/bb-themes/admin_default/sprites/topnav-sprite.png',
+                destCss: 'src/bb-themes/admin_default/css/topnav-sprite.css',
+                cssOpts: {
+                    cssSelector: function (item) {
+                        return '.sprite-topnav-' + item.name;
+                    }
+                }
             }
         },
     });
