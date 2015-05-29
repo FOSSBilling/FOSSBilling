@@ -55,8 +55,8 @@ To create minified js and css files run:
 `./node_modules/.bin/grunt` from project root directory
 
 If you want to use not minified versions of admin_default:
-JS https://github.com/boxbilling/boxbilling/blob/334784d97379f2632f24d97bf557dffb4f0965c1/src/bb-themes/admin_default/html/layout_default.phtml#L17-L24
-CSS https://github.com/boxbilling/boxbilling/blob/2636cae130a94cdd827fb5f4acf46b0cdfebbb30/src/bb-themes/admin_default/html/partial_styles.phtml
+* [separate JS files in layout](https://github.com/boxbilling/boxbilling/blob/5e19912e7287b76e6b760899a7f9d2a4f3c1125c/src/bb-themes/admin_default/html/layout_default.phtml#L17-L24)
+* [separete CSS](https://github.com/boxbilling/boxbilling/blob/2636cae130a94cdd827fb5f4acf46b0cdfebbb30/src/bb-themes/admin_default/html/partial_styles.phtml)
 
 ----
 ##### Virtual Machine Specifications #####
