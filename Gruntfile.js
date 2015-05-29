@@ -24,6 +24,16 @@ module.exports = function(grunt) {
                         return '.sprite-topnav-' + item.name;
                     }
                 }
+            },
+            middleNav: {
+                src: 'src/bb-themes/admin_default/images/icons/middlenav/used/*.png',
+                dest: 'src/bb-themes/admin_default/sprites/dark-icons-23-sprite.png',
+                destCss: 'src/bb-themes/admin_default/css/dark-icons-23-sprite.css',
+                cssOpts: {
+                    cssSelector: function (item) {
+                        return '.sprite-23-' + item.name;
+                    }
+                }
             }
         },
     });

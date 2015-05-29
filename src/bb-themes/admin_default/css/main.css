@@ -1340,3 +1340,8 @@ li.plupload_droptext { background: transparent; text-align: center; vertical-ali
     background-repeat: no-repeat;
     display: inline-block;
 }
+.sprite-23 {
+    background-repeat: no-repeat;
+    display: block;
+    margin: 0 auto;
+}
