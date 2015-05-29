@@ -41,7 +41,7 @@ class Admin implements \Box\InjectionAwareInterface
                 'index'     => 500,
                 'label' => 'Support',
                 'class' => 'support',
-                'sprite_class' => 'sprite sprite-dialog',
+                'sprite_class' => 'dark-sprite-icon sprite-dialog',
             ),
             'subpages' => array(
                 array(

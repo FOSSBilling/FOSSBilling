@@ -13,15 +13,8 @@
     {% include "partial_bb_meta.phtml" %}
     
     {% include "partial_styles.phtml" %}
-    
-    <script type="text/javascript" src="js/jquery.min.js?v={{guest.system_version}}"></script>
-    <script type="text/javascript" src="js/ui/jquery.alerts.js?v={{guest.system_version}}"></script>
-    <script type="text/javascript" src="js/ui/jquery.tipsy.js?v={{guest.system_version}}"></script>
-    <script type="text/javascript" src="js/jquery.collapsible.min.js?v={{guest.system_version}}"></script>
-    <script type="text/javascript" src="js/forms/forms.js?v={{guest.system_version}}"></script>
-    <script type="text/javascript" src="js/jquery.ToTop.js?v={{guest.system_version}}"></script>
-    <script type="text/javascript" src="js/jquery.scrollTo-min.js?v={{guest.system_version}}"></script>
-    <script type="text/javascript" src="js/jquery-ui.js?v={{guest.system_version}}"></script>
+
+    <script type="text/javascript" src="js/boxbilling.min.js?v={{guest.system_version}}"></script>
     <script type="text/javascript" src="js/bb-admin.js?v={{guest.system_version}}"></script>
 
     {% block head %}{% endblock %}
@@ -81,20 +74,24 @@
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"order"}) %}
-        	<li class="order-block"><a href="{{ 'order'|alink({'status' : 'failed_setup'}) }}" title=""><span><i class="sprite-23 sprite-23-basket2"></i>{% trans 'Orders' %}</span></a></li>
+            {% set count_orders = admin.order_get_statuses.failed_setup %}
+        	<li class="iOrders"><a href="{{ 'order'|alink({'status' : 'failed_setup'}) }}" title=""><span><i class="sprite-23 sprite-23-basket2"></i>{% trans 'Orders' %}</span></a>{% if count_orders %}<span class="numberMiddle">{{ count_orders }}</span>{% endif %}</li>
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"invoice"}) %}
-            <li class="invoice-block"><a href="{{ 'invoice'|alink({'status' : 'unpaid'}) }}" title=""><span><i class="sprite-23 sprite-23-money"></i>{% trans 'Invoices' %}</span></a></li>
+            {% set count_invoices = admin.invoice_get_statuses.unpaid %}
+        	<li class="iInvoices"><a href="{{ 'invoice'|alink({'status' : 'unpaid'}) }}" title=""><span><i class="sprite-23 sprite-23-money"></i>{% trans 'Invoices' %}</span></a>{% if count_invoices %}<span class="numberMiddle">{{ count_invoices }}</span>{% endif %}</li>
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"support"}) %}
-            <li class="public-ticket-block"><a href="{{ 'support/public-tickets'|alink({'status' : 'open'}) }}" title=""><span><i class="sprite-23 sprite-23-speech"></i>{% trans 'Inquiries' %}</span></a></li>
-        	<li class="support-block"><a href="{{ 'support'|alink({'status' : 'open'}) }}" title=""><span><i class="sprite-23 sprite-23-dialog"></i>{% trans 'Tickets' %}</span></a></li>
+            {% set count_tickets = admin.support_ticket_get_statuses.open %}
+            {% set count_ptickets = admin.support_public_ticket_get_statuses.open %}
+        	<li class="iSpeech"><a href="{{ 'support/public-tickets'|alink({'status' : 'open'}) }}" title=""><span><i class="sprite-23 sprite-23-speech"></i>{% trans 'Inquiries' %}</span></a>{% if count_ptickets %}<span class="numberMiddle">{{ count_ptickets }}</span>{% endif %}</li>
+        	<li class="iMes"><a href="{{ 'support'|alink({'status' : 'open'}) }}" title=""><span><i class="sprite-23 sprite-23-dialog"></i>{% trans 'Tickets' %}</span></a>{% if count_tickets %}<span class="numberMiddle">{{ count_tickets }}</span>{% endif %}</li>
             {% endif %}
             
             {% if admin.system_is_allowed({"mod":"client"}) %}
-            <li class="client-block"><a href="{{ 'client'|alink }}" title=""><span><i class="sprite-23 sprite-23-user"></i>{% trans 'Clients' %}</span></a></li>
+            <li><a href="{{ 'client'|alink }}" title=""><span><i class="sprite-23 sprite-23-user"></i>{% trans 'Clients' %}</span></a></li>
             {% endif %}
             
         	<li><a href="{{ 'index'|alink }}" title=""><span><i class="sprite-23 sprite-23-home"></i>{% trans 'Dashboard' %}</span></a></li>

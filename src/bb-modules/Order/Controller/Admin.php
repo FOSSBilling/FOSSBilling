@@ -42,7 +42,7 @@ class Admin implements \Box\InjectionAwareInterface
                 'label' => 'Orders',
                 'uri' => $this->di['url']->adminLink('order'),
                 'class'     => 'orders',
-                'sprite_class' => 'sprite sprite-basket',
+                'sprite_class' => 'dark-sprite-icon sprite-basket',
                 ),
             'subpages' => array(
                 array(
