@@ -36,12 +36,57 @@ module.exports = function(grunt) {
                 }
             }
         },
+
+        clean: {
+            css: {
+                src: [
+                    "src/bb-themes/admin_default/css/min-temp.css"
+                ]
+            }
+        },
+
+        concat_css: {
+            style: {
+                src: [
+                    'src/bb-themes/admin_default/css/dark-icons-sprite.css',
+                    'src/bb-themes/admin_default/css/dark-icons-23-sprite.css',
+                    'src/bb-themes/admin_default/css/topnav-sprite.css',
+                    'src/bb-themes/admin_default/css/jquery-ui.css',
+                    'src/bb-themes/admin_default/css/bb.css',
+                    'src/bb-themes/admin_default/css/reset.css',
+                    'src/bb-themes/admin_default/css/dataTable.css',
+                    'src/bb-themes/admin_default/css/ui_custom.css',
+                    'src/bb-themes/admin_default/css/icons.css.css',
+                    'src/bb-themes/admin_default/css/main.css'
+                ],
+                dest: "src/bb-themes/admin_default/css/min-temp.css"
+            }
+        },
+
+        cssmin: {
+            target: {
+                files: [
+                    {
+                        'src/bb-themes/admin_default/css/min.css': ['src/bb-themes/admin_default/css/min-temp.css']
+                    }
+                ]
+            }
+        },
     });
 
     // Load packages
     grunt.loadNpmTasks('grunt-spritesmith');
 
+    grunt.loadNpmTasks('grunt-contrib-concat');
+    grunt.loadNpmTasks('grunt-concat-css');
+    grunt.loadNpmTasks('grunt-contrib-clean');
+    grunt.loadNpmTasks('grunt-contrib-cssmin');
+
     // Default task(s).
-    grunt.registerTask('default', ['sprite']);
+    grunt.registerTask('default');
+    grunt.registerTask('create-sprites', ['sprite']);
+    grunt.registerTask('css', ['concat_css', 'cssmin', 'clean:css']);
+
+
 
 };
