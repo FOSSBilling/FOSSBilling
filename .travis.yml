@@ -25,7 +25,7 @@ before_script:
 
 script:
   - ant
-  - sh -c 'if [ "$TRAVIS_PHP_VERSION" = "5.6" ]; then src/bb-vendor/bin/phpunit --coverage-clover=coverage.clover; fi;'
+  - sh -c 'if [ "$TRAVIS_PHP_VERSION" = "5.6" ]; then src/bb-vendor/bin/phpunit --coverage-clover=coverage.clover tests/; fi;'
 
 after_script:
   - sh -c 'if [ "$TRAVIS_PHP_VERSION" = "5.6" ]; then wget https://scrutinizer-ci.com/ocular.phar; fi;'
