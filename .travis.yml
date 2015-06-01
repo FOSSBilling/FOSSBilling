@@ -23,7 +23,13 @@ before_script:
   - mysql --user=root -e "GRANT ALL PRIVILEGES ON *.* TO 'foo'@'localhost'"
   - mysql -e 'create database IF NOT EXISTS boxbilling'
 
-script: ant
+script:
+  - ant
+  - sh -c 'if [ "$TRAVIS_PHP_VERSION" != "5.6" ]; then phpunit --coverage-clover=coverage.clover; fi;'
+
+after_script:
+  - sh -c 'if [ "$TRAVIS_PHP_VERSION" != "5.6" ]; then wget https://scrutinizer-ci.com/ocular.phar; fi;'
+  - sh -c 'if [ "$TRAVIS_PHP_VERSION" != "5.6" ]; then php ocular.phar code-coverage:upload --format=php-clover coverage.clover; fi;'
 
 notifications:
   email: false
