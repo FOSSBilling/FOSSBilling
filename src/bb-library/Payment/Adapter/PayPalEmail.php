@@ -383,6 +383,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         $data['last_name']			= $buyer['last_name'];
         $data['zip']				= $buyer['zip'];
         $data['state']				= $buyer['state'];
+        $data['bn']                             = "BoxBilling_SP";
         return $data;
     }
 
@@ -402,7 +403,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         $data['cmd']                = '_xclick';
         $data['amount']             = $this->moneyFormat($invoice['subtotal'], $invoice['currency']);
         $data['tax']                = $this->moneyFormat($invoice['tax'], $invoice['currency']);
-        $data['bn']                 = "PP-BuyNowBF";
+        $data['bn']                 = "BoxBilling_SP";
         $data['charset']            = "utf-8";
         return $data;
     }
