@@ -89,7 +89,6 @@ module.exports = function(grunt) {
                     'src/bb-themes/admin_default/js/jquery.ToTop.js',
                     'src/bb-themes/admin_default/js/jquery.scrollTo-min.js',
                     'src/bb-themes/admin_default/js/jquery-ui.js',
-                    'src/bb-themes/admin_default/js/bb-admin.js',
                 ],
                 dest: 'src/bb-themes/admin_default/js/boxbilling.js'
             },
