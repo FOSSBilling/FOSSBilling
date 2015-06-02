@@ -290,7 +290,7 @@
                         test_button.attr('id', s.substring(1));
                     }
 
-                    s.addEventListener('OrderButtonEventsReady', function (e) {
+                    document.addEventListener('OrderButtonEventsReady', function (e) {
                         $(s).click();
                     }, false);
                 });
