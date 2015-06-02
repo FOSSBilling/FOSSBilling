@@ -282,17 +282,18 @@
 
             $('#load').click(function(){
                 var s = $('#bind_selector').val() + new Date().getTime();
-                $.getScript(generate_link(s)).done( function(){
+                $.getScript(generate_link(s), function(){
                     var test_button = $('<button/>').css({"display": "none"}).appendTo('body');
                     if(s.charAt(0) == '.') {
                         test_button.attr('class', s.substring(1));
                     } else {
                         test_button.attr('id', s.substring(1));
                     }
-                    $(s).undelegate();
-                    $(s).click();
-                });
 
+                    s.addEventListener('OrderButtonEventsReady', function (e) {
+                        $(s).click();
+                    }, false);
+                });
             });
         });
 
