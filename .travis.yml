@@ -17,7 +17,7 @@ matrix:
 
 install:
   - composer self-update
-  - composer require-dev 'satooshi/php-coveralls:0.7.*@dev'
+  - composer require 'satooshi/php-coveralls:0.7.*@dev'
 
 before_script:
   - mysql --user=root -e "CREATE USER 'foo'@'localhost' IDENTIFIED BY 'foo';"
