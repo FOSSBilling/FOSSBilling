@@ -91,11 +91,6 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('Email is already registered. You may want to login instead of registering.');
         }
 
-        $phoneCC = $this->di['array_get']($data, 'phone_cc', $client->phone_cc);
-        if(!empty($phoneCC)){
-            $client->phone_cc = intval($phoneCC);
-        }
-
         $client = $service->guestCreateClient($data);
 
         if (isset($config['require_email_confirmation']) && (int)$config['require_email_confirmation'] && !$client->email_approved) {
