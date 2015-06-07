@@ -481,13 +481,17 @@ class Service implements InjectionAwareInterface
         $client->first_name = ucwords($this->di['array_get']($data, 'first_name'));
         $client->pass       = $this->di['password']->hashIt($password);
 
+        $phoneCC = $this->di['array_get']($data, 'phone_cc', $client->phone_cc);
+        if(!empty($phoneCC)){
+            $client->phone_cc = intval($phoneCC);
+        }
+
         $client->aid             = $this->di['array_get']($data, 'aid');
         $client->last_name       = $this->di['array_get']($data, 'last_name');
         $client->client_group_id = $this->di['array_get']($data, 'group_id');
         $client->status          = $this->di['array_get']($data, 'status');
         $client->gender          = $this->di['array_get']($data, 'gender');
         $client->birthday        = $this->di['array_get']($data, 'birthday');
-        $client->phone_cc        = $this->di['array_get']($data, 'phone_cc');
         $client->phone           = $this->di['array_get']($data, 'phone');
         $client->company         = $this->di['array_get']($data, 'company');
         $client->company_vat     = $this->di['array_get']($data, 'company_vat');
