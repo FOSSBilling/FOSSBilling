@@ -37,10 +37,10 @@ notifications:
   email: false
 
 before_deploy:
-  - ant release
   - npm install -g grunt-cli
   - npm install
   - grunt
+  - ant release
 deploy:
   provider: releases
   api-key:
