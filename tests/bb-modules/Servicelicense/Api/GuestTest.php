@@ -4,7 +4,7 @@
 namespace Box\Mod\Servicelicense\Api;
 
 
-class GuestTest extends \PHPUnit_Framework_TestCase {
+class GuestTest extends \BBTestCase {
     /**
      * @var \Box\Mod\Servicelicense\Api\Guest
      */

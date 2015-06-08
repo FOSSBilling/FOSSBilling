@@ -1,7 +1,7 @@
 <?php
 namespace Box\Tests\Mod\Support\Api;
 
-class Api_AdminTest extends \PHPUnit_Framework_TestCase
+class Api_AdminTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Support\Api\Admin

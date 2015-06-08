@@ -2,7 +2,7 @@
 
 namespace Box\Tests\Mod\Profile\Api;
 
-class AdminTest extends \PHPUnit_Framework_TestCase
+class AdminTest extends \BBTestCase
 {
     public function testGet()
     {

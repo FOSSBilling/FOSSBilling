@@ -1,7 +1,7 @@
 <?php
 namespace Box\Tests\Mod\Kb\Api;
 
-class GuestTest extends \PHPUnit_Framework_TestCase
+class GuestTest extends \BBTestCase
 {
     public function testArticle_get_list()
     {

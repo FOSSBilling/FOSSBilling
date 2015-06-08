@@ -20,3 +20,7 @@ report/*
 .vagrant/
 puphpet/files/dot/ssh/*
 !puphpet/files/dot/ssh/insecure_private_key
+
+### node_moduels ###
+node_modules
+npm-debug.log

@@ -2,7 +2,7 @@
 namespace Box\Tests\Mod\Cart\Api;
 
 
-class ClientTest extends \PHPUnit_Framework_TestCase {
+class ClientTest extends \BBTestCase {
     /**
      * @var \Box\Mod\Cart\Api\Client
      */

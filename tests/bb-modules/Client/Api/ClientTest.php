@@ -4,7 +4,7 @@
 namespace Box\Mod\Client\Api;
 
 
-class ClientTest extends \PHPUnit_Framework_TestCase {
+class ClientTest extends \BBTestCase {
 
     public function testgetDi()
     {

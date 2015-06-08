@@ -1,3 +1,16 @@
+Release 4.18
+------------------------------------------------------------------------------
+* Select TLDs for free domain registration on shared hosting product
+* Add grunt task runner for developers (creates minified js and css files in admin_default theme)
+* Updated Stripe payment gateway;
+* Updated Serviceboxbillinglicense module;
+* Improved batch paid invoice activation process;
+* Updated 2checkout payment adapter;
+* Domain transfer option added to `huraga` theme #327
+* Updated Paypal payment gateway to avoid 403 forbidden error on IPN request
+* Added phone code filter;
+* Various bug fixes and improvements
+
 Release 4.17
 ------------------------------------------------------------------------------
 * Added Stripe payment adapter

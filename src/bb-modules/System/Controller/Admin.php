@@ -41,6 +41,7 @@ class Admin implements \Box\InjectionAwareInterface
                 'location'  =>  'system',
                 'label'     => 'Configuration',
                 'class'     => 'settings',
+                'sprite_class' => 'dark-sprite-icon sprite-cog3',
             ),
             'subpages'=> array(
                 array(

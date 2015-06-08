@@ -235,7 +235,6 @@ $(function() {
 
 	//===== Global ajax methods =====//
     $('.loading').ajaxStart(function() {
-        //bb.msg('Loading...');
         $(this).show();
     }).ajaxStop(function() {
         $(this).hide();

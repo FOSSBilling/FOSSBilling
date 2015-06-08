@@ -107,18 +107,18 @@ class Client extends \Api_Abstract
         $client->state          = $this->di['array_get']($data, 'state', $client->state);
         $client->document_type  = $this->di['array_get']($data, 'document_type', 'passport');
         $client->document_nr    = $this->di['array_get']($data, 'document_nr', '');
+        $client->notes     = $this->di['array_get']($data, 'notes', $client->notes);
 
-        $client->notes         = $this->di['array_get']($data, 'notes', $client->notes);
-        $client->custom_1      = $this->di['array_get']($data, 'custom_1', $client->c1);
-        $client->custom_2      = $this->di['array_get']($data, 'custom_2', $client->c2);
-        $client->custom_3      = $this->di['array_get']($data, 'custom_3', $client->c3);
-        $client->custom_4      = $this->di['array_get']($data, 'custom_4', $client->c4);
-        $client->custom_5      = $this->di['array_get']($data, 'custom_5', $client->c5);
-        $client->custom_6      = $this->di['array_get']($data, 'custom_6', $client->c6);
-        $client->custom_7      = $this->di['array_get']($data, 'custom_7', $client->c7);
-        $client->custom_8      = $this->di['array_get']($data, 'custom_8', $client->c8);
-        $client->custom_9      = $this->di['array_get']($data, 'custom_9', $client->c9);
-        $client->custom_10     = $this->di['array_get']($data, 'custom_10', $client->c10);
+        $client->custom_1  = $this->di['array_get']($data, 'custom_1', $client->custom_1);
+        $client->custom_2  = $this->di['array_get']($data, 'custom_2', $client->custom_2);
+        $client->custom_3  = $this->di['array_get']($data, 'custom_3', $client->custom_3);
+        $client->custom_4  = $this->di['array_get']($data, 'custom_4', $client->custom_4);
+        $client->custom_5  = $this->di['array_get']($data, 'custom_5', $client->custom_5);
+        $client->custom_6  = $this->di['array_get']($data, 'custom_6', $client->custom_6);
+        $client->custom_7  = $this->di['array_get']($data, 'custom_7', $client->custom_7);
+        $client->custom_8  = $this->di['array_get']($data, 'custom_8', $client->custom_8);
+        $client->custom_9  = $this->di['array_get']($data, 'custom_9', $client->custom_9);
+        $client->custom_10 = $this->di['array_get']($data, 'custom_10', $client->custom_10);
 
         $client->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($client);

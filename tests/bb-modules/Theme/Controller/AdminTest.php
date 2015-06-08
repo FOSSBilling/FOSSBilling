@@ -4,7 +4,7 @@
 namespace Box\Mod\Theme\Controller;
 
 
-class AdminTest extends \PHPUnit_Framework_TestCase {
+class AdminTest extends \BBTestCase {
 
     public function testDi()
     {

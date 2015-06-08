@@ -26,7 +26,7 @@ $bb_gateway_id = null;
 if(isset($_GET['bb_gateway_id'])) {
     $bb_gateway_id = $_GET['bb_gateway_id'];
 }
-if(isset($_POST['bb_invoice_id'])) {
+if(isset($_POST['bb_gateway_id'])) {
     $bb_gateway_id = $_POST['bb_gateway_id'];
 }
 
@@ -49,15 +49,10 @@ try {
     $output = false;
 }
 
-// print transaction output if available
-if(!is_bool($output)) {
-    print $output;
-    exit;
-}
-
 // redirect to invoice if gateways requires
 if(isset($_GET['bb_redirect']) && isset($_GET['bb_invoice_hash'])) {
-    $url = $di['url']->get('invoice/'.$_GET['bb_invoice_hash']);
+    $url = $di['url']->link('invoice/'.$_GET['bb_invoice_hash']);
+    var_dump($url);exit;
     header("Location: $url");
     exit;
 } else {

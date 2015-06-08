@@ -2,7 +2,7 @@
 
 namespace Box\Tests\Mod\Currency\Api;
 
-class GuestTest extends \PHPUnit_Framework_TestCase
+class GuestTest extends \BBTestCase
 {
     public function testGetPairs()
     {

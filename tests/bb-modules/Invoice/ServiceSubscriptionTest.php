@@ -4,7 +4,7 @@
 namespace Box\Mod\Invoice;
 
 
-class ServiceSubscriptionTest extends \PHPUnit_Framework_TestCase
+class ServiceSubscriptionTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Invoice\ServiceSubscription

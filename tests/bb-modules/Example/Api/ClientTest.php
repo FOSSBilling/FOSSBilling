@@ -4,7 +4,7 @@
 namespace Box\Mod\Example\Api;
 
 
-class ClientTest extends \PHPUnit_Framework_TestCase {
+class ClientTest extends \BBTestCase {
 
     /**
      * @var \Box\Mod\Example\Api\Client

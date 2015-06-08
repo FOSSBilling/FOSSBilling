@@ -301,4 +301,22 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
         $corderService->setUnpaidInvoice($order, $proforma);
     }
+
+    /**
+     * Get list of paid invoice not executed invoice items
+     * @return array - array of Model_InvoiceItem items
+     */
+    public function getAllNotExecutePaidItems()
+    {
+        $sql = 'SELECT invoice_item.*
+                FROM invoice_item
+                  left join invoice on invoice_item.invoice_id = invoice.id
+                WHERE invoice_item.status != :item_status and invoice.status = :invoice_status';
+        $bindings = array(
+            ':item_status' => \Model_InvoiceItem::STATUS_EXECUTED,
+            ':invoice_status' => \Model_Invoice::STATUS_PAID,
+        );
+        $result = $this->di['db']->getAll($sql, $bindings);
+        return $this->di['db']->convertToModels('InvoiceItem', $result);
+    }
 }

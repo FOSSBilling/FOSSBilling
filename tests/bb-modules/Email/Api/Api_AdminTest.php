@@ -1,7 +1,7 @@
 <?php
 namespace Box\Tests\Mod\Email\Api;
 
-class AdminTest extends \PHPUnit_Framework_TestCase
+class AdminTest extends \BBTestCase
 {
 
     public function testEmail_get_list()

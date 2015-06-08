@@ -65,8 +65,8 @@ class ServiceBoxbilling implements \Box\InjectionAwareInterface
             throw new \Exception('cURL extension is not enabled');
         }
 
-        if (isset($options['api_token'])) {
-            $this->_api_key = $options['api_token'];
+        if (isset($options['api_key'])) {
+            $this->_api_key = $options['api_key'];
         }
 
         if (isset($options['api_url'])) {

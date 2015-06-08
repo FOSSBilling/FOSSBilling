@@ -4,7 +4,7 @@
 namespace Box\Mod\Page\Api;
 
 
-class AdminTest extends \PHPUnit_Framework_TestCase {
+class AdminTest extends \BBTestCase {
 
     /**
      * @var \Box\Mod\Page\Api\Admin

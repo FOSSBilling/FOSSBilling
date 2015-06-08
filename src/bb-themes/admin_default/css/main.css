@@ -1,8 +1,3 @@
-@import "reset.css";
-@import "dataTable.css";
-@import "ui_custom.css";
-@import "icons.css";
-
 html { height: 100%; }
 * html body { height: 100%; }
 body { margin: 0; padding: 0; background: url(../images/bodyBg.jpg) repeat; font-size: 12px; color: #424242; font-family: Arial, Helvetica, sans-serif; line-height: 20px; min-height: 100%; position: relative; }
@@ -238,18 +233,13 @@ input[type=submit], input[type=reset], input[type=button], button, .button { fon
 
 .middleNav { float: right; margin-right: 1px; }
 .middleNav ul { margin-top: 25px; }
-.middleNav ul li { height: 55px;  text-align: center; display: block; float: left; margin-left: 25px; position: relative; }
+.middleNav ul li { height: 55px;  text-align: center; display: block; float: left; margin-left: 25px; position: relative; min-width:64px;}
 .middleNav ul li:first-child { margin: 0; }
 .middleNav ul li a { display: block; border: 1px solid #d5d5d5; background: url(../images/middlebg.png) repeat-x 0 0; -moz-border-radius: 2px; -webkit-border-radius: 2px; -khtml-border-radius: 2px; border-radius: 2px; color: #595858; font-size: 12px; position: relative; -moz-box-shadow: 0 2px 1px #fff; -webkit-box-shadow: 0 2px 1px #fff; box-shadow: 0 2px 1px #fff; }
 .middleNav ul li a span { display: block; padding: 34px 10px 0 10px; }
+.middleNav ul li a span i { margin-top: -26px; margin-bottom: 4px; }
 
-.middleNav ul li.iHome a span { background: url(../images/icons/middlenav/home.png) no-repeat 50% 8px; }
-.middleNav ul li.iMes a span { background: url(../images/icons/middlenav/dialog.png) no-repeat 50% 8px; }
-.middleNav ul li.iSpeech a span { background: url(../images/icons/middlenav/speech.png) no-repeat 50% 8px; }
 .middleNav ul li.iStat a span { background: url(../images/icons/middlenav/graph.png) no-repeat 50% 8px; }
-.middleNav ul li.iUser a span { background: url(../images/icons/middlenav/users.png) no-repeat 50% 8px; }
-.middleNav ul li.iOrders a span { background: url(../images/icons/middlenav/basket2.png) no-repeat 50% 8px; }
-.middleNav ul li.iInvoices a span { background: url(../images/icons/middlenav/money.png) no-repeat 50% 8px; }
 .middleNav ul li.iTransactions a span { background: url(../images/icons/middlenav/transfer.png) no-repeat 50% 8px; }
 .middleNav ul li.iPlugin a span { background: url(../images/icons/middlenav/electroPlug.png) no-repeat 50% 8px; }
 .middleNav ul li.iMegaphone a span { background: url(../images/icons/middlenav/megaphone.png) no-repeat 50% 8px; }
@@ -267,22 +257,15 @@ input[type=submit], input[type=reset], input[type=button], button, .button { fon
 .leftNav ul li { position: relative; }
 .leftNav ul li a { color: #494949; font-size: 15px; display: block; background: #efefef url(../images/leftNavBg.png) repeat-x 0 0; border: 1px solid #d5d5d5; margin-top: 1px; }
 .leftNav ul li a:hover, .leftNav ul li a.active { background: url(../images/darkBg.jpg) repeat-x; color: #fff; border: 1px solid #3c4049; }
-.leftNav ul li a span { padding: 9px 0 9px 35px; display: block; }
+.leftNav ul li a span { padding: 9px 0 9px 0px; display: block; }
+.leftNav ul li a span i{ margin: -3px 10px; }
 
 
 /* Left navigation icons */
 
 .leftNav ul li.home a span { background: url(../images/icons/dark/home.png) no-repeat 10px; }
-.leftNav ul li.graphs span { background: url(../images/icons/dark/graph.png) no-repeat 10px; }
-.leftNav ul li.settings a span { background: url(../images/icons/dark/cog3.png) no-repeat 10px; }
-.leftNav ul li.invoices a span { background: url(../images/icons/dark/money.png) no-repeat 10px; }
 .leftNav ul li.transactions a span { background: url(../images/icons/dark/transfer.png) no-repeat 10px; }
-.leftNav ul li.orders a span { background: url(../images/icons/dark/basket.png) no-repeat 10px; }
-.leftNav ul li.contacts a span { background: url(../images/icons/dark/users.png) no-repeat 10px; }
-.leftNav ul li.support a span { background: url(../images/icons/dark/dialog.png) no-repeat 10px; }
-.leftNav ul li.iPlugin a span { background: url(../images/icons/dark/electroPlug.png) no-repeat 10px; }
 .leftNav ul li.dash a span { background-image: url(../images/icons/dark/download.png); }
-.leftNav ul li.graphs a span { background-image: url(../images/icons/dark/graph.png); }
 .leftNav ul li.forms a span { background-image: url(../images/icons/dark/pencil.png); }
 .leftNav ul li.gallery a span { background-image: url(../images/icons/dark/preview.png); }
 .leftNav ul li.typo span { background-image: url(../images/icons/dark/create.png); }
@@ -291,11 +274,8 @@ input[type=submit], input[type=reset], input[type=button], button, .button { fon
 .leftNav ul li.errors a span { background-image: url(../images/icons/dark/alert.png); }
 .leftNav ul li.files a span { background-image: url(../images/icons/dark/files.png); }
 .leftNav ul li.login a span { background-image: url(../images/icons/dark/user.png); }
-.leftNav ul li.pic a span { background-image: url(../images/icons/dark/blocks.png); }
 .leftNav ul li.widgets a span { background-image: url(../images/icons/dark/full.png); }
-.leftNav ul li.contacts a span { background-image: url(../images/icons/dark/users.png); }
 
-.leftNav ul li a span { background-position: 10px; background-repeat: no-repeat; }
 
 
 /* Left navigation subnav */
@@ -1345,4 +1325,25 @@ li.plupload_droptext { background: transparent; text-align: center; vertical-ali
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+.dark-sprite-icon {
+    margin: auto 0;
+    display: inline-block;
+    background-repeat: no-repeat;
+}
+.sprite-topnav {
+    background-repeat: no-repeat;
+    display: inline-block;
+}
+.sprite-23 {
+    background-repeat: no-repeat;
+    display: block;
+    margin: 0 auto;
+}
+
+.ajax-loader{
+    background: url('../images/loader.gif');
+    width: 16px;
+    height:11px;
+    display: inline-block;
 }

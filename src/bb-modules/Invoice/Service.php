@@ -984,14 +984,12 @@ class Service implements InjectionAwareInterface
     {
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
 
-        foreach($this->findAllPaid() as $proforma) {
-            $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = :id', array('id'=>$proforma->id));
-            foreach($invoiceItems as $item) {
-                try {
-                    $invoiceItemService->executeTask($item);
-                } catch(\Exception $e) {
-                    error_log($e->getMessage());
-                }
+        $invoiceItems = (array) $invoiceItemService->getAllNotExecutePaidItems();
+        foreach($invoiceItems as $item) {
+            try {
+                $invoiceItemService->executeTask($item);
+            } catch(\Exception $e) {
+                error_log($e->getMessage());
             }
         }
         $this->di['logger']->info('Executed action to activate paid invoices');

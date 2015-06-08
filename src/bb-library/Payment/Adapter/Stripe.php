@@ -146,7 +146,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             $tx->currency = $charge->currency;
 
             $bd = array(
-                'amount'        =>  $tx->amount / 100,
+                'amount'        =>  $tx->amount,
                 'description'   =>  'Stripe transaction '.$charge->id,
                 'type'          =>  'transaction',
                 'rel_id'        =>  $tx->id,
