@@ -85,6 +85,11 @@ class Client extends \Api_Abstract
             $client->email = strtolower(trim($email));
         }
 
+        $phoneCC = $this->di['array_get']($data, 'phone_cc', $client->phone_cc);
+        if(!empty($phoneCC)){
+            $client->phone_cc = intval($phoneCC);
+        }
+
         $client->first_name     = $this->di['array_get']($data, 'first_name', $client->first_name);
         $client->last_name      = $this->di['array_get']($data, 'last_name', $client->last_name);
         $client->gender         = $this->di['array_get']($data, 'gender', $client->gender);
@@ -95,7 +100,6 @@ class Client extends \Api_Abstract
         $client->type           = $this->di['array_get']($data, 'type', $client->type);
         $client->address_1      = $this->di['array_get']($data, 'address_1', $client->address_1);
         $client->address_2      = $this->di['array_get']($data, 'address_2', $client->address_2);
-        $client->phone_cc       = $this->di['array_get']($data, 'phone_cc', $client->phone_cc);
         $client->phone          = $this->di['array_get']($data, 'phone', $client->phone);
         $client->country        = $this->di['array_get']($data, 'country', $client->country);
         $client->postcode       = $this->di['array_get']($data, 'postcode', $client->postcode);
@@ -120,7 +124,7 @@ class Client extends \Api_Abstract
         $this->di['db']->store($client);
 
         $this->di['events_manager']->fire(array('event'=>'onAfterClientProfileUpdate', 'params'=>array('id'=>$client->id)));
-        
+
         $this->di['logger']->info('Updated profile');
         return true;
     }
