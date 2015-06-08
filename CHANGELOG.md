@@ -2,6 +2,13 @@ Release 4.18
 ------------------------------------------------------------------------------
 * Select TLDs for free domain registration on shared hosting product
 * Add grunt task runner for developers (creates minified js and css files in admin_default theme)
+* Updated Stripe payment gateway;
+* Updated BoxBillingservicelicense module;
+* Improved batch paid invoice activation process;
+* Updated twocheckout payment adapter;
+* Fixed domain transfer issue #327
+* Updated Paypal payment gateway to avoid 403 forbidden error on IPN request
+* Added phone code filter;
 
 Release 4.17
 ------------------------------------------------------------------------------
