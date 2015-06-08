@@ -113,8 +113,6 @@ class Box_License implements \Box\InjectionAwareInterface
             try {
                 $servers = array(
                     'http://www.boxbilling.com/api/guest/servicelicense/check',
-                    'http://api.boxbilling.com/license.php',
-                    'http://api.boxbilling.com/license-valid.php',
                 );
                 $l = $this->_getLicenseDetailsFromServer($servers);
             } catch(\LogicException $e) {
