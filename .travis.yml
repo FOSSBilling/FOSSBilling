@@ -35,6 +35,7 @@ after_script:
 
 notifications:
   email: false
+  slack: boxbilling:vsdKszFU9Pm308ye5rNSpr8n
 
 before_deploy:
   - npm install -g grunt-cli
