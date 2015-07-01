@@ -60,7 +60,7 @@ function handler_exception(Exception $e)
         print sprintf('<p>Code: <em>%s</em></p>', $e->getCode());
     }
     print sprintf('<p>%s</p>', $e->getMessage());
-    print sprintf('<p><a href="http://www.boxbilling.com/docs/search.html?q=%s" target="_blank">Look for detailed error explanation</a></p>', urlencode($e->getMessage()));
+    print sprintf('<p><a href="http://docs.boxbilling.com/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p>', urlencode($e->getMessage()));
 
     if(defined('BB_DEBUG') && BB_DEBUG) {
         print sprintf('<em>%s</em>', 'Set BB_DEBUG to FALSE, to hide the message below');
@@ -100,7 +100,7 @@ if(!file_exists($configPath) || 0 == filesize( $configPath )) {
     $base_url .= preg_replace('@/+$@','',dirname($_SERVER['SCRIPT_NAME'])).'/';
     $url = $base_url . 'install/index.php';
     $configFile = pathinfo($configPath, PATHINFO_BASENAME);
-    $msg = sprintf("There doesn't seem to be a <em>$configFile</em> file or bb-config.php file does not contain required configuration parameters. I need this before we can get started. Need more help? <a target='_blank' href='http://www.boxbilling.com/docs/search.html?q=install'>We got it</a>. You can create a <em>$configFile</em> file through a web interface, but this doesn't work for all server setups. The safest way is to manually create the file.</p><p><a href='%s' class='button'>Continue with BoxBilling installation</a>", $url);
+    $msg = sprintf("There doesn't seem to be a <em>$configFile</em> file or bb-config.php file does not contain required configuration parameters. I need this before we can get started. Need more help? <a target='_blank' href='http://docs.boxbilling.com/en/latest/reference/installation.html'>We got it</a>. You can create a <em>$configFile</em> file through a web interface, but this doesn't work for all server setups. The safest way is to manually create the file.</p><p><a href='%s' class='button'>Continue with BoxBilling installation</a>", $url);
     throw new Exception($msg, 101);
 }
 

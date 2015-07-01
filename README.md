@@ -22,7 +22,7 @@ Requirements
 Getting started
 ================================================================================
 
-Please read documentation at http://www.boxbilling.com/docs to get started
+Please read documentation at http://docs.boxbilling.com to get started
 with BoxBilling
 
 Contributing
@@ -72,7 +72,7 @@ If you want to use not minified versions of admin_default theme:
 Support
 ================================================================================
 
-* [Documentation](http://www.boxbilling.com/docs/)
+* [Documentation](http://docs.boxbilling.com/)
 * [Official website](http://www.boxbilling.com/)
 * [@boxbilling](https://twitter.com/boxbilling)
 * [Facebook](https://www.facebook.com/boxbilling)
