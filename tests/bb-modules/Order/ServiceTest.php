@@ -974,9 +974,6 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->will($this->returnValue(array(array(), array())));
-        $dbMock->expects($this->atLeastOnce())
-            ->method('convertToModels')
-            ->will($this->returnValue(array($order, $order)));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getSoonExpiringActiveOrdersQuery'))->disableOriginalConstructor()->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('getSoonExpiringActiveOrdersQuery')
