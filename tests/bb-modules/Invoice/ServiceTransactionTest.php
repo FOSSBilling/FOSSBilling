@@ -608,8 +608,8 @@ class ServiceTransactionTest extends \BBTestCase
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
         $dbMock->expects($this->atLeastOnce())
-            ->method('convertToModels')
-            ->will($this->returnValue(array($transactionModel)));
+            ->method('getAll')
+            ->will($this->returnValue(array(array())));
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
@@ -617,7 +617,6 @@ class ServiceTransactionTest extends \BBTestCase
 
         $result = $serviceMock->getReceived();
         $this->assertInternalType('array', $result);
-        $this->assertInternalType('\Model_Transaction', $result[0]);
     }
 
     public function testdebitTransaction()
