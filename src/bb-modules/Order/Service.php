@@ -297,9 +297,8 @@ class Service implements InjectionAwareInterface
     public function getSoonExpiringActiveOrders()
     {
         list($query, $bindings) = $this->getSoonExpiringActiveOrdersQuery();
-        $ordersArr = $this->di['db']->getAll($query, $bindings);
 
-        return $this->di['db']->convertToModels('ClientOrder', $ordersArr);
+        return $this->di['db']->getAll($query, $bindings);
     }
 
     public function getSoonExpiringActiveOrdersQuery($data = array())

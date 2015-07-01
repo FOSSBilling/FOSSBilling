@@ -1,3 +1,7 @@
+Release 4.19
+------------------------------------------------------------------------------
+* Cron job memory optimizations
+
 Release 4.18
 ------------------------------------------------------------------------------
 * Select TLDs for free domain registration on shared hosting product

@@ -881,7 +881,8 @@ class Service implements InjectionAwareInterface
         $unpaid = $this->findAllUnpaid($data);
         foreach($unpaid as $proforma) {
             try {
-                $this->tryPayWithCredits($proforma);
+                $model = $this->di['db']->getExistingModelById('Invoice', $proforma['id']);
+                $this->tryPayWithCredits($model);
             } catch(\Exception $e) {
                 if($this->di['config']['debug']) {
                     error_log($e->getMessage());
@@ -969,7 +970,8 @@ class Service implements InjectionAwareInterface
 
         foreach($orders as $order) {
             try {
-                $invoice = $this->generateForOrder($order);
+                $model = $this->di['db']->getExistingModelById('ClientOrder', $order['id']);
+                $invoice = $this->generateForOrder($model);
                 $this->approveInvoice($invoice, array('id'=>$invoice->id, 'use_credits'=>true));
             } catch(\Exception $e) {
                 error_log($e->getMessage());
@@ -987,7 +989,8 @@ class Service implements InjectionAwareInterface
         $invoiceItems = (array) $invoiceItemService->getAllNotExecutePaidItems();
         foreach($invoiceItems as $item) {
             try {
-                $invoiceItemService->executeTask($item);
+                $model = $this->di['db']->getExistingModelById('InvoiceItem', $item['id']);
+                $invoiceItemService->executeTask($model);
             } catch(\Exception $e) {
                 error_log($e->getMessage());
             }
@@ -1343,9 +1346,7 @@ class Service implements InjectionAwareInterface
         $sql .= ' GROUP BY m.id, cl.id
                  ORDER BY m.id DESC';
 
-        $records = $this->di['db']->getAll($sql, $params);
-        $invoices = $this->di['db']->convertToModels('invoice', $records);
-        return $invoices;
+        return $this->di['db']->getAll($sql, $params);
     }
 
     public function findAllPaid()
