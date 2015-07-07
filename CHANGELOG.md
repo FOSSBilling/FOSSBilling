@@ -1,6 +1,7 @@
 Release 4.19
 ------------------------------------------------------------------------------
 * Cron job memory optimizations
+* Remove convertToModels() function as it uses too much RAM
 
 Release 4.18
 ------------------------------------------------------------------------------
