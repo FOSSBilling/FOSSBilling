@@ -687,6 +687,9 @@ class Service implements InjectionAwareInterface
         $model->accesshash   = $this->di['array_get']($data, 'accesshash', $model->accesshash);
         $model->port         = $this->di['array_get']($data, 'port', $model->port);
         $model->secure       = $this->di['array_get']($data, 'secure', $model->secure);
+        $model->username     = $this->di['array_get']($data, 'username', $model->username);
+        $model->password     = $this->di['array_get']($data, 'password', $model->password);
+        $model->accesshash     = $this->di['array_get']($data, 'accesshash', $model->accesshash);
 
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
