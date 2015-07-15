@@ -463,7 +463,7 @@ class Service implements InjectionAwareInterface
 
         if ($ids) {
             $where[]          = "co.id IN (:ids)";
-            $bindings[':ids'] = $ids;
+            $bindings[':ids'] = implode(', ',$ids);
         }
         if ($meta) {
             $i = 1;
