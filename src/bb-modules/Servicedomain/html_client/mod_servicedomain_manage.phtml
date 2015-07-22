@@ -53,8 +53,8 @@
                         <p class="alert alert-info">{% trans 'If you would like to hide domain contact information which is shown on WHOIS you can enable privacy protection. Once domain privacy protection is enabled no one will know who registered this service. And once you decide to disable privacy protection, information that is listed above on "Update Domain Contact Details" section will be seen on domain WHOIS again.' %}</p>
                         <div class="control-group">
                             <div class="controls">
-                                <button class="btn btn-primary" type="button" id="domain-disable-pp" {% if service.privacy == 1 %}style="display:none;"{% endif %}>{% trans 'Disable Privacy protection' %}</button>
-                                <button class="btn btn-primary" type="button" id="domain-enable-pp" {% if service.privacy == 0 %}style="display:none;"{% endif %}>{% trans 'Enable Privacy protection' %}</button>
+                                <button class="btn btn-primary" type="button" id="domain-disable-pp" {% if service.privacy == 0 %}style="display:none;"{% endif %}>{% trans 'Disable Privacy protection' %}</button>
+                                <button class="btn btn-primary" type="button" id="domain-enable-pp" {% if service.privacy == 1 %}style="display:none;"{% endif %}>{% trans 'Enable Privacy protection' %}</button>
                             </div>
                         </div>
                     </div>
