@@ -2,6 +2,11 @@ Release 4.19
 ------------------------------------------------------------------------------
 * Cron job memory optimizations
 * Remove convertToModels() function as it uses too much RAM
+* Fixed issue with custom fields of client
+* Forum search fix
+* Product and admin area icons will be using absolute path in order to avoid issues when BoxBilling installed in subfolder
+* Domain privacy button issue fixed
+* Various bug fixes and improvements
 
 Release 4.18
 ------------------------------------------------------------------------------
