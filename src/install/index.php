@@ -324,7 +324,7 @@ final class Box_Installer
         $content .= "Email: ".$admin_email.PHP_EOL;
         $content .= "Password: ".$admin_pass.PHP_EOL.PHP_EOL;
 
-        $content .= "Read BoxBilling documentation to get started http://www.boxbilling.com/docs/".PHP_EOL;
+        $content .= "Read BoxBilling documentation to get started http://docs.boxbilling.com/".PHP_EOL;
         $content .= "Thank You for using BoxBilling.".PHP_EOL;
 
         $subject = sprintf('BoxBilling is ready at "%s"', BB_URL);
@@ -392,7 +392,7 @@ final class Box_Installer
 
         $output = '<?php '.PHP_EOL;
         $output .= sprintf($cf, 'BoxBilling Configuration File');
-        $output .= sprintf($cf, 'More information on this file at http://www.boxbilling.com/docs/');
+        $output .= sprintf($cf, 'More information on this file at http://docs.boxbilling.com/');
 
         $output .= sprintf($cf, 'Define timezone');
         $output .= sprintf("date_default_timezone_set('%s');", 'UTC');

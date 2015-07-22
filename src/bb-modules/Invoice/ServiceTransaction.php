@@ -40,7 +40,8 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['logger']->info('Executed action to process received transactions');
         $received = $this->getReceived();
         foreach($received as $transaction) {
-            $this->preProcessTransaction($transaction);
+            $model = $this->di['db']->getExistingModelById('Transaction', $transaction['id']);
+            $this->preProcessTransaction($model);
         }
         return true;
     }
@@ -384,8 +385,8 @@ class ServiceTransaction implements InjectionAwareInterface
             'status'    =>  'received'
         );
         list($sql, $params) = $this->getSearchQuery($filter);
-        $assocArray = $this->di['db']->getAll($sql, $params);
-        return $this->di['db']->convertToModels('transaction', $assocArray);
+
+        return $this->di['db']->getAll($sql, $params);
     }
 
     public function process($tx)

@@ -438,7 +438,6 @@ class Service implements InjectionAwareInterface
 
     public function changePassword(\Model_Admin $model, $password)
     {
-
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminStaffPasswordChange', 'params'=>array('id'=>$model->id)));
 
         $model->pass = $this->di['password']->hashIt($password);
@@ -660,7 +659,7 @@ class Service implements InjectionAwareInterface
         $content .= "Email: ".$admin_email.PHP_EOL;
         $content .= "Password: ".$admin_pass.PHP_EOL.PHP_EOL;
 
-        $content .= "Read BoxBilling documentation to get started http://www.boxbilling.com/docs/".PHP_EOL;
+        $content .= "Read BoxBilling documentation to get started http://docs.boxbilling.com/".PHP_EOL;
         $content .= "Thank You for using BoxBilling.".PHP_EOL;
 
         $subject = sprintf('BoxBilling is ready at "%s"', BB_URL);

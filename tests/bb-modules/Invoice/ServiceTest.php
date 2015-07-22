@@ -1093,12 +1093,18 @@ class ServiceTest extends \BBTestCase
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findAllUnpaid')
-            ->will($this->returnValue(array($invoiceModel)));
+            ->will($this->returnValue(array(array())));
         $serviceMock->expects($this->atLeastOnce())
             ->method('tryPayWithCredits');
 
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->will($this->returnValue($invoiceModel));
+
         $di           = new \Box_Di();
         $di['logger'] = new \Box_Log();
+        $di['db']     = $dbMock;
 
         $serviceMock->setDi($di);
         $result = $serviceMock->doBatchPayWithCredits(array());
@@ -1242,11 +1248,17 @@ class ServiceTest extends \BBTestCase
         $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getSoonExpiringActiveOrders')
-            ->will($this->returnValue(array($clientOrder)));
+            ->will($this->returnValue(array(array())));
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->will($this->returnValue($clientOrder));
 
         $di                = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($orderService) { return $orderService; });
         $di['logger']      = new \Box_Log();
+        $di['db']          = $dbMock;
 
         $serviceMock->setDi($di);
         $result = $serviceMock->generateInvoicesForExpiringOrders();
@@ -1265,11 +1277,17 @@ class ServiceTest extends \BBTestCase
             ->with($invoiceItemModel);
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
             ->method('getAllNotExecutePaidItems')
-            ->willReturn(array($invoiceItemModel));
+            ->willReturn(array(array()));
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->will($this->returnValue($invoiceItemModel));
 
         $di                = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($itemInvoiceServiceMock) { return $itemInvoiceServiceMock; });
         $di['logger']      = new \Box_Log();
+        $di['db']          = $dbMock;
 
         $this->service->setDi($di);
         $result = $this->service->doBatchPaidInvoiceActivation();
@@ -1289,11 +1307,17 @@ class ServiceTest extends \BBTestCase
             ->willThrowException(new \Box_Exception('tesitng exception..'));
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
             ->method('getAllNotExecutePaidItems')
-            ->willReturn(array($invoiceItemModel));
+            ->willReturn(array(array()));
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->will($this->returnValue($invoiceItemModel));
 
         $di                = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($itemInvoiceServiceMock) { return $itemInvoiceServiceMock; });
         $di['logger']      = new \Box_Log();
+        $di['db']          = $dbMock;
 
         $this->service->setDi($di);
         $result = $this->service->doBatchPaidInvoiceActivation();
@@ -1713,9 +1737,6 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->will($this->returnValue($getAllResult));
-        $dbMock->expects($this->atLeastOnce())
-            ->method('convertToModels')
-            ->will($this->returnValue(array($invoiceModel)));
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
@@ -1723,7 +1744,6 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->findAllUnpaid();
         $this->assertInternalType('array', $result);
-        $this->assertInstanceOf('\Model_Invoice', $result[0]);
     }
 
     public function testfindAllPaid()

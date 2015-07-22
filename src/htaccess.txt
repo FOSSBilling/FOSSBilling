@@ -1,4 +1,4 @@
-# Read documentation http://www.boxbilling.com/docs/ for more information
+# Read documentation http://docs.boxbilling.com/ for more information
 # Rename this file to .htaccess in order to work
 # If you are receiving "Internal Server Error" message - make sure mod_rewrite is enabled in apache
 

@@ -73,7 +73,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             $orderService = $this->di['mod_service']('Order');
             switch ($item->task) {
                 case \Model_InvoiceItem::TASK_ACTIVATE:
-                    $product = $this->di['db']->findOne('Product', $order->product_id);
+                    $product = $this->di['db']->getExistingModelById('Product', $order->product_id);
                     if($product->setup == \Model_Product::SETUP_AFTER_PAYMENT) {
                         try {
                             $orderService->activateOrder($order);
@@ -115,8 +115,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         if($item->type == \Model_InvoiceItem::TYPE_DEPOSIT) {
             $clientService = $this->di['mod_service']('Client');
 
-            $invoice = $this->di['db']->findOne('Invoice', $item->invoice_id);
-            $client = $this->di['db']->findOne('Client', $invoice->client_id);
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $item->invoice_id);
+            $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id);
             $data = array(
                 'type' => 'invoice',
                 'rel_id' => $item->invoice_id,
@@ -308,15 +308,15 @@ class ServiceInvoiceItem implements InjectionAwareInterface
      */
     public function getAllNotExecutePaidItems()
     {
-        $sql = 'SELECT invoice_item.*
+        $sql      = 'SELECT invoice_item.*
                 FROM invoice_item
                   left join invoice on invoice_item.invoice_id = invoice.id
                 WHERE invoice_item.status != :item_status and invoice.status = :invoice_status';
         $bindings = array(
-            ':item_status' => \Model_InvoiceItem::STATUS_EXECUTED,
+            ':item_status'    => \Model_InvoiceItem::STATUS_EXECUTED,
             ':invoice_status' => \Model_Invoice::STATUS_PAID,
         );
-        $result = $this->di['db']->getAll($sql, $bindings);
-        return $this->di['db']->convertToModels('InvoiceItem', $result);
+
+        return $this->di['db']->getAll($sql, $bindings);
     }
 }

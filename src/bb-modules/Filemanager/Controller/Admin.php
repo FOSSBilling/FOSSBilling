@@ -167,7 +167,7 @@ class Admin implements \Box\InjectionAwareInterface
         $files = glob($location);
         foreach($files as $f) {
             $name = pathinfo($f, PATHINFO_BASENAME);
-            $list[] =  '/bb-uploads/icons/'.$name;
+            $list[] =  $this->di['config']['url'].'/bb-uploads/icons/'.$name;
         }
         
         return $app->render('mod_filemanager_icons', array('icons'=>$list));

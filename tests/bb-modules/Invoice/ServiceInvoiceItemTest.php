@@ -139,7 +139,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('findOne')
+            ->method('getExistingModelById')
             ->withConsecutive(array('Invoice'), array('Client'))
             ->willReturnOnConsecutiveCalls($invoiceModel, $clientModel);
         $di['db'] = $dbMock;
@@ -428,13 +428,6 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->willReturn(array());
-
-        $model = new \Model_InvoiceItem();
-        $models = array($model);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('convertToModels')
-            ->with('InvoiceItem')
-            ->willReturn($models);
 
         $di['db'] = $dbMock;
         $this->service->setDi($di);

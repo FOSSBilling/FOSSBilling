@@ -175,22 +175,6 @@ class Box_Database implements InjectionAwareInterface
         return $model;
     }
 
-    /**
-     * @param string $modelName
-     * @param array $records
-     * @return array
-     */
-    public function convertToModels($modelName, array $records)
-    {
-        $result = array();
-        $type = $this->_getTypeFromModelName($modelName);
-        $beans = $this->orm->convertToBeans($type, $records);
-        foreach($beans as $bean){
-            $result[] = $bean->box();
-        }
-        return $result;
-    }
-
     private function _getTypeFromModelName($modelName)
     {
         if($modelName == strtolower($modelName)) {

@@ -26,9 +26,6 @@ class ServiceTransactionTest extends \BBTestCase
 
     public function testproccessReceivedATransactions()
     {
-        $di           = new \Box_Di();
-        $di['logger'] = new \Box_Log();
-
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
 
@@ -37,9 +34,19 @@ class ServiceTransactionTest extends \BBTestCase
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getReceived')
-            ->will($this->returnValue(array($transactionModel)));
+            ->will($this->returnValue(array(array())));
         $serviceMock->expects($this->atLeastOnce())
             ->method('preProcessTransaction');
+
+        $dbMock = $this->getMockBuilder('\Box_Database')
+            ->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->will($this->onConsecutiveCalls($transactionModel));
+
+        $di           = new \Box_Di();
+        $di['logger'] = new \Box_Log();
+        $di['db']     = $dbMock;
 
         $serviceMock->setDi($di);
         $result = $serviceMock->proccessReceivedATransactions();
@@ -601,8 +608,8 @@ class ServiceTransactionTest extends \BBTestCase
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
         $dbMock->expects($this->atLeastOnce())
-            ->method('convertToModels')
-            ->will($this->returnValue(array($transactionModel)));
+            ->method('getAll')
+            ->will($this->returnValue(array(array())));
 
         $di       = new \Box_Di();
         $di['db'] = $dbMock;
@@ -610,7 +617,6 @@ class ServiceTransactionTest extends \BBTestCase
 
         $result = $serviceMock->getReceived();
         $this->assertInternalType('array', $result);
-        $this->assertInternalType('\Model_Transaction', $result[0]);
     }
 
     public function testdebitTransaction()

@@ -277,16 +277,16 @@ class Admin extends \Api_Abstract
         $client->tax_exempt     = $this->di['array_get']($data, 'tax_exempt', $client->tax_exempt);
         $client->created_at     = $this->di['array_get']($data, 'created_at', $client->created_at);
 
-        $client->custom_1      = $this->di['array_get']($data, 'custom_1', $client->c1);
-        $client->custom_2      = $this->di['array_get']($data, 'custom_2', $client->c2);
-        $client->custom_3      = $this->di['array_get']($data, 'custom_3', $client->c3);
-        $client->custom_4      = $this->di['array_get']($data, 'custom_4', $client->c4);
-        $client->custom_5      = $this->di['array_get']($data, 'custom_5', $client->c5);
-        $client->custom_6      = $this->di['array_get']($data, 'custom_6', $client->c6);
-        $client->custom_7      = $this->di['array_get']($data, 'custom_7', $client->c7);
-        $client->custom_8      = $this->di['array_get']($data, 'custom_8', $client->c8);
-        $client->custom_9      = $this->di['array_get']($data, 'custom_9', $client->c9);
-        $client->custom_10     = $this->di['array_get']($data, 'custom_10', $client->c10);
+        $client->custom_1      = $this->di['array_get']($data, 'custom_1', $client->custom_1);
+        $client->custom_2      = $this->di['array_get']($data, 'custom_2', $client->custom_2);
+        $client->custom_3      = $this->di['array_get']($data, 'custom_3', $client->custom_3);
+        $client->custom_4      = $this->di['array_get']($data, 'custom_4', $client->custom_4);
+        $client->custom_5      = $this->di['array_get']($data, 'custom_5', $client->custom_5);
+        $client->custom_6      = $this->di['array_get']($data, 'custom_6', $client->custom_6);
+        $client->custom_7      = $this->di['array_get']($data, 'custom_7', $client->custom_7);
+        $client->custom_8      = $this->di['array_get']($data, 'custom_8', $client->custom_8);
+        $client->custom_9      = $this->di['array_get']($data, 'custom_9', $client->custom_9);
+        $client->custom_10     = $this->di['array_get']($data, 'custom_10', $client->custom_10);
 
         $client->client_group_id = $this->di['array_get']($data, 'group_id', $client->client_group_id);
         $client->company_number = $this->di['array_get']($data, 'company_number', $client->company_number);
