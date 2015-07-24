@@ -248,6 +248,11 @@ class Admin extends \Api_Abstract
 
         $this->di['events_manager']->fire(array('event'=>'onBeforeAdminClientUpdate', 'params'=>$data));
 
+        $phoneCC = $this->di['array_get']($data, 'phone_cc', $client->phone_cc);
+        if(!empty($phoneCC)){
+            $client->phone_cc = intval($phoneCC);
+        }
+
         $client->email          = $this->di['array_get']($data, 'email', $client->email);
         $client->first_name     = $this->di['array_get']($data, 'first_name', $client->first_name);
         $client->last_name      = $this->di['array_get']($data, 'last_name', $client->last_name);
@@ -258,7 +263,6 @@ class Admin extends \Api_Abstract
         $client->company_vat    = $this->di['array_get']($data, 'company_vat', $client->company_vat);
         $client->address_1      = $this->di['array_get']($data, 'address_1', $client->address_1);
         $client->address_2      = $this->di['array_get']($data, 'address_2', $client->address_2);
-        $client->phone_cc       = $this->di['array_get']($data, 'phone_cc', $client->phone_cc);
         $client->phone          = $this->di['array_get']($data, 'phone', $client->phone);
         $client->document_type  = $this->di['array_get']($data, 'document_type', $client->document_type);
         $client->document_nr    = $this->di['array_get']($data, 'document_nr', $client->document_nr);

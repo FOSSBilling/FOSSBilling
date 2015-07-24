@@ -241,6 +241,8 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
 		$headers = Array(
 			($post_contents ? 'POST' : 'GET')." $path HTTP/1.1",
 			"Host: $host",
+            'Connection: Close',
+            'User-Agent: BoxBilling'
 		);
 		if (!empty($phd)) {
 			if (!is_array($phd)) {

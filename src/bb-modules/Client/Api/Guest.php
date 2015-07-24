@@ -74,6 +74,10 @@ class Guest extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
+        if($data['password'] != $data['password_confirm']) {
+            throw new \Box_Exception('Passwords do not match.');
+        }
+
         $this->getService()->checkExtraRequiredFields($data);
         $this->getService()->checkCustomFields($data);
 
