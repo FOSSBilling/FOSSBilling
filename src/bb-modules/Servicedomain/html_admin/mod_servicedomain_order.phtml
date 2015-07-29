@@ -9,7 +9,7 @@
 
 <div class="rowElem domain-action domain-register">
     <label>{% trans 'Register domain' %}:</label>
-    <div class="formRight moreFields">
+    <div class="formRight">
         <ul>
             <li style="width: 200px"><input type="text" name="config[register_sld]" value="{{ request.register_sld }}" placeholder="{% trans 'Domain name to register' %}"></li>
             <li style="width: 90px">{{ mf.selectboxtld('config[register_tld]', guest.serviceDomain_tlds({"allow_register":1})) }}</li>
@@ -21,7 +21,7 @@
 
 <div class="rowElem domain-action domain-transfer" style="display: none;">
     <label>{% trans 'Transfer domain' %}:</label>
-    <div class="formRight moreFields">
+    <div class="formRight">
         <ul>
             <li style="width: 200px"><input type="text" name="config[transfer_sld]" value="{{ request.transfer_sld }}"  placeholder="{% trans 'Domain name to transfer' %}"></li>
             <li style="width: 90px">{{ mf.selectboxtld('config[transfer_tld]', guest.serviceDomain_tlds({"allow_transfer":1})) }}</li>
