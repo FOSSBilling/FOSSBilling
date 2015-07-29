@@ -77,14 +77,19 @@ class Server implements \Box\InjectionAwareInterface
 
     private function getIp($checkProxy = true)
     {
-        $ip = NULL;
+        $ip = null;
         if ($checkProxy && $this->getServer('HTTP_CLIENT_IP') != null) {
             $ip = $this->getServer('HTTP_CLIENT_IP');
-        } else if ($checkProxy && $this->getServer('HTTP_X_FORWARDED_FOR') != null) {
-            $ip = $this->getServer('HTTP_X_FORWARDED_FOR');
         } else {
-            $ip = $this->getServer('REMOTE_ADDR');
+            if ($checkProxy && $this->getServer('HTTP_X_FORWARDED_FOR') != null) {
+                $ip = $this->getServer('HTTP_X_FORWARDED_FOR');
+            } else {
+                $ip = $this->getServer('REMOTE_ADDR');
+            }
         }
+
+        $ips_arr = explode(',', $ip);
+        $ip      = trim($ips_arr[0]);
 
         return $ip;
     }
