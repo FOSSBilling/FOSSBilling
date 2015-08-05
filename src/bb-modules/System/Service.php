@@ -1538,30 +1538,6 @@ class Service
         return $this->di['db']->getAssoc($query);
     }
 
-    public function getEmailSettings()
-    {
-        $params = array(
-            'mailer',
-            'smtp_authentication',
-            'smtp_security',
-            'smtp_port',
-            'smtp_username',
-            'smtp_password',
-            'smtp_host',
-        );
-        $res    = $this->_getMultipleParams($params);
-
-        return array(
-            'mailer'              => $this->di['array_get']($res, 'mailer', 'sendmail'),
-            'smtp_authentication' => (isset($res['smtp_authentication']) && $res['smtp_authentication']) ? 'login' : NULL,
-            'smtp_host'           => $this->di['array_get']($res, 'smtp_host'),
-            'smtp_security'       => (isset($res['smtp_security']) && $res['smtp_security'] != 'no') ? $res['smtp_security'] : NULL,
-            'smtp_port'           => $this->di['array_get']($res, 'smtp_port'),
-            'smtp_username'       => $this->di['array_get']($res, 'smtp_username'),
-            'smtp_password'       => $this->di['array_get']($res, 'smtp_password'),
-        );
-    }
-
     public function getVersion()
     {
         return \Box_Version::VERSION;
