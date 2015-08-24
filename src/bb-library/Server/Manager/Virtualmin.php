@@ -227,7 +227,7 @@ class Server_Manager_Virtualmin extends Server_Manager
      */
     private function _getUrl()
     {
-    	$url = (isset($this->_config['ssl']) && $this->_config['ssl'])  ? 'http://' : 'https://';
+    	$url = (isset($this->_config['ssl']) && $this->_config['ssl'])  ? 'https://' : 'http://';
     	$url .= $this->_config['host'] . ' : ' . $this->_config['port'] . '/virtual-server/remote.cgi';
 
     	return $url;
