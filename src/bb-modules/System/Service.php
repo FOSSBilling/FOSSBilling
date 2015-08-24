@@ -735,7 +735,7 @@ class Service
             "GF" => "French Guiana",
             "PF" => "French Polynesia",
             "GA" => "Gabon",
-            "GB" => "Great Britain",
+            "GB" => "United Kingdom",
             "GM" => "Gambia",
             "GE" => "Georgia",
             "DE" => "Germany",
