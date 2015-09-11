@@ -52,7 +52,6 @@ try {
 // redirect to invoice if gateways requires
 if(isset($_GET['bb_redirect']) && isset($_GET['bb_invoice_hash'])) {
     $url = $di['url']->link('invoice/'.$_GET['bb_invoice_hash']);
-    var_dump($url);exit;
     header("Location: $url");
     exit;
 } else {
