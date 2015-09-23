@@ -865,7 +865,7 @@ class Service implements \Box\InjectionAwareInterface
         $rel_type      = $this->di['array_get']($data, 'rel_type', NULL);
 
 
-        if ($rel_type == \Model_SupportTicket::REL_TYPE_ORDER) {
+        if (!is_null($rel_id) && $rel_type == \Model_SupportTicket::REL_TYPE_ORDER) {
             $orderService = $this->di['mod_service']('order');
             $o            = $orderService->findForClientById($client, $rel_id);
             if (!$o instanceof \Model_ClientOrder) {
