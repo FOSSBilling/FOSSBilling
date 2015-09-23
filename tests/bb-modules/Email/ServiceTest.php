@@ -551,15 +551,12 @@ class ServiceTest extends \BBTestCase
             'smtp_password'       => NULL,
         );
 
-        $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->setMethods(array('getEmailSettings'))->getMock();
-        $systemService->expects($this->atLeastOnce())
-            ->method('getEmailSettings')
-            ->will($this->returnValue($emailSettings));
-
         $di['db']          = $db;
         $di['mail']        = $mailMock;
-        $di['mod_service'] = $di->protect(function () use ($systemService) {
-            return $systemService;
+
+        $config = array();
+        $di['mod_config']  = $di->protect(function ($modName) use($config){
+            return $config;
         });
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {

@@ -304,8 +304,7 @@ class Service implements \Box\InjectionAwareInterface
 
         $this->_logEmailToDb($email); //Logging to DB
 
-        $systemService = $this->di['mod_service']('system');
-        $settings        = $systemService->getEmailSettings();
+        $settings      = $this->di['mod_config']('email');
         $transport       = $this->di['array_get']($settings, 'mailer', 'sendmail');
 
         if (APPLICATION_ENV == 'testing') {

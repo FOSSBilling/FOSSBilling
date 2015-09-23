@@ -40,9 +40,9 @@ class Server_Manager_Virtualmin extends Server_Manager
 	public function getLoginUrl()
 	{
 		if ($this->_config['secure']) {
-        	return 'http://'.$this->_config['host'] . ':' . $this->_config['port'] . '/';
+        	return 'https://'.$this->_config['host'] . ':' . $this->_config['port'] . '/';
 		} else {
-			return 'https://'.$this->_config['host'] . ':' . $this->_config['port'] . '/';
+			return 'http://'.$this->_config['host'] . ':' . $this->_config['port'] . '/';
 		}
 	}
 

@@ -1227,7 +1227,7 @@ class Service implements InjectionAwareInterface
         $invoice_info = __("Invoice number: ") . $invoice['nr'] . "\n" .
             __("Invoice date: ") . $invoiceDate . "\n" .
             __("Due date: ") . strftime($localeDateFormat, strtotime($invoice['due_at'])) . "\n" .
-            __("Invoice status: ") . $invoice['status'];
+            __("Invoice status: ") . ucfirst($invoice['status']);
         $pdf->SetFont('DejaVu', 'B', $font_size);
         $pdf->text($left + 15, 75, __("Invoice"));
         $pdf->SetFont('DejaVu', '', $font_size);
@@ -1248,7 +1248,7 @@ class Service implements InjectionAwareInterface
         $pdf->SetXY(75, 70);
         $pdf->MultiCell(60, 10, "\n" . $company_info, 0, "L", 0);
 
-        $buyer_info = __("Name: ") . $invoice['buyer']['first_name'] . $invoice['buyer']['last_name'] . "\n" .
+        $buyer_info = __("Name: ") . $invoice['buyer']['first_name'].' ' . $invoice['buyer']['last_name'] . "\n" .
             __("Company: ") . $invoice['buyer']['company'] . "\n" .
             __("Address: ") . $invoice['buyer']['address'] . "\n" .
             __("Company VAT: ") . $invoice['seller']['company_vat'] . "\n" .

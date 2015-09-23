@@ -192,8 +192,9 @@ class Service implements InjectionAwareInterface
 
         foreach ($result as $key => $value){
             $iconPath = 'images/icons/middlenav/cog.png';
-            if ($value['icon_url']){
-                $iconPath = $this->di['config']['url'].$value['icon_url'];
+            $icon_url = $this->di['array_get']($value, 'icon_url');
+            if ($icon_url){
+                $iconPath = $this->di['config']['url'].$icon_url;
             }
             $result[$key]['icon_url'] = $iconPath;
         }

@@ -4,11 +4,11 @@
 <div class="pagination pagination-centered">
     <ul>
         <li {% if not request.page or request.page == 1 %}class="disabled"{% endif %}>
-            <a href="{% if request.page and request.page != 1%}?page=1{% else %}#{% endif %}">«</a>
+            <a href="{% if request.page and request.page != 1%}?{% for k,v in {}|merge(request)|merge({'page': 1}) %}{{k}}={{v}}{% if loop.last == FALSE %}&{%endif%}{% endfor %}{% else %}#{% endif %}">«</a>
         </li>
 
         <li {% if not request.page or request.page == 1 %}class="disabled"{% endif %}>
-        <a href="{% if request.page  and request.page != '1' %}?page={{ request.page - 1 }}{% else %}#{% endif %}"> <span class="awe-arrow-left"></span> </a>
+        <a href="{% if request.page  and request.page != '1' %}?{% for k,v in {}|merge(request)|merge({'page': request.page - 1}) %}{{k}}={{v}}{% if loop.last == FALSE %}&{%endif%}{% endfor %}{% else %}#{% endif %}"> <span class="awe-arrow-left"></span> </a>
         </li>
 
         {% for i in 1..list.pages %}
@@ -22,11 +22,11 @@
         {% endfor %}
 
         <li {% if request.page == list.pages %}class="disabled"{% endif %}>
-            <a href="{% if request.page and request.page != list.pages %}?page={{ request.page + 1 }}{% elseif not request.page %}?page=2{% else %}#{% endif %}"><span class="awe-arrow-right"></span> </a>
+            <a href="{% if request.page and request.page != list.pages %}?{% for k,v in {}|merge(request)|merge({'page': request.page + 1}) %}{{k}}={{v}}{% if loop.last == FALSE %}&{%endif%}{% endfor %}{% elseif not request.page %}?{% for k,v in {}|merge(request)|merge({'page': 2}) %}{{k}}={{v}}{% if loop.last == FALSE %}&{%endif%}{% endfor %}{% else %}#{% endif %}"><span class="awe-arrow-right"></span> </a>
         </li>
 
         <li {% if request.page == list.pages %}class="disabled"{% endif %}>
-            <a href="{% if not request.page or request.page != list.pages %}?page={{ list.pages }}{% else %}#{% endif %}">»</a>
+            <a href="{% if not request.page or request.page != list.pages %}?{% for k,v in {}|merge(request)|merge({'page': list.pages}) %}{{k}}={{v}}{% if loop.last == FALSE %}&{%endif%}{% endfor %}{% else %}#{% endif %}">»</a>
         </li>
     </ul>
 </div>

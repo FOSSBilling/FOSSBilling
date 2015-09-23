@@ -232,7 +232,7 @@
                             bb.msg(data.error.message, 'error');
                         }
                     } else {
-                        bb.redirect('/');
+                        bb.redirect("{{ constant('BB_URL') }}");
                     }
                 }
             });
