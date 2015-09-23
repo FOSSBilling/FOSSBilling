@@ -863,6 +863,16 @@ class Service implements \Box\InjectionAwareInterface
         //@todo validate task params
         $rel_id        = $this->di['array_get']($data, 'rel_id', NULL);
         $rel_type      = $this->di['array_get']($data, 'rel_type', NULL);
+
+
+        if ($rel_type == \Model_SupportTicket::REL_TYPE_ORDER) {
+            $orderService = $this->di['mod_service']('order');
+            $o            = $orderService->findForClientById($client, $rel_id);
+            if (!$o instanceof \Model_ClientOrder) {
+               throw new \Box_Exception('Order ID does not exist');
+            }
+        }
+
         $rel_task      = $this->di['array_get']($data, 'rel_task', NULL);
         $rel_new_value = $this->di['array_get']($data, 'rel_new_value', NULL);
         $rel_status    = isset($data['rel_task']) ? \Model_SupportTicket::REL_STATUS_PENDING : \Model_SupportTicket::REL_STATUS_COMPLETE;
