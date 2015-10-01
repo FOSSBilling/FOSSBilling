@@ -135,6 +135,10 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception('License plugin do not have generate method');
         }
 
+        if(method_exists($plugin, 'setDi')) {
+            $plugin->setDi($this->di);
+        }
+
         $i = 0;
         do {
             $licenseKey = $plugin->generate($model, $order, $c);
