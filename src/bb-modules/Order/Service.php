@@ -656,7 +656,7 @@ class Service implements InjectionAwareInterface
             try {
                 $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
                 $this->createFromOrder($addon);
-                $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
+                $this->di['events_manager']->fire(array('event' => 'onAfterAdminOrderActivate', 'params' => array('id' => $addon->id)));
             } catch (\Exception $e) {
                 error_log($e->getMessage());
             }
