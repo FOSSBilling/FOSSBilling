@@ -251,7 +251,7 @@ function twig_size_filter($value)
 function twig_markdown_filter(Twig_Environment $env, $value)
 {
     $markdownParser = new \Michelf\MarkdownExtra;
-    return $markdownParser->transform($value);
+    return $markdownParser->transform(htmlspecialchars($value, ENT_NOQUOTES));
 }
 
 function twig_truncate_filter(Twig_Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
