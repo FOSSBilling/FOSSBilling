@@ -1156,12 +1156,12 @@ class Service implements \Box\InjectionAwareInterface
     {
         $data        = $this->di['db']->toArray($model);
         $messages    = array();
-        $messagesArr = $this->di['db']->find('SupportPTicketMessage', 'support_p_ticket_id = :support_p_ticket_id', array(':support_p_ticket_id' => $model->id));
+        $messagesArr = $this->di['db']->find('SupportPTicketMessage', 'support_p_ticket_id = :support_p_ticket_id ORDER BY id', array(':support_p_ticket_id' => $model->id));
         foreach ($messagesArr as $msg) {
             $messages[] = $this->publicMessageToApiArray($msg);
         }
 
-        $first = $this->di['db']->findOne('SupportPTicketMessage', 'support_p_ticket_id = :support_p_ticket_id LIMIT 1', array(':support_p_ticket_id' => $model->id));
+        $first = reset($messagesArr);
         if ($first instanceof \Model_SupportPTicketMessage) {
             $data['author'] = $this->publicMessageGetAuthorDetails($first);
         } else {
