@@ -65,12 +65,11 @@ class Service implements InjectionAwareInterface
 
         try {
             $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');;
-            $identity = $di['loggedin_admin'];
-            $s  = $service->getOrderServiceData($order, $identity);
-            $orderArr = $service->toApiArray($order, true, $identity);
+            $s  = $service->getOrderServiceData($order);
+            $orderArr = $service->toApiArray($order, true);
 
             $email              = $params;
-            $email['to_client'] = $orderArr['client']['id'];
+            $email['to_client'] = $order->client_id;
             $email['code']      = sprintf('mod_service%s_activated', $orderArr['service_type']);
             $email['service']   = $s;
             $email['order']     = $orderArr;
@@ -1264,7 +1263,7 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
     }
 
-    public function getOrderServiceData(\Model_ClientOrder $order, $identity)
+    public function getOrderServiceData(\Model_ClientOrder $order, $identity = null)
     {
         $orderId = $order->id;
         $service = $this->getOrderService($order);
