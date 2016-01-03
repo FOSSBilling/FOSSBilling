@@ -160,7 +160,7 @@
                                                 </div>
                                             </div>
                                             <div id="suspend_popup_panel">
-                                                <input type="button" class="blueBtn" value="&nbsp;{% trans 'Suspend' %}&nbsp;" id="popup_ok" onclick="return susp.suspendOrder('admin/order/suspend?id={{order.id}}', 'reason');"/>
+                                                <input type="button" class="blueBtn" value="&nbsp;{% trans 'Suspend' %}&nbsp;" id="popup_ok" onclick="return susp.suspendOrder('/api/admin/order/suspend?id={{order.id}}', 'reason');"/>
                                                 <input type="button" class="basicBtn" value="&nbsp;Cancel&nbsp;" id="popup_cancel" onclick="return susp.suspenderHide();"/>
                                             </div>
                                         </div>
