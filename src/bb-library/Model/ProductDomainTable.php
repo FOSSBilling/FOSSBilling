@@ -64,7 +64,9 @@ class Model_ProductDomainTable extends Model_ProductTable
 
     private function isFreeDomainSet($item)
     {
-        return isset($item['config']['free_domain']) && $item['config']['free_domain'];
+         if(isset($item['config']['free_domain']) && $item['config']['free_domain'] && isset($item['config']['free_domain_periods']) && in_array($item['config']['period'],$item['config']['free_domain_periods']) && isset($item['config']['free_tlds']) && in_array($item['config']['tld'],$item['config']['free_tlds']))
+	   { return true;}
+   else{ return false;}
     }
 
     private function registerDomainMatch($item, $config)
