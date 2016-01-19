@@ -120,7 +120,7 @@ class Payment_Adapter_SimplePay implements \Box\InjectionAwareInterface
 
         $title = $this->getInvoiceTitle($invoice);
 
-	$invoiceService = $this->di['mod_service']('Invoice');
+    $invoiceService = $this->di['mod_service']('Invoice');
 
         $tx->invoice_id = $invoice->id;
         $tx->type = 'SimplePay Checkout';
@@ -169,15 +169,12 @@ class Payment_Adapter_SimplePay implements \Box\InjectionAwareInterface
         $form = '<form action=":callbackUrl" method="POST" class="api_form" data-api-redirect=":redirectUrl">
                  <div class="loading" style="display:none;"><span>{% trans \'Loading ...\' %}</span></div>
                  <script src="https://checkout.simplepay.ng/simplepay.js"></script>
-                  <script>
-
-
-                    var handler = SimplePay.configure(SimplePay.CHECKOUT, {
-			   token: handleTokenCall,
-			   key: \':key\',
-			   image: ":image",
-			});
-
+                 <script>
+                     var handler = SimplePay.configure({
+                                                token: handleTokenCall,
+                                                key: \':key\',
+                                                image: ":image",
+                                   });
 
                     function handleTokenCall(token){
                         form = $(".api_form");
@@ -185,20 +182,19 @@ class Payment_Adapter_SimplePay implements \Box\InjectionAwareInterface
                         form.submit();
 
                     }
-                  </script>
-                  <script>
-
+                 </script>
+                 <script>
                     function openHandler(){
                         handler.open(SimplePay.CHECKOUT, {
                                email: ":email",
                                phone: ":phone",
-                               desc: ":description",
+                               description: ":description",
                                address: ":address",
-                               postal: ":postal",
+                               postal_code: ":postal",
                                city: ":city",
                                country: ":country",
-                               value: ":amount",
-                               cur: ":currency"
+                               amount: ":amount",
+                               currency: ":currency"
                         });
                     };
                     $(document).ready ( function(){
@@ -210,8 +206,8 @@ class Payment_Adapter_SimplePay implements \Box\InjectionAwareInterface
                     });
 
 
-                  </script>
-                </form>';
+                 </script>
+                 </form>';
 
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         $payGateway = $this->di['db']->findOne('PayGateway', 'gateway = "SimplePay"');
@@ -231,7 +227,7 @@ class Payment_Adapter_SimplePay implements \Box\InjectionAwareInterface
             ':callbackUrl' => $payGatewayService->getCallbackUrl($payGateway, $invoice),
             ':redirectUrl' => $this->di['tools']->url('invoice/'.$invoice->hash)
         );
-	
+    
         return strtr($form, $bindings);
     }
 
