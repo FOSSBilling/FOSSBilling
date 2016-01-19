@@ -170,7 +170,7 @@ class Payment_Adapter_SimplePay implements \Box\InjectionAwareInterface
                  <div class="loading" style="display:none;"><span>{% trans \'Loading ...\' %}</span></div>
                  <script src="https://checkout.simplepay.ng/simplepay.js"></script>
                  <script>
-                     var handler = SimplePay.configure(SimplePay.CHECKOUT, {
+                     var handler = SimplePay.configure({
                                                 token: handleTokenCall,
                                                 key: \':key\',
                                                 image: ":image",
