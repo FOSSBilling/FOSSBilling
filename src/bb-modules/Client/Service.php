@@ -281,9 +281,9 @@ class Service implements InjectionAwareInterface
         $where = array();
         $params = array();
         if($search) {
-            $where[] = 'c.first_name LIKE %:first_name% OR c.last_name LIKE %:last_name% OR c.id LIKE :id';
-            $params[':first_name'] = $search;
-            $params[':last_name'] = $search;
+            $where[] = 'c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.id LIKE :id';
+            $params[':first_name'] = "%".$search."%";
+            $params[':last_name'] = "%".$search."%";
             $params[':id'] = $search;
         }
 
