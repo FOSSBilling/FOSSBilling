@@ -46,7 +46,7 @@ class Service
         }
 
         if ($search) {
-            $sql .= " title LIKE :q OR content LIKE :q";
+            $sql .= " AND title LIKE :q OR content LIKE :q";
             $filter[':q'] = "%$search%";
         }
 
