@@ -171,8 +171,8 @@ class Service implements \Box\InjectionAwareInterface
 			'timezone'			=>	'auto',
 			'allowproxy'		=>	'0',
 			'charset'			=>	'ISO-8859-1',
-			'servertype'		=>	'ShoutCast2',
-			'sourcetype'		=>	'sctrans2',
+			'servertype'		=>	$pc['servertype'],
+			'sourcetype'		=>	$pc['sourcetype'],
 			'template'			=>	$pc['template'],
     	);
         

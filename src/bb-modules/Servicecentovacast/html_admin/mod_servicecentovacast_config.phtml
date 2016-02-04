@@ -22,6 +22,14 @@
         </div>
         
         <div class="rowElem">
+            <label>{% trans 'Server Type' %}</label>
+            <div class="formRight">
+                <input type="text" name="config[servertype]" value="{{ product.config.servertype }}" placeholder="Enter the Server type ShoutCast2/IceCast"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
             <label>{% trans 'Max clients' %}</label>
             <div class="formRight">
                 <input type="text" name="config[maxclients]" value="{{ product.config.maxclients }}" placeholder="Specify the maximum number simultaneous listeners for this stream"/>
@@ -56,7 +64,7 @@
         <div class="rowElem">
             <label>{% trans 'Autostart' %}</label>
             <div class="formRight">
-                <input type="text" name="config[autostart]" value="{{ product.config.autostart }}" placeholder="Set this to '1' to automatically start the server after provisioning"/>
+                <input type="text" name="config[autostart]" value="{{ product.config.autostart }}" placeholder="Set this to '1' to automatically start the server after provisioning, Set it to 2 for icecast"/>
             </div>
             <div class="fix"></div>
         </div>
