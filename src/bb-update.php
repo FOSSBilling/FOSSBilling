@@ -464,6 +464,8 @@ class BBPatch_7 extends BBPatchAbstract
                 'smtp_username' =>  $api->system_param(array("key"=>"smtp_username")),
                 'smtp_password' =>  $api->system_param(array("key"=>"smtp_password")),
                 'smtp_security' =>  $api->system_param(array("key"=>"smtp_security")),
+                'sendgrid_username' =>  $api->system_param(array("key"=>"sendgrid_username")),
+                'sendgrid_password' =>  $api->system_param(array("key"=>"sendgrid_password")),
             );
             $api->extension_config_save($config);
         } catch(Exception $e) {
