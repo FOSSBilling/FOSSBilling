@@ -749,14 +749,25 @@ class Service implements InjectionAwareInterface
 
     public function getProductCategorySearchQuery($data)
     {
-        $sql = "SELECT m.*
-                FROM product_category as m
-                  LEFT JOIN product p on p.product_category_id = m.id
-                WHERE p.status = 'enabled'
-                  AND p.hidden = 0
-                GROUP BY p.product_category_id
-                ORDER BY p.priority ASC
-        ";
+        $sql = 'SELECT m.id, 
+                       m.title, 
+                       m.description, 
+                       m.icon_url, 
+                       m.created_at, 
+                       m.updated_at, 
+                       Max(p.priority) AS MaxPrio
+                FROM   product_category AS m 
+                       LEFT JOIN product p 
+                              ON p.product_category_id = m.id 
+                WHERE  p.status = \'enabled\' 
+                       AND p.hidden = 0 
+                GROUP  BY m.id, 
+                          m.title, 
+                          m.description, 
+                          m.icon_url, 
+                          m.created_at, 
+                          m.updated_at 
+                ORDER  BY MaxPrio ASC;';
 
         $params = array();
 
