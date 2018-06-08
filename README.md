@@ -10,7 +10,8 @@ Open Source billing software
 Requirements
 ================================================================================
 
-* PHP >=5.3.3
+* PHP 5.6 | Does not support PHP 7.x
+* Linux Operating System (64-bit) | Does not support Windows Operating Systems.
 * PHP extensions:
   * mcrypt
   * curl
