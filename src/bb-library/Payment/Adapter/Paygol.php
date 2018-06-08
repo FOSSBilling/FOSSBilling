@@ -264,3 +264,4 @@ class Payment_Adapter_PayGol implements \Box\InjectionAwareInterface
         
     }
 }
+
