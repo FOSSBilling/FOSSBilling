@@ -2,9 +2,6 @@ BoxBilling [![Download Latest](http://i.imgur.com/djy4ExU.png)](https://github.c
 ================================================================================
 *If you want to download BoxBilling for use please click on `Download BoxBilling` button above instead of `git pull` command or GitHub's `Download ZIP` button!*
 
-[![Build Status](https://travis-ci.org/boxbilling/boxbilling.svg?branch=master)](https://travis-ci.org/boxbilling/boxbilling)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/boxbilling/boxbilling/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/boxbilling/boxbilling/?branch=master)
-
 Open Source billing software
 
 Requirements
@@ -20,10 +17,23 @@ Requirements
   * gettext
 * MySQL or any PDO compatible SQL server
 
+Recommended
+================================================================================
+
+* PHP 5.6
+* CentOS 64-bit Operating System
+* PHP Extensions
+  * mcrypt
+  * curl
+  * zlib
+  * PDO
+  * gettext
+* MySQL or any PDO compatible SQL server
+
 Getting started
 ================================================================================
 
-Please read documentation at http://docs.boxbilling.com to get started
+Please read our installation instructions located at http://docs.boxbilling.com to get started
 with BoxBilling
 
 Contributing
