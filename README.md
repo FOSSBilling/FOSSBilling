@@ -98,7 +98,8 @@ End User License Agreement & Other Restrictions
    Those that wish to distribute a modified version of BoxBilling must gain 
    permission from BoxBilling before releasing the software. All 
    authorised modified versions of BoxBilling must retain this copyright
-   notice.
+   notice. All modified releases of BoxBilling must release the software under 
+   the same license as the BoxBilling software (Apache License 2.0)
    
    Copyright © 2011-2018 BoxBilling. All rights reserved.
    www.boxbilling.com
