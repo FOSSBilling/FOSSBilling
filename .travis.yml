@@ -21,6 +21,9 @@ matrix:
 
 sudo: false
 
+install:
+  - composer self-update
+
 before_script:
   - mysql --user=root -e "CREATE USER 'foo'@'localhost' IDENTIFIED BY 'foo';"
   - mysql --user=root -e "GRANT ALL PRIVILEGES ON *.* TO 'foo'@'localhost'"
@@ -30,7 +33,7 @@ before_script:
   - mv ./src/bb-config-sample.php ./src/bb-config.php
 
 script:
-  - src/bb-vendor/bin/phpunit
+  - ./src/bb-vendor/bin/phpunit
 
 notifications:
   email: false
