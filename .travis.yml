@@ -5,7 +5,6 @@ language: php
 dist: trusty
 
 php:
-  - 5.3
   - 5.4
   - 5.5
   - 5.6
@@ -22,7 +21,10 @@ matrix:
 sudo: false
 
 install:
+  - ant
   - composer self-update
+  - composer require --dev phpunit/phpunit ^6.0 php-coveralls/php-coveralls ^2.1
+  - composer install --dev
 
 before_script:
   - mysql --user=root -e "CREATE USER 'foo'@'localhost' IDENTIFIED BY 'foo';"
@@ -33,8 +35,28 @@ before_script:
   - mv ./src/bb-config-sample.php ./src/bb-config.php
 
 script:
-  - ./src/bb-vendor/bin/phpunit
+  - ./vendor/bin/phpunit --coverage-clover ./tests/logs/clover.xml
+
+after_script:
+  - php vendor/bin/coveralls -v
 
 notifications:
   email: false
   slack: boxbilling:vsdKszFU9Pm308ye5rNSpr8n
+
+before_deploy:
+  - npm install -g grunt-cli
+  - npm install
+  - grunt
+  - ant release
+
+deploy:
+  provider: releases
+  api-key:
+    secure: tVzZ+3U0ndBGvoUpFqA6ikg6fDKnPgMoNqK1pvTdEp0xmrFtjMP/fuc8+awObhj89iEC+MyzfsOP57CZbHR/UjmUSHPQew+BvTwxYmTUzgUeyUrYsTEI7WJgB7tsL35aRgrpxk102tlSmlX7EonufUT0svPOAQ1p4NgZRm3GI3A=
+  file: ./build/distribution/BoxBilling.zip
+  skip_cleanup: true
+  on:
+    tags: true
+    all_branches: true
+    php: 5.6
