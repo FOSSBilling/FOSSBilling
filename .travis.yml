@@ -21,10 +21,6 @@ matrix:
 
 sudo: false
 
-install:
-  - composer self-update
-  - composer install
-
 before_script:
   - mysql --user=root -e "CREATE USER 'foo'@'localhost' IDENTIFIED BY 'foo';"
   - mysql --user=root -e "GRANT ALL PRIVILEGES ON *.* TO 'foo'@'localhost'"
