@@ -45,6 +45,12 @@ Contributing
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request to **develop** branch
 
+Roadmap
+================================================================================
+
+* [ ] Support latest PHP version 7.3
+* [ ] Add support for composer package manager
+
 Using Vagrant
 ================================================================================
 Vagrant is [very well documented](https://docs.vagrantup.com/v2/) but here are a few common commands:
