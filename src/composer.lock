@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "hash": "ac56946e8613836864a0e52fa345304f",
+    "content-hash": "cf79209b9d92f839ce383233c4da965c",
     "packages": [
         {
             "name": "geoip2/geoip2",
@@ -56,7 +56,7 @@
                 "geolocation",
                 "maxmind"
             ],
-            "time": "2014-10-29 17:11:44"
+            "time": "2014-10-29T17:11:44+00:00"
         },
         {
             "name": "guzzle/guzzle",
@@ -151,7 +151,8 @@
                 "rest",
                 "web service"
             ],
-            "time": "2015-03-18 18:23:50"
+            "abandoned": "guzzlehttp/guzzle",
+            "time": "2015-03-18T18:23:50+00:00"
         },
         {
             "name": "ircmaxell/password-compat",
@@ -193,7 +194,7 @@
                 "hashing",
                 "password"
             ],
-            "time": "2014-11-20 16:49:30"
+            "time": "2014-11-20T16:49:30+00:00"
         },
         {
             "name": "maxmind-db/reader",
@@ -242,7 +243,7 @@
                 "geolocation",
                 "maxmind"
             ],
-            "time": "2015-03-13 22:35:13"
+            "time": "2015-03-13T22:35:13+00:00"
         },
         {
             "name": "michelf/php-markdown",
@@ -293,7 +294,7 @@
             "keywords": [
                 "markdown"
             ],
-            "time": "2015-03-01 12:03:08"
+            "time": "2015-03-01T12:03:08+00:00"
         },
         {
             "name": "mustangostang/spyc",
@@ -340,35 +341,59 @@
                 "yaml",
                 "yml"
             ],
-            "time": "2013-02-21 10:52:01"
+            "time": "2013-02-21T10:52:01+00:00"
         },
         {
             "name": "phpmailer/phpmailer",
-            "version": "v5.2.4",
+            "version": "v5.2.27",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPMailer/PHPMailer.git",
-                "reference": "adb0197c106fad05c1fab28dbed5437133836c44"
+                "reference": "dde1db116511aa4956389d75546c5be4c2beb2a6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/adb0197c106fad05c1fab28dbed5437133836c44",
-                "reference": "adb0197c106fad05c1fab28dbed5437133836c44",
+                "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/dde1db116511aa4956389d75546c5be4c2beb2a6",
+                "reference": "dde1db116511aa4956389d75546c5be4c2beb2a6",
                 "shasum": ""
             },
             "require": {
+                "ext-ctype": "*",
                 "php": ">=5.0.0"
             },
             "require-dev": {
-                "phpdocumentor/phpdocumentor": "*",
-                "phpunit/phpunit": "*"
+                "doctrine/annotations": "1.2.*",
+                "jms/serializer": "0.16.*",
+                "phpdocumentor/phpdocumentor": "2.*",
+                "phpunit/phpunit": "4.8.*",
+                "symfony/debug": "2.8.*",
+                "symfony/filesystem": "2.8.*",
+                "symfony/translation": "2.8.*",
+                "symfony/yaml": "2.8.*",
+                "zendframework/zend-cache": "2.5.1",
+                "zendframework/zend-config": "2.5.1",
+                "zendframework/zend-eventmanager": "2.5.1",
+                "zendframework/zend-filter": "2.5.1",
+                "zendframework/zend-i18n": "2.5.1",
+                "zendframework/zend-json": "2.5.1",
+                "zendframework/zend-math": "2.5.1",
+                "zendframework/zend-serializer": "2.5.*",
+                "zendframework/zend-servicemanager": "2.5.*",
+                "zendframework/zend-stdlib": "2.5.1"
+            },
+            "suggest": {
+                "league/oauth2-google": "Needed for Google XOAUTH2 authentication"
             },
             "type": "library",
             "autoload": {
                 "classmap": [
                     "class.phpmailer.php",
+                    "class.phpmaileroauth.php",
+                    "class.phpmaileroauthgoogle.php",
+                    "class.smtp.php",
                     "class.pop3.php",
-                    "class.smtp.php"
+                    "extras/EasyPeasyICS.php",
+                    "extras/ntlm_sasl_client.php"
                 ]
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -393,7 +418,7 @@
                 }
             ],
             "description": "PHPMailer is a full-featured email creation and transfer class for PHP",
-            "time": "2013-02-21 11:44:28"
+            "time": "2018-11-15T22:32:31+00:00"
         },
         {
             "name": "pimple/pimple",
@@ -439,7 +464,7 @@
                 "container",
                 "dependency injection"
             ],
-            "time": "2014-02-10 08:05:32"
+            "time": "2014-02-10T08:05:32+00:00"
         },
         {
             "name": "rev42/tfpdf",
@@ -476,7 +501,8 @@
             "keywords": [
                 "pdf"
             ],
-            "time": "2014-01-19 09:18:44"
+            "abandoned": "docnet/tFPDF",
+            "time": "2014-01-19T09:18:44+00:00"
         },
         {
             "name": "stripe/stripe-php",
@@ -531,19 +557,19 @@
                 "payment processing",
                 "stripe"
             ],
-            "time": "2015-03-02 05:44:40"
+            "time": "2015-03-02T05:44:40+00:00"
         },
         {
             "name": "symfony/event-dispatcher",
             "version": "v2.7.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/EventDispatcher.git",
+                "url": "https://github.com/symfony/event-dispatcher.git",
                 "reference": "687039686d0e923429ba6e958d0baa920cd5d458"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/687039686d0e923429ba6e958d0baa920cd5d458",
+                "url": "https://api.github.com/repos/symfony/event-dispatcher/zipball/687039686d0e923429ba6e958d0baa920cd5d458",
                 "reference": "687039686d0e923429ba6e958d0baa920cd5d458",
                 "shasum": ""
             },
@@ -589,7 +615,7 @@
             ],
             "description": "Symfony EventDispatcher Component",
             "homepage": "https://symfony.com",
-            "time": "2015-05-02 15:21:08"
+            "time": "2015-05-02T15:21:08+00:00"
         },
         {
             "name": "twig/extensions",
@@ -636,7 +662,7 @@
                 "i18n",
                 "text"
             ],
-            "time": "2013-02-28 14:21:30"
+            "time": "2013-02-28T14:21:30+00:00"
         },
         {
             "name": "twig/twig",
@@ -693,7 +719,7 @@
             "keywords": [
                 "templating"
             ],
-            "time": "2014-02-13 10:19:29"
+            "time": "2014-02-13T10:19:29+00:00"
         }
     ],
     "packages-dev": [
@@ -749,7 +775,7 @@
                 "constructor",
                 "instantiate"
             ],
-            "time": "2014-10-13 12:58:55"
+            "time": "2014-10-13T12:58:55+00:00"
         },
         {
             "name": "phpdocumentor/reflection-docblock",
@@ -798,7 +824,7 @@
                     "email": "mike.vanriel@naenius.com"
                 }
             ],
-            "time": "2015-02-03 12:10:50"
+            "time": "2015-02-03T12:10:50+00:00"
         },
         {
             "name": "phpspec/prophecy",
@@ -858,7 +884,7 @@
                 "spy",
                 "stub"
             ],
-            "time": "2015-04-27 22:15:08"
+            "time": "2015-04-27T22:15:08+00:00"
         },
         {
             "name": "phpunit/dbunit",
@@ -917,7 +943,8 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2015-03-29 14:23:04"
+            "abandoned": true,
+            "time": "2015-03-29T14:23:04+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -979,7 +1006,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2015-06-01 07:35:26"
+            "time": "2015-06-01T07:35:26+00:00"
         },
         {
             "name": "phpunit/php-file-iterator",
@@ -1026,7 +1053,7 @@
                 "filesystem",
                 "iterator"
             ],
-            "time": "2015-04-02 05:19:05"
+            "time": "2015-04-02T05:19:05+00:00"
         },
         {
             "name": "phpunit/php-text-template",
@@ -1070,7 +1097,7 @@
             "keywords": [
                 "template"
             ],
-            "time": "2014-01-30 17:20:04"
+            "time": "2014-01-30T17:20:04+00:00"
         },
         {
             "name": "phpunit/php-timer",
@@ -1114,7 +1141,7 @@
             "keywords": [
                 "timer"
             ],
-            "time": "2013-08-02 07:42:54"
+            "time": "2013-08-02T07:42:54+00:00"
         },
         {
             "name": "phpunit/php-token-stream",
@@ -1163,7 +1190,7 @@
             "keywords": [
                 "tokenizer"
             ],
-            "time": "2015-04-08 04:46:07"
+            "time": "2015-04-08T04:46:07+00:00"
         },
         {
             "name": "phpunit/phpunit",
@@ -1235,7 +1262,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2015-05-29 06:00:03"
+            "time": "2015-05-29T06:00:03+00:00"
         },
         {
             "name": "phpunit/phpunit-mock-objects",
@@ -1290,7 +1317,8 @@
                 "mock",
                 "xunit"
             ],
-            "time": "2015-05-29 05:19:18"
+            "abandoned": true,
+            "time": "2015-05-29T05:19:18+00:00"
         },
         {
             "name": "sebastian/comparator",
@@ -1354,7 +1382,7 @@
                 "compare",
                 "equality"
             ],
-            "time": "2015-01-29 16:28:08"
+            "time": "2015-01-29T16:28:08+00:00"
         },
         {
             "name": "sebastian/diff",
@@ -1406,7 +1434,7 @@
             "keywords": [
                 "diff"
             ],
-            "time": "2015-02-22 15:13:53"
+            "time": "2015-02-22T15:13:53+00:00"
         },
         {
             "name": "sebastian/environment",
@@ -1456,7 +1484,7 @@
                 "environment",
                 "hhvm"
             ],
-            "time": "2015-01-01 10:01:08"
+            "time": "2015-01-01T10:01:08+00:00"
         },
         {
             "name": "sebastian/exporter",
@@ -1522,7 +1550,7 @@
                 "export",
                 "exporter"
             ],
-            "time": "2015-01-27 07:23:06"
+            "time": "2015-01-27T07:23:06+00:00"
         },
         {
             "name": "sebastian/global-state",
@@ -1573,7 +1601,7 @@
             "keywords": [
                 "global state"
             ],
-            "time": "2014-10-06 09:23:50"
+            "time": "2014-10-06T09:23:50+00:00"
         },
         {
             "name": "sebastian/recursion-context",
@@ -1626,7 +1654,7 @@
             ],
             "description": "Provides functionality to recursively process PHP variables",
             "homepage": "http://www.github.com/sebastianbergmann/recursion-context",
-            "time": "2015-01-24 09:48:32"
+            "time": "2015-01-24T09:48:32+00:00"
         },
         {
             "name": "sebastian/version",
@@ -1661,7 +1689,7 @@
             ],
             "description": "Library that helps with managing the version number of Git-hosted PHP projects",
             "homepage": "https://github.com/sebastianbergmann/version",
-            "time": "2015-02-24 06:35:25"
+            "time": "2015-02-24T06:35:25+00:00"
         },
         {
             "name": "squizlabs/php_codesniffer",
@@ -1736,7 +1764,7 @@
                 "phpcs",
                 "standards"
             ],
-            "time": "2014-12-04 22:32:15"
+            "time": "2014-12-04T22:32:15+00:00"
         },
         {
             "name": "symfony/yaml",
@@ -1785,7 +1813,7 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
-            "time": "2015-05-02 15:21:08"
+            "time": "2015-05-02T15:21:08+00:00"
         }
     ],
     "aliases": [],
