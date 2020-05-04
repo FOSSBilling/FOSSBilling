@@ -24,3 +24,4 @@ puphpet/files/dot/ssh/*
 ### node_moduels ###
 node_modules
 npm-debug.log
+.history/
