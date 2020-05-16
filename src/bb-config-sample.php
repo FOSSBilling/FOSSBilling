@@ -94,6 +94,11 @@ return array(
          * Database password
          */
         'password'   =>'foo',
+
+        /**
+         * Database Port
+         */
+        'port'   =>'3306',
     ),
 
     'twig'   =>  array(

@@ -94,6 +94,11 @@ return array(
          * Database password
          */
         'password'   =>getenv('BB_DB_PASSWORD'),
+
+        /**
+         * Database port
+         */
+        'port'   =>getenv('BB_DB_PORT'),
     ),
 
     'twig'   =>  array(

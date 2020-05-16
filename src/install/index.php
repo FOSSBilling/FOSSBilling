@@ -64,13 +64,15 @@ final class Box_Installer
                 $host = $_POST['db_host'];
                 $pass = $_POST['db_pass'];
                 $name = $_POST['db_name'];
-                if (!$this->canConnectToDatabase($host, $name, $user, $pass)) {
+                $port = $_POST['db_port'];
+                if (!$this->canConnectToDatabase($host, $name, $user, $pass, $port)) {
                     print 'Could not connect to database. Please check database details.';
                 } else {
                     $this->session->set('db_host', $host);
                     $this->session->set('db_name', $name);
                     $this->session->set('db_user', $user);
                     $this->session->set('db_pass', $pass);
+                    $this->session->set('db_port', $port);
                     print 'ok';
                 }
 
@@ -83,13 +85,15 @@ final class Box_Installer
                     $host = $_POST['db_host'];
                     $pass = $_POST['db_pass'];
                     $name = $_POST['db_name'];
-                    if (!$this->canConnectToDatabase($host, $name, $user, $pass)) {
+                    $port = $_POST['db_port'];
+                    if (!$this->canConnectToDatabase($host, $name, $user, $pass, $port)) {
                         throw new Exception('Could not connect to database or database does not exist');
                     } else {
                         $this->session->set('db_host', $host);
                         $this->session->set('db_name', $name);
                         $this->session->set('db_user', $user);
                         $this->session->set('db_pass', $pass);
+                        $this->session->set('db_port', $port);
                     }
 
                     // admin config
@@ -146,6 +150,7 @@ final class Box_Installer
                     'db_name' => $this->session->get('db_name'),
                     'db_user' => $this->session->get('db_user'),
                     'db_pass' => $this->session->get('db_pass'),
+                    'db_port' => $this->session->get('db_port'),
 
                     'admin_email' => $this->session->get('admin_email'),
                     'admin_pass' => $this->session->get('admin_pass'),
@@ -195,9 +200,9 @@ final class Box_Installer
         return file_get_contents($path);
     }
 
-    private function canConnectToDatabase($host, $db, $user, $pass)
+    private function canConnectToDatabase($host, $db, $user, $pass, $port)
     {
-        $con = new mysqli($host, $user, $pass, $db);
+        $con = new mysqli($host, $user, $pass, $db, $port);
         if ($con->connect_error) {
             return false;
         }
@@ -242,7 +247,7 @@ final class Box_Installer
         $this->_isValidInstallData($ns);
         $this->_createConfigurationFile($ns);
 
-        $link = new mysqli($ns->get('db_host'), $ns->get('db_user'), $ns->get('db_pass'), $ns->get('db_name'));
+        $link = new mysqli($ns->get('db_host'), $ns->get('db_user'), $ns->get('db_pass'), $ns->get('db_name'), $ns->get('db_port'));
 
         if ($link->connect_error) {
             throw new Exception("Connect Error (" . $link->connect_errno . ") " . $link->connect_error);
@@ -353,6 +358,7 @@ final class Box_Installer
                 'name' => $ns->get('db_name'),
                 'user' => $ns->get('db_user'),
                 'password' => $ns->get('db_pass'),
+                'port' => $ns->get('db_port'),
             ],
 
             'twig' => [
@@ -394,6 +400,7 @@ final class Box_Installer
         $output .= sprintf($f, 'BB_DB_USER', $ns->get('db_user'));
         $output .= sprintf($f, 'BB_DB_PASSWORD', $ns->get('db_pass'));
         $output .= sprintf($f, 'BB_DB_HOST', $ns->get('db_host'));
+        $output .= sprintf($f, 'BB_DB_PORT', $ns->get('db_port'));
         $output .= sprintf($f, 'BB_DB_TYPE', 'mysql');
 
         $output .= sprintf($cf, 'Live site URL with trailing slash');
@@ -425,7 +432,7 @@ final class Box_Installer
 
     private function _isValidInstallData($ns)
     {
-        if (!$this->canConnectToDatabase($ns->get('db_host'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'))) {
+        if (!$this->canConnectToDatabase($ns->get('db_host'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'), $ns->get('db_port'))) {
             throw new Exception('Can not connect to database');
         }
 
