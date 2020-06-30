@@ -957,9 +957,7 @@ class Service implements \Box\InjectionAwareInterface
         } else {
             throw new \Box_Exception('Identity is not valid');
         }
-        
-        /* Using *htmlspecialchars* makes possible sanitize the HTML characters and quotes in order to avoid XSS */
-        $msg->content    = htmlspecialchars($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $msg->content    = $content;
         $msg->ip         = $this->di['request']->getClientAddress();
         $msg->created_at = date('Y-m-d H:i:s');
         $msg->updated_at = date('Y-m-d H:i:s');
