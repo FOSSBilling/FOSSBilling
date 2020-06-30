@@ -69,7 +69,8 @@ class Service implements \Box\InjectionAwareInterface
             }
 
             if (!$validator->isSldValid($data['owndomain_sld'])) {
-                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['owndomain_sld']));
+                $safe_dom = htmlspecialchars($data['owndomain_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
             }
 
             $required = array(
@@ -85,7 +86,8 @@ class Service implements \Box\InjectionAwareInterface
             }
 
             if (!$validator->isSldValid($data['transfer_sld'])) {
-                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['transfer_sld']));
+                $safe_dom = htmlspecialchars($data['transfer_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
             }
 
             $required = array(
