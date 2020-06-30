@@ -117,7 +117,8 @@ class Service implements \Box\InjectionAwareInterface
             }
 
             if (!$validator->isSldValid($data['register_sld'])) {
-                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['register_sld']));
+                $safe_dom = htmlspecialchars($data['register_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
             }
 
             $required = array(
@@ -561,7 +562,8 @@ class Service implements \Box\InjectionAwareInterface
 
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
-            throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $sld));
+            $safe_dom = htmlspecialchars($sld, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
         }
 
         if (!$model->allow_register) {
