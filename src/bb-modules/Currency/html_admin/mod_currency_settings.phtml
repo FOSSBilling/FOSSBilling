@@ -106,7 +106,7 @@
                     <div class="rowElem">
                         <label>{% trans 'Format' %}:</label>
                         <div class="formRight">
-                            <input type="text" name="format" value="{%raw%}{{price}}{%endraw%} $" required="required">
+                            <input type="text" name="format" value="{{price|raw}} $" required="required">
                         </div>
                         <div class="fix"></div>
                     </div>

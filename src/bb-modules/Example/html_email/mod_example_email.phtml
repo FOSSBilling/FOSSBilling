@@ -1,11 +1,11 @@
 {% block subject %}Example Email Subject{% endblock %}
 {% block content %}
-{% filter markdown %}
+{% apply markdown %}
 Hi {{ c.first_name }},
 
 This is a test message from BoxBilling.com
 
 {{ guest.system_company.signature }}
 
-{% endfilter %}
+{% endapply %}
 {% endblock %}

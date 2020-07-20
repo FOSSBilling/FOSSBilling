@@ -86,6 +86,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
                 case \Model_InvoiceItem::TASK_RENEW:
                     try {
+							//Unsuspend order if suspended before renew
+							if($order->status == \Model_ClientOrder::STATUS_SUSPENDED) {
+								 $orderService->unsuspendFromOrder($order);
+							}
+							
                         $order = $this->di['db']->load('ClientOrder', $order_id);
                         $orderService->renewOrder($order);
                     } catch(\Exception $e) {

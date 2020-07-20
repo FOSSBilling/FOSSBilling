@@ -139,18 +139,20 @@ $di['twig'] = function () use ($di) {
     $config = $di['config'];
     $options = $config['twig'];
 
-    $loader = new Twig_Loader_String();
-    $twig = new Twig_Environment($loader, $options);
+    $loader = new Twig\Loader\ArrayLoader();
+    $twig = new Twig\Environment($loader, $options);
 
     $box_extensions = new Box_TwigExtensions();
     $box_extensions->setDi($di);
 
-    $twig->addExtension(new Twig_Extension_Optimizer());
-    $twig->addExtension(new Twig_Extensions_Extension_I18n());
-    $twig->addExtension(new Twig_Extensions_Extension_Debug());
+      //$twig->addExtension(new Twig\Extension\OptimizerExtension());
+      $twig->addExtension(new \Twig\Extension\StringLoaderExtension());
+      $twig->addExtension(new Twig\Extension\DebugExtension());
+      $twig->addExtension(new Twig\Extensions\I18nExtension());
     $twig->addExtension($box_extensions);
-    $twig->getExtension('core')->setDateFormat($config['locale_date_format']);
-    $twig->getExtension('core')->setTimezone($config['timezone']);
+      $twig->getExtension(Twig\Extension\CoreExtension::class)->setDateFormat($config['locale_date_format']);
+      $twig->getExtension(Twig\Extension\CoreExtension::class)->setTimezone($config['timezone']);
+  
 
     // add globals
     if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest') {
@@ -165,6 +167,8 @@ $di['twig'] = function () use ($di) {
 
 $di['is_client_logged'] = function() use($di) {
     if(!$di['auth']->isClientLoggedIn()) {
+        $url = $di['url']->link('login');
+        header("Location: $url");  
         throw new Exception('Client is not logged in');
     }
     return true;
@@ -338,6 +342,6 @@ $di['translate'] = $di->protect(function($textDomain = '') use ($di) {
     return $tr;
 });
 $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-    return isset ($array[$key]) ? $array[$key] : $default;
+    return array_key_exists($key, $array)  ? $array[$key] : $default;
 });
 return $di;

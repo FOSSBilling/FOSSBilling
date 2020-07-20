@@ -607,7 +607,7 @@
 
 {% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
 {% block js %}
-{% autoescape true js %}
+{% autoescape "js" %}
 <script type="text/javascript">
 $(function() {
     $('input[name=gateway]:first').attr('checked', true);
