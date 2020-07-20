@@ -183,7 +183,7 @@ $di['loggedin_client'] = function() use ($di) {
     return $di['db']->getExistingModelById('Client', $client_id);
 };
 $di['loggedin_admin'] = function() use ($di) {
-    if(php_sapi_name() == 'cli') {
+    if(php_sapi_name() == 'cli' || substr(php_sapi_name(), 0, 3) == 'cgi') {
         return $di['mod_service']('staff')->getCronAdmin();
     }
 

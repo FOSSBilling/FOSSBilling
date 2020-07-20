@@ -347,6 +347,8 @@ class Service implements InjectionAwareInterface
         $data['title']          = $model->title;
         $data['meta']           = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', array(':id' => $model->id));
         $data['active_tickets'] = $supportService->getActiveTicketsCountForOrder($model);
+        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
+        $data['client'] = $clientService->toApiArray($client, false);
 
         if ($identity instanceof \Model_Admin) {
             $data['config'] = $this->getConfig($model);
@@ -356,8 +358,6 @@ class Service implements InjectionAwareInterface
             }else{
                 $data['plugin'] = null;
             }
-            $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
-            $data['client'] = $clientService->toApiArray($client, false);
         }
 
         return $data;
@@ -656,7 +656,7 @@ class Service implements InjectionAwareInterface
             try {
                 $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
                 $this->createFromOrder($addon);
-                $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
+                $this->di['events_manager']->fire(array('event' => 'onAfterAdminOrderActivate', 'params' => array('id' => $addon->id)));
             } catch (\Exception $e) {
                 error_log($e->getMessage());
             }

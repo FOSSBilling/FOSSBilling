@@ -38,11 +38,12 @@ class Service implements \Box\InjectionAwareInterface
 
         if($search) {
             $search = "%$search%";
-            $where[] = '(m.sender LIKE :sender OR m.recipients LIKE :recipient OR m.subject LIKE :subject OR m.content_text LIKE :context_text)';
+            $where[] = '(sender LIKE :sender OR recipients LIKE :recipient OR subject LIKE :subject OR content_text LIKE :content_text OR content_html LIKE :content_html)';
             $bindings[':sender'] = $search;
             $bindings[':recipient'] = $search;
             $bindings[':subject'] = $search;
             $bindings[':content_text'] = $search;
+            $bindings[':content_html'] = $search;
         }
 
         if(NULL !== $client_id) {

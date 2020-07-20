@@ -257,8 +257,8 @@ class Service
             $msgs['info'][] = sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install);
         }
 
-        if(!extension_loaded('mcrypt')) {
-            $msgs['info'][] = sprintf('BoxBilling requires %s extension to be enabled on this server for security reasons.', 'php mcrypt');
+        if(!extension_loaded('openssl')) {
+            $msgs['info'][] = sprintf('BoxBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl');
         }
 
         return $this->di['array_get']($msgs, $type, array());

@@ -89,7 +89,6 @@ class Model_ProductDomainTable extends Model_ProductTable
     {
         return isset($item['config']['free_transfer']) && $item['config']['free_transfer'];
     }
-
     
     public function getPricingArray(Model_Product $product)
     {
@@ -125,7 +124,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return $pricing;
     }
 
-    public function getProductPrice(Model_Product $product, array $config = array())
+    public function getProductPrice(Model_Product $product, array $config = null)
     {
         $rtable = $this->di['mod_service']('servicedomain', 'Tld');
         $tld = '';
@@ -162,7 +161,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         return 0;
     }
 
-    public function getProductSetupPrice(Model_Product $product, array $config = array())
+    public function getProductSetupPrice(Model_Product $product, array $config = null)
     {
         return 0;
     }
