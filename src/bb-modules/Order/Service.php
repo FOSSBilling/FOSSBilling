@@ -1263,7 +1263,7 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
     }
 
-    public function getOrderServiceData(\Model_ClientOrder $order, $identity)
+    public function getOrderServiceData(\Model_ClientOrder $order, $identity = null)
     {
         $orderId = $order->id;
         $service = $this->getOrderService($order);
