@@ -174,13 +174,13 @@ final class Box_Installer
             'debug' => true,
             'charset' => 'utf-8',
             'optimizations' => 1,
-            'autoescape' => true,
+            'autoescape' => 'html',
             'auto_reload' => true,
             'cache' => false,
         ];
-        $loader = new Twig_Loader_Filesystem($options['paths']);
-        $twig = new Twig_Environment($loader, $options);
-        $twig->addExtension(new Twig_Extension_Optimizer());
+        $loader = new \Twig\Loader\FilesystemLoader($options['paths']);
+        $twig = new Twig\Environment($loader, $options);
+        //$twig->addExtension(new Twig_Extension_Optimizer());
         $twig->addGlobal('request', $_REQUEST);
         $twig->addGlobal('version', Box_Version::VERSION);
         return $twig->render($name, $vars);

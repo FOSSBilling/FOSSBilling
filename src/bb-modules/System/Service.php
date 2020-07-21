@@ -304,9 +304,24 @@ class Service
         }
 
         try {
-            $template = $twig->loadTemplate($tpl);
+            $template = $twig->load($tpl);
             $parsed   = $template->render($vars);
         } catch (\Exception $e) {
+            //$twig->load throws error when $tpl is string
+            $parsed = $this->createTemplateFromString($tpl, $try_render, $vars);    
+            
+        }
+
+        return $parsed;
+    }
+
+    public function createTemplateFromString($tpl, $try_render, $vars){
+        try{    
+                $twig = $this->di['twig'];            
+                $template = $twig->createTemplate($tpl);
+                $parsed   = $template->render($vars);  
+        }
+        catch(\Exception $e){
             $parsed = $tpl;
             if (!$try_render) {
                 throw $e;

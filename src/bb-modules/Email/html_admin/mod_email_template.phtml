@@ -162,7 +162,7 @@
             
             <div class="body mainForm">
                 <div class="formBottom">
-                    <textarea cols="5" rows="20" class="example">{% raw %} {% filter markdown %}
+                    <textarea cols="5" rows="20" class="example">{% autoescape false %} {% apply markdown %}
 
 This is an example of markdown syntax in email template
 
@@ -195,7 +195,7 @@ Accessing Admin API can get information about your BoxBilling, for example how m
 {#<pre>{% debug stats %}</pre>#}
 
 
-{% endfilter %}{% endraw %}</textarea>
+{% endapply %}{% endautoescape %}</textarea>
                     <input type="button" value="{% trans 'Preview' %}" class="blueBtn mt10 epb"/>
                     <div class="mt20 example-preview" style="padding: 5px; background: white; border: 1px dashed grey; overflow: auto; display: none;"></div>
                 </div>

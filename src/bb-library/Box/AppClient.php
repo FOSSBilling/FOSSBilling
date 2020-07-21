@@ -57,7 +57,12 @@ class Box_AppClient extends Box_App
         } catch(Exception $e) {
             if(BB_DEBUG) error_log($e);
         }
-        throw new \Box_Exception('Page :url not found', array(':url'=>$page), 404);
+      // throw new \Box_Exception('Page :url not found', array(':url'=>$page), 404);
+      $e = new \Box_Exception('Page :url not found', array(':url'=>$this->url), 404);
+        
+      error_log($e->getMessage());
+     header("HTTP/1.0 404 Not Found");
+     return $this->render('404', array('exception'=>$e));
     }
 
     /**
@@ -66,8 +71,8 @@ class Box_AppClient extends Box_App
     public function render($fileName, $variableArray = array(), $ext = 'phtml')
     {
         try {
-            $template = $this->getTwig()->loadTemplate($fileName.'.'.$ext);
-        } catch (\Twig_Error_Loader $e) {
+            $template = $this->getTwig()->load($fileName.'.'.$ext);
+        } catch (Twig\Error\LoaderError $e) {
             error_log($e->getMessage());
             throw new \Box_Exception('Page not found', null, 404);
         }

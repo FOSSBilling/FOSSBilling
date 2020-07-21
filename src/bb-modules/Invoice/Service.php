@@ -224,7 +224,7 @@ class Service implements InjectionAwareInterface
             'account_number' => !empty($c['account_number']) ? $c['account_number'] : null,
         );
 
-        if($identity instanceof \Model_Admin) {
+        if($identity instanceof \Model_Admin){
             $client = $this->di['db']->load('Client', $row['client_id']);
             $clientService = $this->di['mod_service']('client');
             if($client instanceof \Model_Client) {

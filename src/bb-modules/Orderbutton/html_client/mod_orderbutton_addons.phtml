@@ -27,7 +27,7 @@
 
                 <td class="currency">
                     <label for="addon_{{ addon.id }}">
-                    {% if addon.pricing.type is sameas('recurrent') %}
+                    {% if addon.pricing.type is same as('recurrent') %}
                         {% set periods = guest.system_periods %}
                         <select name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
                         {% for code,prices in addon.pricing.recurrent %}
@@ -38,11 +38,11 @@
                     </select>
                     {% endif %}
 
-                    {% if addon.pricing.type is sameas('once') %}
+                    {% if addon.pricing.type is same as('once') %}
                     {{ (addon.pricing.once.price + addon.pricing.once.setup) | money_convert }}
                     {% endif %}
 
-                    {% if addon.pricing.type is sameas('free') %}
+                    {% if addon.pricing.type is same as('free') %}
                     {{ 0 | money_convert }}
                     {% endif %}
                     </label>
