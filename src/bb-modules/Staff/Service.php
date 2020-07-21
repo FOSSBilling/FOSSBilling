@@ -157,7 +157,7 @@ class Service implements InjectionAwareInterface
         try {
             $supportTicketService = $di['mod_service']('support');
             $ticketModel = $supportTicketService->getTicketById($params['id']);
-            $ticket = $supportTicketService->toApiArray($ticketModel, true, $di['loggedin_admin']);
+            $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
             $helpdeskModel = $di['db']->load('SupportHelpdesk', $ticketModel->support_helpdesk_id);
             $emailService = $di['mod_service']('email');
