@@ -197,6 +197,13 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     {
         $item->title = $this->di['array_get']($data, 'title', $item->title);
         $item->price = $this->di['array_get']($data, 'price', $item->price);
+		
+		$item_quantity =  $this->di['array_get']($data, 'quantity', 1);
+		
+		if($item_quantity != $item->quantity){
+        $item->quantity = $item_quantity > 0 ? $item_quantity : 1 ;
+		}
+		
         if(isset($data['taxed']) && !empty($data['taxed'])) {
             $item->taxed = (bool)$data['taxed'];
         } else {

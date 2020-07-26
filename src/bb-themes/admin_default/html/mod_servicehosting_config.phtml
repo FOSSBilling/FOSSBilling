@@ -39,7 +39,7 @@
         <label>{% trans 'Select free tlds' %}</label>
         <div class="formRight">
             {% set tlds = guest.serviceDomain_tlds({"allow_register":1}) %}
-            <select name="config[free_tlds][]" multiple="multiple" class="multiple" size="{{tlds|length}}">
+            <select name="config[free_tlds][]" multiple="multiple" class="multiple" size="{{tlds|length}}" {% if product.config.free_domain %}required{% endif %}>
                 {% for id,tld in tlds %}
                 <option value="{{tld.tld}}" {% if tld.tld in product.config.free_tlds %}selected="selected"{% endif %}>{{tld.tld }}</option>
                 {% endfor %}
@@ -51,7 +51,7 @@
 	   <div class="rowElem free-periods-row">
         <label>{% trans 'Select free periods' %}</label>
         <div class="formRight">
-            <select name="config[free_domain_periods][]" multiple="multiple" class="multiple" size="8">
+            <select name="config[free_domain_periods][]" multiple="multiple" class="multiple" size="8" {% if product.config.free_domain %}required{% endif %}>
                 <option value="1M" {% if "1M" in product.config.free_domain_periods %}selected="selected"{% endif %}>1M</option>
 				<option value="3M" {% if "3M" in product.config.free_domain_periods %}selected="selected"{% endif %}>3M</option>
 				<option value="6M" {% if "6M" in product.config.free_domain_periods %}selected="selected"{% endif %}>6M</option>
@@ -152,8 +152,14 @@
         if ($(this).val() == 1){
             freeTldsRow.fadeIn('slow');
 			freePerdsRow.fadeIn('slow');
+            $('select[name="config[free_tlds][]"]').prop('required', true);
+            $('select[name="config[free_domain_periods][]"]').prop('required', true);
         }
         if ($(this).val() == 0){
+            $('select[name="config[free_domain_periods][]"]').prop('required', false);
+            $('select[name="config[free_tlds][]"]').prop('required', false);
+            $('select[name="config[free_tlds][]"] option:selected').prop('selected', false);
+            $('select[name="config[free_domain_periods][]"] option:selected').prop('selected', false);
             freeTldsRow.fadeOut('slow');
 			freePerdsRow.fadeOut('slow');
         }

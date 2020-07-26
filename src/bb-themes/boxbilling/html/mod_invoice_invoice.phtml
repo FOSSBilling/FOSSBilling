@@ -179,12 +179,12 @@
                         {% else %}
                         {{ item.title }}
                         {% endif %}
+                        {% if item.quantity > 1 %}
+                        x {{ item.quantity }} {{ item.unit }}
+                        {% endif %}
                     </td>
                     <td class="currency">
                         {{ item.price | money(invoice.currency) }}
-                        {% if item.quantity > 1 %}
-                        x {{ item.quantity }} {# item.unit #}
-                        {% endif %}
                     </td>
                     <td class="currency">{{ item.total | money(invoice.currency) }}</td>
                 </tr>

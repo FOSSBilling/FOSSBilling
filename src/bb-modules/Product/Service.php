@@ -345,12 +345,13 @@ class Service implements InjectionAwareInterface
     public function updateConfig(\Model_Product $model, $data)
     {
         /* add new config value */
-        $config = json_decode($model->config, 1);
+        $config = json_decode($model->config, true);
 
         if (isset($data['config']) && is_array($data['config'])) {
+            $config = array_intersect_key((array)$config, $data['config']);
             foreach ($data['config'] as $key => $val) {
                 $config[$key] = $val;
-                if (isset($config[$key]) && empty ($val)) {
+                if (isset($config[$key]) && empty($val) && !is_numeric($val)) {
                     unset ($config[$key]);
                 }
             }

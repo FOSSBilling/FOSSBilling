@@ -324,7 +324,7 @@ class Service implements InjectionAwareInterface
         foreach ($products as $product) {
             $p = $this->cartProductToApiArray($product);
             $total += $p['total'];
-            $items_discount += $p['discount'];
+            $items_discount += $p['discount_price'];
             $items[] = $p;
         }
 
@@ -339,7 +339,8 @@ class Service implements InjectionAwareInterface
         $result          = array(
             'promocode' => $promocode,
             'discount'  => $items_discount,
-            'total'     => $total,
+            'subtotal'  => $total,
+            'total'     => $total - $items_discount,
             'items'     => $items,
             'currency'  => $currencyService->toApiArray($currency),
         );
@@ -545,7 +546,7 @@ class Service implements InjectionAwareInterface
 
             $invoice_items[] = array(
                 'title'    => $order->title,
-                'price'    => $order->price - ($order->discount),
+                'price'    => $order->price * $order->quantity,
                 'quantity' => $order->quantity,
                 'unit'     => $order->unit,
                 'period'   => $order->period,
@@ -554,6 +555,16 @@ class Service implements InjectionAwareInterface
                 'rel_id'   => $order->id,
                 'task'     => \Model_InvoiceItem::TASK_ACTIVATE,
             );
+
+            if($order->discount > 0){ 
+                $invoice_items[] = array(
+                    'title'    => __('Discount: :product', array(':product' => $order->title)),
+                    'price'    => $order->discount * -1,
+                    'quantity' => 1,
+                    'unit'     => 'discount',
+                    'rel_id'    => $order->id,
+                );
+            }
 
             if ($item['setup_price'] > 0) {
                 $setup_price     = ($item['setup_price'] * $currency->conversion_rate) - ($item['discount_setup'] * $currency->conversion_rate);
@@ -662,7 +673,7 @@ class Service implements InjectionAwareInterface
      *
      * @param \Model_Cart $cart
      * @param \Model_CartProduct $model
-     * @return type
+     * @return number
      */
     protected function getRelatedItemsDiscount(\Model_Cart $cart, \Model_CartProduct $model)
     {
@@ -720,14 +731,6 @@ class Service implements InjectionAwareInterface
 
         list ($discount_price, $discount_setup) = $this->getProductDiscount($model, $setup);
 
-        $discount_total = $discount_price + $discount_setup;
-
-        $subtotal = ($price * $qty) + $setup;
-        if(abs($discount_total) > $subtotal ) {
-            $discount_total = $subtotal;
-            $discount_price = $subtotal;
-        }
-
         $data = array_merge($config, array(
             'id'            => $model->id,
             'product_id'    => $product->id,
@@ -738,10 +741,9 @@ class Service implements InjectionAwareInterface
             'unit'          => $repo->getUnit($product),
             'price'         => $price,
             'setup_price'   => $setup,
-            'discount'      => $discount_total,
             'discount_price'=> $discount_price,
             'discount_setup'=> $discount_setup,
-            'total'         => $subtotal - $discount_total,
+            'total'         => ($price * $qty) ,
         ));
         return $data;
     }
@@ -753,7 +755,8 @@ class Service implements InjectionAwareInterface
         $discount_setup = 0; // discount for setup price
         if($cart->promo_id) {
             $promo = $this->di['db']->getExistingModelById('Promo', $cart->promo_id, 'Promo not found');
-            $discount_price += $this->getItemPromoDiscount($cartProduct, $promo);
+            //Promo discount should override related item discount
+            $discount_price = $this->getItemPromoDiscount($cartProduct, $promo);
 
             if($promo->freesetup) {
                 $discount_setup = $setup;

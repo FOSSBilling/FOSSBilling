@@ -61,11 +61,9 @@
                                 <legend>{% trans 'Register a new domain' %}</legend>
                                 <p>
                                     <input type="text" name="domain[register_sld]" value="{{ request.register_sld }}" style="width: 333px" placeholder="{% trans 'Enter your domain name' %}">
-                                    {% if product.config.free_domain == 1 %}
-                                        {% set tlds = guest.serviceHosting_free_tlds({'product_id' : product.id}) %}
-                                    {% else %}
+                               
                                         {% set tlds = guest.serviceDomain_tlds({"allow_register":1})%}
-                                    {% endif %}
+                                    
                                     {{ mf.selectboxtld('domain[register_tld]', tlds)}}
                                 </p>
 
