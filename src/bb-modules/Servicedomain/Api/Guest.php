@@ -94,7 +94,7 @@ class Guest extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $sld       = $data['sld'];
+        $sld       = htmlspecialchars($data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
             throw new \Box_Exception('Domain :domain is not valid', array(':domain' => $sld));
