@@ -107,7 +107,7 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $default_content = '{% filter markdown %}
+        $default_content = '{% apply markdown %}
 Hi {{ c.first_name }} {{ c.last_name }},
 
 Your email is: {{ c.email }}
@@ -123,7 +123,7 @@ vut amet et nunc! Elementum dolor, dictumst porta ultrices. Rhoncus, amet.
 Order our services at {{ "order"|link }}
 
 {{ guest.system_company.name }} - {{ guest.system_company.signature }}
-{% endfilter %}
+{% endapply %}
         ';
         $systemService = $this->di['mod_service']('system');
         $company = $systemService->getCompany();

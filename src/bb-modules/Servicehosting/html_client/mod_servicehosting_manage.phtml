@@ -141,10 +141,12 @@
                             </fieldset>
                         </form>
                 </div>
+            </section>    
         </div>
     </article>
 </div>
 
+{% block js %}
 <script type="text/javascript">
 $(function() {
     $('.domain-tabs a').bind('click',function(e){
@@ -187,4 +189,5 @@ $(function() {
 
 });
 </script>
+{% endblock %}
 {% endif %}

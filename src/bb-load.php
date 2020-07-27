@@ -30,7 +30,8 @@ function handler_error($number, $message, $file, $line)
     return false;
 }
 
-function handler_exception(Exception $e)
+// Removed Exception type. Some errors are thrown as exceptions causing fatal errors.
+function handler_exception($e)
 {
     if(APPLICATION_ENV == 'testing') {
         print $e->getMessage() . PHP_EOL;
@@ -140,6 +141,8 @@ ini_set('error_log', BB_PATH_LOG . '/php_error.log');
 if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
     // Create lamba style unescaping function (for portability)
     $quotes_sybase = strtolower(ini_get('magic_quotes_sybase'));
+
+    /* create_function deprecated in PHP 7.2
     $unescape_function = (empty($quotes_sybase) || $quotes_sybase === 'off') ? 'stripslashes($value)' : 'str_replace("\'\'","\'",$value)';
     $stripslashes_deep = create_function('&$value, $fn', '
         if (is_string($value)) {
@@ -147,7 +150,16 @@ if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
         } else if (is_array($value)) {
             foreach ($value as &$v) $fn($v, $fn);
         }
-    ');
+    ');  */
+
+    $stripslashes_deep = function(&$value, $fn){
+        if (is_string($value)) {
+            $value = (empty($quotes_sybase) || $quotes_sybase === 'off') ? stripslashes($value) : str_replace("\'\'","\'",$value);
+        } else if (is_array($value)) {
+            foreach ($value as &$v) $fn($v, $fn);
+        }
+    };
+
 
     // Unescape data
     $stripslashes_deep($_POST, $stripslashes_deep);

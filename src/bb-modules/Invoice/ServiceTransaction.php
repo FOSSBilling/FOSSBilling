@@ -59,6 +59,8 @@ class ServiceTransaction implements InjectionAwareInterface
         $model->type = $this->di['array_get']($data, 'type', $model->type);
         $model->note = $this->di['array_get']($data, 'note', $model->note);
         $model->status = $this->di['array_get']($data, 'status', $model->status);
+        $model->error = $this->di['array_get']($data, 'error', $model->error);
+        $model->error_code = $this->di['array_get']($data, 'error_code', $model->error_code);
         $model->validate_ipn = $this->di['array_get']($data, 'validate_ipn', $model->validate_ipn);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);

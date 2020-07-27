@@ -22,7 +22,7 @@ class Box_AppAdmin extends Box_App
 
     public function render($fileName, $variableArray = array())
     {
-        $template = $this->getTwig()->loadTemplate($fileName.'.phtml');
+        $template = $this->getTwig()->load($fileName.'.phtml');
         return $template->render($variableArray);
     }
 

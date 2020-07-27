@@ -1,6 +1,6 @@
 {% block subject %}[{{ guest.system_company.name }}] New Forum Message{% endblock %}
 {% block content %}
-{% filter markdown %}
+{% apply markdown %}
 Hello {{ c.first_name }} {{ c.last_name }},
 
 New message was posted on Forum **{{ topic.forum.title }} > {{ topic.title }}**
@@ -17,5 +17,5 @@ To reply to this message or disable notifications, visit the link below:
 
 {{ guest.system_company.signature }}
 
-{% endfilter %}
+{% endapply %}
 {% endblock %}

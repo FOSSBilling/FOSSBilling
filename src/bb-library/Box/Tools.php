@@ -246,14 +246,14 @@ class Box_Tools
     public function autoLinkText($text)
     {
        $pattern  = '#\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))#';
-       $callback = create_function('$matches', '
+       $callback = function($matches){
            $url       = array_shift($matches);
            $url_parts = parse_url($url);
            if(!isset($url_parts["scheme"])) {
               $url = "http://".$url;
            }
-           return sprintf(\'<a target="_blank" href="%s">%s</a>\', $url, $url);
-       ');
+           return sprintf('<a target="_blank" href="%s">%s</a>', $url, $url);
+        };
        return preg_replace_callback($pattern, $callback, $text);
     }
 
@@ -362,13 +362,13 @@ class Box_Tools
         if($capitalise_first_char) {
             $str[0] = strtoupper($str[0]);
         }
-        $func = create_function('$c', 'return strtoupper($c[1]);');
+        $func = function($c){ return strtoupper($c[1]); };
         return preg_replace_callback('/-([a-z])/', $func, $str);
     }
 
     public function from_camel_case($str) {
         $str[0] = strtolower($str[0]);
-        $func = create_function('$c', 'return "-" . strtolower($c[1]);');
+        $func = function($c){ return "-" . strtolower($c[1]); };
         return preg_replace_callback('/([A-Z])/', $func, $str);
     }
 

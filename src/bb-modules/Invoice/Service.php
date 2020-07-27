@@ -224,7 +224,7 @@ class Service implements InjectionAwareInterface
             'account_number' => !empty($c['account_number']) ? $c['account_number'] : null,
         );
 
-        if($identity instanceof \Model_Admin) {
+        if($identity instanceof \Model_Admin){
             $client = $this->di['db']->load('Client', $row['client_id']);
             $clientService = $this->di['mod_service']('client');
             if($client instanceof \Model_Client) {
@@ -766,14 +766,14 @@ class Service implements InjectionAwareInterface
         $model->buyer_phone           = $this->di['array_get']($data, 'buyer_phone', $model->buyer_phone);
         $model->buyer_email           = $this->di['array_get']($data, 'buyer_email', $model->buyer_email);
 
-        $paid_at = $this->di['array_get']($data, 'paid_at', null);
+        $paid_at = $this->di['array_get']($data, 'paid_at', $model->paid_at);
         if(empty($paid_at)) {
                 $model->paid_at = null;
         } else {
             $model->paid_at = date('Y-m-d H:i:s', strtotime($paid_at));
         }
 
-        $due_at = $this->di['array_get']($data, 'due_at', null);
+        $due_at = $this->di['array_get']($data, 'due_at', $model->due_at);
         if(empty($due_at)) {
             $model->due_at = null;
         } else {

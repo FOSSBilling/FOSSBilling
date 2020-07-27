@@ -130,13 +130,13 @@ class Service implements \Box\InjectionAwareInterface
         $vars['c'] = $clientArr;
         $vars['_client_id'] = $client->id;
         $vars['_tpl'] = $model->subject;
-        $ps = $systemService->renderString($vars['_tpl'], false, $vars);
+        $ps = $systemService->renderString($vars['_tpl'], true, $vars);
         
         $vars = array();
         $vars['c'] = $clientArr;
         $vars['_client_id'] = $client->id;
         $vars['_tpl'] = $model->content;
-        $pc = $systemService->renderString($vars['_tpl'], false, $vars);
+        $pc = $systemService->renderString($vars['_tpl'], true, $vars);
         
         return array($ps, $pc);
     }
@@ -171,6 +171,19 @@ class Service implements \Box\InjectionAwareInterface
             return true;
         }
 
+		/**
+		By: Samuel A.
+		Modified: 07.07.2019
+		Log email to database
+		*/ 
+		$mod      = $this->di['mod']('email');
+        $settings = $mod->getConfig();
+
+        if (isset($settings['log_enabled']) && $settings['log_enabled']) {
+            $activityService =  $this->di['mod_service']('activity');
+            $activityService->logEmail($data['subject'], $client_id, $data['from'], $data['to'], $data['content']);
+        }
+		
         $emailSettings = $this->di['mod_config']('email');
         $transport     = $this->di['array_get']($emailSettings, 'mailer', 'sendmail');
 

@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
 {% set active_menu = 'invoice' %}
 {% block meta_title %}Subscription {{ subscription.sid }}{% endblock %}
 
