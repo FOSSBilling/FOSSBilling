@@ -10,7 +10,6 @@
  * with this source code in the file LICENSE
  */
 
-
 class Model_ProductDomainTable extends Model_ProductTable
 {
     public function getUnit(Model_Product $model)
@@ -33,25 +32,106 @@ class Model_ProductDomainTable extends Model_ProductTable
         return false;
     }
 
-    public function getRelatedDiscount(array $items, Model_Product $product, array $config)
+    /**
+     * Determine discount for items in cart (Hosting and related domain discount)
+     * @param array $items Array of cart products
+     * @param CartProduct $product current product in iteration
+     * @param array $config configurations specified in product config
+     * @return number discount
+     * 
+     */
+    public function getRelatedDiscount(array $items, $product, array $config)
     {
-        foreach($items as $item) {
+        /**For each cart product, 
+         * Compare it with other items in the cart
+         * If a domain has related hosting package, determine discount configured.
+         */
+        foreach($items as $addon) {
 
-            if($this->isActionNameSet($item, 'register') &&
-                $this->isFreeDomainSet($item) &&
-                $this->registerDomainMatch($item, $config) )
-            {
-                        return $this->getProductPrice($product, $config);
+            if($this->isActionNameSet($addon, 'register') &&
+                $this->_isFreeDomainSet($addon) &&
+                $this->registerDomainMatch($addon, $config)) {
+                if($this->_hasFreePeriod($addon)){
+                  $factor = $this->discountFactor($addon, $config["period"]);                             
+                    return $factor * $this->getProductPrice($product, $config);  
+                } else {
+                    return 0;
+                }
+                    
             }
-            
-            if($this->isActionNameSet($item, 'transfer') &&
-                $this->isFreeTransferSet($item) &&
-                $this->transferDomainMatch($item, $config) ) {
+
+            if($this->isActionNameSet($addon, 'transfer') &&
+                $this->isFreeTransferSet($addon) &&
+                $this->transferDomainMatch($addon, $config) ) {
                     return $this->getProductPrice($product, $config);
             }
         }
         
         return 0;
+    }
+
+    private function _hasFreePeriod($addon)
+    {
+        $free_domain_periods    = $addon['config']['free_domain_periods'];
+         $addon_period      = $addon['config']['period'];
+        if (in_array($addon_period, $free_domain_periods) || sizeof($free_domain_periods) > 0) {
+             return true;
+        } else {
+            return false;
+         }
+
+    }
+
+
+    /**
+     * Determine the number of years configured for free domain      
+     * 
+     */
+    private function discountFactor($addon, $period)
+            {
+        $ref_item_period = $this->di['period']($period);
+        $ref_item_qty = $ref_item_period->getQty();
+
+        $addon_period      = $addon['config']['period'];
+        $addon_sys_period = $this->di['period']($addon_period);
+        $addon_qty = $addon_sys_period->getQty();
+
+         $free_domain_periods    = $addon['config']['free_domain_periods'];
+        if (count($free_domain_periods) > 0) {
+            // if hosting and domain periods are equal, return domain quantity (year)
+            if ($addon_period == $period) {
+
+      if( in_array($addon_period, $free_domain_periods) ){
+              return $ref_item_qty;
+          }
+          }
+
+            if (strpos($addon_period, 'Y') !== false) {
+
+                if (min($ref_item_qty, $addon_qty) == 1) {
+                    return 1;
+       } 
+
+               $free_domain_qtys = [];
+               foreach($free_domain_periods as $fp){
+                   $prd = $this->di['period']($fp);
+                   $qnty = $prd->getQty();
+                    if ($ref_item_qty - $qnty > 0) {
+                   $free_domain_qtys[] = $qnty;
+               }
+            }
+            
+             if(count($free_domain_qtys) > 1){
+                 return min($ref_item_qty, min($free_domain_qtys));
+                } else {
+                    return min($ref_item_qty, $free_domain_qtys[0]);
+            }
+     
+        }
+        
+        } else {
+        return 0;
+    }
     }
 
     /**
@@ -62,11 +142,18 @@ class Model_ProductDomainTable extends Model_ProductTable
         return isset($item['config']['domain']['action']) && $item['config']['domain']['action'] == $actionName;
     }
 
-    private function isFreeDomainSet($item)
+    private function _isFreeDomainSet($item)
     {
-         if(isset($item['config']['free_domain']) && $item['config']['free_domain'] && isset($item['config']['free_domain_periods']) && in_array($item['config']['period'],$item['config']['free_domain_periods']) && isset($item['config']['free_tlds']) && in_array($item['config']['tld'],$item['config']['free_tlds']))
-	   { return true;}
-   else{ return false;}
+        $free_domain            = $this->di['array_get']($item['config'],'free_domain',false);
+        $tld                    = $this->di['array_get']($item['config'], 'tld', null);
+        $free_tlds              = $this->di['array_get']($item['config'], 'free_tlds', array());
+
+        if($tld != null && !!$free_domain && is_array($free_tlds) && in_array($tld, $free_tlds)) {
+        return true;
+        } else {
+            return false;
+        }
+
     }
 
     private function registerDomainMatch($item, $config)
@@ -117,7 +204,7 @@ class Model_ProductDomainTable extends Model_ProductTable
                 'registrar'             => array(
                     'id'                =>  $tld['tld_registrar_id'],
                     'title'             =>  $tld['name'],
-                )
+                ),
             );
         }
 

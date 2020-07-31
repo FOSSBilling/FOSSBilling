@@ -363,8 +363,8 @@
                 </thead>
 
                 <tbody>
-                    {% set transactions = admin.client_balance_get_list({"per_page":20, "client_id":client.id}) %}
-                    {% for i, tx in transactions.list %}
+                    {% set payments = admin.client_balance_get_list({"per_page":20, "client_id":client.id}) %}
+                    {% for i, tx in payments.list %}
                     <tr>
                         <td>{{mf.currency_format(tx.amount, tx.currency)}}</td>
                         <td>{{tx.description}}</td>

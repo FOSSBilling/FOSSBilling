@@ -66,7 +66,7 @@ class Payment_Adapter_Custom
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
 
         $vars = array(
-            'client'    =>  $invoice['buyer'],
+            '_client_id'    => $invoice['client']['id'],
             'invoice'   =>  $invoice,
             '_tpl'      =>  ($subscription) ? $this->config['recurrent'] : $this->config['single'],
         );
