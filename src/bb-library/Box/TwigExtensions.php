@@ -97,6 +97,10 @@ class Box_TwigExtensions extends Twig\Extension\AbstractExtension implements \Bo
 
     function twig_ipcountryname_filter($value)
     {
+        if (empty($value)) {
+            return '';
+        }
+
         try {
             $record = $this->di['geoip']->country($value);
             return $record->country->name;
