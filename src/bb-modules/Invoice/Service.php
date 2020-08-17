@@ -146,16 +146,8 @@ class Service implements InjectionAwareInterface
         foreach($items as $item) {
             $order_id = ($item->type == \Model_InvoiceItem::TYPE_ORDER) ? $item->rel_id : null;
                         
-            /* Item quantity shouldn't be used to determine total price at this point. 
-             * The total price must be determined when invoice is being generated else recurring discounts will be 
-             * applied by a factor of the quantity instead of being applied once as demonstrated below.
-             * If the order has a recurring discount, the price that is fetched already has the discount applied. Example:  
-             * Case 1 - correct: $item->price = ($order->price * $order->quantity) - $order->discount
-             * Case 2 - incorrect: $item->price = ($order->price - $order->discount) * $order->quantity 
-             * However, case 1 cannot be calculated at this point because invoice_item doesn't store discount so the calculation must
-             * be done before calling toApiArray.
-            */
-            $total += $item->price;  
+            $line_total = $item->price * $item->quantity; 
+            $total +=  $line_total;
             $line_tax = $invoiceItemService->getTax($item) * $item->quantity;
             $tax_total += $line_tax;
             $line = array(
@@ -168,7 +160,7 @@ class Service implements InjectionAwareInterface
                 'tax'       =>  $line_tax,
                 'taxed'     =>  $item->taxed,
                 'charged'   =>  $item->charged,
-                'total'     =>  $item->price, //total appears to be redundant.
+                'total'     =>  $line_total,
                 'order_id'  =>  $order_id,
                 'type'      =>  $item->type,
                 'rel_id'    =>  $item->rel_id,
@@ -945,16 +937,7 @@ class Service implements InjectionAwareInterface
 
         $this->setInvoiceDefaults($proforma);
 
-        $price = $order->price * $order->quantity;
-        // apply discount for new invoice if promo code is recurrent
-        if($order->promo_recurring) {
-            $price = $price - $order->discount;
-            if($price < 0) {
-                $price = 0;
-            }
-            $order->promo_used +=1;
-            $this->di['db']->store($order);
-        }
+        $price = $order->price;
 
         $invoiceItemService = $this->di['mod_service']('Invoice', "InvoiceItem");
         $invoiceItemService->generateFromOrder($proforma, $order, \Model_InvoiceItem::TASK_RENEW, $price);

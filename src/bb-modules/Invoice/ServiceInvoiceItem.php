@@ -312,6 +312,49 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $this->di['db']->store($pi);
 
         $corderService->setUnpaidInvoice($order, $proforma);
+                
+        // apply discount for new invoice if promo code is recurrent
+        if($order->promo_recurring) {
+            $order_total = $order->price * $order->quantity;
+            $promo_discount = $order->discount;
+            if($promo_discount >  $order_total) {
+                $promo_discount = $order_total;
+            }
+
+            $discount_title = $this->_getTitleForPromoDiscount($order->promo_id, $order->currency);
+
+            $pd = [
+                'title'    => $discount_title,
+                'price'    => $promo_discount * -1,
+                'quantity' => 1,
+                'unit'     => 'discount',
+                'rel_id'   => $order->id,
+                'taxed'    => $taxed, 
+            ];
+
+            $this->addNew($proforma, $pd);
+            $order->promo_used +=1;
+            $this->di['db']->store($order);
+        }
+    }
+    
+    private function _getTitleForPromoDiscount($promo_id, $currency)
+    {        
+        $promo = $this->di['db']->findOne('Promo', 'id = ?', [$promo_id]);
+
+        $api_guest = $this->di['api_guest'];
+                
+        switch ($promo->type) {
+            case \Model_Promo::ABSOLUTE:
+                    $currencyAmount = $api_guest->currency_format(['code' => $currency, 'price' => $promo->value]);
+                    return __('Promotional Code: :code - :value Discount', [':code' => $promo->code, ':value' => $currencyAmount]); 
+
+            case \Model_Promo::PERCENTAGE:
+                    return __('Promotional Code: :code - :value%', [':code' => $promo->code, ':value' => $promo->value]); 
+
+            default:
+                break;
+        }
     }
 
     /**
