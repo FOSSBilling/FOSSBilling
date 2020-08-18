@@ -10,7 +10,7 @@ class Api_ClientTest extends BBDbApiTestCase
     {
 
         $array = $this->api_client->client_get();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'email' => 'newEmail@boxbilling.com',
@@ -30,10 +30,10 @@ class Api_ClientTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $key = $this->api_client->client_api_key_get(array());
-        $this->assertInternalType('string', $key);
+        $this->assertIsString($key);
 
         $newKey = $this->api_client->client_api_key_reset(array());
-        $this->assertInternalType('string', $newKey);
+        $this->assertIsString($newKey);
         $this->assertNotEquals($key, $newKey);
 
         $data = array(
@@ -44,20 +44,20 @@ class Api_ClientTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $array = $this->api_client->client_balance_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
     }
 
     public function testClientBalanceGetList()
     {
         $array = $this->api_client->client_balance_get_list(array());
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         if (count($list)) {
             $item = $list[0];
-            $this->assertInternalType('array', $item);
+            $this->assertIsArray($item);
             $this->assertArrayHasKey('id', $item);
             $this->assertArrayHasKey('description', $item);
             $this->assertArrayHasKey('amount', $item);

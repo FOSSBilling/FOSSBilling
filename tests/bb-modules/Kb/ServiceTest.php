@@ -30,10 +30,10 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $result = $service->searchArticles('active', 'keyword', 'category');
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $this->assertArrayHasKey('list', $result);
-        $this->assertInternalType('array', $result['list']);
+        $this->assertIsArray($result['list']);
 
         $this->assertArrayHasKey('pages', $result);
         $this->assertArrayHasKey('page', $result);
@@ -93,7 +93,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $result = $service->findActive();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testHitView()
@@ -141,7 +141,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testToApiArrayProvider()
+    public function toApiArrayProvider()
     {
         $model                         = new \Model_KbArticle();
         $model->loadBean(new \RedBeanPHP\OODBBean());
@@ -230,7 +230,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testToApiArrayProvider
+     * @dataProvider toApiArrayProvider
      */
     public function testToApiArray($model, $expected, $deep, $identity, $category)
     {
@@ -274,7 +274,7 @@ class ServiceTest extends \BBTestCase
 
         $service->setDi($di);
         $result = $service->createArticle(rand(1, 100), 'Title', 'Active', 'Content');
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($result, $randId);
     }
 
@@ -307,13 +307,10 @@ class ServiceTest extends \BBTestCase
 
         $service->setDi($di);
         $result = $service->updateArticle($randId, $kb_article_category_id, $title, $slug, $status, $content, $views);
-        $this->assertInternalType('boolean', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
-
-    /**
-     * @expectedException \Box_Exception
-     */
+   
     public function testUpdateArticleNotFoundException()
     {
         $service = new \Box\Mod\Kb\Service();
@@ -339,13 +336,14 @@ class ServiceTest extends \BBTestCase
         $di['db']     = $db;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
 
-        $service->setDi($di);
+        $service->setDi($di); 
+        $this->expectException(\Box_Exception::class);
         $result = $service->updateArticle($randId, $kb_article_category_id, $title, $slug, $status, $content, $views);
-        $this->assertInternalType('boolean', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
-    public function testCategoryGetSearchQueryProvider()
+    public function categoryGetSearchQueryProvider()
     {
         return array(
             array(
@@ -401,7 +399,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testCategoryGetSearchQueryProvider
+     * @dataProvider categoryGetSearchQueryProvider
      */
     public function testCategoryGetSearchQuery($data, $query, $bindings)
     {
@@ -415,8 +413,8 @@ class ServiceTest extends \BBTestCase
 
         $result = $service->categoryGetSearchQuery($data);
 
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
 
         $this->assertEquals(trim(preg_replace('/\s+/', '', str_replace("\n", " ", $result[0]))), trim(preg_replace('/\s+/', '', str_replace("\n", " ", $query))));
         $this->assertEquals($result[1], $bindings);
@@ -437,7 +435,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $result = $service->categoryFindAll();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCategoryGetPairs()
@@ -454,7 +452,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $result = $service->categoryGetPairs();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCategoryRm()
@@ -481,9 +479,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCategoryRmHasArticlesException()
     {
         $service = new \Box\Mod\Kb\Service();
@@ -504,6 +499,7 @@ class ServiceTest extends \BBTestCase
         $model->KbArticle = new \Model_KbArticle();
         $model->KbArticle->loadBean(new \RedBeanPHP\OODBBean());
 
+        $this->expectException(\Box_Exception::class);
         $result = $service->categoryRm($model);
         $this->assertNull($result);
     }
@@ -538,7 +534,7 @@ class ServiceTest extends \BBTestCase
         $model->id = rand(1, 100);
 
         $result = $serviceMock->categoryToApiArray($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCreateCategory()
@@ -579,7 +575,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $result = $service->createCategory('Title', 'Description');
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($result, $randId);
 
     }

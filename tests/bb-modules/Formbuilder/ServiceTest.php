@@ -12,7 +12,7 @@ class ServiceTest extends \BBTestCase {
     protected $service = null;
 
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Formbuilder\Service();
     }
@@ -103,7 +103,7 @@ class ServiceTest extends \BBTestCase {
 
         $result = $this->service->addNewForm($data);
 
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newFormId, $result);
     }
 
@@ -142,7 +142,7 @@ class ServiceTest extends \BBTestCase {
 
         $result = $this->service->addNewField($data);
 
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newFieldId, $result);
     }
 
@@ -214,7 +214,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->updateField($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($updateFIeldId, $result);
     }
 
@@ -222,6 +222,7 @@ class ServiceTest extends \BBTestCase {
     {
         $data = array(
             'id' => 2,
+            'form_id' => 1,
             'name' => 'testFIeld',
             'type' => 'select',
         );
@@ -237,7 +238,9 @@ class ServiceTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getField');
 
-        $this->setExpectedException('\Box_Exception', 'Unfortunately field with this name exists in this form already. Form must have different field names.', 7628);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(7628);
+        $this->expectExceptionMessage('Unfortunately field with this name exists in this form already. Form must have different field names.');
         $serviceMock->updateField($data);
     }
 
@@ -264,7 +267,9 @@ class ServiceTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getField');
 
-        $this->setExpectedException('\Box_Exception', ucfirst($data['type']).' values must be unique', 1597);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(1597);
+        $this->expectExceptionMessage(ucfirst($data['type']).' values must be unique');
         $serviceMock->updateField($data);
     }
 
@@ -291,7 +296,9 @@ class ServiceTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getField');
 
-        $this->setExpectedException('\Box_Exception', ucfirst($data['type']).' labels must be unique', 1598);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(1598);
+        $this->expectExceptionMessage(ucfirst($data['type']).' labels must be unique');
         $serviceMock->updateField($data);
     }
 
@@ -320,7 +327,9 @@ class ServiceTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getField');
 
-        $this->setExpectedException('\Box_Exception', 'Textarea size options must be integer values', 3510);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(3510);
+        $this->expectExceptionMessage('Textarea size options must be integer values');
         $serviceMock->updateField($data);
     }
 
@@ -360,7 +369,7 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
         $result = $this->service->getForm($formId);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetFormFields()
@@ -377,7 +386,7 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
         $result = $this->service->getFormFields($formId);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetFormFieldsCount()
@@ -393,7 +402,7 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
         $result = $this->service->getFormFieldsCount($formId);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetFormPairs()
@@ -409,7 +418,7 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
         $result = $this->service->getFormPairs($formId);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetField()
@@ -444,7 +453,7 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
         $result = $this->service->getField($fieldId);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expectedArray, $result);
     }
 
@@ -521,7 +530,7 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
         $result = $this->service->getForms(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testdublicateForm()
@@ -558,7 +567,7 @@ class ServiceTest extends \BBTestCase {
 
         $serviceMock->setDi($di);
         $result = $serviceMock->dublicateForm($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newFormId, $result);
     }
 

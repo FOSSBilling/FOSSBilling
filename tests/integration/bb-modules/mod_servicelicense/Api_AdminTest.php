@@ -9,7 +9,7 @@ class Api_Admin_ServiceLicenseTest extends BBDbApiTestCase
     public function testAdminServiceLicense()
     {
         $array = $this->api_admin->servicelicense_plugin_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'order_id'   =>  2,

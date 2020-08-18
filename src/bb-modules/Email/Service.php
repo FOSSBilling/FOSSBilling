@@ -313,7 +313,18 @@ class Service implements \Box\InjectionAwareInterface
         }
 
         try {
+
+		    $mod      = $this->di['mod']('email');
+            $settings = $mod->getConfig();
+
+            if (isset($settings['log_enabled']) && $settings['log_enabled']) {
+                $activityService =  $this->di['mod_service']('activity');
+                $activityService->logEmail($email->subject, $email->client_id, $email->sender, $email->recipients, $email->content_html, $email->content_text);
+            }
+            
             $mail->send($transport, $settings);
+            
+
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
@@ -322,9 +333,6 @@ class Service implements \Box\InjectionAwareInterface
 
         return true;
     }
-
-
-
 
     public function templateGetSearchQuery($data)
     {

@@ -9,39 +9,39 @@ class Api_Guest_ProductTest extends BBDbApiTestCase
     public function testGetAll()
     {
         $list = $this->api_guest->product_get_pairs();
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         $list = $this->api_guest->product_get_list();
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         
         $list = $this->api_guest->product_category_get_pairs();
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         $data = array(
             'id'    =>  10,
         );
         $list = $this->api_guest->product_get($data);
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         
         $list = $this->api_guest->product_get_slider($data);
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
     }
 
     public function testCategoryGetList()
     {
         $pager = $this->api_guest->product_category_get_list();
-        $this->assertInternalType('array', $pager);
+        $this->assertIsArray($pager);
         $this->assertArrayHasKey('list', $pager);
 
         $list = $pager['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         $item = $list[0];
         $this->assertArrayHasKey('price_starting_from', $item);
         $this->assertArrayHasKey('icon_url', $item);
         $this->assertArrayHasKey('type', $item);
         $this->assertArrayHasKey('products', $item);
-        $this->assertInternalType('array', $item['products']);
+        $this->assertIsArray($item['products']);
     }
 
     /*
@@ -58,11 +58,11 @@ class Api_Guest_ProductTest extends BBDbApiTestCase
     public function testProductGetList()
     {
         $array = $this->api_guest->product_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         $item = $list[0];
 
         $this->assertArrayHasKey('id', $item);
@@ -79,17 +79,17 @@ class Api_Guest_ProductTest extends BBDbApiTestCase
         $this->assertArrayHasKey('pricing', $item);
 
         $pricing = $item['pricing'];
-        $this->assertInternalType('array', $item['pricing']);
+        $this->assertIsArray($item['pricing']);
         $this->assertArrayHasKey('type', $pricing);
         $this->assertArrayHasKey('free', $pricing);
         $this->assertArrayHasKey('once', $pricing);
         $this->assertArrayHasKey('recurrent', $pricing);
 
         $this->assertArrayHasKey('config', $item);
-        $this->assertInternalType('array', $item['config']);
+        $this->assertIsArray($item['config']);
 
         $this->assertArrayHasKey('addons', $item);
-        $this->assertInternalType('array', $item['addons']);
+        $this->assertIsArray($item['addons']);
 
         $this->assertArrayHasKey('price_starting_from', $item);
         $this->assertArrayHasKey('icon_url', $item);

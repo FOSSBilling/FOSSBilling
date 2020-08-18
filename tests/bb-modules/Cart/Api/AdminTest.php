@@ -9,7 +9,7 @@ class AdminTest extends \BBTestCase
      */
     protected $adminApi = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->adminApi = new \Box\Mod\Cart\Api\Admin();
     }
@@ -55,7 +55,7 @@ class AdminTest extends \BBTestCase
         $data   = array();
         $result = $this->adminApi->get_list($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testGet()
@@ -87,7 +87,7 @@ class AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
 

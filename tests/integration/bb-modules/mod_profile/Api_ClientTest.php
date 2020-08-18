@@ -9,7 +9,7 @@ class Api_Client_ProfileTest extends BBDbApiTestCase
     public function testProfile()
     {
         $array = $this->api_client->profile_get();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'email'             =>  'email@test.com',
@@ -44,16 +44,16 @@ class Api_Client_ProfileTest extends BBDbApiTestCase
     public function testApi()
     {
         $string = $this->api_client->profile_api_key_reset();
-        $this->assertInternalType('string', $string);
+        $this->assertIsString($string);
         
         $string = $this->api_client->profile_api_key_get();
-        $this->assertInternalType('string', $string);
+        $this->assertIsString($string);
     }
     
     public function testBalance()
     {
         $array = $this->api_client->client_balance_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testLogout()

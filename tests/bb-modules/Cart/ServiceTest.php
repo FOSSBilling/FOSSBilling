@@ -9,7 +9,7 @@ class ServiceTest extends \BBTestCase
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Cart\Service();
     }
@@ -31,8 +31,8 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Cart\Service();
         $result  = $service->getSearchQuery(array());
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
         $this->assertNotFalse(strpos($result[0], 'SELECT cart.id FROM cart'));
     }
 
@@ -69,7 +69,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result->session_id, $session_id);
     }
 
-    public function testGetSessionCartDoesNotExistProvider()
+    public function getSessionCartDoesNotExistProvider()
     {
         return array(
             array(
@@ -86,7 +86,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testGetSessionCartDoesNotExistProvider
+     * @dataProvider getSessionCartDoesNotExistProvider
      */
     public function testGetSessionCartDoesNotExist($sessionGetWillReturn, $getCurrencyByClientIdExpects, $getDefaultExpects)
     {
@@ -206,7 +206,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->isPeriodEnabledForProduct($productModelMock, 'monthly');
 
-        $this->assertInternalType('boolean', $result);
+        $this->assertIsBool($result);
         $this->assertEquals($result, $enabled);
     }
 
@@ -233,7 +233,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->isPeriodEnabledForProduct($productModelMock, 'monthly');
 
-        $this->assertInternalType('boolean', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -264,9 +264,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testRemoveProductCartProductNotFound()
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -284,6 +281,7 @@ class ServiceTest extends \BBTestCase
 
         $cart = new \Model_Cart();
         $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $this->expectException(\Box_Exception::class);
         $result = $this->service->removeProduct($cart, rand(1, 100));
         $this->assertTrue($result);
     }
@@ -412,9 +410,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testApplyPromoEmptyCartException()
     {
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -440,6 +435,7 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $serviceMock->setDi($di);
 
+        $this->expectException(\Box_Exception::class);
         $result = $serviceMock->applyPromo($cart, $promo);
         $this->assertTrue($result);
     }
@@ -565,7 +561,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testPromoCanBeAppliedProvider()
+    public function promoCanBeAppliedProvider()
     {
         $promo1 = new \Model_Promo();
         $promo1->loadBean(new \RedBeanPHP\OODBBean());
@@ -610,7 +606,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testPromoCanBeAppliedProvider
+     * @dataProvider promoCanBeAppliedProvider
      */
     public function testPromoCanBeApplied($promo, $expectedResult)
     {
@@ -644,7 +640,7 @@ class ServiceTest extends \BBTestCase
         $cart->loadBean(new \RedBeanPHP\OODBBean());
 
         $result = $this->service->getCartProducts($cart);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertInstanceOf('Model_CartProduct', $result[0]);
     }
 
@@ -700,7 +696,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $serviceMock->checkoutCart($cart, $client);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('gateway_id', $result);
         $this->assertArrayHasKey('invoice_hash', $result);
         $this->assertArrayHasKey('order_id', $result);
@@ -737,10 +733,11 @@ class ServiceTest extends \BBTestCase
         $di['db']     = $dbMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $serviceMock->setDi($di);
-
+        
+        $this->expectException(\Box_Exception::class);
         $result = $serviceMock->checkoutCart($cart, $client);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('gateway_id', $result);
         $this->assertArrayHasKey('invoice_hash', $result);
         $this->assertArrayHasKey('order_id', $result);
@@ -819,7 +816,8 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Period parameter not passed');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Period parameter not passed');
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
 
@@ -861,7 +859,8 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Selected billing period is not valid');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Selected billing period is not valid');
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
 
@@ -901,7 +900,8 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
         $productModel->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', "I'm afraid we are out of stock.");
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage("I'm afraid we are out of stock.");
         $serviceMock->addItem($cartModel, $productModel, $data);
     }
 
@@ -1088,7 +1088,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array($cartProductModel)));
         $cartProductApiArray = array(
             'total' => 1,
-            'discount' => 0,
+            'discount_price' => 0,
         );
         $serviceMock->expects($this->atLeastOnce())
             ->method('cartProductToApiArray')
@@ -1121,8 +1121,9 @@ class ServiceTest extends \BBTestCase
             'total'     => 1,
             'items'     => array($cartProductApiArray),
             'currency'  => array(),
+            'subtotal' => 1
         );
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -1177,7 +1178,7 @@ class ServiceTest extends \BBTestCase
         $setupPrice = 0;
         $result = $serviceMock->getProductDiscount($cartProductModel, $setupPrice);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($discountPrice, $result[0]);
         $discountSetup = 0;
         $this->assertEquals($discountSetup, $result[1]);
@@ -1215,7 +1216,7 @@ class ServiceTest extends \BBTestCase
         $setupPrice = 0;
         $result = $serviceMock->getProductDiscount($cartProductModel, $setupPrice);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals(0, $result[0]);
         $this->assertEquals(0, $result[1]);
     }
@@ -1262,13 +1263,13 @@ class ServiceTest extends \BBTestCase
         $setupPrice = 25;
         $result = $serviceMock->getProductDiscount($cartProductModel, $setupPrice);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($discountPrice, $result[0]);
         $discountSetup = $setupPrice;
         $this->assertEquals($discountSetup, $result[1]);
     }
 
-    public function testIsPromoAvailableForClientGroupProvider()
+    public function isPromoAvailableForClientGroupProvider()
     {
         $promo1 = new \Model_Promo();
         $promo1->loadBean(new \RedBeanPHP\OODBBean());
@@ -1330,7 +1331,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testIsPromoAvailableForClientGroupProvider
+     * @dataProvider isPromoAvailableForClientGroupProvider
      */
     public function testIsPromoAvailableForClientGroup(\Model_Promo $promo, $client, $expectedResult)
     {

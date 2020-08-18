@@ -11,7 +11,7 @@ class ServiceTest extends \BBTestCase
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Servicedownloadable\Service();
     }
@@ -43,7 +43,7 @@ class ServiceTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $this->service->setDi($di);
         $result = $this->service->attachOrderConfig($productModel, $data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -142,7 +142,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->toApiArray($model, null, new \Model_Admin());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -159,7 +159,8 @@ class ServiceTest extends \BBTestCase
         $di['request'] = $requestMock;
         $this->service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Error uploading file');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Error uploading file');
         $this->service->uploadProductFile($productModel);
 
     }
@@ -202,7 +203,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->uploadProductFile($productModel);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -246,7 +247,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->updateProductFile($serviceDownloadableModel, $orderModel);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -267,7 +268,8 @@ class ServiceTest extends \BBTestCase
         $di['request'] = $requestMock;
         $this->service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Error uploading file');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Error uploading file');
         $this->service->updateProductFile($serviceDownloadableModel, $orderModel);
     }
 
@@ -303,7 +305,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->sendFile($serviceDownloadableModel);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -332,7 +334,9 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'File can not be downloaded at the moment. Please contact support', 404);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(404);
+        $this->expectExceptionMessage('File can not be downloaded at the moment. Please contact support');
         $this->service->sendFile($serviceDownloadableModel);
     }
 

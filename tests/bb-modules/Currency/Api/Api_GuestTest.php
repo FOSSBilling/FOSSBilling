@@ -2,7 +2,7 @@
 
 namespace Box\Tests\Mod\Currency\Api;
 
-class GuestTest extends \BBTestCase
+class Api_GuestTest extends \BBTestCase
 {
     public function testGetPairs()
     {
@@ -22,12 +22,12 @@ class GuestTest extends \BBTestCase
 
         $result = $guestApi->get_pairs(array());
         $this->assertEquals($result, $willReturn);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('EUR', $result);
         $this->assertArrayHasKey('USD', $result);
     }
 
-    public function testGetProvider()
+    public function getProvider()
     {
         $model = new \Model_Currency();
 
@@ -51,7 +51,7 @@ class GuestTest extends \BBTestCase
 
     /**
      *
-     * @dataProvider testGetProvider
+     * @dataProvider getProvider
      */
     public function testGet($data, $model, $expectsGetByCode, $expectsGetDefault)
     {
@@ -82,13 +82,10 @@ class GuestTest extends \BBTestCase
         $guestApi->setService($service);
 
         $result = $guestApi->get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($result, $willReturn);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testGetException()
     {
         $guestApi = new \Box\Mod\Currency\Api\Guest();
@@ -112,11 +109,11 @@ class GuestTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $guestApi->setService($service);
-
+        $this->expectException(\Box_Exception::class);
         $result = $guestApi->get(array()); //Expecting \Box_Exception
     }
 
-    public function testFormatPriceFormatProvider()
+    public function formatPriceFormatProvider()
     {
         return array(
             array(
@@ -143,7 +140,7 @@ class GuestTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testFormatPriceFormatProvider
+     * @dataProvider formatPriceFormatProvider
      */
     public function testFormatPriceFormat($price_format, $expectedResult)
     {
@@ -180,7 +177,7 @@ class GuestTest extends \BBTestCase
         $this->assertEquals($result, $expectedResult);
     }
 
-    public function testFormatProvider()
+    public function formatProvider()
     {
         return array(
             array(
@@ -209,7 +206,7 @@ class GuestTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testFormatProvider
+     * @dataProvider formatProvider
      */
     public function testFormat($data, $expectedResult)
     {

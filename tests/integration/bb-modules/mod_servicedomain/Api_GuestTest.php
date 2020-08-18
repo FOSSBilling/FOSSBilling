@@ -19,12 +19,12 @@ class Api_Guest_ServiceDomainTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $array = $this->api_guest->servicedomain_pricing($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testTlds()
     {
         $array = $this->api_guest->servicedomain_tlds();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 }

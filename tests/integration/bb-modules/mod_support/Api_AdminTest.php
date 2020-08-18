@@ -9,12 +9,12 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
     public function testCanned()
     {
         $array = $this->api_admin->support_canned_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->support_canned_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         $item = $list[0];
         $this->assertArrayHasKey('category', $item);
 
@@ -28,7 +28,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertTrue(is_numeric($id));
 
         $array = $this->api_admin->support_canned_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data['id'] = $id;
         $data['title'] = 'new title';
@@ -42,13 +42,13 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
     public function testCannedCategory()
     {
         $array = $this->api_admin->support_canned_category_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'id'    =>  '1',
         );
         $array = $this->api_admin->support_canned_category_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data['title'] = 'new cat title';
         $id = $this->api_admin->support_canned_category_create($data);
@@ -66,12 +66,12 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
     public function testPublicTickets()
     {
         $array = $this->api_admin->support_public_ticket_get_statuses();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->support_public_ticket_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         $bool = $this->api_admin->support_batch_public_ticket_auto_close();
         $this->assertTrue($bool);
@@ -87,7 +87,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
 
         $data['id'] = $id;
         $array = $this->api_admin->support_public_ticket_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $data['subject'] = 'new subject';
         $data['status'] = 'closed';
@@ -114,7 +114,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertTrue($bool);
         
         $array = $this->api_admin->support_ticket_get_statuses(array());
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'client_id'      =>  1,
@@ -127,7 +127,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
 
         $data['id'] = $id;
         $array = $this->api_admin->support_ticket_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data['content'] = 'other message';
         $mid = $this->api_admin->support_ticket_reply($data);
@@ -172,7 +172,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
 
         $data['id'] = $id;
         $array = $this->api_admin->support_helpdesk_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data['name'] = 'new name';
         $data['can_reopen'] = 1;
@@ -186,10 +186,10 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $this->assertTrue($bool);
         
         $array = $this->api_admin->support_helpdesk_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->support_helpdesk_get_pairs($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testExpirePublicTicket()
@@ -212,7 +212,7 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
         $bool = $this->api_admin->support_batch_public_ticket_auto_close();
         
         $array = $this->api_admin->support_public_ticket_get_list(array('status'=>'on_hold'));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertTrue(empty($array['list']));
     }
 
@@ -240,14 +240,14 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
     public function testSupportTicketGetList()
     {
         $array = $this->api_admin->support_ticket_get_list(array());
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         if (count($list)) {
             $item = $list[0];
-            $this->assertInternalType('array', $item);
+            $this->assertIsArray($item);
             $this->assertArrayHasKey('id', $item);
             $this->assertArrayHasKey('support_helpdesk_id', $item);
             $this->assertArrayHasKey('client_id', $item);
@@ -264,12 +264,12 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
             $this->assertArrayHasKey('replies', $item);
 
             $this->assertArrayHasKey('first', $item);
-            $this->assertInternalType('array', $item['first']);
+            $this->assertIsArray($item['first']);
 
             $this->assertArrayHasKey('helpdesk', $item);
             $helpdesk = $item['helpdesk'];
             if (count($helpdesk)){
-                $this->assertInternalType('array', $helpdesk);
+                $this->assertIsArray($helpdesk);
                 $this->assertArrayHasKey('id', $helpdesk);
                 $this->assertArrayHasKey('name', $helpdesk);
                 $this->assertArrayHasKey('email', $helpdesk);
@@ -281,13 +281,13 @@ class Api_Admin_SupportTest extends BBDbApiTestCase
             }
 
             $this->assertArrayHasKey('messages', $item);
-            $this->assertInternalType('array', $item['messages']);
+            $this->assertIsArray($item['messages']);
 
             $this->assertArrayHasKey('rel', $item);
-            $this->assertInternalType('array', $item['rel']);
+            $this->assertIsArray($item['rel']);
 
             $this->assertArrayHasKey('client', $item);
-            $this->assertInternalType('array', $item['client']);
+            $this->assertIsArray($item['client']);
         }
     }
 

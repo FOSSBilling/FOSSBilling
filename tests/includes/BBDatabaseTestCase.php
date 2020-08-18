@@ -1,7 +1,7 @@
 <?php
-require_once "PHPUnit/Extensions/Database/TestCase.php";
+use PHPUnit\Framework\TestCase;
 
-abstract class BBDatabaseTestCase extends PHPUnit_Extensions_Database_TestCase
+abstract class BBDatabaseTestCase extends Testcase
 {
     static private $pdo = null;
     private $conn = NULL;

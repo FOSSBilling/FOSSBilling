@@ -9,7 +9,7 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
     public function testAdminServiceHosting()
     {
         $array = $this->api_admin->servicehosting_manager_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
     
     public function testAccountManagement()
@@ -51,10 +51,10 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
     public function testHp()
     {
         $array = $this->api_admin->servicehosting_hp_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->servicehosting_hp_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $data = array(
             'name'  =>  'test',
@@ -64,7 +64,7 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
         
         $data['id'] = $id;
         $array = $this->api_admin->servicehosting_hp_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $data['quota'] = 12345;
         $bool = $this->api_admin->servicehosting_hp_update($data);
@@ -77,7 +77,7 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
     public function testServer()
     {
         $array = $this->api_admin->servicehosting_server_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $data = array(
             'name'  =>  'test',
@@ -89,7 +89,7 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
         
         $data['id'] = $id;
         $array = $this->api_admin->servicehosting_server_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $bool = $this->api_admin->servicehosting_server_test_connection($data);
         $this->assertTrue($bool);
@@ -108,28 +108,28 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
             'id'    =>  1,
         );
         $array = $this->api_admin->servicehosting_server_get($data);
-        $this->assertInternalType('array', $array);
-        $this->assertInternalType('array', $array['assigned_ips']);
+        $this->assertIsArray($array);
+        $this->assertIsArray($array['assigned_ips']);
 
         $data['assigned_ips'] = '127.85.81.156'.PHP_EOL.'189.156.45.78'.PHP_EOL;
         $bool = $this->api_admin->servicehosting_server_update($data);
         $this->assertTrue($bool);
         
         $array = $this->api_admin->servicehosting_server_get($data);
-        $this->assertInternalType('array', $array['assigned_ips']);
+        $this->assertIsArray($array['assigned_ips']);
         $this->assertEquals(2, count($array['assigned_ips']));
     }
 
     public function testServicehostingServerGetList()
     {
         $array = $this->api_admin->servicehosting_server_get_list(array());
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         if (count($list)) {
             $item = $list[0];
-            $this->assertInternalType('array', $item);
+            $this->assertIsArray($item);
             $this->assertArrayHasKey('name', $item);
             $this->assertArrayHasKey('hostname', $item);
             $this->assertArrayHasKey('ip', $item);
@@ -143,7 +143,7 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
             $this->assertArrayHasKey('active', $item);
             $this->assertArrayHasKey('secure', $item);
             $this->assertArrayHasKey('assigned_ips', $item);
-            $this->assertInternalType('array', $item['assigned_ips']);
+            $this->assertIsArray($item['assigned_ips']);
             $this->assertArrayHasKey('status_url', $item);
             $this->assertArrayHasKey('max_accounts', $item);
             $this->assertArrayHasKey('manager', $item);
@@ -159,12 +159,12 @@ class Api_Admin_ServiceHostingTest extends BBDbApiTestCase
     public function testServicehostingHpGetList()
     {
         $array = $this->api_admin->servicehosting_hp_get_list(array());
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         $item = $list[0];
-        $this->assertInternalType('array', $item);
+        $this->assertIsArray($item);
         $this->assertArrayHasKey('id', $item);
         $this->assertArrayHasKey('name', $item);
         $this->assertArrayHasKey('bandwidth', $item);

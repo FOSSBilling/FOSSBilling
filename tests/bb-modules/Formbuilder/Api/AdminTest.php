@@ -21,7 +21,7 @@ class AdminTest extends \BBTestCase {
         return $this->getMockBuilder('\Box\Mod\Formbuilder\Service')->getMock();
     }
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Formbuilder\Service();
         $this->api = new \Box\Mod\Formbuilder\Api\Admin();
@@ -56,7 +56,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->create_form($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($createdFormId, $result);
     }
 
@@ -72,7 +72,8 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
         $this->api->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Form style was not found in predefined list', 3657);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Form style was not found in predefined list', 3657);
         $this->api->create_form($data);
     }
 
@@ -101,14 +102,16 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->add_field($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newFieldId, $result);
     }
 
     public function testadd_fieldMissingType()
     {
         $data = array();
-        $this->setExpectedException('\Box_Exception', 'Form field type is not valid', 2684);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(2684);
+        $this->expectExceptionMessage('Form field type is not valid');
         $this->api->add_field($data);
     }
 
@@ -120,7 +123,9 @@ class AdminTest extends \BBTestCase {
         );
 
         $this->api->setService($this->service);
-        $this->setExpectedException('\Box_Exception', 'This input type must have unique values', 3658);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(3658);
+        $this->expectExceptionMessage('This input type must have unique values');
         $this->api->add_field($data);
     }
 
@@ -133,7 +138,9 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($this->service);
 
-        $this->setExpectedException('\Box_Exception', 'Form id was not passed', 9846);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(9846);
+        $this->expectExceptionMessage('Form id was not passed');
         $this->api->add_field($data);
     }
 
@@ -155,7 +162,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->get_form($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_form_fields()
@@ -176,7 +183,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->get_form_fields($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_field()
@@ -198,7 +205,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->get_field($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_forms()
@@ -211,7 +218,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->get_forms();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testdelete_form()
@@ -284,7 +291,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->update_field($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($updatedFieldId, $result);
     }
 
@@ -299,7 +306,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->get_pairs($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testcopy_form()
@@ -317,7 +324,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->copy_form($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newFormId, $result);
     }
 
@@ -325,7 +332,9 @@ class AdminTest extends \BBTestCase {
     {
         $data = array();
 
-        $this->setExpectedException('\Box_Exception', 'Form id was not passed', 9958);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(9958);
+        $this->expectExceptionMessage('Form id was not passed');
         $this->api->copy_form($data);
     }
 
@@ -333,7 +342,9 @@ class AdminTest extends \BBTestCase {
     {
         $data = array('form_id' => 1);
 
-        $this->setExpectedException('\Box_Exception', 'Form name was not passed', 9842);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(9842);
+        $this->expectExceptionMessage('Form name was not passed');
         $this->api->copy_form($data);
     }
 
@@ -380,7 +391,8 @@ class AdminTest extends \BBTestCase {
         );
         unset($data[ $missingField ]);
 
-        $this->setExpectedException('\Box_Exception', $exceptionMessage, $exceptionCode);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage($exceptionMessage, $exceptionCode);
         $this->api->update_form_settings($data);
     }
 

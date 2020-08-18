@@ -2,14 +2,14 @@
 namespace Box\Tests\Mod\Servicecustom\Api;
 
 
-class AdminTest extends \BBTestCase
+class Api_AdminTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Servicecustom\Api\Admin
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api = new \Box\Mod\Servicecustom\Api\Admin();
     }
@@ -33,9 +33,6 @@ class AdminTest extends \BBTestCase
         $this->api->update($data);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testUpdateOrderIdNotSetException()
     {
         $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->setMethods(array('updateConfig'))->getMock();
@@ -50,7 +47,7 @@ class AdminTest extends \BBTestCase
         );
 
         $this->api->setService($serviceMock);
-
+        $this->expectException(\Exception::class);
         $result = $this->api->update($data);
 
         $this->assertTrue($result);
@@ -112,9 +109,6 @@ class AdminTest extends \BBTestCase
         $this->api->__call('delete', $arguments);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCallArgumentsNotSetException()
     {
         $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->getMock();
@@ -128,13 +122,10 @@ class AdminTest extends \BBTestCase
         $arguments = array();
 
         $this->api->setService($serviceMock);
-
+        $this->expectException(\Exception::class);
         $this->api->__call('delete', $arguments);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCallOrderIdNotSetException()
     {
         $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->getMock();
@@ -150,7 +141,7 @@ class AdminTest extends \BBTestCase
         );
 
         $this->api->setService($serviceMock);
-
+        $this->expectException(\Exception::class);
         $this->api->__call('delete', $arguments);
     }
 }

@@ -8,7 +8,7 @@ class GuestTest extends \BBTestCase
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api = new \Box\Mod\Servicehosting\Api\Guest();
     }
@@ -46,7 +46,7 @@ class GuestTest extends \BBTestCase
         $this->api->setDi($di);
 
         $result = $this->api->free_tlds(array('product_id' => 1));
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testfree_tlds_ProductTypeIsNotHosting()
@@ -77,7 +77,8 @@ class GuestTest extends \BBTestCase
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Product type is invalid');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Product type is invalid');
         $this->api->free_tlds(array('product_id' => 1));
     }
 }

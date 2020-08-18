@@ -16,7 +16,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public function testGetSearchQueryProvider()
+    public function getSearchQueryProvider()
     {
         return array(
             array(
@@ -28,12 +28,13 @@ class ServiceTest extends \BBTestCase
                 array(
                     'search' => "search_query"
                 ),
-                'SELECT * FROM activity_client_email WHERE (m.sender LIKE :sender OR m.recipients LIKE :recipient OR m.subject LIKE :subject OR m.content_text LIKE :context_text) ORDER BY id DESC',
+                'SELECT * FROM activity_client_email WHERE (sender LIKE :sender OR recipients LIKE :recipient OR subject LIKE :subject OR content_text LIKE :content_text OR content_html LIKE :content_html) ORDER BY id DESC',
                 array(
                     ':sender'       => '%search_query%',
                     ':recipient'    => '%search_query%',
                     ':subject'      => '%search_query%',
                     ':content_text' => '%search_query%',
+                    ':content_html' => '%search_query%',
                 ),
             ),
             array(
@@ -50,12 +51,13 @@ class ServiceTest extends \BBTestCase
                     'search'    => "search_query",
                     'client_id' => 5
                 ),
-                'SELECT * FROM activity_client_email WHERE (m.sender LIKE :sender OR m.recipients LIKE :recipient OR m.subject LIKE :subject OR m.content_text LIKE :context_text) AND client_id = :client_id ORDER BY id DESC',
+                'SELECT * FROM activity_client_email WHERE (sender LIKE :sender OR recipients LIKE :recipient OR subject LIKE :subject OR content_text LIKE :content_text OR content_html LIKE :content_html) AND client_id = :client_id ORDER BY id DESC',
                 array(
                     ':sender'       => '%search_query%',
                     ':recipient'    => '%search_query%',
                     ':subject'      => '%search_query%',
                     ':content_text' => '%search_query%',
+                    ':content_html' => '%search_query%',
                     ':client_id'    => 5,
                 )
             ),
@@ -63,7 +65,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testGetSearchQueryProvider
+     * @dataProvider getSearchQueryProvider
      */
     public function testGetSearchQuery($data, $query, $bindings)
     {
@@ -75,8 +77,8 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
         $result = $service->getSearchQuery($data);
 
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
 
         $this->assertEquals($result[0], $query);
         $this->assertEquals($result[1], $bindings);
@@ -207,7 +209,7 @@ class ServiceTest extends \BBTestCase
 
 
         $result = $service->toApiArray($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($result, $expected);
     }
 
@@ -261,7 +263,7 @@ class ServiceTest extends \BBTestCase
         $t->vars = 'haNUZYeNjo1oXhH6OkoKuHGPxakyKY10qR3O/DSy9Og=';
 
         $result = $service->getVars($t);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -349,11 +351,8 @@ class ServiceTest extends \BBTestCase
             ->method('getParamValue')
             ->will($this->returnValue('value'));
 
-
-        $twig = $this->getMockBuilder('Twig_Environment')->getMock();
-        $twig->expects($this->atLeastOnce())
-            ->method('render')
-            ->will($this->returnValue('value'));
+        
+        $twig = $this->getMockBuilder('\Twig\Environment')->disableOriginalConstructor()->getMock();
 
         $di['api_admin'] = function () use ($di) {
             $api = new \Api_Handler(new \Model_Admin());
@@ -391,7 +390,7 @@ class ServiceTest extends \BBTestCase
     }
 
 
-    public function testSendTemplateExistsStaffProvider()
+    public function sendTemplateExistsStaffProvider()
     {
         return array(
             array(
@@ -423,7 +422,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testSendTemplateExistsStaffProvider
+     * @dataProvider sendTemplateExistsStaffProvider
      */
     public function testSendTemplateExistsStaff($data, $clientGetExpects, $staffgetListExpects)
     {
@@ -451,6 +450,10 @@ class ServiceTest extends \BBTestCase
         $system->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->will($this->returnValue('value'));
+
+        $system->expects($this->atLeastOnce())
+        ->method('renderString')
+        ->will($this->returnValue('value'));    
 
 
         $staffServiceMock = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
@@ -484,11 +487,10 @@ class ServiceTest extends \BBTestCase
         $clientServiceMock->expects($clientGetExpects)
             ->method('toApiArray')
             ->will($this->returnValue($clientApiArray));
-
-        $twig = $this->getMockBuilder('Twig_Environment')->getMock();
-        $twig->expects($this->atLeastOnce())
-            ->method('render')
-            ->will($this->returnValue('value'));
+            
+        $loader = new \Twig\Loader\ArrayLoader();
+        $twig = $this->getMockBuilder('Twig\Environment')->setConstructorArgs([$loader,['debug' => false]])->getMock();
+        
 
         $cryptMock = $this->getMockBuilder('\Box_Crypt')
             ->disableOriginalConstructor()
@@ -516,7 +518,7 @@ class ServiceTest extends \BBTestCase
         $di['mod_service'] = $di->protect(function ($name) use ($system, $staffServiceMock, $clientServiceMock) {
             if ($name == 'staff') {
                 return $staffServiceMock;
-            } elseif ($name == 'system') {
+            } elseif ($name == 'System' || $name == 'system') {
                 return $system;
             } elseif ($name == 'client') {
                 return $clientServiceMock;
@@ -578,7 +580,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testTemplateGetSearchQueryProvider()
+    public function templateGetSearchQueryProvider()
     {
         return array(
             array(
@@ -624,7 +626,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testTemplateGetSearchQueryProvider
+     * @dataProvider templateGetSearchQueryProvider
      */
     public function testTemplateGetSearchQuery($data, $query, $bindings)
     {
@@ -636,8 +638,8 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
         $result = $service->templateGetSearchQuery($data);
 
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
 
         $this->assertEquals($result[0], $query);
         $this->assertEquals($result[1], $bindings);
@@ -678,7 +680,7 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Email\Service();
         $result  = $service->templateToApiArray($model);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($result, $expected);
     }
 
@@ -724,14 +726,14 @@ class ServiceTest extends \BBTestCase
 
         $result = $serviceMock->templateToApiArray($model, true);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('vars', $result);
-        $this->assertInternalType('array', $result['vars']);
+        $this->assertIsArray($result['vars']);
 
         $this->assertEquals($result, $expected);
     }
 
-    public function testTemplate_updateProvider()
+    public function template_updateProvider()
     {
         return array(
             array(
@@ -758,7 +760,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testTemplate_updateProvider
+     * @dataProvider template_updateProvider
      */
     public function testTemplate_update($data, $templateRenderExpects)
     {
@@ -768,9 +770,6 @@ class ServiceTest extends \BBTestCase
         $model->id = $id;
 
         $emailServiceMock = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('template_render'))->getMock();
-        $emailServiceMock->expects($templateRenderExpects)
-            ->method('template_render')
-            ->will($this->returnValue('rendered_string'));
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
@@ -786,16 +785,21 @@ class ServiceTest extends \BBTestCase
             ->method('decodeJ')
             ->will($this->returnValue(array()));
 
-        $twigMock = $this->getMockBuilder('\Twig_Environment')->disableOriginalConstructor()->getMock();
-        $twigMock->expects($templateRenderExpects)
-            ->method('render');
+        $twigMock = $this->getMockBuilder('Twig\Environment')->disableOriginalConstructor()->getMock();
 
         $di           = new \Box_Di();
         $di['db']     = $db;
         $di['logger'] = $loggerMock;
         $di['tools']  = $toolsMock;
         $di['crypt']  = $cryptMock;
-        $di['twig']   = $twigMock;
+        $di['twig']   = $twigMock;      
+       
+        $systemServiceMock = $this->getMockBuilder('Box\Mod\System\Service')->getMock();
+        
+        $di['mod_service'] = $di->protect(function () use ($systemServiceMock) {
+                return $systemServiceMock;
+            });    
+
         $emailServiceMock->setDi($di);
 
         $templateModel = new \Model_EmailTemplate();
@@ -827,9 +831,6 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($id, $result->id);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testGetEmailByIdException()
     {
         $service = new \Box\Mod\Email\Service();
@@ -843,6 +844,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $service->setDi($di);
 
+        $this->expectException(\Box_Exception::class);
         $service->getEmailById(5);
     }
 
@@ -882,7 +884,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($emailTemplateModel, $result);
     }
 
-    public function testBatchTemplateGenerateProvider()
+    public function batchTemplateGenerateProvider()
     {
         return array(
             array(true, false, $this->never(), $this->never()),
@@ -891,7 +893,7 @@ class ServiceTest extends \BBTestCase
         );
     }
     /**
-     * @dataProvider testBatchTemplateGenerateProvider
+     * @dataProvider batchTemplateGenerateProvider
      */
     public function testBatchTemplateGenerate($findOneReturn, $isExtensionActiveReturn, $findOneExpects, $dispenseExpects)
     {
@@ -986,12 +988,9 @@ class ServiceTest extends \BBTestCase
         $queueModel->to_name = 'To Name';
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
-        $db->expects($this->at(0))
+        $db->expects($this->exactly(2))
             ->method('findOne')
-            ->will($this->returnValue($queueModel));
-        $db->expects($this->at(1))
-            ->method('findOne')
-            ->will($this->returnValue(false));
+            ->will($this->onConsecutiveCalls($queueModel, false));
          $db->expects($this->atLeastOnce())
             ->method('store')
             ->will($this->returnValue(true));
@@ -1065,9 +1064,7 @@ class ServiceTest extends \BBTestCase
             ->method('decodeJ')
             ->will($this->returnValue(array()));
 
-        $twigMock = $this->getMockBuilder('\Twig_Environment')->disableOriginalConstructor()->getMock();
-        $twigMock->expects($this->atLeastOnce())
-            ->method('render');
+        $twigMock = $this->getMockBuilder('Twig\Environment')->disableOriginalConstructor()->getMock();
 
         $di           = new \Box_Di();
         $di['db']     = $db;
@@ -1078,6 +1075,13 @@ class ServiceTest extends \BBTestCase
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
+        
+        $systemService = $this->getMockBuilder('Box\Mod\System\Service')->getMock();
+        
+        $di['mod_service'] = $di->protect(function () use ($systemService) {
+            return $systemService;
+        });
+
         $service->setDi($di);
 
         $result = $service->resetTemplateByCode('mod_email_test');
@@ -1085,9 +1089,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testResetTemplateByCodeException()
     {
         $service = new \Box\Mod\Email\Service();
@@ -1101,6 +1102,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $service->setDi($di);
 
+        $this->expectException(\Box_Exception::class);
         $service->resetTemplateByCode('mod_email_test');
     }
 

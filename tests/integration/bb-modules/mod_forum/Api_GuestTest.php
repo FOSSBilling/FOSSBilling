@@ -15,59 +15,59 @@ class Api_Guest_ForumTest extends BBDbApiTestCase
             'per_page'  => 10,
         );
         $array = $this->api_guest->forum_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_guest->forum_get_categories($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'id'    => 1,
         );
         $array = $this->api_guest->forum_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'slug'    => 'discuss-about-everything',
         );
         $array = $this->api_guest->forum_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'forum_id'    => 1,
         );
         $array = $this->api_guest->forum_get_topic_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'id'    => 1,
         );
         $array = $this->api_guest->forum_get_topic($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'slug'    => 'read-before-posting',
         );
         $array = $this->api_guest->forum_get_topic($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'forum_topic_id'    => 2,
         );
         $array = $this->api_guest->forum_get_topic_message_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_guest->forum_members_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
-        $this->assertInternalType('array', $array['list']);
+        $this->assertIsArray($array['list']);
 
         $data = array(
             'q' => 'BoxBilling'
         );
         $array = $this->api_guest->forum_search($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
-        $this->assertInternalType('array', $array['list']);
+        $this->assertIsArray($array['list']);
     }
 
     public function testForumGetList()
@@ -77,11 +77,11 @@ class Api_Guest_ForumTest extends BBDbApiTestCase
             'per_page' => 10,
         );
         $array = $this->api_guest->forum_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         if (count($list)) {
             $item = $list[0];
             $this->assertArrayHasKey('id', $item);
@@ -95,7 +95,7 @@ class Api_Guest_ForumTest extends BBDbApiTestCase
             $this->assertArrayHasKey('updated_at', $item);
             $this->assertArrayHasKey('stats', $item);
             $stats = $item['stats'];
-            $this->assertInternalType('array', $stats);
+            $this->assertIsArray($stats);
             $this->assertArrayHasKey('topics_count', $stats);
             $this->assertArrayHasKey('posts_count', $stats);
             $this->assertArrayHasKey('views_count', $stats);

@@ -10,7 +10,7 @@ class GuestTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api = new \Box\Mod\Invoice\Api\Guest();
     }
@@ -51,7 +51,7 @@ class GuestTest extends \BBTestCase {
 
         $data['hash'] = md5(1);
         $result = $this->api->get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetInvoiceNotFound()
@@ -75,7 +75,8 @@ class GuestTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->setExpectedException('\Box_Exception', 'Invoice was not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Invoice was not found');
         $this->api->get($data);
     }
 
@@ -109,7 +110,7 @@ class GuestTest extends \BBTestCase {
 
         $data['hash'] = md5(1);
         $result = $this->api->update($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue(true);
     }
 
@@ -134,7 +135,8 @@ class GuestTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->setExpectedException('\Box_Exception', 'Invoice was not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Invoice was not found');
         $this->api->update($data);
     }
 
@@ -160,7 +162,8 @@ class GuestTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->setExpectedException('\Box_Exception', 'Paid Invoice can not be modified');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Paid Invoice can not be modified');
         $this->api->update($data);
     }
 
@@ -177,7 +180,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->gateways(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testpayment()
@@ -194,7 +197,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->payment($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testpaymentMissingHashParam()
@@ -203,7 +206,9 @@ class GuestTest extends \BBTestCase {
             'gateway_id' => '',
         );
 
-        $this->setExpectedException('\Box_Exception', 'Invoice hash not passed. Missing param hash', 810);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(810);
+        $this->expectExceptionMessage('Invoice hash not passed. Missing param hash');
         $this->api->payment($data);
     }
 
@@ -213,7 +218,9 @@ class GuestTest extends \BBTestCase {
             'hash' => '',
         );
 
-        $this->setExpectedException('\Box_Exception', 'Payment method not found. Missing param gateway_id', 811);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(811);
+        $this->expectExceptionMessage('Payment method not found. Missing param gateway_id');
         $this->api->payment($data);
     }
 

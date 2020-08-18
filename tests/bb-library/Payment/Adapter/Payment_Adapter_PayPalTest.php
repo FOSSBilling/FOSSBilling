@@ -1,11 +1,11 @@
 <?php
 
 
-class Payment_Adapter_PaypalTest extends PHPUnit_Framework_TestCase {
+class Payment_Adapter_PayPalTest extends PHPUnit\Framework\TestCase {
 
     private $defaultConfig = array();
 
-    public function setup()
+    public function setup(): void
     {
         $this->defaultConfig = array(
             'email' => 'info@boxbilling.com',
@@ -43,7 +43,10 @@ class Payment_Adapter_PaypalTest extends PHPUnit_Framework_TestCase {
     public function testConsturctMissingEmail()
     {
         $config = array();
-        $this->setExpectedException('Payment_Exception', 'Payment gateway "PayPal" is not configured properly. Please update configuration parameter "PayPal Email address" at "Configuration -> Payments".');
+
+        $this->expectException(Payment_Exception::class);
+        $this->expectExceptionMessage('Payment gateway "PayPal" is not configured properly. Please update configuration parameter "PayPal Email address" at "Configuration -> Payments".');
+
         new Payment_Adapter_PayPalEmail($config);
     }
 

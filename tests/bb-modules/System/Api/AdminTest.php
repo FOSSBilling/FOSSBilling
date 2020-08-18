@@ -10,7 +10,7 @@ class AdminTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api= new \Box\Mod\System\Api\Admin();
     }
@@ -36,7 +36,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->license_info($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testparam()
@@ -60,7 +60,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->param($data);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
     }
 
     public function testget_params()
@@ -76,7 +76,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->get_params($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testupdate_params()
@@ -92,7 +92,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->update_params($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -115,7 +115,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->messages($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testtemplate_exists()
@@ -132,7 +132,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->template_exists($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -154,7 +154,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->string_render($data);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
     }
 
     public function testenv()
@@ -174,7 +174,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->env($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testis_allowed()
@@ -209,7 +209,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->is_allowed($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -225,7 +225,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->clear_cache($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 

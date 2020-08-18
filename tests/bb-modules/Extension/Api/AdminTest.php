@@ -16,7 +16,7 @@ class AdminTest extends \BBTestCase {
     protected $api = null;
 
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Extension\Service();
         $this->api = new \Box\Mod\Extension\Api\Admin();
@@ -43,7 +43,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->get_list($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 /*
  * @todo enable when extensions are available
@@ -62,7 +62,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
         $result = $this->api->get_latest($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_latestException()
@@ -80,7 +80,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
         $result = $this->api->get_latest($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals(array(), $result);
     }
 */
@@ -99,7 +99,7 @@ class AdminTest extends \BBTestCase {
 
         $result = $this->api->get_navigation($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testlanguages()
@@ -115,7 +115,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
         $result = $this->api->languages();
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testupdate_core()
@@ -157,7 +157,8 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'You have latest version of BoxBilling. You do not need to update', 930);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('You have latest version of BoxBilling. You do not need to update', 930);
         $result = $this->api->update_core(array());
         $this->assertTrue($result);
     }
@@ -187,7 +188,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
         $result = $this->api->update($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
 
@@ -210,7 +211,8 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
-        $this->setExpectedException('\Box_Exception', 'Extension not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Extension not found');
         $this->api->update($data);
     }
 
@@ -236,7 +238,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->activate($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testdeactivate()
@@ -357,7 +359,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->install($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -406,7 +408,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->install($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -431,7 +433,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
         $result = $this->api->config_get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testconfig_save()

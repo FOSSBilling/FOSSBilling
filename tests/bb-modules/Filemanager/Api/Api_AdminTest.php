@@ -3,7 +3,7 @@
 namespace Box\Tests\Mod\Filemanager\Api;
 
 
-class AdminTest extends \BBTestCase
+class Api_AdminTest extends \BBTestCase
 {
 
     /**
@@ -11,7 +11,7 @@ class AdminTest extends \BBTestCase
      */
     protected $adminApi = null;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->adminApi = new \Box\Mod\Filemanager\Api\Admin();
     }
@@ -100,7 +100,7 @@ class AdminTest extends \BBTestCase
 
         $result = $this->adminApi->get_list(array());
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
 

@@ -12,10 +12,10 @@ class Api_Guest_InvoiceTest extends BBDbApiTestCase
             'hash'    =>  'hash',
         );
         $array = $this->api_guest->invoice_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_guest->invoice_gateways();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
 
@@ -43,7 +43,7 @@ class Api_Guest_InvoiceTest extends BBDbApiTestCase
             'gateway_id'    =>  $id,
         );
         $array = $this->api_guest->invoice_payment($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testNewPayment()
@@ -59,7 +59,7 @@ class Api_Guest_InvoiceTest extends BBDbApiTestCase
             'gateway_id'    =>  $gateway_id,
         );
         $form = $this->api_guest->invoice_payment($data);
-        $this->assertInternalType('array', $form);
+        $this->assertIsArray($form);
         $this->assertEquals('html', $form['type']);
         $this->assertFalse(empty($form['result']));
         
@@ -72,7 +72,7 @@ class Api_Guest_InvoiceTest extends BBDbApiTestCase
             'gateway_id'    =>  $gateway_id,
         );
         $form2 = $this->api_guest->invoice_payment($data);
-        $this->assertInternalType('array', $form2);
+        $this->assertIsArray($form2);
         $this->assertEquals('html', $form2['type']);
         $this->assertFalse(empty($form2['result']));
     }
