@@ -36,7 +36,7 @@
         </td>
         <td><div style="overflow: auto; width: 250px;">{{ event.message }}</div></td>
         <td>{{ event.ip }}</td>
-        <td>{{ event.ip|ipcountryname }}</td>
+        <td>{{ event.ip|ipcountryname|default('Unknown') }}</td>
         <td>{{ event.created_at|date('Y-m-d H:i') }}</td>
         <td class="actions">
             <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="{% trans 'Are you sure?' %}" data-api-redirect="{{ 'activity'|alink }}" href="{{ 'api/admin/activity/log_delete'|link({'id' : event.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
