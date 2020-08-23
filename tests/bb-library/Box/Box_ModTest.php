@@ -2,7 +2,7 @@
 /**
  * @group Core
  */
-class Box_ModTest extends PHPUnit_Framework_TestCase
+class Box_ModTest extends PHPUnit\Framework\TestCase
 {
     public function testEmptyConfig()
     {
@@ -27,7 +27,7 @@ class Box_ModTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($mod->isCore());
         
         $array = $mod->getCoreModules();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $mod = new Box_Mod('example');
         $this->assertFalse($mod->isCore());
@@ -43,7 +43,7 @@ class Box_ModTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($bool);
 
         $obj = $mod->getService();
-        $this->assertInstanceOf('Box\\Mod\\Example\\Service', $obj);
+        $this->assertInstanceOf(Box\Mod\Example\Service::class, $obj);
 
         $bool = $mod->hasAdminController();
         $this->assertTrue($bool);
@@ -52,13 +52,13 @@ class Box_ModTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($bool);
 
         $obj = $mod->getAdminController();
-        $this->assertInstanceOf('Box\\Mod\\Example\\Controller\\Admin', $obj);
+        $this->assertInstanceOf(Box\Mod\Example\Controller\Admin::class, $obj);
 
         $bool = $mod->hasClientController();
         $this->assertTrue($bool);
 
         $obj = $mod->getClientController();
-        $this->assertInstanceOf('Box\\Mod\\Example\\Controller\\Client', $obj);
+        $this->assertInstanceOf(Box\Mod\Example\Controller\Client::class, $obj);
     }
 
     public function testManifest()
@@ -73,7 +73,7 @@ class Box_ModTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($bool);
 
         $array = $mod->getManifest();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testInstall()
@@ -106,7 +106,7 @@ class Box_ModTest extends PHPUnit_Framework_TestCase
         $subServiceName = 'transaction';
 
         $subService = $mod->getService($subServiceName);
-        $this->assertInstanceOf('\Box\Mod\Invoice\ServiceTransaction', $subService);
+        $this->assertInstanceOf(\Box\Mod\Invoice\ServiceTransaction::class, $subService);
 
     }
 

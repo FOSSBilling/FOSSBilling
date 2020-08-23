@@ -11,7 +11,7 @@ class ServiceTest extends \BBTestCase
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Servicelicense\Service();
     }
@@ -32,7 +32,7 @@ class ServiceTest extends \BBTestCase
         $data                 = array();
 
         $result = $this->service->attachOrderConfig($productModel, $data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals(array(), $result);
     }
 
@@ -45,14 +45,14 @@ class ServiceTest extends \BBTestCase
         $expected             = array_merge(json_decode($productModel->config, 1), $data);
 
         $result = $this->service->attachOrderConfig($productModel, $data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
     public function testgetLicensePlugins()
     {
         $result = $this->service->getLicensePlugins();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testaction_create()
@@ -139,15 +139,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
-        $dbMock->expects($this->at(0))
+        $dbMock->expects($this->exactly(3))
             ->method('findOne')
-            ->will($this->returnValue($serviceLicenseModel));
-        $dbMock->expects($this->at(1))
-            ->method('findOne')
-            ->will($this->returnValue($serviceLicenseModel));
-        $dbMock->expects($this->at(2))
-            ->method('findOne')
-            ->will($this->returnValue(null));
+            ->will($this->onConsecutiveCalls($serviceLicenseModel, $serviceLicenseModel, null));
 
         $di                = new \Box_Di();
         $di['db']          = $dbMock;
@@ -161,9 +155,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testaction_activateLicenseCollisionMaxIterationsException()
     {
         $clientOrderModel = new \Model_ClientOrder();
@@ -196,6 +187,7 @@ class ServiceTest extends \BBTestCase
         });
         $this->service->setDi($di);
 
+        $this->expectException(\Box_Exception::class);
         $result = $this->service->action_activate($clientOrderModel);
         $this->assertTrue($result);
     }
@@ -224,7 +216,8 @@ class ServiceTest extends \BBTestCase
         });
         $this->service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', sprintf('License plugin %s was not found', $serviceLicenseModel->plugin));
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf('License plugin %s was not found', $serviceLicenseModel->plugin));
         $this->service->action_activate($clientOrderModel);
     }
 
@@ -248,7 +241,8 @@ class ServiceTest extends \BBTestCase
         });
         $this->service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Could not activate order. Service was not created');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Could not activate order. Service was not created');
         $this->service->action_activate($clientOrderModel);
     }
 
@@ -556,7 +550,7 @@ class ServiceTest extends \BBTestCase
         $serviceLicenseModel->plugin = 'Simple';
 
         $result = $this->service->getAdditionalParams($serviceLicenseModel);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetOwnerName()
@@ -582,7 +576,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->getOwnerName($serviceLicenseModel);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -607,7 +601,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->getExpirationDate($serviceLicenseModel);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -631,7 +625,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $result = $this->service->toApiArray($serviceLicenseModel, false, new \Model_Admin());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertTrue(count(array_diff(array_keys($expected), array_keys($result))) == 0, 'Missing array key values.');
     }
 
@@ -662,7 +656,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->update($serviceLicenseModel, $data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -692,12 +686,12 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->checkLicenseDetails($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('error', $result);
         $this->assertArrayHasKey('error_code', $result);
     }
 
-    public function testcheckLicenseDetails()
+    public function testCheckLicenseDetails()
     {
         $loggerMock = $this->getMockBuilder('\Box_Log')
             ->getMock();
@@ -721,7 +715,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->checkLicenseDetails($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 }
  

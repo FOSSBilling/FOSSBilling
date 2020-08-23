@@ -8,7 +8,7 @@ class ServiceTest extends \BBTestCase
      */
     protected $service = null;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->service = new \Box\Mod\Filemanager\Service();
     }
@@ -78,9 +78,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCreateDirectoryExistsException()
     {
         $type   = 'dir';
@@ -94,18 +91,16 @@ class ServiceTest extends \BBTestCase
         $di = new \Box_Di();
         $di['tools'] = $toolsMock;
         $this->service->setDi($di);
-
+        $this->expectException(\Box_Exception::class);
         $result = $this->service->create($path, $type);
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCreateDirectoryTypeNotExists()
     {
         $type   = 'non-existing-type';
         $path   = 'tests/test_dir';
+        $this->expectException(\Box_Exception::class);
         $result = $this->service->create($path, $type);
         $this->assertTrue($result);
     }
@@ -133,11 +128,11 @@ class ServiceTest extends \BBTestCase
         $result = $this->service->getFiles('../tests');
         $file = $result['files'][0];
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('files', $result);
         $this->assertArrayHasKey('filecount', $result);
-        $this->assertInternalType('array', $result['files']);
-        $this->assertInternalType('integer', $result['filecount']);
+        $this->assertIsArray($result['files']);
+        $this->assertIsInt($result['filecount']);
         $this->assertEquals($result['filecount'], count($result['files']));
 
         $this->assertArrayHasKey('filename', $file);
@@ -150,20 +145,20 @@ class ServiceTest extends \BBTestCase
     {
         $result = $this->service->getFiles('../tests/test_dir');
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('files', $result);
         $this->assertArrayHasKey('filecount', $result);
-        $this->assertInternalType('integer', $result['filecount']);
+        $this->assertIsInt($result['filecount']);
 
         $this->assertNull($result['files']);
-        $this->assertEquals(count($result['files']), 0);
+        $this->assertEquals($result['filecount'], 0);
 
     }
     public function testGetFilesNonExistingDir()
     {
         $result = $this->service->getFiles('non-existing-dir');
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('files', $result);
         $this->assertArrayHasKey('filecount', $result);
         $this->assertNull($result['files']);

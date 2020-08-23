@@ -9,14 +9,14 @@ class Api_Admin_CurrencyTest extends BBDbApiTestCase
     public function testCurrencies()
     {
         $array = $this->api_admin->currency_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->currency_get(array('code' => 'USD'));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertEquals('USD', $array['code']);
 
         $array = $this->api_admin->currency_get_default();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'code'  =>    'GBP',
@@ -24,7 +24,7 @@ class Api_Admin_CurrencyTest extends BBDbApiTestCase
             'format'  =>    '{{price}}£',
         );
         $code = $this->api_admin->currency_create($data);
-        $this->assertInternalType('string', $code);
+        $this->assertIsString($code);
 
         $bool = $this->api_admin->currency_update($data);
         $this->assertTrue($bool);
@@ -43,11 +43,11 @@ class Api_Admin_CurrencyTest extends BBDbApiTestCase
     public function testCurerncyGetList()
     {
         $array = $this->api_admin->currency_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         if (count($list)){
             $item = $list[0];
             $this->assertArrayHasKey('code', $item);

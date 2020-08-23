@@ -2,7 +2,7 @@
 /**
  * @group Core
  */
-class Box_TranslateTest extends PHPUnit_Framework_TestCase
+class Box_TranslateTest extends PHPUnit\Framework\TestCase
 {
     public function testsetLocale()
     {

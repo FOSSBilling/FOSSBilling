@@ -11,7 +11,7 @@ class AdminTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api = new \Box\Mod\Page\Api\Admin();
     }
@@ -35,7 +35,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->get_pairs();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
 }

@@ -8,7 +8,7 @@ class Api_AdminTest extends \BBTestCase
      */
     protected $adminApi = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->adminApi = new \Box\Mod\Servicedomain\Api\Admin();
     }
@@ -221,7 +221,7 @@ class Api_AdminTest extends \BBTestCase
         $data   = array();
         $result = $this->adminApi->tld_get_list($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testTld_get()
@@ -246,13 +246,9 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->tld_get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testTld_getTldNotFoundException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -273,6 +269,7 @@ class Api_AdminTest extends \BBTestCase
         $data = array(
             'tld' => '.com'
         );
+        $this->expectException(\Box_Exception::class);
         $this->adminApi->tld_get($data);
     }
 
@@ -298,12 +295,9 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->tld_delete($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testTld_deleteTldNotFoundException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -324,6 +318,8 @@ class Api_AdminTest extends \BBTestCase
         $data = array(
             'tld' => '.com'
         );
+
+        $this->expectException(\Box_Exception::class);
         $this->adminApi->tld_delete($data);
     }
 
@@ -354,12 +350,9 @@ class Api_AdminTest extends \BBTestCase
         );
 
         $result = $this->adminApi->tld_create($data);
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testTld_createAlreadyRegisteredException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -379,8 +372,9 @@ class Api_AdminTest extends \BBTestCase
             'tld' => '.com'
         );
 
+        $this->expectException(\Box_Exception::class);
         $result = $this->adminApi->tld_create($data);
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
     }
 
 
@@ -407,12 +401,9 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->tld_update($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testTld_updateTldNotFoundException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -434,6 +425,8 @@ class Api_AdminTest extends \BBTestCase
         $data = array(
             'tld' => '.com'
         );
+
+        $this->expectException(\Box_Exception::class);
         $this->adminApi->tld_update($data);
     }
 
@@ -468,7 +461,7 @@ class Api_AdminTest extends \BBTestCase
         $data   = array();
         $result = $this->adminApi->registrar_get_list($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testRegistrar_get_pairs()
@@ -481,7 +474,7 @@ class Api_AdminTest extends \BBTestCase
 
         $result = $this->adminApi->registrar_get_pairs(array());
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testRegistrar_get_available()
@@ -494,7 +487,7 @@ class Api_AdminTest extends \BBTestCase
 
         $result = $this->adminApi->registrar_get_available(array());
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testRegistrar_install()
@@ -526,9 +519,6 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testRegistrar_installRegistrarNotAvailableException()
     {
         $registrars = array(
@@ -552,6 +542,8 @@ class Api_AdminTest extends \BBTestCase
         $data   = array(
             'code' => 'ResellerClub'
         );
+        
+        $this->expectException(\Box_Exception::class);
         $result = $this->adminApi->registrar_install($data);
 
         $this->assertTrue($result);
@@ -590,9 +582,6 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testRegistrar_deleteIdNotSetException()
     {
         $registrar = new \Model_TldRegistrar();
@@ -620,6 +609,7 @@ class Api_AdminTest extends \BBTestCase
 
         $data = array();
 
+        $this->expectException(\Box_Exception::class);
         $result = $this->adminApi->registrar_delete($data);
 
         $this->assertTrue($result);
@@ -658,9 +648,6 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testRegistrar_copyIdNotSetException()
     {
         $registrar = new \Model_TldRegistrar();
@@ -688,6 +675,7 @@ class Api_AdminTest extends \BBTestCase
 
         $data = array();
 
+        $this->expectException(\Box_Exception::class);
         $result = $this->adminApi->registrar_copy($data);
 
         $this->assertTrue($result);
@@ -723,12 +711,9 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->registrar_get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testRegistrar_getIdNotSetException()
     {
         $registrar = new \Model_TldRegistrar();
@@ -756,9 +741,10 @@ class Api_AdminTest extends \BBTestCase
 
         $data = array();
 
+        $this->expectException(\Box_Exception::class);
         $result = $this->adminApi->registrar_get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testBatch_sync_expiration_dates()
@@ -807,9 +793,6 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testRegistrar_updateIdNotSetException()
     {
         $registrar = new \Model_TldRegistrar();
@@ -837,6 +820,7 @@ class Api_AdminTest extends \BBTestCase
 
         $data = array();
 
+        $this->expectException(\Box_Exception::class);
         $result = $this->adminApi->registrar_update($data);
 
         $this->assertTrue($result);
@@ -880,9 +864,6 @@ class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testGetServiceOrderIdMissingException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -914,14 +895,13 @@ class Api_AdminTest extends \BBTestCase
         $this->adminApi->setDi($di);
 
         $data   = array();
+        
+        $this->expectException(\Box_Exception::class);
         $result = $this->adminApi->update($data);
 
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testGetServiceOrderNotActivatedException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')->getMock();
@@ -955,6 +935,8 @@ class Api_AdminTest extends \BBTestCase
         $data   = array(
             'order_id' => rand(1, 100)
         );
+        
+        $this->expectException(\Box_Exception::class);
         $result = $this->adminApi->update($data);
 
         $this->assertTrue($result);

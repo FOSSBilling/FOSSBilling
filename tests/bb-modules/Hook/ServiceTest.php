@@ -11,7 +11,7 @@ class ServiceTest extends \BBTestCase {
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service= new \Box\Mod\Hook\Service();
     }
@@ -29,8 +29,8 @@ class ServiceTest extends \BBTestCase {
     {
         list ($sql, $params) = $this->service->getSearchQuery(array());
 
-        $this->assertInternalType('string', $sql);
-        $this->assertInternalType('array', $params);
+        $this->assertIsString($sql);
+        $this->assertIsArray($params);
 
         $this->assertTrue(strpos($sql, 'SELECT id, rel_type, rel_id, meta_value as event, created_at, updated_at') !== false);
         $this->assertEquals($params, array());

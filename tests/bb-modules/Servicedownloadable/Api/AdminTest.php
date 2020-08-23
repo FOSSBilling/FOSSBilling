@@ -11,7 +11,7 @@ class AdminTest extends \BBTestCase
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api = new \Box\Mod\Servicedownloadable\Api\Admin();
     }
@@ -44,7 +44,8 @@ class AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
 
         $this->api->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'File was not uploaded');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('File was not uploaded');
         $this->api->upload($data);
     }
 
@@ -76,7 +77,7 @@ class AdminTest extends \BBTestCase
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->upload($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -104,7 +105,8 @@ class AdminTest extends \BBTestCase
         $di['validator']   = $validatorMock;
 
         $this->api->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Order is not activated');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Order is not activated');
         $this->api->update($data);
     }
 
@@ -142,7 +144,7 @@ class AdminTest extends \BBTestCase
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->update($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 }

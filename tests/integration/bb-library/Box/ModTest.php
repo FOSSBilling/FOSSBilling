@@ -3,7 +3,7 @@
 /**
  * @group Core
  */
-class Box_ModIntegrationTest extends BBDbApiTestCase
+class ModTest extends BBDbApiTestCase
 {
     public function testConfig()
     {

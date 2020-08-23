@@ -36,8 +36,8 @@ class AdminTest extends \BBTestCase {
         $this->assertArrayHasKey('group', $result);
         $this->assertArrayHasKey('subpages', $result);
 
-        $this->assertInternalType('array', $result['group']);
-        $this->assertInternalType('array', $result['subpages']);
+        $this->assertIsArray($result['group']);
+        $this->assertIsArray($result['subpages']);
     }
 
     public function testregister()

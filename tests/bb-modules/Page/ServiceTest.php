@@ -19,7 +19,7 @@ class ServiceTest extends \BBTestCase {
 
         $service->setDi($di);
         $result = $service->getPairs();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 }
  

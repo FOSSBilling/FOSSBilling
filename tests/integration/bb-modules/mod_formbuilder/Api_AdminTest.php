@@ -157,7 +157,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
         $id = $this->api_admin->formbuilder_create_form(array(
             'name' => 'New form'
         ));
-        $this->assertInternalType('int', $id);
+        $this->assertIsInt($id);
         $id2 = $this->api_admin->formbuilder_create_form(array(
             'type' => null,
             'name' => 'Form',
@@ -166,14 +166,14 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
                 'type' => "checkbox"
 
             )));
-        $this->assertInternalType('int', $id2);
+        $this->assertIsInt($id2);
 
     }
 
     public function testFieldAdd()
     {
         $fieldId = $this->api_admin->formbuilder_add_field(array('form_id' => 1, 'type' => 'text'));
-        $this->assertInternalType('int', $fieldId);
+        $this->assertIsInt($fieldId);
         $test = $this->api_admin->formbuilder_add_field(array(
             'description' => 'Form field description',
             "label" => "Field label",
@@ -192,7 +192,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
             'show_suffix' => 'suffix',
             'text_size' => 499
         ));
-        $this->assertInternalType('int', $test);
+        $this->assertIsInt($test);
         $this->api_admin->formbuilder_get_form(array(
             'id' => 1,
             'form_id' => 1,
@@ -207,7 +207,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
     public function testFormGet()
     {
         $array = $this->api_admin->formbuilder_get_form(array('id' => 1));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertTrue(isset($array['fields']));
         $this->assertNotEmpty($array['fields']);
     }
@@ -216,7 +216,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
     public function testGetForm()
     {
         $form = $this->api_admin->formbuilder_get_form(array('id' => 1));
-        $this->assertInternalType('array', $form);
+        $this->assertIsArray($form);
         $this->assertNotEmpty($form);
 
     }
@@ -224,14 +224,14 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
     public function testGetFormFields()
     {
         $test = $this->api_admin->formbuilder_get_form_fields(array('form_id' => 1));
-        $this->assertInternalType('array', $test);
+        $this->assertIsArray($test);
         $this->assertNotEmpty($test);
     }
 
     public function testGetField()
     {
         $test = $this->api_admin->formbuilder_get_field(array('id' => 1));
-        $this->assertInternalType('array', $test);
+        $this->assertIsArray($test);
         $this->assertNotEmpty($test);
     }
 
@@ -239,7 +239,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
     {
         $arr = $this->api_admin->formbuilder_get_forms();
         $test = $arr[0];
-        $this->assertInternalType('array', $test);
+        $this->assertIsArray($test);
         $this->assertArrayHasKey('product_count',$test);
         $this->assertArrayHasKey('order_count',$test);
         $this->assertArrayHasKey('name',$test);
@@ -269,7 +269,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
     public function testUpdateField()
     {
         $test = $this->api_admin->formbuilder_update_field(array('id' => 3, 'description' => 'This is very awesome description.', 'name' => "Form name"));
-        $this->assertInternalType('int', $test);
+        $this->assertIsInt($test);
         $test = $this->api_admin->formbuilder_add_field(array(
             'description' => 'Form field description',
             "label" => "Form field label",
@@ -312,7 +312,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
 
         ));
 
-        $this->assertInternalType('int', $test);
+        $this->assertIsInt($test);
 
     }
 
@@ -325,7 +325,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
             'type' => 'horizontal',
             'show_title' => '0'
         ));
-        $this->assertInternalType('bool', $test);
+        $this->assertIsBool($test);
         $this->assertTrue($test);
     }
 
@@ -353,7 +353,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
             'form_id' => 1,
             'name' => 'Second'
         ));
-        $this->assertInternalType('int', $test);
+        $this->assertIsInt($test);
 
 
     }
@@ -361,7 +361,7 @@ class Api_Admin_FormbuilderTest extends BBDbApiTestCase
     public function testGetPairs()
     {
         $test = $this->api_admin->formbuilder_get_pairs();
-        $this->assertInternalType('array', $test);
+        $this->assertIsArray($test);
     }
 
 

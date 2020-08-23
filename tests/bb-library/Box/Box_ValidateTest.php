@@ -3,7 +3,7 @@
 /**
  * @group Core
  */
-class Box_ValidateTest extends PHPUnit_Framework_TestCase
+class Box_ValidateTest extends PHPUnit\Framework\TestCase
 {
     public static function domains()
     {
@@ -44,11 +44,7 @@ class Box_ValidateTest extends PHPUnit_Framework_TestCase
         $this->assertNull($v->checkRequiredParamsForArray($required, $data));
     }
 
-    /**
-     * @expectedException \Box_Exception
-     * @expectedExceptionCode 0
-     * @expectedExceptionMessage ID must be set
-     */
+   
     public function testCheckRequiredParamsForArrayNotExist()
     {
         $data     = array();
@@ -56,15 +52,13 @@ class Box_ValidateTest extends PHPUnit_Framework_TestCase
             'id' => 'ID must be set'
         );
         $v        = new Box_Validate();
+        $this->expectException(Box_Exception::class);
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('ID must be set');
         $v->checkRequiredParamsForArray($required, $data);
     }
 
 
-    /**
-     * @expectedException \Box_Exception
-     * @expectedExceptionCode 0
-     * @expectedExceptionMessage KEY must be set
-     */
     public function testCheckRequiredParamsForArrayOneKeyNotExists()
     {
         $data     = array(
@@ -74,16 +68,13 @@ class Box_ValidateTest extends PHPUnit_Framework_TestCase
             'id'  => 'ID must be set',
             'key' => 'KEY must be set'
         );
-        $v        = new Box_Validate();
+        $v        = new Box_Validate();        
+        $this->expectException(Box_Exception::class);
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('KEY must be set');
         $v->checkRequiredParamsForArray($required, $data);
     }
 
-
-    /**
-     * @expectedException \Box_Exception
-     * @expectedExceptionCode 0
-     * @expectedExceptionMessage KEY placeholder_key must be set
-     */
     public function testCheckRequiredParamsForArrayMessagePlaceholder()
     {
         $data     = array(
@@ -95,15 +86,13 @@ class Box_ValidateTest extends PHPUnit_Framework_TestCase
         );
 
         $variables = array(':key' => 'placeholder_key');
-        $v         = new Box_Validate();
+        $v         = new Box_Validate();       
+        $this->expectException(Box_Exception::class);
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('KEY placeholder_key must be set');
         $v->checkRequiredParamsForArray($required, $data, $variables);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     * @expectedExceptionCode 0
-     * @expectedExceptionMessage KEY placeholder_key must be set for array config
-     */
     public function testCheckRequiredParamsForArrayMessagePlaceholders()
     {
         $data     = array(
@@ -118,16 +107,14 @@ class Box_ValidateTest extends PHPUnit_Framework_TestCase
             ':key'   => 'placeholder_key',
             ':array' => 'config'
         );
-        $v         = new Box_Validate();
+        $v         = new Box_Validate();   
+        $this->expectException(Box_Exception::class);
+        $this->expectExceptionCode(0);
+        $this->expectExceptionMessage('KEY placeholder_key must be set for array config');
         $v->checkRequiredParamsForArray($required, $data, $variables);
     }
 
 
-    /**
-     * @expectedException \Box_Exception
-     * @expectedExceptionCode 12345
-     * @expectedExceptionMessage KEY placeholder_key must be set
-     */
     public function testCheckRequiredParamsForArrayErrorCode()
     {
         $data     = array(
@@ -139,15 +126,13 @@ class Box_ValidateTest extends PHPUnit_Framework_TestCase
         );
 
         $variables = array(':key' => 'placeholder_key');
-        $v         = new Box_Validate();
+        $v         = new Box_Validate();   
+        $this->expectException(Box_Exception::class);
+        $this->expectExceptionCode(12345);
+        $this->expectExceptionMessage('KEY placeholder_key must be set');
         $v->checkRequiredParamsForArray($required, $data, $variables, 12345);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     * @expectedExceptionCode 54321
-     * @expectedExceptionMessage KEY must be set
-     */
     public function testCheckRequiredParamsForArrayErrorCodeVariablesNotSet()
     {
         $data     = array(
@@ -159,6 +144,9 @@ class Box_ValidateTest extends PHPUnit_Framework_TestCase
         );
 
         $v = new Box_Validate();
+        $this->expectException(Box_Exception::class);
+        $this->expectExceptionCode(54321);
+        $this->expectExceptionMessage('KEY must be set');
         $v->checkRequiredParamsForArray($required, $data, array(), 54321);
     }
 
@@ -173,6 +161,9 @@ class Box_ValidateTest extends PHPUnit_Framework_TestCase
 
         $v = new Box_Validate();
         $v->checkRequiredParamsForArray($required, $data);
+
+        //add needed assert, set to true if no exception called in $v->checkRequiredParamsForArray
+        $this->assertTrue(true);
     }
 
     public function testcheckRequiredParamsForArray_EmptyString()
@@ -185,7 +176,10 @@ class Box_ValidateTest extends PHPUnit_Framework_TestCase
         );
 
         $v = new Box_Validate();
-        $this->setExpectedException('\Box_Exception', $required['message']);
+
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage($required['message']);
+
         $v->checkRequiredParamsForArray($required, $data);
     }
 
@@ -200,7 +194,10 @@ class Box_ValidateTest extends PHPUnit_Framework_TestCase
         );
 
         $v = new Box_Validate();
-        $this->setExpectedException('\Box_Exception', $required['message']);
+
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage($required['message']);
+
         $v->checkRequiredParamsForArray($required, $data);
     }
 

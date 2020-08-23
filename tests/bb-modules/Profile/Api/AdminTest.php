@@ -93,20 +93,16 @@ class AdminTest extends \BBTestCase
     public function testChangePasswordExceptions()
     {
         $adminApi = new \Box\Mod\Profile\Api\Admin();
+        
+        $this->expectException(\Exception::class);
+        $adminApi->change_password(array());
+        $this->fail('password should be passed');
+        
 
-        try {
-            $adminApi->change_password(array());
-            $this->fail('password should be passed');
-        } catch(\Exception $e) {
-            //ok
-        }
-
-        try {
-            $adminApi->change_password(array('password'=>'new_pass'));
-            $this->fail('password confirmation should be passed');
-        } catch(\Exception $e) {
-            //ok
-        }
+        $this->expectException(\Exception::class);
+        $adminApi->change_password(array('password'=>'new_pass'));
+        $this->fail('password confirmation should be passed');
+        
     }
 
     public function testChangePassword()

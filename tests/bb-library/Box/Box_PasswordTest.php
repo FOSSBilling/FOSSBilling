@@ -1,7 +1,7 @@
 <?php
 
 
-class Box_PasswordTest extends PHPUnit_Framework_TestCase {
+class Box_PasswordTest extends PHPUnit\Framework\TestCase {
 
     public function testsetAlgo()
     {
@@ -28,15 +28,15 @@ class Box_PasswordTest extends PHPUnit_Framework_TestCase {
         $boxPassword = new Box_Password();
         $password = '123456';
         $hash = $boxPassword->hashIt($password);
-        $this->assertInternalType('string', $hash);
+        $this->assertIsString($hash);
         $this->assertNotEmpty($hash);
 
         $veryfied = $boxPassword->verify($password, $hash);
-        $this->assertInternalType('bool', $veryfied);
+        $this->assertIsBool($veryfied);
         $this->assertTrue($veryfied);
 
         $needRehashing = $boxPassword->needsRehash($hash);
-        $this->assertInternalType('bool', $needRehashing);
+        $this->assertIsBool($needRehashing);
         $this->assertFalse($needRehashing);
     }
 
@@ -45,14 +45,14 @@ class Box_PasswordTest extends PHPUnit_Framework_TestCase {
         $boxPassword = new Box_Password();
         $password = '123456';
         $hash = $boxPassword->hashIt($password);
-        $this->assertInternalType('string', $hash);
+        $this->assertIsString($hash);
         $this->assertNotEmpty($hash);
 
         $newOptions = array('cost' => 15);
         $boxPassword->setOptions($newOptions);
 
         $needRehashing = $boxPassword->needsRehash($hash);
-        $this->assertInternalType('bool', $needRehashing);
+        $this->assertIsBool($needRehashing);
         $this->assertTrue($needRehashing);
     }
 }

@@ -9,10 +9,10 @@ class Api_Admin_KbTest extends BBDbApiTestCase
     public function testKbCategory()
     {
         $array = $this->api_admin->kb_category_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->kb_category_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'title'    =>      'test',
@@ -24,7 +24,7 @@ class Api_Admin_KbTest extends BBDbApiTestCase
             'id'    =>$id,
         );
         $array = $this->api_admin->kb_category_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data['id'] = $id;
         $data['title'] = 'new';
@@ -38,13 +38,13 @@ class Api_Admin_KbTest extends BBDbApiTestCase
     public function testKbArticle()
     {
         $array = $this->api_admin->kb_article_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'id'    =>  1,
         );
         $array = $this->api_admin->kb_article_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'kb_article_category_id'    =>      1,
@@ -65,11 +65,11 @@ class Api_Admin_KbTest extends BBDbApiTestCase
     public function testArticleGetList()
     {
         $array = $this->api_admin->kb_article_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         if (count($list)) {
             $item = $list[0];
@@ -82,7 +82,7 @@ class Api_Admin_KbTest extends BBDbApiTestCase
             $this->assertArrayHasKey('category', $item);
 
             $category = $item['category'];
-            $this->assertInternalType('array', $category);
+            $this->assertIsArray($category);
             $this->assertArrayHasKey('id', $category);
             $this->assertArrayHasKey('slug', $category);
             $this->assertArrayHasKey('title', $category);
@@ -92,11 +92,11 @@ class Api_Admin_KbTest extends BBDbApiTestCase
     public function testCategoryGetList()
     {
         $array = $this->api_admin->kb_category_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         if (count($list)) {
             $item = $list[0];
@@ -111,7 +111,7 @@ class Api_Admin_KbTest extends BBDbApiTestCase
             $articles = $item['articles'];
             if (count($articles)){
                 $article = $articles[0];
-                $this->assertInternalType('array', $article);
+                $this->assertIsArray($article);
                 $this->assertArrayHasKey('id', $article);
                 $this->assertArrayHasKey('slug', $article);
                 $this->assertArrayHasKey('title', $article);

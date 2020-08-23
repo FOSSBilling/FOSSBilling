@@ -27,11 +27,11 @@ class Api_GUest_FormbuilderTest extends BBDbApiTestCase
     public function testGet()
     {
         $test = $this->api_guest->formbuilder_get(array("id" => 2));
-        $this->assertInternalType('array', $test);
+        $this->assertIsArray($test);
         $this->assertNotEmpty($test);
 
         $test = $this->api_guest->formbuilder_get(array("id" => "2"));
-        $this->assertInternalType('array', $test);
+        $this->assertIsArray($test);
         $this->assertNotEmpty($test);
 
 

@@ -47,7 +47,8 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Invalid email confirmation link');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Invalid email confirmation link');
         $clientService->approveClientEmailByHash('');
     }
 
@@ -77,7 +78,7 @@ class ServiceTest extends \BBTestCase {
         $client_id = 1;
         $result = $clientService->generateEmailConfirmationLink($client_id);
 
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertTrue(strpos($result, '/client/confirm-email/') !== false);
     }
 
@@ -263,8 +264,8 @@ class ServiceTest extends \BBTestCase {
     {
         $clientService = new \Box\Mod\Client\Service();
         $result = $clientService->getSearchQuery($data);
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
 
         $this->assertTrue(strpos($result[0], $expectedStr) !== false, $result[0]);
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == array());
@@ -276,8 +277,8 @@ class ServiceTest extends \BBTestCase {
         $selectStmt = 'c.id, CONCAT(c.first_name, c.last_name) as full_name';
         $clientService = new \Box\Mod\Client\Service();
         $result = $clientService->getSearchQuery($data, $selectStmt);
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
 
         $this->assertTrue(strpos($result[0], $selectStmt) !== false, $result[0]);
     }
@@ -300,7 +301,7 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
         $result = $clientService->getPairs($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testtoSessionArray()
@@ -317,7 +318,7 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
         $result = $clientService->toSessionArray($model);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertTrue(array_diff_key($result, $expectedArrayKeys) == array());
     }
 
@@ -337,7 +338,7 @@ class ServiceTest extends \BBTestCase {
         $clientService->setDi($di);
 
         $result = $clientService->emailAreadyRegistered($email);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
     }
 
     public function testEmailAlreadyRegWithModel()
@@ -350,7 +351,7 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
 
         $result = $clientService->emailAreadyRegistered($email, $model);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertEquals(false, $result);
     }
 
@@ -371,7 +372,7 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
         $result = $clientService->canChangeCurrency($model, $currency);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -387,7 +388,7 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
 
         $result = $clientService->canChangeCurrency($model, $currency);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -404,7 +405,7 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
 
         $result = $clientService->canChangeCurrency($model, $currency);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertFalse($result);
     }
 
@@ -420,7 +421,8 @@ class ServiceTest extends \BBTestCase {
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $database = $this->getMockBuilder('\Box_Database')->getMock();
-        $database->expects($this->at(0))->method('findOne')
+        $database->expects($this->once())
+                 ->method('findOne')
             ->will($this->returnValue($invoiceModel));
 
         $di       = new \Box_Di();
@@ -429,7 +431,8 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Currency can not be changed. Client already have invoices issued.');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Currency can not be changed. Client already have invoices issued.');
         $clientService->canChangeCurrency($model, $currency);
     }
 
@@ -445,10 +448,8 @@ class ServiceTest extends \BBTestCase {
         $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $database = $this->getMockBuilder('\Box_Database')->getMock();
-        $database->expects($this->at(0))->method('findOne')
-            ->will($this->returnValue(null));
-        $database->expects($this->at(1))->method('findOne')
-            ->will($this->returnValue($clientOrderModel));
+        $database->expects($this->exactly(2))->method('findOne')
+            ->will($this->onConsecutiveCalls($this->returnValue(null, $clientorderModel)));
 
         $di       = new \Box_Di();
         $di['db'] = $database;
@@ -456,7 +457,6 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Currency can not be changed. Client already have orders.');
         $clientService->canChangeCurrency($model, $currency);
     }
 
@@ -502,8 +502,8 @@ class ServiceTest extends \BBTestCase {
         $clientBalanceService->setDi($di);
         list ($sql, $params) = $clientBalanceService->getSearchQuery($data);
         $this->assertNotEmpty($sql);
-        $this->assertInternalType('string', $sql);
-        $this->assertInternalType('array', $params);
+        $this->assertIsString($sql);
+        $this->assertIsArray($params);
 
         $this->assertTrue(strpos($sql, $expectedStr) !== false, $sql);
         $this->assertTrue(array_diff_key($params, $expectedParams) == array());
@@ -550,7 +550,8 @@ class ServiceTest extends \BBTestCase {
 
         $clientService = new \Box\Mod\Client\Service();
 
-        $this->setExpectedException('\Box_Exception', 'Define clients currency before adding funds.');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Define clients currency before adding funds.');
         $clientService->addFunds($modelClient, $amount, $description);
 
     }
@@ -567,7 +568,8 @@ class ServiceTest extends \BBTestCase {
 
         $clientService = new \Box\Mod\Client\Service();
 
-        $this->setExpectedException('\Box_Exception', 'Funds amount is not valid');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Funds amount is not valid');
         $clientService->addFunds($modelClient, $amount, $description);
     }
 
@@ -584,7 +586,8 @@ class ServiceTest extends \BBTestCase {
 
         $clientService = new \Box\Mod\Client\Service();
 
-        $this->setExpectedException('\Box_Exception', 'Funds description is not valid');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Funds description is not valid');
         $result = $clientService->addFunds($modelClient, $amount, $description);
         $this->assertTrue($result);
     }
@@ -602,7 +605,7 @@ class ServiceTest extends \BBTestCase {
         $clientService->setDi($di);
 
         $result = $clientService->getExpiredPasswordReminders();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function searchHistoryQueryData()
@@ -611,10 +614,10 @@ class ServiceTest extends \BBTestCase {
             array(array(), 'SELECT ach.*, c.first_name, c.last_name, c.email', array()),
             array(
                 array('search' => 'sameValue'),
-                'c.first_name LIKE %:first_name% OR c.last_name LIKE %:last_name% OR c.id LIKE :id',
+                'c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.id LIKE :id',
                 array(
-                    ':first_name' => 'sameValue',
-                    ':last_name' => 'sameValue',
+                    ':first_name' => '%sameValue%',
+                    ':last_name' => '%sameValue%',
                     ':id' => 'sameValue')
             ),
             array(
@@ -638,8 +641,8 @@ class ServiceTest extends \BBTestCase {
         $clientService->setDi($di);
         list ($sql, $params) = $clientService->getHistorySearchQuery($data);
         $this->assertNotEmpty($sql);
-        $this->assertInternalType('string', $sql);
-        $this->assertInternalType('array', $params);
+        $this->assertIsString($sql);
+        $this->assertIsArray($params);
 
         $this->assertTrue(strpos($sql, $expectedStr) !== false, $sql);
         $this->assertTrue(array_diff_key($params, $expectedParams) == array());
@@ -658,7 +661,7 @@ class ServiceTest extends \BBTestCase {
         $clientService->setDi($di);
 
         $result = $clientService->counter();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $expected = array(
             'total' => 0,
@@ -681,7 +684,7 @@ class ServiceTest extends \BBTestCase {
         $clientService->setDi($di);
 
         $result = $clientService->getGroupPairs();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testclientAlreadyExists()
@@ -765,7 +768,8 @@ class ServiceTest extends \BBTestCase {
         $service->setDi($di);
 
         $data = array('id' => 0);
-        $this->setExpectedException('\Box_Exception', 'Client not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Client not found');
         $service->get($data);
     }
 
@@ -785,7 +789,7 @@ class ServiceTest extends \BBTestCase {
         $service->setDi($di);
 
         $result = $service->getClientBalance($model);
-        $this->assertInternalType('numeric', $result);
+        $this->assertIsNumeric($result);
 
     }
 
@@ -817,12 +821,13 @@ class ServiceTest extends \BBTestCase {
         $serviceMock->setDi($di);
 
         $result = $serviceMock->toApiArray($model, true, new \Model_Admin());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
     }
 
     public function testIsClientTaxableProvider()
     {
+        $this->assertTrue(true);
         return array(
             array(
                 false,
@@ -910,7 +915,7 @@ class ServiceTest extends \BBTestCase {
         $service->setDi($di);
 
         $result = $service->adminCreateClient($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
     }
 
     public function testguestCreateClient()
@@ -1004,7 +1009,8 @@ class ServiceTest extends \BBTestCase {
 
         $model = new \Model_ClientGroup();
         $model->loadBean(new \RedBeanPHP\OODBBean());
-        $this->setExpectedException('\Box_Exception', 'Can not remove group with clients');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Can not remove group with clients');
         $service->deleteGroup($model);
     }
 
@@ -1062,9 +1068,6 @@ class ServiceTest extends \BBTestCase {
         $this->assertInstanceOf('\Model_Client', $result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testauthorizeClientEmailRequiredNotConfirmed()
     {
         $email    = 'example@boxbilling.vm';
@@ -1077,14 +1080,10 @@ class ServiceTest extends \BBTestCase {
         $extensionMetaModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->at(0))
+        $dbMock->expects($this->exactly(2))
             ->method('findOne')
-            ->with('Client')
-            ->willReturn($clientModel);
-        $dbMock->expects($this->at(1))
-            ->method('findOne')
-            ->with('ExtensionMeta')
-            ->willReturn($extensionMetaModel);
+            ->withConsecutive(['Client'],['ExtensionMeta'])
+            ->will($this->onConsecutiveCalls($clientModel, $extensionMetaModel));
 
         $authMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
         $authMock->expects($this->never())
@@ -1101,6 +1100,7 @@ class ServiceTest extends \BBTestCase {
         $service          = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
+        $this->expectException(\Box_Exception::class);
         $result = $service->authorizeClient($email, $password);
         $this->assertInstanceOf('\Model_Client', $result);
     }
@@ -1220,7 +1220,8 @@ class ServiceTest extends \BBTestCase {
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
 
-        $this->setExpectedException('Box_Exception', 'Email can not be changed');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Email can not be changed');
         $service->canChangeEmail($clientModel, $email);
     }
 
@@ -1239,7 +1240,8 @@ class ServiceTest extends \BBTestCase {
         });
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
-        $this->setExpectedException('Box_Exception', 'It is required that you provide details for field "Id"');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('It is required that you provide details for field "Id"');
         $service->checkExtraRequiredFields($data);
     }
 
@@ -1263,7 +1265,8 @@ class ServiceTest extends \BBTestCase {
         $data = array();
         $service = new \Box\Mod\Client\Service();
         $service->setDi($di);
-        $this->setExpectedException('Box_Exception', 'It is required that you provide details for field "custom_field_title"');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('It is required that you provide details for field "custom_field_title"');
         $service->checkCustomFields($data);
 
     }

@@ -13,7 +13,7 @@ class Box_Mod_Invoice_Api_ClientTest extends BBModTestCase
             'hash'          =>  'hash2',
         );
         $array = $this->api_client->invoice_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $data['gateway_id'] = 1;
         $bool = $this->api_client->invoice_update($data);

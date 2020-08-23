@@ -6,6 +6,6 @@ class Api_Guest_ServiceSolusvmTest extends BBDbApiTestCase
     public function testservicesolusvm()
     {
         $array = $this->api_guest->servicesolusvm_get_templates();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 }

@@ -2,7 +2,7 @@
 namespace Box\Tests\Mod\Email\Api;
 
 
-class ClientTest extends \BBTestCase
+class Api_ClientTest extends \BBTestCase
 {
     public function testGet_list()
     {
@@ -36,10 +36,10 @@ class ClientTest extends \BBTestCase
         $clientApi->setIdentity($client);
 
         $result = $clientApi->get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $this->assertArrayHasKey('list', $result);
-        $this->assertInternalType('array', $result['list']);
+        $this->assertIsArray($result['list']);
     }
 
     public function testGet()
@@ -71,13 +71,10 @@ class ClientTest extends \BBTestCase
         $clientApi->setIdentity($client);
 
         $result = $clientApi->get(array('id' => 1));
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
     }
-
-    /**
-     * @expectedException \Box_Exception
-     */
+    
     public function testGetNotFoundException()
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
@@ -101,8 +98,9 @@ class ClientTest extends \BBTestCase
 
         $clientApi->setService($service);
 
+        $this->expectException(\Box_Exception::class);
         $result = $clientApi->get(array('id' => 1));
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
     }
 
@@ -140,9 +138,6 @@ class ClientTest extends \BBTestCase
 
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testResendNotFoundException()
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
@@ -167,8 +162,9 @@ class ClientTest extends \BBTestCase
 
         $clientApi->setService($service);
 
+        $this->expectException(\Box_Exception::class);
         $result = $clientApi->resend(array('id' => 1));
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
     }
 
@@ -206,10 +202,7 @@ class ClientTest extends \BBTestCase
         $this->assertTrue($result);
 
     }
-
-    /**
-     * @expectedException \Box_Exception
-     */
+ 
     public function testDeleteNotFoundException()
     {
         $clientApi = new \Box\Mod\Email\Api\Client();
@@ -234,8 +227,9 @@ class ClientTest extends \BBTestCase
 
         $clientApi->setService($service);
 
+        $this->expectException(\Box_Exception::class);
         $result = $clientApi->delete(array('id' => 1));
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
     }
 

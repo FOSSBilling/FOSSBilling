@@ -43,8 +43,8 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Activity\Service();
         $service->setDi($di);
         $result  = $service->getSearchQuery($filterKey);
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
         $this->assertTrue(strpos($result[0], $search) != false, $expected, $result);
     }
 
@@ -194,12 +194,12 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $result = $service->toApiArray($clientHistoryModel);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('id', $result);
         $this->assertArrayHasKey('ip', $result);
         $this->assertArrayHasKey('created_at', $result);
 
-        $this->assertInternalType('array', $result['client']);
+        $this->assertIsArray($result['client']);
         $this->assertArrayHasKey('id', $result['client']);
         $this->assertArrayHasKey('first_name', $result['client']);
         $this->assertArrayHasKey('last_name', $result['client']);

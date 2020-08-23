@@ -11,7 +11,7 @@ class GuestTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api= new \Box\Mod\Example\Api\Guest();
     }
@@ -29,7 +29,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->readme(array());
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
     }
 
     public function testtop_songs()
@@ -54,7 +54,7 @@ class GuestTest extends \BBTestCase {
 
         $this->api->setDi($di);
         $result = $this->api->top_songs($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
     }
 }

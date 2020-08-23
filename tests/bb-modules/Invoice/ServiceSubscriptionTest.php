@@ -11,7 +11,7 @@ class ServiceSubscriptionTest extends \BBTestCase
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Invoice\ServiceSubscription();
     }
@@ -59,7 +59,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         );
 
         $result = $this->service->create(new \Model_Client(), new \Model_PayGateway(), $data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
     }
 
@@ -146,9 +146,9 @@ class ServiceSubscriptionTest extends \BBTestCase
         );
 
         $result = $this->service->toApiArray($subscriptionModel);
-        $this->assertInternalType('array', $result);
-        $this->assertInternalType('array', $result['client']);
-        $this->assertInternalType('array', $result['gateway']);
+        $this->assertIsArray($result);
+        $this->assertIsArray($result['client']);
+        $this->assertIsArray($result['gateway']);
         $this->assertEquals($expected, $result);
     }
 
@@ -225,9 +225,9 @@ class ServiceSubscriptionTest extends \BBTestCase
         $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
 
-        $this->assertInternalType('array', $result);
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsArray($result);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
 
         $this->assertEquals($expectedParams, $result[1]);
         $this->assertTrue(strpos($result[0], $expectedSqlPart) !== false);
@@ -247,7 +247,7 @@ class ServiceSubscriptionTest extends \BBTestCase
 
         $invoice_id = 2;
         $result     = $this->service->isSubscribable($invoice_id);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertFalse($result);
     }
 
@@ -272,7 +272,7 @@ class ServiceSubscriptionTest extends \BBTestCase
 
         $invoice_id = 2;
         $result     = $this->service->isSubscribable($invoice_id);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -300,7 +300,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $result = $serviceMock->getSubscriptionPeriod($invoiceModel);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals($period, $result);
     }
 

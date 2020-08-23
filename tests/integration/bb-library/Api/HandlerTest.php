@@ -1,5 +1,5 @@
 <?php
-class Api_HandlerTest extends BBDbApiTestCase
+class HandlerTest extends BBDbApiTestCase
 {
 
     public function api_roles()
@@ -28,36 +28,30 @@ class Api_HandlerTest extends BBDbApiTestCase
         $this->assertEquals('0.0.1', $version);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     * @expectedExceptionCode 710
-     */
     public function testException()
     {
         $api = $this->di['api_guest'];
         $method = 'methodWithoutUnderscore';
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(710);
         $api->$method();
     }
 
-    /**
-     * @expectedException \Box_Exception
-     * @expectedExceptionCode 714
-     */
     public function testInvalidModuleNameException()
     {
         $api = $this->di['api_guest'];
         $moduleName = '__';
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(714);
         $version = $api->$moduleName();
     }
 
-    /**
-     * @expectedException \Box_Exception
-     * @expectedExceptionCode 715
-     */
     public function testModuleNotActiveException()
     {
         $api = $this->di['api_guest'];
         $moduleName = 'notActiveModule_version';
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(715);
         $version = $api->$moduleName();
     }
 }

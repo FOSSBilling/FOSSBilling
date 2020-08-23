@@ -2,7 +2,7 @@
 /**
  * @group Core
  */
-class Box_ExceptionTest extends PHPUnit_Framework_TestCase
+class Box_ExceptionTest extends PHPUnit\Framework\TestCase
 {
 
     public function testException()
@@ -13,6 +13,6 @@ class Box_ExceptionTest extends PHPUnit_Framework_TestCase
         
         $uri = 'client/manage';
         $e = new Box_ExceptionAuth($uri);
-        $this->assertInstanceOf('Box_ExceptionAuth', $e);
+        $this->assertInstanceOf(Box_ExceptionAuth::class, $e);
     }
 }

@@ -2,7 +2,7 @@
 /**
  * @group Core
  */
-class Box_RequestTest extends PHPUnit_Framework_TestCase
+class Box_RequestTest extends PHPUnit\Framework\TestCase
 {
     public function testDi()
     {
@@ -94,14 +94,14 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
     {
         $request = new Box_Request();
         $full_request = $request->getRawBody();
-        $this->assertInternalType('string', $full_request);
+        $this->assertIsString($full_request);
     }
 
     public function testHeaders()
     {
         $request = new Box_Request();
         $headers = $request->getHeaders();
-        $this->assertInternalType('array', $headers);
+        $this->assertIsArray($headers);
     }
 
     public function testGetMethod()
@@ -152,16 +152,12 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
 
     public function testIs()
     {
-        $request = $this->getMockBuilder('Box_Request')
-            ->setMethods(array('getMethod'))
+        $request = $this->getMockBuilder(Box_Request::class)
+            ->setMethods(['getMethod'])
             ->getMock();
-        $request->expects($this->at(0))->method('getMethod')->will($this->returnValue('POST'));
-        $request->expects($this->at(1))->method('getMethod')->will($this->returnValue('GET'));
-        $request->expects($this->at(2))->method('getMethod')->will($this->returnValue('PUT'));
-        $request->expects($this->at(3))->method('getMethod')->will($this->returnValue('PATCH'));
-        $request->expects($this->at(4))->method('getMethod')->will($this->returnValue('HEAD'));
-        $request->expects($this->at(5))->method('getMethod')->will($this->returnValue('DELETE'));
-        $request->expects($this->at(6))->method('getMethod')->will($this->returnValue('OPTIONS'));
+        $request->expects($this->exactly(7))
+                ->method('getMethod')
+                ->willReturnOnConsecutiveCalls('POST', 'GET', 'PUT', 'PATCH', 'HEAD', 'DELETE', 'OPTIONS'); 
 
         $this->assertTrue($request->isPost());
         $this->assertTrue($request->isGet());
@@ -175,18 +171,17 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
     public function testIsMethods()
     {
         $request = $this->getMockBuilder('Box_Request')
-            ->setMethods(array('getMethod'))
+            ->setMethods(['getMethod'])
             ->getMock();
-        $request->expects($this->at(0))->method('getMethod')->will($this->returnValue('POST'));
-        $request->expects($this->at(1))->method('getMethod')->will($this->returnValue('GET'));
-        $request->expects($this->at(2))->method('getMethod')->will($this->returnValue('GET'));
-        $request->expects($this->at(3))->method('getMethod')->will($this->returnValue('PUT'));
-
+        $request->expects($this->exactly(4))
+                ->method('getMethod')
+                ->willReturnOnConsecutiveCalls('POST', 'GET', 'GET', 'PUT');
+                
         $this->assertTrue($request->isMethod('POST'));
         $this->assertFalse($request->isMethod('POST'));
         $this->assertTrue($request->isMethod(array('POST', 'GET')));
         $this->assertFalse($request->isMethod(array('POST', 'GET')));
-    }
+    }  
 
     public function testGetScheme()
     {
@@ -194,17 +189,15 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
             ->setMethods(array('getServer'))
             ->getMock();
 
-        $request->expects($this->at(0))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('HTTPS', '1'),
-            )
-        ));
-
-        $request->expects($this->at(1))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('HTTPS', null),
-            )
-        ));
+        $request->expects($this->exactly(2))
+                ->method('getServer')
+                ->will($this->onConsecutiveCalls($this->returnValueMap(
+                    	                    [
+                                                ['HTTPS', '1'],
+                                                ['HTTPS', null]
+                
+                                            ]        
+                                        )));
 
         $this->assertEquals('https',  $request->getScheme());
         $this->assertEquals('http', $request->getScheme());
@@ -216,17 +209,13 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
             ->setMethods(array('getServer'))
             ->getMock();
 
-        $request->expects($this->at(0))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('HTTP_X_REQUESTED_WITH', 'XMLHttpRequest'),
-            )
-        ));
-
-        $request->expects($this->at(1))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('HTTP_X_REQUESTED_WITH', null),
-            )
-        ));
+        $request->expects($this->exactly(2))
+                ->method('getServer')
+                ->will($this->onConsecutiveCalls($this->returnValueMap(
+            [
+                ['HTTP_X_REQUESTED_WITH', 'XMLHttpRequest'],
+                ['HTTP_X_REQUESTED_WITH', null]
+            ])));
 
         $this->assertTrue($request->isAjax());
         $this->assertFalse($request->isAjax());
@@ -238,15 +227,12 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
             ->setMethods(array('getServer'))
             ->getMock();
 
-        $request->expects($this->at(0))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('SERVER_ADDR', '8.8.8.8'),
-            )
-        ));
-
-        $request->expects($this->at(1))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('SERVER_ADDR', null),
+        $request->expects($this->exactly(2))
+                ->method('getServer')
+                ->will($this->onConsecutiveCalls($this->returnValueMap([
+                    ['SERVER_ADDR', '8.8.8.8'],
+                    ['SERVER_ADDR', null]
+                ]
             )
         ));
 
@@ -260,15 +246,12 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
             ->setMethods(array('getServer'))
             ->getMock();
 
-        $request->expects($this->at(0))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('SERVER_NAME', 'google.com'),
-            )
-        ));
-
-        $request->expects($this->at(1))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('SERVER_NAME', null),
+        $request->expects($this->exactly(2))
+                ->method('getServer')
+                ->will($this->onConsecutiveCalls($this->returnValueMap([
+                    ['SERVER_NAME', 'google.com'],
+                    ['SERVER_NAME', null]
+                ]
             )
         ));
 
@@ -282,8 +265,9 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
             ->setMethods(array('getRawBody'))
             ->getMock();
 
-        $request->expects($this->at(0))->method('getRawBody')->will($this->returnValue('{"example":1}'));
-        $request->expects($this->at(1))->method('getRawBody')->will($this->returnValue('ss'));
+        $request->expects($this->exactly(2))
+                ->method('getRawBody')
+                ->will($this->onConsecutiveCalls('{"example":1}', 'ss'));
 
         $this->assertEquals(array('example'=>1), $request->getJsonRawBody());
         try {
@@ -296,21 +280,18 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
 
     public function testGetClientAddressForwarded()
     {
-        $request = $this->getMockBuilder('Box_Request')
-            ->setMethods(array('getServer'))
-            ->getMock();
+        $request = $this->getMockBuilder(Box_Request::class)
+            ->setMethods(['getServer'])
+            ->getMock();      
 
-        $request->expects($this->at(0))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('HTTP_X_FORWARDED_FOR', '123.123.123.120'),
+        $request->expects($this->exactly(2)) 
+                ->method('getServer')
+                ->withConsecutive(['HTTP_X_FORWARDED_FOR'], ['HTTP_X_FORWARDED_FOR'])
+                ->will($this->onConsecutiveCalls(
+                    '123.123.123.120',
+                    '123.123.123.121, 123.123.123.122'
             )
-        ));
-
-        $request->expects($this->at(1))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('HTTP_X_FORWARDED_FOR', '123.123.123.121, 123.123.123.122'),
-            )
-        ));
+        );
 
         $this->assertEquals('123.123.123.120', $request->getClientAddress());
         $this->assertEquals('123.123.123.121', $request->getClientAddress(true));
@@ -321,18 +302,15 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
         $request = $this->getMockBuilder('Box_Request')
             ->setMethods(array('getServer'))
             ->getMock();
-
-        $request->expects($this->at(0))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('REMOTE_ADDR', '123.123.123.1'),
+        
+        $request->expects($this->exactly(2)) 
+                ->method('getServer')
+                ->withConsecutive(['REMOTE_ADDR'], ['REMOTE_ADDR'])
+                ->will($this->onConsecutiveCalls(
+                    '123.123.123.1',
+                    '123.123.123.2, 123.123.123.122'
             )
-        ));
-
-        $request->expects($this->at(1))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('REMOTE_ADDR', '123.123.123.2, 123.123.123.122'),
-            )
-        ));
+        );
 
         $this->assertEquals('123.123.123.1', $request->getClientAddress(false));
         $this->assertEquals('123.123.123.2', $request->getClientAddress(false));
@@ -344,11 +322,11 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
             ->setMethods(array('getServer'))
             ->getMock();
 
-        $request->expects($this->at(0))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('HTTP_USER_AGENT', 'Chrome'),
-            )
-        ));
+        $request->expects($this->exactly(2))
+                ->method('getServer')
+                ->withConsecutive(['HTTP_USER_AGENT'], ['HTTP_USER_AGENT'])
+                ->willReturnOnConsecutiveCalls('Chrome', null);
+                
         $this->assertEquals('Chrome', $request->getUserAgent());
         $this->assertNull($request->getUserAgent());
     }
@@ -359,11 +337,10 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
             ->setMethods(array('getServer'))
             ->getMock();
 
-        $request->expects($this->at(0))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('REQUEST_URI', '/foo/bar'),
-            )
-        ));
+        $request->expects($this->exactly(2))
+                ->method('getServer')
+                ->withConsecutive(['REQUEST_URI'], ['REQUEST_URI'])
+                ->willReturnOnConsecutiveCalls('/foo/bar', null);
 
         $this->assertEquals('/foo/bar', $request->getURI());
         $this->assertNull($request->getURI());
@@ -375,11 +352,10 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
             ->setMethods(array('getServer'))
             ->getMock();
 
-        $request->expects($this->at(0))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('HTTP_HOST', 'www.google.com'),
-            )
-        ));
+        $request->expects($this->exactly(2))
+                ->method('getServer')
+                ->withConsecutive(['HTTP_HOST'], ['HTTP_HOST'])
+                ->willReturnOnConsecutiveCalls('www.google.com', null);
 
         $this->assertEquals('www.google.com', $request->getHttpHost());
         $this->assertNull($request->getHttpHost());
@@ -391,12 +367,10 @@ class Box_RequestTest extends PHPUnit_Framework_TestCase
         $request = $this->getMockBuilder('Box_Request')
             ->setMethods(array('getServer'))
             ->getMock();
-
-        $request->expects($this->at(0))->method('getServer')->will($this->returnValueMap(
-            array(
-                array('HTTP_ACCEPT_LANGUAGE', "en-US,en;q=0.8,fr;q=0.6,id;q=0.4,lt;q=0.2,ms;q=0.2,nl;q=0.2,pl;q=0.2,pt;q=0.2,ru;q=0.2,es;q=0.2,nb;q=0.2,ro;q=0.2"),
-            )
-        ));
+        $request->expects($this->once())->method('getServer')->will($this->returnValueMap(
+            [
+                ['HTTP_ACCEPT_LANGUAGE', "en-US,en;q=0.8,fr;q=0.6,id;q=0.4,lt;q=0.2,ms;q=0.2,nl;q=0.2,pl;q=0.2,pt;q=0.2,ru;q=0.2,es;q=0.2,nb;q=0.2,ro;q=0.2"]
+            ]));
 
         $result = array (
             0 =>

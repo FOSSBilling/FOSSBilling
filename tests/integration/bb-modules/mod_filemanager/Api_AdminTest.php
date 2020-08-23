@@ -7,7 +7,7 @@ class Box_Mod_Filemanager_Api_AdminTest extends BBDbApiTestCase
     public function testActions()
     {
         $array = $this->api_admin->filemanager_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertTrue(isset($array['filecount']));
         $this->assertTrue(isset($array['files']));
         

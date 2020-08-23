@@ -9,10 +9,10 @@ class Box_Mod_Cart_Api_AdminTest extends BBDbApiTestCase
     public function testCarts()
     {
         $array = $this->api_admin->cart_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         if (count($list)){
             $item = $list[0];
             $this->assertArrayHasKey('promocode', $item);
@@ -21,7 +21,7 @@ class Box_Mod_Cart_Api_AdminTest extends BBDbApiTestCase
             $this->assertArrayHasKey('items', $item);
             $this->assertArrayHasKey('currency', $item);
             $currency = $item['currency'];
-            $this->assertInternalType('array', $currency);
+            $this->assertIsArray($currency);
             $this->assertArrayHasKey("code", $currency);
             $this->assertArrayHasKey("title", $currency);
             $this->assertArrayHasKey("conversion_rate", $currency);
@@ -37,7 +37,7 @@ class Box_Mod_Cart_Api_AdminTest extends BBDbApiTestCase
             'id' => 1
         );
         $cartArr = $this->api_admin->cart_get($data);
-        $this->assertInternalType('array', $cartArr);
+        $this->assertIsArray($cartArr);
     }
 
     public function testExpire()
