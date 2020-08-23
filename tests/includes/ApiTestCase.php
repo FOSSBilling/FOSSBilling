@@ -1,5 +1,5 @@
 <?php
-class ApiTestCase extends PHPUnit_Framework_TestCase
+class ApiTestCase extends PHPUnit\Framework\TestCase
 {
     protected $di = NULL;
     protected $session = NULL;
@@ -7,7 +7,7 @@ class ApiTestCase extends PHPUnit_Framework_TestCase
     protected $api_client = NULL;
     protected $api_admin = NULL;
 
-    public function setUp()
+    public function setUp(): void
     {
         global $di;
         $this->di = $di;

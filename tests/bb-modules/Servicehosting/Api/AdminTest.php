@@ -12,7 +12,7 @@ class AdminTest extends \BBTestCase
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api = new \Box\Mod\Servicehosting\Api\Admin();
     }
@@ -57,7 +57,7 @@ class AdminTest extends \BBTestCase
         $apiMock->setService($serviceMock);
 
         $result = $apiMock->change_plan($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -65,7 +65,8 @@ class AdminTest extends \BBTestCase
     {
         $data = array();
 
-        $this->setExpectedException('\Box_Exception', 'plan_id is missing');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('plan_id is missing');
         $this->api->change_plan($data);
     }
 
@@ -88,7 +89,7 @@ class AdminTest extends \BBTestCase
         $apiMock->setService($serviceMock);
 
         $result = $apiMock->change_username(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -111,7 +112,7 @@ class AdminTest extends \BBTestCase
         $apiMock->setService($serviceMock);
 
         $result = $apiMock->change_ip(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -134,7 +135,7 @@ class AdminTest extends \BBTestCase
         $apiMock->setService($serviceMock);
 
         $result = $apiMock->change_domain(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -157,7 +158,7 @@ class AdminTest extends \BBTestCase
         $apiMock->setService($serviceMock);
 
         $result = $apiMock->change_password(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -180,7 +181,7 @@ class AdminTest extends \BBTestCase
         $apiMock->setService($serviceMock);
 
         $result = $apiMock->sync(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -203,7 +204,7 @@ class AdminTest extends \BBTestCase
         $apiMock->setService($serviceMock);
 
         $result = $apiMock->update(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -217,7 +218,7 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->manager_get_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testserver_get_pairs()
@@ -230,7 +231,7 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->server_get_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testserver_get_list()
@@ -261,7 +262,7 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->server_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testserver_create()
@@ -291,7 +292,7 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->server_create($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newServerId, $result);
     }
 
@@ -322,7 +323,7 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->server_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testserver_delete()
@@ -353,7 +354,7 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->server_delete($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -383,7 +384,7 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->server_update($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -413,7 +414,7 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->server_test_connection($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -426,7 +427,7 @@ class AdminTest extends \BBTestCase
 
         $this->api->setService($serviceMock);
         $result = $this->api->hp_get_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testhp_get_list()
@@ -452,7 +453,7 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->hp_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testhp_delete()
@@ -485,7 +486,7 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->hp_delete($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -520,7 +521,7 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->hp_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testhp_update()
@@ -554,7 +555,7 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->hp_update($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -584,7 +585,7 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->hp_create($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newHpId, $result);
     }
 
@@ -619,7 +620,7 @@ class AdminTest extends \BBTestCase
         $this->api->setDi($di);
 
         $result = $this->api->_getService($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertInstanceOf('\Model_ClientOrder', $result[0]);
         $this->assertInstanceOf('\Model_ServiceHosting', $result[1]);
     }
@@ -655,7 +656,8 @@ class AdminTest extends \BBTestCase
 
         $this->api->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Order is not activated');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Order is not activated');
         $this->api->_getService($data);
     }
 

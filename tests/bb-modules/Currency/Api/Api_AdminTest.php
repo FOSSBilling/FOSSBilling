@@ -2,7 +2,7 @@
 
 namespace Box\Tests\Mod\Currency\Api;
 
-class AdminTest extends \BBTestCase
+class Api_AdminTest extends \BBTestCase
 {
     public $availableCurrencies = array(
         'AED' => 'AED - United Arab Emirates dirham',
@@ -195,8 +195,8 @@ class AdminTest extends \BBTestCase
 
         $result = $adminApi->get_list(array());
 
-        $this->assertInternalType('array', $result);
-        $this->assertInternalType('array', $result['list']);
+        $this->assertIsArray($result);
+        $this->assertIsArray($result['list']);
     }
 
     public function testGetPairs()
@@ -211,7 +211,7 @@ class AdminTest extends \BBTestCase
         $adminApi->setService($service);
         $result = $adminApi->get_pairs();
         $this->assertEquals($result, $this->availableCurrencies);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testGet()
@@ -241,7 +241,7 @@ class AdminTest extends \BBTestCase
         $adminApi->setService($service);
         $adminApi->setDi($di);
         $result = $adminApi->get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testGetDefault()
@@ -277,12 +277,12 @@ class AdminTest extends \BBTestCase
         $adminApi->setService($service);
         $result = $adminApi->get_default(array());
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($result, $returnArr);
 
         $this->assertEquals($model->code, $returnArr['code']);
         $this->assertEquals($model->title, $returnArr['title']);
-        $this->assertInternalType('float', $returnArr['conversion_rate']);
+        $this->assertIsFloat($returnArr['conversion_rate']);
         $this->assertEquals((float)$model->conversion_rate, $returnArr['conversion_rate']);
         $this->assertEquals($model->format, $returnArr['format']);
         $this->assertEquals($model->price_format, $returnArr['price_format']);
@@ -290,7 +290,7 @@ class AdminTest extends \BBTestCase
 
     }
 
-    public function testCreateExceptionProvider()
+    public function CreateExceptionProvider()
     {
         $model = new \Model_Currency();
         $model->loadBean(new \RedBeanPHP\OODBBean());
@@ -321,8 +321,7 @@ class AdminTest extends \BBTestCase
     }
 
     /**
-     * @expectedException \Box_Exception
-     * @dataProvider testCreateExceptionProvider
+     * @dataProvider CreateExceptionProvider
      */
     public function testCreateException($data, $getByCodeCalled, $getByCodeReturn, $getAvailableCurrenciesCalled)
     {
@@ -348,6 +347,7 @@ class AdminTest extends \BBTestCase
 
         $adminApi->setService($service);
         $adminApi->setDi($di);
+        $this->expectException(\Box_exception::class);
         $adminApi->create($data); //Expecting \Box_Exception every time
     }
 
@@ -385,7 +385,7 @@ class AdminTest extends \BBTestCase
 
         $result = $adminApi->create($data);
 
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals(strlen($result), 3);
         $this->assertEquals($result, $data['code']);
 
@@ -423,7 +423,7 @@ class AdminTest extends \BBTestCase
 
         $result = $adminApi->update($data);
 
-        $this->assertInternalType('boolean', $result);
+        $this->assertIsBool($result);
         $this->assertEquals($result, true);
 
     }
@@ -449,6 +449,7 @@ class AdminTest extends \BBTestCase
 
         $adminApi->setDi($di);
         $adminApi->setService($service);
+        $this->expectException(\Box_Exception::class);
         $adminApi->delete(array()); //Expecting \Box_Exception every time
     }
 
@@ -482,11 +483,11 @@ class AdminTest extends \BBTestCase
 
         $result = $adminApi->delete($data);
 
-        $this->assertInternalType('boolean', $result);
+        $this->assertIsBool($result);
         $this->assertEquals($result, true);
     }
 
-    public function testSetDefaultExceptionProvider()
+    public function SetDefaultExceptionProvider()
     {
         $model = new \Model_Currency();
         $model->loadBean(new \RedBeanPHP\OODBBean());
@@ -505,7 +506,7 @@ class AdminTest extends \BBTestCase
 
     /**
      * @expectedException \Box_Exception
-     * @dataProvider testSetDefaultExceptionProvider
+     * @dataProvider SetDefaultExceptionProvider
      */
     public function testSetDefaultException($data, $getByCodeCalled, $getByCodeReturn)
     {
@@ -526,6 +527,7 @@ class AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $adminApi->setService($service);
+        $this->expectException(\Box_exception::class);
         $adminApi->set_default($data); //Expecting \Box_Exception every time
     }
 
@@ -564,7 +566,7 @@ class AdminTest extends \BBTestCase
 
         $result = $adminApi->set_default($data);
 
-        $this->assertInternalType('boolean', $result);
+        $this->assertIsBool($result);
         $this->assertEquals($result, true);
     }
 }

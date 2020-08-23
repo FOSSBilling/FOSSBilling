@@ -2,7 +2,7 @@
 /**
  * @group Core
  */
-class Box_CryptTest extends PHPUnit_Framework_TestCase
+class Box_CryptTest extends PHPUnit\Framework\TestCase
 {
     public function testCrypt()
     {

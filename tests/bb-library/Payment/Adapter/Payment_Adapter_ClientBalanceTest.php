@@ -1,7 +1,7 @@
 <?php
 
 
-class Payment_Adapter_ClientBalanceTest extends PHPUnit_Framework_TestCase {
+class Payment_Adapter_ClientBalanceTest extends PHPUnit\Framework\TestCase {
 
     public function testDi()
     {
@@ -58,7 +58,7 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit_Framework_TestCase {
         $adapterMock->setDi($di);
         $invoiceId = 1;
         $result = $adapterMock->getHtml(null, $invoiceId, null);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals('Not enough in balance', $result);
     }
 
@@ -100,7 +100,7 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit_Framework_TestCase {
         $adapterMock->setDi($di);
         $invoiceId = 1;
         $result = $adapterMock->getHtml(null, $invoiceId, null);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals('Forbidden to pay deposit invoice with this gateway', $result);
     }
 
@@ -153,7 +153,7 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit_Framework_TestCase {
         $adapterMock->setDi($di);
         $result = $adapterMock->getHtml(null, $invoiceId, null);
 
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertTrue(strpos($result, $url) !== false);
         $this->assertTrue(strpos($result, '<script') !== false);
     }
@@ -175,7 +175,10 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit_Framework_TestCase {
         $transactionId = 1;
         $data = array();
         $gatewayId = 1;
-        $this->setExpectedException('Payment_Exception', 'IPN is not valid');
+
+        $this->expectException(Payment_Exception::class);
+        $this->expectExceptionMessage('IPN is not valid');
+
         $adapterMock->processTransaction(null, $transactionId, $data, $gatewayId);
     }
 
@@ -216,7 +219,9 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit_Framework_TestCase {
                 return $invoiceServiceMock;
         });
 
-        $this->setExpectedException('Payment_Exception', 'Forbidden to pay deposit invoice with this gateway', 303);
+        $this->expectException(Payment_Exception::class);
+        $this->expectExceptionCode(303);
+        $this->expectExceptionMessage('Forbidden to pay deposit invoice with this gateway');
 
         $transactionId = 1;
         $data = array();
@@ -362,7 +367,10 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit_Framework_TestCase {
         $adapter = new \Payment_Adapter_ClientBalance();
         $adapter->setDi($di);
 
-        $this->setExpectedException('Payment_Exception', 'ClientBalance gateway is not enabled', 301);
+        $this->expectException(Payment_Exception::class);
+        $this->expectExceptionCode(301);
+        $this->expectExceptionMessage('ClientBalance gateway is not enabled');
+
         $adapter->getServiceUrl();
     }
 
@@ -400,7 +408,10 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit_Framework_TestCase {
         $adapter = new \Payment_Adapter_ClientBalance();
         $adapter->setDi($di);
 
-        $this->setExpectedException('Payment_Exception', 'Forbidden to pay deposit invoice with this gateway', 302);
+        $this->expectException(Payment_Exception::class);
+        $this->expectExceptionCode(302);
+        $this->expectExceptionMessage('Forbidden to pay deposit invoice with this gateway');
+
         $adapter->getServiceUrl();
     }
 

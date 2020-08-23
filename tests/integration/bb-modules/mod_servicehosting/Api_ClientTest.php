@@ -9,7 +9,7 @@ class Api_Client_ServiceHostingTest extends BBDbApiTestCase
     public function testLists()
     {
         $array = $this->api_client->servicehosting_hp_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public static function orders()

@@ -1062,15 +1062,15 @@ class Service implements InjectionAwareInterface
     public function rmInvoiceItemByOrder(\Model_ClientOrder $order)
     {
         $bindings = array(
-            ':type'   => 'order',
             ':rel_id' => $order->id,
             ':status' => \Model_InvoiceItem::STATUS_PENDING_PAYMENT
         );
 
-        $item = $this->di['db']->findOne('InvoiceItem', 'type = :type AND rel_id = :rel_id AND status = :status', $bindings);
-
+        $items = $this->di['db']->find('InvoiceItem', 'rel_id = :rel_id AND status = :status', $bindings);
+        foreach($items as $item){
         if ($item instanceof \Model_InvoiceItem) {
             $this->di['db']->trash($item);
+            }
         }
     }
 

@@ -6,7 +6,7 @@ namespace Box\Mod\Formbuilder\Api;
 
 class GuestTest extends \BBTestCase {
 
-    public function setup()
+    public function setup(): void
     {
         $this->api = new \Box\Mod\Formbuilder\Api\Guest();
     }
@@ -38,7 +38,7 @@ class GuestTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
 }

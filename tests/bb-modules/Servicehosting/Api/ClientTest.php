@@ -10,7 +10,7 @@ class ClientTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api= new \Box\Mod\Servicehosting\Api\Client();
     }
@@ -42,7 +42,7 @@ class ClientTest extends \BBTestCase {
         $apiMock->setService($serviceMock);
 
         $result = $apiMock->change_username(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -65,7 +65,7 @@ class ClientTest extends \BBTestCase {
         $apiMock->setService($serviceMock);
 
         $result = $apiMock->change_domain(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -88,7 +88,7 @@ class ClientTest extends \BBTestCase {
         $apiMock->setService($serviceMock);
 
         $result = $apiMock->change_password(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -101,7 +101,7 @@ class ClientTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->hp_get_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function test_getService()
@@ -134,7 +134,7 @@ class ClientTest extends \BBTestCase {
         $clientModel->id = 1;
         $this->api->setIdentity($clientModel);
         $result = $this->api->_getService($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertInstanceOf('\Model_ClientOrder', $result[0]);
         $this->assertInstanceOf('\Model_ServiceHosting', $result[1]);
     }
@@ -169,7 +169,8 @@ class ClientTest extends \BBTestCase {
         $clientModel->id = 1;
         $this->api->setIdentity($clientModel);
 
-        $this->setExpectedException('\Box_Exception', 'Order is not activated');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Order is not activated');
         $this->api->_getService($data);
     }
 
@@ -195,7 +196,8 @@ class ClientTest extends \BBTestCase {
         $clientModel->id = 1;
         $this->api->setIdentity($clientModel);
 
-        $this->setExpectedException('\Box_Exception', 'Order not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Order not found');
         $this->api->_getService($data);
 
     }
@@ -204,7 +206,8 @@ class ClientTest extends \BBTestCase {
     {
         $data = array();
 
-        $this->setExpectedException('\Box_Exception', 'Order id is required');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Order id is required');
         $this->api->_getService($data);
     }
 }

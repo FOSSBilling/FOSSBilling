@@ -2,7 +2,7 @@
 /**
  * @group Core
  */
-class Api_Admin_ActivityTest extends BBDbApiTestCase
+class Api_AdminTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'settings.xml';
 
@@ -23,20 +23,21 @@ class Api_Admin_ActivityTest extends BBDbApiTestCase
 
     public function testLogDeleteIdNotSetException()
     {
-        $this->setExpectedException('Box_Exception');
+        $this->expectException(\Box_Exception::class);
+
         $this->api_admin->activity_log_delete(array());
     }
 
     public function testLogNotFoundException()
     {
-        $this->setExpectedException('Box_Exception');
+        $this->expectException(\Box_Exception::class);
         $this->api_admin->activity_log_delete(array('id' => 100));
     }
 
     public function testActivityLogGetList()
     {
         $array = $this->api_admin->activity_log_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $this->assertArrayHasKey('pages', $array);
         $this->assertArrayHasKey('page', $array);
@@ -44,7 +45,7 @@ class Api_Admin_ActivityTest extends BBDbApiTestCase
         $this->assertArrayHasKey('total', $array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         if (count($list)) {
             $item = $list[0];
             $this->assertArrayHasKey('id', $item);

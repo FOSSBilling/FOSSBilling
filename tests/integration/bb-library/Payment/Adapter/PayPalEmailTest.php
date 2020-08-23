@@ -43,7 +43,7 @@ class Payment_Adapter_PayPalEmailTest extends BBDbApiTestCase
         $adapter = new Payment_Adapter_PayPalEmail($config);
         $adapter->setDi($this->di);
         $form = $adapter->getHtml($this->api_admin, 1, false);
-        $this->assertRegExp('/action="https:\/\/www\.paypal\.com\/cgi-bin\/webscr"/', $form);
+        $this->assertMatchesRegularExpression('/action="https:\/\/www\.paypal\.com\/cgi-bin\/webscr"/', $form);
     }
 
     public function testGatewayTestmodeUrl()
@@ -58,6 +58,6 @@ class Payment_Adapter_PayPalEmailTest extends BBDbApiTestCase
         $adapter = new Payment_Adapter_PayPalEmail($config);
         $adapter->setDi($this->di);
         $form = $adapter->getHtml($this->api_admin, 1, false);
-        $this->assertRegExp('/action="https:\/\/www\.sandbox\.paypal\.com\/cgi-bin\/webscr"/', $form);
+        $this->assertMatchesRegularExpression('/action="https:\/\/www\.sandbox\.paypal\.com\/cgi-bin\/webscr"/', $form);
     }
 }

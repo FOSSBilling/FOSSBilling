@@ -7,19 +7,19 @@ class Api_Admin_ProductTest extends ApiTestCase
     public function testLists()
     {
         $list = $this->api_admin->product_get_list();
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         $list = $this->api_admin->product_get_pairs();
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         
         $list = $this->api_admin->product_get_types();
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         $data = array(
             'id'    =>  10,
         );
         $array = $this->api_admin->product_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testProduct()
@@ -46,7 +46,7 @@ class Api_Admin_ProductTest extends ApiTestCase
     public function testAddons()
     {
         $array = $this->api_admin->product_addon_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
 
         $data = array(
@@ -60,7 +60,7 @@ class Api_Admin_ProductTest extends ApiTestCase
             'title'  =>  'new title',
         );
         $array = $this->api_admin->product_addon_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $bool = $this->api_admin->product_addon_update($data);
         $this->assertTrue($bool);
@@ -72,7 +72,7 @@ class Api_Admin_ProductTest extends ApiTestCase
     public function testCategory()
     {
         $array = $this->api_admin->product_category_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'title'                 => 'title',
@@ -85,7 +85,7 @@ class Api_Admin_ProductTest extends ApiTestCase
             'title'                 => 'title',
         );
         $array = $this->api_admin->product_category_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $bool = $this->api_admin->product_category_update($data);
         $this->assertTrue($bool);
@@ -98,7 +98,7 @@ class Api_Admin_ProductTest extends ApiTestCase
     public function testPromos()
     {
         $array = $this->api_admin->product_promo_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'code'                 => 'title',
@@ -113,7 +113,7 @@ class Api_Admin_ProductTest extends ApiTestCase
             'value'                 => '25',
         );
         $array = $this->api_admin->product_promo_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $bool = $this->api_admin->product_promo_update($data);
         $this->assertTrue($bool);
@@ -126,11 +126,11 @@ class Api_Admin_ProductTest extends ApiTestCase
     public function testProductGetList()
     {
         $array = $this->api_admin->product_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         $item = $list[0];
 
         $this->assertArrayHasKey('id', $item);
@@ -147,17 +147,17 @@ class Api_Admin_ProductTest extends ApiTestCase
         $this->assertArrayHasKey('pricing', $item);
 
         $pricing = $item['pricing'];
-        $this->assertInternalType('array', $item['pricing']);
+        $this->assertIsArray($item['pricing']);
         $this->assertArrayHasKey('type', $pricing);
         $this->assertArrayHasKey('free', $pricing);
         $this->assertArrayHasKey('once', $pricing);
         $this->assertArrayHasKey('recurrent', $pricing);
 
         $this->assertArrayHasKey('config', $item);
-        $this->assertInternalType('array', $item['config']);
+        $this->assertIsArray($item['config']);
 
         $this->assertArrayHasKey('addons', $item);
-        $this->assertInternalType('array', $item['addons']);
+        $this->assertIsArray($item['addons']);
 
         $this->assertArrayHasKey('price_starting_from', $item);
         $this->assertArrayHasKey('icon_url', $item);
@@ -165,22 +165,22 @@ class Api_Admin_ProductTest extends ApiTestCase
         $this->assertArrayHasKey('quantity_in_stock', $item);
         $this->assertArrayHasKey('stock_control', $item);
         $this->assertArrayHasKey('upgrades', $item);
-        $this->assertInternalType('array', $item['upgrades']);
+        $this->assertIsArray($item['upgrades']);
         $this->assertArrayHasKey('status', $item);
         $this->assertArrayHasKey('hidden', $item);
         $this->assertArrayHasKey('setup', $item);
         $this->assertArrayHasKey('category', $item);
-        $this->assertInternalType('array', $item['category']);
+        $this->assertIsArray($item['category']);
     }
 
     public function testProductPromoGetList()
     {
         $array = $this->api_admin->product_promo_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         $item = $list[0];
 
         $this->assertArrayHasKey('id', $item);
@@ -201,7 +201,7 @@ class Api_Admin_ProductTest extends ApiTestCase
         $this->assertArrayHasKey('created_at', $item);
         $this->assertArrayHasKey('updated_at', $item);
         $this->assertArrayHasKey('applies_to', $item);
-        $this->assertInternalType('array', $item['applies_to']);
+        $this->assertIsArray($item['applies_to']);
     }
 
 
@@ -212,7 +212,11 @@ class Api_Admin_ProductTest extends ApiTestCase
             'type'                  => Model_ProductTable::DOMAIN,
         );
 
-        $this->setExpectedException('\Box_Exception', 'You have already created domain product.', 413);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(413);
+        $this->expectExceptionMessage('You have already created domain product.');
+
+
         for($i = 0; $i< 2; $i++){
             $id = $this->api_admin->product_prepare($data);
         }

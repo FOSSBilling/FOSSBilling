@@ -10,7 +10,7 @@ class ServiceTest extends \BBTestCase
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Servicedomain\Service();
     }
@@ -23,7 +23,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testGetCartProductTitleProvider()
+    public function getCartProductTitleProvider()
     {
         return array(
             array(
@@ -50,7 +50,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testGetCartProductTitleProvider
+     * @dataProvider getCartProductTitleProvider
      */
     public function testGetCartProductTitle($data, $expected)
     {
@@ -63,7 +63,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $expected);
     }
 
-    public function testValidateOrderDataProvider()
+    public function validateOrderDataProvider()
     {
         return array(
             array(
@@ -101,7 +101,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testValidateOrderDataProvider
+     * @dataProvider validateOrderDataProvider
      */
     public function testValidateOrderData($data, $finOneByTldCalled, $canBeTransferedCalled, $isDomainAvailableCalled)
     {
@@ -132,7 +132,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testValidateOrderDataExceptionsProvider()
+    public function validateOrderDataExceptionsProvider()
     {
         return array(
             array(
@@ -144,9 +144,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testValidateOrderDataExceptionsProvider
-     *
-     * @expectedException \Box_Exception
+     * @dataProvider validateOrderDataExceptionsProvider
      */
     public function testValidateOrderDataExceptions($data)
     {
@@ -156,11 +154,12 @@ class ServiceTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $this->service->setDi($di);
 
+        $this->expectException(\Box_Exception::class);
         $result = $this->service->validateOrderData($data);
         $this->assertNull($result);
     }
 
-    public function testValidateOrderDateOwndomainExceptionsProvider()
+    public function validateOrderDateOwndomainExceptionsProvider()
     {
         return array(
             array(
@@ -185,9 +184,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testValidateOrderDateOwndomainExceptionsProvider
-     *
-     * @expectedException \Box_Exception
+     * @dataProvider validateOrderDateOwndomainExceptionsProvider
      */
     public function testValidateOrderDateOwndomainOwndomain($data, $isSldValidCalled, $isSldValidReturn)
     {
@@ -202,12 +199,13 @@ class ServiceTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $this->service->setDi($di);
 
+        $this->expectException(\Box_Exception::class);
         $result = $this->service->validateOrderData($data);
         $this->assertNull($result);
     }
 
 
-    public function testValidateOrderDateTransferExceptionsProvider()
+    public function validateOrderDateTransferExceptionsProvider()
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -256,9 +254,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testValidateOrderDateTransferExceptionsProvider
-     *
-     * @expectedException \Box_Exception
+     * @dataProvider validateOrderDateTransferExceptionsProvider
      */
     public function testValidateOrderDateTransferExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBeTransfered)
     {
@@ -279,11 +275,12 @@ class ServiceTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
 
+        $this->expectException(\Box_Exception::class);
         $result = $serviceMock->validateOrderData($data);
         $this->assertNull($result);
     }
 
-    public function testValidateOrderDateRegisterExceptionsProvider()
+    public function validateOrderDateRegisterExceptionsProvider()
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -355,9 +352,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testValidateOrderDateRegisterExceptionsProvider
-     *
-     * @expectedException \Box_Exception
+     * @dataProvider validateOrderDateRegisterExceptionsProvider
      */
     public function testValidateOrderDateRegisterExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBeTransfered)
     {
@@ -378,6 +373,7 @@ class ServiceTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
 
+        $this->expectException(\Box_Exception::class);
         $result = $serviceMock->validateOrderData($data);
         $this->assertNull($result);
     }
@@ -467,9 +463,6 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_ServiceDomain', $result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testActionCreateNameserversException()
     {
         $tldModel = new \Model_Tld();
@@ -511,10 +504,11 @@ class ServiceTest extends \BBTestCase
         $order = new \Model_ClientOrder();
         $order->loadBean(new \RedBeanPHP\OODBBean());
         $order->client_id = rand(1, 100);
+        $this->expectException(\Box_Exception::class);
         $serviceMock->action_create($order);
     }
 
-    public function testActionActivateProvider()
+    public function actionActivateProvider()
     {
         return array(
             array(
@@ -531,7 +525,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testActionActivateProvider
+     * @dataProvider actionActivateProvider
      */
     public function testActionActivate($action, $registerDomainCalled, $transferDomainCalled)
     {
@@ -582,9 +576,6 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Model_ServiceDomain', $result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testActionActivateServiceNotFoundException()
     {
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
@@ -601,6 +592,8 @@ class ServiceTest extends \BBTestCase
         $order = new \Model_ClientOrder();
         $order->loadBean(new \RedBeanPHP\OODBBean());
         $order->client_id = rand(1, 100);
+        
+        $this->expectException(\Box_Exception::class);
         $this->service->action_activate($order);
     }
 
@@ -660,9 +653,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testActionRenewServiceNotFoundException()
     {
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
@@ -680,6 +670,8 @@ class ServiceTest extends \BBTestCase
         $order->loadBean(new \RedBeanPHP\OODBBean());
         $order->id        = rand(1, 100);
         $order->client_id = rand(1, 100);
+        
+        $this->expectException(\Box_Exception::class);
         $result           = $this->service->action_renew($order);
 
         $this->assertTrue($result);
@@ -742,9 +734,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testActionCancelServiceNotFoundException()
     {
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
@@ -762,6 +751,8 @@ class ServiceTest extends \BBTestCase
         $order->loadBean(new \RedBeanPHP\OODBBean());
         $order->id        = rand(1, 100);
         $order->client_id = rand(1, 100);
+        
+        $this->expectException(\Box_Exception::class);
         $result           = $this->service->action_cancel($order);
 
         $this->assertTrue($result);
@@ -866,7 +857,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdateNameserversExceptionProvider()
+    public function updateNameserversExceptionProvider()
     {
         return array(
             array(
@@ -879,13 +870,14 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testUpdateNameserversExceptionProvider
-     * @expectedException \Box_Exception
+     * @dataProvider updateNameserversExceptionProvider
      */
     public function testUpdateNameserversException($data)
     {
         $serviceDomainModel = new \Model_ServiceDomain();
         $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
+        
+        $this->expectException(\Box_Exception::class);
         $this->service->updateNameservers($serviceDomainModel, $data);
     }
 
@@ -958,7 +950,7 @@ class ServiceTest extends \BBTestCase
         $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
         $result = $serviceMock->getTransferCode($serviceDomainModel);
 
-        $this->assertInternalType('string', $epp);
+        $this->assertIsString($epp);
         $this->assertEquals($result, $epp);
     }
 
@@ -1115,23 +1107,19 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCanBeTransferedEmptySldException()
     {
+        $this->expectException(\Box_Exception::class);
         $this->service->canBeTransfered(new \Model_Tld(), '');
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCanBeTransferedNotAllowedException()
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \RedBeanPHP\OODBBean());
         $tldModel->allow_transfer = false;
 
+        $this->expectException(\Box_Exception::class);
         $this->service->canBeTransfered($tldModel, 'example');
     }
 
@@ -1176,19 +1164,14 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testIsDomainAvailableEmptySldException()
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $this->expectException(\Box_Exception::class);
         $this->service->isDomainAvailable($tldModel, '');
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testIsDomainAvailableSldNotValidException()
     {
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
@@ -1201,12 +1184,10 @@ class ServiceTest extends \BBTestCase
 
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $this->expectException(\Box_Exception::class);
         $this->service->isDomainAvailable($tldModel, 'example');
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testIsDomainAvailableSldNotAllowedToRegisterException()
     {
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
@@ -1221,6 +1202,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $model->allow_register = false;
 
+        $this->expectException(\Box_Exception::class);
         $this->service->isDomainAvailable($model, 'example');
     }
 
@@ -1233,7 +1215,7 @@ class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testToApiArrayProvider()
+    public function toApiArrayProvider()
     {
         $model = new \Model_Admin();
         $model->loadBean(new \RedBeanPHP\OODBBean());
@@ -1251,7 +1233,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testToApiArrayProvider
+     * @dataProvider toApiArrayProvider
      */
     public function testToApiArray($identity, $dbLoadCalled)
     {
@@ -1300,7 +1282,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->toApiArray($model, true, $identity);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $this->assertArrayHasKey('domain', $result);
         $this->assertArrayHasKey('sld', $result);
@@ -1317,7 +1299,7 @@ class ServiceTest extends \BBTestCase
 
         $this->assertArrayHasKey('contact', $result);
         $contact = $result['contact'];
-        $this->assertInternalType('array', $contact);
+        $this->assertIsArray($contact);
         $this->assertArrayHasKey('first_name', $contact);
         $this->assertArrayHasKey('last_name', $contact);
         $this->assertArrayHasKey('email', $contact);
@@ -1454,7 +1436,7 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testTldGetSearchQueryProvider()
+    public function tldGetSearchQueryProvider()
     {
         return array(
             array(
@@ -1497,7 +1479,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testTldGetSearchQueryProvider
+     * @dataProvider tldGetSearchQueryProvider
      */
     public function testTldGetSearchQuery($data, $expectedQuery, $expectedBindings)
     {
@@ -1510,7 +1492,7 @@ class ServiceTest extends \BBTestCase
 
         $this->assertEquals($query, $expectedQuery);
 
-        $this->assertInternalType('array', $bindings);
+        $this->assertIsArray($bindings);
         $this->assertEquals($bindings, $expectedBindings);
 
     }
@@ -1528,7 +1510,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->tldFindAllActive();
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testTldFindOneActiveById()
@@ -1565,7 +1547,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->tldGetPairs();
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($result, $returns);
     }
 
@@ -1653,7 +1635,7 @@ class ServiceTest extends \BBTestCase
 
 
         $result = $this->service->tldToApiArray($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $this->assertArrayHasKey('tld', $result);
         $this->assertArrayHasKey('price_registration', $result);
@@ -1666,7 +1648,7 @@ class ServiceTest extends \BBTestCase
         $this->assertArrayHasKey('registrar', $result);
 
         $registrar = $result['registrar'];
-        $this->assertInternalType('array', $registrar);
+        $this->assertIsArray($registrar);
         $this->assertArrayHasKey('id', $registrar);
         $this->assertArrayHasKey('title', $registrar);
 
@@ -1707,7 +1689,7 @@ class ServiceTest extends \BBTestCase
         list($query, $bindings) = $this->service->registrarGetSearchQuery(array());
 
         $this->assertEquals('SELECT * FROM tld_registrar ORDER BY name ASC', $query);
-        $this->assertInternalType('array', $bindings);
+        $this->assertIsArray($bindings);
         $this->assertEquals(array(), $bindings);
     }
 
@@ -1727,7 +1709,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->registrarGetAvailable();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testRegistrarGetPairs()
@@ -1749,7 +1731,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->registrarGetPairs();
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals(count($result), 3);
 
     }
@@ -1795,7 +1777,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->registrarGetConfiguration($model);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($result, $config);
     }
 
@@ -1806,31 +1788,27 @@ class ServiceTest extends \BBTestCase
         $model->registrar = 'Custom';
 
         $result = $this->service->registrarGetRegistrarAdapterConfig($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testRegistrarGetRegistrarAdapterConfigClassNotExistsException()
     {
         $model = new \Model_TldRegistrar();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $model->registrar = 'Non-Existing';
 
+        $this->expectException(\Box_Exception::class);
         $result = $this->service->registrarGetRegistrarAdapterConfig($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testRegistrarGetRegistrarAdapterConfigRegistrarNotExistException()
     {
         $model = new \Model_TldRegistrar();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $model->registrar = 'Non-Existing';
 
+        $this->expectException(\Box_Exception::class);
         $this->service->registrarGetRegistrarAdapterConfig($model);
     }
 
@@ -1850,9 +1828,6 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('Registrar_Adapter_' . $model->registrar, $result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testRegistrarGetRegistrarAdapterNotFoundException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
@@ -1864,8 +1839,8 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $model->registrar = 'Non-Existing';
 
+        $this->expectException(\Box_Exception::class);
         $result = $serviceMock->registrarGetRegistrarAdapter($model);
-
         $this->assertInstanceOf('Registrar_Adapter_' . $model->registrar, $result);
     }
 
@@ -1894,9 +1869,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testRegistrarRmHasDomainsException()
     {
         $serviceDomainModel = new \Model_ServiceDomain();
@@ -1917,6 +1889,7 @@ class ServiceTest extends \BBTestCase
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $model->id = rand(1, 100);
 
+        $this->expectException(\Box_Exception::class);
         $this->service->registrarRm($model);
 
     }
@@ -1979,7 +1952,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->tldCreate($data);
 
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($result, $randId);
 
     }
@@ -2075,7 +2048,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->registrarCopy($model);
 
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
     }
 

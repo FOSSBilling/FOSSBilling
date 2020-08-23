@@ -9,7 +9,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
     public function testStaff()
     {
         $array = $this->api_admin->staff_get_list(array('status'=>'active'));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'admin_group_id' => 1,
@@ -20,14 +20,14 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
             'status' => 'active',
         );
         $id = $this->api_admin->staff_create($data);
-        $this->assertInternalType('int', $id);
+        $this->assertIsInt($id);
 
         $staffModel = $this->di['db']->load('Admin', $id);
         $this->assertNotEquals($data['password'], $staffModel->pass);
 
         $data['id'] = $id;
         $array = $this->api_admin->staff_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data['id'] = $id;
         $data['email']  =   'new@email.com';
@@ -50,7 +50,8 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
     }
 
     public function testChangePasswordException(){
-        $this->setExpectedException('Box_Exception');
+        $this->expectException(\Box_Exception::class);
+
         $data = array(
             'id' => 1,
             'password'=> 'new123123',
@@ -69,7 +70,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
             'id'            =>  1,
         );
         $array = $this->api_admin->staff_permissions_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $perms = array();
         $perms['activity'] = 1;
@@ -82,7 +83,7 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->assertTrue($bool);
         
         $array = $this->api_admin->staff_permissions_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertEquals($perms, $array);
     }
     
@@ -102,13 +103,13 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $array = $this->api_admin->staff_group_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->staff_group_get_pairs($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->staff_group_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $bool = $this->api_admin->staff_group_delete($data);
         $this->assertTrue($bool);
@@ -117,13 +118,13 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
     public function testHistory()
     {
         $array = $this->api_admin->staff_login_history_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'id'    => 1,
         );
         $array = $this->api_admin->staff_login_history_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $bool = $this->api_admin->staff_login_history_delete($data);
         $this->assertTrue($bool);
@@ -132,19 +133,19 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
     public function testStaffActivityHistoryList()
     {
         $array = $this->api_admin->staff_login_history_get_list(array('status' => 'active'));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         if (count($list)) {
             $item = $list[0];
-            $this->assertInternalType('array', $item);
+            $this->assertIsArray($item);
             $this->assertArrayHasKey('id', $item);
             $this->assertArrayHasKey('ip', $item);
             $this->assertArrayHasKey('created_at', $item);
             $this->assertArrayHasKey('staff', $item);
             $staff = $item['staff'];
-            $this->assertInternalType('array', $staff);
+            $this->assertIsArray($staff);
             $this->assertArrayHasKey('id', $staff);
             $this->assertArrayHasKey('name', $staff);
             $this->assertArrayHasKey('email', $staff);
@@ -154,12 +155,12 @@ class Api_Admin_StaffTest extends BBDbApiTestCase
     public function testStaffGroupGetList()
     {
         $array = $this->api_admin->staff_group_get_list(array());
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         $item = $list[0];
 
         $this->assertArrayHasKey('id', $item);

@@ -23,23 +23,23 @@ class Api_Client_SupportTest extends BBDbApiTestCase
             'support_helpdesk_id'   =>  '1',
         );
         $id = $this->api_client->support_ticket_create($data);
-        $this->assertInternalType('int', $id);
+        $this->assertIsInt($id);
         
         $data = array(
             'id'    => $id,
         );
         $array = $this->api_client->support_ticket_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertEquals(2, count($array['messages']));
     }
     
     public function testSupport()
     {
         $array = $this->api_client->support_ticket_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_client->support_helpdesk_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'subject'               =>  'Subject',
@@ -47,13 +47,13 @@ class Api_Client_SupportTest extends BBDbApiTestCase
             'support_helpdesk_id'   =>  '1',
         );
         $id = $this->api_client->support_ticket_create($data);
-        $this->assertInternalType('int', $id);
+        $this->assertIsInt($id);
 
         $data = array(
             'id'    => $id,
         );
         $array = $this->api_client->support_ticket_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $data = array(
             'id'        =>  $id,
@@ -80,7 +80,7 @@ class Api_Client_SupportTest extends BBDbApiTestCase
             'task'                  =>  'cancel',
         );
         $id = $this->api_client->support_ticket_create($data);
-        $this->assertInternalType('int', $id);
+        $this->assertIsInt($id);
     }
 
     /**

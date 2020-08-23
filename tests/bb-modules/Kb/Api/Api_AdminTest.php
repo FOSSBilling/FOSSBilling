@@ -1,7 +1,7 @@
 <?php
 namespace Box\Tests\Mod\Kb\Api;
 
-class AdminTest extends \BBTestCase
+class Api_AdminTest extends \BBTestCase
 {
     public function testArticle_get_list()
     {
@@ -26,7 +26,7 @@ class AdminTest extends \BBTestCase
         $adminApi->setService($kbService);
 
         $result = $adminApi->article_get_list($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
     }
 
@@ -65,13 +65,9 @@ class AdminTest extends \BBTestCase
         $adminApi->setService($kbService);
 
         $result = $adminApi->article_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testArticle_getNotFoundException()
     {
         $adminApi = new \Box\Mod\Kb\Api\Admin();
@@ -93,6 +89,7 @@ class AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
+        $this->expectException(\Box_Exception::class);
         $adminApi->article_get($data);
     }
 
@@ -125,7 +122,7 @@ class AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $result = $adminApi->article_create($data);
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($result, $id);
     }
 
@@ -200,10 +197,6 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testArticle_deleteNotFoundException()
     {
         $adminApi = new \Box\Mod\Kb\Api\Admin();
@@ -229,6 +222,7 @@ class AdminTest extends \BBTestCase
             ->will($this->returnValue(true));
         $adminApi->setService($kbService);
 
+        $this->expectException(\Box_Exception::class);
         $result = $adminApi->article_delete(array('id' => rand(1, 100)));
         $this->assertTrue($result);
     }
@@ -264,7 +258,7 @@ class AdminTest extends \BBTestCase
         $adminApi->setService($kbService);
 
         $result = $adminApi->category_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($result, $willReturn);
     }
 
@@ -296,12 +290,9 @@ class AdminTest extends \BBTestCase
             'id' => rand(1, 100)
         );
         $result = $adminApi->category_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCategory_getIdNotSetException()
     {
         $adminApi = new \Box\Mod\Kb\Api\Admin();
@@ -326,13 +317,11 @@ class AdminTest extends \BBTestCase
             ->will($this->returnValue(array()));
         $adminApi->setService($kbService);
 
+        $this->expectException(\Box_Exception::class);
         $result = $adminApi->category_get(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
-
-    /**
-     * @expectedException \Box_Exception
-     */
+  
     public function testCategory_getNotFoundException()
     {
         $adminApi = new \Box\Mod\Kb\Api\Admin();
@@ -361,8 +350,9 @@ class AdminTest extends \BBTestCase
             'id' => rand(1, 100)
         );
 
-        $result = $adminApi->category_get($data);
-        $this->assertInternalType('array', $result);
+        $this->expectException(\Box_Exception::class);
+        $result = $adminApi->category_get($data);;
+        $this->assertIsArray($result);
     }
 
     public function testCategory_create()
@@ -392,7 +382,7 @@ class AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $result = $adminApi->category_create($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCategory_update()
@@ -434,12 +424,9 @@ class AdminTest extends \BBTestCase
         );
 
         $result = $adminApi->category_update($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCategory_updateIdNotSet()
     {
         $adminApi = new \Box\Mod\Kb\Api\Admin();
@@ -468,13 +455,11 @@ class AdminTest extends \BBTestCase
 
         $data = array();
 
+        $this->expectException(\Box_Exception::class);
         $result = $adminApi->category_update($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCategory_updateNotFound()
     {
         $adminApi = new \Box\Mod\Kb\Api\Admin();
@@ -508,8 +493,9 @@ class AdminTest extends \BBTestCase
             'description' => 'Description',
         );
 
+        $this->expectException(\Box_Exception::class);
         $result = $adminApi->category_update($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCategory_delete()
@@ -541,12 +527,9 @@ class AdminTest extends \BBTestCase
             'id' => rand(1, 100),
         );
         $result = $adminApi->category_delete($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCategory_deleteIdNotSet()
     {
         $adminApi = new \Box\Mod\Kb\Api\Admin();
@@ -573,14 +556,11 @@ class AdminTest extends \BBTestCase
         $adminApi->setDi($di);
 
         $data   = array();
+        $this->expectException(\Box_Exception::class);
         $result = $adminApi->category_delete($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCategory_deleteNotFound()
     {
         $adminApi = new \Box\Mod\Kb\Api\Admin();
@@ -609,8 +589,10 @@ class AdminTest extends \BBTestCase
         $data   = array(
             'id' => rand(1, 100)
         );
+
+        $this->expectException(\Box_Exception::class);
         $result = $adminApi->category_delete($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCategory_get_pairs()
@@ -624,7 +606,7 @@ class AdminTest extends \BBTestCase
         $adminApi->setService($kbService);
 
         $result = $adminApi->category_get_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
 

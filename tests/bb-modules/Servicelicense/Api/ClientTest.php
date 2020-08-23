@@ -10,7 +10,7 @@ class ClientTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api= new \Box\Mod\Servicelicense\Api\Client();
     }
@@ -44,7 +44,7 @@ class ClientTest extends \BBTestCase {
         $apiMock->setService($serviceMock);
         $result = $apiMock->reset($data);
 
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -112,7 +112,8 @@ class ClientTest extends \BBTestCase {
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
         $this->api->setIdentity($clientModel);
 
-        $this->setExpectedException('\Box_Exception', 'Order is not activated');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Order is not activated');
         $this->api->_getService($data);
     }
 }

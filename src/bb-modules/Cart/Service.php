@@ -323,8 +323,8 @@ class Service implements InjectionAwareInterface
         $items_discount = 0;
         foreach ($products as $product) {
             $p = $this->cartProductToApiArray($product);
-            $total += $p['total'];
-            $items_discount += $p['discount_price'];
+            $total += $p['total'] + $p['setup_price'];
+            $items_discount += $p['discount'];
             $items[] = $p;
         }
 
@@ -546,7 +546,7 @@ class Service implements InjectionAwareInterface
 
             $invoice_items[] = array(
                 'title'    => $order->title,
-                'price'    => $order->price * $order->quantity,
+                'price'    => $order->price,
                 'quantity' => $order->quantity,
                 'unit'     => $order->unit,
                 'period'   => $order->period,
@@ -563,6 +563,7 @@ class Service implements InjectionAwareInterface
                     'quantity' => 1,
                     'unit'     => 'discount',
                     'rel_id'    => $order->id,
+                    'taxed'    => $taxed,
                 );
             }
 
@@ -731,6 +732,14 @@ class Service implements InjectionAwareInterface
 
         list ($discount_price, $discount_setup) = $this->getProductDiscount($model, $setup);
 
+        $discount_total = $discount_price + $discount_setup;
+
+        $subtotal = ($price * $qty); 
+        if(abs($discount_total) > ($subtotal + $setup) ) {
+            $discount_total = $subtotal;
+            $discount_price = $subtotal;
+        }
+
         $data = array_merge($config, array(
             'id'            => $model->id,
             'product_id'    => $product->id,
@@ -741,9 +750,10 @@ class Service implements InjectionAwareInterface
             'unit'          => $repo->getUnit($product),
             'price'         => $price,
             'setup_price'   => $setup,
+            'discount'      => $discount_total,
             'discount_price'=> $discount_price,
             'discount_setup'=> $discount_setup,
-            'total'         => ($price * $qty) ,
+            'total'         => $subtotal,
         ));
         return $data;
     }

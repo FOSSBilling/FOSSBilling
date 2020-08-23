@@ -2,7 +2,7 @@
 /**
  * @group Core
  */
-class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
+class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
 {
     private function getAdapter()
     {
@@ -16,7 +16,10 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
     public function testConstruction_MissingUserId()
     {
         $options = array();
-        $this->setExpectedException('Registrar_Exception', 'Domain registrar "ResellerClub" is not configured properly. Please update configuration parameter "ResellerClub Reseller ID" at "Configuration -> Domain registration".');
+
+        $this->expectException(Registrar_Exception::class);
+        $this->expectExceptionMessage('Domain registrar "ResellerClub" is not configured properly. Please update configuration parameter "ResellerClub Reseller ID" at "Configuration -> Domain registration".');
+
         $adapter = new \Registrar_Adapter_Resellerclub($options);
     }
 
@@ -25,7 +28,10 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
         $options = array(
             'userid' => '12345',
         );
-        $this->setExpectedException('Registrar_Exception', 'Domain registrar "ResellerClub" is not configured properly. Please update configuration parameter "ResellerClub API Key" at "Configuration -> Domain registration".');
+
+        $this->expectException(Registrar_Exception::class);
+        $this->expectExceptionMessage('Domain registrar "ResellerClub" is not configured properly. Please update configuration parameter "ResellerClub API Key" at "Configuration -> Domain registration".');
+
         new \Registrar_Adapter_Resellerclub($options);
     }
 
@@ -48,7 +54,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
         $result = $adapter->getConfig();
 
         $this->assertNotEmpty($result);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('label', $result);
         $this->assertArrayHasKey('form', $result);
     }
@@ -59,7 +65,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
         $result = $adapter->getTlds();
 
         $this->assertNotEmpty($result);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testisDomainAvailable_foundInArray()
@@ -135,7 +141,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
             ->willReturn($requestResult);
 
         $result = $adapterMock->isDomainCanBeTransfered($registrarDomain);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -155,7 +161,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
             ->willReturnOnConsecutiveCalls(1, $requestResult);
 
         $result = $adapterMock->modifyNs($registrarDomain);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -175,7 +181,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
             ->willReturnOnConsecutiveCalls(array('customerid' => 1), array('Contact' => array('registrant' => 1)), $requestResult);
 
         $result = $adapterMock->modifyContact($registrarDomain);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -195,7 +201,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
             ->willReturnOnConsecutiveCalls(array('customerid' => 1), array('Contact' => array('registrant' => 1)), $requestResult);
 
         $result = $adapterMock->transferDomain($registrarDomain);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testregisterDomain()
@@ -231,7 +237,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit_Framework_TestCase
             );
 
         $result = $adapterMock->registerDomain($registrarDomain);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 

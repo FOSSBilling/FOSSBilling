@@ -2,7 +2,7 @@
 /**
  * @group Core
  */
-class Api_Guest_CurrencyTest extends BBDbApiTestCase
+class Api_GuestTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'currencies.xml';
 
@@ -24,14 +24,14 @@ class Api_Guest_CurrencyTest extends BBDbApiTestCase
     public function testCurrency()
     {
         $array = $this->api_guest->currency_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_guest->currency_get(array('code'=>'usd'));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertEquals('USD', $array['code']);
 
         $array = $this->api_guest->currency_get(array('code'=>'eur'));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertEquals('EUR', $array['code']);
     }
 }

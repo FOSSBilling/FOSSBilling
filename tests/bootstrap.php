@@ -22,14 +22,16 @@ set_include_path(implode(PATH_SEPARATOR, array(
     BB_PATH_TESTS.'/includes/Vps',
 )));
 
+
 require_once 'SolusvmMock.php';
 require_once 'BoxSessionMock.php';
-require_once 'BBDatabaseTestCase.php';
-require_once 'ApiTestCase.php';
-require_once 'BBDbApiTestCase.php';
-require_once 'BBModTestCase.php';
 require_once 'BBTestCase.php';
+require_once 'BBDatabaseTestCase.php'; 
+require_once 'BBDbApiTestCase.php';
+require_once 'ApiTestCase.php';
+require_once 'BBModTestCase.php';
 require_once BB_PATH_TESTS.'/includes/Payment/Adapter/Dummy.php';
-
+require_once 'FakeTemplateWrapper.php';
+/**/
 $di = include BB_PATH_ROOT . '/bb-di.php';
 $di['translate']();

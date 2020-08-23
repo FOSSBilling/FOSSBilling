@@ -37,6 +37,6 @@ class Api_Client_ServiceSolusvmTest extends BBDbApiTestCase
         $this->assertEquals('online',$text);
         
         $array = $this->api_client->servicesolusvm_info($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 }

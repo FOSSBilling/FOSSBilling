@@ -9,11 +9,11 @@ class Api_Admin_NewsTest extends BBDbApiTestCase
     public function testNews()
     {
         $array = $this->api_admin->news_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array('id'=>1);
         $array = $this->api_admin->news_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'id'        => 1,
@@ -38,11 +38,11 @@ class Api_Admin_NewsTest extends BBDbApiTestCase
     public function testNewsgetList()
     {
         $array = $this->api_admin->news_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         if (count($list)) {
             $item = $list[0];
@@ -61,7 +61,7 @@ class Api_Admin_NewsTest extends BBDbApiTestCase
             $this->assertArrayHasKey('author', $item);
 
             $author = $item['author'];
-            $this->assertInternalType('array', $author);
+            $this->assertIsArray($author);
 
             $this->assertArrayHasKey('name', $author);
             $this->assertArrayHasKey('email', $author);
@@ -85,6 +85,8 @@ class Api_Admin_NewsTest extends BBDbApiTestCase
 
     public function testNewsMoreTagProvider()
     {
+        $this->assertTrue(true);
+
         return array(
             array(
                 'This is blog post with<!--more--> tag',

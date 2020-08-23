@@ -12,10 +12,10 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
             'id'    =>  1,
         );
         $array = $this->api_admin->client_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->client_login($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data['email'] = 'new@gmail.com';
         $data['first_name'] = 'phpunit';
@@ -30,20 +30,20 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $array = $this->api_admin->client_get_statuses($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $bool = $this->api_admin->client_balance_add_funds(array('id' => 1, 'amount' => 100, 'description' => 'Added from PHPUnit'));
         $this->assertTrue($bool);
 
         $array = $this->api_admin->client_balance_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertEquals(count($array['list']), 1);
 
         $bool = $this->api_admin->client_balance_delete(array('id' => 1));
         $this->assertTrue($bool);
 
         $array = $this->api_admin->client_balance_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertEquals(count($array['list']), 0);
         
         
@@ -64,7 +64,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         );
 
         $array = $this->api_admin->client_get_pairs($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
     
     public function testGroups()
@@ -81,10 +81,10 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         $this->assertTrue($bool);
         
         $array = $this->api_admin->client_group_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->client_group_get_pairs($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $bool = $this->api_admin->client_group_delete($data);
         $this->assertTrue($bool);
@@ -96,7 +96,7 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
             'id'    =>  1,
         );
         $array = $this->api_admin->client_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertNull($array['auth_type']);
     }
     
@@ -118,21 +118,21 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
     public function testLoginHistoryGetList()
     {
         $array = $this->api_admin->client_login_history_get_list(array());
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         if (count($list)) {
             $item = $list[0];
-            $this->assertInternalType('array', $item);
+            $this->assertIsArray($item);
             $this->assertArrayHasKey('id', $item);
             $this->assertArrayHasKey('ip', $item);
             $this->assertArrayHasKey('created_at', $item);
 
             $this->assertArrayHasKey('client', $item);
             $staff = $item['client'];
-            $this->assertInternalType('array', $staff);
+            $this->assertIsArray($staff);
             $this->assertArrayHasKey('id', $staff);
             $this->assertArrayHasKey('first_name', $staff);
             $this->assertArrayHasKey('last_name', $staff);
@@ -143,14 +143,14 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
     public function testClientGetList()
     {
         $array = $this->api_admin->client_get_list(array());
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         if (count($list)) {
             $item = $list[0];
-            $this->assertInternalType('array', $item);
+            $this->assertIsArray($item);
             $this->assertArrayHasKey('id', $item);
             $this->assertArrayHasKey('aid', $item);
             $this->assertArrayHasKey('email', $item);
@@ -191,13 +191,13 @@ class Api_Admin_ClientTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $array = $this->api_admin->client_balance_get_list(array());
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         if (count($list)) {
             $item = $list[0];
-            $this->assertInternalType('array', $item);
+            $this->assertIsArray($item);
             $this->assertArrayHasKey('id', $item);
             $this->assertArrayHasKey('description', $item);
             $this->assertArrayHasKey('amount', $item);

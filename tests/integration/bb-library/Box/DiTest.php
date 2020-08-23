@@ -1,8 +1,8 @@
 <?php
-class Box_DiTest extends PHPUnit_Framework_TestCase
+class DiTest extends PHPUnit\Framework\TestCase
 {
 
-    public function setup()
+    public function setup(): void
     {
         global $di;
         $this->di = clone $di;
@@ -27,7 +27,7 @@ class Box_DiTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Box_Request', $di['request']);
         $this->assertInstanceOf('FileCache', $di['cache']);
         $this->assertInstanceOf('Box_Authorization', $di['auth']);
-        $this->assertInstanceOf('Twig_Environment', $di['twig']);
+        $this->assertInstanceOf('Twig\Environment', $di['twig']);
         $this->assertInstanceOf('Box_License', $di['license']);
         $this->assertInstanceOf('Box_Tools', $di['tools']);
         $this->assertInstanceOf('Box_Validate', $di['validator']);

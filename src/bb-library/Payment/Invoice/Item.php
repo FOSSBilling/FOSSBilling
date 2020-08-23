@@ -124,6 +124,6 @@ class Payment_Invoice_Item
 
     public function getTotalWithTax()
     {
-        return $this->getTotal() + $this->getQuantity() * $this->getTax();
+        return $this->getTotal() + $this->getTax();
     }
 }

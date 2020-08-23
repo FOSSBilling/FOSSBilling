@@ -7,6 +7,6 @@ class Box_Mod_Page_Api_AdminTest extends BBModTestCase
     public function testMod()
     {
         $array = $this->api_admin->page_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 }

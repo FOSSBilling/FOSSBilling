@@ -18,7 +18,7 @@ class ServiceTest extends \BBTestCase {
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service= new \Box\Mod\Stats\Service();
     }
@@ -45,7 +45,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->getOrdersStatuses(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetProductSummary()
@@ -62,7 +62,7 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
         $result = $this->service->getProductSummary($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetSummary()
@@ -110,7 +110,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->getSummary();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -141,7 +141,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $result = $this->service->getSummaryIncome();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -173,7 +173,7 @@ class ServiceTest extends \BBTestCase {
             'date_to' => 'now',
         );
         $result = $this->service->getProductSales($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testincomeAndRefundStats()
@@ -203,7 +203,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->incomeAndRefundStats(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($res[0], $result);
     }
 
@@ -235,7 +235,7 @@ class ServiceTest extends \BBTestCase {
             'date_to' => 'now',
         );
         $result = $this->service->getRefunds($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetIncome()
@@ -266,7 +266,7 @@ class ServiceTest extends \BBTestCase {
             'date_to' => 'now',
         );
         $result = $this->service->getIncome($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetClientCountries()
@@ -293,7 +293,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->getClientCountries(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetSalesByCountry()
@@ -320,7 +320,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->getSalesByCountry(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetTableStats()
@@ -351,7 +351,7 @@ class ServiceTest extends \BBTestCase {
             'date_to' => 'now',
         );
         $result = $this->service->getTableStats('TableName', $data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 }
  

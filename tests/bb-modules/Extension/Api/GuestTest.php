@@ -16,7 +16,7 @@ class GuestTest extends \BBTestCase {
     protected $api = null;
 
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Extension\Service();
         $this->api = new \Box\Mod\Extension\Api\Guest();
@@ -82,7 +82,7 @@ class GuestTest extends \BBTestCase {
 
         $this->api->setDi($di);
         $result = $this->api->theme();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testsettings()
@@ -96,14 +96,15 @@ class GuestTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->settings($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testsettingsExtExtension()
     {
         $data = array();
 
-        $this->setExpectedException('\Box_Exception', 'Parameter ext is missing');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Parameter ext is missing');
         $this->api->settings($data);
 
     }
@@ -120,7 +121,7 @@ class GuestTest extends \BBTestCase {
 
         $this->api->setDi($di);
         $result = $this->api->languages();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 }
  

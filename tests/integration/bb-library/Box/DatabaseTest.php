@@ -2,29 +2,31 @@
 /**
  * @group Core
  */
-class Box_DatabaseIntegrationTest extends BBDbApiTestCase
+class DatabaseTest extends BBDbApiTestCase
 {
+
     public function testModel()
     {
         $model = $this->di['db']->dispense('Admin');
-        $this->assertInstanceOf('RedBean_SimpleModel', $model);
-        $this->assertNotNull($this->di['db']->store($model));
+        $this->assertInstanceOf(RedBean_SimpleModel::class, $model);
+        $id = $this->di['db']->store($model);
+        
+        $this->assertNotNull($id);
+        $model = $this->di['db']->findOne('Admin', 'id = ?', array($id));
+        $this->assertInstanceOf(RedBean_SimpleModel::class, $model);
 
-        $model = $this->di['db']->findOne('Admin', 'id = ?', array(1));
-        $this->assertInstanceOf('RedBean_SimpleModel', $model);
+        $model = $this->di['db']->load('Admin', $id);
+        $this->assertInstanceOf(RedBean_SimpleModel::class, $model);
 
-        $model = $this->di['db']->load('Admin', 1);
-        $this->assertInstanceOf('RedBean_SimpleModel', $model);
-
-        $model = $this->di['db']->getExistingModelById('Admin', 1);
-        $this->assertInstanceOf('RedBean_SimpleModel', $model);
+        $model = $this->di['db']->getExistingModelById('Admin', $id);
+        $this->assertInstanceOf(RedBean_SimpleModel::class, $model);
 
         $array = $this->di['db']->toArray($model);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $models = $this->di['db']->find('Admin');
         foreach($models as $m) {
-            $this->assertInstanceOf('RedBean_SimpleModel', $m);
+            $this->assertInstanceOf(RedBean_SimpleModel::class, $m);
         }
 
         $this->assertNull($this->di['db']->trash($model));
@@ -33,24 +35,25 @@ class Box_DatabaseIntegrationTest extends BBDbApiTestCase
     public function testBean()
     {
         $bean = $this->di['db']->dispense('admin');
-        $this->assertInstanceOf('RedBeanPHP\OODBBean', $bean);
-        $this->assertNotNull($this->di['db']->store($bean));
+        $this->assertInstanceOf(RedBeanPHP\OODBBean::class, $bean);
+        $id = $this->di['db']->store($bean);
+        $this->assertNotNull($id);
 
-        $model = $this->di['db']->findOne('admin', 'id = ?', array(1));
-        $this->assertInstanceOf('RedBeanPHP\OODBBean', $model);
+        $model = $this->di['db']->findOne('admin', 'id = ?', array($id));
+        $this->assertInstanceOf(RedBeanPHP\OODBBean::class, $model);
 
-        $model = $this->di['db']->load('admin', 1);
-        $this->assertInstanceOf('RedBeanPHP\OODBBean', $model);
+        $model = $this->di['db']->load('admin', $id);
+        $this->assertInstanceOf(RedBeanPHP\OODBBean::class, $model);
 
-        $model = $this->di['db']->getExistingModelById('admin', 1);
-        $this->assertInstanceOf('RedBeanPHP\OODBBean', $model);
+        $model = $this->di['db']->getExistingModelById('admin', $id);
+        $this->assertInstanceOf(RedBeanPHP\OODBBean::class, $model);
 
         $array = $this->di['db']->toArray($model);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $models = $this->di['db']->find('admin');
         foreach($models as $m) {
-            $this->assertInstanceOf('RedBeanPHP\OODBBean', $m);
+            $this->assertInstanceOf(RedBeanPHP\OODBBean::class, $m);
         }
 
         $this->assertNull($this->di['db']->trash($model));

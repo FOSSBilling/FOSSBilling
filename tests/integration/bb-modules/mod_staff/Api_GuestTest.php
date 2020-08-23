@@ -35,8 +35,8 @@ class Api_Guest_StaffTest extends BBDbApiTestCase
             'password' => 'demo',
         );
         $array = $this->api_guest->staff_login($data);
-        $this->assertInternalType('array', $array);
-        $this->assertInternalType('array', $this->session->get('admin'));
+        $this->assertIsArray($array);
+        $this->assertIsArray($this->session->get('admin'));
 
         $bool = $this->api_admin->staff_profile_logout($data);
         $this->assertFalse(isset($this->session->admin));
