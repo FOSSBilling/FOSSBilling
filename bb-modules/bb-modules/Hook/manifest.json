@@ -1,0 +1,7 @@
+{
+    "id":           "hook",
+	"type":         "mod",
+    "name":         "Event hooks subsystem",
+    "description":  "BoxBilling core module",
+    "version":      "1.0.0"
+}

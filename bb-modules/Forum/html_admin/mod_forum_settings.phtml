@@ -1,0 +1,111 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Forum settings' %}{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li class="lastB">{% trans 'Forum settings' %}</li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="widget">
+    <div class="head">
+        <h5 class="iCog">{% trans 'Forum settings' %}</h5>
+    </div>
+
+    {% set params = admin.extension_config_get({"ext":"mod_forum"}) %}
+    
+    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Configuration updated' %}">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{% trans 'Forum points' %}</label>
+                <div class="formRight">
+                    <input type="radio" name="forum_points_enable" value="1"{% if params.forum_points_enable %} checked="checked"{% endif %}/><label>{% trans 'Enabled' %}</label>
+                    <input type="radio" name="forum_points_enable" value="0"{% if not params.forum_points_enable %} checked="checked"{% endif %} /><label>{% trans 'Disabled' %}</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div id="forum_points_block" {% if not params.forum_points_enable %}style="display:none;"{% endif %}>
+            <div class="rowElem">
+                <div class="formBottom moreFields">
+                    <ul>
+                        <li class="sep txt">Give</li>
+                        <li style="width: 50px"><input type="text" name="points" value="{{ params.points }}" placeholder="0"></li>
+                        <li class="sep txt">points if post length is longer than</li>
+                        <li style="width: 50px">
+                            <input type="text" name="post_length" value="{{params.post_length}}" placeholder="0"/>
+                        </li>
+                        <li class="sep txt">symbols</li>
+                    </ul>
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            <table class="tableStatic wide with-tbb">
+                <thead>
+                    <tr>
+                        <td style="width: 5%">
+                            <input type="checkbox" id="perm-check" /> 
+                        </td>
+                        <td>{% trans 'Give points for posting in selected forums' %}</td>
+                    </tr>
+                </thead>
+                
+                <tbody>
+                {% for category, forums in admin.forum_get_categories %}
+                <tr class="group">
+                    <th colspan="2">{{category}}</th>
+                </tr>
+                {% for forum in forums %}
+                <tr>
+                    <td>
+                        <input type="checkbox" name="points_forums[]" value="{{forum.id}}" class="perm" {% if forum.id in params.points_forums %}checked="checked"{%endif%}/>
+                    </td>
+                    <td>{{forum.title}}</td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+                </tbody>
+            </table>
+            <br/>
+            </div>
+            
+            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+            <input type="hidden" name="ext" value="mod_forum" />
+        </fieldset>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+    
+$(function() {
+    $('input[name=forum_points_enable]').click(function(){
+        if($(this).val() == 1) {
+            $('#forum_points_block').slideDown();
+        } else {
+            $('#forum_points_block').slideUp();
+        }
+    });
+
+    $('#perm-check').click(function(){
+        if($('#perm-check').is(':checked')) {
+            $('.perm').prop('checked', true);
+        } else {
+            $('.perm').prop('checked', false);
+        }
+        $.uniform.update(".perm");
+    });
+});
+
+</script>
+{% endblock %}

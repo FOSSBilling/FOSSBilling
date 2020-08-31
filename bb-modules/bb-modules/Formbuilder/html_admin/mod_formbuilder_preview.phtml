@@ -1,0 +1,74 @@
+<div class="rowElem preview">
+    <label for="{{field.name}}">{% if field.hide_label != 1 %}{{ field.label }}{% endif %}</label>
+
+    <div class="formRight">
+        {% if field.type == "text" %}
+        <div class="moreFields allUpper">
+            <ul>
+                <li class="sep">{{field.prefix}}</li>
+                <li style="width: 50%">
+                    <input type="text" name="{{ field.name }}" value="{{ field.default_value }}"  id="{{field.name}}"
+                        {{ (field.readonly==1)? 'readonly="readonly"' : ''}}
+                    />
+                </li>
+                <li class="sep">{{field.suffix}}</li>
+            </ul>
+        </div>
+        {% elseif field.type == "select" %}
+            {% if field.options is empty %}
+            <ul>
+                <li style="width: 80%"><blockquote>{% trans 'Please click on "Edit" in order to add new select box' %}</blockquote></li>
+            </ul>
+            {% else %}
+                <select name="{{ field.name }}" required="required"   id="{{field.name}}"
+                    {{ (field.readonly==1)? 'disabled="disabled"' : ''}}
+                    />
+                    {% for k,v in field.options %}
+                    <option value="{{v}}"
+                    {{ (field.default_value == v) ? 'selected' : '' }}>{{k}}</option>
+                    {% endfor %}
+
+                </select>
+            {% endif %}
+        {% elseif field.type == "checkbox" %}
+            {% if field.options is empty %}
+            <ul>
+                <li style="width: 80%"><blockquote>{% trans 'Please click on "Edit" in order to add new checkbox' %}</blockquote></li>
+            </ul>
+            {% else %}
+                {% for k,v in field.options %}
+                <input type="checkbox" name="{{field.name}}" value="{{v}}" id="{{k}}_{{v}}" {% if v in field.default_value %}checked="checked"{% endif %}
+                    {{ (field.readonly==1)? 'disabled="disabled"' : ''}}
+            />
+                <label for="{{k}}_{{v}}">{{k}}</label>
+                {% endfor %}
+            {% endif %}
+        {% elseif field.type == "radio" %}
+            {% if field.options is empty %}
+                <ul>
+                    <li style="width: 80%"><blockquote>{% trans 'Please click on "Edit" in order to add new radio box' %}</blockquote></li>
+                </ul>
+            {% else %}
+                {% for k,v in field.options %}
+                <input type="radio" name="{{field.name}}" value="{{v}}" id="{{k}}_{{v}}" {{ (field.default_value == v) ? 'checked' : '' }}
+                    {{ (field.readonly==1)? 'disabled="disabled"' : ''}}
+            />
+                <label for="{{k}}_{{v}}">{{k}}</label>
+                {% endfor %}
+            {% endif %}
+        {% elseif field.type == "textarea" %}
+            <div style="width: auto; max-width:50%;">
+                <textarea name="{{field.name}}" style="width: {{field.options.width}}px; height: {{field.options.height}}px; overflow: scroll;">{{field.default_value}}</textarea>
+            </div>
+        {% endif %}
+        </div>
+        <div class="fix"></div>
+
+    <div class="actions" style="right: 0; bottom: 0; padding: 5px; position: absolute;">
+<!--        <a class="btn14 pr btnIconLeft" href="#" style="display: none;"><img src="images/icons/dark/preview.png" alt="Preview" class="icon">Preview</a>-->
+        <a class="btn14 ed" href="#"><img src="images/icons/dark/pencil.png" alt="Edit" class="icon"></a>
+        <a class="btn14 rm" href="#" data-field-id="{{field.id}}"><img src="images/icons/dark/trash.png" alt="" class="icon"></a>
+    </div>
+    <div class="fix"></div>
+
+</div>

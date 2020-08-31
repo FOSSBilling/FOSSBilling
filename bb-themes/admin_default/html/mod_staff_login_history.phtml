@@ -1,0 +1,52 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}Staff members login history{% endblock %}
+{% set active_menu = 'activity' %}
+
+{% block content %}
+<div class="widget">
+    <div class="head"><h5 class="iFrames">{% trans 'Staff members logins history' %}</h5></div>
+
+{{ mf.table_search }}
+<table class="tableStatic wide">
+    <thead>
+        <tr>
+            <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
+            <td colspan="2">{% trans 'Admin' %}</td>
+            <td>{% trans 'IP' %}</td>
+            <td>{% trans 'Country' %}</td>
+            <td>{% trans 'Date' %}</td>
+            <td style="width: 5%">&nbsp;</td>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% set history = admin.staff_login_history_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+    {% for i, event in history.list %}
+    <tr>
+        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ event.id }}"/></td>
+        <td style="width:5%"><a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}"><img src="{{ event.staff.email|gravatar }}?size=20" alt="{{ event.staff.email }}" /></a></td>
+        <td>{{ event.staff.name }}</td>
+        <td>{{ event.ip }}</td>
+        <td>{{ event.ip|ipcountryname|default('Unknown') }}</td>
+        <td>{{ event.created_at|date('Y-m-d H:i') }}</td>
+        <td class="actions">
+            <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" data-api-redirect="{{'staff/logins'|alink }}" href="{{ 'api/admin/staff/login_history_delete'|link({'id' : event.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+        </td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="7">
+            {% trans 'The list is empty' %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+</div>
+
+{% include "partial_batch_delete.phtml" with {'action' : 'admin/staff/batch_delete_logs'} %}
+{% include "partial_pagination.phtml" with {'list': history, 'url':'staff/logins'} %}
+
+{% endblock %}

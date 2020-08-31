@@ -1,0 +1,54 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% set active_menu = 'activity' %}
+{% block meta_title %}{{email.subject}}{% endblock %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'email/history'|alink }}">{% trans 'Email history' %}</a></li>
+    <li class="lastB">{{email.subject}}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget">
+    <div class="head">
+        <h5>{{email.subject}}</h5>
+    </div>
+    
+    <table class="tableStatic wide">
+        <tbody>
+            <tr class="noborder">
+                <td>{% trans 'From' %}</td>
+                <td>{{email.sender}}</td>
+            </tr>
+
+            <tr>
+                <td>{% trans 'To' %}</td>
+                <td>{{email.recipients}}</td>
+            </tr>
+
+            <tr>
+                <td>{% trans 'Sent' %}</td>
+                <td>{{email.created_at|date('l, d F Y')}}</td>
+            </tr>
+         </tbody>
+         <tfoot>
+             <tr>
+                 <td colspan="2">
+                    <div class="aligncenter">
+                        <a class="btn55 mr10 api-link" href="{{'api/admin/email/email_resend'|link({'id' : email.id}) }}" data-api-msg="Email resent"><img src="images/icons/middlenav/refresh2.png" alt=""><span>{% trans 'Resend' %}</span></a>
+                        <a class="btn55 mr10 api-link" href="{{'api/admin/email/email_delete'|link({'id' : email.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{'email/history'|alink}}"><img src="images/icons/middlenav/trash.png" alt=""><span>{% trans 'Delete' %}</span></a>
+                    </div>
+                 </td>
+             </tr>
+         </tfoot>
+    </table>
+    
+    <div class="body">
+        {{email.content_html|raw}}
+    </div>
+    
+</div>
+
+{% endblock %}

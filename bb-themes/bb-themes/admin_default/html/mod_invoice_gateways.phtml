@@ -1,0 +1,111 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% set active_menu = 'system' %}
+{% block meta_title %}Payment gateways{% endblock %}
+
+{% block content %}
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Payment gateways' %}</a></li>
+        <li><a href="#tab-new">{% trans 'New payment gateway' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+            {{ mf.table_search }}
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td>{% trans 'Title' %}</td>
+                        <td>{% trans 'Code' %}</td>
+                        <td>{% trans 'Enabled' %}</td>
+                        <td>{% trans 'Allow one time payments' %}</td>
+                        <td>{% trans 'Allow subscriptions' %}</td>
+                        <td style="width: 18%">&nbsp;</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for gateway in admin.invoice_gateway_get_list({"per_page":100}|merge(request)).list %}
+                <tr>
+                    <td>{{ gateway.title }}</td>
+                    <td>{{ gateway.code }}</td>
+                    <td>{{ mf.q(gateway.enabled) }}</td>
+                    <td>{{ mf.q(gateway.allow_single) }}</td>
+                    <td>{{ mf.q(gateway.allow_recurrent) }}</td>
+                    <td class="actions">
+                        <a class="bb-button btn14" href="{{ '/invoice/gateway'|alink }}/{{gateway.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                        <a class="bb-button btn14 api-link" href="{{ 'api/admin/invoice/gateway_copy'|link({'id' : gateway.id}) }}" data-api-redirect="{{ 'invoice/gateways'|alink }}" title="Copy"><img src="images/icons/dark/baloons.png" alt=""></a>
+                        <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" data-api-redirect="{{ 'invoice/gateways'|alink }}" href="{{ 'api/admin/invoice/gateway_delete'|link({'id' : gateway.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                    </td>
+                </tr>
+                </tbody>
+
+                {% else %}
+                <tbody>
+                    <tr>
+                        <td colspan="5">
+                            {% trans 'The list is empty' %}
+                        </td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new">
+            {% include "partial_extensions.phtml" with {'type': 'payment-gateway', 'header':"List of payment gateways on extensions site"} only %}
+            <div class="body">
+                <h1 class="pt10">{% trans 'Adding new payment gateway' %}</h1>
+                <p>{% trans 'Although BoxBilling ships with most popular payment gateways, you can install other gateways.' %}</p>
+                <p>{% trans 'Follow these instructions to install new payment gateway.' %}</p>
+                <div class="pt20 list arrowGrey">
+                    <ul>
+                        <li>{% trans 'Check for payment gateway at' %} <a href="http://extensions.boxbilling.com/" target="_blank">BoxBilling extensions site</a> {% trans 'for more payment gateways' %}</li>
+                        <li>{% trans 'Download payment gateway extension file and place it to' %}<strong>{{ constant('BB_PATH_LIBRARY') }}/Payment/Adapter</strong></li>
+                        <li>{% trans 'After file is uploaded in place, reload this page.' %}</li>
+                        <li>{% trans 'Select uploaded file name and click on install.' %}</li>
+                        <li>{% trans 'Payment gateway will be installed in BoxBilling and can be configured in \"Payment gateways\" tab.' %}</li>
+                        <li>{% trans 'For developers. Read' %} <a href="http://docs.boxbilling.com/en/latest/reference/extension.html#payment-gateway" target="_blank">BoxBilling documentation</a> {% trans 'to learn how to create your own payment gateway and share it with community' %}</li>
+                    </ul>
+                </div>
+            </div>
+
+            {% if admin.invoice_gateway_get_available|length > 0 %}
+            <table class="tableStatic wide">
+            <thead>
+                <tr>
+                    <td>{% trans 'Code' %}</td>
+                    <td style="width: 5%">{% trans 'Install' %}</td>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% for gtw in admin.invoice_gateway_get_available %}
+            <tr>
+                <td>{{ gtw }}</td>
+                <td class="actions">
+                    <a class="bb-button btn14 api-link" href="{{ 'api/admin/invoice/gateway_install'|link({'code' : gtw}) }}" data-api-redirect="{{ 'invoice/gateways'|alink }}" title="Install"><img src="images/icons/dark/cog.png" alt=""></a>
+                </td>
+            </tr>
+            </tbody>
+
+            {% else %}
+            <tbody>
+                <tr>
+                    <td colspan="5">
+                        {% trans 'All payment gateways installed' %}
+                    </td>
+                </tr>
+            </tbody>
+            {% endfor %}
+        </table>
+                {% endif %}
+        </div>
+        
+    </div>
+</div>
+
+{% endblock %}

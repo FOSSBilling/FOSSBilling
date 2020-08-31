@@ -1,0 +1,59 @@
+{% if product.addons|length > 0 %}
+<div class="addons" style="display: none;">
+<div class="widget">
+    <div class="head">
+        <h2 class="dark-icon i-services">{% trans 'Addons & extras' %}</h2>
+    </div>
+    <table>
+        <tbody>
+            {% for addon in product.addons %}
+            <tr>
+                <td>
+                    <input type="hidden" name="addons[{{ addon.id }}][selected]" value="0">
+                    <input type="checkbox" name="addons[{{ addon.id }}][selected]" value="1" id="addon_{{ addon.id }}">
+                </td>
+                <td>
+                    <label for="addon_{{ addon.id }}"><img src="{{ addon.icon_url }}" alt="" width="36"/></label>
+                </td>
+                <td style="width: 50%">
+                    <label for="addon_{{ addon.id }}"><h2>{{ addon.title }}</h2></label>
+                    {{ addon.description|bbmd }}
+                </td>
+                <td>
+                    {% if addon.pricing.type is same as('recurrent') %}
+                    <select name="addons[{{ addon.id }}][period]" class="addon-period-selector" rel="addon-periods-{{ addon.id }}">
+                    {% for code,prices in addon.pricing.recurrent %}
+                        {% if prices.enabled %}
+                        <option value="{{code}}">{{ periods[code] }}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                    {% endif %}
+                </td>
+                <td class="currency" style="width: 20%">
+                    {% if addon.pricing.type is same as('recurrent') %}
+                    <div id="addon-periods-{{ addon.id }}">
+                    {% for code,prices in addon.pricing.recurrent %}
+                        <span class="{{code}}">{{ (prices.price + prices.setup) | money_convert }}</span>
+                    {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if addon.pricing.type is same as('once') %}
+                        {{ (addon.pricing.once.price + addon.pricing.once.setup) | money_convert }}
+                    {% endif %}
+
+                    {% if addon.pricing.type is same as('free') %}
+                        {{ 0 | money_convert }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="block" style="text-align: right; margin-bottom:10px;">
+    <button class="bb-button bb-button-submit bb-button-big" type="submit">{% trans 'Order now' %}</button>
+</div>
+</div>
+{% endif %}

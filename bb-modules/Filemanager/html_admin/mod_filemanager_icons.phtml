@@ -1,0 +1,23 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block content %}
+
+<ul style="list-style-type: none; display: inline-block">
+{% for icon in icons %}
+<li style="display: block; float: left; margin: 5px;"><a href="#" class="bb-push-to-input"><img src="{{icon}}" alt="icon" /></a></li>
+{% else %}
+<li>{% trans 'No icons available' %}</li>
+{% endfor %}
+</ul>
+
+<script type="text/javascript">
+$(function() {
+    $('.bb-push-to-input').click(function(){
+        $('.bb-push-to-input').removeClass('selected');
+        $(this).addClass('selected');
+        $('#{{ request.rel }}').val($(this).find('img').attr('src'));
+        return false;
+    });
+});
+</script>
+{% endblock %}

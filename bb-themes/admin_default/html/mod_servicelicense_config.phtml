@@ -1,0 +1,81 @@
+{% import "macro_functions.phtml" as mf %}
+<div class="help">
+    <h5>{% trans 'License settings' %}</h5>
+</div>
+
+<form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm api-form save" data-api-msg="License settings updated">
+<fieldset>
+    <div class="rowElem noborder">
+        <label>{% trans 'Prefix' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[prefix]" value="{{ product.config.prefix }}">
+        </div>
+        <div class="fix"></div>
+    </div>
+    <div class="rowElem">
+        <label>{% trans 'Length' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[length]" value="{{ product.config.length }}">
+        </div>
+        <div class="fix"></div>
+    </div>
+    <div class="rowElem">
+        <label>{% trans 'Plugin' %}:</label>
+        <div class="formRight">
+            {{ mf.selectbox('config[plugin]', admin.servicelicense_plugin_get_pairs, product.config.plugin, 1) }}
+        </div>
+        <div class="fix"></div>
+    </div>
+    <div class="rowElem">
+        <label>{% trans 'Validate IP' %}:</label>
+        <div class="formRight">
+            <input type="radio" name="config[validate_ip]" value="1"{% if product.config.validate_ip %} checked="checked"{% endif %}/><label>Yes</label>
+            <input type="radio" name="config[validate_ip]" value="0"{% if not product.config.validate_ip %} checked="checked"{% endif %} /><label>No</label>
+        </div>
+        <div class="fix"></div>
+    </div>
+    <div class="rowElem">
+        <label>{% trans 'Validate Hostname' %}:</label>
+        <div class="formRight">
+            <input type="radio" name="config[validate_host]" value="1"{% if product.config.validate_host %} checked="checked"{% endif %}/><label>Yes</label>
+            <input type="radio" name="config[validate_host]" value="0"{% if not product.config.validate_host %} checked="checked"{% endif %} /><label>No</label>
+        </div>
+        <div class="fix"></div>
+    </div>
+    <div class="rowElem">
+        <label>{% trans 'Validate Version' %}:</label>
+        <div class="formRight">
+            <input type="radio" name="config[validate_version]" value="1"{% if product.config.validate_version %} checked="checked"{% endif %}/><label>Yes</label>
+            <input type="radio" name="config[validate_version]" value="0"{% if not product.config.validate_version %} checked="checked"{% endif %} /><label>No</label>
+        </div>
+        <div class="fix"></div>
+    </div>
+    <div class="rowElem">
+        <label>{% trans 'Validate Path' %}:</label>
+        <div class="formRight">
+            <input type="radio" name="config[validate_path]" value="1"{% if product.config.validate_path %} checked="checked"{% endif %}/><label>Yes</label>
+            <input type="radio" name="config[validate_path]" value="0"{% if not product.config.validate_path %} checked="checked"{% endif %} /><label>No</label>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+</fieldset>
+    
+<input type="hidden" name="id" value="{{ product.id }}" />
+</form>
+
+<div class="body">
+    <h1 class="pt10">{% trans 'License plugins' %}</h1>
+    <p>{% trans 'BoxBilling gives you ability to provide your own license generation script. Follow instructions bellow to install new license plugin' %}</p>
+
+    <div class="pt20 list arrowGrey">
+        <ul>
+            <li>{% trans 'License plugin is PHP class "License_PluginName" with one method' %} <strong>generate</strong></li>
+            <li>{% trans 'Take a look at default plugin at' %} <strong>src/bb-modules/Servicelicense/Plugin/Simple.php</strong></li>
+            <li>{% trans 'Create your plugin and place it to' %} <strong>src/bb-modules/Servicelicense/Plugin/PluginName.php</strong></li>
+            <li>{% trans 'BoxBilling will automatically detect new plugin' %}</li>
+            <li>{% trans 'Read' %} <a href="http://docs.boxbilling.com/en/latest/reference/service-license.html#license-plugin" target="_blank">{% trans 'BoxBilling documentation' %}</a> {% trans 'for more information.' %}</li>
+        </ul>
+    </div>
+</div>

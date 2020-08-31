@@ -1,0 +1,13 @@
+{% block subject %}[{{ guest.system_company.name }}] New Client Signed Up{% endblock %}
+{% block content %}
+{% apply markdown %}
+Hi {{ staff.name }},
+
+ *{{ c.first_name }} {{ c.last_name }}* has just signed up with {{ guest.system_company.name }}
+
+Manage client at {{'client/manage'|alink}}/{{c.id}}
+
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

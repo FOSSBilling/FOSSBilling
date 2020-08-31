@@ -1,0 +1,135 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% set active_menu = 'invoice' %}
+{% block meta_title %}Subscription {{ subscription.sid }}{% endblock %}
+
+{% block content %}
+
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Subscription' %}</a></li>
+        <li><a href="#tab-manage">{% trans 'Manage' %}</a></li>
+    </ul>
+
+    <div class="tab_container">
+
+        <div class="tab_content nopadding" id="tab-index">
+            <div class="help">
+                <h3>{% trans 'Subscription details' %}</h3>
+            </div>
+
+            <table class="tableStatic wide">
+                <tbody>
+                    <tr class="noborder">
+                        <td>{% trans 'Client' %}</td>
+                        <td><a href="{{ 'client/manage'|alink }}/{{subscription.client.id}}">{{ subscription.client.first_name }} {{ subscription.client.last_name }}</a></td>
+                    </tr>
+
+                    <tr>
+                        <td>{% trans 'Amount' %}</td>
+                        <td>{{ mf.currency_format( subscription.amount, subscription.currency) }} {{ mf.period_name(subscription.period) }}</td>
+                    </tr>
+
+                    <tr>
+                        <td>{% trans 'Payment gateway' %}</td>
+                        <td>{{subscription.gateway.title}}</td>
+                    </tr>
+
+                    <tr>
+                        <td>{% trans 'Subscription ID on payment gateway' %}</td>
+                        <td>{{subscription.sid|default('-')}}</td>
+                    </tr>
+
+                    <tr>
+                        <td>{% trans 'Status' %}</td>
+                        <td>{{ mf.status_name(subscription.status) }}</td>
+                    </tr>
+
+                    <tr>
+                        <td>{% trans 'Created at' %}</td>
+                        <td>{{subscription.created_at|date('l, d F Y')}}</td>
+                    </tr>
+
+                    {% if subscription.created_at != subscription.updated_at %}
+                    <tr>
+                        <td>{% trans 'Updated at' %}</td>
+                        <td>{{subscription.updated_at|date('l, d F Y')}}</td>
+                    </tr>
+                    {% endif %}
+                 </tbody>
+
+                 <tfoot>
+                     <tr>
+                         <td colspan="2">
+                            <div class="aligncenter">
+                                <a class="btn55 mr10 api-link" href="{{ 'api/admin/invoice/subscription_delete'|link({'id' : subscription.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'invoice/subscriptions'|alink }}"><img src="images/icons/middlenav/trash.png" alt=""><span>{% trans 'Delete' %}</span></a>
+                            </div>
+                         </td>
+                     </tr>
+                 </tfoot>
+            </table>
+
+        </div>
+
+        <div id="tab-manage" class="tab_content nopadding">
+            <form method="post" action="{{ 'api/admin/invoice/subscription_update'|link }}" class="mainForm save api-form" data-api-reload="1">
+                <fieldset>
+                    <div class="rowElem">
+                        <label>{% trans 'Payment Gateway' %}:</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, subscription.gateway.id, 0, 'Select payment gateway') }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Subscription ID on payment gateway' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="sid" value="{{subscription.sid}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Status' %}:</label>
+                        <div class="formRight">
+                            <input type="radio" name="status" value="active" {% if subscription.status == 'active' %} checked="checked"{% endif %}/><label>Active</label>
+                            <input type="radio" name="status" value="canceled" {% if subscription.status == 'canceled' %} checked="checked"{% endif %}/><label>Canceled</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Period' %}:</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('period', guest.system_periods, subscription.period, 1, 'Select period') }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Amount' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="amount" value="{{subscription.amount}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Currency' %}</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('currency', guest.currency_get_pairs, subscription.currency, 1, 'Select currency') }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="hidden" name="id" value="{{ subscription.id }}" />
+                </fieldset>
+            </form>
+        </div>
+
+    </div>
+
+    <div class="fix"></div>
+</div>
+
+{% endblock %}

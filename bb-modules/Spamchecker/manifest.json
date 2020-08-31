@@ -1,0 +1,13 @@
+{
+    "id":           "spamchecker",
+	"type":         "mod",
+    "name":         "Spam Checker",
+    "description":  "Uses stopforumspam.com database and captcha verification to stop spam",
+    "icon_url":     "icon.png",
+    "project_url":  "http://www.boxbilling.com/",
+    "homepage_url": "http://www.boxbilling.com/",
+    "author":       "BoxBilling",
+    "author_url":   "http://www.boxbilling.cz/",
+    "license":      "Free for commercial and non-commercial use (Apache License or GPL 2)",
+    "version":      "1.0.0"
+}

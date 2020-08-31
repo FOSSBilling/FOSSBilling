@@ -1,0 +1,55 @@
+{% if product.addons|length > 0 %}
+<hr/>
+<section>
+    <header>
+        <h2>{% trans 'Addons & extras' %}</h2>
+    </header>
+</section>
+<div class="row-fluid">
+        <table class="table table-condensed">
+            <tbody>
+            {% for addon in product.addons %}
+            <label for="addon_{{ addon.id }}">
+            <tr>
+                <td>
+                    <input type="hidden" name="addons[{{ addon.id }}][selected]" value="0">
+                    <input type="checkbox" name="addons[{{ addon.id }}][selected]" value="1" id="addon_{{ addon.id }}">
+                </td>
+
+                <td {% if not addon.icon_url%}style="display: none"{% endif %}>
+                    <label for="addon_{{ addon.id }}"><img src="{{ addon.icon_url }}" alt="" width="36"/></label>
+                </td>
+
+                <td>
+                    <label for="addon_{{ addon.id }}"><h3>{{ addon.title }}</h3></label>
+                    {{ addon.description|bbmd }}
+                </td>
+
+                <td class="currency">
+                    <label for="addon_{{ addon.id }}">
+                    {% if addon.pricing.type is same as('recurrent') %}
+                        {% set periods = guest.system_periods %}
+                        <select name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
+                        {% for code,prices in addon.pricing.recurrent %}
+                        {% if prices.enabled %}
+                        <option value="{{code}}">{{ periods[code] }} {{ prices.price | money_convert }} {% if prices.setup != '0.00' %}{% trans 'Setup:' %} {{prices.setup | money_convert}}{% endif %}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                    {% endif %}
+
+                    {% if addon.pricing.type is same as('once') %}
+                    {{ (addon.pricing.once.price + addon.pricing.once.setup) | money_convert }}
+                    {% endif %}
+
+                    {% if addon.pricing.type is same as('free') %}
+                    {{ 0 | money_convert }}
+                    {% endif %}
+                    </label>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+</div>
+{% endif %}

@@ -1,0 +1,204 @@
+{% extends "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+
+{% block meta_title %}{% trans 'Profile' %}{% endblock %}
+{% set active_menu = 'system' %}
+
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li><a href="{{ 'extension/settings/staff'|alink }}">{% trans 'Staff' %}</a></li>
+    <li class="lastB">{{staff.name}}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+
+{% if staff.role == 'cron' %}
+<div class="nNote nInformation hideit first">
+    <p><strong>{% trans 'INFORMATION' %}: </strong>{% trans 'This staff member is used by BoxBilling to perform system tasks and can not be removed.' %}</p>
+</div>
+{% endif %}
+
+<!-- Full width tabs --> 
+<div class="widget simpleTabs">
+    <ul class="tabs">
+        <li><a href="#tab-profile">{% trans 'Profile' %}</a></li>
+        <li><a href="#tab-permissions">{% trans 'Permissions' %}</a></li>
+        <li><a href="#tab-password">{% trans 'Password' %}</a></li>
+        <li><a href="#tab-api">{% trans 'API' %}</a></li>
+    </ul>
+
+    <div class="tab_container">
+        <div id="tab-profile" class="tab_content nopadding">
+            
+            <div class="help">
+                <h3>{% trans 'Manage staff member details' %}</h3>
+            </div>
+
+            <form method="post" action="admin/staff/update" class="mainForm api-form" data-api-msg="{% trans 'This staff member updated.' %}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Group' %}</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('admin_group_id', admin.staff_group_get_pairs, staff.group.id, 1) }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label for="name">{% trans 'Name' %}</label>
+                        <div class="formRight">
+                            <input type="text" name="name" value="{{staff.name}}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label for="email">{% trans 'Email' %}</label>
+                        <div class="formRight">
+                            <input type="text" name="email" value="{{staff.email}}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>  
+                    <div class="rowElem">
+                        <label>{% trans 'Status' %}</label>
+                        <div class="formRight">
+                            <input type="radio" name="status" value="active"{% if staff.status == 'active' %} checked="checked"{% endif %}/><label>Active</label>
+                            <input type="radio" name="status" value="inactive"{% if staff.status == 'inactive' %} checked="checked"{% endif %} /><label>Inactive</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label for="signature">{% trans 'Signature' %}</label>
+                        <div class="formRight">
+                            <textarea name="signature" cols="5" rows="2">{{staff.signature}}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="hidden" name="id" value="{{ staff.id }}">
+                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+        
+        <div id="tab-permissions" class="tab_content nopadding">
+            <div class="help">
+                {% set member_name = staff.name %}
+                <h3>{% trans %}{{ member_name }} permissions{% endtrans %}</h3>
+            </div>
+            
+            {% if staff.role == 'admin' %}
+            <div class="body">
+                <p>{% trans 'Administrator account is allowed to do everything' %}</p>
+            </div>
+            {% else %}
+            {% set prms = admin.staff_permissions_get({"id":staff.id}) %}
+            <form method="post" action="admin/staff/permissions_update" class="mainForm api-form" data-api-msg="{% trans 'Permissions updated' %}">
+            <input type="hidden" name="permissions[]" value="">
+                
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td style="width: 5%">
+                            <input type="checkbox" id="perm-check" /> 
+                        </td>
+                        <td>{% trans 'Module' %}</td>
+                    </tr>
+                </thead>
+                
+                <tbody>
+                {% for mod in mods %}
+                <tr>
+                    <td>
+                        <input type="checkbox" name="permissions[{{mod}}]" value="1" class="perm" {% if prms[mod] %}checked="checked"{% endif %}/> 
+                    </td>
+                    <td>{{mod|title}}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+                
+                <tfoot>
+                <tr>
+                    <td colspan="2">
+                        <input type="hidden" name="id" value="{{ staff.id }}">
+                        <input type="submit" value="{% trans 'Save' %}" class="greyishBtn" />
+                    </td>
+                </tr>
+                </tfoot>
+            </table>
+            </form>
+            {% endif %}
+        </div>
+            
+        <div id="tab-password" class="tab_content nopadding">
+            <div class="help">
+                <h3>{% trans 'Change staff member password' %}</h3>
+            </div>
+
+            <form method="post" action="admin/staff/change_password" class="mainForm api-form" data-api-msg="{% trans 'Staff member password changed' %}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label for="password">{% trans 'Password' %}</label>
+                        <div class="formRight">
+                        <input type="password" name="password" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label for="password_confirm">{% trans 'Repeat same password' %}</label>
+                        <div class="formRight">
+                        <input type="password" name="password_confirm" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <input type="hidden" name="id" value="{{ staff.id }}">
+                    <input type="submit" value="{% trans 'Submit' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+        
+        <div id="tab-api" class="tab_content nopadding">
+            <div class="help">
+                <h3>{% trans 'Api key is used to manage system via other interfaces.' %}</h3>
+            </div>
+
+            <form method="post" action="admin/profile/generate_api_key" class="mainForm api-form" data-api-reload="1">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'API key' %}</label>
+                        <div class="formRight">
+                            <input type="text" value="{{ admin.profile_get.api_token }}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="hidden" name="id" value="{{ staff.id }}">
+                    <input type="submit" value="{% trans 'Generate new key' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+
+        </div>
+    </div>
+    <div class="fix"></div>	 
+</div>
+
+{% endblock %}
+
+
+{% block js%}
+<script type="text/javascript">
+
+$(function() {
+    $('#perm-check').click(function(){
+        if($('#perm-check').is(':checked')) {
+            $('.perm').prop('checked', true);
+        } else {
+            $('.perm').prop('checked', false);
+        }
+        $.uniform.update(".perm");
+    });
+});
+    
+</script>
+{% endblock %}

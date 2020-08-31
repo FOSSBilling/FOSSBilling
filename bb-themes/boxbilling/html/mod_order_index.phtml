@@ -1,0 +1,123 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Order' %}{% endblock %}
+
+{% set periods = guest.system_periods %}
+
+{% block content_before %}
+{% include "partial_steps.phtml" with {'selected': 1} %}
+{% endblock %}
+
+{% block content %}
+
+<div class="h-block">
+    <div class="h-block-header">
+        <div class="icon"><span class="number">1</span></div>
+        <h2>{% trans 'Select Product' %}</h2>
+        <p>{% trans 'Choose products we offer for selling' %}</p>
+    </div>
+    <div class="block">
+    {% for i, category in guest.product_category_get_list.list %}
+    <div class="product-category{% if loop.last %} last{% endif %}" id="pc-{{category.id}}">
+        <div class="show-products">
+            {% if category.icon_url %}
+            <div style="float: left; margin: 20px;">
+                {{ category.icon_url | img_tag }}
+            </div>
+            {% endif %}
+            <div class="block product-pricing" style="float: right;">
+                <span class="starting_from">{% trans 'Starting from:' %}</span>
+                <div class="currency">{{ category.price_starting_from | money_convert }}</div>
+                <a class="bb-button" href="#">{% trans 'View products' %}</a>
+            </div>
+            <div class="block">
+                <h2>{{ category.title }}</h2>
+                {{ category.description|bbmd }}
+            </div>
+        </div>
+        <div class="clear"></div>
+        <div class="products" style="display:none; position: relative;">
+            <div class="fader" style="width: 100%;margin-right: 0;height: 8px;position: absolute;top: 0;left: 0;opacity: 0.75;border-top: 1px solid rgba(0, 0, 0, 0.4);background: -webkit-gradient(linear, left top, left bottom, from(rgba(0, 0, 0, .2)), to(transparent));-webkit-mask-box-image: -webkit-gradient(linear, left top, right top, color-stop(0.0, rgba(0,0,0,0)), color-stop(0.5, rgba(0,0,0,.8)), color-stop(1.0, rgba(0,0,0,0)));"></div>
+            {% set listing_template = 'mod_service'~category.type~'_listing.phtml' %}
+            {% if guest.system_template_exists({"file":listing_template}) %}
+                <div class="mod_service{{category.type}}">{% include listing_template %}</div>
+            {% else %}
+            {% for product in category.products %}
+            <div class="product{% if loop.first %} first{% endif %}{% if loop.last %} last{% endif %}">
+                <div class="block" style="position: relative;">
+                    <div class="product-pricing" style="float:right; text-align: right; margin: 0 0 20px 20px;">
+                        <span class="starting_from">{% trans 'Starting from:' %}</span>
+                        <div class="currency">{{ product.price_starting_from | money_convert }}</div>
+                        {% if product.pricing.type == 'recurrent' %}
+                        <form method="get" action="">
+                        <p>
+                        <input type="hidden" name="_url" value="/order/{{ product.slug }}"/>
+                        <select name="period" id="period-selector">
+                        {% for code,prices in product.pricing.recurrent %}
+                            {% if prices.enabled %}
+                            <option value="{{code}}" data-bb-price="{{ prices.price | money_convert }}">{{ periods[code] }}</option>
+                            {% endif %}
+                        {% endfor %}
+                        </select>
+                        </p>
+                        <button class="bb-button bb-button-submit" type="submit">{% trans 'Order now' %}</button>
+                        </form>
+                        {% else %}
+                        <p><button class="bb-button bb-button-submit" type="button" onclick="parent.location='{{ '/order'|link }}/{{ product.slug }}'">{% trans 'Order now' %}</button></p>
+                        {% endif %}
+                    </div>
+
+                    {% if product.icon_url %}
+                    <div style="display: block;float:left; margin:0 20px 20px 0;">
+                        {{ product.icon_url | img_tag }}
+                    </div>
+                    {% endif %}
+                    
+                    <h2>{{ product.title }}</h2>
+
+                    {{ product.description|bbmd }}
+                    <div class="clear"></div>
+                </div>
+                <div class="clear"></div>
+            </div>
+            {% endfor %}
+            {% endif %}
+            <div class="clear"></div>
+        </div>
+    </div>
+    {% endfor %}
+    <div class="clear"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block sidebar2 %}
+    {% include 'partial_currency.phtml' %}
+{% endblock %}
+
+{% block js %}
+{% autoescape "js" %}
+<script type="text/javascript">
+$(function() {
+
+    $('.show-products').click(function(){
+        if($(this).parents('.product-category').hasClass('selected')) {
+            $(this).parents('.product-category').find('.products').slideUp();
+            $(this).parents('.product-category').removeClass('selected');
+        } else {
+            $('.product-category').removeClass('selected');
+            $(this).parents('.product-category').addClass('selected');
+            $('.product-category .products').slideUp('fast');
+            $(this).parents('.product-category').find('.products').slideToggle();
+        }
+        return false;
+    });
+    
+    var open = '{{request.show}}';
+    if(open) {
+        $('#pc-' + open + ' .show-products').trigger('click');
+    }
+});
+</script>
+{% endautoescape %}
+{% endblock %}

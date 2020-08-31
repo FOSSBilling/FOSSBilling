@@ -1,0 +1,7 @@
+{
+    "id":           "servicehosting",
+	"type":         "mod",
+    "name":         "Hosting product type",
+    "description":  "BoxBilling core module",
+    "version":      "1.0.0"
+}

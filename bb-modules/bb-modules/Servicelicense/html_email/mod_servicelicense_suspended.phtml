@@ -1,0 +1,20 @@
+{% block subject %}[{{ guest.system_company.name }}] {{ order.title }} Suspended{% endblock %}
+{% block content %}
+{% apply markdown %}
+
+Hello {{ c.first_name }} {{ c.last_name }},
+
+Your *{{ order.title }}* that was issued on *{{ order.activated_at|bb_date }}* is now suspended.
+{% if order.reason %} due to reason:     
+
+**{{ order.reason }}** {% endif %}   
+
+If you have any questions regarding this message please login to the members area and submit a support ticket.
+
+Login to members area: {{'login'|link({'email' : c.email }) }}
+Submit support ticket: {{ 'support'|link({'ticket' : 1}) }}
+
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

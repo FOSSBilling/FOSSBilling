@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<!--[if IE 8]>    <html class="no-js ie8 ie" lang="en"> <![endif]-->
+<!--[if IE 9]>    <html class="no-js ie9 ie" lang="en"> <![endif]-->
+<!--[if gt IE 9]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+    <meta charset="utf-8">
+    <title>{% block meta_title %}{% endblock %} {{ settings.meta_title }}</title>
+
+    <meta property="bb:url" content="{{ constant('BB_URL') }}">
+    <meta property="bb:client_area" content="{{ '/'|link }}">
+
+    <meta name="description" content="{{ settings.meta_description }}">
+    <meta name="robots" content="{{ settings.meta_robots }}">
+    <meta name="author" content="{{ settings.meta_author }}">
+    <meta name="generator" content="BoxBilling {{ guest.system_version }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel='stylesheet' type='text/css' href="{{ ('css/huraga-' ~ settings.color_scheme ~ '.css') | asset_url }}">
+    <link rel='stylesheet' type='text/css' href="{{ 'css/plugins/jquery.jgrowl.css' | asset_url }}">
+
+    <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="{{ 'img/icons/apple-touch-icon-114-precomposed.png' | asset_url }}">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="{{ 'img/icons/apple-touch-icon-72-precomposed.png' | asset_url }}">
+    <link rel="apple-touch-icon-precomposed" href="{{ 'img/icons/apple-touch-icon-57-precomposed.png' | asset_url }}">
+
+    <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
+    <script src="{{ 'js/bb-jquery.js' | asset_url }}"></script>
+    <script src="{{ 'js/libs/modernizr.js' | asset_url }}"></script>
+    <script src="{{ 'js/bootstrap/bootstrap.min.js' | asset_url}}"></script>
+    <script src="{{ 'js/libs/selectivizr.js' | asset_url }}"></script>
+    <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.js' | asset_url }}"></script>
+
+    {% block head %}{% endblock %}
+    {% block js %}{% endblock %}
+</head>
+<body>
+    {% block body %}{% endblock %}
+    {% include 'partial_pending_messages.phtml' ignore missing %}
+</body>
+</html>

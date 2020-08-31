@@ -1,0 +1,295 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Profile details' %}{% endblock %}
+{% block page_header %}{% trans 'User profile settings' %}{% endblock %}
+{% block breadcrumb %} <li class="active">{% trans 'Profile' %}</li>{% endblock %}
+
+{% block content %}
+
+<div class="row-fluid">
+
+<article class="span12 data-block">
+<div class="data-container">
+
+<section class="tab-content">
+
+<div class="tab-pane active" id="two">
+
+<!-- Second level tabs -->
+<div class="tabbable tabs-left">
+    <ul class="nav nav-tabs">
+        <li class="active"><a href="#tab1" data-toggle="tab">{% trans 'Details' %}</a></li>
+        <li class=""><a href="#tab2" data-toggle="tab">{% trans 'Change Password' %}</a></li>
+        <li class=""><a href="#tab3" data-toggle="tab">{% trans 'API key' %}</a></li>
+        <li class=""><a href="#tab4" data-toggle="tab">{% trans 'Currency' %}</a></li>
+    </ul>
+
+    <div class="tab-content">
+
+        <div class="tab-pane active" id="tab1">
+            <header>
+                <h1>{% trans 'Update details' %}</h1>
+                <p>{% trans 'Keep your personal data up to date.' %}</p>
+            </header>
+            <form method="post" action="" id="profile-update" class="form-horizontal">
+                <fieldset>
+                    <div class="alert alert-block alert-success">
+                        <div class="row">
+                        <div class="span3"><img src="{{ profile.email|gravatar }}" alt="Gravatar"></div>
+                        <div class="span6">{% trans 'Please register with'%} <strong>{{ profile.email }}</strong> {% trans 'at ' %}<a target="_blank" href="http://gravatar.com">Gravatar.com</a> {% trans 'to change your profile image. Gravatar image updates may not appear immediately.' %}</div>
+                        </div>
+                    </div>
+                        <div class="control-group">
+                            <label class="control-label" for="input">{% trans 'Email Address' %}</label>
+                            <div class="controls">
+                                <input type="email" class="input-xlarge" name="email" value="{{ profile.email }}" required="required">
+                                <p class="help-block"></p>
+                            </div>
+                        </div>
+
+                       <div class="control-group">
+                           <label class="control-label" for="input">{% trans 'First Name' %}</label>
+                           <div class="controls">
+                                <input type="text" name="first_name" value="{{ profile.first_name }}" required="required">
+                                <p class="help-block"></p>
+                           </div>
+                       </div>
+
+                       <div class="control-group">
+                           <label class="control-label" for="input">{% trans 'Last Name' %}</label>
+                           <div class="controls">
+                                <input type="text" name="last_name" value="{{ profile.last_name }}" required="required">
+                               <p class="help-block"></p>
+                           </div>
+                       </div>
+
+                       <div class="control-group">
+                           <label class="control-label" for="input">{% trans 'Birth date' %}</label>
+                           <div class="controls">
+                                <input type="date" name="birthday" value="{{ profile.birthday }}" >
+                               <p class="help-block"></p>
+                           </div>
+                       </div>
+
+                       <div class="control-group">
+                           <label class="control-label" for="input">{% trans 'Company Name' %}</label>
+                           <div class="controls">
+                                <input type="text" name="company" value="{{ profile.company }}">
+                               <p class="help-block"></p>
+                           </div>
+                       </div>
+
+                    <div class="control-group">
+                           <label class="control-label" for="input">{% trans 'Company VAT' %}</label>
+                           <div class="controls">
+                                <input type="text" name="company_vat" value="{{ profile.company_vat }}">
+                               <p class="help-block"></p>
+                           </div>
+                       </div>
+
+                    <div class="control-group">
+                           <label class="control-label" for="input">{% trans 'Company Number' %}</label>
+                           <div class="controls">
+                                <input type="text" name="company_number" value="{{ profile.company_number }}">
+                               <p class="help-block"></p>
+                           </div>
+                       </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="input">{% trans 'Phone Country Code' %}</label>
+                            <div class="controls">
+                                <input type="text" name="phone_cc" value="{{ profile.phone_cc }}" required="required">
+                                <p class="help-block"></p>
+                            </div>
+                        </div>
+
+                       <div class="control-group">
+                           <label class="control-label" for="input">{% trans 'Phone Number' %}</label>
+                           <div class="controls">
+                                <input type="text" name="phone" value="{{ profile.phone }}" required="required">
+                               <p class="help-block"></p>
+                           </div>
+                       </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="input">{% trans 'Address' %}</label>
+                            <div class="controls">
+                                <input type="text" name="address_1" value="{{ profile.address_1 }}" required="required">
+                                <p class="help-block"></p>
+                            </div>
+                        </div>
+
+                       <div class="control-group">
+                           <label class="control-label" for="input">{% trans 'Address 2' %}</label>
+                           <div class="controls">
+                                <input type="text" name="address_2" value="{{ profile.address_2 }}">
+                               <p class="help-block"></p>
+                           </div>
+                       </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="input">{% trans 'City' %}</label>
+                            <div class="controls">
+                                <input type="text" name="city" value="{{ profile.city }}" required="required">
+                                <p class="help-block"></p>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="input">{% trans 'Country' %}</label>
+                            <div class="controls">
+                                <select name="country" required="required">
+                                <option value="">{% trans '-- Select country --' %}</option>
+                                {% for val,label in guest.system_countries %}
+                                <option value="{{ val }}" label="{{ label|e }}" {% if val == profile.country %}selected="selected"{% endif %}>{{ label|e }}</option>
+                                {% endfor %}
+                                </select>
+                                <p class="help-block"></p>
+                            </div>
+                        </div>
+
+                       <div class="control-group">
+                           <label class="control-label" for="input">{% trans 'State' %}</label>
+                           <div class="controls">
+                                {# mf.selectbox('state', guest.system_states, profile.state, 0, 'Select state') #}
+                                <input type="text" name="state" value="{{ profile.state }}" />
+                               <p class="help-block"></p>
+                           </div>
+                       </div>
+
+                      <div class="control-group">
+                          <label class="control-label" for="input">{% trans 'Zip/Postal Code' %}</label>
+                          <div class="controls">
+                                <input type="text" name="postcode" value="{{ profile.postcode }}" required="required">
+                              <p class="help-block"></p>
+                          </div>
+                      </div>
+
+                      <div class="control-group">
+                          <label class="control-label" for="input">{% trans 'Passport number' %}</label>
+                          <div class="controls">
+                                <input type="text" name="document_nr" value="{{ profile.document_nr}}" >
+                              <p class="help-block"></p>
+                          </div>
+                      </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-alt btn-large btn-primary" type="submit">{% trans 'Update profile' %}</button>
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+        <div class="tab-pane" id="tab2">
+            <header>
+                <h1>{% trans 'New password' %}</h1>
+                <p>{% trans 'Please enter new password two times in order avoid mistypes' %}</p>
+            </header>
+            <form method="post" action="" id="change-password" class="form-horizontal">
+                <fieldset>
+                        <div class="control-group">
+                            <label class="control-label" for="input">{% trans 'Password' %}</label>
+                            <div class="controls">
+                                <input type="password" name="password" value="" required="required">
+                                <p class="help-block"></p>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="input">{% trans 'Password confirm' %}</label>
+                            <div class="controls">
+                                <input type="password" name="password_confirm" value="" required="required">
+                                <p class="help-block"></p>
+                            </div>
+                        </div>
+                    <div class="form-actions">
+                        <button class="btn btn-alt btn-large btn-primary" type="submit">{% trans 'Update password' %}</button>
+                    </div>                </fieldset>
+            </form>        </div>
+        <div class="tab-pane" id="tab3">
+            <header>
+                <h1>{% trans 'API key' %}</h1>
+                <p>{% trans 'API key allows integration with external applications. You will need this key for authentication.' %}</p>
+            </header>
+            <form method="post" action="" id="change-api-key" class="form-horizontal">
+                <fieldset>
+                    <div class="alert alert-block">
+                     <h4><p>{% trans 'Warning! Resetting the key will break existing applications using it!' %}</p></h4>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label" for="api-key">{% trans 'Your API key' %}: </label>
+                        <div class="controls">
+                        <input type="text" value="{{ client.profile_api_key_get }}" class="input-xlarge" id="api-key">
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn btn-alt btn-large btn-primary" type="submit">{% trans 'Reset key' %}</button>
+                        </div>                    </div>
+                </fieldset>
+            </form>        </div>
+        <div class="tab-pane" id="tab4">
+            <header>
+                <h1>{% trans 'Currency' %}</h1>
+                <p>{% trans 'Your profile currency is defined after your first order. Once your currency is set, all your profile accounting will be managed in that currency and can not be changed.' %}</p>
+            </header>
+                {% if profile.currency %}
+                <p>{% trans 'Your profile currency is' %} <strong>{{ profile.currency }}</strong></p>
+                <p>{% trans 'Create new client profile if you want to manage your money in other currency' %}</p>
+                {% endif %}
+
+        </div>
+    </div>
+</div>
+
+</div>
+
+</section>
+</div>
+</article>
+
+</div>
+
+{% endblock %}
+
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+
+    $('#change-password').bind('submit',function(event){
+        bb.post(
+            'client/client/change_password',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Password was changed');
+            }
+        );
+        return false;
+    });
+    
+    $('#change-api-key').submit(function(event){
+
+        bb.post(
+            'client/client/api_key_reset',
+            $(this).serialize(),
+            function(result) {
+                $('#api-key').val(result);
+                bb.msg('API key was changed');
+            }
+        );
+
+        return false;
+    });
+
+    $('#profile-update').bind('submit',function(event){
+        bb.post(
+            'client/client/update',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Profile updated');
+            }
+        );
+        return false;
+    });
+
+});
+</script>
+{% endblock %}

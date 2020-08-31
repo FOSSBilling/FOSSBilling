@@ -1,0 +1,252 @@
+{% if order.status == 'active' %}
+<div class="widget simpleTabs tabsRight">
+    <div class="head">
+        <h2 class="dark-icon i-services">{% trans 'Manage hosting account' %}</h2>
+    </div>
+
+    <ul class="tabs">
+        <li><a href="#tab-details">{% trans 'Details' %}</a></li>
+        <li><a href="#tab-change-pass">{% trans 'Password' %}</a></li>
+        <li><a href="#tab-change-domain">{% trans 'Domain' %}</a></li>
+        <li><a href="#tab-change-username">{% trans 'Username' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+
+        <div class="tab_content" id="tab-details">
+            <div class="grid_6 alpha">
+                <div class="box">
+                    <h2>{% trans 'Details' %}</h2>
+                    <div class="block">
+                    {% set server = service.server %}
+                    {% set hp = service.hosting_plan %}
+                        <table>
+                            <tbody>
+                                <tr>
+                                    <td>{% trans 'Domain' %}:</td>
+                                    <td>
+                                        <a target="_blank" href="http://{{ service.domain }}">{{ service.domain }}</a>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>{% trans 'Server IP' %}:</td>
+                                    <td>{{ server.ip }}</td>
+                                </tr>
+
+                                <tr>
+                                    <td>{% trans 'Server Hostname' %}:</td>
+                                    <td>{{ server.hostname }}</td>
+                                </tr>
+
+                                <tr>
+                                    <td>{% trans 'Username' %}:</td>
+                                    <td>{{ service.username }}</td>
+                                </tr>
+
+                                <tr>
+                                    <td>{% trans 'Password' %}:</td>
+                                    <td>******</td>
+                                </tr>
+
+                                <tr>
+                                    <td>{% trans 'Hosting plan' %}:</td>
+                                    <td>{{ hp.name }}</td>
+                                </tr>
+
+                                <tr>
+                                    <td>{% trans 'Bandwidth' %}:</td>
+                                    <td>{{ hp.bandwidth }} MB / {% trans 'per month' %}</td>
+                                </tr>
+                                <tr>
+                                    <td>{% trans 'Disk quota' %}:</td>
+                                    <td>{{ hp.quota }} MB</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+
+                        <p>
+                        {% if service.domain_order_id %}
+                        <a class="bb-button" href="{{ '/order/service/manage'|link }}/{{service.domain_order_id}}">{% trans 'Manage domain' %}</a>
+                        {% endif %}
+
+                        <a class="bb-button bb-button-submit" href="{{ server.cpanel_url }}" target="_blank">{% trans 'Jump to cPanel' %}</a>
+
+                        {% if service.reseller %}
+                        <a class="bb-button bb-button-submit" href="{{ server.reseller_cpanel_url }}" target="_blank">{% trans 'Reseller control panel' %}</a>
+                        {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid_6 omega">
+
+                <div class="box">
+                    <h2>{% trans 'Nameservers' %}</h2>
+                    <div class="block">
+                        <table>
+                            <tbody>
+                                <tr>
+                                    <td>{% trans 'Nameserver 1' %}:</td>
+                                    <td>{{ server.ns1 }}</td>
+                                </tr>
+
+                                <tr>
+                                    <td>{% trans 'Nameserver 2' %}:</td>
+                                    <td>{{ server.ns2 }}</td>
+                                </tr>
+
+                                {% if server.ns3 %}
+                                <tr>
+                                    <td>{% trans 'Nameserver 3' %}:</td>
+                                    <td>{{ server.ns3 }}</td>
+                                </tr>
+                                {% endif %}
+
+                                {% if server.ns4 %}
+                                <tr>
+                                    <td>{% trans 'Nameserver 4' %}:</td>
+                                    <td>{{ server.ns4 }}</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="box">
+                    <h2>{% trans 'FTP details' %}</h2>
+                    <div class="block">
+                        <p>{% trans 'Use these details to connect to your FTP account.' %}</p>
+                        <table>
+                            <tbody>
+
+                                <tr>
+                                    <td>{% trans 'FTP IP' %}:</td>
+                                    <td>{{ server.ip }}</td>
+                                </tr>
+
+                                <tr>
+                                    <td>{% trans 'FTP Username' %}:</td>
+                                    <td>{{ service.username }}</td>
+                                </tr>
+
+                                <tr>
+                                    <td>{% trans 'FTP Password' %}:</td>
+                                    <td>******</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="clear"></div>
+        </div>
+
+        <div class="tab_content box" id="tab-change-pass">
+            <h2>{% trans 'Change account password' %}</h2>
+            <div class="block">
+                <p>{% trans 'Change your FTP cPanel SSH password.' %}</p>
+                <form action="" method="post" id="change-password">
+                    <fieldset>
+                        <legend>{% trans 'Change account password' %}</legend>
+                        <p>
+                            <label>{% trans 'Password' %}: </label>
+                            <input type="password" name="password" value="{{ request.password }}" required="required">
+                        </p>
+
+                        <p>
+                            <label>{% trans 'Password Confirm' %}: </label>
+                            <input type="password" name="password_confirm" value="{{ request.password_confirm }}" required="required">
+                        </p>
+
+                        <input type="hidden" name="order_id" value="{{ order.id }}">
+                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Change password' %}">
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+
+        <div class="tab_content box" id="tab-change-username">
+            <h2>{% trans 'Change username' %}</h2>
+            <div class="block">
+                <form action="" method="post" id="change-username">
+                    <fieldset>
+                        <legend>{% trans 'Change username' %}</legend>
+                        <p>
+                            <label>{% trans 'Username' %}: </label>
+                            <input type="text" name="username" value="{{ request.username|default(service.username) }}" required="required">
+                        </p>
+
+                        <input type="hidden" name="order_id" value="{{ order.id }}">
+                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Change' %}">
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+
+        <div class="tab_content box" id="tab-change-domain">
+            <h2>{% trans 'Change domain' %}</h2>
+            <div class="block">
+                <form action="" method="post" id="change-domain">
+                    <fieldset>
+                        <legend>{% trans 'Change domain' %}</legend>
+                        <p>
+                            <label>{% trans 'Domain' %}: </label>
+                            <input type="text" name="sld" value="{{ request.domain|default(service.sld) }}" required="required" style="width: 250px;">
+                            <input type="text" name="tld" value="{{ request.domain|default(service.tld) }}" required="required" style="width: 50px;">
+                        </p>
+
+                        <input type="hidden" name="order_id" value="{{ order.id }}">
+                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Change' %}">
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="clear"></div>
+</div>
+
+<script type="text/javascript">
+$(function() {
+    $('#change-domain').bind('submit',function(event){
+        bb.post(
+            'client/servicehosting/change_domain',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Domain name was changed');
+            }
+        );
+        return false;
+    });
+
+    $('#change-username').bind('submit',function(event){
+        bb.post(
+            'client/servicehosting/change_username',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Account Username was changed');
+            }
+        );
+        return false;
+    });
+
+    $('#change-password').bind('submit',function(event){
+        bb.post(
+            'client/servicehosting/change_password',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Account Password was changed');
+            }
+        );
+        return false;
+    });
+
+});
+</script>
+{% endif %}

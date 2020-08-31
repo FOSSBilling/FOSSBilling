@@ -1,0 +1,201 @@
+{% if request.theme_color %}{% set theme_color = 'css/huraga-'~request.theme_color~'.css' %}{% else %}{% set theme_color = 'css/huraga-green.css' %}{% endif %}
+{% set loader_nr = request.loader | default("8")%}
+{% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta property="bb:url" content="{{ constant('BB_URL') }}"/>
+    <meta property="bb:client_area" content="{{ '/'|link }}"/>
+
+    <meta charset="utf-8">
+    <title>Order</title>
+    {{ 'css/bootstrap.css' | mod_asset_url('orderbutton') | stylesheet_tag }}
+    {{ theme_color | mod_asset_url('orderbutton') | stylesheet_tag }}
+    {{ 'css/plugins/jquery.jgrowl.css' | mod_asset_url('orderbutton') | stylesheet_tag }}
+    <script src="{{ 'js/libs/jquery.js' | mod_asset_url('orderbutton')}}"></script>
+    <script src="{{ 'js/bb-jquery.js' | mod_asset_url('orderbutton')}}"></script>
+    <script src="{{ 'js/bootstrap/bootstrap.min.js' | mod_asset_url('orderbutton')}}"></script>
+    <script src="{{ 'js/bootstrap/plugins/bootstrap-collapse.js' | mod_asset_url('orderbutton')}}"></script>
+    <script src="{{ 'js/bootstrap/plugins/bootstrap-tab.js' | mod_asset_url('orderbutton')}}"></script>
+    <script src="{{ 'js/jGrowl/jquery.jgrowl.js' | mod_asset_url('orderbutton')}}"></script>
+    <style type="text/css">
+        body{
+            background:none transparent;
+            background-color:transparent;
+            padding-left: 0px;
+            padding-right: 0px;
+            height: auto;
+        }
+        .accordion-body form {
+            border: 0px;
+            margin-bottom: 0;
+            border-radius: 0;
+            -webkit-box-shadow: none;
+            -moz-box-shadow: none;
+            box-shadow: none;
+        }
+    </style>
+
+</head>
+
+<body>
+<article class="data-block decent" id="orderbutton" style="margin-bottom: 0">
+    <div class="data-container">
+        {#
+        <header>
+            <h2>{% trans 'Order Form' %}</h2>
+        </header>
+        #}
+        <section>
+            <div id="accordion1" class="accordion">
+
+                {% include 'mod_orderbutton_choose_product.phtml' %}
+
+                {% include 'mod_orderbutton_product_configuration.phtml' %}
+
+                {% if not client %}
+                    {% include 'mod_orderbutton_client.phtml' %}
+                {% endif %}
+
+                {% include 'mod_orderbutton_checkout.phtml' %}
+
+
+                <div class="accordion-group" id="payment-html-outer">
+                    <div class="accordion-heading">
+                        <a class="accordion-toggle" href="#payment-html" data-parent="#accordion1"><span class="awe-list"></span> {% trans 'Payment' %}</a>
+                    </div>
+                    <div id="payment-html" class="accordion-body collapse" >
+                        <div class="accordion-inner" id="payment-html-inner"></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+        {% include 'mod_orderbutton_currency.phtml' %}
+        {% if guest.extension_is_on({"mod":'branding'}) %}
+        <div style="text-align: center">
+            <a href="http://www.boxbilling.com" title="Billing Software" target="_blank">{% trans 'Powered by BoxBilling' %}</a>
+        </div>
+        {% endif %}
+
+    </div>
+</article>
+<div class="loading" style="display: none; background: rgba(0,0,0,.5) no-repeat; width:100%; height:100%; position:fixed; top:0; left:0; z-index:999;">
+    <img src="{{ loader_url | mod_asset_url('orderbutton')}}" style="display: block; margin-left: auto; margin-right: auto;position: relative; top : 50%">
+</div>
+<script type="text/javascript">
+    $(function(){
+        $('.accordion-body').on('shown', function(){
+            $('#popup-iframe').height($('body').height());
+        });
+
+        $('#client-login').bind('submit',function(event){
+            bb.post(
+                'guest/client/login',
+                $(this).serialize(),
+                function(result) {
+                    bb.msg("{% trans 'You logged in successfully' %}");
+                    $('#register-or-login').hide(1000, function(){
+                        $('#register-or-login').remove();
+                        bb.reload();
+                    });
+
+                }
+            );
+            return false;
+        });
+        $('#create-profile').bind('submit',function(event){
+            bb.post(
+                'guest/client/create',
+                $(this).serialize(),
+                function(result) {
+                    //login after registration
+                    var login_details = {
+                        email: $('#reg-email').val(),
+                        password: $('#reg-password').val()
+                    };
+                    bb.post(
+                        'guest/client/login',
+                        login_details,
+                        function(result) {
+                            bb.msg("{% trans 'You logged in successfully' %}");
+                            $('#register-or-login').hide(1000, function(){
+                                $('#register-or-login').remove();
+                                bb.reload();
+                            });
+                        }
+                    );
+                }
+            );
+            return false;
+        });
+        $('#add-to-cart').bind('submit',function(event){
+            bb.post(
+                'guest/cart/add_item',
+                $(this).serialize(),
+                function(result) {
+                    bb.msg("{% trans 'Product was added to shopping cart' %}");
+                    bb.redirect("{{ 'orderbutton' |link({'checkout' : 1}) }}"+"{% if request.show_custom_form_values%}&show_custom_form_values=1{% endif%}");
+                }
+            );
+            return false;
+        });
+        $('#apply-promo').bind('submit',function(event){
+            bb.post(
+                'guest/cart/apply_promo',
+                $(this).serialize(),
+                function(result) {
+                    bb.msg("{% trans 'Promo code was applied for your order' %}");
+                    location.reload(false);
+                }
+            );
+            return false;
+        });
+
+        $('#checkout-form').bind('submit',function(event){
+            bb.post(
+                'client/cart/checkout',
+                $(this).serialize(),
+                function(result) {
+                    if(result.invoice_hash) {
+                        bb.post('guest/invoice/payment', {hash:result.invoice_hash, gateway_id:result.gateway_id,auto_redirect:true }, function(r){
+                            if(r.iframe) {
+                            $('#payment-html-inner').html(r.result);
+                                $('#checkout').collapse('hide');
+                                $('#checkout').on('hidden', function(){
+                                    $('#checkout').remove();
+                                    $('#payment-html').collapse('show');
+                                });
+                            } else {
+                                var link = '{{"invoice/banklink"|link}}' + '/' + result.invoice_hash + '/' + result.gateway_id;
+                                $('#payment-html-inner').html('<a href="'+link+'" target="_parent" id="redirect-to-gateway">Redirect to payment gateway</a>');
+                                $('#checkout').collapse('hide');
+                                $('#checkout-inner').remove();
+                                $('#payment-html').collapse('show');
+                                $('#redirect-to-gateway')[0].click();
+                            }
+                        });
+                    } else {
+                        window.top.location.href = ('{{"order/service/manage"|link}}' + '/' + result.order_id );
+                    }
+                }
+            );
+            return false;
+        });
+
+        $('#show-promo-field').bind('click', function(event){
+            $('#apply-promo').show();
+            $(this).hide();
+            $('#promocode').focus();
+        });
+
+        $('.register-login a').click(function (e) {
+            e.preventDefault();
+            $(this).tab('show');
+        });
+
+    });
+</script>
+</body>
+
+</html>

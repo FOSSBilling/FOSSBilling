@@ -1,0 +1,65 @@
+/*
+Icon classes can be used entirely standalone. They are named after their original file names.
+
+```html
+<!-- `display: block` sprite -->
+<div class="icon-home"></div>
+
+<!-- `display: inline-block` sprite -->
+<img class="icon-home" />
+```
+*/
+.sprite-topnav-contactAdmin {
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: -22px 0px;
+  width: 11px;
+  height: 10px;
+}
+.sprite-topnav-help {
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: 0px -22px;
+  width: 10px;
+  height: 10px;
+}
+.sprite-topnav-logout {
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: 0px 0px;
+  width: 11px;
+  height: 11px;
+}
+.sprite-topnav-mainWebsite {
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: -10px -22px;
+  width: 10px;
+  height: 10px;
+}
+.sprite-topnav-messages {
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: -11px 0px;
+  width: 11px;
+  height: 11px;
+}
+.sprite-topnav-profile {
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: 0px -11px;
+  width: 11px;
+  height: 11px;
+}
+.sprite-topnav-register {
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: -20px -22px;
+  width: 10px;
+  height: 10px;
+}
+.sprite-topnav-settings {
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: -22px -10px;
+  width: 10px;
+  height: 11px;
+}
+.sprite-topnav-tasks {
+  background-image: url(../sprites/topnav-sprite.png);
+  background-position: -11px -11px;
+  width: 11px;
+  height: 11px;
+}

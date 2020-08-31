@@ -1,0 +1,189 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{ticket.subject}}{% endblock %}
+{% block breadcrumb %}
+<li><a href="{{ 'support' | link}}">{% trans 'Support tickets' %}</a><span class="divider">/</span></li>
+{{ticket.subject}}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <article class="span4 data-block">
+        <div class="data-container">
+            <header>
+                <h2>{% trans 'Ticket information' %}</h2>
+
+                {% if ticket.status != 'closed' %}
+                    <div class="data-header-actions">
+                        <button class="btn btn-small" type="button" id="ticket-close">{% trans 'Close ticket' %}</button>
+                    </div>
+                {% endif %}
+            </header>
+            <section>
+                <table class="table table-striped table-bordered table-condensed">
+                    <tbody>
+                    <tr>
+                        <td>{% trans 'Ticket ID' %}</td>
+                        <td><b>#{{ticket.id}}</b></td>
+                    </tr>
+
+                    <tr>
+                        <td>{% trans 'Help desk' %}</td>
+                        <td>{{ticket.helpdesk.name}}</td>
+                    </tr>
+
+                    <tr>
+                        <td>{% trans 'Status' %}</td>
+                        <td><div class="label {% if ticket.status=='open'%}label-success{% elseif ticket.status == 'on_hold'%}label-warning{%endif%}">{{mf.status_name(ticket.status)}}</div></td>
+                    </tr>
+
+                    <tr>
+                        <td>{% trans 'Time opened' %}</td>
+                        <td>{{ticket.created_at|bb_date }}</td>
+                    </tr>
+
+                    {% if ticket.rel_type == 'order' and ticket.rel_id %}
+                    <tr>
+                        <td>{% trans 'Related to' %}</td>
+                        <td><a href="{{ 'order/service/manage'|link }}/{{ ticket.rel_id }}">{% trans 'Service #' %} {{ ticket.rel_id }}</a></td>
+                    </tr>
+                    {% endif %}
+                    </tbody>
+
+                </table>
+
+            </section>
+        </div>
+    </article>
+    <article class="span8 data-block">
+        <div class="data-container">
+            <header>
+                <h2>{% trans 'Last tickets'%}</h2>
+                <div class="data-header-actions">
+                    <ul>
+                        <li>
+                            <a class="btn btn-small" href="{{ '/support'|link }}">{% trans 'Back to tickets list' %}</a>
+                        </li>
+                    </ul>
+                </div>
+            </header>
+            <section>
+                <table class="table table-bordered table-condensed">
+                    <thead>
+                    <tr>
+                        <th>{% trans 'Subject' %}</th>
+                        <th>{% trans 'Help desk' %}</th>
+                        <th>{% trans 'Status' %}</th>
+                        <th>{% trans 'Submitted' %}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% set tickets = client.support_ticket_get_list({"per_page":5, "page":request.page}) %}
+                    {% for i, t in tickets.list %}
+                    <tr {% if ticket.id == t.id %}class="alert alert-info"{% endif %}>
+                        <td><a href="{{ 'support/ticket'|link }}/{{t.id}}">{{t.subject|truncate(40)}}</a></td>
+                        <td>{{t.helpdesk.name}}</td>
+                        <td><span class="label {% if t.status=='open'%}label-info{% elseif t.status == 'on_hold'%}label-warning{%endif%}">{{mf.status_name(t.status)}}</span></td>
+                        <td>{{t.created_at|timeago}} {% trans 'ago' %}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </article>
+
+</div>
+
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h2>{{ ticket.subject }}</h2>
+                <p>#{{ ticket.id }} - {{ticket.helpdesk.name}}</p>
+            </header>
+            <section>
+                {% for i, message in ticket.messages %}
+                        <div class="row-fluid">
+                            <div class="span3">
+                                <div class="thumbnails">
+                                    <img src="{{ message.author.email|gravatar }}?size=60" alt="{{ message.author.name }}" class="gravatar">
+                                    <h3>
+                                        {{ message.author.name }}
+                                    </h3>
+                                </div>
+                            </div>
+                            <div class="span9">
+                                <header>#{{ i+1 }} | {{ message.created_at|bb_date }}
+                                    {% if ticket.status != 'closed' %}
+                                    <div class="pull-right">
+                                        <a href="#" class="btn btn-inverse reply-to-message" message-quote="{{ mf.markdown_quote(message.content) }}">{% trans 'Reply' %}</a>
+                                    </div>
+                                    {% endif %}
+                                </header>
+                                <section>
+                                    <div class="well" id="message-{{message.id}}">{{ message.content|bbmd }}</div>
+                                </section>
+                            </div>
+                        </div>
+                        <hr/>
+                {% endfor %}
+
+                <div class="row-fluid">
+                    {% if ticket.status != 'closed' %}
+                    <div class="span3"></div>
+                    <div class="span9">
+                        <form method="post" action="" class="api_form" data-api-url="{{ 'api/client/support/ticket_reply'|link }}" data-api-reload="1">
+                            <fieldset>
+                                <textarea name="content" cols="5" rows="10" class="span12" required="required" id="ticket-reply-text"></textarea>
+                                <button class="btn btn-primary btn-large" type="submit" id="submit-support-message" value="{% trans 'Post' %}" onclick="">{% trans 'Post' %}</button>
+                                <input type="hidden" name="id" value="{{ ticket.id }}">
+                            </fieldset>
+                        </form>
+                    </div>
+                    {% elseif ticket.status == 'closed' %}
+                        <div class="alert alert-white text-center">{% trans 'Ticket was closed and cannot be reopened.' %}</div>
+                    {% endif %}
+                </div>
+
+            </section>
+        </div>
+    </article>
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+        $('.reply-to-message').click(function (event) {
+            event.preventDefault();
+            var quote = $(this).attr('message-quote');
+            $('#ticket-reply-text').text(quote);
+            $('#ticket-reply-text').focus();
+        });
+
+        $('#submit-support-message').click(function () {
+            if ($('#ticket-reply-text').val().length > 0) {
+                $('.wait').show();
+            }
+        });
+
+    $('#ticket-close').bind('click',function(event){
+        event.preventDefault();
+        $('.wait').show();
+        bb.post(
+            'client/support/ticket_close',
+            { id: {{ ticket.id }} },
+            function(result) {
+                bb.redirect('{{ "support"|link }}');
+            }
+        );
+    });
+});
+</script>
+{% endblock %}

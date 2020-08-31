@@ -1,0 +1,125 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{{ forum.title }}{% endblock %}
+
+{% block content %}
+    <div class="h-block">
+        <div class="h-block-header">
+            <div class="icon"><span class="big-light-icon i-forum"></span></div>
+            <h2>{{ forum.title }}</h2>
+            <p>{{ forum.description }}</p>
+        </div>
+        <div class="block">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:5%">&nbsp;</th>
+                        <th style="width:5%">&nbsp;</th>
+                        <th style="width:40%">{% trans 'Thread / Thread Starter' %}</th>
+                        <th>{% trans 'Last post' %}</th>
+                        <th>{% trans 'Replies' %}</th>
+                        <th>{% trans 'Views' %}</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% set topics = guest.forum_get_topic_list({"forum_id":forum.id, "per_page":10,"page":request.page}) %}
+                    {% for i, topic in topics.list %}
+
+                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <td>
+                            <span class="forum-status {{topic.status}}"></span>
+                        </td>
+                        <td>
+                            <img src="{{ topic.first.author.email|gravatar }}?size=30" alt="{{ topic.first.author.name }}" />
+                        </td>
+                        <td>
+                            <a href="{{ '/forum'|link }}/{{forum.slug}}/{{topic.slug}}">{{topic.title}}</a>
+                            <p style="font-size: .9em">{{ topic.first.author.name }}</p>
+                        </td>
+                        <td>
+                            {{ topic.last.created_at|bb_date }}
+                            <p style="font-size: .9em">{% trans 'by' %} <a href="{{ '/forum'|link }}/{{forum.slug}}/{{topic.slug}}#m-{{ topic.last.id }}">{{ topic.last.author.name }} {#<img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"></a>#}</p>
+                        </td>
+                        <td>{{ topic.stats.posts_count }}</td>
+                        <td>{{ topic.stats.views_count }}</td>
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+                        <td colspan="6">{% trans 'The list is empty' %}</td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+
+    {% include "partial_pagination.phtml" with {'list': topics} %}
+
+    <p>
+        <button class="bb-button" type="button" onclick="parent.location='{{ '/forum'|link }}'"><span class="dark-icon i-arrow"></span>{% trans 'Forum list' %}</button>
+        {% if client %}
+        <button class="bb-button bb-button-submit" type="button" id="new-topic">{% trans 'New topic' %}</button>
+        {% else %}
+        <button class="bb-button bb-button-red" type="button" onclick="parent.location='{{ '/login'|link }}'">{% trans 'Register' %}</button>
+        {% endif %}
+    </p>
+
+    <div class="widget" id="new-topic-block" style="display: none">
+        <div class="head">
+            <h2 class="dark-icon i-forum">{% trans 'Start new topic in' %} "{{ forum.title }}"</h2>
+        </div>
+        <div class="block">
+            <form action="" method="post" id="forum-new-topic">
+                <fieldset>
+                    <legend>{% trans 'Start new topic' %}</legend>
+                    <p>
+                        <label>{% trans 'Topic title' %}: </label>
+                        <input type="text" name="topic" value="{{ request.topic }}" required="required">
+                    </p>
+                    <p>
+                        <label>{% trans 'Topic message' %}: </label>
+                        <textarea name="message" cols="5" rows="5" required="required">{{ request.message }}</textarea>
+                    </p>
+                    <input type="hidden" name="return" value="slug">
+                    <input type="hidden" name="forum_id" value="{{ forum.id }}">
+                    <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Create new topic' %}">
+                </fieldset>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+
+    $('#new-topic').bind('click', function(){
+        $(this).fadeOut();
+        $('#new-topic-block').fadeIn();
+        return false;
+    });
+
+    $('#forum-new-topic').bind('submit', function(){
+        bb.post(
+            'client/forum/start_topic',
+            $(this).serialize(),
+            function(result) {
+                bb.redirect('{{ "forum"|link }}' + '/' + '{{ forum.slug }}' + '/' + result);
+            }
+        );
+        return false;
+    });
+
+});
+</script>
+{% endblock %}

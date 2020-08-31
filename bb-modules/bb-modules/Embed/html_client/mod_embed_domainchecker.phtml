@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check domain</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <style type="text/css">
+        body { margin: 0; }
+        form {
+            border: 1px solid #D1D1D1;
+        }
+        fieldset {
+            border: 0px;
+        }
+        legend {
+            padding-top: 15px;
+        }
+        p {
+            margin: 0px;
+        }
+        textarea, select, input {
+            border: 1px solid #D1D1D1;
+            padding: 5px;
+            -webkit-border-radius: 2px;
+            -moz-border-radius: 2px;
+            border-radius: 2px;
+            background-color: white;
+        }
+    </style>
+</head>
+
+<body>
+<form method="post" action="" class="domainsearch" id="domain-checker">
+    <fieldset>
+        <p>
+            <input type="text" id="dsearch" value="" name="sld" />
+            <select id="dsearch" name="tld">
+                <option value=".com" label=".com">.com</option>
+                <option value=".asia" label=".asia">.asia</option>
+                <option value=".biz" label=".biz">.biz</option>
+                <option value=".bz" label=".bz">.bz</option>
+                <option value=".ca" label=".ca">.ca</option>
+                <option value=".cc" label=".cc">.cc</option>
+                <option value=".de" label=".de">.de</option>
+                <option value=".es" label=".es">.es</option>
+                <option value=".eu" label=".eu">.eu</option>
+                <option value=".in" label=".in">.in</option>
+                <option value=".info" label=".info">.info</option>
+                <option value=".me" label=".me">.me</option>
+                <option value=".mobi" label=".mobi">.mobi</option>
+                <option value=".name" label=".name">.name</option>
+                <option value=".net" label=".net">.net</option>
+                <option value=".org" label=".org">.org</option>
+                <option value=".ru" label=".ru">.ru</option>
+                <option value=".tel" label=".tel">.tel</option>
+                <option value=".tv" label=".tv">.tv</option>
+                <option value=".us" label=".us">.us</option>
+                <option value=".ws" label=".ws">.ws</option>
+                <option value=".xxx" label=".xxx">.xxx</option>
+            </select>
+        <button class="button large dsearch" type="submit"><span>Search</span></button>
+        </p>
+    </fieldset>
+</form>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script type="text/javascript">
+$(function() {
+    $('#domain-checker').bind('submit',function(event){
+        $.post('{{ constant('BB_URL_API') }}guest/servicedomain/check',
+        $(this).serialize(),
+        function(json) {
+            if(json.error) {
+                alert(json.error.message);
+            } else if(json.result) {
+                alert('Domain is available');
+            } else {
+                alert('Domain is already registered');
+            }
+        }, 'json');
+        return false;
+    });
+});
+</script>
+</body>
+</html>

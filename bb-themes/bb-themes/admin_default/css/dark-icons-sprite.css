@@ -1,0 +1,1805 @@
+/*
+Icon classes can be used entirely standalone. They are named after their original file names.
+
+```html
+<!-- `display: block` sprite -->
+<div class="icon-home"></div>
+
+<!-- `display: inline-block` sprite -->
+<img class="icon-home" />
+```
+*/
+.sprite-abacus {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-add {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-addressBook {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-adminUser {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-adminUser2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-airplane {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-alarm {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-alert {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-alert2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-android {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-archive {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-arrowDown {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-arrowLeft {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-arrowRight {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-arrowUp {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-bag {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-baloons {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-bandaid {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-basket {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-basket2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-battery {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-batteryFull {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-bell {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-bell2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-bigBrush {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-blackberry {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-block {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-blocks {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-bluetooth {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-bluetooth2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-bluray {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-book {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-bookLarge {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-books {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-bright {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-bubbles {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-bubbles2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-building {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-bullsEye {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-buzz {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-calc {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-camera {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-camera2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-car {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cart {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cart2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cart3 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cart4 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cashRegister {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cassette {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cat {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cd {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-chair {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-chart {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-chart2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-chart3 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-chart4 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-chart5 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-chart6 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-chart7 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-chart8 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-check {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-chemical {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-chrome {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-clipboard {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-clock {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-close {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cloud {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cloudDownload {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cloudUpload {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cog {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cog2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cog3 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cog4 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-companies {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-computer {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-coverflow {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-create {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cup {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-cut {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-dayCalendar {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-delicious {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-denied {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-dialog {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-digg {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-digg2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-doc {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-docs {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-download {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-download2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-download3 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-dribbble {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-dribbble2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-drive {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-dropbox {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-dropper {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-drupal {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-dvd {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-electricity {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-electroPlug {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-excelDoc {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-exit {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-expengine {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-expose {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-facebook {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-fax {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-femaleContour {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-femaleSymbol {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-files {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-filmCamera {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-filmStrip {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-filmStrip2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-firefox {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-flag {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-flag2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-flagFinished {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-folder {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-footprints {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-fountainPen {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-frames {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-full {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-full2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-fullscreen {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-globe {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-globe2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-gmaps {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-goBack {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-goFull {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-graph {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-hd {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-hd2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-hd3 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-headphones {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-heart {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-help {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-home {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-home2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-icecream {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-ichat {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-image {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-image2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-imageList {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-images {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-images2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-imagesList {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-inbox {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-inbox2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-incoming {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-info {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-ipad {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-iphone {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-ipodClassic {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-ipodNano {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-joomla {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-key {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-ladyPurse {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-lamp {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-laptop {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-lastFM {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-lemonadeStand {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-lightBulb {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-like {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-link {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-link2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-linux {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-list {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-loading {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-locked {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-locked2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-logoff {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-macos {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-magicMouse {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-magnify {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-mail {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-maleContour {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-maleSymbol {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-map {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-medicalCase {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-megaphone {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-microphone {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-mightyMouse {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-mobile {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-mobyPicture {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-money {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-money2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-monitor {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-monthCalendar {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-mouse {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-music {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-myspace {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-notebook {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-outgoing {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-pacman {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-paintBrush {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-pants {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-paperclip {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-paypal {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-paypal2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-paypal3 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-pdfDoc {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-pencil {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-phone {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-phone2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-phone3 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-photos {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-piggyBank {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-pin {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-planeSuitcase {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-play {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-play2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-plixi {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-podium {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-postcard {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-power {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-powerBattery {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-ppDoc {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-presentation {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-preview {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-priceTag {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-priceTags {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-printer {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-radio {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-record {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-recycle {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-refresh {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-refresh2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-refresh3 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-refresh4 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-repeat {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-robot {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-rss {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-ruler {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-ruler2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-runningMan {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-safari {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-scanLabel {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-sd {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-sd2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-sd3 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-settings {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-settings2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-shirt {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-shoppingBag {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-shuffle {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-signPost {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-signal {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-skype {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-smallBrush {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-socks {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-sound {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-speech {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-speech2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-star {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-stats {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-stop {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-stopWatch {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-strategy {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-strategy2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-stumble {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-suitcase {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-switcher {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-table {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-tag {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-tags {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-timer {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-transfer {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -126px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-trash {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -140px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-travelSuitcase {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -154px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-tree {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -168px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-trolly {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -182px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-truck {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -196px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-tumbler {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -210px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-tv {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: 0px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-twitter {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -14px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-twitter2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -28px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-umbrella {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -42px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-underConstruction {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -56px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-unlocked {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -70px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-upload {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -84px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-user {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -98px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-user2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -112px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-userComment {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -126px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-users {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -140px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-users2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -154px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-vault {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -168px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-vcard {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -182px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-view {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -196px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-vimeo {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -210px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-vimeo2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -224px -224px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-walkingMan {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -238px 0px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-wifi {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -238px -14px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-wifi2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -238px -28px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-windows {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -238px -42px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-wordDoc {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -238px -56px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-wordpress {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -238px -70px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-wordpress2 {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -238px -84px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-youtube {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -238px -98px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-zip {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -238px -112px;
+  width: 14px;
+  height: 14px;
+}
+.sprite-zipFiles {
+  background-image: url(../sprites/dark-icons-sprite.png);
+  background-position: -238px -126px;
+  width: 14px;
+  height: 14px;
+}

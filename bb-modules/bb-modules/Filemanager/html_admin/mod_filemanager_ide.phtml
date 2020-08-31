@@ -1,0 +1,96 @@
+{% set mod = constant('BB_URL') ~ 'bb-modules/Filemanager' %}
+<html>
+	<head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+		<title>{% trans 'File manager' %}</title>
+		<link rel="stylesheet" type="text/css" href="{{ mod }}/src/css/bootstrap/bootstrap-1.0.0.min.css" />
+		<link rel="stylesheet" type="text/css" href="{{ mod }}/src/css/app.css" />
+		<link rel="stylesheet" type="text/css" href="{{ mod }}/src/css/jqueryui/jquery.ui.base.css" />
+		<script src="{{ mod }}/src/js/jquery.js" type="text/javascript"></script>
+		<script src="{{ mod }}/src/js/jquery-ui.js" type="text/javascript"></script>
+		<script src="{{ mod }}/src/js/disableText.js" type="text/javascript"></script>
+		<script type="text/javascript">
+		$(function(){
+			$("#main-site").tabs();
+		});
+		</script>
+	</head>
+    
+	<body>
+		<div id="main-site">
+			<div id="acct-nav">
+                Hint: Use Ctrl+S to save file |
+                {% if show_full_screen %}
+                <a href="{{ 'filemanager/ide'|alink }}" target="_blank">{% trans 'Full screen' %}</a>
+                {% else %}
+				<a href="{{ 'index'|alink }}">{% trans 'Dashboard' %}</a>
+                {% endif %}
+			</div>
+			<ul id="main-nav">
+				<li class="active"><a href="#tab-edit">Edit</a></li>
+				<li><a href="#tab-ref">Reference</a></li>
+			</ul>
+            
+			<div id="tab-edit">
+                <div id="edit-files">
+                    <div id="edit-dir">
+                        <span class="icon icon-dir"></span>
+                        <div data-path="/" id="select-dir">/</div>
+                    </div>
+                    <ul id="path-tree">
+                        <li data-path="/"><span class="icon icon-dir"></span> /</li>
+                    </ul>
+                    <div id="file-tools">
+                        <a href="#" onclick="newDir(); return false;"><img src="{{ mod }}/src/img/dir-add.png" alt="new dir" /></a>
+                        <a href="#" onclick="newFile(); return false;"><img src="{{ mod }}/src/img/document--plus.png" alt="new dir" /></a>
+                    </div>
+                    <ul id="file-list"></ul>
+                </div>
+                <div id="edit-content">
+                    <ul></ul>
+                </div>
+                <script>
+                var absoDir = '{{ dir }}';
+                var apiUrl = '{{ constant('BB_URL_API') }}';
+                var bbUrl = '{{ "/" | alink }}';
+                var openFile = '{{open}}';
+                </script>
+                <script src="{{ mod }}/src/js/edit.js" type="text/javascript"></script>
+			</div>
+            
+			<div id="tab-ref">
+                <div id="ref-list">
+                    <ul>
+                        <li><a target="ref-iframe" href="http://docs.boxbilling.com/">BoxBilling.com Docs</a></li>
+                        <li><a target="ref-iframe" href="http://php.net">PHP.net</a></li>
+                        <li><a target="ref-iframe" href="http://dev.w3.org/html5/spec/Overview.html">HTML5 Spec</a></li>
+                        <li><a target="ref-iframe" href="http://reference.sitepoint.com/css">CSS</a></li>
+                        <li><a target="ref-iframe" href="http://w3schools.com/">W3 Schools</a></li>
+                        <li><a target="ref-iframe" href="http://jqapi.com/">jQuery</a></li>
+                    </ul>
+                </div>
+                <div id="ref-frame-wrap">
+                    <iframe id="ref-iframe"></iframe>
+                </div>
+                <script>
+                $(function(){
+                    resizeFrame();
+                    $("#ref-list ul li").click(function(e){
+                        $(this).siblings().removeClass('ref-sel');
+                        $(this).addClass('ref-sel');
+                        var href = $(this).children('a').attr('href');
+                        $("#ref-iframe")[0].src = href;
+                    });
+                });
+                $(window).resize(function(){
+                    resizeFrame();
+                });
+                function resizeFrame(){
+                    var hh = $(window).height() - ($("#main-nav").height() + $("#ref-list").height());
+                    $("#ref-iframe").css('height',hh+'px');
+                }
+                </script>
+			</div>
+		</div>
+	</body>
+</html>

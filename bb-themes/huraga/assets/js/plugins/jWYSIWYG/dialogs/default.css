@@ -1,0 +1,97 @@
+.wysiwyg-dialog {
+	position:fixed;
+	top:50px;
+	left:50px;
+	width:450px;
+	height:300px;
+	background:white;
+	font:14px "Helvetic Neue", Helvetica,Arial,sans-serif;
+}
+
+.wysiwyg-dialog .wysiwyg-dialog-topbar {
+	background:#333;
+	border:1px #111 solid;
+	color:white;
+	padding:10px;
+	position:relative;
+}
+
+.wysiwyg-dialog .wysiwyg-dialog-topbar .wysiwyg-dialog-close-wrapper .wysiwyg-dialog-close-button {
+	color:white;
+	text-decoration:none;
+	display:block;
+	padding:6px 10px;
+	position:absolute;
+	right:12px;
+	top:50%;
+	height:14px;
+	margin-top:-12px;
+}
+
+.wysiwyg-dialog .wysiwyg-dialog-topbar .wysiwyg-dialog-close-wrapper a.wysiwyg-dialog-close-button:hover {
+	background:#666;
+}
+
+.wysiwyg-dialog .wysiwyg-dialog-topbar .wysiwyg-dialog-title {
+	font-size:20px;
+	font-weight:bold;
+	padding:5px;
+}
+
+.wysiwyg-dialog .wysiwyg-dialog-content {
+	border:1px #ccc solid;
+	border-top:0;
+	padding:15px;
+}
+
+.wysiwyg-dialog form.wysiwyg fieldset {
+	border:1px #ccc solid;
+}
+
+.wysiwyg-dialog form.wysiwyg legend {
+	padding:7px;
+}
+
+.wysiwyg-dialog form.wysiwyg .form-row {
+	clear:both;
+	padding:4px 0;
+}
+
+.wysiwyg-dialog form.wysiwyg .form-row label, .wysiwyg-dialog form.wysiwyg .form-row .form-row-key {
+	display:block;
+	float:left;
+	width:35%;
+	text-align:right;
+	padding:4px 5px;
+}
+
+.wysiwyg-dialog form.wysiwyg .form-row .form-row-value {
+	display:block;
+	float:left;
+	width:55%;
+}
+
+.wysiwyg-dialog form.wysiwyg .form-row input.width-auto {
+	width:auto;
+}
+
+.wysiwyg-dialog form.wysiwyg input.width-small {
+	width:50px;
+	min-width:50px;
+	max-width:50px;
+}
+
+.wysiwyg-dialog form.wysiwyg input, .wysiwyg-dialog form.wysiwyg select {
+	padding:2px;
+	width:100%;
+	margin:2px;
+}
+
+.wysiwyg-dialog form.wysiwyg input[type=submit], .wysiwyg-dialog form.wysiwyg input[type=reset] {
+	padding:2px 7px;
+	width:auto;
+}
+
+
+
+

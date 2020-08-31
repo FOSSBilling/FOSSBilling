@@ -1,0 +1,22 @@
+{% block subject %}[{{ guest.system_company.name }}] {{ticket.subject}}{% endblock %}
+{% block content %}
+{% apply markdown %}
+
+Hi {{ c.first_name }} {{ c.last_name }},
+
+New reply was posted to request **{{ticket.subject}}**
+
+Ticket ID: #{{ticket.id}}   
+Department: {{ticket.helpdesk.name}}   
+Status: {{ticket.status|title}}  
+
+Login to members area: {{'login'|link({'email' : c.email }) }}
+Reply Ticket at: {{'support/ticket'|link}}/{{ ticket.id }}
+
+
+Please do not reply to this email directly. Use the link provided above.
+      
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

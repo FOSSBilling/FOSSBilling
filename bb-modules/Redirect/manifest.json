@@ -1,0 +1,10 @@
+{
+    "id":           "redirect",
+	"type":         "mod",
+    "name":         "Redirect",
+    "icon_url":     "icon.png",
+    "description":  "Manage redirects",
+    "author":       "BoxBilling",
+    "author_url":   "http://www.boxbilling.com",
+    "version":      "1.0.0"
+}

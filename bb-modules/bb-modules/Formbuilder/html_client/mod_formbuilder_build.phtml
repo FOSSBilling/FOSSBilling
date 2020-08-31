@@ -1,0 +1,76 @@
+{% if guest.extension_is_on({"mod":"formbuilder"}) %}
+{% set form = guest.formbuilder_get({"id":product.form_id}) %}
+        {% if form.style.show_title != "0" %}
+        <div class="control-group">
+            <div class="controls">
+                <legend>{{form.name}}</legend>
+            </div>
+        </div>
+        {% endif %}
+
+    <fieldset>
+        {% for field in form.fields %}
+    {% if form.style.type == 'horizontal' %}
+       <div class="control-group">
+    {% endif %}
+            {% if field.hide_label!=1 %}<label {% if form.style.type == 'horizontal' %}class="control-label"{% endif %} for="{{ field.name }}">{{ field.label }}</label>{% endif %}
+       {% if form.style.type == 'horizontal' %}
+           <div class="controls">
+       {% endif %}
+
+
+                {% if field.type == "text" %}
+                    {% if field.prefix is not empty or field.suffix is not empty %}<div class="{% if field.prefix is not empty %}input-prepend{% endif %} {% if field.suffix is not empty %}input-append{% endif %} ">{% endif %}
+                    {% if field.prefix is not empty %}<span class="add-on">{{field.prefix}}</span>{% endif %}
+                    <input type="text" name="{{ field.name }}" value="{{field.default_value}}"
+                    {% if field.required==1 %}required="required"{% endif %}
+                    {% if field.readonly==1%}readonly="readonly"{% endif %}
+                    />
+                    {% if field.suffix is not empty %}<span class="add-on">{{field.suffix}}</span>{% endif %}
+                    {% if field.prefix is not empty or field.suffix is not empty %} </div>{% endif %}
+
+                {% elseif field.type == "select" %}
+                <select name="{{ field.name }}" required="required">
+                    {% for k,v in field.options %}
+                        <option value="{{v}}" {% if v == field.default_value %}selected="selected"{%endif%}>{{k}}</option>
+                    {% endfor %}
+                </select>
+    
+                {% elseif field.type == "checkbox" %}
+                    {% for k,v in field.options %}
+                    <label class="checkbox"><input type="checkbox" name="{{field.name}}[]" value="{{v}}"
+                    {% if field.readonly==1 %}readonly="readonly"{% endif %}
+                    {% if v in field.default_value %}checked="checked"{% endif %}
+                        />{{k}}
+                    </label>
+                    {% endfor %}
+
+                {% elseif field.type == "radio" %}
+                {% for k,v in field.options %}
+                <label class="radio">
+                    <input type="radio" name="{{field.name}}" value="{{v}}"
+                    {% if field.default_value == v %}checked{% endif %}
+                    {% if field.required==1 %}required="required"{% endif %}
+                    {% if field.readonly==1%}readonly="readonly"{% endif %}
+                    />
+                    {{k}}
+                </label>
+                {% endfor %}
+
+                {% elseif field.type == "textarea" %}
+                <textarea id="{{field.name}}" name="{{field.name}}" cols="{{field.options.cols}}" rows="{{field.options.rows}}"
+                    {% if field.required==1 %}required="required"{% endif %}
+                    {% if field.readonly==1%}readonly="readonly"{% endif %}
+                >{{field.default_value}}</textarea>
+                {% endif %}
+                <span class="help-block">{{field.description}}</span>
+    {% if form.style.type == 'horizontal' %}
+        </div>
+        </div>
+    {% endif %}
+
+        {% endfor %}
+    </fieldset>
+    <input type="hidden" name="form_id" value="{{ form.id }}" />
+    <input type="hidden" name="id" value="{{ product.id }}" />
+{% endif %}

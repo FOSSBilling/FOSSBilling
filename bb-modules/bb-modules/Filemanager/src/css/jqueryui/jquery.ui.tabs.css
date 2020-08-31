@@ -1,0 +1,38 @@
+/*
+ * jQuery UI Tabs 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Tabs#theming
+ */
+.ui-tabs { position: relative; padding: 0; zoom: 1; } /* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */
+.ui-tabs .ui-tabs-nav { margin: 0; padding: 0; }
+.ui-tabs .ui-tabs-nav li { list-style: none; float: left; position: relative; border-bottom: 0 !important; padding: 0;
+	white-space: nowrap;
+	border-right: 1px solid #ddd;
+}
+.ui-tabs .ui-tabs-nav li a { float: left; padding: 4px 10px 3px 10px; text-decoration: none; }
+.ui-tabs .ui-tabs-nav li.ui-tabs-selected {
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#e0e0e0', endColorstr='#f0f0f0');
+	background: -webkit-gradient(linear, left top, left bottom, from(#e0e0e0), to(#f8f8f8));
+	background: -moz-linear-gradient(top,  #e0e0e0,  #f8f8f8);
+	box-shadow:inset 0px 2px 5px #aaa;
+	padding-bottom: 1px;
+	margin-bottom: 0;
+}
+.ui-tabs .ui-tabs-nav li.ui-tabs-selected a, .ui-tabs .ui-tabs-nav li.ui-state-disabled a, .ui-tabs .ui-tabs-nav li.ui-state-processing a { cursor: text; }
+.ui-tabs .ui-tabs-nav li a, .ui-tabs.ui-tabs-collapsible .ui-tabs-nav li.ui-tabs-selected a { cursor: pointer; } /* first selector in group seems obsolete, but required to overcome bug in Opera applying cursor: text overall if defined elsewhere... */
+.ui-tabs .ui-tabs-panel { clear:both; display: block; border-width: 0; background: none; }
+.ui-tabs .ui-tabs-hide { display: none !important; }
+
+.ui-tabs .ui-icon {
+	width: 14px;
+	height: 14px;
+	position: relative;
+	top: 6px;
+	margin-right: 5px;
+	background: url('../../img/close.png') center center no-repeat;
+    float: left;
+}

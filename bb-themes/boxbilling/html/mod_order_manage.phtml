@@ -1,0 +1,344 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{ order.title }}{% endblock %}
+
+{% set service_partial = "mod_service" ~ order.service_type ~ "_manage.phtml" %}
+{% set upgradables = client.order_upgradables({'id':order.id}) %}
+
+{% block content %}
+
+    <div class="h-block">
+        <div class="h-block-header">
+            <div class="icon"><span class="big-light-icon i-services"></span></div>
+            <h2>{% trans 'Service details' %}</h2>
+            <p>{% trans 'All information about your service' %}</p>
+        </div>
+        <div class="block">
+            <table>
+                <tbody>
+                <tr>
+                    <td><label>{% trans 'Order' %}</label></td>
+                    <td>#{{ order.id }}</td>
+                </tr>
+
+                <tr>
+                    <td><label>{% trans 'Product name' %}</label></td>
+                    <td><strong>{{ order.title }}</strong></td>
+                </tr>
+
+                <tr>
+                    <td><label>{% trans 'Payment amount' %}</label></td>
+                    <td>{{ order.total | money(order.currency) }}</td>
+                </tr>
+
+                {% if order.period %}
+                <tr>
+                    <td><label>{% trans 'Billing cycle' %}</label></td>
+                    <td>{{ order.period | period_title }}</td>
+                </tr>
+                {% endif %}
+                
+                <tr>
+                    <td><label>{% trans 'Order status' %}</label></td>
+                    <td>{{mf.status_name(order.status)}}</td>
+                </tr>
+
+                <tr>
+                    <td><label>{% trans 'Order created' %}</label></td>
+                    <td>{{ order.created_at|bb_date }}</td>
+                </tr>
+
+                <tr>
+                    <td><label>{% trans 'Activated at' %}</label></td>
+                    <td>{% if order.activated_at %}{{ order.activated_at|bb_date }}{% else %}-{% endif %}</td>
+                </tr>
+
+                {% if order.period %}
+                <tr>
+                    <td><label>{% trans 'Renewal date' %} {% if order.expires_at %} in {{ order.expires_at|daysleft }} day(s) {% endif %}</label></td>
+                    <td>{% if order.expires_at %}{{ order.expires_at|bb_date }}{% else %}-{% endif %}</td>
+                </tr>
+                {% endif %}
+                
+                {% if order.notes %}
+                <tr>
+                    <td><label>{% trans 'Order notes' %}</label></td>
+                    <td>{{ order.notes|bbmd }}</td>
+                </tr>
+                {% endif %}
+
+                {% if order.active_tickets > 0 %}
+                <tr>
+                    <td><label>{% trans 'Active support tickets' %}</label></td>
+                    <td>
+                        <div class="num"><a href="{{ 'support'|link }}" class="redNum">{{ order.active_tickets }}</a></div>
+                        {# <div class="num"><a href="{{ 'support'|link }}" class="greenNum">{{ order.active_tickets }}</a></div> #}
+                        {# <div class="num"><a href="{{ 'support'|link }}" class="bludNum">{{ order.active_tickets }}</a></div> #}
+                    </td>
+                </tr>
+                {% endif %}
+                </tbody>
+                
+                <tfoot>
+                    <tr>
+                        <td colspan="2">
+                            
+                        {% if order.period %}
+                        <button class="bb-button bb-button-submit" type="button" id="renewal-button"><span class="light-icon i-invoice"></span> {% trans 'Renew now' %}</button>
+                        {% endif %}
+
+                        {% if upgradables %}
+                        <button class="bb-button bb-button-submit" type="button" id="request-upgrade"><span class="light-icon i-order"></span> {% trans 'Request Upgrade' %}</button>
+                        {% endif %}
+
+                        <button class="bb-button bb-button-submit" type="button" id="open-ticket"><span class="light-icon i-support"></span> {% trans 'Open ticket' %}</button>
+                        {% if order.status == 'pending_setup' %}
+                        <a class="bb-button api bb-button-submit" href="{{'api/client/order/delete' | link({'id' : order.id})}}" data-api-redirect="{{ 'order/service'|link }}"><span class="light-icon i-bin"></span> {% trans 'Cancel' %}</a>
+                        {% endif %}
+
+                        {% if order.status == 'active' %}
+                        <button class="bb-button bb-button-submit" type="button" id="request-cancellation"><span class="light-icon i-forum"></span> {% trans 'Request Cancellation' %}</button>
+                        {% endif %}
+
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="widget request-cancelation" style="display: none;">
+        <div class="head">
+            <h2 class="dark-icon i-services">{% trans 'Request Cancellation' %}</h2>
+        </div>
+        <div class="block">
+            <form action="" method="post">
+                <fieldset>
+                    <p>
+                        <label>{% trans 'Help desk' %}: </label>
+                        {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                    </p>
+
+                    <p>
+                        <label>{% trans 'Subject' %}: </label>
+                        <input type="text" name="subject" value="{% trans 'I would like to cancel' %} {{ order.title }}" required="required"/>
+                    </p>
+
+                    <p>
+                        <label>{% trans 'Reason' %}: </label>
+                        <textarea name="content" cols="5" rows="5" required="required">{{ request.content|e }}</textarea>
+                    </p>
+
+                    <input type="hidden" name="rel_type" value="order">
+                    <input type="hidden" name="rel_id" value="{{ order.id }}">
+                    <input type="hidden" name="rel_task" value="cancel">
+                    <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Submit' %}">
+                </fieldset>
+            </form>
+        </div>
+    </div>
+
+    <div class="widget open-ticket" style="display: none;">
+        <div class="head">
+            <h2 class="dark-icon i-services">{% trans 'Open new support ticket regarding this order' %}</h2>
+        </div>
+        <div class="block">
+            <form action="" method="post">
+                <fieldset>
+                    <legend>{% trans 'Submit new support ticket. Ticket will be visible in support section after submission' %}</legend>
+                    <p>
+                        <label>{% trans 'Help desk' %}: </label>
+                        {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                    </p>
+
+                    <p>
+                        <label>{% trans 'Subject' %}: </label>
+                        <input type="text" name="subject" value="{{ request.subject|e }}" required="required"/>
+                    </p>
+
+                    <p>
+                        <label>{% trans 'Message' %}: </label>
+                        <textarea name="content" cols="5" rows="5" required="required">{{ request.content|e }}</textarea>
+                    </p>
+
+                    <input type="hidden" name="rel_type" value="order">
+                    <input type="hidden" name="rel_id" value="{{ order.id }}">
+                    <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Submit' %}">
+                </fieldset>
+            </form>
+        </div>
+    </div>
+
+    <div class="widget" id="upgrades" style="display: none;">
+        <div class="head">
+            <h2 class="dark-icon i-services">{% trans 'Request upgrade' %}</h2>
+        </div>
+        <div class="block">
+            <div class="block">
+                <form action="" method="post" class="api_form" data-api-url="client/support/ticket_create" data-api-msg="Upgrade request received">
+                    <fieldset>
+                        <p>
+                            <label>{% trans 'Help desk' %}: </label>
+                            {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                        </p>
+
+                        <p>
+                            <label>{% trans 'Subject' %}: </label>
+                            <input type="text" name="subject" value="{% trans 'I would like to upgrade' %} {{ order.title }}" required="required"/>
+                        </p>
+
+                        <p>
+                            <label>{% trans 'Upgrade to' %}: </label>
+                            {{ mf.selectbox('rel_new_value', upgradables, '', 1) }}
+                        </p>
+
+                        <p>
+                            <label>{% trans 'Notes' %}: </label>
+                            <textarea name="content" cols="5" rows="5" placeholder="Your comment">{% trans 'I would like to upgrade' %} {{ order.title }}</textarea>
+                        </p>
+
+                        <input type="hidden" name="rel_type" value="order">
+                        <input type="hidden" name="rel_id" value="{{ order.id }}">
+                        <input type="hidden" name="rel_task" value="upgrade">
+                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Request' %}">
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% if order.group_master == 1 %}
+{% set addons = client.order_addons({"id":order.id}) %}
+{% if addons|length > 0 %}
+    <div class="widget">
+        <div class="head">
+            <h2 class="dark-icon i-services">{% trans 'Addons you have ordered with this service' %}</h2>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>{% trans 'Product/Service' %}</th>
+                    <th>{% trans 'Price' %}</th>
+                    <th>{% trans 'Billing Cycle' %}</th>
+                    <th>{% trans 'Next due date' %}</th>
+                    <th>{% trans 'Status' %}</th>
+                    <th>&nbsp</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% for i, addon in addons %}
+            <tr class="{{ cycle(['odd', 'even'], i) }}">
+                <td>{{addon.title}}</td>
+                <td>{{ addon.total | money(addon.currency) }}</td>
+                <td>{{ addon.period | period_title }}</td>
+                <td>{% if addon.expires_at %}{{addon.expires_at|bb_date }}{% else %}-{% endif %}</td>
+                <td>{{ mf.status_name(addon.status) }}</td>
+                <td class="actions"><a class="bb-button" href="{{ '/order/service/manage'|link }}/{{addon.id}}"><span class="dark-icon i-drag"></span></a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+{% endif %}
+
+<p><a class="bb-button" href="{{ '/order/service'|link }}"><span class="dark-icon i-arrow"></span> {% trans 'Back to services' %}</a></p>
+
+
+{% if guest.system_template_exists({"file":service_partial})%}
+    {% set service = client.order_service({"id":order.id}) %}
+    {% include service_partial with {'order': order, 'service': service} %}
+{% else %}
+    {# trans 'Service does not have configuration page' #}
+{% endif %}
+
+{% endblock %}
+
+{# block sidebar2 %}
+    <div class="widget">
+        <div class="head">
+            <h2 class="dark-icon i-services">{% trans 'Actions' %}</h2>
+        </div>
+        <div class="block">
+        {% if order.period %}
+        <p><button class="bb-button bb-button-submit" type="button" id="renewal-button"><span class="light-icon i-invoice"></span> {% trans 'Renew now' %}</button></p>
+        {% endif %}
+
+        {% if upgradables %}
+        <p><button class="bb-button bb-button-submit" type="button" id="request-upgrade"><span class="light-icon i-order"></span> {% trans 'Request Upgrade' %}</button></p>
+        {% endif %}
+
+        <p><button class="bb-button bb-button-submit" type="button" id="open-ticket"><span class="light-icon i-support"></span> {% trans 'Open ticket' %}</button></p>
+        {% if order.status == 'pending_setup' %}
+        <p><a class="bb-button api bb-button-submit" href="{{'api/client/order/delete' | link({'id' : order.id})}}" data-api-redirect="{{ 'order/service'|link }}"><span class="light-icon i-bin"></span> {% trans 'Cancel' %}</a></p>
+        {% endif %}
+        
+        {% if order.status == 'active' %}
+        <p><button class="bb-button bb-button-submit" type="button" id="request-cancellation"><span class="light-icon i-forum"></span> {% trans 'Request Cancellation' %}</button></p>
+        {% endif %}
+
+        </div>
+    </div>
+{% endblock #}
+
+{% block js %}
+{% autoescape "js" %}
+<script type="text/javascript">
+$(function() {
+    $('#renewal-button').click(function(){
+
+        if(confirm("This will generate new invoice. Are you sure you want to continue?")) {
+            bb.post(
+                'client/invoice/renewal_invoice',
+                {order_id: {{order.id}} },
+                function(result) {
+                    bb.redirect('{{"invoice"|link}}' + '/' + result);
+                }
+            );
+        }
+    });
+
+    $('#request-cancellation').click(function(){
+        $('div.request-cancelation').slideToggle();
+        $('div.open-ticket').slideUp();
+    });
+
+    $('#open-ticket').click(function(){
+        $('div.open-ticket').slideToggle();
+        $('div.request-cancelation').slideUp();
+    });
+
+    $('#request-upgrade').click(function(){
+        $('#upgrades').slideToggle();
+    });
+
+    $('.open-ticket form').submit(function(){
+        bb.post(
+            'client/support/ticket_create',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Ticket was submitted. If you want to track conversation please go to support section');
+                $('div.open-ticket').fadeOut();
+                $('#open-ticket').fadeOut();
+            }
+        );
+        return false;
+    });
+
+    $('.request-cancelation form').submit(function(){
+        bb.post(
+            'client/support/ticket_create',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Service cancellation request received');
+                $('div.request-cancelation').fadeOut();
+                $('#request-cancellation').fadeOut();
+            }
+        );
+        return false;
+    });
+});
+</script>
+{% endautoescape %}
+{% endblock %}

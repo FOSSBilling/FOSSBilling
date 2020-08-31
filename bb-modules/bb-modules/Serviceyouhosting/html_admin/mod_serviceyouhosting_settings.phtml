@@ -1,0 +1,137 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}YouHosting{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+    <ul>
+        <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+        <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+        <li class="lastB">{% trans 'YouHosting settings' %}</li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+{% set params = admin.extension_config_get({"ext":"mod_serviceyouhosting"}) %}
+<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="Settings updated">
+
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'YouHosting settings' %}</a></li>
+        <li><a href="#tab-advanced">{% trans 'Advanced' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+    <div class="fix"></div>
+
+    <div id="tab-index" class="tab_content nopadding">
+            <fieldset>
+                <div class="rowElem noborder">
+                    <label>{% trans 'Your IP' %}</label>
+                    <div class="formRight">
+                        <strong>{{  admin.system_env({'ip':1}) }}</strong>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'WebHook URL' %}</label>
+                    <div class="formRight">
+                        <strong>{{  'api/guest/serviceyouhosting/webhook' | link }}</strong>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Api Key' %}</label>
+                    <div class="formRight">
+                        <input type="text" name="api_key" value="{{params.api_key}}" placeholder="Get API Key at YouHosting.com control panel"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+
+                <input type="submit" value="{% trans 'Update settings' %}" class="greyishBtn submitForm" />
+                <div class="body">
+                    {#<a href="{{'product'|alink({'type' : 'youhosting', 'title' : 'YouHosting'})}}#tab-new" target="_blank" class="btnIconLeft mr10"><img src="images/icons/dark/play.png" alt="" class="icon"><span>{% trans 'Create YouHosting product' %}</span></a>#}
+                    <input type="button" value="{% trans 'Check connection' %}" class="blueBtn" onclick="bb.post('admin/serviceyouhosting/get_plans', null, function(){ bb.msg('Successfully connected') }); return false;"/>
+                    <input type="button" value="{% trans 'Import clients' %}" class="blueBtn" id="import-clients" data-bb-import-page="1"/>
+                    <input type="button" value="{% trans 'Import clients, accounts and products' %}" class="blueBtn" id="import-accounts" data-bb-import-page="1"/>
+                </div>
+            </fieldset>
+
+        <div id="import-results"></div>
+        <pre id="import-results-log"></pre>
+    </div>
+
+        <div id="tab-advanced" class="tab_content nopadding">
+            <fieldset>
+                <div class="rowElem noborder">
+                    <label class="topLabel">{% trans 'Allowed IPs for Webhook listener' %}</label>
+                    <div class="formBottom">
+                        <textarea name="yh_ips" value="{{params.yh_ips}}" placeholder="212.1.209.2"></textarea>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+            <input type="submit" value="{% trans 'Update settings' %}" class="greyishBtn submitForm" />
+            </fieldset>
+        </div>
+
+    </div>
+</div>
+
+<input type="hidden" name="ext" value="mod_serviceyouhosting" />
+</form>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+    $(function() {
+
+        $('#import-accounts').click(function(){
+            $.ajax({
+                type: "POST",
+                url: bb.restUrl('admin/serviceyouhosting/import_accounts'),
+                data: {page: $('#import-accounts').attr('data-bb-import-page')},
+                dataType: 'json',
+                error: function(jqXHR, textStatus, e) {
+                    bb.msg(e, 'error');
+                },
+                success: function(data) {
+                    if(data.result.continue) {
+                        $('#import-results-log').text(data.result.log);
+                        $('#import-results').text('Imported page ' + data.result.current + ' of ' + data.result.total);
+                        $('#import-accounts').attr('data-bb-import-page', data.result.next);
+                        $('#import-accounts').click();
+                    }
+                }
+            });
+            return false;
+        });
+
+        $('#import-clients').click(function(){
+            $.ajax({
+                type: "POST",
+                url: bb.restUrl('admin/serviceyouhosting/import_clients'),
+                data: {page: $('#import-clients').attr('data-bb-import-page')},
+                dataType: 'json',
+                error: function(jqXHR, textStatus, e) {
+                    bb.msg(e, 'error');
+                },
+                success: function(data) {
+                    if(data.result.continue) {
+                        $('#import-results-log').text(data.result.log);
+                        $('#import-results').text('Imported page ' + data.result.current + ' of ' + data.result.total);
+                        $('#import-clients').attr('data-bb-import-page', data.result.next);
+                        $('#import-clients').click();
+                    }
+                }
+            });
+            return false;
+        });
+
+    });
+</script>
+{% endblock %}

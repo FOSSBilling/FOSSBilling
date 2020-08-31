@@ -1,0 +1,11 @@
+{
+    "id":           "queue",
+    "type":         "mod",
+    "name":         "Queue manager",
+    "description":  "Execute long running tasks in queue",
+    "homepage_url": "http://github.com/boxbilling/",
+    "author":       "BoxBilling",
+    "author_url":   "http://extensions.boxbilling.com/",
+    "license":      "http://www.boxbilling.com/license.txt",
+    "version":      "1.0.0"
+}

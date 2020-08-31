@@ -1,0 +1,42 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>BoxBilling setup</title>
+    <base href="{{ constant('BB_URL_INSTALL') }}"/>
+    <link href="css/main.css" rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/css?family=Cuprum" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+<div id="header" class="wrapper">
+    <div class="logo"><a href="{{ constant('BB_URL_INSTALL') }}" title="BoxBilling"><img src="https://sites.google.com/site/boxbilling/_/rsrc/1308483006796/home/logo_boxbilling.png" alt="" style="max-height: 50px"/></a></div>
+    <div class="middleNav">
+    	<ul>
+            <li class="iForum"><a href="http://www.boxbilling.com/forum" target="_blank" title="Invoicing, billing and client management software forum"><span>Forums</span></a></li>
+            <li class="iDocs"><a href="http://docs.boxbilling.com/" target="_blank" title="Invoicing, billing and client management software documentation"><span>Documentation</span></a></li>
+        </ul>
+    </div>
+    <div class="fix"></div>
+</div>
+
+<div class="wrapper">
+    <div class="leftNav">
+        {% block left %}{% endblock %}
+    </div>
+    
+    <div class="content" id="container">
+       {% block content %}{% endblock %}
+    </div>
+    <div class="fix"></div>
+</div>
+
+<div id="footer">
+	<div class="wrapper">
+       	<span>&copy; Copyright {{ now|date('Y') }}. All rights reserved. Powered by <a href="http://www.boxbilling.com" title="Invoicing, billing and client management software" target="_blank">BoxBilling {{version}}</a></span>
+    </div>
+</div>
+
+{% block js %}{% endblock %}
+</body>
+</html>

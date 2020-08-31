@@ -1,0 +1,62 @@
+{% extends "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% set active_menu = 'products' %}
+{% block meta_title %}{{ category.title}}{% endblock %}
+
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'product'|alink }}">{% trans 'Products' %}</a></li>
+    <li><a href="{{ 'product'|alink }}#tab-categories">{% trans 'Categories' %}</a></li>
+    <li class="lastB">{{ category.title}}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget">
+    
+    <div class="head">
+        <h5>{{ category.title}}</h5>
+    </div>
+    
+    <form method="post" action="{{ 'api/admin/product/category_update'|link }}" class="mainForm save api-form" data-api-msg="{% trans 'Category updated' %}">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{% trans 'Title' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="title" value="{{ category.title }}" required="required"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            <div class="rowElem">
+                <label>{% trans 'Icon' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="icon_url" id="bb-icon" value="{{ category.icon_url }}" style="width: 80%"/>
+                    <input type="button" value="{% trans 'Browse' %}" class="bHtml blueBtn button" />
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <textarea name="description" cols="5" rows="20" class="bb-textarea">{{ category.description }}</textarea>
+
+            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+            <input type="hidden" name="id" value="{{ category.id }}"/>
+        </fieldset>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+	$(".bHtml").click( function() {
+		jAlert(bb.load('{{"filemanager/icons"|alink }}', {rel:"bb-icon"}), '{% trans 'Select icon and click OK' %}');
+	});
+});
+</script>
+{% endblock %}

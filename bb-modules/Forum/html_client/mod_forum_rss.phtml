@@ -1,0 +1,30 @@
+{% set company  = guest.system_company %}
+<?xml version="1.0" encoding="utf-8" ?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <atom:link href="/rss.xml" rel="self" type="application/rss+xml" />
+        <title>{{ company.name }}</title>
+        <link>{{ 'forum' | link }}</link>
+        <language>en</language>
+        <description>{{ company.description }}</description>
+        <generator>BoxBilling RSS Engine</generator>
+        <image>
+            <url>{{ company.logo_url }}</url>
+            <title>{{ company.name }}</title>
+            <link>{{ '/' | link }}</link>
+        </image>
+        {% for topic in guest.forum_get_topic_list({"per_page":100}).list %}
+        
+        <item>
+            <title>{{ topic.title | truncate(150) }}</title>
+            <guid isPermaLink="true">{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}</guid>
+            <link>{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}</link>
+            <description>{{ topic.first.message | truncate(250) }}</description>
+            <category>{{topic.forum.category}}/{{topic.forum.title}}</category>
+            <dc:creator>{{ topic.first.author.name }}</dc:creator>
+            <pubDate>{{ topic.created_at|date("D, d M Y H:i:s O") }}</pubDate>
+        </item>
+        {% endfor %}
+
+    </channel>
+</rss>

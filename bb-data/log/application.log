@@ -1,0 +1,21 @@
+2020-08-31 20:21:23 DEBUG (7): onBeforeClientLogin: array (
+  'email' => 'timothy@webbhostingservices.com',
+  'password' => '987Um098',
+  'remember' => 'on',
+  'ip' => '66.169.61.212',
+)
+2020-08-31 20:21:23 DEBUG (7): onAfterClientLogin: array (
+  'id' => '7',
+  'ip' => '66.169.61.212',
+)
+2020-08-31 20:21:23 INFO (6): Client #7 logged in
+2020-08-31 20:26:27 DEBUG (7): onBeforeAdminLogin: array (
+  'email' => 'webmaster@webbhostingservices.com',
+  'password' => 'Mju7Cft6',
+  'ip' => '66.169.61.212',
+)
+2020-08-31 20:26:27 DEBUG (7): onAfterAdminLogin: array (
+  'id' => '1',
+  'ip' => '66.169.61.212',
+)
+2020-08-31 20:26:27 INFO (6): Staff member 1 logged in

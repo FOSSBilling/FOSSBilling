@@ -1,0 +1,81 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Email' %}{% endblock %}
+{% block breadcrumb %}
+<li><a href="{{ 'email' | link}}">{% trans 'Emails' %}</a><span class="divider">/</span></li>
+{{ email.subject }}
+{% endblock %}
+{% block content %}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h1>{{ email.subject }}</h1>
+                <div class="data-header-actions">
+                    <ul>
+                        <li>
+                            <a class="btn btn-small" href="{{ '/email'|link }}">{% trans 'Back to emails list' %}</a>
+                        </li>
+                    </ul>
+                </div>
+            </header>
+            <section>
+
+                        <div class="tab-pane {% if loop.first%}active{% endif %}" id="tab{{email.id}}"  >
+                            <div class="well well-small">
+                                <p><strong>{% trans 'From:' %}</strong> {{email.sender}}</p>
+                                <p><strong>{% trans 'To:' %}</strong> {{email.recipients}}</p>
+                                <p><strong>{% trans 'Created at:' %}</strong> {{email.created_at|bb_date}}</p>
+                            </div>
+                            <div class="well">
+                                <h3>{{ email.subject }}</h3>
+                                <p> {{email.content_html | raw}}</p>
+                            </div>
+                            <a class="btn btn-inverse email-resend" href="#" mail-id="{{email.id}}">{% trans 'Resend' %}</a>
+                            <a class="btn btn-danger email-delete" href="#"  mail-id="{{email.id}}">{% trans 'Delete' %}</a>
+                        </div>
+                </div>
+            </section>
+    </article>
+</div>
+
+{% endblock %}
+{% block js %}
+{% autoescape "js" %}
+<script type="text/javascript">
+    $(function() {
+        $('.email-resend').click(function(e){
+            e.preventDefault();
+            $('.wait').show();
+            var email_id = $(this).attr('mail-id');
+            bb.post(
+                'client/email/resend',
+                {id: email_id },
+                function(result) {
+                    $('.wait').hide();
+                    bb.msg('Email resent');
+                    return false;
+                }
+            );
+        });
+        $('.email-delete').click(function(e){
+            e.preventDefault();
+            if (confirm('Are you sure?')){
+                $('.wait').show();
+                var email_id = $(this).attr('mail-id');
+                bb.post(
+                    'client/email/delete',
+                    {id: email_id },
+                    function(result) {
+                        bb.msg('Email deleted');
+                        bb.redirect('{{ 'email'|link }}');
+                        return false;
+                    }
+                );
+            };
+        });
+
+    });
+</script>
+{% endautoescape %}
+{% endblock %}

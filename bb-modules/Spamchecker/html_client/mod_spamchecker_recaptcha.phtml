@@ -1,0 +1,20 @@
+{% if guest.extension_is_on({"mod":"spamchecker"}) %}
+{% set rc = guest.spamchecker_recaptcha %}
+    {% if rc.enabled %}
+        {% if rc.version == 2 %}
+            <script src='https://www.google.com/recaptcha/api.js' async defer></script>
+            <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
+        {% else %}
+            {% set server = "https://www.google.com/recaptcha/api" %}
+            <script type="text/javascript" src="https://www.google.com/recaptcha/api/challenge?k={{ rc.publickey }}"></script>
+            <noscript>
+               <iframe src="https://www.google.com/recaptcha/api/noscript?k={{ rc.publickey }}"
+                   height="300" width="500" frameborder="0"></iframe><br>
+               <textarea name="recaptcha_challenge_field" rows="3" cols="40">
+               </textarea>
+               <input type="hidden" name="recaptcha_response_field"
+                   value="manual_challenge">
+            </noscript>
+        {% endif %}
+    {% endif %}
+{% endif %}

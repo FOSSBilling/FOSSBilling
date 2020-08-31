@@ -1,0 +1,12 @@
+{
+    "id":           "example",
+	"type":         "mod",
+    "name":         "Example module",
+    "description":  "Open source extension for BoxBilling developer to get started.",
+    "icon_url":     "icon.png",
+    "homepage_url": "http://github.com/boxbilling/",
+    "author":       "BoxBilling",
+    "author_url":   "http://extensions.boxbilling.com/",
+    "license":      "GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
+    "version":      "2.0.0"
+}

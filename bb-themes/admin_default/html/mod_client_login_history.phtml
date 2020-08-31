@@ -1,0 +1,51 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}Clients login history{% endblock %}
+{% set active_menu = 'activity' %}
+
+{% block content %}
+<div class="widget">
+    <div class="head"><h5 class="iFrames">{% trans 'Clients logins history' %}</h5></div>
+
+{{ mf.table_search }}
+<table class="tableStatic wide">
+    <thead>
+        <tr>
+            <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
+            <td colspan="2">{% trans 'Client' %}</td>
+            <td>{% trans 'IP' %}</td>
+            <td>{% trans 'Country' %}</td>
+            <td>{% trans 'Date' %}</td>
+            <td style="width: 5%">&nbsp;</td>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% set history = admin.client_login_history_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+    {% for i, event in history.list %}
+    <tr>
+        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ event.id }}"/></td>
+        <td style="width:5%"><a href="{{ 'client/manage'|alink }}/{{ event.client.id }}"><img src="{{ event.client.email|gravatar }}?size=20" alt="{{ event.client.email }}" /></a></td>
+        <td>{{ event.client.first_name }} {{ event.client.last_name }}</td>
+        <td>{{ event.ip }}</td>
+        <td>{{ event.ip|ipcountryname|default('Unknown') }}</td>
+        <td>{{ event.created_at|date('Y-m-d H:i') }}</td>
+        <td class="actions">
+            <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" data-api-redirect="{{ 'client/logins'|alink }}" href="{{ 'api/admin/client/login_history_delete'|link({'id' : event.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+        </td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="6">
+            {% trans 'The list is empty' %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    
+</table>
+    {% include "partial_batch_delete.phtml" with {'action' : 'admin/client/batch_delete_log'} %}
+    {% include "partial_pagination.phtml" with {'list': history, 'url':'client/logins'} %}
+</div>
+
+{% endblock %}

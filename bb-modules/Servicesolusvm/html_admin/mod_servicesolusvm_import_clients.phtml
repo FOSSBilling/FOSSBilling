@@ -1,0 +1,82 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}Import SolusVM clients{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block content %}
+<div class="widget">
+    <div class="head"><h5 class="iFrames">{% trans 'Import SolusVM clients' %}</h5></div>
+
+<form action="{{ 'api/admin/servicesolusvm/import_clients'|link }}" method="post" class="mainForm api-form" data-api-jsonp="onAfterImport">
+<table class="tableStatic wide">
+    <thead>
+        <tr>
+            <td style="width:15px;"><input type="checkbox" id="smctoggler" checked="checked"></td>
+            <td>{% trans 'ID' %}</td>
+            <td>{% trans 'Name' %}</td>
+            <td>{% trans 'Company' %}</td>
+            <td>{% trans 'Email' %}</td>
+            <td>{% trans 'Username' %}</td>
+            <td>{% trans 'Created' %}</td>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for i, client in admin.servicesolusvm_client_list({"skip":1}) %}
+    <tr>
+        <td><input type="checkbox" name="clients[]" checked="checked" class="smc" value="{{client.id}}"></td>
+        <td>{{ client.id }}</td>
+        <td>{{ client.firstname }} {{ client.lastname }}</td>
+        <td>{{ client.company }}</td>
+        <td>{{ client.email }}</td>
+        <td>{{ client.username }}</td>
+        <td>{{ client.created }}</td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="7">
+            {% trans 'The list is empty' %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    
+    <tfoot>
+        <tr>
+            <td colspan="7">
+                <input type="submit" value="{% trans 'Import selected SolusVM clients to BoxBilling' %}" class="greyishBtn" />
+            </td>
+        </tr>
+    </tfoot>
+</table>
+</form>
+    
+    <div class="body" style="display:none;"><pre id="rsp"></pre></div>
+
+</div>
+{% endblock %}
+
+{% block js %}
+{% autoescape "js" %}
+<script type="text/javascript">
+    function onAfterImport(result)
+    {
+        $('#rsp').parent().show();
+        $('#rsp').text(result);
+    }
+    
+$(function() {
+    $('#smctoggler').change(function(){
+        if($(this).is(':checked')) {
+            $('.jqTransformCheckboxWrapper a.jqTransformCheckbox').addClass('jqTransformChecked');
+            $('.smc').attr('checked', 'checked');
+        } else {
+            $('.jqTransformCheckboxWrapper a.jqTransformCheckbox').removeClass('jqTransformChecked');
+            $('.smc').removeAttr('checked');
+        }
+        return false;
+    });
+});
+</script>
+{% endautoescape %}
+{% endblock %}

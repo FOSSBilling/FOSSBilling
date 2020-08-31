@@ -1,0 +1,138 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{ticket.subject}}{% endblock %}
+
+{% block content %}
+
+<div class="h-block forum">
+    <div class="h-block-header">
+        <div class="icon"><span class="big-light-icon i-support"></span></div>
+        <h2>{{ ticket.subject|truncate(60) }}</h2>
+        <p>#{{ ticket.id }} - {{ticket.helpdesk.name}}</p>
+    </div>
+    <div class="block conversation">
+    {% for i, message in ticket.messages %}
+    <div class="widget simpleTabs tabsRight{% if loop.first %} first{% endif %}">
+        <div class="head">
+            <h2 class="dark-icon i-forum">{{ message.author.name }}</h2>
+            <h3>{{ message.created_at|bb_date }}</h3>
+        </div>
+        <ul class="tabs">
+            <li><a href="#m-{{message.id}}">#{{ i+1 }}</a></li>
+            <li><a href="#reply-{{message.id}}"><span class="dark-icon i-support"></span>{% trans 'Reply' %}</a></li>
+            <li><a href="#quote-{{message.id}}"><span class="dark-icon i-quote"></span>{% trans 'Quote' %}</a></li>
+        </ul>
+        <div class="tabs_container">
+            <div class="tab_content" id="m-{{message.id}}">
+                <div class="grid_2 alpha">
+                    <img src="{{ message.author.email|gravatar }}?size=60" alt="{{ message.author.name }}" class="gravatar"/>
+                </div>
+                <div class="grid_10 omega">
+                    <div class="block message">
+                        <div class="body">
+                            {{ message.content|bbmd }}
+                            <div class="clear"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="clear"></div>
+            </div>
+            <div class="tab_content" id="reply-{{message.id}}">
+                <form method="post" action="" class="api_form" data-api-url="{{ 'api/client/support/ticket_reply'|link }}" data-api-reload="1">
+                    <fieldset>
+                        <p>
+                            <textarea name="content" cols="5" rows="10" required="required"></textarea>
+                        </p>
+                        <input type="hidden" name="id" value="{{ ticket.id }}">
+                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Post' %}">
+                    </fieldset>
+                </form>
+            </div>
+
+            <div class="tab_content" id="quote-{{message.id}}">
+                <form method="post" action="" class="api_form" data-api-url="{{ 'api/client/support/ticket_reply'|link }}" data-api-reload="1">
+                    <fieldset>
+                        <p>
+                            <textarea name="content" cols="5" rows="10" required="required">{{ mf.markdown_quote(message.content) }}</textarea>
+                        </p>
+                        <input type="hidden" name="id" value="{{ ticket.id }}">
+                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Post' %}">
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+</div>
+
+<div class="grid_12 alpha omega">
+    <div class="widget">
+        <div class="head">
+            <h2 class="dark-icon i-support">{{ticket.subject|truncate(95)}}</h2>
+        </div>
+        <table>
+            <tbody>
+                <tr>
+                    <td>{% trans 'Ticket ID' %}</td>
+                    <td><b>#{{ticket.id}}</b></td>
+                </tr>
+
+                <tr>
+                    <td>{% trans 'Help desk' %}</td>
+                    <td>{{ticket.helpdesk.name}}</td>
+                </tr>
+
+                <tr>
+                    <td>{% trans 'Status' %}</td>
+                    <td>{{mf.status_name(ticket.status)}}</td>
+                </tr>
+
+                <tr>
+                    <td>{% trans 'Time opened' %}</td>
+                    <td>{{ticket.created_at|bb_date }}</td>
+                </tr>
+
+                {% if ticket.rel_type == 'order' and ticket.rel_id %}
+                <tr>
+                    <td>{% trans 'Related to' %}</td>
+                    <td><a href="{{ 'order/service/manage'|link }}/{{ ticket.rel_id }}">{% trans 'Service #' %} {{ ticket.rel_id }}</a></td>
+                </tr>
+                {% endif %}
+             </tbody>
+
+             <tfoot>
+                 <tr>
+                     <td colspan="2">
+
+                     <a class="bb-button" href="{{ '/support'|link }}"><span class="dark-icon i-arrow"></span>{% trans 'Tickets list' %}</a>
+
+                     {% if ticket.status != 'closed' %}
+                        <button class="bb-button" type="button" id="ticket-close">{% trans 'Close ticket' %}</button>
+                        {% endif %}
+                     </td>
+                 </tr>
+             </tfoot>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+
+    $('#ticket-close').bind('click',function(event){
+        bb.post(
+            "{{ 'api/client/support/ticket_close'|link }}",
+            { id: {{ ticket.id }} },
+            function(result) {
+                bb.redirect('{{ "support"|link }}');
+            }
+        );
+        return false;
+    });
+});
+</script>
+{% endblock %}

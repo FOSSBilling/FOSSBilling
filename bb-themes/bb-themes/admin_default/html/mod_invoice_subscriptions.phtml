@@ -1,0 +1,164 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Subscriptions' %}{% endblock %}
+{% set active_menu = 'invoice' %}
+
+{% block content %}
+
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Subscriptions' %}</a></li>
+        <li><a href="#tab-new">{% trans 'New subscription' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+
+        {{ mf.table_search }}
+        <table class="tableStatic wide">
+            <thead>
+                <tr>
+                    <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
+                    <th colspan="2">{% trans 'ID' %}</th>
+                    <th>{% trans 'Status' %}</th>
+                    <th>{% trans 'Gateway' %}</th>
+                    <th>{% trans 'Amount' %}</th>
+                    <th width="13%">&nbsp;</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% set subscriptions = admin.invoice_subscription_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+                {% for i, subscription in subscriptions.list %}
+                <tr>
+                    <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ subscription.id }}"/></td>
+                    <td style="width:5%;"><a href="{{ 'client/manage'|alink }}/{{ subscription.client.id }}"><img src="{{ subscription.client.email|gravatar }}?size=20" alt="{{ subscription.client.email }}" title="{{subscription.client.first_name}} {{subscription.client.last_name}}"/></a></td>
+                    <td>{{ subscription.sid }}</td>
+                    <td>{{ mf.status_name(subscription.status) }}</td>
+                    <td>{{ subscription.gateway.title }}</td>
+                    <td>{{ mf.currency_format( subscription.amount, subscription.currency) }} {{ mf.period_name(subscription.period) }}</td>
+                    <td class="actions">
+                        <a class="btn14" href="{{ 'invoice/subscription'|alink }}/{{ subscription.id }}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                        <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/invoice/subscription_delete'|link({'id' : subscription.id}) }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/trash.png" alt=""></a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6">
+                        {% trans 'The list is empty' %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+            {% include "partial_batch_delete.phtml" with {'action' : 'admin/invoice/batch_delete_subscription'} %}
+            {% include "partial_pagination.phtml" with {'list': subscriptions, 'url':'invoice/subscriptions'} %}
+    </div>
+        
+        <div class="tab_content nopadding" id="tab-new">
+
+            <form method="post" action="{{ 'api/admin/invoice/subscription_create'|link }}" class="mainForm save api-form" data-api-reload="1">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Client' %}</label>
+                        <div class="formRight">
+                            <input type="text" id="client_selector" placeholder="{% trans 'Start typing clients name, email or ID' %}"/>
+                            <input type="hidden" name="client_id" value="{{ request.client_id }}" id="client_id"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Payment Gateway' %}:</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'Select payment gateway') }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Subscription ID on payment gateway' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="sid" value="{{request.sid}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Status' %}:</label>
+                        <div class="formRight">
+                            <input type="radio" name="status" value="active" checked="checked"/><label>{% trans 'Active' %}</label>
+                            <input type="radio" name="status" value="canceled" /><label>{% trans 'Canceled' %}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Period' %}:</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('period', guest.system_periods, request.period, 1, 'Select period') }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Amount' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="amount" value="{{request.amount}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Currency' %}</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 1, 'Select currency') }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+            </div>
+        
+    </div>
+</div>
+{% endblock %}
+
+
+{% block js%}
+<script type="text/javascript">
+$(function() {
+
+	$('#client_selector').autocomplete({
+        source: function( request, response ) {
+            $.ajax({
+                url: bb.restUrl('admin/client/get_pairs'),
+                dataType: "json",
+                data: {
+                    per_page: 10,
+                    search: request.term
+                },
+                success: function( data ) {
+                    response( $.map( data.result, function( name, id) {
+                        return {
+                            label: name,
+                            value: id
+                        }
+                    }));
+                }
+            });
+        },
+        minLength: 1,
+        select: function( event, ui ) {
+            $("#client_selector").val(ui.item.label);
+            $("#client_id").val(ui.item.value);
+            return false;
+        }
+    });
+
+});
+
+</script>
+{% endblock %}

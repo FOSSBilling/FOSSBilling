@@ -1,0 +1,228 @@
+{% import "macro_functions.phtml" as mf %}
+{% extends "layout_default.phtml" %}
+{% block meta_title %}{% trans 'Product promotions' %}{% endblock %}
+{% set active_menu = 'products' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'product'|alink }}">{% trans 'Products' %}</a></li>
+    <li class="lastB">{% trans 'Product promotions' %}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-promos">{% trans 'Promo' %}</a></li>
+        <li><a href="#tab-new">{% trans 'New promo' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-promos">
+
+            {{ mf.table_search }}
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td>{% trans 'Code' %}</td>
+                        <td>{% trans 'Discount' %}</td>
+                        <td>{% trans 'Applies to' %}</td>
+                        <td>{% trans 'Client groups' %}</td>
+                        <td>{% trans 'Valid period' %}</td>
+                        <td>{% trans 'Enabled' %}</td>
+                        <td>{% trans 'Usage' %}</td>
+                        <td style="width: 13%">&nbsp;</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% set promos = admin.product_promo_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+                {% for promo in promos.list %}
+                <tr>
+                    <td><strong>{{ promo.code }}</strong></td>
+                    <td>{% if promo.type == 'percentage' %}{{ promo.value }}%{% endif %}{% if promo.type == 'absolute' %}{{ mf.currency_format(promo.value) }}{% endif %}</td>
+                    <td>{% for pid,product in promo.applies_to %}
+                        <a href="{{ 'product/manage'|alink }}/{{pid}}">{{ product|truncate(15) }}</a><br/>
+                        {% else %}
+                        All products
+                        {% endfor %}
+                    </td>
+                    <td>{% for cid,client_group in promo.cgroups %}
+                        <a href="{{ 'client/group'|alink }}/{{cid}}">{{ client_group|truncate(15) }}</a><br/>
+                        {% else %}
+                        All client groups
+                        {% endfor %}
+                    </td>
+                    <td>
+                        From {% if promo.start_at %}{{ promo.start_at|date('Y-m-d') }}{% else %}now{% endif %}
+                        untill {% if promo.end_at %}{{ promo.end_at|date('Y-m-d') }}{% else %}disabled{% endif %}
+                    </td>
+                    <td>{{ mf.q(promo.active) }}</td>
+                    <td>{{ promo.used }} / {% if promo.maxuses %}{{ promo.maxuses }}{% else %}&#8734;{% endif %}</td>
+                    <td class="actions">
+                        <a class="bb-button btn14" href="{{ '/product/promo'|alink }}/{{promo.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                        <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/product/promo_delete'|link({'id' : promo.id}) }}" data-api-redirect="{{ 'product/promos'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                    </td>
+                </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="7">
+                            {% trans 'The list is empty' %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            
+            {% include "partial_pagination.phtml" with {'list': promos, 'url':'product/promos'} %}
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new">
+            <div class="help">
+                <h3>{% trans 'Create new coupon code' %}</h3>
+                <p>{% trans %}Create special offers for your clients by creating coupon codes.{% endtrans %}</p>
+            </div>
+            
+            <form method="post" action="{{ 'api/admin/product/promo_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'product/promos'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Code' %}</label>
+                        <div class="formRight">
+                            <input type="text" name="code" value="" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Discount type' %}</label>
+                        <div class="formRight moreFields">
+                            <ul>
+                                <li style="width: 270px">
+                                    <input type="radio" name="type" value="absolute" checked="checked"/><label>{% trans 'Absolute' %}</label>
+                                    <input type="radio" name="type" value="percentage"/><label>{% trans 'Percentage' %}</label>
+                                </li>
+                                <li style="width: 100px"><input type="text" name="value" value="" required="required" placeholder="0"/></li>
+                            </ul>
+                        </div> 
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Recurring' %}</label>
+                        <div class="formRight moreFields">
+                            <input type="radio" name="recurring" value="1" checked="checked"/><label>Applies to first order and renewals</label>
+                            <input type="radio" name="recurring" value="0"/><label>Applies to first order only</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Active' %}</label>
+                        <div class="formRight">
+                            <input type="radio" name="active" value="1" checked="checked"/><label>{% trans 'Yes' %}</label>
+                            <input type="radio" name="active" value="0"/><label>{% trans 'No' %}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Free setup' %}</label>
+                        <div class="formRight">
+                            <input type="radio" name="freesetup" value="1"/><label>{% trans 'Yes' %}</label>
+                            <input type="radio" name="freesetup" value="0" checked="checked"/><label>{% trans 'No' %}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>{% trans 'Promo code limitations' %}</legend>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Once per client' %}</label>
+                        <div class="formRight">
+                            <input type="radio" name="once_per_client" value="1" checked="checked"/><label>Yes</label>
+                            <input type="radio" name="once_per_client" value="0"/><label>No</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Max uses (zero for unlimited)' %}</label>
+                        <div class="formRight">
+                            <input type="text" name="maxuses" value="" class="dirRight" title="Leave blank for unlimited uses"  placeholder="0"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Valid time (Leave blank for undefined time)' %}</label>
+                        <div class="formRight moreFields">
+                            <ul>
+                                <li style="width: 100px"><input type="text" name="start_at" value="" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
+                                <li class="sep">-</li>
+                                <li style="width: 100px"><input type="text" name="end_at" value="" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
+                            </ul>
+                        </div> 
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Products (Select none to apply to all products)' %}</label>
+                        <div class="formRight">
+                            {% set products = admin.product_get_pairs %}
+                            <select name="products[]" multiple="multiple" class="multiple" size="{{products|length}}">
+                                {% for id,product in products %}
+                                <option value="{{id}}">{{ product }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Periods (Select none to apply to all periods)' %}</label>
+                        <div class="formRight">
+                            {% set periods = guest.system_periods %}
+                            <select name="periods[]" multiple="multiple" class="multiple" size="{{periods|length}}">
+                                {% for id,period in periods %}
+                                <option value="{{id}}">{{ period }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Client Groups (Select none to apply to all client groups)' %}</label>
+                        <div class="formRight">
+                            {% set client_groups = admin.client_group_get_pairs %}
+                            <select name="client_groups[]" multiple="multiple" class="multiple" size="{{groups|length}}">
+                                {% for id, client_group in client_groups %}
+                                <option value="{{id}}">{{ client_group }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    {#
+                    <div class="rowElem">
+                        <label>{% trans 'Addons (Select none to apply to all addons)' %}</label>
+                        <div class="formRight">
+                            {% set products = admin.product_addon_get_pairs %}
+                            <select name="products[]" multiple="multiple" class="multiple" size="{{products|length}}">
+                                {% for id,product in products %}
+                                <option value="{{id}}">{{ product }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    #}
+                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+        
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}Cookie consent settings{% endblock %}
+{% set active_menu = 'extensions' %}
+
+{% block content %}
+<div class="widget">
+    <div class="head">
+        <h5>{% trans 'Edit cookie consent message text' %}</h5>
+    </div>
+    <div class="help">
+        <p>{% trans 'Here you can specify message which will be shown to user. It will be shown until user will click <strong>Close &times;</strong> button, however it will not be intrusive and will not disturb to perform any actions.' %}</p>
+        <p>{% trans 'If there is a need to change the way notification looks or is being displayed, you can do it by editing' %} <strong>src/bb-modules/Cookieconsent/html_client/mod_cookieconsent_index.phtml</strong></p>
+    </div>
+
+    {% set params = admin.extension_config_get({"ext":"mod_cookieconsent"}) %}
+        <div class="tab_content nopadding" id="tab-new">
+            <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Configuration updated' %}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <div class="formBottom">
+                            <textarea cols="5" rows="10" name="message" placeholder="{% trans 'Add note or todo task' %}" >{% if params.message %}{{params.message}}{% else %}This website uses cookies. By continuing to use this website, you consent to our use of these cookies.{% endif %}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="hidden" name="ext" value="mod_cookieconsent" />
+                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+</div>
+{% endblock %}

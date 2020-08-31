@@ -1,0 +1,63 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% set active_menu = 'system' %}
+{% block meta_title %}{% trans 'Currency management' %}{% endblock %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li><a href="{{ 'extension/settings/currency'|alink }}">{% trans 'Currency settings' %}</a></li>
+    <li class="lastB">{{currency.code}}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+
+<div class="widget">
+    
+    <div class="head">
+        <h5>{% trans 'Edit currency information' %} {{currency.code}}</h5>
+    </div>
+
+    <form method="post" action="{{ 'api/admin/currency/update'|link }}" class="mainForm save api-form" data-api-msg="Currency updated">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{% trans 'Title' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="title" value="{{currency.title}}" required="required">
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Conversion rate' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="conversion_rate" value="{{currency.conversion_rate}}" required="required">
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Format' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="format" value="{{currency.format}}" required="required" placeholder="$ {{price|raw}}">
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Price format' %}:</label>
+                <div class="formRight">
+                    <input type="radio" name="price_format" value="1" {% if currency.price_format == 1 %}checked="checked"{% endif %}><label>1234.56</label>
+                    <input type="radio" name="price_format" value="2" {% if currency.price_format == 2 %}checked="checked"{% endif %}><label>1,234.56</label>
+                    <input type="radio" name="price_format" value="3" {% if currency.price_format == 3 %}checked="checked"{% endif %}><label>1.234,56</label>
+                    <input type="radio" name="price_format" value="4" {% if currency.price_format == 4 %}checked="checked"{% endif %}><label>1,234</label>
+                    <input type="radio" name="price_format" value="5" {% if currency.price_format == 5 %}checked="checked"{% endif %}><label>1234</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+            <input type="hidden" name="code" value="{{currency.code}}"/>
+        </fieldset>
+    </form>
+</div>
+
+{% endblock %}

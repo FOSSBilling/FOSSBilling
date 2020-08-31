@@ -1,0 +1,66 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% set active_menu = 'support' %}
+{% block meta_title %}{% trans 'Canned response' %}{% endblock %}
+
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'support'|alink }}">{% trans 'Support' %}</a></li>
+    <li><a href="{{ 'support/canned-responses'|alink }}">{% trans 'Canned responses' %}</a></li>
+    <li class="lastB">{{response.title}}</li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="widget">
+
+    <div class="head">
+        <h5>{% trans 'Canned response' %}</h5>
+    </div>
+    
+    <form method="post" action="{{ 'api/admin/support/canned_update'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{% trans 'Category' %}:</label>
+                <div class="formRight">
+                    {{ mf.selectbox('category_id', admin.support_canned_category_pairs, response.category.id, 1) }}
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Title' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="title" value="{{response.title}}" required="required" placeholder=""/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+            <input type="hidden" name="id" value="{{ response.id }}"/>
+        </fieldset>
+    </form>
+</div>
+
+
+<div class="widget">
+    <div class="head">
+        <h5>{{response.title}}</h5>
+    </div>
+    
+    <form method="post" action="{{ 'api/admin/support/canned_update'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+        <fieldset>
+            <textarea name="content" cols="5" rows="10" class="bb-textarea">{{ response.content }}</textarea>
+            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+            <input type="hidden" name="id" value="{{ response.id }}"/>
+        </fieldset>
+    </form>
+</div>
+
+
+{% endblock %}
+
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

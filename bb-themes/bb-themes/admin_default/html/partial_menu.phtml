@@ -1,0 +1,19 @@
+<ul id="menu">
+{% set navigation = admin.extension_get_navigation({"url":guest.system_current_url}) %}
+{% for location,group in navigation %}
+    {% if group.subpages %}
+        <li class="{{ group.class }}" data-nav-index="{{ group.index }}" data-nav-location="{{location}}">
+            <a class="exp corner"{% if group.active or active_menu == location %} id="current"{% endif %} href="#">
+                <span><i class="{{ group.sprite_class }}"></i>{{ group.label|trans }}</span>
+            </a>
+            <ul class="sub" style="display: none;">
+            {% for subpage in group.subpages %}
+                <li class="{% if loop.last %}last{% endif %}{% if subpage.active %} active{% endif %}" data-nav-index="{{ subpage.index }}">
+                    <a class="{{ subpage.class }}" href="{{ subpage.uri}}">{{ subpage.label|trans }}</a>
+                </li>
+            {% endfor %}
+            </ul>
+        </li>
+    {% endif %}
+{% endfor %}
+</ul>

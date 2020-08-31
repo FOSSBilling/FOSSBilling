@@ -1,0 +1,16 @@
+{% extends "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Error' %}{% endblock %}
+
+{% block content %}
+
+<div class="h-block">
+    <div class="h-block-header">
+        <h2>{% trans 'Looks like we have a misunderstanding here' %}</h2>
+    </div>
+    <div class="block">
+        <p>{{ exception.getMessage }}</p>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% block meta_title %}Embed parts of BoxBilling{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block content %}
+
+<div class="widget acc">
+    <div class="head"><h5>Client area login form</h5></div>
+    <div class="menu_body">
+        <textarea cols="2" rows="1" style="width: 100%; padding: 10px 0"><iframe width="215" height="200" src="{{ 'embed/loginform'|link }}" frameborder="0"></iframe></textarea>
+        <p>Copy and paste the embed code to your website.</p>
+    </div>
+  
+    <div class="head"><h5>Domain checker form</h5></div>
+    <div class="menu_body">
+        <textarea cols="2" rows="1" style="width: 100%; padding: 10px 0"><iframe width="360" height="75" src="{{ 'embed/domainchecker'|link }}" frameborder="0"></iframe></textarea>
+        <p>Copy and paste the embed code to your website.</p>
+    </div>
+
+    <div class="head"><h5>Contact us form</h5></div>
+    <div class="menu_body">
+        <textarea cols="2" rows="1" style="width: 100%; padding: 10px 0"><iframe width="400" height="310" src="{{ 'embed/contact'|link }}" frameborder="0"></iframe></textarea>
+        <p>Copy and paste the embed code to your website.</p>
+    </div>
+</div>
+<div class="fix"></div>
+
+{% endblock %}
+
+
+{% block js %}
+{% autoescape "js" %}
+<script type="text/javascript">
+$(function() {
+	//===== Accordion =====//
+
+	$('div.menu_body:eq(0)').show();
+	$('.acc .head:eq(0)').show().css({color:"#2B6893"});
+
+	$(".acc .head").click(function() {
+		$(this).css({color:"#2B6893"}).next("div.menu_body").slideToggle(300).siblings("div.menu_body").slideUp("slow");
+		$(this).siblings().css({color:"#404040"});
+	});
+
+});
+</script>
+{% endautoescape %}
+{% endblock %}

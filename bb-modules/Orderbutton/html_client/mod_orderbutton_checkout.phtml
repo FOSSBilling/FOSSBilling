@@ -1,0 +1,222 @@
+{% set cart = guest.cart_get%}
+<div class="accordion-group">
+    <div class="accordion-heading">
+        <a class="accordion-toggle" href="#checkout" data-parent="#accordion1" data-toggle="collapse"><span class="awe-shopping-cart"></span> {% trans 'Cart' %} <span class="label label-warning pull-right">{{ cart.items | length }}</span></a>
+    </div>
+    {% if cart.items %}
+    <div id="checkout" class="accordion-body collapse {% if request.checkout and client %}in{%endif%}">
+        <div class="accordion-inner" id="checkout-inner">
+
+            <table class="table table-striped table-bordered table-condensed">
+                <thead>
+                <tr>
+                    <th>{% trans 'Product' %}</th>
+                    <th>{% trans 'Price' %}</th>
+                    <th style="width: 3%; text-align: center"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for i, item in cart.items %}
+                <tr>
+                    <td>
+                        {{ item.title }}
+                        {% if item.quantity > 1 %}
+                        x {{ item.quantity }}
+                        {% endif %}
+
+                        {% if item.period %}
+                            ({{ item.period | period_title }})
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.discount_price %}
+                        <del>{{ item.total | money_convert }}</del>
+                        <strong class="text-success">{{ (item.total-item.discount_price) | money_convert }}</strong>
+							
+								
+                        {% else %}
+                            {{ (item.total) | money_convert }}
+                        {% endif %}
+                    </td>
+                    <td><button data-cart-item-id="{{ item.id }}" class="btn btn-inverse btn-mini remove-cart-item" title="{% trans 'Remove item' %}"><strong><i class="awe-remove"></i></strong></button></td>
+                </tr>
+
+                {% if request.show_custom_form_values %}
+                <tr>
+                    <td>
+                        {% if item.form_id and guest.extension_is_on({"mod":"formbuilder"}) %}
+                        {% set form = guest.formbuilder_get({"id": item.form_id}) %}
+                        {# debug form #}
+                        <div class="well">
+                            <dl class="dl-horizontal">
+                                {% for field, value in item %}
+                                    {% for form_field in form.fields %}
+                                        {% if value is not empty %}
+                                            {% if form_field.name == field%}
+                                            <dt>
+                                                {{form_field.label}}
+                                            </dt>
+                                            <dd>
+                                                {% if form_field.type == "checkbox"%}
+                                                    {% for selection in value %}
+                                                        {% for field_key,field_value in form_field.options%}
+                                                            {% if field_value == selection %}
+                                                                {{ field_key }}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    {% endfor%}
+                                                {% elseif form_field.type == "select" or form_field.type == "radio" %}
+                                                    {% for field_key,field_value in form_field.options%}
+                                                        {% if field_value == value %}
+                                                            {{ field_key }}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% else %}
+                                                    {{value}}
+                                                {% endif %}
+                                            </dd>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                            </dl>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td></td>
+                </tr>
+                {% endif %}
+
+                {% if item.setup_price != 0 %}
+                <tr>
+                    <td>{{ item.title }} {% trans 'setup' %}</td>
+                    <td>
+                        {% if item.discount_setup %}
+                        <del>{{ item.setup_price | money_convert }}</del>
+                        {{ (item.setup_price - item.discount_setup) | money_convert }}
+                        {% else %}
+                        {{ item.setup_price | money_convert }}</td>
+                    {% endif %}
+                </tr>
+                {% endif %}
+			
+                {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="row-fluid">
+                <div class="span6">
+                    {% if not cart.promocode %}
+                    <a href="#" id="show-promo-field">{% trans 'Have coupon code?' %}</a>
+                    {% endif %}
+
+                    <form action="guest/cart/apply_promo" method="post" class="well" id="apply-promo" data-api-reload="1" {% if not cart.promocode %}style="display:none"{% endif %}>
+                        <div class="control-group">
+                            <div class="form-controls">
+                                <div class="input-append">
+                                    <input class="span8" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo.required %}required="required"{% endif %} placeholder="{% trans 'Enter code' %}">
+                                    {% if cart.promocode %}
+                                    <button class="btn" id="remove-promo" href="{{ 'api/guest/cart/remove_promo'|link }}" type="button" data-api-reload="1">{% trans 'Remove' %}</button>
+                                    {% else %}
+                                    <button class="btn" type="submit">{% trans 'Apply' %}</button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {#
+                        <input type="text" class="search-query" name="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo.required %}required="required"{% endif %} placeholder="{% trans 'Enter code' %}">
+                        {% if cart.promocode %}
+                        <a href="{{ 'api/guest/cart/remove_promo'|link }}" class="btn btn-info api-link" data-api-reload="1" >{% trans 'Remove ' %}(<strong>{{cart.promocode}}</strong>)</a>
+                        {% else %}
+                        <button class="btn btn-info" type="submit"><span class="awe-gift"></span> {% trans 'Apply' %}</button>
+                        {% endif %}
+                        #}
+                    </form>
+                </div>
+
+                <div class="span6">
+                    <table class="table table-bordered table-striped">
+
+                        {% if cart.discount >0 %}
+                        <tr>
+                            <td><strong>{% trans 'Subtotal:' %}</strong></td>
+                            <td><strong>{{ (cart.subtotal)| money_convert }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>{% trans 'Discount:' %}</strong></td>
+                            <td><strong>- {{ cart.discount | money_convert }}</strong></td>
+                        </tr>
+                        {% endif %}
+
+                        {% set tax_amount = 0 %}
+                        {% if client.client_is_taxable %}
+                        {% set tax_rate = client.invoice_get_tax_rate %}
+                        {% set tax_amount = cart.total * tax_rate / 100 %}
+                        <tr>
+                            <td><strong>{% trans 'VAT'%} ({{ tax_rate }}%) :</strong></td>
+                            <td><strong>{{ tax_amount | money_convert }}</strong></td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td><strong>{% trans 'Total:' %}</strong></td>
+                            <td><strong>{{ (cart.total + tax_amount) | money_convert }}</strong></td>
+                        </tr>
+
+                    </table>
+
+                    <form method="post" action="client/cart/checkout" class="form-horizontal" id="checkout-form" onsubmit="return false;">
+                        <fieldset>
+                            {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
+                            {% if cart.total and not enough_in_balance %}
+                            <div class="control-group">
+                                {% for gtw in guest.invoice_gateways %}
+                                {% if cart.currency.code in gtw.accepted_currencies %}
+                                <label class="radio" for="{{gtw.id}}">
+                                    <input type="radio" name="gateway_id" id={{gtw.id}} value="{{gtw.id}}" {{loop.first ? 'checked' : ''}}/>
+                                    {% trans 'Pay by' %} {{gtw.title}}
+                                </label>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="control-group">
+                                <div class="controls">
+                                    {% if enough_in_balance %}
+                                        <p>{% trans 'Total amount will be deducted from account balance' %}</p>
+                                    {% endif %}
+                                    <button class="btn btn-primary btn-large" type="submit">{% trans 'Checkout' %}</button>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+<script type="text/javascript">
+    $('#remove-promo').click(function(e){
+        e.preventDefault();
+        bb.post("guest/cart/remove_promo", {}, function(r){
+                bb.msg("{% trans 'Promo code was removed' %}");
+                location.reload(false);
+        });
+
+    });
+
+    $('.remove-cart-item').click(function(e){
+        e.preventDefault();
+        var btn = $(this);
+        if (confirm('{% trans 'Are you sure you want to remove this item from cart?' %}')){
+            var item_id = $(btn).attr('data-cart-item-id');
+            bb.post("guest/cart/remove_item", {id: item_id}, function(r){
+                bb.msg("{% trans 'Item was removed from cart' %}");
+                location.reload(false);
+            });
+        }
+
+
+    });
+</script>

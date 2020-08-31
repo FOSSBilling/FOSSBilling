@@ -1,0 +1,30 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% block meta_title %}{% trans 'Thank you' %}{% endblock %}
+{% block breadcrumb %}<li class="active">{% trans 'Thank you' %}</li>{% endblock %}
+
+{% block content %}
+
+<div class="row">
+
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h1>{% trans 'Thank you' %}</h1>
+                <p>{% trans%}Your payment is being processed right now. It can take up 5 minutes to complete.{% endtrans %}</p>
+            </header>
+            <section>
+                <p>{% trans %}Payment for invoice received{% endtrans %}</p>
+
+                <p>{% trans%}You will be automatically redirected to invoice page after 5 minutes.{% endtrans %}</p>
+
+                <script type="text/javascript">
+                    setTimeout(function(){ bb.redirect("{{('/invoice/'~invoice.hash)|link }}";}, 5*60*1000);
+                </script>
+            </section>
+        </div>
+    </article>
+
+
+</div>
+
+{% endblock %}

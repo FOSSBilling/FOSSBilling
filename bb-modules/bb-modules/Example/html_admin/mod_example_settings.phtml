@@ -1,0 +1,53 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}Example extension settings{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li class="lastB">{% trans 'Example module settings' %}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+
+<div class="widget">
+    <div class="head">
+        <h5 class="iCog">{% trans 'Example extension settings' %}</h5>
+    </div>
+
+{% set params = admin.extension_config_get({"ext":"mod_example"}) %}
+
+<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Configuration updated' %}">
+    
+    <div class="help">
+        <h3>{% trans 'Example extension settings' %}</h3>
+        <p>{% trans 'Every extension can have settings page. Only requirement is to have mod_example_settings.phtml page in html_admin folder' %}</p>
+    </div>
+    
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'Parameter title' %}</label>
+            <div class="formRight">
+                <input type="text" name="custom_param" value="{{params.custom_param}}" placeholder="{% trans 'Example custom value' %}"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Public Parameter title' %}</label>
+            <div class="formRight">
+                <input type="text" name="public[param]" value="{{params.public.param}}" placeholder="{% trans 'This setting will be accessible by Guest API' %}"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+        <input type="hidden" name="ext" value="mod_example" />
+    </fieldset>
+</form>
+</div>
+
+{% endblock %}

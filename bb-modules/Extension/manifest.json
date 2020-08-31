@@ -1,0 +1,7 @@
+{
+    "id":           "extension",
+	"type":         "mod",
+    "name":         "Extensions",
+    "description":  "BoxBilling core module",
+    "version":      "1.0.0"
+}

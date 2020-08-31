@@ -1,0 +1,64 @@
+# Read documentation http://docs.boxbilling.com/ for more information
+# Rename this file to .htaccess in order to work
+# If you are receiving "Internal Server Error" message - make sure mod_rewrite is enabled in apache
+
+Options -Indexes
+Options +FollowSymLinks
+
+RewriteEngine On
+
+## Begin - Rewrite rules to block out some common exploits.
+# If you experience problems on your site block out the operations listed below
+# This attempts to block the most common type of exploit `attempts`
+#
+# Block out any script trying to base64_encode data within the URL.
+RewriteCond %{QUERY_STRING} base64_encode[^(]*\([^)]*\) [OR]
+# Block out any script that includes a <script> tag in URL.
+RewriteCond %{QUERY_STRING} (<|%3C)([^s]*s)+cript.*(>|%3E) [NC,OR]
+# Block out any script trying to set a PHP GLOBALS variable via URL.
+RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+# Block out any script trying to modify a _REQUEST variable via URL.
+RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+# Return 403 Forbidden header and show the content of the root homepage
+RewriteRule .* index.php [F]
+#
+## End - Rewrite rules to block out some common exploits.
+
+### re-direct to www
+#RewriteCond %{HTTP_HOST} ^yourdomain.com
+#RewriteRule (.*) http://www.yourdomain.com/$1 [R=301,L]
+
+# If you are receiving "Internal Server Error" message
+# Tune path if installing into subfolder, ie "RewriteBase /boxbilling/"
+# RewriteBase /
+
+# This line is for Windows Environment when API is giving authorization error
+RewriteRule .? - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+RewriteCond %{REQUEST_FILENAME} -s [OR]
+RewriteCond %{REQUEST_FILENAME} -l [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^.*$ - [NC,L]
+RewriteRule ^(.*)$ index.php?_url=/$1 [QSA,L]
+
+<FilesMatch "\.(htaccess|htpasswd|ini|log|sh|inc|bak|phtml|sql)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    # MONTH
+    <FilesMatch "\.(flv|gif|jpg|jpeg|png|ico|swf)$">
+       Header set Cache-Control "max-age=2592000"
+    </FilesMatch>
+
+    # WEEK
+    <FilesMatch "\.(js|css|pdf|txt)$">
+       Header set Cache-Control "max-age=604800"
+    </FilesMatch>
+
+    # DAY
+    <FilesMatch "\.(html|htm)$">
+       Header set Cache-Control "max-age=43200"
+    </FilesMatch>
+</IfModule>

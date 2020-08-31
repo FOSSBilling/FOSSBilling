@@ -1,0 +1,22 @@
+{% block subject %}[{{ guest.system_company.name }}] {{ticket.subject}}{% endblock %}
+{% block content %}
+{% apply markdown %}
+
+{{ticket.messages[0].content}}
+
+***
+
+Ticket ID: #{{ticket.id}}   
+Department: {{ticket.helpdesk.name}}   
+Status: {{ticket.status|title}}   
+
+Reply Ticket at: {{'support/ticket'|link}}/{{ ticket.id }}
+
+
+Please do not reply to this email directly. Use the link provided above.
+      
+{{ guest.system_company.signature }}
+
+{% endapply %}
+
+{% endblock %}

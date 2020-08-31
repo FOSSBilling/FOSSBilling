@@ -1,0 +1,267 @@
+{% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
+{% set seller = invoice.seller %}
+{% set buyer = invoice.buyer %}
+{% set company  = guest.system_company %}
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <link rel='stylesheet' type='text/css' href="{{ ('css/bootstrap.css') | asset_url }}" media="screen">
+        <link rel='stylesheet' type='text/css' href="{{ ('css/bootstrap.css') | asset_url }}" media="print">
+
+        <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}">
+
+        <style>
+    @media print {
+
+    html, body{
+    margin-right: 75%;
+        left: 0px;
+    }
+    .dl-horizontal dt{
+        width: auto;
+    }
+    .dl-horizontal dd{
+        margin-left: 30%;
+    }
+    .invoice-well dt{
+        padding-right: 5px;
+    }
+    #proforma-invoice{
+        width: 650px;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+    }
+
+    #invoice-title{
+        text-align: center;
+        padding-bottom: 3%;
+    }
+}
+    html, body{
+        margin-right: 9%;
+        left: 0px;
+    }
+    .dl-horizontal dt{
+        width: auto;
+    }
+    .dl-horizontal dd{
+        margin-left: 30%;
+    }
+    .invoice-well dt{
+        padding-right: 5px;
+    }
+    #proforma-invoice{
+        width: 650px;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+    }
+
+    #invoice-title{
+        text-align: center;
+        padding-bottom: 3%;
+    }
+
+</style>
+    </head>
+    <body>
+    <div class="row" id="proforma-invoice">
+        <article class="span10 data-block" style="margin-left: 0px">
+            <div class="data-container">
+                <header>
+                    <h2 id="invoice-title">{% trans 'Invoice' %} {{nr}}</h2>
+                </header>
+                <section>
+                    <div class="row-fluid">
+                        <div class="span4">
+
+                            <div class="well small invoice-well">
+                                {% if company.logo_url %}
+                                <img src="{{ company.logo_url }}" alt="Logo">
+                                {% endif %}
+                                <dl class="dl-horizontal">
+                                    <dt>{% trans 'Invoice number' %}:</dt>
+                                    <dd>{{ nr }}</dd>
+                                    <dt>{% trans 'Invoice date' %}:</dt>
+                                    <dd>{% if invoice.created_at %}
+                                        {{ invoice.created_at | bb_date }}
+                                        {% else %}
+                                        -----
+                                        {% endif %}
+                                    </dd>
+                                    <dt>{% trans 'Due date' %}:</dt>
+                                    <dd>{% if invoice.due_at %}
+                                        {{ invoice.due_at | bb_date }}
+                                        {% else %}
+                                        -----
+                                        {% endif %}
+                                    </dd>
+                                    <dt>{% trans 'Invoice status' %}:</dt>
+                                    <dd>
+                                    <span class="label {% if invoice.status == 'paid' %} label-success{% elseif invoice.status == 'unpaid'%}label-warning{% endif %}">
+                                          <span class="{% if invoice.status == 'paid' %}awe-ok-sign{% elseif invoice.status == 'unpaid'%}awe-exclamation-sign{% endif %}"></span>
+                                          {{ invoice.status | capitalize }}
+                                    </span>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                        <div class="span4">
+                            <div class="well small">
+                                <h4>{% trans 'Company' %}</h4>
+                                <dl class="dl-horizontal">
+                                    {% if seller.company %}
+                                    <dt>{% trans 'Name' %}:</dt>
+                                    <dd>{{seller.company}}</dd>
+                                    {% endif %}
+
+                                    {% if seller.company_vat%}
+                                    <dt>{% trans 'VAT' %}:</dt>
+                                    <dd>{{seller.company_vat}}</dd>
+                                    {% endif %}
+
+                                    {% if seller.address%}
+                                    <dt>{% trans 'Address' %}:</dt>
+                                    <dd>{{seller.address}}</dd>
+                                    {% endif %}
+
+                                    {% if seller.phone %}
+                                    <dt>{% trans 'Phone' %}:</dt>
+                                    <dd>{{seller.phone}}</dd>
+                                    {% endif %}
+
+                                    {% if seller.email %}
+                                    <dt>{% trans 'Email' %}:</dt>
+                                    <dd>{{seller.email}}</dd>
+                                    {% endif %}
+
+                                    {% if seller.account_number %}
+                                    <dt>{% trans 'Account' %}:</dt>
+                                    <dd>{{seller.account_number}}</dd>
+                                    {% endif %}
+
+                                    {% if seller.note %}
+                                    <dt>{% trans 'Note' %}:</dt>
+                                    <dd>{{seller.note}}</dd>
+                                    {% endif %}
+                                </dl>
+                            </div>
+                        </div>
+
+
+                        <div class="span4">
+                            <div class="well small">
+                                <h4>{% trans 'Billing & Delivery address' %}</h4>
+                                <dl class="dl-horizontal">
+                                    {% if buyer.first_name or buyer.last_name %}
+                                    <dt>{% trans 'Name' %}:</dt>
+                                    <dd>{{buyer.first_name}} {{buyer.last_name}}</dd>
+                                    {% endif %}
+
+                                    {% if buyer.company %}
+                                    <dt>{% trans 'Company' %}:</dt>
+                                    <dd>{{buyer.company}}</dd>
+                                    {% endif %}
+
+                                    {% if buyer.company_number %}
+                                    <dt>{% trans 'Company number' %}:</dt>
+                                    <dd>{{buyer.company_number}}</dd>
+                                    {% endif %}
+
+                                    {% if buyer.company_vat %}
+                                    <dt>{% trans 'Company VAT' %}:</dt>
+                                    <dd>{{buyer.company_vat}}</dd>
+                                    {% endif %}
+
+                                    {% if buyer.address %}
+                                    <dt>{% trans 'Address' %}:</dt>
+                                    <dd>{{buyer.address}}</dd>
+                                    <dd>{{buyer.city}}, {{buyer.state}}</dd>
+                                    <dd>{{buyer.zip}}, {{guest.system_countries[buyer.country]}}</dd>
+                                    {% endif %}
+
+                                    {% if buyer.phone %}
+                                    <dt>{% trans 'Phone' %}:</dt>
+                                    <dd>{{buyer.phone}}</dd>
+                                    {% endif %}
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if invoice.text_1 %}
+                    <div class="well">
+                        {{ invoice.text_1|markdown }}
+                    </div>
+                    {% endif %}
+
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>{% trans '#' %}</th>
+                            <th>{% trans 'Title' %}</th>
+                            <th>{% trans 'Price' %}</th>
+                            <th>{% trans 'Total' %}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for i, item in invoice.lines %}
+                        <tr>
+                            <td>{{ i+1 }}.</td>
+                            <td>
+                                {% if item.order_id%}
+                                {{ item.title }}
+                                {% else %}
+                                {{ item.title }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ item.price | money(invoice.currency) }}
+                                {% if item.quantity > 1 %}
+                                x {{ item.quantity }} {# item.unit #}
+                                {% endif %}
+                            </td>
+                            <td >{{ item.total | money(invoice.currency) }}</td>
+                        </tr>
+
+                        {% endfor %}
+                        </tbody>
+
+                    </table>
+                    <hr/>
+                    <div class="row-fluid">
+                        <div class="span4 offset8">
+                            <table class="table">
+                                {% if invoice.tax > 0 %}
+                                <tr>
+                                    <td>{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
+                                    <td>{{ invoice.tax | money(invoice.currency) }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if invoice.discount > 0 %}
+                                <tr>
+                                    <td>{% trans 'Discount' %}</td>
+                                    <td>{{ invoice.discount | money(invoice.currency) }}</td>
+                                </tr>
+                                {% endif %}
+
+                                <tr>
+                                    <td><strong>{% trans 'Total' %}</strong></td>
+                                    <td><strong>{{ invoice.total | money(invoice.currency) }}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if invoice.text_2 %}
+                    <div class="well">
+                        {{ invoice.text_2|markdown }}
+                    </div>
+                    {% endif %}
+                </section>
+            </div>
+        </article>
+    </div>
+    </body>
+</html>

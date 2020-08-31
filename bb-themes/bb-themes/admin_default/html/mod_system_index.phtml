@@ -1,0 +1,72 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Settings' %}{% endblock %}
+{% set active_menu = 'system' %}
+{% set params = admin.system_get_params %}
+{% block content %}
+
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Settings' %}</a></li>
+        <li><a href="#tab-license">{% trans 'License' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div id="tab-index" class="tab_content nopadding">
+            {{ mf.table_search }}
+            <table class="tableStatic wide">
+                <tbody>
+                    {% for ext in admin.extension_get_list({"active":1, "has_settings":1}|merge(request)) %}
+                    <tr {{ loop.first ? 'style="border-top:0;"' : '' }} class="hover-row">
+                        <td style="width: 32px;"><a href="{{ 'extension/settings'|alink }}/{{ext.id}}"><img src="{{ ext.icon_url }}" alt="{{ext.name}}" style="width: 32px; height: 32px;"/></a></td>
+                        <td style="border: 0; font-weight: bold;"><a href="{{ 'extension/settings'|alink }}/{{ext.id}}">{{ ext.name }}</a></td>
+                        <td style="width: 5%; border: 0;"><a class="bb-button btn14" href="{{ 'extension/settings'|alink }}/{{ext.id}}"><img src="images/icons/dark/play.png" alt="" class="icon" title="{% trans 'Module settings' %}"></a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div id="tab-license" class="tab_content nopadding">
+
+            <div class="help">
+                <h3>{% trans 'License' %}</h3>
+                <p>{% trans 'After purchase you have received an e-mail with license key. Update license key to unlock all features of BoxBilling' %}</p>
+                <p>{% trans 'To change license key, change <em>BB_LICENSE</em> value in <em>bb-config.php</em> file' %}. </p>
+                <p><a href="{{ 'filemanager/ide'|alink({'open' : 'bb-config.php'}) }}" target="_blank" target="_blank">{% trans 'Edit bb-config.php file' %}</a> (File must be writable by web server)</p>
+            </div>
+
+            {% set env = admin.system_env %}
+            {% set license = admin.system_license_info %}
+            <table class="tableStatic wide">
+                <tbody>
+                    <tr class="noborder">
+                        <td>{% trans 'Licensed to' %}</td>
+                        <td align="right">{{ license.licensed_to }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Key' %}</td>
+                        <td align="right">{{ license.key }}</td>
+                    </tr>
+
+                    {% if license.expires_at %}
+                    <tr>
+                        <td>{% trans 'Expires at' %}</td>
+                        <td align="right">{{ license.expires_at|date('Y-m-d') }}</td>
+                    </tr>
+                    {% endif %}
+                    
+                    <tr>
+                        <td>{% trans 'IP' %}</td>
+                        <td align="right">{{ env.ip }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+    
+</div>
+{% endblock %}

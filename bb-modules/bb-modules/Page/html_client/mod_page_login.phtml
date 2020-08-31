@@ -1,0 +1,96 @@
+{% extends "layout_public.phtml" %}
+
+{% block meta_title %}{% trans 'Log in' %}{% endblock %}
+
+{% block body %}
+
+<section class="container login" role="main">
+
+{% if settings.login_page_show_logo %}
+    {% set company = guest.system_company %}
+    <h1 style="text-align: center">
+        {% if settings.login_page_show_logo %}
+        <a href="{{ settings.login_page_logo_url | default('/')}}" target="_blank"><img src="{{ guest.system_company.logo_url }}" alt="{{ guest.system_company.name }}"/></a>
+        {% endif %}
+    </h1>
+{% endif %}
+
+    <div class="data-block">
+        <div class="data-container">
+
+            <form method="post" action="" id="client-login">
+                <fieldset>
+                    <div class="control-group">
+                        <label class="control-label" for="email">{% trans 'Email Address' %}</label>
+                        <div class="controls">
+                            <input id="icon" type="text" placeholder="{% trans 'Your email address' %}" name="email" value="{{ request.email }}" required="required" data-validation-required-message="{% trans 'You must fill in your email.' %}" autofocus>
+                            <div class="help-block"></div>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label" for="password">{% trans 'Password' %}</label>
+                        <div class="controls">
+                            <input id="password" type="password" placeholder="{% trans 'Password' %}" name="password" required="required" value="{{ request.password }}" data-validation-required-message="{% trans 'You must fill in your password.' %}">
+                            {% if settings.login_page_show_remember_me %}
+                            <label class="checkbox">
+                                <input type="checkbox" name="remember" checked="checked"> {% trans 'Remember me' %}
+                            </label>
+                            {% endif %}
+                            <div class="help-block"></div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-block btn-large btn-inverse btn-alt" type="submit">{% trans 'Log in' %}</button>
+                    </div>
+                </fieldset>
+            </form>
+
+        </div>
+    </div>
+
+    {% if settings.show_password_reset_link or settings.show_signup_link %}
+    <ul class="login-footer">
+        {% if settings.show_signup_link%}
+        <li><a href="{{ 'signup'|link }}"><small>{% trans 'Signup' %}</small></a></li>
+        {% endif %}
+
+        {% if settings.show_password_reset_link%}
+        <li><a href="{{ 'password-reset'|link }}"><small>{% trans 'Forgot password?' %}</small></a></li>
+        {% endif %}
+    </ul>
+    {% endif %}
+
+</section>
+
+{% endblock%}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+    $('#client-login').bind('submit',function(event){
+        bb.post('guest/client/login',
+            $(this).serialize(),
+            function(result) {
+                bb.redirect();
+            }
+        );
+        return false;
+    });
+    {% if request.al %}
+        $('#client-login').submit();
+    {% endif %}
+});
+</script>
+<script src="{{ 'js/plugins/bootstrapValidation/jqBootstrapValidation.min.js' | asset_url}}"></script>
+<script>
+    $(document).ready(function() {
+
+        $("input").jqBootstrapValidation({
+            submitSuccess: function($form, event) {
+                event.preventDefault();
+            }
+        });
+
+    });
+</script>
+{% endblock %}

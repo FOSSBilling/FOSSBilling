@@ -1,0 +1,8 @@
+{
+    "id":           "staff",
+	"type":         "mod",
+    "name":         "Staff",
+    "description":  "BoxBilling core module",
+    "icon_url":     "icon.png",
+    "version":      "1.0.0"
+}

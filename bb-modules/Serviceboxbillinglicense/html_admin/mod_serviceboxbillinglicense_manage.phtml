@@ -1,0 +1,85 @@
+<div class="help">
+    <h2>{% trans 'BoxBilling license management' %}</h2>
+</div>
+
+<form method="post" action="{{ 'api/admin/serviceboxbillinglicense/update'|link }}" class="mainForm api-form save" data-api-reload="1">
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'License order ID' %}:</label>
+            <div class="formRight">
+                <input type="text" name="oid" value="{{service.oid}}" placeholder="License order ID on BoxBilling.com"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <input type="hidden" name="order_id" value="{{ order.id }}" />
+        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+    </fieldset>
+</form>
+
+{% set info = admin.serviceboxbillinglicense_order_info({"order_id":order.id}) %}
+
+{% if info %}
+
+<div class="help">
+    <h2>{% trans 'License details' %}</h2>
+</div>
+
+<table class="tableStatic wide">
+    <tbody>
+        <tr class="noborder">
+            <td style="width: 30%">{% trans 'Order status' %}:</td>
+            <td>{{ info.status|title }}</td>
+        </tr>
+        <tr>
+            <td>{% trans 'License key' %}:</td>
+            <td>{{ info.license_key }}</td>
+        </tr>
+        <tr>
+            <td>{% trans 'Created at' %}:</td>
+            <td>{{ info.created_at|bb_date }}</td>
+        </tr>
+        <tr>
+            <td>{% trans 'Updated at' %}:</td>
+            <td>{{ info.updated_at|bb_date }}</td>
+        </tr>
+        <tr>
+            <td>{% trans 'Expires at' %}:</td>
+            <td>{{ info.expires_at|bb_date }}</td>
+        </tr>
+        <tr>
+            <td>{% trans 'Valid IPs' %}:</td>
+            <td>{% for v in info.ips %}{{ v }}{{constant("PHP_EOL")}}{%else%}All IPs{% endfor %}</td>
+        </tr>
+        <tr>
+            <td>{% trans 'Valid hostnames' %}:</td>
+            <td>{% for v in info.hosts %}{{ v }}{{constant("PHP_EOL")}}{%else%}All hostnames{% endfor %}</td>
+        </tr>
+        <tr>
+            <td>{% trans 'Valid versions' %}:</td>
+            <td>{% for v in info.versions %}{{ v }}{{constant("PHP_EOL")}}{%else%}Any version{% endfor %}</td>
+        </tr>
+        <tr>
+            <td>{% trans 'Valid install paths' %}:</td>
+            <td>{% for v in info.paths %}{{ v }}{{constant("PHP_EOL")}}{%else%}Any install path{% endfor %}</td>
+        </tr>
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="2">
+                <div class="aligncenter">
+                    <a href="{{ 'api/admin/serviceboxbillinglicense/order_reset'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="License details was reset" class="btn55 mr10 api-link"><img src="images/icons/middlenav/refresh.png" alt=""><span>Reset</span></a>
+                </div>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+{% else %}
+
+<div class="body">
+    <div class="nNote nInformation hideit">
+        <p><strong>{% trans 'INFORMATION' %}: </strong>{% trans 'Order is not activated or not found' %}</p>
+    </div>
+</div>
+{% endif %}
