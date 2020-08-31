@@ -49,3 +49,4 @@
 [31-Aug-2020 20:26:27 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
 [31-Aug-2020 20:26:27 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
 [31-Aug-2020 20:26:27 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 20:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
