@@ -1,0 +1,46 @@
+{% if order.status == 'active' %}
+{% set info = admin.serviceboxbillinglicense_order_info({"order_id":order.id}) %}
+
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h2>{{ order.title }}</h2>
+            </header>
+            <section>
+                <table >
+                    <tbody>
+                    <tr>
+                        <td>{% trans 'License key' %}:</td>
+                        <td>{{ info.license_key }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Valid IPs' %}:</td>
+                        <td>{% for v in info.ips %}{{ v }}{{constant("PHP_EOL")}}{%else%}All IPs{% endfor %}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Valid hostnames' %}:</td>
+                        <td>{% for v in info.hosts %}{{ v }}{{constant("PHP_EOL")}}{%else%}All hostnames{% endfor %}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Valid versions' %}:</td>
+                        <td>{% for v in info.versions %}{{ v }}{{constant("PHP_EOL")}}{%else%}Any version{% endfor %}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Valid install paths' %}:</td>
+                        <td>{% for v in info.paths %}{{ v }}{{constant("PHP_EOL")}}{%else%}Any install path{% endfor %}</td>
+                    </tr>
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <td colspan="2">
+                            <a href="{{'api/client/serviceboxbillinglicense/reset' | link({'order_id' : order.id})}}" data-api-confirm="Are you sure?" data-api-msg="License details was reset" class="btn btn-primary api-link">{% trans 'Reset' %}</a>
+                        </td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </section>
+        </div>
+    </article>
+</div>
+{% endif %}

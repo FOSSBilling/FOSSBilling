@@ -1,0 +1,7 @@
+{
+    "id":           "orderbutton",
+	"type":         "mod",
+    "name":         "Order Button",
+    "description":  "Provides ability to easily attach order form to any template. It is used by huraga template by default. ",
+    "version":      "1.0.0"
+}

@@ -1,0 +1,253 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% import "macro_functions.phtml" as mf %}
+
+{% block meta_title %}{% trans 'Login / Sign up' %}{% endblock %}
+{% block content %}
+
+    <div class="h-block">
+        <div class="h-block-header">
+            <div class="icon"><span class="big-light-icon i-profile"></span></div>
+            <h2>{% trans 'Sign In / Create new account' %}</h2>
+            <p>{% trans 'Become a member to participate in forum, contact support, order new services' %}</p>
+        </div>
+        <div class="block" id="login-to-account" {% if request.register %}style="display:none;"{% endif %}>
+            <div class="splitter">
+            <div class="grid_6 alpha">
+                <div class="box" >
+                    <div class="block">
+                        <h2>{% trans 'Sign in' %}</h2>
+                        <form action="" method="post" id="client-login">
+                            <fieldset>
+                                <legend>{% trans 'Login to client area' %}</legend>
+                                <p>
+                                    <label>{% trans 'Email Address' %}: </label>
+                                    <input type="email" name="email" value="{{ request.email }}" required="required">
+                                </p>
+
+                                <p>
+                                    <label>{% trans 'Password' %}: </label>
+                                    <input type="password" name="password" value="{{ request.password }}" required="required">
+                                </p>
+                                <input type="hidden" name="remember" value="1" />
+                                <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Login' %}">
+                                <a class="bb-button" href="{{ 'reset-password'|link }}">{% trans 'Reset password' %}</a>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid_6 omega">
+                <div class="box" {% if request.register %}style="display:none;"{% endif %}>
+                    <h2>{% trans 'Do not have an account yet?' %}</h2>
+                    <div class="block">
+                        <a style="margin: 30px 0 0 40px;" class="bb-button bb-button-red bb-button-big" href="#" onclick="$('#login-to-account').slideUp(); $('#register-new-account').slideDown(); return false;" >{% trans 'Register' %}</a>
+                    </div>
+                    {% if guest.extension_is_on({"mod":"oauth"}) %}
+                        {% include "mod_oauth_buttons.phtml" with {"redirect_to":"client/me"} %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="clear"></div>
+        </div>
+        </div>
+
+        <div class="block" id="register-new-account" {% if not request.register %}style="display:none;"{% endif %}>
+            <form action="" method="post" id="create-profile">
+            <div class="grid_6 alpha">
+                <div class="box">
+                    {% set r = guest.client_required %}
+                    <h2>{% trans 'Enter your details below' %}</h2>
+                    <div class="block">
+                        <fieldset>
+                            <legend>{% trans 'Create new profile' %}</legend>
+                            <p>
+                                <label>{% trans 'Email Address' %}: </label>
+                                <input type="email" name="email" value="{{ request.email }}" required="required" id="reg-email">
+                            </p>
+                            <p>
+                                <label>{% trans 'First Name' %}: </label>
+                                <input type="text" name="first_name" value="{{ request.first_name }}" required="required">
+                            </p>
+                            {% if 'last_name' in r %}
+                            <p>
+                                <label>{% trans 'Last Name' %}: </label>
+                                <input type="text" name="last_name" value="{{ request.last_name }}" required="required">
+                            </p>
+                            {% endif %}
+                            
+                            {% if 'company' in r %}
+                            <p>
+                                <label>{% trans 'Company' %}: </label>
+                                <input type="text" name="company" value="{{ request.company }}" required="required">
+                            </p>
+                            {% endif %}
+                            
+                            {% if 'birthday' in r %}
+                            <p>
+                                <label>{% trans 'Birthday' %}: </label>
+                                <input type="text" name="birthday" value="">
+                            </p>
+                            {% endif %}
+                            
+                            {% if 'gender' in r %}
+                            <p>
+                                <label>{% trans 'You are' %}: </label>
+                                <select name="gender">
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </p>
+                            {% endif %}
+
+                            {% set custom_fields = guest.client_custom_fields %}
+                            {% for field_name, field in custom_fields %}
+                            {% if field.active %}
+                            <div class="control-group">
+                                <label class="control-label" for="{{ field_name }}">{% if field.title is not empty %}{{ field.title }}{% else %} {{ field_name | capitalize }} {% endif %}</label>
+                                <div class="controls">
+                                    <input type="text" name="{{ field_name }}" id="{{ field_name }}" value="{{ attribute(request, field_name) }}" {% if field.required %}required="required"{% endif %}>
+                                    <p class="help-block"></p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                            
+                            <p>
+                                <label>{% trans 'Password' %}: </label>
+                                <input type="password" name="password" value="" required="required" id="reg-password">
+                            </p>
+                            
+                            <p>
+                                <label>{% trans 'Password confirm' %}: </label>
+                                <input type="password" name="password_confirm" value="" required="required">
+                            </p>
+                            
+                            {{ mf.recaptcha }}
+
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid_6 omega">
+                <div class="box" id="register-new-account">
+                    <h2>&nbsp;</h2>
+                    <div class="block">
+                        <fieldset>
+                            <legend>{% trans 'Create new profile' %}</legend>
+
+                                {% if 'address_1' in r %}
+                                <p>
+                                    <label>{% trans 'Address' %}: </label>
+                                    <input type="text" name="address_1" value="{{ request.address_1 }}">
+                                </p>
+                                {% endif %}
+                                
+                                {% if 'address_2' in r %}
+                                <p>
+                                    <label>{% trans 'Address 2' %}: </label>
+                                    <input type="text" name="address_2" value="{{ request.address_2 }}">
+                                </p>
+                                {% endif %}
+                                
+                                {% if 'city' in r %}
+                                <p>
+                                    <label>{% trans 'City' %}: </label>
+                                    <input type="text" name="city" value="{{ request.city }}">
+                                </p>
+                                {% endif %}
+                                
+                                {% if 'country' in r %}
+                                <p>
+                                    <label>{% trans 'Country' %}: </label>
+                                    {{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Select country') }}
+                                </p>
+                                {% endif %}
+                                
+                                {% if 'state' in r %}
+                                <p>
+                                    <label>{% trans 'State' %}: </label>
+                                     {# mf.selectbox('state', guest.system_states, request.state, 0, 'Select state') #}
+                                     <input type="text" name="state" value="{{ request.state }}" />
+                                </p>
+                                {% endif %}
+                                
+                                {% if 'postcode' in r %}
+                                <p>
+                                    <label>{% trans 'Zip/Postal Code' %}: </label>
+                                    <input type="text" name="postcode" value="{{ request.postcode }}">
+                                </p>
+                                {% endif %}
+                                
+                                {% if 'phone' in r %}
+                                <p>
+                                    <label>{% trans 'Phone Number' %}: </label>
+                                    <br/>
+                                    <input type="text" name="phone_cc" value="{{ request.phone_cc }}" style="width: 40px"> <input type="text" name="phone" value="{{ request.phone }}" style="width: 233px">
+                                </p>
+                                {% endif %}
+                            <input class="bb-button bb-button-red bb-button-big" type="submit" value="{% trans 'Register' %}" style="margin: 30px 0 0 70px;">
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+            <div class="clear"></div>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+
+    $('#password-reset').bind('submit',function(event){
+        bb.post(
+            'guest/client/reset_password',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Password reset confirmation email was sent');
+            }
+        );
+        return false;
+    });
+
+    $('#client-login').bind('submit',function(event){
+        bb.post(
+            'guest/client/login',
+            $(this).serialize(),
+            function(result) {
+                bb.redirect();
+            }
+        );
+        return false;
+    });
+
+    $('#create-profile').bind('submit',function(event){
+        bb.post(
+            'guest/client/create',
+            $(this).serialize(),
+            function(result) {
+                //login after registration
+                var login_details = {
+                    email: $('#reg-email').val(),
+                    password: $('#reg-password').val()
+                };
+                bb.post(
+                    'guest/client/login',
+                    login_details,
+                    function(result) {
+                        bb.redirect();
+                    }
+                );
+            }
+        );
+        return false;
+    });
+
+});
+</script>
+{% endblock %}

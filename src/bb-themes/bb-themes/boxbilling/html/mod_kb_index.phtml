@@ -1,0 +1,47 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{%trans 'Knowledge base'%}{% endblock %}
+
+{% block content %}
+
+    {% if request.q %}
+        {% set kbcategories = guest.kb_category_get_list({"q": request.q}) %}
+    {% else %}
+        {% set kbcategories = guest.kb_category_get_list %}
+    {% endif %}
+
+<div class="h-block" >
+    <div class="h-block-header">
+        <div class="icon"><span class="big-light-icon i-kb"></span></div>
+        <h2>{% trans 'Knowledge base' %}</h2>
+    </div>
+    <div class="block">
+        <div class="block" style="text-align: center; margin: 20px 0 20px 0">
+            <form method="get" action="{{ 'kb'|link }}" class="search">
+                <p>
+                    <input class="search text" name="q" type="text" value="{{ request.q }}" placeholder="{% trans 'What are you looking for?' %}">
+                    <input class="bb-button bb-button-submit" value="{% trans 'Search'%}" type="submit">
+                </p>
+            </form>
+        </div>
+
+    {% for i, category in kbcategories.list %}
+        <div class="block kb">
+            <h2 class="big-dark-icon i-kb" id="category-{{category.id}}"><a href="{{ 'kb'|link }}/{{ category.slug }}">{{category.title}}</a></h2>
+            <ul>
+            {% for i, article in category.articles %}
+                <li><a href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{article.title}}</a></li>
+            {% endfor %}
+            </ul>
+        </div>
+
+    {% else %}
+        <p>
+            {% trans 'Try using other keyword. No matches not for keyword:' %}
+            <b>{{ request.q }}</b>
+        </p>
+    {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

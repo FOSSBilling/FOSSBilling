@@ -1,0 +1,63 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Email history' %}{% endblock %}
+{% set active_menu = 'activity' %}
+
+{% block content %}
+
+{% set config = admin.extension_config_get({"ext":"mod_email"}) %}
+{% if config.log_enabled is not defined or config.log_enabled != 1 %}
+<div class="nNote nInformation first">
+    <p><strong>{% trans 'INFORMATION' %}: </strong>{% trans 'Email logging is not enabled. If you want to log sent mails to database, enable it in' %}
+        <a href="{{'extension/settings/email'|alink}}"> {% trans 'email settings.' %}</a>
+    </p>
+</div>
+{% endif %}
+
+<div class="widget">
+    <div class="head"><h5 class="iFrames">{% trans 'Email history' %}</h5></div>
+
+{{ mf.table_search }}
+<table class="tableStatic wide">
+    <thead>
+        <tr>
+            <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
+            <td>{% trans 'To' %}</td>
+            <td>{% trans 'From' %}</td>
+            <td>{% trans 'Subject' %}</td>
+            <td>{% trans 'Date' %}</td>
+            <td style="width: 13%">&nbsp;</td>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% set emails = admin.email_email_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+    {% for i, email in emails.list %}
+    <tr>
+        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ email.id }}"/></td>
+        <td>{{ email.recipients }}</td>
+        <td>{{ email.sender }}</td>
+        <td>{{ email.subject|truncate(40) }}</td>
+        <td>{{ email.created_at|date('Y-m-d') }}</td>
+        <td class="actions">
+            <a class="bb-button btn14" href="{{ '/email'|alink }}/{{email.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+            <a class="bb-button btn14 bb-rm-tr api-link" data-api-redirect="{{'email/history'|alink}}" data-api-confirm="Are you sure?"  href="{{'api/admin/email/email_delete'|link({'id' : email.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+        </td>
+    </tr>
+    {% else %}
+        <tr>
+            <td colspan="7">
+                {% trans 'The list is empty' %}
+            </td>
+        </tr>
+    
+    {% endfor %}
+    </tbody>
+</table>
+
+</div>
+
+{% include "partial_batch_delete.phtml" with {'action' : 'admin/email/batch_delete'} %}
+{% include "partial_pagination.phtml" with {'list': emails, 'url':'email/history'} %}
+
+{% endblock %}

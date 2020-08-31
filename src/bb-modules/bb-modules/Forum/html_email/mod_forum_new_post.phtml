@@ -1,0 +1,21 @@
+{% block subject %}[{{ guest.system_company.name }}] New Forum Message{% endblock %}
+{% block content %}
+{% apply markdown %}
+Hello {{ c.first_name }} {{ c.last_name }},
+
+New message was posted on Forum **{{ topic.forum.title }} > {{ topic.title }}**
+
+***
+
+{{ message.message }}
+
+***
+
+To reply to this message or disable notifications, visit the link below:
+
+{{ 'forum'|link }}/{{ topic.forum.slug }}/{{ topic.slug }}   
+
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

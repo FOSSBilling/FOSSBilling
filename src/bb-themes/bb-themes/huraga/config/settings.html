@@ -1,0 +1,305 @@
+<fieldset>
+    <legend>General</legend>
+
+    <table>
+        <tr>
+            <td><label for="color_scheme">Color schema</label></td>
+            <td>
+                <select name="color_scheme" id="color_scheme">
+                    <option value="green" selected="selected">Green</option>
+                    <option value="red">Red</option>
+                    <option value="blue">Blue</option>
+                    <option value="dark">Dark</option>
+                </select>
+            </td>
+        </tr>
+
+        <tr>
+            <td><label>Show page header</label></td>
+            <td>
+                <input type="radio" name="show_page_header" value="1" id="show_page_header_1"/> <label for="show_page_header_1">Yes</label>
+                <input type="radio" name="show_page_header" value="0" id="show_page_header_0" checked="checked"/> <label for="show_page_header_0">No</label>
+            </td>
+        </tr>
+    </table>
+
+    <h3>Header items</h3>
+    <table>
+        <tr>
+            <td><label>Show company logo</label></td>
+            <td>
+                <input type="radio" name="show_company_logo" value="1" id="show_company_logo_1" checked="checked"/> <label for="show_company_logo_1">Yes</label>
+                <input type="radio" name="show_company_logo" value="0" id="show_company_logo_0"/> <label for="show_company_logo_0">No</label>
+            </td>
+        </tr>
+        <tr>
+            <td><label>Show company name</label></td>
+            <td>
+                <input type="radio" name="show_company_name" value="1" id="show_company_name_1" checked="checked"/> <label for="show_company_name_1">Yes</label>
+                <input type="radio" name="show_company_name" value="0" id="show_company_name_0"/> <label for="show_company_name_0">No</label>
+            </td>
+        </tr>
+
+        <tr>
+            <td><label>Show client details</label></td>
+            <td>
+                <input type="radio" name="show_client_details" value="1" id="show_client_details_1" checked="checked"/> <label for="show_client_details_1">Yes</label>
+                <input type="radio" name="show_client_details" value="0" id="show_client_details_0"/> <label for="show_client_details_0">No</label>
+            </td>
+        </tr>
+
+        <tr>
+            <td><label>Show client balance</label></td>
+            <td>
+                <input type="radio" name="sidebar_balance_enabled" value="1" id="sidebar_balance_enabled_1" checked="checked"/> <label for="sidebar_balance_enabled_1">Yes</label>
+                <input type="radio" name="sidebar_balance_enabled" value="0" id="sidebar_balance_enabled_0"/> <label for="sidebar_balance_enabled_1">No</label>
+            </td>
+        </tr>
+    </table>
+
+    <h3>Menu items which are visible in top right menu</h3>
+    <table>
+        <tr>
+            <td><label>Select which menu items:</label></td>
+            <td>
+                <label for="top_menu_dashboard"><input type="checkbox" name="top_menu_dashboard" value="1" id="top_menu_dashboard"/> Show dashboard link</label><br/>
+                <label for="top_menu_order"><input type="checkbox" name="top_menu_order" value="1" id="top_menu_order"/> Show order link</label><br/>
+                <label for="top_menu_profile"><input type="checkbox" name="top_menu_profile" value="1" id="top_menu_profile"/> Show profile link</label><br/>
+                <label for="top_menu_signout"><input type="checkbox" name="top_menu_signout" value="1" id="top_menu_signout"/> Show sign out link</label><br/>
+            </td>
+        </tr>
+    </table>
+
+</fieldset>
+
+<fieldset>
+    <legend>Login page</legend>
+
+    <table>
+        <tr>
+            <td><label>Show logo</label></td>
+            <td>
+                <input type="radio" name="login_page_show_logo" value="1" id="login_page_show_logo_1" checked="checked"/> <label for="login_page_show_logo_1">Yes</label>
+                <input type="radio" name="login_page_show_logo" value="0" id="login_page_show_logo_0"/> <label for="login_page_show_logo_0">No</label>
+            </td>
+        </tr>
+
+        <tr>
+            <td><label>Logo URL</label></td>
+            <td><input type="text" name="login_page_logo_url" id="login_page_logo_url" value=""/></td>
+        </tr>
+
+        <tr>
+            <td><label>Show password reset link</label></td>
+            <td>
+                <input type="radio" name="show_password_reset_link" value="1" id="show_password_reset_link_1" checked="checked"/> <label for="show_password_reset_link_1">Yes</label>
+                <input type="radio" name="show_password_reset_link" value="0" id="show_password_reset_link_0"/> <label for="show_password_reset_link_0">No</label>
+            </td>
+        </tr>
+
+        <tr>
+            <td><label>Show Signup link</label></td>
+            <td>
+                <input type="radio" name="show_signup_link" value="1" id="show_signup_link_1" checked="checked"/> <label for="show_signup_link_1">Yes</label>
+                <input type="radio" name="show_signup_link" value="0" id="show_signup_link_0"/> <label for="show_signup_link_0">No</label>
+            </td>
+        </tr>
+
+        <tr>
+            <td><label>Show remember me link</label></td>
+            <td>
+                <input type="radio" name="login_page_show_remember_me" value="1" id="login_page_show_remember_me_1" checked="checked"/> <label for="login_page_show_remember_me_1">Yes</label>
+                <input type="radio" name="login_page_show_remember_me" value="0" id="login_page_show_remember_me_0"/> <label for="login_page_show_remember_me_0">No</label>
+            </td>
+        </tr>
+    </table>
+</fieldset>
+
+<fieldset>
+    <legend>Breadcrumbs</legend>
+
+    <table>
+        <tr>
+            <td><label>Show breadcrumbs</label></td>
+            <td>
+                <input type="radio" name="show_breadcrumb" value="1" id="show_breadcrumb_1" checked="checked"/> <label for="show_breadcrumb_1">Yes</label>
+                <input type="radio" name="show_breadcrumb" value="0" id="show_breadcrumb_0"/> <label for="show_breadcrumb_0">No</label>
+            </td>
+        </tr>
+        <tr>
+            <td><label>Hide breadcrumbs on dashboard</label></td>
+            <td>
+                <input type="radio" name="hide_dashboard_breadcrumb" value="1" id="hide_dashboard_breadcrumb_1" checked="checked"/> <label for="hide_dashboard_breadcrumb_1">Yes</label>
+                <input type="radio" name="hide_dashboard_breadcrumb" value="0" id="hide_dashboard_breadcrumb_0"/> <label for="hide_dashboard_breadcrumb_0">No</label>
+            </td>
+        </tr>
+    </table>
+</fieldset>
+
+<fieldset>
+    <legend>Dashboard</legend>
+    <h3>Showcase</h3>
+    <table>
+        <tr>
+            <td><label>Enable Showcase</label></td>
+            <td>
+                <input type="radio" name="showcase_enabled" value="1" id="showcase_enabled_1"/> <label for="showcase_enabled_1">Yes</label>
+                <input type="radio" name="showcase_enabled" value="0" id="showcase_enabled_0" checked="checked"/> <label for="showcase_enabled_0">No</label>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="showcase_heading">Showcase heading</label></td>
+            <td><input type="text" name="showcase_heading" id="showcase_heading" value="" class="long"/></td>
+        </tr>
+        <tr>
+            <td><label for="showcase_text">Showcase text</label></td>
+            <td><textarea id="showcase_text" name="showcase_text" class="long"></textarea></td>
+        </tr>
+        <tr>
+            <td><label for="showcase_button_title">Showcase button title</label></td>
+            <td><input type="text" name="showcase_button_title" id="showcase_button_title" value=""/></td>
+        </tr>
+        <tr>
+            <td><label for="showcase_button_url">Showcase link URL</label></td>
+            <td><input type="text" name="showcase_button_url" id="showcase_button_url" value=""/></td>
+        </tr>
+    </table>
+</fieldset>
+
+<fieldset>
+    <legend>Sidebar</legend>
+
+    <h3>Menu items which are visible in left menu</h3>
+    <table>
+        <tr>
+            <td><label>Select menu items:</label></td>
+            <td>
+                <label for="side_menu_dashboard"><input type="checkbox" name="side_menu_dashboard" value="1" id="side_menu_dashboard"/> Show dashboard link</label><br/>
+                <label for="side_menu_order"><input type="checkbox" name="side_menu_order" value="1" id="side_menu_order"/> Show order link</label><br/>
+                <label for="side_menu_support"><input type="checkbox" name="side_menu_support" value="1" id="side_menu_support"/> Show support link</label><br/>
+                <label for="side_menu_services"><input type="checkbox" name="side_menu_services" value="1" id="side_menu_services"/> Show services link</label><br/>
+                <label for="side_menu_invoices"><input type="checkbox" name="side_menu_invoices" value="1" id="side_menu_invoices"/> Show invoices link</label><br/>
+                <label for="side_menu_emails"><input type="checkbox" name="side_menu_emails" value="1" id="side_menu_emails"/> Show emails link</label><br/>
+                <label for="side_menu_payments"><input type="checkbox" name="side_menu_payments" value="1" id="side_menu_payments"/> Show payments link</label><br/>
+
+            </td>
+        </tr>
+    </table>
+
+    <h3>Simple Sidebar Note</h3>
+    <table>
+        <tr>
+            <td><label>Show sidebar note</label></td>
+            <td>
+                <input type="radio" name="sidebar_note_enabled" value="1" id="sidebar_note_enabled_1" checked="checked"/> <label for="sidebar_note_enabled_1">Yes</label>
+                <input type="radio" name="sidebar_note_enabled" value="0" id="sidebar_note_enabled_0"/> <label for="sidebar_note_enabled_0">No</label>
+            </td>
+        </tr>
+
+        <tr>
+            <td><label for="sidebar_note_title">Note title</label></td>
+            <td><input type="text" name="sidebar_note_title" id="sidebar_note_title" value=""/></td>
+        </tr>
+
+        <tr>
+            <td><label for="sidebar_note_content">Note text</label></td>
+            <td><textarea id="sidebar_note_content" name="sidebar_note_content"></textarea></td>
+        </tr>
+    </table>
+</fieldset>
+
+<fieldset>
+    <legend>Meta fields</legend>
+
+    <table>
+        <tr>
+            <td><label for="meta_title">Meta title sufix</label></td>
+            <td><input type="text" name="meta_title" id="meta_title" value="" class="long"/></td>
+        </tr>
+
+        <tr>
+            <td><label for="meta_description">Meta description</label></td>
+            <td><input type="text" name="meta_description" id="meta_description" value="" class="long"/></td>
+        </tr>
+
+        <tr>
+            <td><label for="meta_keywords">Meta keywords</label></td>
+            <td><input type="text" name="meta_keywords" id="meta_keywords" value="" class="long"/></td>
+        </tr>
+
+        <tr>
+            <td><label for="meta_robots">Meta robots</label></td>
+            <td><input type="text" name="meta_robots" id="meta_robots" value="" class="long"/></td>
+        </tr>
+
+        <tr>
+            <td><label for="meta_author">Meta author</label></td>
+            <td><input type="text" name="meta_author" id="meta_author" value="" class="long"/></td>
+        </tr>
+    </table>
+</fieldset>
+
+<fieldset>
+    <legend>Footer</legend>
+
+    <table>
+    <tr>
+        <td><label>Show Footer</label></td>
+        <td>
+            <input type="radio" name="footer_enabled" value="1" id="footer_enabled_1" checked="checked"/> <label for="footer_enabled_1">Yes</label>
+            <input type="radio" name="footer_enabled" value="0" id="footer_enabled_0"/> <label for="footer_enabled_0">No</label>
+        </td>
+    </tr>
+
+    <tr>
+        <td><label>Show "Top" link</label></td>
+        <td>
+            <input type="radio" name="footer_to_top_enabled" value="1" id="footer_to_top_enabled_1" checked="checked"/> <label for="footer_to_top_enabled_1">Yes</label>
+            <input type="radio" name="footer_to_top_enabled" value="0" id="footer_to_top_enabled_0"/> <label for="footer_to_top_enabled_0">No</label>
+        </td>
+    </tr>
+
+    <tr>
+        <td><label for="footer_signature">Footer text (instead of company signature)</label></td>
+        <td><input type="text" name="footer_signature" id="footer_signature" value="" class="long"/></td>
+    </tr>
+    </table>
+
+    <h3>Links</h3>
+    <table>
+        <tr>
+            <td><label>Footer link #1</label></td>
+            <td><input type="checkbox" name="footer_link_1_enabled"/> <input type="text" name="footer_link_1_title" value=""/> -> <input type="text" name="footer_link_1_page"/></td>
+        </tr>
+
+        <tr>
+            <td><label>Footer link #2</label></td>
+            <td><input type="checkbox" name="footer_link_2_enabled"/> <input type="text" name="footer_link_2_title" value=""/> -> <input type="text" name="footer_link_2_page"/></td>
+        </tr>
+
+        <tr>
+            <td><label>Footer link #3</label></td>
+            <td><input type="checkbox" name="footer_link_3_enabled"/> <input type="text" name="footer_link_3_title" value=""/> -> <input type="text" name="footer_link_3_page"/></td>
+        </tr>
+
+        <tr>
+            <td><label>Footer link #4</label></td>
+            <td><input type="checkbox" name="footer_link_4_enabled"/> <input type="text" name="footer_link_4_title" value=""/> -> <input type="text" name="footer_link_4_page"/></td>
+        </tr>
+
+        <tr>
+            <td><label>Footer link #5</label></td>
+            <td><input type="checkbox" name="footer_link_5_enabled"/> <input type="text" name="footer_link_5_title" value=""/> -> <input type="text" name="footer_link_5_page"/></td>
+        </tr>
+
+    </table>
+
+    <h3>Javascript</h3>
+    <table>
+        <tr>
+            <td><label for="meta_title">Add javascript to client area footer</label></td>
+            <td><textarea name="inject_javascript" id="inject_javascript" class="long"></textarea></td>
+        </tr>
+    </table>
+
+</fieldset>

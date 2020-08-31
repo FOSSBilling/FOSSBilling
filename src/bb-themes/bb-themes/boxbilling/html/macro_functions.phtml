@@ -1,0 +1,86 @@
+{% macro selectbox(name, options, selected, required, nullOption) %}
+    <select name="{{ name }}" {% if required %}required="required"{% endif%}>
+        {% if nullOption %}<option value="">-- {{ nullOption }} --</option>{% endif %}
+        {% for val,label in options %}
+        <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
+        {% endfor %}
+    </select>
+{% endmacro %}
+
+{% macro selectboxtld(name, options, selected, required) %}
+    <select name="{{ name }}" {% if required %}required="required"{% endif%} style="width:80px;">
+        {% for data in options %}
+        <option value="{{ data.tld }}" label="{{ data.tld }}" {% if selected == data.tld %}selected="selected"{% endif %}>{{ data.tld }}</option>
+        {% endfor %}
+    </select>
+{% endmacro %}
+
+{# deprecated - use money filter #}
+{% macro currency_format(price, currency) %}
+    {{ price | money(currency) }}
+{% endmacro %}
+
+{# deprecated - use money_convert filter #}
+{% macro currency(price, currency) %}
+    {{ price | money_convert(currency) }}
+{% endmacro %}
+
+{% macro status_name(status) %}
+    {{ status|replace({'_': " "})|title|trans }}
+{% endmacro %}
+
+{# deprecated - use period_title filter #}
+{% macro period_name(period) %}
+    {{ period | period_title }}
+{% endmacro %}
+
+{% macro markdown_quote(text) %}
+
+
+
+{% for line in text|split('\n') %}
+> {{ line }}
+{% endfor %}
+{% endmacro %}
+
+
+{% macro recaptcha() %}
+
+{% if guest.extension_is_on({"mod":"spamchecker"}) %}
+{% set rc = guest.spamchecker_recaptcha %}
+    {% if rc.enabled %}
+        {% if rc.version == 2 %}
+            <script src='https://www.google.com/recaptcha/api.js' async defer></script>
+            <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
+        {% else %}
+        {% set server = "https://www.google.com/recaptcha/api" %}
+            <script type="text/javascript">
+                var RecaptchaOptions = {
+                theme : 'custom',
+                custom_theme_widget: 'recaptcha_widget'
+            };
+            </script>
+
+            <div id="recaptcha_widget" style="display:none">
+
+            <div id="recaptcha_image"></div>
+            <div class="recaptcha_only_if_incorrect_sol" style="color:red">{% trans 'Incorrect please try again' %}</div>
+
+            <p>
+                <label>{% trans 'Enter the words above' %}</label>
+                <br/>
+                <input type="text" id="recaptcha_response_field" name="recaptcha_response_field" style="width: 245px"/>
+                    <a class="bb-button" href="javascript:Recaptcha.reload()" style="float: right"><span class="dark-icon i-reload"></span></a>
+            </p>
+            </div>
+
+            <script type="text/javascript" src="{{ server }}/challenge?k={{ rc.publickey }}"></script>
+            <noscript>
+                <iframe src="{{ server }}/noscript?k={{ rc.publickey }}" height="300" width="500" frameborder="0"></iframe><br/>
+                <textarea name="recaptcha_challenge_field" rows="3" cols="40"></textarea>
+                <input type="hidden" name="recaptcha_response_field" value="manual_challenge"/>
+            </noscript>
+        {% endif %}
+    {% endif %}
+{% endif %}
+{% endmacro %}

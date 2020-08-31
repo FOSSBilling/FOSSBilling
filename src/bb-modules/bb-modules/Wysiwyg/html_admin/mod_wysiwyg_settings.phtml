@@ -1,0 +1,45 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Wysiwyg settings' %}{% endblock %}
+{% set active_menu = 'system' %}
+
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li class="lastB">{% trans 'Wysiwyg settings' %}</li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="widget">
+    <div class="head">
+        <h5 class="iCog">{% trans 'Wysiwyg settings' %}</h5>
+    </div>
+
+{% set params = admin.extension_config_get({"ext":"mod_wysiwyg"}) %}
+
+<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Configuration updated' %}">
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'Default editor' %}</label>
+            <div class="formRight">
+                {% for editor,title in admin.wysiwyg_editors %}
+                <input type="radio" name="editor" value="{{editor}}" {% if params.editor == editor %}checked="checked"{% endif %}/><label>{{title}}</label>
+                <br/>
+                <br/>
+                {% endfor %}
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+        <input type="hidden" name="ext" value="mod_wysiwyg" />
+    </fieldset>
+</form>
+</div>
+
+{% endblock %}

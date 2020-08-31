@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<!--[if IE 8]>    <html class="no-js ie8 ie" lang="en"> <![endif]-->
+<!--[if IE 9]>    <html class="no-js ie9 ie" lang="en"> <![endif]-->
+<!--[if gt IE 9]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+    <meta charset="utf-8">
+    <title>{% block meta_title %}{{ settings.meta_title }}{% endblock %}</title>
+
+    <meta property="bb:url" content="{{ constant('BB_URL') }}">
+    <meta property="bb:client_area" content="{{ '/'|link }}">
+
+    <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
+    <meta name="robots" content="{{ settings.meta_robots }}">
+    <meta name="author" content="{{ settings.meta_author }}">
+    <meta name="generator" content="BoxBilling {{ guest.system_version }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {% block opengraph %}{% endblock %}
+
+    <link rel='stylesheet' type='text/css' href="{{ ('css/huraga-' ~ settings.color_scheme ~ '.css') | asset_url }}">
+    <link rel='stylesheet' type='text/css' href="{{ 'css/plugins/jquery.jgrowl.css' | asset_url }}">
+    <link rel='stylesheet' type='text/css' href="{{ 'css/logos.css' | asset_url }}">
+    <link rel='stylesheet' type='text/css' href="{{ 'css/flags16.css' | asset_url }}">
+
+    <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="{{ 'img/icons/apple-touch-icon-114-precomposed.png' | asset_url }}">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="{{ 'img/icons/apple-touch-icon-72-precomposed.png' | asset_url }}">
+    <link rel="apple-touch-icon-precomposed" href="{{ 'img/icons/apple-touch-icon-57-precomposed.png' | asset_url }}">
+
+    <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
+    <script src="{{ 'js/bb-jquery.js' | asset_url }}" defer="defer"></script>
+    <script src="{{ 'js/libs/modernizr.js' | asset_url }}" defer="defer"></script>
+    <script src="{{ 'js/bootstrap/bootstrap.min.js' | asset_url}}" defer="defer"></script>
+    <script src="{{ 'js/libs/selectivizr.js' | asset_url }}" defer="defer"></script>
+    <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.js' | asset_url }}" defer="defer"></script>
+
+    {% block head %}{% endblock %}
+    {% block js %}{% endblock %}
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+{% if guest.extension_is_on({"mod":"cookieconsent"}) %}
+    {% include 'mod_cookieconsent_index.phtml' ignore missing%}
+{% endif %}
+
+{% block body %}
+{% if not client %}
+<script type="text/javascript">$(function(){bb.redirect('{{ "login"|link }}');});</script>
+{% else %}
+{% set profile = client.client_get %}
+{% set company = guest.system_company %}
+
+<div id="wrapper">
+    <header class="container" id="header">
+            {% if settings.show_page_header %}
+                <nav>
+                <ul class="f16">
+                    {% set languages = guest.extension_languages %}
+                    {% if languages|length > 1 %}
+                    {% set currentLang = guest.system_locale %}
+                    {% set countryCode = currentLang | slice(3, 2) %}
+                        <li>
+                            <div class="btn-group">
+                                <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                                    <span class="flag  {{ countryCode | lower }}"></span>
+                                    {{ countryCode }}
+                                    <span class="caret"></span>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    {% for lang in languages %}
+                                    {% set countryCode = lang | slice(3, 2) %}
+                                    {% if lang != currentLang %}
+                                            <li class="language_selector" data-language-code="{{ lang }}"><a href="javascript:;"> <span class="flag {{ countryCode | lower }}"></span> {{ lang | trans }}</a></li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </li>
+
+                    {% endif %}
+
+                    {% if settings.top_menu_dashboard %}
+                    <li>
+                        <a href="{{ ''|link }}" class="show-tip" title="{% trans 'Dashboard' %}">{% trans 'Dashboard' %}</a>
+                    </li>
+                    {% endif %}
+                    {% if settings.top_menu_order %}
+                    <li class="order-button">
+                        <a href="#" class="show-tip" title="{% trans 'Order' %}">{% trans 'Order services' %}</a>
+                    </li>
+                    {% endif %}
+                    {% if settings.top_menu_profile %}
+                    <li>
+                        <a href="{{ 'client/me'|link }}" class="show-tip" title="{% trans 'Profile' %}">{% trans 'Profile' %}</a>
+                    </li>
+                    {% endif %}
+
+                    {% if settings.top_menu_signout %}
+                    <li>
+                        <a href="{{ 'client/logout' | link }}" class="show-tip" title="{% trans 'Sign out' %}">{% trans 'Sign out' %}</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+            {% if settings.show_company_logo %}
+                {% if company.logo_url %}
+                    <h1>
+                        <a href="{{'/'|link }}">
+                            <img src="{{company.logo_url}}" alt="{{company.name}}" title="{{company.name}}" style="max-height: 75px"/>
+                        </a>
+                        <p></p>
+                    </h1>
+                {% endif %}
+            {% endif %}
+
+            {% if settings.show_company_name %}
+            <p>{{company.name}}</p>
+            {% endif %}
+        {% endif %}
+    </header>
+    <section class="container" role="main">
+        <div class="navigation-block">
+
+            <div class="navbar">
+                <a class="btn btn-navbar btn-block btn-large" data-toggle="collapse" data-target=".nav-collapse"><span class="awe-user"></span> {% trans 'User profile' %}</a>
+            </div>
+
+            <nav class="main-navigation nav-collapse collapse" role="navigation">
+                {% include 'partial_menu.phtml' %}
+            </nav>
+
+            {% if settings.show_client_details %}
+            <section class="user-profile">
+                <figure>
+                    <img alt="{{profile.first_name}} {{profile.last_name}} gravatar" src="{{ profile.email|gravatar(60) }}">
+                    <figcaption>
+                        <strong><a href="{{ 'client/profile' | link}}" class="">{{profile.first_name}} {{profile.last_name}}</a></strong>
+                        <em>{{ profile.company }}</em>
+                        <ul>
+                            <li><a class="btn btn-primary btn-flat" href="{{ 'client/profile' | link}}">{% trans 'profile' %}</a></li>
+                            <li><a class="btn btn-primary btn-flat" href="{{ 'client/logout' | link}}">{% trans 'sign out' %}</a></li>
+                        </ul>
+                    </figcaption>
+                </figure>
+            </section>
+            {% endif %}
+
+            {% if settings.sidebar_balance_enabled %}
+            <section class="balance">
+                <h2>{% trans 'Account balance' %}</h2>
+                <strong>{{ profile.balance | money(profile.currency) }}</strong>
+            </section>
+            {% endif %}
+
+            {% if settings.sidebar_note_enabled %}
+            <section class="side-note">
+                <div class="side-note-container">
+                    <h2>{{ settings.sidebar_note_title }}</h2>
+                    <p>{{ settings.sidebar_note_content }}</p>
+                </div>
+                <div class="side-note-bottom"></div>
+            </section>
+            {% endif %}
+        </div>
+
+        <div class="content-block" role="main">
+
+            {% if settings.show_breadcrumb %}
+            {% block breadcrumbs %}
+            <ul class="breadcrumb">
+                <li><a href="{{ '/'|link }}">{% trans 'Home' %}</a> <span class="divider">/</span></li>
+                {% block breadcrumb %}
+                <li class="active">{% trans 'Dashboard' %}</li>
+                {% endblock %}
+            </ul>
+            {% endblock %}
+            {% endif %}
+
+            {% if settings.show_page_header %}
+            {# block page_header %}
+                <article class="page-header">
+                    <h1>{{ block('meta_title') }}</h1>
+                    <p>{{ block('meta_description') }}</p>
+                </article>
+            {% endblock #}
+            {% endif %}
+
+            {% include "partial_message.phtml" %}
+
+            {% block content_before %}{% endblock %}
+            {% block content %}{% endblock %}
+            {% block content_after %}{% endblock %}
+        </div>
+    </section>
+    <div id="push"></div>
+</div>
+
+{% if settings.footer_enabled %}
+<footer id="footer" class="container">
+    <p>&copy; {{ now|date('Y') }} {{ settings.footer_signature | default(company.signature) | raw }}</p>
+    <ul>
+        {% if settings.footer_link_1_enabled %}
+        <li>
+            {% if 'http://' in settings.footer_link_1_page or  'https://' in settings.footer_link_1_page%}
+            <a href="{{ settings.footer_link_1_page }}">{{ settings.footer_link_1_title }}</a>
+            {% else %}
+            <a href="{{ settings.footer_link_1_page | link }}">{{ settings.footer_link_1_title }}</a>
+            {% endif %}
+        </li>
+        {% endif %}
+        {% if settings.footer_link_2_enabled %}
+        <li>
+            {% if 'http://' in settings.footer_link_2_page or  'https://' in settings.footer_link_2_page%}
+            <a href="{{ settings.footer_link_2_page }}">{{ settings.footer_link_2_title }}</a>
+            {% else %}
+            <a href="{{ settings.footer_link_2_page | link}}">{{ settings.footer_link_2_title }}</a>
+            {% endif %}
+        </li>
+        {% endif %}
+        {% if settings.footer_link_3_enabled %}
+        <li>
+            {% if 'http://' in settings.footer_link_3_page or  'https://' in settings.footer_link_3_page%}
+            <a href="{{ settings.footer_link_3_page }}">{{ settings.footer_link_3_title }}</a>
+            {% else %}
+            <a href="{{ settings.footer_link_3_page | link }}">{{ settings.footer_link_3_title }}</a>
+
+            {%endif %}
+        </li>
+        {% endif %}
+        {% if settings.footer_link_4_enabled %}
+        <li>
+            {% if 'http://' in settings.footer_link_4_page or  'https://' in settings.footer_link_4_page%}
+            <a href="{{ settings.footer_link_4_page }}">{{ settings.footer_link_4_title }}</a>
+            {% else %}
+            <a href="{{ settings.footer_link_4_page | link }}">{{ settings.footer_link_4_title }}</a>
+            {% endif %}
+        </li>
+        {% endif %}
+        {% if settings.footer_link_5_enabled %}
+        <li>
+            {% if 'http://' in settings.footer_link_5_page or  'https://' in settings.footer_link_5_page%}
+            <a href="{{ settings.footer_link_5_page }}">{{ settings.footer_link_5_title }}</a>
+            {% else %}
+            <a href="{{ settings.footer_link_5_page | link }}">{{ settings.footer_link_5_title }}</a>
+            {% endif %}
+        </li>
+        {% endif %}
+
+        {# Removing this link is allowed only for BoxBilling PRO license owners. #}
+        {% if guest.extension_is_on({"mod":'branding'}) %}
+        <li>
+            <a href="http://www.boxbilling.com" title="Billing Software" target="_blank">{% trans 'Powered by BoxBilling' %}</a>
+        </li>
+        {% endif %}
+    </ul>
+    {% if settings.footer_to_top_enabled %}
+    <a href="#top" class="btn btn-primary btn-flat pull-right"><span class="awe-arrow-up"></span> {% trans 'Top' %}</a>
+    {% endif %}
+</footer>
+{% endif %}
+
+<div class="wait" style="display:none" onclick="$(this).hide();">
+    <div class="popup_block" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: black; opacity: 0.5; -webkit-opacity: 0.5; -moz-opacity: 0.5; filter :  alpha(opacity=50); z-index: 2000">
+        <img src="{{ 'img/loader.gif' | asset_url}}" style="position: absolute; display: block; margin-left: auto; margin-right: auto; position: relative; top: 50%; opacity: 1; filter: alpha(opacity=100); z-index: 1003">
+    </div>
+</div>
+<noscript>NOTE: Many features on BoxBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
+
+{% endif %}
+{% endblock %}
+
+{% if settings.top_menu_order or settings.side_menu_order %}
+<script src="{{'orderbutton/js'| link({'options' : '1', 'width' : 600, 'theme_color' : 'green', 'background_color' : 'black', 'background_opacity' : 50, 'background_close' : 1, 'bind_selector' : '.order-button', 'border_radius' : 0, 'loader' : 8}) }}" ></script>
+{% endif %}
+
+{% if settings.inject_javascript %}
+    {{ settings.inject_javascript | raw}}
+{% endif %}
+{% include 'partial_pending_messages.phtml' ignore missing %}
+</body>
+</html>

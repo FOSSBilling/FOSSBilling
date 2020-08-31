@@ -1,0 +1,181 @@
+{% set periods = guest.system_periods %}
+{% set pricing = product.pricing %}
+{% set transfer_tlds = guest.serviceDomain_tlds({"allow_transfer":1})%}
+
+<div class="tab-pane active">
+    <div class="tabbable tabs-left">
+        <ul class="nav nav-tabs">
+            <li class="active domain-tab"><a href="#register" rel="register" data-toggle="tab">Register</a></li>
+            {% if transfer_tlds is not empty %}
+            <li class="domain-tab"><a href="#transfer" rel="transfer" data-toggle="tab">Transfer</a></li>
+            {% endif %}
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane active" id="register">
+                <section>
+                    <fieldset>
+                        <div class="control-group">
+                            <label>{% trans 'Register a new domain' %}</label>
+                            <div class="form-horizontal">
+                                <input type="text" name="register_sld" style="width: 55%" value="{{ request.register_sld }}" placeholder="{% trans 'Enter new domain name to register' %}">
+                                {% set tlds = guest.serviceDomain_tlds({"allow_register":1})%}
+                                <select name="register_tld" style="width: 20%">
+                                    {% for tld in tlds%}
+                                    <option value="{{ tld.tld}}" label="{{ tld.tld}}">{{ tld.tld}}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="btn btn-inverse" type="button" id="domain-check">{% trans 'Check' %}</button>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="onAfterDomainCheck" style="display:none;">
+                                <label>
+                                    <select name="register_years" id="registration-years"></select>
+                                </label>
+                                <br/>
+                                <label class="checkbox"><input type="checkbox" onclick="$('#nameservers').slideToggle();">{% trans 'I want to use my nameservers' %}</label>
+                                <div id="nameservers" style="display:none; margin: 10px 0;">
+                                    <div class="row-fluid">
+                                        <input type="text" name="ns1" value="" placeholder="{% trans 'Nameserver 1' %}"/>
+                                    </div>
+                                    <div class="row-fluid">
+                                        <input type="text" name="ns2" value="" placeholder="{% trans 'Nameserver 2' %}"/>
+                                    </div>
+                                    <div class="row-fluid">
+                                        <input type="text" name="ns3" value="" placeholder="{% trans 'Nameserver 3' %}"/>
+                                    </div>
+                                    <div class="row-fluid">
+                                        <input type="text" name="ns4" value="" placeholder="{% trans 'Nameserver 4' %}"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </section>
+            </div>
+
+            {% if transfer_tlds is not empty %}
+            <div class="tab-pane" id="transfer">
+                <section>
+                    <fieldset>
+                        <div class="control-group">
+                            <label>{% trans 'Transfer a new domain' %}</label>
+                            <div class="form-horizontal">
+                                <input type="text" name="transfer_sld" style="width: 55%" value="{{ request.transfer_sld }}" placeholder="{% trans 'Enter your domain name to transfer' %}">
+                                <select name="transfer_tld" style="width: 20%">
+                                    {% for tld in transfer_tlds%}
+                                    <option value="{{ tld.tld}}" label="{{ tld.tld}}">{{ tld.tld}}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="btn btn-inverse" type="button" id="transfer-check">{% trans 'Check' %}</button>
+                            </div>
+                            </div>
+                            <div class="control-group">
+                                <div class="form-horizontal">
+                                    <div id="domain-transfer-config" style="display:none;">
+                                        <p>{% trans 'Transfer price'%}: <span id="transfer-price"></span></p>
+                                        <input type="text" name="transfer_code" value="{{ request.transfer_code }}" style="width: 200px" placeholder="{% trans 'Enter domain transfer code' %}">
+                                    </div>
+                                </div>
+                            </div>
+                    </fieldset>
+                </section>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <!-- Second level tabs -->
+</div>
+
+<input type="hidden" name="id" value="{{ product.id }}" />
+<input type="hidden" name="action" value="register" id="domain-action"/>
+
+{% set currency = guest.cart_get_currency %}
+<script type="text/javascript">
+$(function() {
+
+    $('ul.nav.nav-tabs > li.domain-tab a').bind('click', function (){
+        $('#domain-action').val($(this).attr('rel'));
+    });
+
+    if($(".addons").length) {
+        $('.order-button').one('click', function(){
+            $(this).hide();
+            $('.addons').slideDown('fast');
+            return false;
+        });
+    }
+
+    $('.addon-period-selector').change(function(){
+        var r = $(this).attr('rel');
+        $('#' + r + ' span').hide();
+        $('#' + r + ' span.' + $(this).val()).fadeIn();
+    }).trigger('change');
+
+    $('#transfer-check').bind('click',function(event){
+        var sld = $('input[name="transfer_sld"]').val();
+        var tld = $('select[name="transfer_tld"]').val();
+        var domain = sld + tld;
+        bb.post(
+            'guest/servicedomain/can_be_transferred',
+            { sld: sld, tld: tld },
+            function(result) {
+                setTransferPricing(tld);
+                $('#domain-name').text(domain);
+                $('#domain-transfer-config').fadeIn('fast');
+                $('.onAfterDomainCheck').fadeIn('fast');
+                $('#transfer-check').hide();
+                $('#transfer .order-button').show();
+            }
+        );
+        return false;
+    });
+
+    $('#domain-check').bind('click',function(event){
+        var sld = $('input[name="register_sld"]').val();
+		sld= sld.toLowerCase();
+        var tld = $('select[name="register_tld"]').val();
+        var domain = sld + tld;
+        bb.post(
+            'guest/servicedomain/check',
+            { sld: sld, tld: tld },
+            function(result) {
+                setPricing(tld);
+                $('#domain-name').text(domain);
+                $('.onAfterDomainCheck').fadeIn('fast');
+                $('#domain-check').hide();
+                $('#register .order-button').show();
+            }
+        );
+        return false;
+    });
+
+    function setPricing(tld)
+    {
+        bb.post(
+            'guest/servicedomain/pricing',
+            { tld: tld },
+            function(result) {
+                var s = $("#registration-years");
+                s.find('option').remove();
+                for (i=1;i<6;i++) {
+                    var price = bb.currency(result.price_registration, {{ currency.conversion_rate }}, "{{ currency.code }}", i);
+                    s.append(new Option(i + "{% trans ' Year/s @ ' %}" + price, i));
+                }
+            }
+        );
+    }
+
+    function setTransferPricing(tld)
+    {
+        bb.post(
+            'guest/servicedomain/pricing',
+            { tld: tld },
+            function(result) {
+                var price = bb.currency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
+                $('#transfer-price').text(price);
+            }
+        );
+    }
+});
+</script>

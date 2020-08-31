@@ -1,0 +1,155 @@
+body {
+	background-color: #fff;
+	margin: 0;
+	overflow: hidden;
+}
+#acct-nav {
+	float: right;
+	padding-right: 20px;
+	padding-top: 5px;
+}
+#main-nav {
+	padding: 0;
+	margin: 0;
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#FFFFFF', endColorstr='#f0f0f0');
+	background: -webkit-gradient(linear, left top, left bottom, from(#FFFFFF), to(#f0f0f0));
+	background: -moz-linear-gradient(top,  #FFFFFF,  #f0f0f0);
+	height: 29px;
+	border-bottom: 1px solid #ccc;
+}
+#main-nav a {
+	color: #444;
+	padding: 5px 15px;
+}
+
+
+
+/* start style for edit display */
+#edit-files {
+	width: 250px;
+	background: #dee4ea;
+	border-right: 1px solid #868b8f;
+	min-height: 300px;
+	float: left;
+    overflow: auto;
+}
+#edit-dir {
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#FFFFFF', endColorstr='#f0f0f0');
+	background: -webkit-gradient(linear, left top, left bottom, from(#FFFFFF), to(#f0f0f0));
+	background: -moz-linear-gradient(top,  #FFFFFF,  #f0f0f0);
+	padding: 4px;
+	border-bottom: 1px solid #ccc;
+	height: 18px;
+}
+#edit-dir .icon {
+	
+}
+#edit-dir #select-dir {
+	background: url('../img/drop.png') right center no-repeat;
+	float: left;
+	padding: 1px 20px 0px 5px;
+}
+#edit-dir:active {
+	background: #eee;
+}
+
+ul#path-tree {
+	list-style: none;
+	padding: 0px 0px;
+	margin: 0;
+	background: #FFF;
+	position: absolute;
+	width: 250px;
+	z-index: 9;
+	display: none;
+}
+ul#path-tree li {
+	padding: 5px 10px;
+}
+ul#path-tree li:hover {
+	background: #1C9AD9;
+	color: #FFF;
+}
+
+
+#edit-files #file-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+#edit-files #file-list li {
+	white-space: nowrap;
+	overflow: hidden;
+	padding: 4px;
+	font-size: .88em;
+    cursor: default;
+/*
+	color: #222;
+	font-family: "Lucida Grande", "Lucida Sans", "Lucida Sans Unicode";
+*/
+}
+#edit-files #file-list li.selected-item {
+	background: #1C9AD9;
+	color: #FFF;
+}
+span.icon {
+	width: 16px;
+	height: 16px;
+	float: left;
+	position: relative;
+	margin: 0px 5px;
+}
+span.icon-dir {
+	background: url('../img/dir.png') no-repeat;
+}
+span.icon-file {
+	background: url('../img/doc.png') no-repeat;
+}
+
+
+
+#edit-content {
+	float: left;
+	width: 300px;
+}
+.editor-iframe {
+	border: 0;
+	width: 500px;
+	height: 300px;
+}
+
+
+#file-tools {
+	padding: 5px 10px;
+}
+#file-tools a {
+	margin-right: 5px;
+}
+
+
+#ref-list {
+	height: 28px;
+	background: #eee;
+}
+#ref-list ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+#ref-list ul li {
+	float: left;
+	padding: 5px 10px;
+}
+#ref-list ul li.ref-sel {
+	background: #0069D6;
+}
+#ref-list ul li.ref-sel a {
+	color: #fff;
+}
+#ref-frame-wrap {
+
+}
+#ref-iframe {
+	border: 0;
+	width: 100%;
+}	

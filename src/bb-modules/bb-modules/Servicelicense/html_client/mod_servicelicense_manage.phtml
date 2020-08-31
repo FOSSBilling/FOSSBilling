@@ -1,0 +1,110 @@
+{% if order.status == 'active' %}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h1>{{ order.title }}</h1>
+            </header>
+            <section>
+               <h2>{% trans 'License details' %}</h2>
+                <table class="table table-striped table-bordered table-condensed">
+                    <tbody>
+                    <tr>
+                        <td>
+                            {% trans 'Key' %}
+                        </td>
+                        <td>
+                            <strong>{{ service.license_key }}</strong>
+                        </td>
+                    </tr>
+
+                    {% if service.validate_ip %}
+                    <tr>
+                        <td>
+                            {% trans 'Valid IPs' %}
+                        </td>
+                        <td>
+                            {% for ip in service.ips %}
+                            {{ ip }} <br/>
+                            {% else %}
+                            {% trans 'All ips' %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    {% if service.validate_host %}
+                    <tr>
+                        <td>
+                            {% trans 'Valid Domains' %}
+                        </td>
+                        <td>
+                            {% for host in service.hosts %}
+                            {{ host }} <br/>
+                            {% else %}
+                            {% trans 'All hosts' %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    {% if service.validate_version %}
+                    <tr>
+                        <td>
+                            {% trans 'Valid Versions' %}
+                        </td>
+                        <td>
+                            {% for version in service.versions %}
+                            {{ version }} <br/>
+                            {% else %}
+                            {% trans 'All versions' %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    {% if service.validate_path %}
+                    <tr>
+                        <td>
+                            {% trans 'Valid Install paths' %}
+                        </td>
+                        <td>
+                            {% for path in service.paths %}
+                            {{ path }} <br/>
+                            {% else %}
+                            {% trans 'All paths' %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    </tbody>
+                </table>
+
+                <h2>{% trans 'Reset license' %}</h2>
+                <p>{% trans 'You can reset your license parameters if you have changed your server' %}</p>
+                <div class="block">
+                    <p><button class="btn btn-primary" type="button" id="license-reset">{% trans 'Reset' %}</button></p>
+                </div>
+            </section>
+        </div>
+    </article>
+</div>
+
+<script type="text/javascript">
+$(function() {
+    $('#license-reset').bind('click',function(event){
+            event.preventDefault();
+        if(confirm('{% trans 'Are you sure?' %}')) {
+            bb.post(
+                'client/servicelicense/reset',
+                { order_id: {{ order.id }} },
+                function(result) {
+                    bb.msg('License was reset');
+                }
+            );
+        }
+    });
+});
+</script>
+{% endif %}

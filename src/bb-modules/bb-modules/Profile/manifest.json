@@ -1,0 +1,7 @@
+{
+    "id":           "profile",
+	"type":         "mod",
+    "name":         "Profile",
+    "description":  "BoxBilling core module",
+    "version":      "1.0.0"
+}

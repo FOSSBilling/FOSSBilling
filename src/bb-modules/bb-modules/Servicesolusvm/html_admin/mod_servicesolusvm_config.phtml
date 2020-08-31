@@ -1,0 +1,184 @@
+<div class="help">
+    <h5>{% trans 'SolusVM configuration' %}</h5>
+    <p>More information what does each configuration parameter means at {{ 'http://wiki.solusvm.com/index.php/API:Admin'|autolink|raw }}</p>
+</div>
+
+<form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm api-form save" data-api-reload="1">
+<fieldset>
+    <div class="rowElem noborder">
+        <label>{% trans 'Virtualization type' %}:</label>
+        <div class="formRight">
+            {{ mf.selectbox('config[vtype]', admin.servicesolusvm_get_virtualization_types, product.config.vtype, 0, 'Select type') }}
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    {% if product.config.vtype %}
+    
+    {#
+    <div class="rowElem">
+        <label>{% trans 'Auto select node' %}:</label>
+        <div class="formRight">
+            <input type="radio" name="config[autoselectnode]" value="1" {% if product.config.autoselectnode == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
+            <input type="radio" name="config[autoselectnode]" value="0" {% if not product.config.autoselectnode %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+        </div>
+        <div class="fix"></div>
+    </div>
+    #}
+    
+    <div class="rowElem">
+        <label>{% trans 'Node' %}:</label>
+        <div class="formRight">
+            {% set nodes = admin.servicesolusvm_get_nodes({"type":product.config.vtype}) %}
+            {% if nodes %}
+            {{ mf.selectbox('config[node]', nodes, product.config.node, 0, 'Select node') }}
+            {% else %}
+            {% trans 'Make sure BoxBilling can connect to SolusVM master server and check if nodes are configured for selected virtualizator type. Refresh page if you have changed virtualization type to see new nodes.' %}
+            {% endif %}
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <div class="rowElem">
+        <label>{% trans 'Plan' %}:</label>
+        <div class="formRight">
+            {% set plans = admin.servicesolusvm_get_plans({"type":product.config.vtype}) %}
+            {% if plans %}
+            {{ mf.selectbox('config[plan]', plans, product.config.plan, 0, 'Select plan') }}
+            {% else %}
+            {% trans 'Make sure BoxBilling can connect to SolusVM master server and check if plans are configured for selected virtualizator type.' %}
+            {% endif %}
+        </div>
+        <div class="fix"></div>
+    </div>
+    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+</fieldset>
+    
+<input type="hidden" name="config[cluster_id]" value="1" />
+<input type="hidden" name="id" value="{{ product.id }}" />
+</form>
+
+<form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm api-form save" data-api-msg="Plan confuguration updated">
+<fieldset>
+    <legend>{% trans 'Plan parameters' %}</legend>
+    <div class="rowElem">
+        <label>{% trans 'IPs amount' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[ips]" value="{{product.config.ips}}" required="required" placeholder="Define how many ips should be assigned for new VPS"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <div class="rowElem">
+        <label>{% trans 'Guaranteed RAM' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[custommemory]" value="{{product.config.custommemory}}" placeholder="Overide plan memory with this amount. Number of MB"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <div class="rowElem">
+        <label>{% trans 'Hdd Space' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[customdiskspace]" value="{{product.config.customdiskspace}}" placeholder="Overide plan diskspace with this amount. Number of GB"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <div class="rowElem">
+        <label>{% trans 'Bandwidth' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[custombandwidth]" value="{{product.config.custombandwidth}}" placeholder="Overide plan bandwidth with this amount. Number of GB per month"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <div class="rowElem">
+        <label>{% trans 'CPU cores' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[customcpu]" value="{{product.config.customcpu}}" placeholder="Overide plan cpu cores with this amount"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <div class="rowElem">
+        <label>{% trans 'Custom extraip' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[customextraip]" value="{{product.config.customextraip}}" placeholder="Add this amount of extra ips"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <div class="rowElem">
+        <label>{% trans 'HVMT' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[hvmt]" value="{{product.config.hvmt}}" placeholder="[0|1] This allows to to define templates & isos for Xen HVM"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <div class="rowElem">
+        <label>{% trans 'Issue cPanel License' %}:</label>
+        <div class="formRight">
+            <input type="radio" name="config[issuelicense]" value="1" {% if product.config.issuelicense == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
+            <input type="radio" name="config[issuelicense]" value="0" {% if not product.config.issuelicense %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    {% endif %}
+    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+</fieldset>
+<input type="hidden" name="id" value="{{ product.id }}" />
+</form>
+
+<form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm api-form save" data-api-msg="Slider information updated">
+<fieldset>
+    <legend>Slider information. Set values to be displayed for client on order page</legend>
+    
+    <div class="rowElem">
+        <label>{% trans 'Dedicated CPU' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[slider_cpu]" value="{{product.config.slider_cpu}}" placeholder="4.2GHz"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <div class="rowElem">
+        <label>{% trans 'Dedicated RAM' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[slider_ram]" value="{{product.config.slider_ram}}" placeholder="1504MB"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <div class="rowElem">
+        <label>{% trans 'Disk space' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[slider_hdd]" value="{{product.config.slider_hdd}}" placeholder="40GB"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <div class="rowElem">
+        <label>{% trans 'Network transfer' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[slider_bandwidth]" value="{{product.config.slider_bandwidth}}" placeholder="4TB"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <div class="rowElem">
+        <label>{% trans 'Description' %}:</label>
+        <div class="formRight">
+            <textarea name="config[slider_desc]" placeholder="Very simple description, like: Perfect for WordPress hosting">{{product.config.slider_bandwidth}}</textarea>
+        </div>
+        <div class="fix"></div>
+    </div>
+    
+    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+</fieldset>
+    
+<input type="hidden" name="config[cluster_id]" value="1" />
+<input type="hidden" name="id" value="{{ product.id }}" />
+</form>

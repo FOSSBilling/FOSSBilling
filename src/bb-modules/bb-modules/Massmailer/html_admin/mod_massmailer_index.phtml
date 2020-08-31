@@ -1,0 +1,122 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}Mass mailer{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block content %}
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Mass Mail Messages' %}</a></li>
+        <li><a href="#tab-new">{% trans 'Create new mass mail message' %}</a></li>
+        <li><a href="#tab-settings">{% trans 'Settings' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+
+        {{ mf.table_search }}
+        <table class="tableStatic wide">
+            <thead>
+                <tr>
+                    <td style="width: 30%">{% trans 'Subject' %}</td>
+                    <td>{% trans 'From' %}</td>
+                    <td>{% trans 'Status' %}</td>
+                    <td style="width: 18%">&nbsp;</td>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% set msgs = admin.massmailer_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+            {% for i, msg in msgs.list %}
+            <tr>
+                <td>{{ msg.subject }}</td>
+                <td>{{ msg.from_name }} <br/>{{ msg.from_email }}</td>
+                <td>{{ mf.status_name(msg.status) }}</td>
+                <td class="actions">
+                    <a class="bb-button btn14 api-link" href="{{ 'api/admin/massmailer/copy'|link({'id' : msg.id}) }}" data-api-redirect="{{ 'massmailer'|alink }}" title="Copy"><img src="images/icons/dark/baloons.png" alt=""></a>
+                    <a class="bb-button btn14" href="{{ '/massmailer/message'|alink }}/{{msg.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                    <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/massmailer/delete'|link({'id' : msg.id}) }}" data-api-redirect="{{ 'massmailer'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4">
+                    {% trans 'The list is empty' %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% include "partial_pagination.phtml" with {'list': msgs, 'url':'massmailer'} %}
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new">
+
+            <form method="post" action="admin/massmailer/create" class="mainForm api-form" data-api-jsonp="onAfterCreateMM">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Subject' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="subject" value="{{request.subject}}" required="required" placeholder="Message subject"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-settings">
+            <div class="help">
+                <h3>{% trans 'Mass Mail Settings' %}</h3>
+            </div>
+    
+            {% set params = admin.extension_config_get({"ext":"mod_massmailer"}) %}
+
+            <form method="post" action="admin/extension/config_save" class="mainForm api-form" data-api-msg="{% trans 'Configuration updated' %}">
+
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <div class="moreFields">
+                            <ul>
+                                <li class="sep txt">Send</li>
+                                <li style="width: 50px"><input type="text" name="limit" value="{{ params.limit }}" placeholder="25"></li>
+                                <li class="sep txt"> emails every </li>
+                                <li style="width: 45px"><input type="text" name="interval" value="{{ params.interval }}" placeholder="30"/></li>
+                                <li class="sep txt">seconds until complete</li>
+                            </ul>
+                        </div> 
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label class="topLabel">{% trans 'Client ID to send test email while creating message' %}</label>
+                        <div class="formBottom">
+                            <input type="text" value="{{ params.test_client_id }}" name="test_client_id" placeholder="Test client ID"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="hidden" name="ext" value="mod_massmailer" />
+                </fieldset>
+                
+            </form>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+function onAfterCreateMM(mid)
+{
+    bb.redirect("{{ 'massmailer/message'|alink }}/" + mid);
+}
+</script>
+{% endblock %}

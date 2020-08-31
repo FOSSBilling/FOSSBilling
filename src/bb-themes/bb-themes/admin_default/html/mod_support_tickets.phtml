@@ -1,0 +1,323 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Support tickets' %}{% endblock %}
+{% set active_menu = 'support' %}
+{% block top_content %}
+{% if request.show_filter %}
+<div class="widget filterWidget">
+    <div class="head"><h5 class="iMagnify">{% trans 'Filter support tickets' %}</h5></div>
+    <div class="body nopadding">
+
+        <form method="get" action="" class="mainForm">
+            <input type="hidden" name="_url" value="{{ request._url }}" />
+            <fieldset>
+                <div class="rowElem noborder">
+                    <label>{% trans 'Client ID' %}</label>
+                    <div class="formRight">
+                        <input type="text" name="client_id" value="{{ request.client_id }}">
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Order ID' %}</label>
+                    <div class="formRight">
+                        <input type="text" name="order_id" value="{{ request.order_id }}">
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Ticket subject' %}</label>
+                    <div class="formRight">
+                        <input type="text" name="subject" value="{{ request.subject }}">
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Ticket messages' %}</label>
+                    <div class="formRight">
+                        <input type="text" name="content" value="{{ request.content }}">
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Priority' %}</label>
+                    <div class="formRight">
+                        <input type="text" name="priority" value="{{ request.priority }}">
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Status' %}</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('status', admin.support_ticket_get_statuses({"titles":1}), request.status, 0, "All statuses") }}
+                        </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Help desk' %}:</label>
+                    <div class="formRight">
+                            {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, request.support_helpdesk_id, 0, "All help desks") }}
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Created at' %}</label>
+                    <div class="formRight moreFields">
+                        <ul>
+                            <li style="width: 100px"><input type="text" name="date_from" value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
+                            <li class="sep">-</li>
+                            <li style="width: 100px"><input type="text" name="date_to" value="{% if request.date_to %}{{ request.date_to|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
+                        </ul>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <input type="hidden" name="show_filter" value="1" />
+                <input type="submit" value="{% trans 'Filter' %}" class="greyishBtn submitForm" />
+            </fieldset>
+        </form>
+        <div class="fix"></div>
+    </div>
+</div>
+{% else %}
+{% set statuses = admin.support_ticket_get_statuses %}
+<div class="stats">
+    <ul>
+        <li><a href="{{ 'support'|alink({'status' : 'open'}) }}" class="count green" title="">{{ statuses.open }}</a><span>{% trans 'Tickets waiting for staff reply' %}</span></li>
+        <li><a href="{{ 'support'|alink({'status' : 'on_hold'}) }}" class="count blue" title="">{{ statuses.on_hold }}</a><span>{% trans 'Tickets waiting for client reply' %}</span></li>
+        <li><a href="{{ 'support'|alink({'status' : 'closed'}) }}" class="count grey" title="">{{ statuses.closed }}</a><span>{% trans 'Solved tickets' %}</span></li>
+        <li class="last"><a href="{{ 'support'|alink }}" class="count grey" title="">{{ statuses.open + statuses.on_hold + statuses.closed }}</a><span>{% trans 'Total' %}</span></li>
+    </ul>
+    <div class="fix"></div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Support tickets' %}</a></li>
+        <li><a href="#tab-new">{% trans 'New ticket' %}</a></li>
+        <li><a href="#tab-email">{% trans 'New email' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+
+            {{ mf.table_search }}
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
+                        <td colspan="2">{% trans 'Client' %}</td>
+                        <td>{% trans 'Subject' %}</td>
+                        <td>{% trans 'Status' %}</td>
+                        <td>{% trans 'Helpdesk' %}</td>
+                        <td style="width: 13%">&nbsp;</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% set tickets = admin.support_ticket_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+                    {% for i, ticket in tickets.list %}
+                    <tr class="priority_{{ ticket.priority }}">
+                        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ ticket.id }}"/></td>
+                        <td style="width:5%"><a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}"><img src="{{ ticket.client.email|gravatar }}?size=20" alt="gravatar" /></a></td>
+                        <td style="width:20%"><a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}">{{ ticket.client.first_name|truncate(1, null, '.') }} {{ ticket.client.last_name }}</a></td>
+                        <td>
+                            <a href="{{ 'support/ticket'|alink }}/{{ticket.id}}#reply-box">#{{ticket.id}} - {{ticket.subject|truncate(50)}} ({{ ticket.replies }})</a>
+                            <br/>
+                            {% if ticket.notes|length %}
+                            <a href="#" rel="{{ticket.id}}" title="{{ ticket.notes|length }}" class="show-notes"><img src="images/icons/dark/notebook.png" alt="" /></a>
+                            {% endif %}
+                            {{ticket.updated_at|timeago}} {% trans 'ago' %}
+                        </td>
+                        <td>{{mf.status_name(ticket.status)}}</td>
+                        <td>{{ticket.helpdesk.name}}</td>
+                        <td class="actions">
+                            <a class="bb-button btn14" href="{{ '/support/ticket'|alink }}/{{ticket.id}}#reply-box"><img src="images/icons/dark/pencil.png" alt=""></a>
+                            <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink }}" href="{{ 'api/admin/support/ticket_delete'|link({'id' : ticket.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                        </td>
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+                        <td colspan="6">{% trans 'The list is empty' %}</td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+            </table>
+            {% include "partial_batch_delete.phtml" with {'action':'admin/support/batch_delete'} %}
+            {% include "partial_pagination.phtml" with {'list': tickets, 'url':'support'} %}
+
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new">
+            <div class="help">
+                <h3>{% trans 'Open ticket for existing client' %}</h3>
+            </div>
+
+            <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" class="mainForm api-form" data-api-redirect="{{ 'support'|alink }}">
+                <fieldset>
+                    {% if not request.client_id %}
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Client' %}</label>
+                        <div class="formRight noborder">
+                            <input type="text" id="client_selector" placeholder="{% trans %}Start typing clients name, email or ID{% endtrans %}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    {% endif %}
+                    <div class="rowElem">
+                        <label>{% trans 'Help desk' %}</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, '', 1) }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Subject' %}</label>
+                        <div class="formRight">
+                            <input type="text" name="subject" value="{{ticket.subject}}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Message' %}</label>
+                        <div class="formRight">
+                        <textarea name="content" cols="5" rows="10" required="required" id="msg-area-{{message.id}}">
+
+{{ profile.signature }}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <input type="hidden" name="client_id" value="{{ request.client_id }}" id="client_id"/>
+                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-email">
+            <div class="help">
+                <h3>{% trans 'Open public ticket for non client' %}</h3>
+            </div>
+
+            <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" class="mainForm api-form" data-api-jsonp="onAfterPublicTicketCreate">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Receivers name' %}</label>
+                        <div class="formRight noborder">
+                            <input type="text" name="name" required="required" placeholder="{% trans %}John Smith{% endtrans %}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Email' %}</label>
+                        <div class="formRight noborder">
+                            <input type="text" name="email" required="required" placeholder="{% trans %}to@gmail.com{% endtrans %}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Subject' %}</label>
+                        <div class="formRight">
+                            <input type="text" name="subject" value="{{ticket.subject}}" required="required" placeholder="{% trans %}Email subject{% endtrans %}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Message' %}</label>
+                        <div class="formRight">
+                        <textarea name="message" cols="5" rows="10" required="required">
+
+{{ profile.signature }}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <input type="hidden" name="client_id" value="{{ request.client_id }}" id="client_id"/>
+                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+    </div>
+    
+</div>
+
+{% endblock %}
+
+
+{% block js%}
+<script type="text/javascript">
+$(function() {
+
+	$('#client_selector').autocomplete({
+        source: function( request, response ) {
+            $.ajax({
+                url: bb.restUrl('admin/client/get_pairs'),
+                dataType: "json",
+                data: {
+                    per_page: 10,
+                    search: request.term
+                },
+                success: function( data ) {
+                    response( $.map( data.result, function( name, id) {
+                        return {
+                            label: name,
+                            value: id
+                        }
+                    }));
+                }
+            });
+        },
+        minLength: 1,
+        select: function( event, ui ) {
+            $("#client_selector").val(ui.item.label);
+            $("#client_id").val(ui.item.value);
+            return false;
+        }
+    });
+
+    $('a.show-notes').click(function(){
+        bb.post('admin/support/ticket_get', { id:$(this).attr('rel') }, function(result){
+            var html = $('<div>');
+            $.each(result.notes, function(i, v){
+                html.append($('<div>').html(v.note));
+                html.append($('<hr>'));
+            });
+            jAlert(html, '{% trans "Notes" %}');
+        });
+        
+        return false;
+    });
+
+});
+
+function onAfterPublicTicketCreate(result) {
+    bb.redirect("{{ 'support/public-ticket'|alink }}/"+result);
+}
+
+</script>
+{% endblock %}

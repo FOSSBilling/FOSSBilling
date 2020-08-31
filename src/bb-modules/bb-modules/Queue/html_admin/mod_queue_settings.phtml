@@ -1,0 +1,60 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Queues' %}{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li class="lastB">{% trans 'Queues' %}</li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="widget">
+    <div class="head">
+        <h5 class="iCog">{% trans 'Queues' %}</h5>
+    </div>
+
+    {{ mf.table_search }}
+    <table class="tableStatic wide">
+        <thead>
+            <tr>
+                <td style="width: 40%">{% trans 'Name' %}</td>
+                <td>{% trans 'Extension' %}</td>
+                <td>{% trans 'Messages' %}</td>
+                <td>{% trans 'Created' %}</td>
+                <td width="13%">&nbsp;</td>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% set queues = admin.queue_get_list({"per_page":100, "page":request.page}|merge(request)) %}
+        {% for i, queue in queues.list %}
+        <tr>
+            <td>{{ queue.name }}</td>
+            <td>{{ queue.mod }}</td>
+            <td>{{ queue.messages_count }}</td>
+            <td>{{ queue.created_at|bb_date }}</td>
+            <td class="actions">
+                <a class="bb-button btn14 api-link" href="{{ 'api/admin/queue/execute'|link({'queue' : queue.name}) }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/airplane.png" alt=""></a>
+                {#<a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/queue/queue_delete'|link({'id' : queue.name}) }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/trash.png" alt=""></a>#}
+            </td>
+
+        </tr>
+
+        {% else %}
+        <tr>
+            <td colspan="5">
+                {% trans 'The list is empty.' %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

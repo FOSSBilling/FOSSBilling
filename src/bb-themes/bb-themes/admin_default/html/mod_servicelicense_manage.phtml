@@ -1,0 +1,132 @@
+<div class="help">
+    <h2>{% trans 'License details' %}</h2>
+</div>
+{% set service = admin.order_service({"id":order.id}) %}
+<table class="tableStatic wide">
+    <tbody>
+        <tr class="noborder">
+            <td style="width: 30%;">
+                {% trans 'Key' %}
+            </td>
+            <td>
+                <strong>{{ service.license_key }}</strong>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                {% trans 'Plugin' %}
+            </td>
+            <td>{{ service.plugin }}</td>
+        </tr>
+        
+        <tr>
+            <td>
+                {% trans 'Last ping' %}
+            </td>
+            <td>{{ service.pinged_at|bb_date }} ({{ service.pinged_at|timeago }} ago)</td>
+        </tr>
+
+    </tbody>
+
+    <tfoot>
+        <tr>
+            <td colspan="2">
+                <div class="aligncenter">
+                    {{ order_actions }}
+                </div>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+<form method="post" action="{{ 'api/admin/servicelicense/update'|link }}" class="mainForm api-form" data-api-msg="License updated">
+    <fieldset>
+        <legend>{% trans 'License data' %}</legend>
+        <div class="rowElem">
+            <label>{% trans 'License Key' %}: </label>
+            <div class="formRight">
+                <textarea type="text" cols="" rows="5" name="license_key" required="required" >{{ request.license_key|default(service.license_key) }}</textarea>
+            </div>
+            <div class="fix"></div>
+        </div>
+        <div class="rowElem">
+            <label>{% trans 'Plugin' %}: </label>
+            <div class="formRight">
+                <input type="text" name="plugin" value="{{ request.plugin|default(service.plugin) }}" required="required" >
+            </div>
+            <div class="fix"></div>
+        </div>
+    </fieldset>
+    <fieldset>
+        <legend>License validation rules</legend>
+        <div class="rowElem">
+            <label>{% trans 'Validate IP' %}:</label>
+            <div class="formRight">
+                <input type="radio" name="validate_ip" value="1"{% if service.validate_ip  %} checked="checked"{% endif %}/><label>Yes</label>
+                <input type="radio" name="validate_ip" value="0"{% if not service.validate_ip %} checked="checked"{% endif %} /><label>No</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+        <div class="rowElem noborder">
+            <label class="">{% trans 'Valid IPs (one per line)' %}:</label>
+            <div class="formRight">
+                <textarea name="ips" cols="" rows="5">{% for v in service.ips %}{{ v }}{{constant("PHP_EOL")}}{% endfor %}</textarea>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Validate host' %}:</label>
+            <div class="formRight">
+                <input type="radio" name="validate_host" value="1"{% if service.validate_host  %} checked="checked"{% endif %}/><label>Yes</label>
+                <input type="radio" name="validate_host" value="0"{% if not service.validate_host %} checked="checked"{% endif %} /><label>No</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+        <div class="rowElem noborder">
+            <label class="">{% trans 'Valid hosts (one per line)' %}:</label>
+            <div class="formRight">
+                <textarea name="hosts" cols="" rows="5">{% for v in service.hosts %}{{ v }}{{constant("PHP_EOL")}}{% endfor %}</textarea>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Validate path' %}:</label>
+            <div class="formRight">
+                <input type="radio" name="validate_path" value="1"{% if service.validate_path  %} checked="checked"{% endif %}/><label>Yes</label>
+                <input type="radio" name="validate_path" value="0"{% if not service.validate_path %} checked="checked"{% endif %} /><label>No</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+        <div class="rowElem noborder">
+            <label class="">{% trans 'Valid paths (one per line)' %}:</label>
+            <div class="formRight">
+                <textarea name="paths" cols="" rows="5">{% for v in service.paths %}{{ v }}{{constant("PHP_EOL")}}{% endfor %}</textarea>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Validate version' %}:</label>
+            <div class="formRight">
+                <input type="radio" name="validate_version" value="1"{% if service.validate_version  %} checked="checked"{% endif %}/><label>Yes</label>
+                <input type="radio" name="validate_version" value="0"{% if not service.validate_version %} checked="checked"{% endif %} /><label>No</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+        <div class="rowElem noborder">
+            <label class="">{% trans 'Valid versions (one per line)' %}:</label>
+            <div class="formRight">
+                <textarea name="versions" cols="" rows="5">{% for v in service.versions %}{{ v }}{{constant("PHP_EOL")}}{% endfor %}</textarea>
+            </div>
+            <div class="fix"></div>
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+        <input type="hidden" name="order_id" value="{{ order.id }}"/>
+    </fieldset>
+</form>

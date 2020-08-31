@@ -1,0 +1,9 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}Filemanager{% endblock %}
+{% set active_menu = 'system' %}
+{% set hide_menu = '1' %}
+
+{% block content_wide %}
+<iframe src="{{ 'filemanager/ide'|alink({'inline' : 1}) }}" width="100%" height="700"></iframe>
+{% endblock %}

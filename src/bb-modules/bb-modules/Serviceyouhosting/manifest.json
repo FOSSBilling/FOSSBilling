@@ -1,0 +1,12 @@
+{
+    "id":           "serviceyouhosting",
+	"type":         "mod",
+    "name":         "YouHosting product",
+    "description":  "Sell YouHosting hosting services",
+    "icon_url":     "icon.png",
+    "homepage_url": "http://github.com/boxbilling/",
+    "author":       "BoxBilling",
+    "author_url":   "http://extensions.boxbilling.com/",
+    "license":      "http://www.boxbilling.com/license.txt",
+    "version":      "1.0.0"
+}

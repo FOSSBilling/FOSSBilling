@@ -1,0 +1,75 @@
+<div class="help">
+    <h5>{% trans 'Centova Cast product settings' %}</h5>
+</div>
+
+<form method="post" action="admin/product/update_config" class="mainForm api-form save" data-api-msg="Settings updated">
+    <fieldset>
+        
+        <div class="rowElem">
+            <label>{% trans 'Server' %}</label>
+            <div class="formRight">
+                {{ mf.selectbox('config[server_id]', admin.servicecentovacast_server_pairs, product.config.server_id, 0, 'Select server') }}
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Template' %}</label>
+            <div class="formRight">
+                <input type="text" name="config[template]" value="{{ product.config.template }}" placeholder="Enter the name of the Centova Cast account template to use for this package"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Server Type' %}</label>
+            <div class="formRight">
+                <input type="text" name="config[servertype]" value="{{ product.config.servertype }}" placeholder="Enter the Server type ShoutCast2/IceCast"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Max clients' %}</label>
+            <div class="formRight">
+                <input type="text" name="config[maxclients]" value="{{ product.config.maxclients }}" placeholder="Specify the maximum number simultaneous listeners for this stream"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Max bitrate' %}</label>
+            <div class="formRight">
+                <input type="text" name="config[maxbitrate]" value="{{ product.config.maxbitrate }}" placeholder="Specify the maximum bit rate (in kbps) for this stream"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Transfer limit' %}</label>
+            <div class="formRight">
+                <input type="text" name="config[transferlimit]" value="{{ product.config.transferlimit }}" placeholder="Specify a custom data transfer limit (in MB per month)"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Disk quota' %}</label>
+            <div class="formRight">
+                <input type="text" name="config[diskquota]" value="{{ product.config.diskquota }}" placeholder="Specify the disk quota for this stream"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Autostart' %}</label>
+            <div class="formRight">
+                <input type="text" name="config[autostart]" value="{{ product.config.autostart }}" placeholder="Set this to '1' to automatically start the server after provisioning, Set it to 2 for icecast"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+        <input type="hidden" name="id" value="{{ product.id }}" />
+    </fieldset>
+</form>

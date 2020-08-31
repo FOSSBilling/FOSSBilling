@@ -1,0 +1,345 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Proforma invoice' %}{% endblock %}
+
+{% block content_before %}
+{% if invoice.status == 'unpaid' %}
+    {% include "partial_steps.phtml" with {'selected': 4} %}
+{% endif%}
+{% endblock %}
+
+{% block content %}
+{% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
+{% set seller = invoice.seller %}
+{% set buyer = invoice.buyer %}
+{% set company  = guest.system_company %}
+
+<div class="h-block" id="invoice-block">
+    <div class="h-block-header">
+        <div class="icon"><span class="big-light-icon i-invoice"></span></div>
+        {% if invoice.status == 'unpaid' %}
+        <h2>{% trans 'Proforma Invoice' %}</h2>
+        <p>{% trans 'Please choose payment type and pay for your chosen products.' %}</p>
+        {% else %}
+        <h2>{% trans 'Invoice' %} {{ nr }}</h2>
+        <p>{% trans 'Invoice is paid' %}</p>
+        {% endif %}
+    </div>
+    <div class="block">
+        <div id="invoice-header">
+
+        <div class="grid_6 alpha">
+            <div class="box">
+                <div class="block">
+                    {% if company.logo_url %}
+                    <img src="{{company.logo_url}}" alt="{{company.name}}" style="max-width: 100%; max-height: 100%"/>
+                    {% else %}
+                    <img src=" {{ 'images/logo.png' | asset_url }}" alt="{{company.name}}" style="max-width: 100%; max-height: 100%"/>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="grid_6 omega">
+            <div class="box">
+                <div class="block" style="text-align: right;">
+                    <h2>{% trans 'Invoice' %} {{ invoice.serie_nr }}</h2>
+                    <p>
+                        {% if invoice.paid_at %}
+                        {{ invoice.paid_at | bb_date }}
+                        {% else %}
+                        {{ invoice.created_at | bb_date }}
+                        {% endif %}
+                    </p>
+
+                    <h2 class="invoice_{{invoice.status }}">{% if invoice.status == 'unpaid' %}{% trans 'Unpaid' %}{% else %}{% trans 'Paid' %}{% endif %}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="clear"></div>
+
+        <div class="grid_6 alpha">
+            <table class="seller">
+                {% if seller.company %}
+                <tr>
+                    <td><b>{{ seller.company }}</b></td>
+                </tr>
+                {% endif %}
+
+                {% if seller.address %}
+                <tr>
+                    <td>{{ seller.address }}</td>
+                </tr>
+                {% endif %}
+
+                {% if seller.phone %}
+                <tr>
+                    <td>{{ seller.phone }}</td>
+                </tr>
+                {% endif %}
+
+                {% if seller.email %}
+                <tr>
+                    <td>{{ seller.email }}</td>
+                </tr>
+                {% endif %}
+                
+                {% if company.account_number %}
+                <tr>
+                    <td>{% trans 'Account' %}: {{ company.account_number }}</td>
+                </tr>
+                {% endif %}
+
+                {% if company.number %}
+                <tr>
+                    <td>{% trans 'Company number' %}: {{ company.number }}</td>
+                </tr>
+                {% endif %}
+
+                {% if company.vat_number %}
+                <tr>
+                    <td>{% trans 'VAT' %}: {{ company.vat_number }}</td>
+                </tr>
+                {% endif %}
+
+                {# Company note #}
+                {# if company.note %}
+                <tr>
+                    <td>{{ company.note }}</td>
+                </tr>
+                {% endif #}
+            </table>
+        </div>
+
+        <div class="grid_6 omega">
+            <table class="buyer">
+                {% if buyer.company %}
+                <tr>
+                    <td><b>{{ buyer.company }}</b></td>
+                </tr>
+                {% endif %}
+
+                {% if buyer.first_name or buyer.last_name %}
+                <tr>
+                    <td><b>{{ buyer.first_name }} {{ buyer.last_name }}</b></td>
+                </tr>
+                {% endif %}
+
+                {% if buyer.email %}
+                <tr>
+                    <td>{{ buyer.email }}</td>
+                </tr>
+                {% endif %}
+
+                {% if buyer.address %}
+                <tr>
+                    <td>{{ buyer.address }} {{ buyer.city }} {{ buyer.state }} {{ buyer.postcode }} {{ buyer.country }}</td>
+                </tr>
+                {% endif %}
+                
+                {% if buyer.phone %}
+                <tr>
+                    <td>{{ buyer.phone }}</td>
+                </tr>
+                {% endif %}
+
+            </table>
+        </div>
+
+        {% if invoice.text_1 %}
+        <div class="grid_12 alpha omega">
+            <div class="box">
+                {{ invoice.text_1|markdown }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="clear"></div>
+        </div>
+
+        <table class="with-border">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>{% trans 'Title' %}</th>
+                    <th class="currency">{% trans 'Price' %}</th>
+                    <th class="currency">{% trans 'Total' %}</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for i, item in invoice.lines %}
+
+                <tr class="{{ cycle(['odd', 'even'], i) }}">
+                    <td>{{ i+1 }}.</td>
+                    <td>
+                        {% if item.order_id%}
+                        <a href="{{ '/order/service'|link }}/manage/{{item.order_id}}">{{ item.title }}</a>
+                        {% else %}
+                        {{ item.title }}
+                        {% endif %}
+                        {% if item.quantity > 1 %}
+                        x {{ item.quantity }} {{ item.unit }}
+                        {% endif %}
+                    </td>
+                    <td class="currency">
+                        {{ item.price | money(invoice.currency) }}
+                    </td>
+                    <td class="currency">{{ item.total | money(invoice.currency) }}</td>
+                </tr>
+
+                {% endfor %}
+            </tbody>
+
+            <tfoot>
+            {% if invoice.tax > 0 %}
+                <tr>
+                    <th colspan="3">{{ invoice.taxname }} {{ invoice.taxrate }}%</th>
+                    <th class="currency">{{ invoice.tax | money(invoice.currency) }}</th>
+                </tr>
+            {% endif %}
+            
+            {% if invoice.discount > 0 %}
+                <tr>
+                    <th colspan="3">{% trans 'Discount' %}</th>
+                    <th class="currency">{{ invoice.discount | money(invoice.currency) }}</th>
+                </tr>
+            {% endif %}
+                <tr class="total">
+                    <th colspan="3">{% trans 'Total' %}</th>
+                    <th class="currency">{{ invoice.total | money(invoice.currency) }}</th>
+                </tr>
+            </tfoot>
+        </table>
+
+        {% if invoice.text_2 %}
+        <div class="grid_12 alpha omega">
+            <div class="box">
+                {{ invoice.text_2|markdown }}
+            </div>
+        </div>
+        {% endif %}
+
+    {% if invoice.status == 'unpaid' %}
+        
+        {% if invoice.gateway_id and not request.change_payment_method %}
+        {% set payment = guest.invoice_payment({"gateway_id" : invoice.gateway_id, "hash":invoice.hash, "auto_redirect":request.auto_redirect }) %}
+        <div class="grid_12 alpha omega">
+            <div class="box">
+                {% if payment.type == 'html' %}
+                    {{ payment.result|raw }}
+                {% endif %}
+                    {% if payment.type == 'form' %}
+                    <h2>{% trans 'Redirecting to payment gateway..' %}</h2>
+                    <form name="payment_form" action="{{payment.service_url}}" method="post">
+                        {% for key, value in payment.result %}
+                        <input type="hidden" name="{{key}}" value="{{value}}" />
+                        {% endfor %}
+                        <input class="btn btn-primary" type="submit" value="{% trans 'Please click here to continue if this page does not redirect automatically in 5 seconds' %}" id="payment_button"/>
+                    </form>
+
+                    <script type="text/javascript">
+                        $(document).ready(function(){
+                            document.getElementById('payment_button').style.display = 'none';
+                            document.forms["payment_form"].submit();
+                        });
+                    </script>
+                    {% endif %}
+            </div>
+        </div>
+
+        <div class="clear"></div>
+
+        {% endif %}
+
+        {% if request.change_payment_method %}
+        
+        <form method="post" action="{{ 'api/guest/invoice/update'|link }}" class="api-form" data-api-redirect="{{ ('invoice/'~invoice.hash)|link({'auto_redirect' : 1}) }}">
+            <div class="grid_8 alpha">
+                <div class="box">
+                    <div class="block pricing">
+                        {% for gtw in guest.invoice_gateways %}
+                            {% if invoice.currency in gtw.accepted_currencies %}
+                            <label class="gateway">
+                                <input type="radio" name="gateway_id" value="{{gtw.id}}"/>
+                                {% trans 'Pay by' %} {{gtw.title}}
+                            </label>
+                            {% endif %}
+                        {% endfor %}
+                        <div class="clear"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid_4 omega">
+                <div class="box">
+                    <div class="block pricing">
+                        <p>{% trans 'Total:' %}</p>
+                        <div class="currency">{{ invoice.total | money(invoice.currency) }}</div>
+                        <button class="bb-button bb-button-submit bb-button-big" type="submit">{% trans 'Pay now' %}</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" name="hash" value="{{invoice.hash}}"/>
+        </form>
+        
+        {% endif %}
+    {% endif %}
+        <div class="clear"></div>
+    </div>
+</div>
+
+{% set transactions = client.invoice_transaction_get_list({"invoice_id":invoice.id, "type":"payment","per_page":100 }).list %}
+
+{% if transactions|length > 0 %}
+
+<div class="widget">
+    <div class="head">
+        <h2 class="dark-icon i-payment">{% trans 'Transactions' %}</h2>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>{% trans 'Transaction Date' %}</th>
+                <th>{% trans 'Transaction ID' %}</th>
+                <th>{% trans 'Gateway' %}</th>
+                <th>{% trans 'Amount' %}</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for i, tx in transactions %}
+            <tr class="{{ cycle(['odd', 'even'], i) }}">
+                <td>{{tx.created_at|bb_date }}</td>
+                <td>{{tx.txn_id}}</td>
+                <td>{{tx.gateway|default('-')}}</td>
+                <td>{{ tx.amount | money(tx.currency) }}</td>
+            </tr>
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+</div>
+
+{% endif %}
+
+
+{% endblock %}
+
+{% block sidebar2 %}
+
+<div class="widget">
+    <div class="head">
+        <h2 class="dark-icon i-services">{% trans 'Actions' %}</h2>
+    </div>
+    <div class="block">
+        {% if invoice.status == 'unpaid' %}
+        <a class="bb-button" href="{{ ('invoice/'~invoice.hash)|link({'change_payment_method' : 1}) }}" style="margin-bottom: 10px">{% trans 'Change payment method' %}</a>
+        {% endif %}
+        <a class="bb-button" href="{{ 'invoice/pdf' | link }}/{{invoice.hash}}">{% trans 'Download PDF' %}</a>
+    </div>
+</div>
+
+{% endblock %}

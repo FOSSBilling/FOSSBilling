@@ -1,0 +1,330 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{ticket.subject}} - {{ ticket.messages|length }} {% trans 'message(s)' %}{% endblock %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'support'|alink }}">{% trans 'Support tickets' %}</a></li>
+    <li class="lastB">#{{ticket.id}}  - {{ticket.subject}}</li>
+</ul>
+{% endblock %}
+
+{% set active_menu = 'support' %}
+{% block content %}
+
+<div class="widget simpleTabs tabsRight">
+    <div class="head">
+        <h5 class="iSpeech">{{ ticket.subject }}</h5>
+    </div>
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Ticket' %}</a></li>
+        <li><a href="#tab-manage">{% trans 'Manage' %}</a></li>
+        <li><a href="#tab-notes">{% if ticket.notes|length > 0%}{{ticket.notes|length}} - {% endif %}{% trans 'Notes' %}</a></li>
+        <li><a href="#tab-support">{% trans 'Client tickets' %}</a></li>
+    </ul>
+    
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+            <table class="tableStatic wide">
+                <tbody>
+                    <tr class="noborder">
+                        <td style="width: 30%">{% trans 'Ticket ID' %}</td>
+                        <td><b>#{{ticket.id}}</b></td>
+                    </tr>
+
+                    <tr>
+                        <td>{% trans 'Client' %}</td>
+                        <td>#{{ticket.client.id}} <a href="{{ 'client/manage'|alink }}/{{ ticket.client.id }}">{{ticket.client.first_name}} {{ticket.client.last_name}}</a></td>
+                    </tr>
+                    
+                    <tr>
+                        <td>{% trans 'Help desk' %}</td>
+                        <td class="shd">
+                            {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, ticket.support_helpdesk_id, 1) }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>{% trans 'Status' %}</td>
+                        <td>
+                            {% for tcode,tstatus in admin.support_ticket_get_statuses({"titles":1}) %}
+                            <label><input class="tst" type="radio" name="status" value="{{tcode}}" {% if ticket.status == tcode %}checked="checked"{% endif %} /> {{ tstatus }}</label>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td>{% trans 'Time opened' %}</td>
+                        <td>{{ticket.created_at|date('l, d F Y')}}</td>
+                    </tr>
+
+                 </tbody>
+
+                {% set task = ticket.rel %}
+                <tbody>
+                {% if task.task %}
+                <tr>
+                    <td><label>{% trans 'Task' %}</label></td>
+                    <td><strong>{{ mf.status_name(task.task) }}</strong></td>
+                </tr>
+                {% endif %}
+
+                {% if task.type == 'order' %}
+                <tr>
+                    <td><label>{% trans 'Related to' %}</label></td>
+                    <td><a href="{{ 'order/manage'|alink }}/{{ task.id }}">Order #{{ task.id }}</a></td>
+                </tr>
+                {% endif %}
+
+                {% if task.task == 'upgrade' %}
+                <tr>
+                    <td><label>{% trans 'Upgrade to' %}</label></td>
+                    <td><a href="{{ 'product/manage'|alink }}/{{task.new_value}}">{{ admin.product_get_pairs[task.new_value] }}</a></td>
+                </tr>
+                {% endif %}
+
+                </tbody>
+
+                 <tfoot>
+                     <tr>
+                         <td colspan="2">
+                            <div class="aligncenter">
+                                {% if ticket.status != 'closed' %}
+                                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btn55 mr10 api-link" ><img src="images/icons/middlenav/stop.png" alt=""><span>{% trans 'Close ticket' %}</span></a>
+                                {% endif %}
+                                <a href="{{ 'api/admin/support/ticket_delete'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink }}" class="btn55 mr10 api-link"><img src="images/icons/middlenav/trash.png" alt=""><span>{% trans 'Delete' %}</span></a>
+
+                                {% if task.status == 'pending' %}
+                                <a href="{{ 'api/admin/support/task_complete'|link({'id' : ticket.id }) }}" class="btn55 mr10 api-link" data-api-reload="1"><img src="images/icons/middlenav/check.png" alt="" data-api-reload="1"><span>{% trans 'Set Task complete' %}</span></a>
+                                {% endif %}
+                            </div>
+                         </td>
+                     </tr>
+                 </tfoot>
+            </table>
+            <div class="fix"></div>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-manage">
+            <form method="post" action="{{ 'api/admin/support/ticket_update'|link }}" class="mainForm api-form" data-api-reload="1">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Subject' %}</label>
+                        <div class="formRight noborder">
+                            <input type="text" name="subject" value="{{ticket.subject}}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Help desk' %}</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, ticket.support_helpdesk_id, 1) }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Status' %}</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('status', admin.support_ticket_get_statuses({"titles":1}), ticket.status, 1) }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Priority' %}</label>
+                        <div class="formRight">
+                            <input type="text" name="priority" value="{{ticket.priority}}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                     <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                </fieldset>
+                <input type="hidden" name="id" value="{{ ticket.id }}">
+            </form>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-notes">
+
+            <table class="tableStatic wide">
+            {% for note in ticket.notes %}
+                <tr {% if loop.first %}class="noborder"{% endif %}>
+                    <td>{{ note.note }}</td>
+                    <td style="width: 20%"><a href="{{ 'staff'|alink }}/manage/{{ note.admin_id }}">{{ note.author.name }}</a></td>
+                    <td style="width: 5%">
+                        <a href="{{ 'api/admin/support/note_delete'|link({'id' : note.id}) }}" data-api-confirm="Are you sure?" data-api-reload="1" class="bb-button btn14 api-link"><img src="images/icons/dark/trash.png" alt=""></a>
+                    </td>
+                </tr>
+            {% endfor %}
+                <tfoot>
+                    <tr>
+                        <td colspan="3" {% if ticket.notes|length == 0 %}class="noborder"{% endif %}>
+
+                            <form method="post" action="{{ 'api/admin/support/note_create'|link }}" class="mainForm api-form" data-api-reload="1">
+                                <fieldset>
+                                    <textarea name="note" cols="5" rows="5" required="required" placeholder="Add new note" style="width: 98%"></textarea>
+                                    <input type="submit" value="{% trans 'Add note' %}" class="greyishBtn submitForm" style=" margin-top: 22px; width: 100px"/>
+                                    <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                                </fieldset>
+                            </form>
+
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-support">
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td>ID</td>
+                        <td width="60%">Subject</td>
+                        <td width="15%">Help desk</td>
+                        <td width="15%">Status</td>
+                        <td>&nbsp;</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% set tickets = admin.support_ticket_get_list({"per_page":"20", "client_id":ticket.client.id}) %}
+                    {% for ticket in tickets.list %}
+                    <tr>
+                        <td>{{ ticket.id }}</td>
+                        <td>{{ ticket.subject|truncate(30) }}</td>
+                        <td>{{ ticket.helpdesk.name }}</td>
+                        <td>{{ mf.status_name(ticket.status) }}</td>
+                        <td class="actions"><a class="bb-button btn14" href="{{ '/support/ticket'|alink }}/{{ticket.id}}"><img src="images/icons/dark/pencil.png" alt=""></a></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+                <tfoot>
+                    <tr>
+                        <td colspan="5">
+                            <a href="{{ 'support'|alink({'client_id' : client.id})}}#tab-new" class="btnIconLeft mr10 mt5" ><img src="images/icons/dark/help.png" alt="" class="icon"><span>{% trans 'New support ticket' %}</span></a>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<div class="conversation">
+{% for i, message in ticket.messages %}
+<div class="widget {{ loop.last ? 'last' : '' }}" id="{{ message.id == request_message ? 'direct-msg' : ''}}">
+    <div class="head" style="cursor: pointer;">
+        <h5 class="no-icon"><img src="{{ message.author.email|gravatar }}?size=20" alt="{{ message.author.name }}" class="gravatar"/> {{ message.author.name }}</h5>
+        <h5 style="float:right;"><a href="{{ '/support/ticket'|alink }}/{{ticket.id}}/message/{{message.id}}" style="color:inherit">{{ message.created_at|bb_datetime }}</a></h5>
+    </div>
+
+    <div class="body" style="display:{{ loop.last or loop.index+1 == ticket.messages|length ? 'block' : 'none' }};">
+        {{ message.content|bbmd }}
+        <div class="clear"></div>
+    </div>
+</div>
+{% endfor %}
+</div>
+
+
+<div class="widget" id="reply-box">
+    <div class="head">
+        <h5 class="iSpeech">{% trans 'Reply as' %} {{ profile.name }}</h5>
+        {%  include 'mod_support_canned_selector.phtml' %}
+    </div>
+
+    <form method="post" action="{{ 'api/admin/support/ticket_reply'|link }}" class="mainForm api-form" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}">
+        <fieldset>
+            <textarea name="content" cols="5" rows="20" required="required" class="bb-textarea" id="rt">Hello {{ ticket.client.first_name }},
+{{ canned_delay_message }}
+
+
+
+{{ profile.signature }}
+{{ ticket.helpdesk.signature }}</textarea>
+            <input type="hidden" name="id" value="{{ ticket.id }}">
+            <input type="submit" value="{% trans 'Post' %}" class="greyishBtn submitForm" />
+
+
+            <div class="body">
+                <a href="#"  class="btnIconLeft mr10" id="toggleMessages" ><span>{% trans 'Show/Hide messages' %}</span></a>
+
+                {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
+                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id }) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btnIconLeft mr10 api-link" ><span>{% trans 'Close ticket' %}</span></a>
+                {% endif %}
+            </div>
+        </fieldset>
+    </form>
+
+    <div class="clear"></div>
+</div>
+
+{% endblock %}
+
+{% block js%}
+<script type="text/javascript">
+function setSelRange(inputEl, selStart, selEnd) { 
+   if (inputEl.setSelectionRange) { 
+     inputEl.focus(); 
+     inputEl.setSelectionRange(selStart, selEnd); 
+   } else if (inputEl.createTextRange) { 
+     var range = inputEl.createTextRange(); 
+     range.collapse(true); 
+     range.moveEnd('character', selEnd); 
+     range.moveStart('character', selStart); 
+     range.select(); 
+   }
+}
+
+$(function() {
+
+    $('#reply-box textarea').focus();
+    var ta = document.getElementById('rt');
+    var pos = ta.innerHTML.indexOf('\n') + 2;
+    setSelRange(ta, pos, pos);
+ 
+    $('.shd select').change(function(){
+        bb.get('admin/support/ticket_update', {id:{{ticket.id}}, support_helpdesk_id: $(this).val()});
+    });
+    
+    $('input.tst').click(function(){
+        bb.get('admin/support/ticket_update', {id:{{ticket.id}}, status: $(this).val()});
+    });
+
+    $('.conversation').on('click', '.head', function(e){
+        if( e.target !== this )
+            return;
+        $(this).siblings('.body').toggle();
+        return false;
+    });
+
+    if ($('#direct-msg').length > 0){
+        $('#direct-msg > .body').show();
+        $('html, body').animate({
+            scrollTop: $('#direct-msg').offset().top-50
+        }, 500);
+        $('#direct-msg').css("background-color", "rgb(228, 228, 228)");
+    }
+
+    var showAllMessages = false;
+    $('.api-form').on('click', '#toggleMessages', function(e) {
+        e.preventDefault();
+        showAllMessages = !showAllMessages;
+        $('.conversation .body').toggle(showAllMessages);
+
+    });
+});
+</script>
+{% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
