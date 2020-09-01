@@ -135,7 +135,7 @@ $di['request'] = function () use ($di) {
 };
 $di['cache'] = function () use ($di) { return new FileCache();};
 $di['auth'] = function () use ($di) { return new Box_Authorization($di);};
-$di['twig'] = function () use ($di) {
+$di['twig'] = $di->factory(function () use ($di) {
     $config = $di['config'];
     $options = $config['twig'];
 
@@ -149,7 +149,7 @@ $di['twig'] = function () use ($di) {
       $twig->addExtension(new \Twig\Extension\StringLoaderExtension());
       $twig->addExtension(new Twig\Extension\DebugExtension());
       $twig->addExtension(new Twig\Extensions\I18nExtension());
-    $twig->addExtension($box_extensions);
+      $twig->addExtension($box_extensions);
       $twig->getExtension(Twig\Extension\CoreExtension::class)->setDateFormat($config['locale_date_format']);
       $twig->getExtension(Twig\Extension\CoreExtension::class)->setTimezone($config['timezone']);
   
@@ -163,7 +163,7 @@ $di['twig'] = function () use ($di) {
     $twig->addGlobal('guest', $di['api_guest']);
 
     return $twig;
-};
+});
 
 $di['is_client_logged'] = function() use($di) {
     if(!$di['auth']->isClientLoggedIn()) {

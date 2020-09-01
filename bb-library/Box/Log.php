@@ -118,9 +118,11 @@ class Box_Log
                 $event['info'] = $info;
             }
         }
-
-        //do not log debug level messages if debug is OFF
-        if($this->_min_priority && $priority > self::INFO) {
+    
+           
+//if($this->di('config')('debug') === FALSE && $event('priority') > self::INFO) {
+          //do not log debug level messages if debug is OFF
+          if($this->_min_priority && $priority > self::INFO) {
             return ;
         }
 

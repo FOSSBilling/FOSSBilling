@@ -589,8 +589,7 @@ class Server_Manager_Plesk extends Server_Manager
     		'Content-Type: text/xml'
     	);
 
-    	$xml = $this->_arrayToXml($params, new SimpleXMLElement('<packet />'))
-    				->asXML();
+    	$xml = $this->_arrayToXml($params, new SimpleXMLElement('<packet></packet>'));
         error_log($xml);
     	$ch = curl_init ();
     	curl_setopt ($ch, CURLOPT_SSL_VERIFYHOST, 0);
