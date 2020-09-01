@@ -135,7 +135,7 @@ $di['request'] = function () use ($di) {
 };
 $di['cache'] = function () use ($di) { return new FileCache();};
 $di['auth'] = function () use ($di) { return new Box_Authorization($di);};
-$di['twig'] = $di->factory(function () use ($di) {
+$di['twig'] = function () use ($di) {
     $config = $di['config'];
     $options = $config['twig'];
 
@@ -163,7 +163,7 @@ $di['twig'] = $di->factory(function () use ($di) {
     $twig->addGlobal('guest', $di['api_guest']);
 
     return $twig;
-});
+};
 
 $di['is_client_logged'] = function() use($di) {
     if(!$di['auth']->isClientLoggedIn()) {
