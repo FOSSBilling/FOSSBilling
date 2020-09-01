@@ -19,3 +19,25 @@
   'ip' => '66.169.61.212',
 )
 2020-08-31 20:26:27 INFO (6): Staff member 1 logged in
+2020-08-31 21:06:10 DEBUG (7): onBeforeClientLogin: array (
+  'email' => 'ross@k12usjobs.com',
+  'password' => 'Ff0o73%zFXtripgs',
+  'remember' => 'on',
+  'ip' => '68.119.217.128',
+)
+2020-08-31 21:06:10 DEBUG (7): onAfterClientLogin: array (
+  'id' => '5',
+  'ip' => '68.119.217.128',
+)
+2020-08-31 21:06:10 INFO (6): Client #5 logged in
+2020-08-31 21:06:22 DEBUG (7): onBeforeClientLogin: array (
+  'email' => 'ross@k12usjobs.com',
+  'password' => 'Ff0o73%zFXtripgs',
+  'remember' => 'on',
+  'ip' => '68.119.217.128',
+)
+2020-08-31 21:06:22 DEBUG (7): onAfterClientLogin: array (
+  'id' => '5',
+  'ip' => '68.119.217.128',
+)
+2020-08-31 21:06:22 INFO (6): Client #5 logged in
