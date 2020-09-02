@@ -1,0 +1,76 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Example module' %}{% endblock %}
+
+{% set active_menu = 'example' %}
+
+{% block content %}
+
+<div class="widget">
+    <div class="head">
+        <h5>{% trans 'Example module title' %}</h5>
+    </div>
+
+    <div class="help">
+        <h3>{% trans 'This is an example extension content' %}</h3>
+    </div>
+    <div class="body">
+        <a href="{{ 'example'|alink }}">Example module index</a> <br/>
+        <a href="{{ 'extension/settings/example'|alink }}">Example settings page</a> <br/>
+        <a href="{{ 'example'|alink }}/test">Test link with static URL</a> <br/>
+        <a href="{{ 'example'|alink }}/user/1">Test link location with parameter 1</a> <br/>
+        <a href="{{ 'example'|alink }}/user/2">Test link location with parameter 2</a> <br/>
+        <a href="{{ 'example'|alink }}/user/3">Test link location with parameter 3</a> <br/>
+        <a href="{{ 'example'|alink }}/api">API example</a>
+        <a href="{{ 'example'|link }}" target="_blank">Client area link example</a>
+    </div>
+
+    {# Check if example parameters passed to template file #}
+    {% if youparamname %}
+    <div class="help">
+        <h3>{% trans 'Parameters from Controller' %}</h3>
+    </div>
+    <div class="body">
+        <p>You have passed parameter youparamname: <strong>{{ youparamname }}</strong></p>
+    </div>
+    {% endif %}
+
+
+
+    {# Check if example parameters passed to template file #}
+    {% if userid %}
+    <div class="help">
+        <h3>{% trans 'Parameters from URL' %}</h3>
+    </div>
+    <div class="body">
+        <p>You have passed parameter userid: <strong>{{ userid }}</strong></p>
+    </div>
+    {% endif %}
+
+    {% if api_example %}
+        {# API example #}
+        <div class="help">
+            <h3>{% trans 'API example' %}</h3>
+        </div>
+        <div class="body">
+        <h5 class="pt12">Data from API and passed to template from controller</h5>
+        <pre>{% debug list_from_controller %}</pre>
+
+        <h5 class="pt12">Data from API accessed directly from template file</h5>
+        {% set list = admin.example_get_something({"microsoft":1}) %}
+        <pre>{% debug list %}</pre>
+        </div>
+    {% endif %}
+</div>
+
+<div class="widget">
+    <div class="head">
+        <h5>{% trans 'README' %}</h5>
+    </div>
+    
+    <div class="body list arrowBlue">
+        {{ guest.example_readme|markdown }}
+    </div>
+</div>
+
+{% endblock %}

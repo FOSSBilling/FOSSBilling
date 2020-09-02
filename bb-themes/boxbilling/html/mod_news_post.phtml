@@ -1,0 +1,58 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{{post.title}}{% endblock %}
+
+{% block opengraph %}
+
+    <meta property="og:title" content="{{ post.title }}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="{{ guest.system_current_url }}" />
+    <meta property="og:image" content="{{post.image}}" />
+    <meta property="article:author" content="{{ post.author.name }}" />
+    
+    {% if post.published_at %}<meta property="article:published_time" content="{{post.published_at}}" />{% endif %}
+    {% if post.updated_at %}<meta property="article:modified_time" content="{{post.updated_at}}" />{% endif %}
+    {% if post.expires_at %}<meta property="article:expiration_time" content="{{post.expires_at}}" />{% endif %}
+    {% if post.section %}<meta property="article:section" content="{{ post.section }}" />{% endif %}
+    {% if post.tags %}<meta property="article:tag" content="{{ post.tags|join(', ') }}" />{% endif %}
+    
+{% endblock %}
+
+{% block content %}
+    <div class="h-block">
+        <div class="h-block-header">
+            <div class="icon"><span class="big-light-icon i-blog"></span></div>
+            <h2>{{post.title|truncate(50)}}</h2>
+            <p>{{post.created_at|bb_date}} {% trans 'by '%} {{ post.author.name }}</p>
+        </div>
+        <div class="block articles">
+            <div class="article last">
+                {% if post.image %}<img src="{{post.image}}" alt="{{post.title}}">{% endif %}
+                {{ post.content|bbmd }}
+                {# if post.tags %}Tags: {{ post.tags|join(', ') }}{% endif #}
+            </div>
+        </div>
+    </div>
+
+    {% if guest.extension_is_on({"mod":"comment"}) %}{% include "mod_comment_block.phtml" %}{% endif %}
+
+    <p><a class="bb-button" href="{{ 'news'|link }}"><span class="dark-icon i-arrow"></span> {% trans 'Back to list' %}</a></p>
+
+{% endblock %}
+
+{# block sidebar2 %}
+<div class="box">
+    <h2>{% trans 'Other recent posts' %}</h2>
+    <div class="block" id="list-items">
+        <ul class="menu">
+            {% set posts = guest.news_get_list({"per_page": 5}) %}
+            {% for i, post in posts.list %}
+            <li>
+                <a href="{{ '/news'|link }}/{{post.slug}}">{{post.title|truncate(35)}}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+{% endblock #}

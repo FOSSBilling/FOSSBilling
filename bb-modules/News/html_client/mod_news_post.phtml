@@ -1,0 +1,69 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{{post.title}}{% endblock %}
+{% block breadcrumb %}
+<li><a href="{{ 'news' | link}}">{% trans 'Blog' %}</a><span class="divider">/</span></li>
+<li class="active">{{post.title}}</li>
+{% endblock %}
+
+{% block opengraph %}
+
+    <meta property="og:title" content="{{ post.title }}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="{{ guest.system_current_url }}" />
+    <meta property="og:image" content="{{post.image}}" />
+    <meta property="article:author" content="{{ post.author.name }}" />
+    
+    {% if post.published_at %}<meta property="article:published_time" content="{{post.published_at}}" />{% endif %}
+    {% if post.updated_at %}<meta property="article:modified_time" content="{{post.updated_at}}" />{% endif %}
+    {% if post.expires_at %}<meta property="article:expiration_time" content="{{post.expires_at}}" />{% endif %}
+    {% if post.section %}<meta property="article:section" content="{{ post.section }}" />{% endif %}
+    {% if post.tags %}<meta property="article:tag" content="{{ post.tags|join(', ') }}" />{% endif %}
+    
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h1>{{post.title}}</h1>
+                <div class="pull-right"><h5>{{post.created_at|bb_date}}</h5></div>
+                <p>{% trans 'by '%} {{ post.author.name }}</p>
+            </header>
+            <section>
+                {% if post.image %}<img src="{{post.image}}" alt="{{post.title}}">{% endif %}
+                {{ post.content|bbmd }}
+                {# if post.tags %}Tags: {{ post.tags|join(', ') }}{% endif #}
+
+                {% if guest.extension_is_on({"mod":"comment"}) %}{% include "mod_comment_block.phtml" %}{% endif %}
+                <hr/>
+                <p><a class="btn btn-small" href="{{ 'news'|link }}">{% trans 'Back to list' %}</a></p>
+            </section>
+        </div>
+    </article>
+</div>
+
+{% endblock %}
+
+{# block sidebar2 %}
+<div class="row">
+    <article class="span6 data-block">
+        <div class="data-container">
+            <header>
+                <h2>{% trans 'Other recent posts' %}</h2>
+            </header>
+            <section>
+                <ul class="menu">
+                    {% set posts = guest.news_get_list({"per_page": 5}) %}
+                    {% for i, post in posts.list %}
+                    <li>
+                        <a href="{{ '/news'|link }}/{{post.slug}}">{{post.title|truncate(35)}}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </section>
+        </div>
+    </article>
+</div>
+{% endblock #}

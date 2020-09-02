@@ -1,0 +1,41 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Blog'%}{% endblock %}
+{% block breadcrumb %}{% trans 'Blog'%}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <div class="row-fluid"></div>
+                <h1>{% trans 'News & Announcements' %}</h1>
+                <p>{% trans 'Track our latest information.' %}</p>
+            </header>
+            <section>
+                {% set posts = guest.news_get_list({"page":request.page,"per_page": 5}) %}
+                {% for i, post in posts.list %}
+                <div class="article{% if loop.last %} last{% endif%} data-container">
+                    <header>
+                        <h2><a href="{{ '/news'|link }}/{{post.slug}}">{{post.title}}</a></h2>
+                        <div class="pull-right"><h5>{{post.updated_at|bb_date}}</h5></div>
+                    </header>
+                   <section>
+                       {% if post.excerpt %}
+                            {{ post.excerpt|bbmd }}
+                       {% else %}
+                            {{ post.content|bbmd }}
+                       {% endif %}
+                   </section>
+                    <a class="btn btn-primary btn-small read_more" href="{{ '/news'|link }}/{{post.slug}}">{% trans 'Read more ...' %}</a>
+                </div>
+                {% else %}
+                <p>The list is empty</p>
+                {% endfor %}
+            </section>
+        </div>
+        {% include "partial_pagination.phtml" with {'list': posts} %}
+    </article>
+</div>
+
+{% endblock %}

@@ -1,0 +1,47 @@
+{% set periods = guest.system_periods %}
+{% set pricing = product.pricing %}
+<section>
+    <div class="well">
+       <header><strong>{{ product.title }}</strong></header>
+       <strong>{% trans 'Domain configuration' %}</strong>
+        <div class="control-group">
+            <label class="radio">{% trans 'Subdomain' %}
+                <input type="radio" rel="subdomain" name="domain_type" value="subdomain" onclick="selectDomainAction(this);">
+            </label>
+            <label class="radio">{% trans 'Host my own domain' %}
+                <input type="radio" rel="domain" name="domain_type" value="domain" onclick="selectDomainAction(this);">
+            </label>
+            <div id="subdomain" class="domain_action" style="display: none;">
+                <fieldset>
+                    <div class="row-fluid">
+                        <div class="controls">
+                            <input type="text" name="subdomain" value="" placeholder="Subdomain"/> .
+                            <select name="master_domain">
+                                {% for d in guest.serviceyouhosting_master_domains %}
+                                <option value="{{ d }}">{{ d }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+
+            <div id="domain" class="domain_action" style="display: none;">
+                <fieldset>
+                    <div class="row-fluid">
+                        <div class="controls">
+                            <input type="text" name="domain" value="{{ request.domain }}" placeholder="domain.com">
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+    </div>
+</section>
+    <script type="text/javascript">
+        function selectDomainAction(el)
+        {
+            $('.domain_action').hide();
+            $('#'+$(el).val()).show();
+        }
+    </script>

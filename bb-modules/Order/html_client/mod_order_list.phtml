@@ -1,0 +1,54 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% import "macro_functions.phtml" as mf %}
+
+{% block meta_title %}{% trans 'My Products & Services' %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="service">{% trans 'Orders' %}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h1>{% trans 'Orders' %}</h1>
+                <p>{% trans 'All of your orders are displayed here. Click on any order to get full information about it.' %}</p>
+            </header>
+
+            <section>
+                <table class="table table-striped table-bordered table-condensed table-hover">
+            <thead>
+                <tr>
+                    <th>{% trans 'Product/Service' %}</th>
+                    <th>{% trans 'Price' %}</th>
+                    <th>{% trans 'Next due date' %}</th>
+                    <th>{% trans 'Status' %}</th>
+                    <th>&nbsp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set orders = client.order_get_list({"per_page":10, "page":request.page, "hide_addons":1}) %}
+                {% for i, order in orders.list %}
+                <tr class="{{ cycle(['odd', 'even'], i) }}">
+                    <td><a href="{{ '/order/service/manage'|link }}/{{order.id}}">{{order.title}}</a></td>
+                    <td>{{  order.total | money(order.currency) }} {% if order.period%}{{ order.period | period_title }}{% endif %}</td>
+                    <td>{% if order.expires_at %}{{order.expires_at|bb_date}}{% else %}-{% endif %}</td>
+                    <td><span class="label {% if order.status == 'active'%}label-success{% elseif order.status == 'pending_setup' %}label-warning{% endif %}">{{ mf.status_name(order.status) }}</span></td>
+                    <td class="actions"><a class="bb-button" href="{{ '/order/service/manage'|link }}/{{order.id}}"><span class="dark-icon i-drag"></span></a></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">{% trans 'The list is empty' %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+                {% include "partial_pagination.phtml" with {'list': orders} %}
+            </section>
+        </article>
+    </div>
+</div>
+{% endblock %}

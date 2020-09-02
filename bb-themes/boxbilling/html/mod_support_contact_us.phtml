@@ -1,0 +1,98 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Contact us' %}{% endblock %}
+
+{% block content %}
+{% set company = guest.system_company %}
+
+    <div class="h-block">
+        <div class="h-block-header">
+            <div class="icon"><span class="big-light-icon i-contacts"></span></div>
+            <h2>{% trans 'Contact us' %}</h2>
+            <p>{{ company.signature }}</p>
+        </div>
+        <div class="block">
+                
+            <div class="grid_6 alpha">
+            <form method="post" action="" id="public-ticket-create">
+                <fieldset>
+                    <p>
+                        <label>{% trans 'Name' %}: </label>
+                        <input type="text" name="name" value="{{request.name}}" required="required">
+                    </p>
+
+                    <p>
+                        <label>{% trans 'Email' %}: </label>
+                        <input type="email" name="email" value="{{request.email}}" required="required">
+                    </p>
+
+                    <p>
+                        <label>{% trans 'Subject' %}: </label>
+                        <input type="text" name="subject" value="{{request.subject}}" required="required">
+                    </p>
+
+                    <p>
+                        <label>{% trans 'Message' %}: </label>
+                        <textarea name="message" cols="5" rows="5" required="required">{{request.message}}</textarea>
+                    </p>
+
+                    {{ mf.recaptcha }}
+
+                    <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Send' %}" />
+                    
+                </fieldset>
+
+                <input type="hidden" name="anti-spam" value="1" id="anti-spam" required="required"/>
+                </form>
+            
+            </div>
+
+            <div class="grid_6 omega">
+                <ul class="contact-us">
+                    <li>
+                        {{ company.name }}
+                    </li>
+                    <li>
+                        {{ company.address_1 }}
+                    </li>
+                    <li>
+                        {{ company.address_2 }}
+                    </li>
+                    <li>
+                        {{ company.address_3 }}
+                    </li>
+                    <li>
+                        {{ company.tel }}
+                    </li>
+                    <li>
+                        {{ company.www }}
+                    </li>
+                    <li>
+                        {{ company.email }}
+                    </li>
+                </ul>
+            </div>
+            <div class="clear"></div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+    $('#anti-spam').remove();
+
+    $('#public-ticket-create').bind('submit',function(event){
+        bb.post(
+            'guest/support/ticket_create',
+            $(this).serialize(),
+            function(result) {
+                bb.redirect('{{ 'support/contact-us/conversation'|link }}' + '/' + result);
+            }
+        );
+        return false;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,37 @@
+<div class="rowElem">
+    <label>{% trans 'Import existing' %}:</label>
+    <div class="formRight">
+        <input type="radio" name="config[import]" value="1"/><label>Yes</label>
+        <input type="radio" name="config[import]" value="0" checked="checked" /><label>No</label>
+    </div>
+    <div class="fix"></div>
+</div>
+
+<div class="rowElem">
+    <label>{% trans 'Domain' %}:</label>
+    <div class="formRight moreFields">
+        <ul>
+            <li style="width: 200px"><input type="text" name="config[domain][owndomain_sld]]" value="" placeholder="{% trans 'Domain name' %}"></li>
+            <li style="width: 50px"><input type="text" name="config[domain][owndomain_tld]]" value=".com" placeholder="{% trans 'Domain TLD' %}"></li>
+        </ul>
+    </div>
+    <div class="fix"></div>
+</div>
+
+<div class="rowElem">
+    <label>{% trans 'Username' %}:</label>
+    <div class="formRight">
+        <input type="text" name="config[username]" value="" placeholder="Leave blank to generate"/>
+    </div>
+    <div class="fix"></div>
+</div>
+
+<div class="rowElem">
+    <label>{% trans 'Password' %}:</label>
+    <div class="formRight">
+        <input type="text" name="config[password]" value="" placeholder="Leave blank to generate"/>
+    </div>
+    <div class="fix"></div>
+</div>
+
+<input type="hidden" name="config[domain][action]" value="owndomain"/>

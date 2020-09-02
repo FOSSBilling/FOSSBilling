@@ -1,0 +1,140 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{ topic.title }}{% endblock %}
+
+{% block content_after %}
+
+<div class="widget">
+    <div class="head">
+        <h2 class="dark-icon i-forum">{% trans 'Topic information' %}</h2>
+    </div>
+    <table>
+        <tbody>
+            <tr>
+                <td>{% trans 'Forum' %}</td>
+                <td><a href="{{ '/forum'|link }}/{{forum.slug}}">{{ forum.title }}</a></td>
+            </tr>
+            <tr>
+                <td>{% trans 'Topic' %}</td>
+                <td><a href="{{ '/forum'|link }}/{{forum.slug}}/{{topic.slug}}">{{ topic.title }}</a></td>
+            </tr>
+            <tr>
+                <td>{% trans 'Started By' %}</td>
+                <td>{{ topic.first.author.name }}</td>
+            </tr>
+            <tr>
+                <td>{% trans 'Views' %}</td>
+                <td>{{ topic.stats.views_count }}</td>
+            </tr>
+            <tr>
+                <td>{% trans 'Messages' %}</td>
+                <td>{{ topic.stats.posts_count }}</td>
+            </tr>
+            <tr>
+                <td>{% trans 'Since' %}</td>
+                <td>{{topic.created_at|bb_date}}</td>
+            </tr>
+        </tbody>
+        {% if client %}
+        <tfoot>
+            <tr>
+                <td colspan="2">
+                    {% if client.forum_is_favorite({"id":topic.id}) %}
+                    <a href="{{ 'api/client/forum/favorite_remove'|link({'id' : topic.id}) }}" class="bb-button bb-button-submit api" data-api-reload="1">Remove from favorites</a>
+                    {% else %}
+                    <a href="{{ 'api/client/forum/favorite_add'|link({'id' : topic.id}) }}" class="bb-button bb-button-submit api" data-api-reload="1">Add to favorites</a>
+                    {% endif %}
+
+                    {% if client.forum_is_subscribed({"id":topic.id}) %}
+                    <a href="{{ 'api/client/forum/unsubscribe'|link({'id' : topic.id}) }}" class="bb-button bb-button-submit api" data-api-reload="1">Disable notifications for this topic</a>
+                    {% else %}
+                    <a href="{{ 'api/client/forum/subscribe'|link({'id' : topic.id}) }}" class="bb-button bb-button-submit api" data-api-reload="1">Subscribe to notifications</a>
+                    {% endif %}
+                </td>
+            </tr>
+        </tfoot>
+        {% endif %}
+    </table>
+</div>
+
+<p>
+    <a class="bb-button" href="{{ '/forum'|link }}/{{forum.slug}}"><span class="dark-icon i-arrow"></span> {% trans 'Back to threads list' %}</a>
+</p>
+
+{% endblock %}
+
+{% block content %}
+
+    <div class="h-block forum">
+        <div class="h-block-header">
+            <div class="icon"><span class="big-light-icon i-forum"></span></div>
+            <h2>{{ topic.title }}</h2>
+            <p>{{ topic.first.message|truncate(100) }}</p>
+        </div>
+        <div class="block conversation">
+        {% set messages = guest.forum_get_topic_message_list({"forum_topic_id":topic.id, "page":request.page, "per_page":10}) %}
+        {% for i, message in messages.list %}
+        <div class="widget simpleTabs tabsRight{% if loop.first %} first{% endif %}">
+            <div class="head">
+                <h2 class="dark-icon i-forum">{{ message.author.name }}</h2>
+                <h3>{{ message.created_at|bb_date }}</h3>
+            </div>
+            <ul class="tabs">
+                <li><a href="#m-{{message.id}}">#{{ i+1 }}</a></li>
+                <li><a href="#reply-{{message.id}}"><span class="dark-icon i-support"></span>{% trans 'Reply' %}</a></li>
+                <li><a href="#quote-{{message.id}}"><span class="dark-icon i-quote"></span>{% trans 'Quote' %}</a></li>
+            </ul>
+            <div class="tabs_container">
+                <div class="tab_content" id="m-{{message.id}}">
+                    <div class="grid_2 alpha">
+                        <img src="{{ message.author.email|gravatar }}?size=60" alt="{{ message.author.name }}" class="gravatar"/>
+                    </div>
+                    <div class="grid_10 omega">
+                        <div class="block message">
+                            <div class="body">
+                                {{ message.message|bbmd }}
+                                <div class="clear"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="clear"></div>
+                </div>
+                <div class="tab_content" id="reply-{{message.id}}">
+                    <form method="post" action="" class="api_form" data-api-url="client/forum/post_message" data-api-reload="1">
+                        <fieldset>
+                            <legend>{% trans 'Post new message in forum' %}</legend>
+                            <p>
+                                <textarea name="message" cols="5" rows="10" required="required"></textarea>
+                            </p>
+                            <input type="hidden" name="forum_topic_id" value="{{ topic.id }}">
+                            <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Post' %}">
+                        </fieldset>
+                    </form>
+                </div>
+
+                <div class="tab_content" id="quote-{{message.id}}">
+                    <form method="post" action="" class="api_form" data-api-url="client/forum/post_message" data-api-reload="1">
+                        <fieldset>
+                            <legend>{% trans 'Post new message in forum' %}</legend>
+                            <p>
+                                <textarea name="message" cols="5" rows="10" required="required">{{ mf.markdown_quote(message.message) }}</textarea>
+                            </p>
+                            <input type="hidden" name="forum_topic_id" value="{{ topic.id }}">
+                            <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Post' %}">
+                        </fieldset>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+            <div class="box">
+                <div class="block">{% trans 'No replies in this topic' %}</div>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+
+    {% include "partial_pagination.phtml" with {'list': messages} %}
+
+{% endblock %}

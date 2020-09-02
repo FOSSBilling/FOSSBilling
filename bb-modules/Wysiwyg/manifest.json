@@ -1,0 +1,8 @@
+{
+    "id":           "wysiwyg",
+	"type":         "mod",
+    "name":         "Wysiwyg",
+    "description":  "Allows the use of client-side editors to edit content. It simplifies the installation and integration of the editor of your choice.",
+    "icon_url":     "icon.png",
+    "version":      "1.0.0"
+}

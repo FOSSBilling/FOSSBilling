@@ -1,0 +1,12 @@
+{% block subject %}[{{ guest.system_company.name }}] BoxBilling Email Test{% endblock %}
+{% block content %}
+{% apply markdown %}
+Hi {{ staff.name }},
+
+If you are reading this email, BoxBilling is **configured properly** 
+and is **able to send emails**.
+
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

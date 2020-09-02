@@ -1,0 +1,7 @@
+{
+    "id":           "product",
+	"type":         "mod",
+    "name":         "Product",
+    "description":  "BoxBilling core module",
+    "version":      "1.0.0"
+}

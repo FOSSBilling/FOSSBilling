@@ -1,0 +1,46 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Processing payment ...' %}{% endblock %}
+
+{% block content %}
+
+{#
+<pre>{% debug invoice %}</pre>
+<pre>{% debug payment %}</pre>
+#}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h1>{% trans 'Processing payment ...' %}</h1>
+                <p>{% trans 'Thank you for your patience.' %}</p>
+            </header>
+            <section>
+                {% if payment.type == 'html' %}
+                    {{ payment.result|raw }}
+                {% endif %}
+                {% if payment.type == 'form' %}
+                <h2>{% trans 'Redirecting to payment gateway..' %}</h2>
+                <form name="payment_form" action="{{payment.service_url}}" method="post">
+                    {% for key, value in payment.result %}
+                    <input type="hidden" name="{{key}}" value="{{value}}" />
+                    {% endfor %}
+                    <input class="btn btn-primary" type="submit" value="{% trans 'Please click here to continue if this page does not redirect automatically in 5 seconds' %}" id="payment_button"/>
+                </form>
+
+                <script type="text/javascript">
+                    $(document).ready(function(){
+                        document.getElementById('payment_button').style.display = 'none';
+                        document.forms["payment_form"].submit();
+                    });
+                </script>
+                {% endif %}
+            </section>
+        </div>
+    </article>
+</div>
+
+
+
+
+{% endblock %}

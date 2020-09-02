@@ -1,0 +1,20 @@
+{% block subject %}[{{ guest.system_company.name }}] Payment Received{% endblock %}
+{% block content %}
+{% apply markdown %}
+Hello {{ c.first_name }} {{ c.last_name }},
+
+This is a payment receipt for Invoice **{{ invoice.serie_nr }}** issued on
+{{invoice.created_at|date('Y-m-d')}}
+
+Total Paid: {{ invoice.total | money(invoice.currency) }}
+
+You may review your invoice history at any time by logging in to your client area.
+Note: This email serves as an official receipt for this payment.
+
+Login to members area: {{'login'|link({'email' : c.email }) }}
+View invoice: {{'invoice'|link}}/{{invoice.hash}}
+
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

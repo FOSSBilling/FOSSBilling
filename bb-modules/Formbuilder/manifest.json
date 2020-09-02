@@ -1,0 +1,7 @@
+{
+    "id":           "formbuilder",
+	"type":         "mod",
+    "name":         "Form Builder",
+    "description":  "Adds ability to create custom forms to be used anywhere",
+    "version":      "1.0.0"
+}

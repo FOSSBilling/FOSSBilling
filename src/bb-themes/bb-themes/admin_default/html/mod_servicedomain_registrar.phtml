@@ -1,0 +1,55 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Registrar' %} {{ registrar.title }}{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'servicedomain'|alink }}">{% trans 'Domain management' %}</a></li>
+    <li><a href="{{ 'servicedomain'|alink }}#tab-registrars">{% trans 'Registrars' %}</a></li>
+    <li class="lastB">{{ registrar.title }}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+
+<div class="widget">
+    <div class="head">
+        <h5>{% trans 'Registrar configuration' %}</h5>
+    </div>
+
+    <div class="help">
+        <h5>{{ registrar.title }}</h5>
+        <p>{{ registrar.label }}</p>
+    </div>
+
+    <form method="post" action="{{ 'api/admin/servicedomain/registrar_update'|link }}" class="mainForm save api-form" data-api-msg="Registrar updated">
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'Enable test mode' %}:</label>
+            <div class="formRight">
+                <input type="radio" name="test_mode" value="1"{% if registrar.test_mode %} checked="checked"{% endif %}/><label>Yes</label>
+                <input type="radio" name="test_mode" value="0"{% if not registrar.test_mode %} checked="checked"{% endif %} /><label>No</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Registrar title' %}:</label>
+            <div class="formRight">
+                <input type="text" name="title" value="{{registrar.title}}" />
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        {# Build form elements from registrar configuration array #}
+        {{ mf.build_form(registrar.form, registrar.config) }}
+
+        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+        <input type="hidden" name="id" value="{{ registrar.id }}" />
+    </fieldset>
+    </form>
+</div>
+
+{% endblock %}

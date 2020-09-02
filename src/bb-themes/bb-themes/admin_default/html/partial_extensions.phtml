@@ -1,0 +1,44 @@
+{% if header %}
+<div class="help">
+    <h5>{{ header }}</h5>
+</div>
+{% endif %}
+<table class="tableStatic wide">
+    <thead>
+        <tr>
+            <td>&nbsp;</td>
+            <td style="width: 30%">Extension</td>
+            <td>Description</td>
+            <td width="18%">&nbsp;</td>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% set extensions = admin.extension_get_latest({"type":type}) %}
+        {% for extension in extensions %}
+        <tr>
+            <td><img src="{{ extension.icon_url }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;"/></td>
+            <td>
+                <a class="bb-button" href="{{ extension.project_url }}" target="_blank" title="View extension details">{{ extension.name|truncate(40) }} {{ extension.version }}</a>
+                <br/>by <a href="{{extension.author_url}}" target="_blank">{{extension.author}}</a>
+            </td>
+            <td>{{ extension.description|truncate(150) }}</td>
+            <td class="actions">
+                <a class="bb-button btn14 api-link" data-api-confirm="By installing '{{extension.name}}' you agree with terms and conditions. Install only extensions you trust. Continue?" data-api-reload="1" href="{{ 'api/admin/extension/install'|link ({'type' : extension.type, 'id' : extension.id }) }}" title="Install extension"><img src="images/icons/dark/cog.png" alt=""></a>
+                <a class="bb-button btn14" href="{{ extension.project_url }}" target="_blank" title="Details"><img src="images/icons/dark/globe.png" alt=""></a>
+                <a class="bb-button btn14" href="{{ extension.download_url }}" title="Download {{ extension.name }}"><img src="images/icons/dark/download.png" alt=""></a>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4" class="aligncenter"><a href="http://extensions.boxbilling.com/" target="_blank">Explore BoxBilling extensions</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="4"></td>
+        </tr>
+    </tfoot>
+
+</table>

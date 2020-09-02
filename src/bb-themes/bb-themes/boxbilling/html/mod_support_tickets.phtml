@@ -1,0 +1,130 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Support tickets' %}{% endblock %}
+
+{% block content %}
+    <div class="h-block">
+        <div class="h-block-header">
+            <div class="icon"><span class="big-light-icon i-support"></span></div>
+            <h2>{% trans 'Support tickets' %}</h2>
+            <p>{% trans 'Need an answer? We are here to help' %}</p>
+        </div>
+        <div class="block">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 1%">{% trans 'Id' %}</th>
+                        <th style="width: 40%">{% trans 'Subject' %}</th>
+                        <th>{% trans 'Help desk' %}</th>
+                        <th>{% trans 'Status' %}</th>
+                        <th>{% trans 'Submitted' %}</th>
+                        <th>&nbsp;</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% set tickets = client.support_ticket_get_list({"per_page":10, "page":request.page}) %}
+                    {% for i, ticket in tickets.list %}
+
+                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <td>#{{ticket.id}}</td>
+                        <td><a href="{{ 'support/ticket'|link }}/{{ticket.id}}">{{ticket.subject|truncate(40)}}</a></td>
+                        <td>{{ticket.helpdesk.name}}</td>
+                        <td>{{mf.status_name(ticket.status)}}</td>
+                        <td>{{ticket.created_at|timeago}} {% trans 'ago' %}</td>
+                        <td class="actions"><a class="bb-button" href="{{ 'support/ticket'|link }}/{{ticket.id}}"><span class="dark-icon i-drag"></span></a></td>
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+                        <td colspan="6">{% trans 'The list is empty' %}</td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+                <tfoot>
+                    <tr>
+                        <td colspan="2" ><a class="bb-button" href="#" id="new-ticket-button">{% trans 'Submit new ticket' %}</a></td>
+                        <td colspan="4">
+                            {% include "partial_pagination.phtml" with {'list': tickets} %}
+                        </td>
+                    </tr>
+                </tfoot>
+
+            </table>
+        </div>
+    </div>
+
+<div class="widget" id="new-ticket" {% if not request.ticket %}style="display: none;"{% endif %}>
+    <div class="head">
+        <h2 class="dark-icon i-support">{% trans 'Submit new ticket' %}</h2>
+    </div>
+    <div class="block">
+        <form action="" method="post" id="ticket-submit">
+            <fieldset>
+                <legend>{% trans 'Submit new support ticket' %}</legend>
+                <p>
+                    <label>{% trans 'Help desk' %}: </label>
+                    {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                </p>
+
+                <p>
+                    <label>{% trans 'Subject' %}: </label>
+                    <input type="text" name="subject" value="{{ request.subject|e }}" required="required"/>
+                </p>
+
+                <p>
+                    <label>{% trans 'Message' %}: </label>
+                    <textarea name="content" cols="5" rows="5" required="required">{{ request.content|e }}</textarea>
+                </p>
+
+                <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Submit' %}">
+            </fieldset>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block sidebar2 %}
+
+{% if guest.extension_is_on({"mod":'kb'}) %}
+<div class="widget">
+    <div class="head">
+        <h2 class="dark-icon i-kb">{%trans 'Knowledge base'%}</h2>
+    </div>
+    <ul class="menu">
+    {% for i, category in guest.kb_category_get_list.list %}
+    <li><a href="{{ '/kb'|link }}#category-{{category.id}}">{{category.title}}</a></li>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% endblock %}
+
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+
+    $('#new-ticket-button').bind('click',function(event){
+        $('#new-ticket').slideToggle();
+        return false;
+    });
+
+    $('#ticket-submit').bind('submit',function(event){
+        bb.post(
+            'client/support/ticket_create',
+            $(this).serialize(),
+            function(result) {
+                bb.redirect('{{ 'support/ticket'|link }}' + '/' + result);
+            }
+        );
+        return false;
+    });
+
+});
+</script>
+{% endblock %}

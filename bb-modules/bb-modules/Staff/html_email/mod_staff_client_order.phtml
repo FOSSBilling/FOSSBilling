@@ -1,0 +1,13 @@
+{% block subject %}[{{ guest.system_company.name }}] New Order Placed{% endblock %}
+{% block content %}
+{% apply markdown %}
+Hi {{ staff.name }},
+
+Client **{{ order.client.first_name }} {{ order.client.last_name }}** placed a new order for **{{ order.title }}** on {{ order.created_at|bb_date }}
+
+Manage order {{'order/manage'|alink}}/{{order.id}}
+
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

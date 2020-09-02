@@ -1,0 +1,374 @@
+{% set node_online = admin.servicesolusvm_test_connection({"return":'bool'}) %}
+
+{% if node_online and service.vserverid %}
+{% set info = admin.servicesolusvm_info({"order_id":order.id}) %}
+
+<div class="help">
+    <h2>{% trans 'Details' %}</h2>
+</div>
+
+<table class="tableStatic wide">
+    <tbody>
+        <tr class="noborder">
+            <td style="width: 30%">{% trans 'State' %}:</td>
+            <td>{{ info.state|title }}</td>
+        </tr>
+
+        <tr>
+            <td>{% trans 'Hostname' %}:</td>
+            <td>
+                <a target="_blank" href="http://{{ service.hostname }}">{{ service.hostname }}</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td>{% trans 'Type' %}:</td>
+            <td>{{ info.type|title }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Node / ID / VMID' %}:</td>
+            <td>{{ info.node }} / {{service.vserverid}} / {{service.virtid}} </td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Operating System' %}:</td>
+            <td>{{ service.template }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'IP address' %}:</td>
+            <td><strong>{{ info.mainipaddress }}</strong></td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Additional IP addresses' %}:</td>
+            <td>{{ info.ipaddresses }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Root password' %}:</td>
+            <td>{{ service.rootpassword }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Client area username / password' %}:</td>
+            <td>{{ service.username }} / {{ service.password }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Console user / password' %}:</td>
+            <td>{{ service.consoleuser }} / {{ service.consolepassword }}</td>
+        </tr>
+
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="2">
+                <div class="aligncenter">
+                    <a href="{{service.master_url}}" target="_blank" class="btn55 mr10"><img src="images/icons/middlenav/user2.png" alt=""><span>{% trans 'Client area' %}</span></a>
+                    <a href="{{service.master_url}}/admincp" target="_blank" class="btn55 mr10"><img src="images/icons/middlenav/adminUser2.png" alt=""><span>{% trans 'Admin area' %}</span></a>
+                    <a href="{{ 'api/admin/servicesolusvm/status'|link({'order_id' : order.id}) }}" data-api-jsonp="onAfterStatusCheck" class="btn55 mr10 api-link"><img src="images/icons/middlenav/transfer.png" alt=""><span>Check Status</span></a>
+                    <a href="{{ 'api/admin/servicesolusvm/reboot'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="VPS rebooted" class="btn55 mr10 api-link"><img src="images/icons/middlenav/refresh4.png" alt=""><span>Reboot</span></a>
+                    <a href="{{ 'api/admin/servicesolusvm/boot'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="VPS booted" class="btn55 mr10 api-link"><img src="images/icons/middlenav/electroPlug.png" alt=""><span>Boot</span></a>
+                    <a href="{{ 'api/admin/servicesolusvm/shutdown'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="VPS shutdown" class="btn55 mr10 api-link"><img src="images/icons/middlenav/logoff.png" alt=""><span>Shutdown</span></a>
+                    <a href="{{ 'api/admin/servicesolusvm/addip'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="IP added" class="btn55 mr10 api-link"><img src="images/icons/middlenav/add.png" alt=""><span>Add IP</span></a>
+                    <hr class="sep">
+                    <a href="{{ 'api/admin/servicesolusvm/pae_disable'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="Disabled PAE" class="btn55 mr10 api-link"><img src="images/icons/middlenav/switcher.png" alt=""><span>Disable PAE</span></a>
+                    <a href="{{ 'api/admin/servicesolusvm/pae_enable'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="Enabled PAE" class="btn55 mr10 api-link"><img src="images/icons/middlenav/switcher.png" alt=""><span>Enable PAE</span></a>
+                    <a href="{{ 'api/admin/servicesolusvm/network_disable'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="Network disabled" class="btn55 mr10 api-link"><img src="images/icons/middlenav/switcher.png" alt=""><span>Disable network</span></a>
+                    <a href="{{ 'api/admin/servicesolusvm/network_enable'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="Network enabled" class="btn55 mr10 api-link"><img src="images/icons/middlenav/switcher.png" alt=""><span>Enable network</span></a>
+                    <a href="{{ 'api/admin/servicesolusvm/tun_disable'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="TUN disabled" class="btn55 mr10 api-link"><img src="images/icons/middlenav/switcher.png" alt=""><span>Disable TUN</span></a>
+                    <a href="{{ 'api/admin/servicesolusvm/tun_enable'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="TUN enabled" class="btn55 mr10 api-link"><img src="images/icons/middlenav/switcher.png" alt=""><span>Enable TUN</span></a>
+                </div>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+<div class="help">
+    <h5>{% trans 'Change root password' %}</h5>
+</div>
+
+<form method="post" action="{{ 'api/admin/servicesolusvm/set_root_password'|link }}" class="mainForm api-form save" data-api-msg="Root password changed">
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'New password' %}:</label>
+            <div class="formRight">
+                <input type="text" name="password" value="" placeholder="Enter new password"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        <input type="hidden" name="order_id" value="{{ order.id }}" />
+        <input type="submit" value="{% trans 'Change' %}" class="greyishBtn submitForm" />
+    </fieldset>
+</form>
+
+<div class="help">
+    <h5>{% trans 'Change hostname' %}</h5>
+</div>
+
+<form method="post" action="{{ 'api/admin/servicesolusvm/set_hostname'|link }}" class="mainForm api-form save" data-api-msg="Hostname changed">
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'New hostname' %}:</label>
+            <div class="formRight">
+                <input type="text" name="hostname" value="" placeholder="Enter new hostname"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        <input type="hidden" name="order_id" value="{{ order.id }}" />
+        <input type="submit" value="{% trans 'Change' %}" class="greyishBtn submitForm" />
+    </fieldset>
+</form>
+
+<div class="help">
+    <h5>{% trans 'Change plan' %}</h5>
+</div>
+
+<form method="post" action="{{ 'api/admin/servicesolusvm/set_plan'|link }}" class="mainForm api-form save" data-api-msg="Plan changed">
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'New plan' %}:</label>
+            <div class="formRight">
+                {% set plans = admin.servicesolusvm_get_plans({"type":info.type}) %}
+                {{ mf.selectbox('plan', plans, service.plan, 1, 'Select plan') }}
+            </div>
+            <div class="fix"></div>
+        </div>
+        <input type="hidden" name="order_id" value="{{ order.id }}" />
+        <input type="submit" value="{% trans 'Change' %}" class="greyishBtn submitForm" />
+    </fieldset>
+</form>
+
+<div class="help">
+    <h5>{% trans 'Rebuild' %}</h5>
+</div>
+
+<form method="post" action="{{ 'api/admin/servicesolusvm/rebuild'|link }}" class="mainForm api-form save" data-api-msg="VPS rebuilt">
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'New template' %}:</label>
+            <div class="formRight">
+                {% set plans = admin.servicesolusvm_get_templates({"type":info.type}) %}
+                {{ mf.selectbox('template', plans, service.template, 1, 'Select template') }}
+            </div>
+            <div class="fix"></div>
+        </div>
+        <input type="hidden" name="order_id" value="{{ order.id }}" />
+        <input type="submit" value="{% trans 'Rebuild' %}" class="greyishBtn submitForm" />
+    </fieldset>
+</form>
+
+{% if info.state != 'disabled' %}
+<div class="help">
+    <h5>{% trans 'Usage statistics' %}</h5>
+</div>
+
+<div class="body" style="width: 210px; float: left;">
+    {% set bw = info.bandwidth|split(',') %}
+    <table class="tableStatic wide with-border">
+        <caption>{% trans 'Bandwidth' %}</caption>
+        <tbody>
+            <tr>
+                <td>{% trans 'Total' %}:</td>
+                <td>{{ bw[0]|size }}</td>
+            </tr>
+            <tr>
+                <td>{% trans 'Used' %}:</td>
+                <td>{{ bw[1]|size }}</td>
+            </tr>
+            <tr>
+                <td>{% trans 'Free' %}:</td>
+                <td>{{ bw[2]|size }}</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="2">
+                    <div class="progressbar" style="border: 1px solid #DDD; padding: 2px;">
+                        <div style="background-color: #82d453; width: {{bw[3]}}%; height: 20px;"></div>
+                    </div>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+        
+<div class="body" style="width: 215px; float: left;">
+    {% set ram = info.memory|split(',') %}
+    <table class="tableStatic wide with-border">
+        <caption>{% trans 'Memory' %}</caption>
+        <tbody>
+            <tr>
+                <td>{% trans 'Total' %}:</td>
+                <td>{{ ram[0]|size }}</td>
+            </tr>
+            <tr>
+                <td>{% trans 'Used' %}:</td>
+                <td>{{ ram[1]|size }}</td>
+            </tr>
+            <tr>
+                <td>{% trans 'Free' %}:</td>
+                <td>{{ ram[2]|size }}</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="2">
+                    <div class="progressbar" style="border: 1px solid #DDD; padding: 2px;">
+                        <div style="background-color: #82d453; width: {{ram[3]}}%; height: 20px;"></div>
+                    </div>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<div class="body" style="width: 215px; float: left;">
+    {% set hdd = info.hdd|split(',') %}
+    <table class="tableStatic wide with-border">
+        <caption>{% trans 'Disk usage' %}</caption>
+        <tbody>
+            <tr>
+                <td>{% trans 'Total' %}:</td>
+                <td>{{ hdd[0]|size }}</td>
+            </tr>
+            <tr>
+                <td>{% trans 'Used' %}:</td>
+                <td>{{ hdd[1]|size }}</td>
+            </tr>
+            <tr>
+                <td>{% trans 'Free' %}:</td>
+                <td>{{ hdd[2]|size }}</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="2">
+                    <div class="progressbar" style="border: 1px solid #DDD; padding: 2px;">
+                        <div style="background-color: #82d453; width: {{hdd[3]}}%; height: 20px;"></div>
+                    </div>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<div class="clear"></div>
+
+<div class="help">
+    <h5>{% trans 'Traffic' %}</h5>
+</div>
+
+<div class="body aligncenter">
+    <img src="{{service.master_url}}{{ info.trafficgraph }}" alt="">
+</div>
+
+<div class="help">
+    <h5>{% trans 'Load' %}</h5>
+</div>
+<div class="body aligncenter">
+    <img src="{{service.master_url}}{{ info.loadgraph }}" alt="">
+</div>
+<div class="help">
+    <h5>{% trans 'Memory' %}</h5>
+</div>
+<div class="body aligncenter">
+    <img src="{{service.master_url}}{{ info.memorygraph }}" alt="">
+</div>
+
+{% endif %}
+
+{% else %}
+<div class="body">
+    <div class="nNote nWarning first">
+        <p><strong>{% trans 'INFORMATION' %}: </strong>{% trans 'Master node is offline, order is not yet activated or API is not configured properly.' %}</p>
+    </div>
+</div>
+{% endif %}
+
+<div class="help">
+    <h5>{% trans 'Service management' %}</h5>
+    <p>{% trans 'Changing settings does not send actions to SolusVM server.' %}</p>
+</div>
+
+<form method="post" action="{{ 'api/admin/servicesolusvm/update'|link }}" class="mainForm api-form save" data-api-msg="Configuration updated">
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'Template' %}:</label>
+            <div class="formRight">
+                <input type="text" name="template" value="{{service.template}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Hostname' %}:</label>
+            <div class="formRight">
+                <input type="text" name="hostname" value="{{service.hostname}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Plan' %}:</label>
+            <div class="formRight">
+                <input type="text" name="plan" value="{{service.plan}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Main IP address' %}:</label>
+            <div class="formRight">
+                <input type="text" name="mainipaddress" value="{{service.mainipaddress}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        {#
+        <div class="rowElem">
+            <label>{% trans 'Custom memory' %}:</label>
+            <div class="formRight">
+                <input type="text" name="custommemory" value="{{service.custommemory}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Custom diskspace' %}:</label>
+            <div class="formRight">
+                <input type="text" name="customdiskspace" value="{{service.customdiskspace}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Custom bandwidth' %}:</label>
+            <div class="formRight">
+                <input type="text" name="custombandwidth" value="{{service.custombandwidth}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Custom cpu' %}:</label>
+            <div class="formRight">
+                <input type="text" name="customcpu" value="{{service.customcpu}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        #}
+
+        <input type="hidden" name="order_id" value="{{ order.id }}" />
+        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+    </fieldset>
+</form>
+
+<script type="text/javascript">
+    function onAfterStatusCheck(result)
+    {
+        bb.msg(result);
+    }
+</script>

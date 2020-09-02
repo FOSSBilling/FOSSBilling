@@ -1,0 +1,11 @@
+{% block subject %}Example Email Subject{% endblock %}
+{% block content %}
+{% apply markdown %}
+Hi {{ c.first_name }},
+
+This is a test message from BoxBilling.com
+
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

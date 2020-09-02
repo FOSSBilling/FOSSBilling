@@ -1,0 +1,217 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Profile details' %}{% endblock %}
+
+{% block content %}
+
+{% import "macro_functions.phtml" as mf %}
+{% set profile = client.client_get %}
+
+<div class="h-block">
+        <div class="h-block-header">
+            <div class="icon"><span class="big-light-icon i-profile"></span></div>
+            <h2>{% trans 'Profile details' %}</h2>
+            <p>{% trans 'Keep your profile up to date' %}</p>
+        </div>
+    <div class="block conversation">
+        <div class="widget simpleTabs tabsRight first">
+        <div class="head">
+            <h2 class="dark-icon i-profile">{% trans 'Manage profile' %}</h2>
+        </div>
+        <ul class="tabs">
+            <li><a href="#tab-details"><span class="dark-icon i-profile"></span>{% trans 'Details' %}</a></li>
+            <li><a href="#tab-password"><span class="dark-icon i-logout"></span>{% trans 'Change Password' %}</a></li>
+            <li><a href="#tab-gravatar"><span class="dark-icon i-uncheck"></span>{% trans 'Gravatar' %}</a></li>
+            <li><a href="#tab-currency"><span class="dark-icon i-payment"></span>{% trans 'Currency' %}</a></li>
+            <li><a href="#tab-api"><span class="dark-icon i-logout"></span>{% trans 'API' %}</a></li>
+        </ul>
+        <div class="tabs_container">
+
+            <div class="tab_content" id="tab-details">
+                <form method="post" action="" id="profile-update">
+                <div class="grid_6 alpha">
+                    <div class="box">
+                        <h2>{% trans 'Update profile' %}</h2>
+                        <div class="block">
+                            <fieldset>
+                                <p>
+                                    <label>{% trans 'Email Address' %}: </label>
+                                    <input type="email" name="email" value="{{ profile.email }}" required="required">
+                                </p>
+                                <p>
+                                    <label>{% trans 'First Name' %}: </label>
+                                    <input type="text" name="first_name" value="{{ profile.first_name }}" required="required">
+                                </p>
+                                <p>
+                                    <label>{% trans 'Last Name' %}: </label>
+                                    <input type="text" name="last_name" value="{{ profile.last_name }}" required="required">
+                                </p>
+                                <p>
+                                    <label>{% trans 'Company Name' %}: </label>
+                                    <input type="text" name="company" value="{{ profile.company }}">
+                                </p>
+                                <p>
+                                    <label>{% trans 'Phone Country Code' %}: </label>
+                                    <input type="text" name="phone_cc" value="{{ profile.phone_cc }}" required="required">
+                                </p>
+                                <p>
+                                    <label>{% trans 'Phone Number' %}: </label>
+                                    <input type="text" name="phone" value="{{ profile.phone }}" required="required">
+                                </p>
+                                <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Update profile' %}">
+                            </fieldset>
+                        </div>
+                        </div>
+                </div>
+                <div class="grid_6 omega">
+                    <div class="box">
+                        <h2>&nbsp;</h2>
+                        <div class="block">
+                            <fieldset>
+                                <p>
+                                    <label>{% trans 'Address' %}: </label>
+                                    <input type="text" name="address_1" value="{{ profile.address_1 }}" required="required">
+                                </p>
+                                <p>
+                                    <label>{% trans 'Address 2' %}: </label>
+                                    <input type="text" name="address_2" value="{{ profile.address_2 }}">
+                                </p>
+                                <p>
+                                    <label>{% trans 'City' %}: </label>
+                                    <input type="text" name="city" value="{{ profile.city }}" required="required">
+                                </p>
+                                <p>
+                                    <label>{% trans 'Country' %}: </label>
+                                    {{ mf.selectbox('country', guest.system_countries, profile.country, 1, 'Select country') }}
+                                </p>
+                                <p>
+                                    <label>{% trans 'State' %}: </label>
+                                     {# mf.selectbox('state', guest.system_states, profile.state, 0, 'Select state') #}
+                                     <input type="text" name="state" value="{{ profile.state }}" />
+                                </p>
+                                <p>
+                                    <label>{% trans 'Zip/Postal Code' %}: </label>
+                                    <input type="text" name="postcode" value="{{ profile.postcode }}" required="required">
+                                </p>
+                            </fieldset>
+                        </div>
+                    </div>
+                </div>
+                </form>
+            </div>
+
+            <div class="tab_content" id="tab-password">
+                <div class="box">
+                    <h2>{% trans 'Change password' %}</h2>
+                    <div class="block">
+                        <form method="post" action="" id="change-password">
+                            <fieldset>
+                                <legend>{% trans 'Enter new password' %}</legend>
+                                <p>
+                                    <label>{% trans 'Password' %}: </label>
+                                    <input type="password" name="password" value="" required="required">
+                                </p>
+                                <p>
+                                    <label>{% trans 'Password confirm' %}: </label>
+                                    <input type="password" name="password_confirm" value="" required="required">
+                                </p>
+                                <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Change password' %}">
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab_content" id="tab-api">
+                <div class="box">
+                    <h2>{% trans 'API key' %}</h2>
+                    <p>{% trans 'API key allows integration with external applications. You will need this key for authentication.' %}</p>
+                    <p>{% trans 'Warning! Resetting the key will break existing applications using it.' %}</p>
+                    <div class="block">
+                        <form method="post" action="" id="change-api-key">
+                            <fieldset>
+                                <p>
+                                    <label>{% trans 'Your API key' %}: </label>
+                                    <input type="text" value="{{ client.client_api_key_get }}" id="api-key">
+                                </p>
+                                <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Reset key' %}">
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab_content" id="tab-gravatar">
+                <div class="box">
+                    <h2>{% trans 'Gravatar' %}</h2>
+                    <div class="block">
+                        <img src="{{ profile.email|gravatar }}" alt="Gravatar" style="float: left; padding: 1px; margin-right: 10px; border: 1px solid #d1d1d1;"/>
+                        <p>{% trans 'Please register with'%} <b>{{ profile.email }}</b> {% trans 'at ' %}<a target="_blank" href="http://gravatar.com">Gravatar.com</a> {% trans 'to change your profile image. Gravatar image updates may not appear immediately.' %}</p>
+                        <div class="clear"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab_content" id="tab-currency">
+                <div class="box">
+                    <h2>{% trans 'Currency' %}</h2>
+                    <div class="block">
+                        {% if profile.currency %}
+                            <p>{% trans 'Your profile currency is' %} <em>{{ profile.currency }}</em></p>
+                            <p>{% trans 'Create new client profile if you want to manage your money in other currency' %}</p>
+                        {% else %}
+                            <p>{% trans 'Your profile currency will be defined after your first order. Once your currency is set, all your profile accounting will be managed in that currency and can not be changed.' %}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="clear"></div>
+        </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+
+    $('#change-password').bind('submit',function(event){
+        bb.post(
+            'client/client/change_password',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Password was changed');
+            }
+        );
+        return false;
+    });
+    
+    $('#change-api-key').bind('submit',function(event){
+        bb.post(
+            'client/client/api_key_reset',
+            $(this).serialize(),
+            function(result) {
+                $('#api-key').val(result);
+                bb.msg('API key was changed');
+            }
+        );
+        return false;
+    });
+
+    $('#profile-update').bind('submit',function(event){
+        bb.post(
+            'client/client/update',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Profile updated');
+            }
+        );
+        return false;
+    });
+
+});
+</script>
+{% endblock %}

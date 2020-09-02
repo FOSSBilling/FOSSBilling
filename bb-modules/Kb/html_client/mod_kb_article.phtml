@@ -1,0 +1,68 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{{article.title}}{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{{ '/kb'|link }}">{% trans 'Knowledge base' %}</a> <span class="divider">/</span></li>
+<li><a href="{{ '/kb'|link }}/{{article.category.slug}}">{{article.category.title}}</a><span class="divider">/</span></li>
+<li class="active">{{article.title}}</li>
+{% endblock %}
+
+{% block content %}
+
+<div class="content-block" role="main">
+    <div class="row">
+        <article class=" span12 data-block">
+            <div class="data-container">
+                <header>
+                    <h1>{{article.title}}</h1>
+                    <div class="meta pull-right"><h5>{{article.created_at|bb_date }}</h5></div>
+                    <p>{% trans 'Article views' %}: {{ article.views }}</p>
+                </header>
+                <section>
+                    {{article.content|bbmd}}
+                    <hr/>
+                    <p><a class="btn btn-small" href="{{ 'kb'|link }}">{% trans 'Back to list' %}</a></p>
+                </section>
+            </div>
+        </article>
+    </div>
+</div>
+{% endblock %}
+
+{% block content_after %}
+
+<div class="content-block" role="main">
+    <div class="row">
+        <article class=" span6 data-block">
+            <div class="data-container">
+                <header>
+                    <h2 class="dark-icon i-kb">{%trans 'Similar articles' %}</h2>
+                </header>
+                <section>
+                    <ul class="menu">
+                        {% for i, kbarticle in guest.kb_article_get_list({"kb_article_category_id":article.kb_article_category_id, "per_page":5}).list %}
+                        <li><a href="{{ '/kb'|link }}/{{article.category.slug}}/{{kbarticle.slug}}">{{kbarticle.title|truncate(45)}}</a></li>
+                        {% endfor %}
+                    </ul>
+                </section>
+            </div>
+        </article>
+
+        <article class=" span6 data-block">
+            <div class="data-container">
+                <header>
+                    <h2 class="dark-icon i-kb">{%trans 'Knowledge base categories'%}</h2>
+                </header>
+                <section>
+                    <ul class="menu">
+                        {% for i, category in guest.kb_category_get_list({"per_page":5}).list %}
+                        <li><a href="{{ '/kb'|link }}#category-{{category.id}}">{{category.title}}</a></li>
+                        {% endfor %}
+                    </ul>
+                </section>
+            </div>
+        </article>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% block head%}
+<link rel='stylesheet' href='css/select2.css' />
+{% endblock %}
+<div class="canned_response" style="position: relative;">
+    <select name="canned_response" class="canned" style="position: absolute; top:6px; right: 10px; margin-bottom: 10px; min-width: 50%">
+        <option value=""></option>
+        {% for ctitle,cat in admin.support_canned_pairs %}
+            <optgroup label="{{ctitle}}">
+                {% for mid,mtitle in cat %}
+                    <option value="{{ mid }}">{{ mtitle }}</option>
+                {% endfor %}
+            </optgroup>
+        {% endfor %}
+    </select>
+</div>
+
+<script src='js/forms/select2.min.js'></script>
+<script type="text/javascript">
+    $(function () {
+        $('select.canned').on("change", function () {
+            var id = $(this).val();
+            if (id) bb.get('admin/support/canned_get', {id: id}, function (result) {
+                bb.insertToTextarea('rt', result.content)
+            });
+            return false;
+        });
+        $("select.canned").select2({
+            placeholder: "Select Canned Response"
+        });
+    });
+</script>

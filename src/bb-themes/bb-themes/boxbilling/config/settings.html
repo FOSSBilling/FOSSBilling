@@ -1,0 +1,110 @@
+<fieldset>
+    <legend>Colour Base</legend>
+
+    <h3>Background Options</h3>
+    <table>
+        <tr>
+            <td><label for="text_input">Example simple text input</label></td>
+            <td>
+                <input type="text" name="text_input" id="text_input" value=""/>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="textarea_input">Example textarea</label></td>
+            <td><textarea id="textarea_input" name="textarea_input">Put your description here</textarea></td>
+        </tr>
+    </table>
+
+    <h3>Optional title</h3>
+    <table>
+
+        <tr>
+            <td><label for="select_box">Example Select Box</label></td>
+            <td>
+                <select name="color_scheme">
+                    <option value="ocean.css">Ocean</option>
+                    <option value="forest.css">Forest</option>
+                    <option value="solar.css">Solar</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="logo_font">Select Box with group</label></td>
+            <td>
+                <select name="logo_font" id="logo_font">
+                    <optgroup label="Sans-serif">
+                        <option value="'BebasNeueRegular', Helvetica, Arial, sans-serif" selected="selected">Bebas
+                            Neue
+                        </option>
+                        <option value="'Helvetica Neue', Helvetica, Arial, sans-serif">Helvetica/Arial</option>
+                        <option value="Impact, Charcoal, Helvetica, Arial, sans-serif">Impact</option>
+                        <option value="'Lucida Grande', 'Lucida Sans Unicode', 'Lucida Sans', Lucida, Helvetica, Arial, sans-serif">
+                            Lucida Grande
+                        </option>
+                        <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
+                        <option value="Verdana, Helvetica, Arial, sans-serif">Verdana</option>
+                    </optgroup>
+                    <optgroup label="Serif">
+                        <option value="Garamond, Baskerville, Caslon, serif">Garamond</option>
+                        <option value="Georgia, Utopia, 'Times New Roman', Times, serif">Georgia</option>
+                        <option value="Palatino, 'Palatino Linotype', 'Book Antiqua', serif">Palatino</option>
+                        <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                    </optgroup>
+                    <optgroup label="Monospace">
+                        <option value="'Courier New', Courier, monospace">Courier New</option>
+                        <option value="Monaco, 'Lucida Console', 'DejaVu Sans Mono', monospace">Monaco/Lucida Console
+                        </option>
+                    </optgroup>
+                </select>
+            </td>
+        </tr>
+
+        <tr>
+            <td><label for="">Example Yes/No field</label></td>
+            <td>
+                <input type="radio" name="example_yn" value="1" id="example_yn_yes" checked="checked"/> <label for="example_yn_yes">Yes</label>
+                <input type="radio" name="example_yn" value="0" id="example_yn_no"/> <label for="example_yn_no">No</label>
+            </td>
+        </tr>
+
+        <tr>
+            <td><label for="">Example Checkbox</label></td>
+            <td>
+                <input type="checkbox" name="example_checkbox" value="1" id="example_checkbox"/>
+                <label for="example_checkbox">Example checkbox</label>
+            </td>
+        </tr>
+
+        <tr>
+            <td><label for="logo_file">Example File (Optimal size: 250x60)</label></td>
+            <td><input type="file" name="logo.png" id="logo_file" data-max-width="500"/></td>
+        </tr>
+
+        <tr>
+            <td><label for="header_file">Example File 2</label></td>
+            <td><input type="file" name="header.png" id="header_file" data-max-width="500"/></td>
+        </tr>
+
+    </table>
+
+    <h3>Special Inputs</h3>
+    <table>
+        <tr>
+            <td><label for="example_color">Text input with class="color"</label></td>
+            <td><input type="text" name="example_color" id="example_color" class="color" value="#FF00FF"/></td>
+        </tr>
+        <tr>
+            <td><label for="sidebar_widget">Select box with class="snippet"</label></td>
+            <td> <select class="snippet" name="sidebar_widget" id="sidebar_widget"/></td>
+        </tr>
+        <tr>
+            <td><label for="product1">Select box with class="product"</label></td>
+            <td> <select class="product" name="product1" id="product1"/></td>
+        </tr>
+        <tr>
+            <td><label for="page">Select box with class="page"</label></td>
+            <td> <select class="page" name="page" id="page"/></td>
+        </tr>
+    </table>
+
+</fieldset>

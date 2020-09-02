@@ -1,0 +1,24 @@
+    <div class="rowElem">
+        <label>{% trans 'Import existing' %}:</label>
+        <div class="formRight">
+            <input type="radio" name="config[import]" value="1"/><label>Yes</label>
+            <input type="radio" name="config[import]" value="0" checked="checked" /><label>No</label>
+        </div>
+        <div class="fix"></div>
+    </div>
+
+    <div class="rowElem">
+        <label>{% trans 'Username' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[username]" value="" placeholder="Centova Cast username. Leave blank to generate"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+
+    <div class="rowElem">
+        <label>{% trans 'Password' %}:</label>
+        <div class="formRight">
+            <input type="text" name="config[password]" value="" placeholder="Centova Cast user password. Leave blank to generate"/>
+        </div>
+        <div class="fix"></div>
+    </div>

@@ -1,0 +1,8 @@
+{
+    "id":           "system",
+	"type":         "mod",
+    "name":         "System",
+    "description":  "BoxBilling core module",
+    "icon_url":     "icon.png",
+    "version":      "1.0.0"
+}

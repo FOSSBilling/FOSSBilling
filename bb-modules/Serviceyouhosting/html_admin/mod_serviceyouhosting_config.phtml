@@ -1,0 +1,22 @@
+<div class="help">
+    <h5>{% trans 'YouHosting specifict settings' %}</h5>
+</div>
+
+
+<form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm api-form save" data-api-msg="Configuration saved">
+
+<fieldset>
+
+    <div class="rowElem noborder">
+        <label>{% trans 'Hosting plan' %}:</label>
+        <div class="formRight">
+            {{ mf.selectbox('config[plan_id]', admin.serviceyouhosting_get_plans, product.config.plan_id, 0, 'Select hosting plan') }}
+        </div>
+        <div class="fix"></div>
+    </div>
+
+    <input type="hidden" name="id" value="{{ product.id }}" />
+    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+</fieldset>
+
+</form>

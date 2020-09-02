@@ -1,0 +1,302 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Order Button settings' %}{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block head%}
+<script src='js/jquery.spectrum.js'></script>
+<link rel='stylesheet' href='css/spectrum.css' />
+{% endblock %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li class="lastB">{% trans 'Order Button settings' %}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+
+{% set params = admin.extension_config_get({"ext":"mod_orderbutton"}) %}
+
+<div class="widget simpleTabs">
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Order window settings' %}</a></li>
+        <li><a href="#tab-popup">{% trans 'Advanced settings' %}</a></li>
+    </ul>
+
+    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-reload="Settings updated">
+    <div class="tabs_container">
+        <div class="fix"></div>
+
+         <div class="tab_content nopadding" id="tab-index">
+             <div class="help">
+                 <h3>{% trans 'Order popup settings' %}</h3>
+                 <p>{% trans 'Configure how your popup window will look like' %}</p>
+             </div>
+
+             <fieldset>
+                 <div class="rowElem noborder">
+                     <label>{% trans 'Theme color' %}</label>
+                     <div class="formRight moreFields">
+                         <select name="theme_color" id="theme_color">
+                             <option value="green"{% if params.theme_color == 'green' %}selected{% endif %}>{% trans 'Green' %}</option>
+                             <option value="red"{% if params.theme_color == 'red' %}selected{% endif %}>{% trans 'Red' %}</option>
+                             <option value="blue"{% if params.theme_color == 'blue' %}selected{% endif %}>{% trans 'Blue' %}</option>
+                             <option value="dark"{% if params.theme_color == 'dark' %}selected{% endif %}>{% trans 'Dark' %}</option>
+                         </select>
+                     </div>
+                     <div class="fix"></div>
+                 </div>
+
+                 <input type="submit" value="{% trans 'Update settings' %}" class="greyishBtn submitForm" onclick="window.onbeforeunload = null;"/>
+
+             </fieldset>
+
+         </div>
+
+         <div class="tab_content nopadding" id="tab-popup">
+             <div class="help">
+                 <h3>{% trans 'Advanced settings' %}</h3>
+                 <p>{% trans 'Configure how your popup window will look like' %}</p>
+             </div>
+
+             <fieldset>
+                <div class="rowElem noborder">
+                     <label>{% trans 'Border radius' %}</label>
+                     <div class="formRight">
+                         <input type="text" name="border_radius" value="{{params.border_radius | default('0') }}" size="3" id="border-radius" style="width: 50px"/>
+                     </div>
+                     <div class="fix"></div>
+                 </div>
+
+
+                 <div class="rowElem">
+                     <label>{% trans 'Background' %}</label>
+                     <div class="formRight moreFields">
+                         <ul>
+                             <li class="sep">{% trans 'Color' %}</li>
+                             <li>
+                                 <input type="hidden" class="colorpick" id="background-color" name="background_color" value="{{params.background_color | default('#000000') }}" />
+                             </li>
+                             <li class="sep">{% trans 'Opacity' %}</li>
+                             <li>
+                                 <input type="text" id="background-opacity" name="background_opacity" value="{{params.background_opacity | default(50) }}" />
+                             </li>
+                             <li class="sep">%</li>
+                         </ul>
+                     </div>
+                     <div class="fix"></div>
+                 </div>
+
+
+
+                 <div class="rowElem">
+                     <label>{% trans 'Loader (while content of popup is being loaded)' %}</label>
+                     <div class="formRight moreFields">
+                         <ul>
+
+                             {% for i in range(1, 9) %}
+                             {% set loader_link = 'img/assets/loaders/loader'~i~'.gif'%}
+                             <input type="radio" id="loader{{i}}" name="loader" value="{{i}}" {% if params.loader == i%}checked{% endif %}></radio>
+                             <label for="loader{{i}}">
+                                 <img src="{{ loader_link | mod_asset_url('orderbutton')}}"/>
+                             </label>
+                             {% endfor %}
+                         </ul>
+                     </div>
+                     <div class="fix"></div>
+                 </div>
+
+                 <div class="rowElem">
+                     <label>{% trans 'Width' %}</label>
+                     <div class="formRight moreFields">
+                         <ul>
+                             <li class="sep">{% trans 'Width' %}:</li>
+                             <li style="width: 100px"><input type="text" name="popup_width" id="popup_width" value="{{ params.popup_width | default(600) }}" placeholder="600"></li>
+                             <li class="sep">px</li>
+                         </ul>
+                     </div>
+                     <div class="fix"></div>
+                 </div>
+
+
+                 <div class="rowElem" id="position">
+                     <label>{% trans 'Close (ESC key by default)' %}</label>
+                     <div class="formRight moreFields">
+                         <input type="checkbox" name="background_close" value="1" id="background-close"  {% if params.background_close %}checked{% endif %}/>
+                         <label for="background-close">{% trans 'Click on background closes popup' %}</label>
+                     </div>
+                     <div class="fix"></div>
+                 </div>
+
+                 {% if guest.extension_is_on({"mod":"formbuilder"}) %}
+                 <div class="rowElem">
+                     <label>{% trans 'Show values of custom form before checkout' %}</label>
+                     <div class="formRight moreFields">
+                         <input type="checkbox" name="show_custom_form_values" value="1" id="show-custom-form-values"  {% if params.show_custom_form_values %}checked{% endif %}/>
+                         <label for="show-custom-form-values">{% trans 'User input will be shown before checkout for custom form' %}</label>
+                     </div>
+                     <div class="fix"></div>
+                 </div>
+                 {% endif %}
+
+                 <input type="submit" value="{% trans 'Update settings' %}" class="greyishBtn submitForm" onclick="window.onbeforeunload = null;"/>
+             </fieldset>
+        </div>
+    </div>
+    <input type="hidden" name="ext" value="mod_orderbutton" />
+    </form>
+</div>
+
+<div class="widget">
+    <div class="head">
+        <h5 class="iCog">{% trans 'Order Button code' %}</h5>
+    </div>
+
+    <form class="mainForm">
+        <fieldset>
+            <div class="rowElem">
+                <div class="formBottom moreFields">
+                    <ul>
+                        <li class="sep txt">{% trans 'Clicking on html element with classname or ID' %} </li>
+                        <li style="width: 100px"><input type="text" name="bind_selector" id="bind_selector" value="{{ params.bind_selector | default('.order-button') }}" placeholder=".order-button"/></li>
+                        <li class="sep txt">{% trans 'will open popup window for' %} </li>
+                        <li style="width: 100px">
+                            {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All products') }}
+                        </li>
+                        <li class="sep txt">{% trans 'symbols' %}</li>
+                    </ul>
+                    <br/>
+                    <div class="nNote nInformation ">
+                        <p><strong>{% trans 'IMPORTANT' %}: </strong>{% trans 'You need to add ID (if you want to use it for one html element) or class (if you want to use it for multiple elements) in order for it to work' %}</p>
+                        <p id="button-info">
+                            {% trans 'Add order-button class to your elements which must call popup. For example: ' %}<strong>&lt;button type=&quot;button&quot;<span class="red">&nbsp;class=&quot;order-button</span>&quot; &gt;Order Now&lt;/button&gt;</strong>
+                            <p>{% trans 'Add data-product attribute to your element to open specific product. For example:<br/>' %}<strong>&lt;button type=&quot;button&quot; class=&quot;order-button" <span class="red">data-product="2"</span> &gt;Order Product#2 Now &lt;/button&gt;</strong></p>
+                            <p>{% trans 'data-product attribute value will be overiden if popup\'s product is selected from select-box above' %}</p>
+                        </p>
+                    </div>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label class="topLabel">{% trans 'Copy this code to your website' %}</label>
+                <div class="formBottom">
+                    <textarea cols="5" rows="3" id="script-code" onclick="$(this).select()" readonly="readonly"></textarea>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="aligncenter" style="margin-bottom: 20px">
+                <button type="button" class="greenBtn aligncenter" id="load"><span>{% trans 'Try your popup' %}</span></button>
+            </div>
+        </fieldset>
+    </form>
+</div>
+{% endblock %}
+
+{% block js %}
+    <script type="text/javascript">
+        $(function() {
+            $("#background-color").spectrum({
+                showInput: true,
+                showButtons: true,
+                showAlpha: false,
+                clickoutFiresChange: true,
+                theme: "sp-boxbilling",
+                showInitial: true,
+                preferredFormat: "hex"
+            });
+            var changed = false;
+            window.onbeforeunload = confirmExit;
+            function confirmExit()
+            {
+                if (changed === true){
+                    return "There are unsaved changes! If you will exit this page they will be lost. You can save them by clicking on UPDATE SETTINGS button.";
+                }
+            }
+
+            var generate_link = function(selector){
+                selector = (typeof selector === "undefined") ? $('#bind_selector').val() : selector;
+                var initial_link = "{{'orderbutton/js' | link({'options' : 1})}}";
+                var options = {
+                    'width' : $('#popup_width').val(),
+                    'theme_color': $('#theme_color').val(),
+                    'background_color':$('#background-color').val(),
+                    'popup_top':$('#popup-top').val(),
+                    'popup_left':$('#popup-left').val(),
+                    'background_opacity':$('#background-opacity').val(),
+                    'background_close':$('#background-close:checked').val(),
+                    'show_custom_form_values':$('#show-custom-form-values:checked').val(),
+                    'bind_selector':selector,
+                    'border_radius':$('#border-radius').val(),
+                    'product_id':$('#product_id').val(),
+                    'loader': $('[name=loader]:checked').val()
+                }
+                var options_url = "";
+                $.each(options,function(k,v){
+                    if (v !== "" &&  typeof v !== "undefined" ){
+                        options_url += "&" + k + "=" + encodeURIComponent(v);
+                    }
+                });
+                var link = initial_link + options_url;
+            return link;
+            };
+
+            var show_link = function(){
+                $('#script-code').text('\<script type="text/javascript" src="' + generate_link() + '"\>\<\/script\>')
+             };
+            show_link();
+
+
+            $('#background-close, #show-custom-form-values').click(function(){
+                changed = true;
+                show_link();
+            });
+            $('input').bind('input',function(){
+                changed = true;
+                show_link();
+            });
+            $('select, #background-color, input:radio').change(function(){
+                changed = true;
+                show_link();
+            });
+            $('#bind_selector').bind('input', function(){
+                var selector = $(this).val();
+                if (selector[0]!="." || selector[0]!="#"){
+                    $('#button-info').parent().removeClass('nInformation').addClass('nFailure');
+                    $('#button-info').text('{% trans 'It must start with dot(.) if it is classname or with a hashtag(#)' %}');
+                }
+                if (selector[0]=="."){
+                    $('#button-info').parent().removeClass('nFailure').removeClass('nInformation').addClass('nInformation');
+                    $('#button-info').html("{% trans 'Add "+selector+" class to your elements which must call popup. For example: ' %}" + '<strong>&lt;button type=&quot;button&quot;'+'<span class="red">'+ ' class=&quot;'+selector.substring(1)+'</span>'+'&quot; &gt;Order Now&lt;/button&gt;</strong>');
+
+                }
+                if (selector[0]=="#"){
+                    $('#button-info').parent().removeClass('nFailure').removeClass('nInformation').addClass('nInformation');
+                    $('#button-info').html("{% trans 'Add "+selector+" ID to your element which must call popup. For example: ' %}" + '<strong>&lt;button type=&quot;button&quot;'+'<span class="red">'+ ' id=&quot;'+selector.substring(1)+'</span>'+'&quot; &gt;Order Now&lt;/button&gt;</strong>');
+                }
+            });
+
+            $('#load').click(function(){
+                var s = $('#bind_selector').val() + new Date().getTime();
+                $('body>button').remove()
+                $.getScript(generate_link(s), function() {
+                    var test_button = $('<button/>').css({"display": "none"}).appendTo('body');
+                    if (s.charAt(0) == '.') {
+                        test_button.attr('class', s.substring(1));
+                    } else {
+                        test_button.attr('id', s.substring(1));
+                    }
+
+                });
+                document.addEventListener('OrderButtonEventsReady', function (e) {
+                    $(s).click();
+                }, false);
+            });
+        });
+
+    </script>
+{% endblock %}

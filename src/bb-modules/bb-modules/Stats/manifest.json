@@ -1,0 +1,7 @@
+{
+    "id":           "stats",
+	"type":         "mod",
+    "name":         "Statistics",
+    "description":  "BoxBilling core module",
+    "version":      "1.0.0"
+}

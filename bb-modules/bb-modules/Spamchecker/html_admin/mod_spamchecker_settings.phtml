@@ -1,0 +1,130 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'SpamChecker settings' %}{% endblock %}
+{% set active_menu = 'system' %}
+
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li class="lastB">{% trans 'SpamChecker settings' %}</li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="widget">
+    <div class="head">
+        <h5 class="iCog">{% trans 'SpamChecker settings' %}</h5>
+    </div>
+
+{% set params = admin.extension_config_get({"ext":"mod_spamchecker"}) %}
+
+<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Configuration updated' %}">
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'Enable IP blocking' %}</label>
+            <div class="formRight">
+                <input type="radio" name="block_ips" value="1" {% if params.block_ips == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
+                <input type="radio" name="block_ips" value="0" {% if params.block_ips == "0" %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+        <div class="rowElem noborder">
+            <label class="topLabel">{% trans 'Blocked IPs are not allowed to login, register or open public ticket. One IP per line' %}</label>
+            <div class="formBottom">
+                <textarea name="blocked_ips" cols="5" rows="5" placeholder="127.0.0.1">{{ params.blocked_ips }}</textarea>
+            </div>
+            <div class="fix"></div>
+        </div>
+    </fieldset>
+
+    <div class="help">
+        <h3>{% trans 'Recaptcha settings' %}</h3>
+        <p>{% trans 'Enable captcha for client registration and contact us forms' %}</p>
+        <p>{% trans 'Sign up for Recaptcha key for your domain at' %} <a href="http://www.google.com/recaptcha" target="_blank">http://www.google.com/recaptcha</a></p>
+    </div>
+
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'Recaptcha Enabled' %}</label>
+            <div class="formRight">
+                <input type="radio" name="captcha_enabled" value="1" {% if params.captcha_enabled == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
+                <input type="radio" name="captcha_enabled" value="0" {% if params.captcha_enabled == "0" %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem noborder">
+            <label>{% trans 'Recaptcha version' %}</label>
+            <div class="formRight">
+                <input type="radio" name="captcha_version" value="1" {% if params.captcha_version == "1" %}checked="checked"{% endif %}/><label>{% trans 'v1.0' %}</label>
+                <input type="radio" name="captcha_version" value="2" {% if params.captcha_version == "2" %}checked="checked"{% endif %}/><label>{% trans 'v2.0' %}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'ReCaptcha Public key' %}</label>
+            <div class="formRight">
+                <input type="text" name="captcha_recaptcha_publickey" value="{{params.captcha_recaptcha_publickey}}"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'ReCaptcha Private key' %}</label>
+            <div class="formRight">
+                <input type="text" name="captcha_recaptcha_privatekey" value="{{params.captcha_recaptcha_privatekey}}"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+    </fieldset>
+
+    <div class="help">
+        <h3>{% trans 'Akismet settings' %}</h3>
+        <p>{% trans %} Enable forum messages checking on <a href="http://www.akismet.com/" target="_blank">http://www.akismet.com</a> database{% endtrans %}</p>
+    </div>
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'Enable check' %}</label>
+            <div class="formRight">
+                <input type="radio" name="akismet_enabled" value="1" {% if params.akismet_enabled == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
+                <input type="radio" name="akismet_enabled" value="0" {% if params.akismet_enabled == "0" %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Akismet API key' %}</label>
+            <div class="formRight">
+                <input type="text" name="akismet_api_key" value="{{params.akismet_api_key}}"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+    </fieldset>
+    
+    <div class="help">
+        <h3>{% trans 'StopForumSpam.com settings' %}</h3>
+        <p>{% trans %} If enabled, client ip will be checked on <a href="http://www.stopforumspam.com/" target="_blank">http://www.stopforumspam.com</a> database before registration{% endtrans %}</p>
+    </div>
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'Enable check' %}</label>
+            <div class="formRight">
+                <input type="radio" name="sfs" value="1" {% if params.sfs == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
+                <input type="radio" name="sfs" value="0" {% if params.sfs == "0" %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+        <input type="hidden" name="ext" value="mod_spamchecker" />
+    </fieldset>
+</form>
+</div>
+
+{% endblock %}

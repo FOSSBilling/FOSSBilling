@@ -1,0 +1,100 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}Import SolusVM servers{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block content %}
+<div class="widget">
+    <div class="head"><h5 class="iFrames">{% trans 'Import SolusVM servers' %}</h5></div>
+<div class="help">
+    <h5>{% trans 'Read before importing servers' %}</h5>
+    <p>SolusVM products must be configured before importing servers to BoxBilling</p>
+    <p>SolusVM clients must already be imported</p>
+    <p>SolusVM API does not return plan name. BoxBilling is not able to guess which product assign to imported servers</p>
+    {% for node in admin.servicesolusvm_get_nodes({"by":"id"}) %}
+    <a href="{{ 'servicesolusvm/import/servers'|alink({'node_id' : node}) }}" class="btnIconLeft mr10 mt10"><span>Node: {{node}}</span></a>
+    {% endfor %}
+</div>
+<form action="{{ 'api/admin/servicesolusvm/import_servers'|link }}" method="post" class="mainForm api-form" data-api-jsonp="onAfterImport">
+
+<table class="tableStatic wide">
+    <thead>
+        <tr>
+            <td style="width:15px;"><input type="checkbox" id="smctoggler" checked="checked"></td>
+            <td>{% trans 'VServer ID' %}</td>
+            <td>{% trans 'Type' %}</td>
+            <td>{% trans 'Client ID' %}</td>
+            <td>{% trans 'Hostname' %}</td>
+            <td>{% trans 'Template' %}</td>
+            <td>{% trans 'IP' %}</td>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for i, s in admin.servicesolusvm_node_virtualservers({"node_id":request.node_id, "skip":1}) %}
+    <tr>
+        <td><input type="checkbox" name="servers[]" checked="checked" class="smc" value="{{s.vserverid}}"></td>
+        <td>{{ s.vserverid }}</td>
+        <td>{{ s.type }}</td>
+        <td>{{ s.clientid }}</td>
+        <td>{{ s.hostname }}</td>
+        <td>{{ s.template }}</td>
+        <td>{{ s.ipaddress }}</td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="7">
+            {% trans 'The list is empty' %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    
+    <tfoot>
+        <tr>
+            <td colspan="4">
+                {{ mf.selectbox('product_id', admin.product_get_pairs({"type":"solusvm"}), null, 1, "Select product for new order") }}
+            </td>
+            <td colspan="3">
+                {{ mf.selectbox('period', guest.system_periods, null, null, "Select billing period") }}
+            </td>
+        </tr>
+        <tr>
+            <td colspan="7">
+                <input type="submit" value="{% trans 'Import selected SolusVM virtual server to BoxBilling' %}" class="greyishBtn" />
+            </td>
+        </tr>
+    </tfoot>
+</table>
+    <input type="hidden" name="node_id" value="{{ request.node_id }}" />
+</form>
+    
+<div class="body" style="display:none;"><pre id="rsp"></pre></div>
+
+</div>
+{% endblock %}
+
+{% block js %}
+{% autoescape "js" %}
+<script type="text/javascript">
+    function onAfterImport(result)
+    {
+        $('#rsp').parent().show();
+        $('#rsp').text(result);
+    }
+    
+$(function() {
+    $('#smctoggler').change(function(){
+        if($(this).is(':checked')) {
+            $('.jqTransformCheckboxWrapper a.jqTransformCheckbox').addClass('jqTransformChecked');
+            $('.smc').attr('checked', 'checked');
+        } else {
+            $('.jqTransformCheckboxWrapper a.jqTransformCheckbox').removeClass('jqTransformChecked');
+            $('.smc').removeAttr('checked');
+        }
+        return false;
+    });
+});
+</script>
+{% endautoescape %}
+{% endblock %}

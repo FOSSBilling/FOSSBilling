@@ -1,0 +1,43 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Order' %}{% endblock %}
+
+{% set loader_nr = request.loader | default("8")%}
+{% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
+
+{% block content_before %}
+{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h2>{% trans 'Select Product' %}</h2>
+                <p>{% trans 'Choose products we offer for selling' %}</p>
+            </header>
+            <section>
+                <img id="loader-image" src="{{ loader_url | mod_asset_url('orderbutton')}}" style="display: block; margin-left: auto; margin-right: auto; position: relative; top: 50%" />
+                <iframe style="width: 100%;" frameborder="0" allowtransparency="true" onload='javascript:resizeIframe(this);' id="popup-iframe"  src="{{ "orderbutton" | link }}&theme_color={{request.theme_color | default('green')}}{% if product %}&order={{product.id}}{% endif %}{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}&loader=3" id="popup-iframe"/>
+            </section>
+        </div>
+    </article>
+</div>
+{% endblock %}
+
+{% block sidebar2 %}
+{% include 'partial_currency.phtml' %}
+{% endblock %}
+
+{% block js %}
+{% autoescape "js" %}
+
+<script language="javascript" type="text/javascript">
+    function resizeIframe(obj) {
+        obj.style.height = obj.contentWindow.document.body.scrollHeight + 'px';
+        $('#loader-image').hide();
+    }
+</script>
+{% endautoescape %}
+{% endblock %}

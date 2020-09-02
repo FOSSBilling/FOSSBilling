@@ -1,0 +1,43 @@
+{% block subject %}[{{ guest.system_company.name }}] {{ order.title }}{% endblock %}
+{% block content %}
+{% apply markdown %}
+
+Hello {{ c.first_name }} {{ c.last_name }},
+
+This message is to confirm that your **{{ order.title }}** has been successful. 
+
+Please keep in mind that your domain name will not be visible  on the internet 
+instantly. This process is called propagation and can take up to 48 hours. 
+Your website and  email will not function until the domain has propagated.
+
+
+**Domain details:**
+
+
+Domain: {{ service.domain }}     
+Registration date: {{order.created_at|bb_date}}
+Registration period: {{service.period}} Year(s)   
+{% if order.expires_at %}Expires on: {{ order.expires_at|bb_date }} {% endif %}
+{% if order.period %}
+Billing period:
+
+{{ order.total | money(order.currency) }}
+{{ order.period | period_title }}
+
+{% endif %}       
+
+
+**Domain nameservers**
+
+Nameserver 1: {{ service.ns1 }}   
+Nameserver 2: {{ service.ns2 }}   
+{% if  service.server.ns3 %}Nameserver 3: {{ service.ns3 }}   {% endif %}
+{% if  service.server.ns4 %}Nameserver 4: {{ service.ns4 }}   {% endif %}
+
+Login to members area: {{'login'|link({'email' : c.email }) }}
+Manage order: {{ 'order/service/manage'|link }}/{{ order.id }}
+
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

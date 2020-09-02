@@ -1,0 +1,37 @@
+{% extends "layout_default.phtml" %}
+{% set active_menu = 'client' %}
+{% block meta_title %}{{ group.title}}{% endblock %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'client'|alink }}#tab-groups">{% trans 'Client groups' %}</a></li>
+    <li class="lastB">{{ group.title}}</li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+<div class="widget">
+    
+    <div class="head">
+        <h5>{{ group.title}}</h5>
+    </div>
+    
+    <form method="post" action="{{ 'api/admin/client/group_update'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'client'|alink }}">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{% trans 'Title' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="title" value="{{ group.title }}" required="required"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+            <input type="hidden" name="id" value="{{ group.id }}"/>
+        </fieldset>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li><a href="{{ 'extension/settings/theme'|alink }}">{% trans 'Themes' %}</a></li>
+    <li class="lastB">{% trans 'Settings for' %} {{ theme_code }}</li>
+</ul>
+{% endblock %}
+
+
+{% block meta_title %}{% trans 'Settings for' %} {{ theme_code }}{% endblock %}
+
+{% block content %}
+
+{% if error %}
+<div class="nNote nFailure hideit first">
+    <p><strong>{% trans 'IMPORTANT' %}: </strong>{{ error }}</p>
+</div>
+{% endif %}
+
+{% if info %}
+<div class="nNote nInformation hideit first">
+    <p><strong>{% trans 'INFORMATION' %}: </strong>{{ info }}</p>
+</div>
+{% endif %}
+
+{% if settings_html %}
+
+<div class="widget">
+    <div class="head" title="{% trans "Switch to a predefined set of theme settings from the dropdown. Adjust each section and apply the changes once you're done." %}">
+        <h5 class="iMoney">Your current preset: </h5>
+        <select name="preset" style="margin-top: 10px;" onchange="bb.post('admin/theme/preset_select', {code: '{{theme_code}}', preset: $(this).val() }, function(){ bb.reload(); })">
+            {% for preset in presets %}
+            <option value="{{preset}}" {% if preset == current_preset%}selected="selected"{% endif %}>{{preset}}</option>
+            {% endfor %}
+        </select>
+        {% if presets|length > 1 %}
+        <a href="{{ 'api/admin/theme/preset_delete'|link({'code' : theme_code, 'preset' : current_preset}) }}" class="api-link" data-api-confirm="Are you sure?" data-api-reload="1">{% trans 'delete this preset' %}</a>
+        {% endif %}
+    </div>
+
+    <div id="theme-settings">
+        <form method="post" action="" enctype="multipart/form-data">
+
+            {{ settings_html|raw }}
+
+
+            <div class="actions">
+
+                <input type="checkbox" name="save-current-setting" value="1" id="save-current-setting">
+                <label for="save-current-setting">{% trans 'Save current settings as a new preset called' %}</label>
+                <input type="text" name="save-current-setting-preset" placeholder=""/>
+
+                <br/>
+                <br/>
+                <input type="submit" value="{% trans 'Apply changes' %}" class="greyishBtn"/>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block head %}
+<script src='js/jquery.spectrum.js'></script>
+<link rel='stylesheet' href='css/spectrum.css' />
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+
+$(function() {
+
+    $('#theme-settings fieldset').each(function(index, value){
+        $('<h3 class="section-header collapsed"/>').text($(this).find('legend').text()).insertBefore($(this));
+    });
+
+    $('#theme-settings h3.section-header').toggle(function() {
+        $(this).removeClass('collapsed').next().show();
+    }, function() {
+        $(this).addClass('collapsed').next().hide();
+    });
+
+    $('#theme-settings h3.section-header:first').click();
+
+
+    //special class "page"
+    $("#theme-settings select.page").each(function(){
+        var sel = $(this);
+        sel.append('<option value="">None</option>');
+        $.each({{ admin.page_get_pairs | json_encode | raw }}, function(index, value){
+            sel.append('<option value="' + index + '">' + value + '</option>');
+        });
+    });
+
+    //special class "snippet"
+    $("#theme-settings select.snippet").each(function(){
+        var sel = $(this);
+        sel.append('<option value="">None</option>');
+        $.each({{ snippets | json_encode | raw }}, function(index, value){
+            sel.append('<option value="' + index + '">' + value + '</option>');
+        });
+    });
+
+    //special class "product"
+    $("#theme-settings select.product").each(function(){
+        var sel = $(this);
+        sel.append('<option value="">None</option>');
+        $.each({{ admin.product_get_pairs | json_encode | raw }}, function(index, value){
+        sel.append('<option value="' + index + '">' + value + '</option>');
+    });
+    });
+
+
+// populate settings values
+
+    //<![CDATA[
+    var settings = {{ settings | json_encode | raw }};
+    //]]>
+    $.each(settings, function(index, value){
+        var el = $('#theme-settings *[name="'+ index +'"]');
+        if(el.attr('type') == 'radio') {
+            el.filter('[value="'+value+'"]').attr('checked', true);
+        } else if(el.attr('type') == 'checkbox') {
+            el.attr('checked', true);
+        } else {
+            el.val(value);
+        }
+    });
+
+    // show uploaded files
+    var uploaded = {{ uploaded | json_encode | raw }};
+    $.each(uploaded, function(index, file){
+        var input = $('#theme-settings input[name="'+file.name+'"]');
+        $('<div class="asset">').html('<a href="'+ file.url +'" target="_blank" >'+file.name+'</a>').insertAfter(input);
+    });
+
+    //special class "color"
+    $("#theme-settings input.color").spectrum({
+        showInput: true,
+        showButtons: true,
+        showAlpha: false,
+        clickoutFiresChange: true,
+        theme: "sp-boxbilling",
+        showInitial: true
+    });
+});
+
+</script>
+{% endblock %}

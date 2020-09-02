@@ -1,0 +1,110 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Gateway' %} {{ gateway.title }}{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'invoice/gateways'|alink }}">{% trans 'Payment gateways' %}</a></li>
+    <li class="lastB">{{ gateway.title }}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+
+<div class="widget">
+    <div class="head">
+        <h5>{% trans 'Payment gateway configuration' %} {{ gateway.title }}</h5>
+    </div>
+
+    <div class="help">
+        <h5>{{ gateway.title }}</h5>
+        {{ gateway.description|raw }}
+    </div>
+
+    <form method="post" action="{{ 'api/admin/invoice/gateway_update'|link }}" class="mainForm save api-form" data-api-msg="Gateway updated">
+    <fieldset>
+        <div class="rowElem noborder">
+            <label class="topLabel">{% trans 'Payment gateway title' %}:</label>
+            <div class="formBottom">
+                <input type="text" name="title" value="{{ gateway.title }}" />
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        {# Build form elements from registrar configuration array #}
+        {{ mf.build_form(gateway.form, gateway.config) }}
+
+        <div class="rowElem">
+            <label class="topLabel">{% trans 'Select which currencies can accept this payment gateway (Select none to allow all currencies)' %}</label>
+            <div class="formBottom">
+                {% set currencies = guest.currency_get_pairs %}
+                <select name="accepted_currencies[]" multiple="multiple" class="multiple" size="{{currencies|length}}">
+                    {% for id,currency in currencies %}
+                    <option value="{{id}}" {% if id in gateway.accepted_currencies %}selected="selected"{% endif %}>{{ currency }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Enabled' %}:</label>
+            <div class="formRight">
+                <input type="radio" name="enabled" value="1"{% if gateway.enabled %} checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
+                <input type="radio" name="enabled" value="0"{% if not gateway.enabled %} checked="checked"{% endif %} /><label>{% trans 'No' %}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        {% if gateway.supports_one_time_payments %}
+        <div class="rowElem">
+            <label>{% trans 'Allow one time payments' %}:</label>
+            <div class="formRight">
+                <input type="radio" name="allow_single" value="1"{% if gateway.allow_single %} checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
+                <input type="radio" name="allow_single" value="0"{% if not gateway.allow_single %} checked="checked"{% endif %} /><label>{% trans 'No' %}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+        {% else %}
+        <input type="hidden" name="allow_single" value="0" />
+        {% endif %}
+        
+        {% if gateway.supports_subscriptions %}
+        <div class="rowElem">
+            <label>{% trans 'Allow subscription payments' %}:</label>
+            <div class="formRight">
+                <input type="radio" name="allow_recurrent" value="1"{% if gateway.allow_recurrent %} checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
+                <input type="radio" name="allow_recurrent" value="0"{% if not gateway.allow_recurrent %} checked="checked"{% endif %} /><label>{% trans 'No' %}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+        {% else %}
+        <input type="hidden" name="allow_recurrent" value="0" />
+        {% endif %}
+
+        <div class="rowElem">
+            <label>{% trans 'Enable test mode' %}:</label>
+            <div class="formRight">
+                <input type="radio" name="test_mode" value="1"{% if gateway.test_mode %} checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
+                <input type="radio" name="test_mode" value="0"{% if not gateway.test_mode %} checked="checked"{% endif %} /><label>{% trans 'No' %}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'IPN Callback URL' %}:</label>
+            <div class="formRight">
+                <input type="text" value="{{ gateway.callback }}" readonly="readonly"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+        <input type="hidden" name="id" value="{{ gateway.id }}" />
+    </fieldset>
+    </form>
+</div>
+
+{% endblock %}

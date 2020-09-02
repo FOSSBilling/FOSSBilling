@@ -1,0 +1,12 @@
+{
+    "id":           "paidsupport",
+	"type":         "mod",
+    "name":         "Paid support module",
+    "description":  "Module enables paid support service for your clients.",
+    "icon_url":     "icon.png",
+    "homepage_url": "http://github.com/boxbilling/",
+    "author":       "BoxBilling",
+    "author_url":   "http://github.com/boxbilling/",
+    "license":      "GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
+    "version":      "1.0.3"
+}

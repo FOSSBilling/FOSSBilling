@@ -1,0 +1,5 @@
+<Files *>
+    SetHandler default-handler
+</Files>
+Options -Indexes
+AllowOverride None

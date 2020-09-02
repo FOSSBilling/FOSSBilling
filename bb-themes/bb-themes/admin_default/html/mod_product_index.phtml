@@ -1,0 +1,173 @@
+{% extends "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% set active_menu = 'products' %}
+{% block meta_title %}{% trans 'Products' %}{% endblock %}
+
+{% block content %}
+
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Products' %}</a></li>
+        <li><a href="#tab-new">{% trans 'New product' %}</a></li>
+        <li><a href="#tab-new-category">{% trans 'New category' %}</a></li>
+        <li><a href="#tab-categories">{% trans 'Manage categories' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+
+        <div class="tab_content nopadding" id="tab-index">
+
+            {{ mf.table_search }}
+            <form method="post" action="{{ 'api/admin/product/update_priority'|link }}" class="mainForm api-form" data-api-reload="1">
+            <fieldset>
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td width="50%">Title</td>
+                        <td>Status</td>
+                        <td>Category</td>
+                        <td width="10%">Type</td>
+                        <td style="width: 5%">{% trans 'Priority' %}</td>
+                        <td width="13%">&nbsp;</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set products = admin.product_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+                    {% for product in products.list %}
+                    <tr>
+                        <td><a href="{{ '/product/manage'|alink }}/{{product.id}}">{{ product.title }}</a></td>
+                        <td>{{ mf.status_name(product.status) }}</td>
+                        <td><a href="{{ '/product/category'|alink }}/{{product.category.id}}">{{product.category.title}}</a></td>
+                        <td>{{ mf.status_name(product.type) }}</td>
+                        <td><input type="text" name="priority[{{product.id}}]" value="{{ product.priority }}" style="width:30px;"></td>
+                        <td class="actions">
+                            <a class="bb-button btn14" href="{{ '/product/manage'|alink }}/{{product.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                            <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/product/delete'|link({'id' : product.id}) }}" data-api-redirect="{{ 'product'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+                
+            {% include "partial_pagination.phtml" with {'list': products, 'url':'product'} %}
+            
+                    <input type="submit" value="{% trans 'Update priority' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new">
+            <form method="post" action="{{ 'api/admin/product/prepare'|link }}" class="mainForm" id="prepare-product">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Type' %}:</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('type', admin.product_get_types, request.type, 1) }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Category' %}:</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('product_category_id', admin.product_category_get_pairs, request.product_category_id, 1) }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Title' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+
+                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+
+            <div class="fix"></div>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new-category">
+
+            <form method="post" action="{{ 'api/admin/product/category_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'product'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Title' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="title" value="{{request.cat_title}}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Icon URL' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="icon_url" value=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Description' %}:</label>
+                        <div class="formRight">
+                            <textarea name="description" cols="5" rows="4">{{request.cat_description}}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-categories">
+            <table class="tableStatic wide">
+                <tbody>
+                    {% for cat_id, cat_title in admin.product_category_get_pairs %}
+                    <tr {% if loop.first %}class="noborder"{% endif %}>
+                        <td>{{cat_title}}</td>
+                        <td class="actions" style="width:13%">
+                            <a class="bb-button btn14" href="{{ '/product/category'|alink }}/{{cat_id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                            <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/product/category_delete'|link({'id' : cat_id}) }}" data-api-redirect="{{ 'product'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+
+    $('#prepare-product').bind('submit', function(){
+        bb.post(
+            $(this).attr('action'),
+            $(this).serialize(),
+            function(result) {
+                bb.redirect('{{"product/manage/"|alink}}/' + result);
+            }
+        );
+        return false;
+    });
+});
+</script>
+{% endblock %}

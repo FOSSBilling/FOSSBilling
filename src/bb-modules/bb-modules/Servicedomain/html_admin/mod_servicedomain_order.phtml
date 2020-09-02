@@ -1,0 +1,47 @@
+<div class="rowElem">
+    <label>{% trans 'Domain action' %}:</label>
+    <div class="formRight domain-action-select">
+        <input type="radio" name="config[action]" value="register" checked="checked"/><label>Register</label>
+        <input type="radio" name="config[action]" value="transfer" /><label>Transfer</label>
+    </div>
+    <div class="fix"></div>
+</div>
+
+<div class="rowElem domain-action domain-register">
+    <label>{% trans 'Register domain' %}:</label>
+    <div class="formRight">
+        <ul>
+            <li style="width: 200px"><input type="text" name="config[register_sld]" value="{{ request.register_sld }}" placeholder="{% trans 'Domain name to register' %}"></li>
+            <li style="width: 90px">{{ mf.selectboxtld('config[register_tld]', guest.serviceDomain_tlds({"allow_register":1})) }}</li>
+            <li style="width: 80px"><input type="text" name="config[register_years]" value="1" placeholder="{% trans 'Years' %}"></li>
+        </ul>
+    </div>
+    <div class="fix"></div>
+</div>
+
+<div class="rowElem domain-action domain-transfer" style="display: none;">
+    <label>{% trans 'Transfer domain' %}:</label>
+    <div class="formRight">
+        <ul>
+            <li style="width: 200px"><input type="text" name="config[transfer_sld]" value="{{ request.transfer_sld }}"  placeholder="{% trans 'Domain name to transfer' %}"></li>
+            <li style="width: 90px">{{ mf.selectboxtld('config[transfer_tld]', guest.serviceDomain_tlds({"allow_transfer":1})) }}</li>
+            <li style="width: 200px"><input type="text" name="config[transfer_code]" value="{{ request.transfer_code }}" placeholder="{% trans 'Domain transfer code' %}"></li>
+        </ul>
+    </div>
+    <div class="fix"></div>
+</div>
+
+<script type="text/javascript">
+$(function() {
+
+    $('.domain-action-select input').bind('click', function (){
+        $('.domain-action').hide();
+        if($(this).val() == 'register') {
+            $('.domain-action.domain-register').show();
+        } else {
+            $('.domain-action.domain-transfer').show();
+        }
+    });
+
+});
+</script>

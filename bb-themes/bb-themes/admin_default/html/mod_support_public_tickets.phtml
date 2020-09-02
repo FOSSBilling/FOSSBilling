@@ -1,0 +1,59 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}Public tickets{% endblock %}
+{% set active_menu = 'support' %}
+{% block content %}
+{% set statuses = admin.support_public_ticket_get_statuses %}
+<div class="stats">
+    <ul>
+        <li><a href="{{ 'support/public-tickets'|alink({'status' : 'open'}) }}" class="count green" title="">{{ statuses.open }}</a><span>{% trans 'Tickets waiting for staff reply' %}</span></li>
+        <li><a href="{{ 'support/public-tickets'|alink({'status' : 'on_hold'}) }}" class="count blue" title="">{{ statuses.on_hold }}</a><span>{% trans 'Tickets waiting for client reply' %}</span></li>
+        <li><a href="{{ 'support/public-tickets'|alink({'status' : 'closed'}) }}" class="count grey" title="">{{ statuses.closed }}</a><span>{% trans 'Solved tickets' %}</span></li>
+        <li class="last"><a href="{{ 'support/public-tickets'|alink }}" class="count grey" title="">{{ statuses.open + statuses.on_hold + statuses.closed }}</a><span>{% trans 'Total' %}</span></li>
+    </ul>
+    <div class="fix"></div>
+</div>
+
+<div class="widget">
+    <div class="head"><h5 class="iFrames">{% trans 'Public tickets' %}</h5></div>
+
+{{ mf.table_search }}
+<table class="tableStatic wide">
+    <thead>
+        <tr>
+            <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
+            <td style="width: 50%">{% trans 'Subject' %}</td>
+            <td>{% trans 'Email' %}</td>
+            <td>{% trans 'Status' %}</td>
+            <td>{% trans 'Date' %}</td>
+            <td style="width: 5%">&nbsp;</td>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% set tickets = admin.support_public_ticket_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+    {% for i, ticket in tickets.list %}
+    <tr>
+        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ ticket.id }}"/></td>
+        <td><a href="{{ '/support/public-ticket'|alink }}/{{ticket.id}}">#{{ ticket.id }} - {{ ticket.subject }} ({{ ticket.messages|length}})</a></td>
+        <td>{{ ticket.author_email }}</td>
+        <td>{{ mf.status_name(ticket.status) }}</td>
+        <td>{{ ticket.updated_at|date('Y-m-d') }}</td>
+        <td class="actions">
+            <a class="bb-button btn14" href="{{ '/support/public-ticket'|alink }}/{{ticket.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+        </td>
+    </tr>
+    {% else %}
+        <tr>
+            <td colspan="5">
+                {% trans 'The list is empty' %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% include "partial_batch_delete.phtml" with {'action':'admin/support/batch_delete_public'} %}
+{% include "partial_pagination.phtml" with {'list': tickets, 'url':'support/public-tickets'} %}
+
+{% endblock %}

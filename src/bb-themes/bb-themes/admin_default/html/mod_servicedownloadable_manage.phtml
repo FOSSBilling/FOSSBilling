@@ -1,0 +1,70 @@
+<div class="help">
+    <h2>{% trans 'File information' %}</h2>
+</div>
+
+<table class="tableStatic wide">
+    <tbody>
+        <tr class="noborder">
+            <td>{% trans 'Filename' %}:</td>
+            <td>{{ service.filename  }}</td>
+        </tr>
+
+        <tr>
+            <td>{% trans 'Location' %}:</td>
+            <td>{{ service.path }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Downloads' %}:</td>
+            <td>{{ service.downloads }}</td>
+        </tr>
+
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="2"></td>
+        </tr>
+    </tfoot>
+</table>
+
+<div class="help">
+    <h2>{% trans 'Upload new file for this order' %}</h2>
+    <p>{% trans 'Use this function to update existing order file. Client will be able to download new file from client area' %}</p>
+</div>
+
+<form method="post" action="" class="mainForm" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
+<fieldset>
+    
+    <div class="rowElem">
+        <label>{% trans 'Upload new file' %}:</label>
+        <div class="formRight noborder">
+            <input type="file" name="file_data" id="file_data">
+        </div>
+        <div class="fix"></div>
+    </div>
+
+    <input type="submit" value="{% trans 'Upload' %}" class="greyishBtn submitForm" id="bb-upload-button"/>
+</fieldset>
+
+<input type="hidden" name="order_id" value="{{ order.id }}">
+</form>
+
+<script type="text/javascript">
+$(function() {
+    $('body').append('<iframe id="uploadframe" name="uploadframe" style="display:none" />');
+    $('#bb-upload-form').submit(function(){
+        $(this).attr('action', bb.restUrl('admin/servicedownloadable/update'));
+        iframe = $('#uploadframe').load(function () {
+            response = iframe.contents().find('body');
+            data = $.parseJSON(response.text());
+            if(data.error) {
+                bb.error(data.error.message, data.error.code);
+            }
+            if(data.result) {
+                bb.msg('File was uploaded');
+            }
+            setTimeout(function (){	response.html(''); }, 1);
+        });
+    });
+});
+</script>

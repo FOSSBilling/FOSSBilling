@@ -1,0 +1,19 @@
+body {
+	margin: 0;
+	background-image: url('../img/bg-repeat.gif');
+	background-repeat: repeat-x;
+}
+.content {
+	background-image: url('../img/content.png');
+	background-repeat: no-repeat;
+	background-position: center 60px;
+	min-height: 200px;	
+}
+header {
+	height: 90px;
+	width: 950px;
+	margin: 0px auto 30px auto;
+}
+header img.logo {
+	margin-top: 20px;
+}

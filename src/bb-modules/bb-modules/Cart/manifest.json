@@ -1,0 +1,7 @@
+{
+    "id":           "cart",
+	"type":         "mod",
+    "name":         "Shopping cart",
+    "description":  "BoxBilling core module",
+    "version":      "1.0.0"
+}

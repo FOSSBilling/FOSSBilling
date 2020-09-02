@@ -1,0 +1,457 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'System settings' %}{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li class="lastB">{% trans 'System settings' %}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+
+{% set new_params = admin.extension_config_get({"ext":"mod_system"}) %}
+{% set params = admin.system_get_params %}
+
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Company details' %}</a></li>
+        <li><a href="#tab-ftp">{% trans 'FTP layer' %}</a></li>
+        <li><a href="#tab-countries">{% trans 'Countries' %}</a></li>
+        <li><a href="#tab-cache">{% trans 'Cache' %}</a></li>
+    </ul>
+    
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div id="tab-index" class="tab_content nopadding">
+
+            <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="mainForm api-form" data-api-msg="Company updated">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Name' %}</label>
+                        <div class="formRight">
+                            <input type="text" name="company_name" value="{{params.company_name}}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Email' %}</label>
+                        <div class="formRight">
+                            <input type="text" name="company_email" value="{{params.company_email}}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Phone' %}</label>
+                        <div class="formRight">
+                            <input type="text" name="company_tel" value="{{params.company_tel}}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Address' %}</label>
+                        <div class="formRight">
+                            <input type="text" name="company_address_1" value="{{params.company_address_1}}" placeholder="Address line 1"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem noborder">
+                        <div class="formRight">
+                            <input type="text" name="company_address_2" value="{{params.company_address_2}}" placeholder="Address line 2"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem noborder">
+                        <div class="formRight">
+                            <input type="text" name="company_address_3" value="{{params.company_address_3}}" placeholder="Address line 3"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label class="topLabel">{% trans 'Logo URL' %}</label>
+                        <div class="formBottom">
+                            <input type="text" name="company_logo" value="{{params.company_logo}}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                       <label class="topLabel">{% trans 'Company number, chamber of commerce number' %}</label>
+                        <div class="formBottom">
+                            <input type="text" name="company_number" value="{{params.company_number}}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label class="topLabel">{% trans 'VAT number' %}</label>
+                        <div class="formBottom">
+                            <input type="text" name="company_vat_number" value="{{params.company_vat_number}}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label class="topLabel">{% trans 'Bank Account number' %}</label>
+                        <div class="formBottom">
+                            <input type="text" name="company_account_number" value="{{params.company_account_number}}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label class="topLabel">{% trans 'Signature' %}</label>
+                        <div class="formBottom">
+                            <textarea name="company_signature" rows="5" cols="5">{{params.company_signature}}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                <input type="submit" value="{% trans 'Update settings' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+
+            <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="mainForm api-form" data-api-msg="Company updated">
+                <fieldset>
+                    <legend>{% trans 'Company terms of service, legal regulation' %}</legend>
+                    <textarea name="company_tos" rows="5" cols="5" class="bb-textarea">{{params.company_tos}}</textarea>
+                </fieldset>
+
+                <fieldset>
+                    <legend>{% trans 'Company privacy policy' %}</legend>
+                    <textarea name="company_privacy_policy" rows="5" cols="5" class="bb-textarea">{{params.company_privacy_policy}}</textarea>
+                </fieldset>
+
+                <fieldset>
+                    <legend>{% trans 'Notes' %}</legend>
+                    <textarea name="company_note" rows="5" cols="5" class="bb-textarea">{{params.company_note}}</textarea>
+                </fieldset>
+
+                <fieldset>
+                    <input type="submit" value="{% trans 'Update settings' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+            
+        </div>
+        
+        <div id="tab-countries" class="tab_content nopadding">
+            <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Countries updated' %}">
+                <fieldset>
+{% set default_countries %}
+US=United States
+AF=Afghanistan
+AL=Albania
+DZ=Algeria
+AS=American Samoa
+AD=Andorra
+AO=Angola
+AI=Anguilla
+AQ=Antarctica
+AG=Antigua and Barbuda
+AR=Argentina
+AM=Armenia
+AW=Aruba
+AU=Australia
+AT=Austria
+AZ=Azerbaijan
+BS=Bahamas
+BH=Bahrain
+BD=Bangladesh
+BB=Barbados
+BY=Belarus
+BE=Belgium
+BZ=Belize
+BJ=Benin
+BM=Bermuda
+BT=Bhutan
+BO=Bolivia
+BA=Bosnia and Herzegovina
+BW=Botswana
+BR=Brazil
+BN=Brunei
+BG=Bulgaria
+BF=Burkina Faso
+BI=Burundi
+KH=Cambodia
+CM=Cameroon
+CA=Canada
+CV=Cape Verde
+KY=Cayman Islands
+CF=Central African Republic
+TD=Chad
+CL=Chile
+CN=China
+CX=Christmas Island
+CC=Cocos (Keeling) Islands
+CO=Colombia
+KM=Comoros
+CG=Congo - Brazzaville
+CD=Congo - Kinshasa
+CK=Cook Islands
+CR=Costa Rica
+CI=Cote D'Ivoire
+HR=Croatia
+CU=Cuba
+CY=Cyprus
+CZ=Czech Republic
+DK=Denmark
+DJ=Djibouti
+DM=Dominica
+DO=Dominican Republic
+TP=East Timor
+EC=Ecuador
+EG=Egypt
+SV=El Salvador
+GQ=Equatorial Guinea
+ER=Eritrea
+EE=Estonia
+ET=Ethiopia
+FO=Faroe Islands
+FJ=Fiji
+FI=Finland
+FR=France
+GF=French Guiana
+PF=French Polynesia
+GA=Gabon
+GB=United Kingdom
+GM=Gambia
+GE=Georgia
+DE=Germany
+GH=Ghana
+GI=Gibraltar
+GR=Greece
+GL=Greenland
+GD=Grenada
+GP=Guadeloupe
+GU=Guam
+GT=Guatemala
+GN=Guinea
+GW=Guinea-Bissau
+GY=Guyana
+HT=Haiti
+EL=Hellenic Republic (Greece)
+HN=Honduras
+HK=Hong Kong
+HU=Hungary
+IS=Iceland
+IN=India
+ID=Indonesia
+IR=Iran
+IQ=Iraq
+IE=Ireland
+IL=Israel
+IT=Italy
+JM=Jamaica
+JP=Japan
+JO=Jordan
+KZ=Kazakhstan
+KE=Kenya
+KI=Kiribati
+KW=Kuwait
+KG=Kyrgyzstan
+LA=Laos
+LV=Latvia
+LB=Lebanon
+LS=Lesotho
+LR=Liberia
+LY=Libya
+LI=Liechtenstein
+LT=Lithuania
+LU=Luxembourg
+MO=Macau
+MK=Macedonia
+MG=Madagascar
+MW=Malawi
+MY=Malaysia
+MV=Maldives
+ML=Mali
+MT=Malta
+MH=Marshall Islands
+MQ=Martinique
+MR=Mauritania
+MU=Mauritius
+YT=Mayotte
+MX=Mexico
+MD=Moldova
+MC=Monaco
+MN=Mongolia
+ME=Montenegro
+MS=Montserrat
+MA=Morocco
+MZ=Mozambique
+MM=Myanmar (Burma)
+NA=Namibia
+NR=Nauru
+NP=Nepal
+NL=Netherlands
+AN=Netherlands Antilles
+NC=New Caledonia
+NZ=New Zealand
+NI=Nicaragua
+NE=Niger
+NG=Nigeria
+NU=Niue
+NF=Norfolk Island
+MP=Northern Mariana Islands
+NO=Norway
+OM=Oman
+PK=Pakistan
+PW=Palau
+PA=Panama
+PG=Papua New Guinea
+PY=Paraguay
+PE=Peru
+PH=Philippines
+PN=Pitcairn Islands
+PL=Poland
+PT=Portugal
+PR=Puerto Rico
+QA=Qatar
+RE=Reunion
+RO=Romania
+RU=Russia
+RW=Rwanda
+KN=Saint Kitts And Nevis
+LC=Saint Lucia
+WS=Samoa
+SM=San Marino
+ST=Sao Tome And Principe
+SA=Saudi Arabia
+SN=Senegal
+RS=Serbia
+SC=Seychelles
+SL=Sierra Leone
+SG=Singapore
+SK=Slovakia
+SI=Slovenia
+SB=Solomon Islands
+SO=Somalia
+ZA=South Africa
+KR=South Korea
+ES=Spain
+LK=Sri Lanka
+SH=St. Helena
+PM=St. Pierre And Miquelon
+SD=Sudan
+SR=Suriname
+SZ=Swaziland
+SE=Sweden
+CH=Switzerland
+SY=Syria
+TW=Taiwan
+TJ=Tajikistan
+TZ=Tanzania
+TH=Thailand
+TG=Togo
+TK=Tokelau
+TO=Tonga
+TT=Trinidad and Tobago
+TN=Tunisia
+TR=Turkey
+TM=Turkmenistan
+TC=Turks and Caicos Islands
+TV=Tuvalu
+UG=Uganda
+UA=Ukraine
+AE=United Arab Emirates
+UY=Uruguay
+UZ=Uzbekistan
+VU=Vanuatu
+VA=Vatican City
+VE=Venezuela
+VN=Vietnam
+VI=Virgin Islands (U.S.)
+EH=Western Sahara
+YE=Yemen
+ZM=Zambia
+ZW=Zimbabwe
+{% endset %}
+                    <div class="rowElem noborder">
+                        <label class="topLabel">{% trans 'List of countries' %}</label>
+                        <div class="formBottom">
+                            <textarea name="countries" cols="5" rows="50" placeholder="US=United States">{{ new_params.countries | default(default_countries) }}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <input type="submit" value="{% trans 'Update settings' %}" class="greyishBtn submitForm" />
+                    <input type="hidden" name="ext" value="mod_system" />
+                </fieldset>
+            </form>
+        </div>
+
+        <div id="tab-cache" class="tab_content nopadding">
+
+            <a href="{{ 'api/admin/system/clear_cache'|link }}" class="api-link" data-api-msg="{% trans 'Cache folder cleared' %}">{% trans 'Invalidate cache' %}</a>
+
+        </div>
+
+        <div id="tab-ftp" class="tab_content nopadding">
+            <div class="help">
+                <h3>{% trans 'FTP layer for BoxBilling' %}</h3>
+                <p>{% trans 'FTP is used to manage BoxBilling modules and updates.' %}</p>
+            </div>
+
+            <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="mainForm api-form" data-api-msg="{% trans 'FTP settings updated' %}">
+                <fieldset>
+                <div class="rowElem">
+                    <label class="topLabel">{% trans %}<strong>FTP Hostname</strong> - can be a numerical URL 127.0.0.1 is the default address for a locally hosted server, it might be this, it might be the full URL as my example above with the File Transfer Protocol (FTP) prefix, it might be the http:// protocol it might be SFTP (secure FTP) even secure http (https). Your host will be able to advise you on the correct format.{% endtrans %}</label>
+                    <div class="formBottom">
+                        <input type="text" name="ftp_host" value="{{params.ftp_host|default('localhost')}}"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label class="topLabel">{% trans %}<strong>FTP port</strong> - is nearly always 21 unless the host has changed this they will have notified you of this. Secure FTP generally uses port 22.{% endtrans %}</label>
+                    <div class="formBottom">
+                        <input type="text" name="ftp_port" value="{{params.ftp_port|default(21)}}"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label class="topLabel">{% trans %}<strong>FTP user</strong> - In most cases, this is the specific user name your host has set up for you to access your Web site via FTP- It is the name you use in your FTP client. This could be an alphanumeric, it could be your name, even your e-mail address, If you don't know this speak to your host. You may have the facility on your Web account to set up additional FTP users if that is the case (and it's more secure) you are recommended to do this{% endtrans %}</label>
+                    <div class="formBottom">
+                        <input type="text" name="ftp_user" value="{{params.ftp_user}}"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label class="topLabel">{% trans %}<strong>FTP password</strong> - this is the password you enter in your FTP client.{% endtrans %}</label>
+                    <div class="formBottom">
+                        <input type="password" name="ftp_password" value="{{params.ftp_password}}"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label class="topLabel">{% trans %}<strong>FTP root</strong> - This is generally the directory in which BoxBilling is installed. This setting is very important to be setup correctly as it very specifically depends on the Host server settings. In can be just / BUT it might be htdocs/boxbilling, public_html/, /public_html/boxbilling or other. It is a variable that BoxBilling has absolutely no control over. You will need to clarify this with your host.{% endtrans %}</label>
+                    <div class="formBottom">
+                        <input type="text" name="ftp_root" value="{{params.ftp_root}}"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <input type="submit" value="{% trans 'Update settings' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

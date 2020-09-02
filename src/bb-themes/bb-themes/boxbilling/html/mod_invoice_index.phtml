@@ -1,0 +1,102 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Invoices' %}{% endblock %}
+
+{% block content %}
+
+{% set unpaid_invoices = client.invoice_get_list({"status":"unpaid", "per_page":100}).list %}
+
+    <div class="h-block">
+        <div class="h-block-header">
+            <div class="icon"><span class="big-light-icon i-invoice"></span></div>
+            <h2>{% trans 'Invoices' %}</h2>
+            <p>{% trans 'List of invoices' %}</p>
+        </div>
+        
+        <div class="block conversation">
+        <div class="widget simpleTabs tabsRight first">
+        <div class="head">
+            <h2 class="dark-icon i-invoice">{% trans 'Invoice management' %}</h2>
+        </div>
+        <ul class="tabs">
+            {% if unpaid_invoices|length %}
+            <li><a href="#tab-unpaid">{% trans 'Unpaid' %}</a></li>
+            {% endif %}
+            <li><a href="#tab-paid">{% trans 'Paid' %}</a></li>
+        </ul>
+        <div class="tabs_container">
+            
+            {% if unpaid_invoices|length %}
+            <div class="tab_content" id="tab-unpaid">
+            <table class="with-border">
+                <thead>
+                    <tr>
+                        <th>{% trans 'Title' %}</th>
+                        <th>{% trans 'Issue Date' %}</th>
+                        <th>{% trans 'Due Date' %}</th>
+                        <th>{% trans 'Total' %}</th>
+                        <th>&nbsp</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for i, invoice in unpaid_invoices %}
+                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <td>{{ "Proforma invoice #%05s"|format(invoice.id) }}</td>
+                        <td>{{ invoice.created_at|bb_date }}</td>
+                        <td>{{ invoice.due_at|bb_date }}</td>
+                        <td>{{ invoice.total | money(invoice.currency) }}</td>
+                        <td class="actions"><a class="bb-button bb-button-red" href="{{ 'invoice'|link }}/{{ invoice.hash }}">{% trans 'Pay' %}</a></td>
+                    </tr>
+
+                    {% else %}
+                    <tr>
+                        <td colspan="5">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        
+        <div class="tab_content" id="tab-paid">
+            <table class="with-border">
+                <thead>
+                    <tr>
+                        <th>{% trans 'Title' %}</th>
+                        <th>{% trans 'Issue Date' %}</th>
+                        <th>{% trans 'Paid at' %}</th>
+                        <th>{% trans 'Total' %}</th>
+                        <th>&nbsp</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% set paid_invoices = client.invoice_get_list({"per_page":10, "page":request.page, "status":"paid"}) %}
+                    {% for i, invoice in paid_invoices.list %}
+
+                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <td>{{ "Proforma invoice #%05s"|format(invoice.id) }}</td>
+                        <td>{{ invoice.created_at|bb_date }}</td>
+                        <td>{{ invoice.paid_at|bb_date }}</td>
+                        <td>{{ invoice.total | money(invoice.currency) }}</td>
+                        <td class="actions"><a class="bb-button" href="{{ 'invoice'|link }}/{{ invoice.hash }}"><span class="dark-icon i-drag"></span></a></td>
+                    </tr>
+
+                    {% else %}
+                    <tr>
+                        <td colspan="7">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% include "partial_pagination.phtml" with {'list': paid_invoices} %}
+            
+        </div>
+    </div>
+</div>
+</div>
+</div>
+
+{% endblock %}

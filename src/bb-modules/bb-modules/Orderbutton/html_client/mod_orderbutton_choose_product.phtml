@@ -1,0 +1,17 @@
+<div class="accordion-group" id="choose-product">
+    {% set products = guest.product_get_list %}
+    <div class="accordion-heading">
+        <a class="accordion-toggle" href="#products" data-parent="#accordion1" data-toggle="collapse"><span class="awe-list"></span> {% trans 'Select Product' %}  <span class="label label-info pull-right">{{ products.list | length }} {% trans 'Items' %}</span></a>
+    </div>
+    <div id="products" class="accordion-body collapse {% if not request.order and not request.cart and not request.checkout %}in{%endif%}" >
+        <div class="accordion-inner">
+            <ul class="nav nav-list">
+                {% for i, product in products.list %}
+                <li>
+                    <a href="{{ 'orderbutton' | link({'order':product.id, 'show_custom_form_values':request.show_custom_form_values}) }}">{{ product.title }} <span class="awe-arrow-right pull-right"><span></a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>

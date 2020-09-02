@@ -1,0 +1,44 @@
+    	<span>&copy; Copyright {{ now|date('Y') }}. All rights reserved. Powered by <a href="http://www.boxbilling.com" title="Billing system" target="_blank">BoxBilling {{ guest.system_version }}</a>
+                    <a href="#" title="" id="help_popup_button" style="float:right;">Help</a>
+        </span>
+
+        <div id="help_popup" style="color: #424242; position: fixed; z-index: 99999; padding: 5px; margin: 0px; min-width: 310px; max-width: 310px; top: 30%; left: 45%; display: none;">
+            <h5 id="help_popup_title">{% trans 'Help?' %}</h5>
+            <div id="help_popup_content" class="confirm">
+                <div id="help_popup_message">
+                    <table class="tableStatic wide">
+                        <tbody>
+                        <tr class="noborder">
+                            <td><i class="dark-sprite-icon sprite-help" /></td>
+                            <td class="noborder"><a href="http://docs.boxbilling.com/" title="" target="_blank">{% trans 'Help' %}</a></td>
+                        </tr>
+                        <tr>
+                            <td><i class="dark-sprite-icon sprite-speech2" /></td>
+                            <td class="noborder"><a href="http://www.boxbilling.com/forum" title="" target="_blank">{% trans 'Forum' %}</a></td>
+                        </tr>
+                        <tr>
+                            <td><i class="dark-sprite-icon sprite-pacman" /></td>
+                            <td class="noborder"><a href="https://github.com/boxbilling/boxbilling/issues" title="" target="_blank">{% trans 'Report bug' %}</a></td>
+                        </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+                <div id="help_popup_panel">
+                    <input type="button" class="blueBtn" value="&nbsp;Close&nbsp;" id="help_popup_close" onclick="return susp.suspenderHide();"/>
+                </div>
+            </div>
+        </div>
+
+        {% block js %}
+        <script type="text/javascript">
+            document.getElementById('help_popup_button').addEventListener('click',function(e){
+                e.preventDefault();
+                document.getElementById('help_popup').style.display = 'block';
+            });
+            document.getElementById('help_popup_close').addEventListener('click',function(e){
+                e.preventDefault();
+                document.getElementById('help_popup').style.display = 'none';
+            });
+        </script>
+        {% endblock %}

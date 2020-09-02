@@ -1,0 +1,265 @@
+{% if order.status == 'active' %}
+    <div class="widget simpleTabs tabsRight">
+        <div class="head">
+            <h2 class="dark-icon i-services">{% trans 'Domain management' %}</h2>
+        </div>
+
+        <ul class="tabs">
+            <li><a href="#details">{% trans 'Details' %}</a></li>
+            <li><a href="#protection">Protection</a></li>
+            <li><a href="#privacy">Privacy</a></li>
+            <li><a href="#namservers">Nameservers</a></li>
+            <li><a href="#whois">Whois</a></li>
+            <li><a href="#epp">Transfer</a></li>
+        </ul>
+
+        <div class="tabs_container">
+
+            <div class="tab_content box" id="details">
+                <h2>{% trans 'Domain details' %}</h2>
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>{% trans 'Domain' %}</td>
+                            <td><a target="_blank" href="http://{{ service.domain }}">{{ service.domain }}</a></td>
+                        </tr>
+                        <tr>
+                            <td>{% trans 'Registration date' %}</td>
+                            <td>{{ service.registered_at|bb_date }}</td>
+                        </tr>
+
+                        <tr>
+                            <td>{% trans 'Expires at' %}</td>
+                            <td>{{ service.expires_at|bb_date }}</td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab_content box" id="epp">
+                <h2>{% trans 'Domain Secret' %}</h2>
+                <div class="block">
+                    <p>{% trans 'All domain names (except a .EU, .UK domain name) have a Domain (Transfer) Secret Key/Authorization Code (EPP Code) associated with them. This would be required if you want to transfer service.' %}</p>
+                    <p><button class="bb-button bb-button-submit" type="button" id="get-epp">{% trans 'Get EPP code' %}</button></p>
+                </div>
+            </div>
+
+            <div class="tab_content box" id="protection">
+                <h2>{% trans 'Domain Protection' %}</h2>
+
+                <div class="block">
+                <p>{% trans 'Domain locking is a security enhancement to prevent unauthorized transfers of your domain to another registrar or web host by "locking" your domain name servers.' %}</p>
+                <p>
+                    <button class="bb-button bb-button-submit" type="button" id="domain-unlock" {% if service.locked == 0 %}style="display:none;"{% endif %}>{% trans 'Unlock' %}</button>
+                    <button class="bb-button bb-button-submit" type="button" id="domain-lock" {% if service.locked == 1 %}style="display:none;"{% endif %}>{% trans 'Lock' %}</button>
+                </p>
+                </div>
+            </div>
+
+            <div class="tab_content box" id="privacy">
+                <h2>{% trans 'Domain Privacy Settings' %}</h2>
+                <div class="block">
+                    <p>{% trans 'If you would like to hide domain contact information which is shown on WHOIS you can enable privacy protection. Once domain privacy protection is enabled no one will know who registered this service. And once you decide to disable privacy protection, information that is listed above on "Update Domain Contact Details" section will be seen on domain WHOIS again.' %}</p>
+                    <p>
+                        <button class="bb-button bb-button-submit" type="button" id="domain-disable-pp" {% if service.privacy == 1 %}style="display:none;"{% endif %}>{% trans 'Disable Privacy protection' %}</button>
+                        <button class="bb-button bb-button-submit" type="button" id="domain-enable-pp" {% if service.privacy == 0 %}style="display:none;"{% endif %}>{% trans 'Enable Privacy protection' %}</button>
+                    </p>
+                </div>
+            </div>
+
+            <div class="tab_content box" id="namservers">
+                <h2>{% trans 'Domain Nameservers' %}</h2>
+                <div class="block">
+                <p>{% trans 'If you would like to host this domain with another company you can update nameservers.' %}</p>
+                <form action="" method="post" id="update-nameservers">
+                    <fieldset>
+                        <legend>{% trans 'Update nameservers' %}</legend>
+                        <p>
+                            <label>{% trans 'Nameserver 1' %}: </label>
+                            <input type="text" name="ns1" value="{{ request.ns1|default(service.ns1) }}" required="required">
+                        </p>
+
+                        <p>
+                            <label>{% trans 'Nameserver 2' %}: </label>
+                            <input type="text" name="ns2" value="{{ request.ns2|default(service.ns2) }}" required="required">
+                        </p>
+
+                        <p>
+                            <label>{% trans 'Nameserver 3' %}: </label>
+                            <input type="text" name="ns3" value="{{ request.ns3|default(service.ns3) }}">
+                        </p>
+
+                        <p>
+                            <label>{% trans 'Nameserver 4' %}: </label>
+                            <input type="text" name="ns4" value="{{ request.ns4|default(service.ns4) }}">
+                        </p>
+                        <input type="hidden" name="order_id" value="{{ order.id }}">
+                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Update' %}">
+                    </fieldset>
+                </form>
+
+                </div>
+            </div>
+
+            <div class="tab_content box" id="whois">
+                <h2>{% trans 'Domain Contact Details' %}</h2>
+                <div class="block">
+                    <p>{% trans 'Domain contact details will be displayed once someone will check WHOIS output (which is public) of your service. This will update Technical, Billing and Admin contacts for this service. You can enable domain privacy protection if you want to hide your public WHOIS information.' %}</p>
+                    <form method="post" action="" id="update-contact">
+                        <fieldset>
+                            <legend>{% trans 'Update domain contact details' %}</legend>
+                            <p>
+                                <label>{% trans 'First Name' %}: </label>
+                                <input type="text" name="contact[first_name]" value="{{ request.first_name|default(service.contact.first_name) }}" required="required">
+                            </p>
+
+                            <p>
+                                <label>{% trans 'Last Name' %}: </label>
+                                <input type="text" name="contact[last_name]" value="{{ request.last_name|default(service.contact.last_name) }}" required="required">
+                            </p>
+
+                            <p>
+                                <label>{% trans 'Email' %}: </label>
+                                <input type="text" name="contact[email]" value="{{ request.email|default(service.contact.email) }}" required="required">
+                            </p>
+
+                            <p>
+                                <label>{% trans 'Company' %}: </label>
+                                <input type="text" name="contact[company]" value="{{ request.company|default(service.contact.company) }}" required="required">
+                            </p>
+
+                            <p>
+                                <label>{% trans 'Address Line 1' %}: </label>
+                                <input type="text" name="contact[address1]" value="{{ request.address1|default(service.contact.address1) }}" required="required">
+                            </p>
+
+                            <p>
+                                <label>{% trans 'Address Line 2' %}: </label>
+                                <input type="text" name="contact[address2]" value="{{ request.address2|default(service.contact.address2) }}" required="required">
+                            </p>
+
+                            <p>
+                                <label>{% trans 'Country' %}: </label>
+                                <input type="text" name="contact[country]" value="{{ request.country|default(service.contact.country) }}" required="required">
+                            </p>
+
+                            <p>
+                                <label>{% trans 'City' %}: </label>
+                                <input type="text" name="contact[city]" value="{{ request.city|default(service.contact.city) }}" required="required">
+                            </p>
+
+                            <p>
+                                <label>{% trans 'State' %}: </label>
+                                <input type="text" name="contact[state]" value="{{ request.state|default(service.contact.state) }}" required="required">
+                            </p>
+
+                            <p>
+                                <label>{% trans 'Zip' %}: </label>
+                                <input type="text" name="contact[postcode]" value="{{ request.postcode|default(service.contact.postcode) }}" required="required">
+                            </p>
+
+                            <p>
+                                <label>{% trans 'Phone Country Code' %}: </label>
+                                <input type="text" name="contact[phone_cc]" value="{{ request.phone_cc|default(service.contact.phone_cc) }}" required="required">
+                            </p>
+
+                            <p>
+                                <label>{% trans 'Phone number' %}: </label>
+                                <input type="text" name="contact[phone]" value="{{ request.phone|default(service.contact.phone) }}" required="required">
+                            </p>
+
+                            <input type="hidden" name="order_id" value="{{ order.id }}">
+                            <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Update' %}">
+                        </fieldset>
+                    </form>
+                </div>
+            </div>
+        </div>
+</div>
+
+<script type="text/javascript">
+$(function() {
+
+    $('#domain-lock').bind('click',function(event){
+        bb.post(
+            'client/servicedomain/lock',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Domain locked');
+                $('#domain-lock').toggle();
+                $('#domain-unlock').toggle();
+            }
+        );
+    });
+
+    $('#domain-unlock').bind('click',function(event){
+        bb.post(
+            'client/servicedomain/unlock',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Domain unlocked');
+                $('#domain-lock').toggle();
+                $('#domain-unlock').toggle();
+            }
+        );
+    });
+
+    $('#domain-enable-pp').bind('click',function(event){
+        bb.post(
+            'client/servicedomain/enable_privacy_protection',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Privacy Protection enabled');
+                $('#domain-enable-pp').toggle();
+                $('#domain-disable-pp').toggle();
+            }
+        );
+    });
+
+    $('#domain-disable-pp').bind('click',function(event){
+        bb.post(
+            'client/servicedomain/disable_privacy_protection',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Privacy Protection disabled');
+                $('#domain-enable-pp').toggle();
+                $('#domain-disable-pp').toggle();
+            }
+        );
+    });
+
+    $('#get-epp').bind('click',function(event){
+        bb.post(
+            'client/servicedomain/get_transfer_code',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Domain transfer code is: ' + result);
+            }
+        );
+    });
+
+    $('#update-nameservers').bind('submit',function(event){
+        bb.post(
+            'client/servicedomain/update_nameservers',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Nameservers updated');
+            }
+        );
+    });
+
+    $('#update-contact').bind('submit',function(event){
+        bb.post(
+            'client/servicedomain/update_contacts',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Contact details updated');
+            }
+        );
+    });
+
+});
+</script>
+
+{% endif %}

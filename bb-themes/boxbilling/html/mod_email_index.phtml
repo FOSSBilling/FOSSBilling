@@ -1,0 +1,45 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Emails' %}{% endblock %}
+
+{% block content %}
+
+<div class="h-block">
+    <div class="h-block-header">
+        <div class="icon"><span class="big-light-icon i-email"></span></div>
+        <h2>{% trans 'Emails we have sent you'%}</h2>
+        <p>{% trans 'Here you can track emails we have sent you' %}</p>
+    </div>
+    <div class="block">
+        <table>
+            <thead>
+                <tr>
+                    <th>{% trans 'Email subject' %}</th>
+                    <th>{% trans 'To' %}</th>
+                    <th>{% trans 'Date sent' %}</th>
+                    <th>&nbsp;</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% set emails = client.email_get_list({"per_page":10, "page":request.page}) %}
+                {% for i, email in emails.list %}
+                <tr class="{{ cycle(['odd', 'even'], i) }}">
+                    <td><a href="{{ 'email'|link }}/{{email.id}}">{{email.subject}}</a></td>
+                    <td>{{ email.recipients }}</td>
+                    <td>{{email.created_at|bb_date}}</td>
+                    <td class="actions"><a class="bb-button" href="{{ 'email'|link }}/{{email.id}}"><span class="dark-icon i-drag"></span></a></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4">{% trans 'The list is empty' %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include "partial_pagination.phtml" with {'list': emails} %}
+
+{% endblock %}

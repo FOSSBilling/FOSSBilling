@@ -1,0 +1,231 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Invoices' %}{% endblock %}
+{% set active_menu = 'invoice' %}
+
+{% block top_content %}
+{% if request.show_filter %}
+<div class="widget filterWidget">
+    <div class="head"><h5 class="iMagnify">{% trans 'Filter invoices' %}</h5></div>
+    <div class="body nopadding">
+
+        <form method="get" action="" class="mainForm">
+            <input type="hidden" name="_url" value="{{ request._url }}" />
+            <fieldset>
+                <div class="rowElem noborder">
+                    <label>{% trans 'ID' %}</label>
+                    <div class="formRight">
+                        <input type="text" name="id" value="{{ request.id }}">
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Nr' %}</label>
+                    <div class="formRight">
+                        <input type="text" name="nr" value="{{ request.nr }}">
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Client' %}</label>
+
+                    <div class="formRight">
+
+                        <input type="text" class="client_selector"
+                               placeholder="{% trans 'Start typing clients name, email or ID' %}"
+                        {% if request.client_id %}
+                            {% set client = admin.client_get({"id":request.client_id}) %}
+                            value="{{ client.first_name }} {{ client.last_name }}"
+                        {% endif %}
+                            />
+                        <input type="hidden" name="client_id" value="{{ request.client_id }}" class="client_id"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Currency' %}</label>
+                    <div class="formRight">
+                        {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All currencies') }}
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Status' %}</label>
+                        <div class="formRight">
+                            <input type="radio" name="status" value="0"{% if not request.status %} checked="checked"{% endif %}/><label>{% trans 'All statuses' %}</label>
+                            <input type="radio" name="status" value="paid"{% if request.status == 'paid' %} checked="checked"{% endif %}/><label>{% trans 'Paid' %}</label>
+                            <input type="radio" name="status" value="unpaid"{% if request.status == 'unpaid' %} checked="checked"{% endif %} /><label>{% trans 'Unpaid' %}</label>
+                            <input type="radio" name="status" value="refunded"{% if request.status == 'refunded' %} checked="checked"{% endif %} /><label>{% trans 'Refunded' %}</label>
+                        </div>
+                    <div class="fix"></div>
+                </div>
+
+                {#
+                <div class="rowElem">
+                    <label>{% trans 'Approved' %}</label>
+                        <div class="formRight">
+                            <input type="radio" name="approved" value=""{% if not request.approved %} checked="checked"{% endif %}/><label>All</label>
+                            <input type="radio" name="approved" value="0"{% if request.approved == "1"%} checked="checked"{% endif %} /><label>Pending approval</label>
+                            <input type="radio" name="approved" value="1"{% if request.approved == "0" %} checked="checked"{% endif %}/><label>Approved</label>
+                        </div>
+                    <div class="fix"></div>
+                </div>
+                #}
+                <div class="rowElem">
+                    <label>{% trans 'Issue date' %}</label>
+                    <div class="formRight moreFields">
+                        <ul>
+                            <li style="width: 100px"><input type="text" name="date_from" value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
+                            <li class="sep">-</li>
+                            <li style="width: 100px"><input type="text" name="date_to" value="{% if request.date_to %}{{ request.date_to|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
+                        </ul>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <input type="hidden" name="show_filter" value="1" />
+                <input type="submit" value="{% trans 'Filter' %}" class="greyishBtn submitForm" />
+            </fieldset>
+        </form>
+        <div class="fix"></div>
+    </div>
+</div>
+{% else %}
+{% set statuses = admin.invoice_get_statuses %}
+<div class="stats">
+    <ul>
+        <li><a href="{{ 'invoice'|alink({'status' : 'unpaid'}) }}" class="count blue" title="">{{ statuses.unpaid }}</a><span>{% trans 'Unpaid invoices' %}</span></li>
+        <li><a href="{{ 'invoice'|alink({'status' : 'refunded'}) }}" class="count red" title="">{{ statuses.refunded }}</a><span>{% trans 'Refunded invoices' %}</span></li>
+        <li><a href="{{ 'invoice'|alink({'status' : 'paid'}) }}" class="count green" title="">{{ statuses.paid }}</a><span>{% trans 'Paid invoices' %}</span></li>
+        <li class="last"><a href="{{ 'invoice'|alink }}" class="count grey" title="">{{ statuses.paid + statuses.unpaid + statuses.refunded}}</a><span>{% trans 'Total' %}</span></li>
+    </ul>
+    <div class="fix"></div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block content %}
+
+
+<div class="widget simpleTabs">
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Invoices' %}</a></li>
+        <li><a href="#tab-new">{% trans 'New Invoice' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+
+            {{ mf.table_search }}
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
+                        <td colspan="3">{% trans 'Invoice' %}</td>
+                        <td>{% trans 'Amount' %}</td>
+                        <td>{% trans 'Issued at' %}</td>
+                        <td>{% trans 'Paid at' %}</td>
+                        <td>{% trans 'Status' %}</td>
+                        <td width="13%">&nbsp;</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set invoices = admin.invoice_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+                    {% for invoice in invoices.list %}
+                    <tr>
+                        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ invoice.id }}"/></td>
+                        <td style="width:5%;"><img src="{{ invoice.buyer.email|gravatar }}?size=20" alt="{{ invoice.buyer.email }}" title="{{invoice.buyer.first_name}} {{invoice.buyer.last_name}}"/></td>
+                        <td><a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">{{invoice.client.first_name|truncate(1, null, '.')}} {{invoice.client.last_name|truncate(20)}}</a></td>
+                        <td style="width:15%;" title="{{invoice.id}}">{{ invoice.serie_nr }}</td>
+                        <td>{{ mf.currency_format( invoice.total, invoice.currency) }}</td>
+                        <td>{{ invoice.created_at|date('Y-m-d') }}</td>
+                        <td>{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
+                        <td>{{ mf.status_name(invoice.status) }}</td>
+                        <td class="actions">
+                            <a class="bb-button btn14" href="{{ '/invoice/manage'|alink }}/{{invoice.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                            <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/invoice/delete'|link({'id' : invoice.id}) }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/trash.png" alt=""></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% include "partial_batch_delete.phtml" with {'action' : 'admin/invoice/batch_delete'} %}
+            {% include "partial_pagination.phtml" with {'list': invoices, 'url':'invoice'} %}
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new">
+            <form method="post" action="{{ 'api/admin/invoice/prepare'|link }}" class="mainForm api-form" data-api-jsonp="onAfterInvoicePrepared">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Client' %}</label>
+                        <div class="formRight">
+                            <input type="text" class="client_selector" placeholder="{% trans 'Start typing clients name, email or ID' %}"/>
+                            <input type="hidden" name="client_id" value="{{ request.client_id }}" class="client_id"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                     <input type="submit" value="{% trans 'Prepare' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block head %}
+<link href="css/jquery-ui.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="js/jquery-ui.js"></script>
+{% endblock %}
+
+{% block js%}
+<script type="text/javascript">
+$(function() {
+
+	$('.client_selector').autocomplete({
+        source: function( request, response ) {
+            $.ajax({
+                url: bb.restUrl('admin/client/get_pairs'),
+                dataType: "json",
+                data: {
+                    per_page: 10,
+                    search: request.term
+                },
+                success: function( data ) {
+                    response( $.map( data.result, function( name, id) {
+                        return {
+                            label: name,
+                            value: id
+                        }
+                    }));
+                }
+            });
+        },
+        minLength: 1,
+        select: function( event, ui ) {
+            $(".client_selector").val(ui.item.label);
+            $(".client_id").val(ui.item.value);
+            return false;
+        }
+    });
+
+});
+
+    function onAfterInvoicePrepared(id) {
+        bb.redirect("{{'invoice/manage/'|alink}}/"+id);
+    }
+</script>
+{% endblock %}

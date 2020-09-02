@@ -1,0 +1,141 @@
+{% extends "layout_default.phtml" %}
+{% block meta_title %}{{ msg.subject}}{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block content %}
+<div class="widget">
+    
+    <div class="head">
+        <h5>{% trans 'Send Email Message' %} - {{ msg.subject}}</h5>
+    </div>
+    
+    <form method="post" action="admin/massmailer/update" class="mainForm save api-form" data-api-jsonp="onAfterMessageUpdate" id="msg-form">
+        <fieldset>
+            
+            <div class="rowElem noborder">
+                <label>{% trans 'From' %}</label>
+                <div class="formRight moreFields">
+                    <ul>
+                        <li style="width: 250px"><input type="text" name="from_name" value="{{msg.from_name}}" required="required" title="{% trans 'From name' %}"/></li>
+                        <li class="sep"></li>
+                        <li style="width: 245px"><input type="text" name="from_email" value="{{msg.from_email}}" required="required"  title="{% trans 'From email' %}"/></li>
+                    </ul>
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            <div class="rowElem">
+                <label>{% trans 'Subject' %}</label>
+                <div class="formRight">
+                    <input type="text" name="subject" value="{{ msg.subject }}" required="required"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            </fieldset>
+        
+            <fieldset>
+                <legend>{% trans 'Recipients filter. Select none to send message to all clients' %}</legend>
+            <div class="rowElem">
+                <label>{% trans 'Client status and group' %}</label>
+                <div class="formRight">
+                    <input type="hidden" name="filter" />
+                    <select name="filter[client_status][]" multiple="multiple" size="3">
+                        <option value="active" {% if 'active' in msg.filter.client_status %} selected="selected"{% endif %}>{% trans 'Active' %}</option>
+                        <option value="suspended" {% if 'suspended' in msg.filter.client_status %} selected="selected"{% endif %}>{% trans 'Suspended' %}</option>
+                        <option value="canceled" {% if 'canceled' in msg.filter.client_status %} selected="selected"{% endif %}>{% trans 'Canceled' %}</option>
+                    </select>
+                    
+                    <select name="filter[client_groups][]" multiple="multiple" size="5">
+                        {% for id,label in admin.client_group_get_pairs %}
+                        <option value="{{id}}" {% if id in msg.filter.client_groups %} selected="selected"{% endif %}>{{label}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Has order' %}</label>
+                <div class="formRight">
+                            <select name="filter[has_order_with_status][]" multiple="multiple" size="5">
+                                {% for id,label in admin.order_get_status_pairs %}
+                                <option value="{{id}}" {% if id in msg.filter.has_order_with_status %} selected="selected"{% endif %}>{{label}}</option>
+                                {% endfor %}
+                            </select>
+                            <select name="filter[has_order][]" multiple="multiple" size="5">
+                                {% for id,label in admin.product_get_pairs %}
+                                <option value="{{id}}" {% if id in msg.filter.has_order %} selected="selected"{% endif %}>{{label}}</option>
+                                {% endfor %}
+                            </select>
+                </div>
+                <div class="fix"></div>
+            </div>
+                </fieldset>
+        
+            <fieldset>
+                <legend>{% trans 'Message content' %}</legend>
+            <div class="rowElem">
+                <div class="formBottom">
+                    <textarea name="content" cols="5" rows="20" placeholder="Email content">{{ msg.content }}</textarea>
+                </div>
+                </div>
+                
+            <div class="body">
+                <div class="pt20" id="preview" style="display: none;">
+                    <div class="body esubject mb20" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
+                    <div class="body econtent" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
+                </div>
+            </div>
+            
+            <input type="submit" value="{% trans 'Update and preview' %}" class="greyishBtn submitForm" />
+            <input type="button" value="{% trans 'Send test message' %}" class="blueBtn submitForm" id="send-test-msg" style="float: left;"/>
+            <input type="button" value="{% trans 'Send message to clients' %}" class="greenBtn submitForm" id="send-msg" style="float: left;"/>
+            <input type="hidden" name="id" value="{{ msg.id }}"/>
+        </fieldset>
+    </form>
+    
+            <div class="body">
+                <a href="{{ 'massmailer'|alink }}"  title="" class="btnIconLeft mr10"><img src="images/icons/dark/arrowLeft.png" alt="" class="icon"><span>{% trans 'Back to list' %}</span></a>
+            </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+{% autoescape "js" %}
+<script type="text/javascript">
+function onAfterMessageUpdate()
+{
+        bb.post('admin/massmailer/preview', {id:'{{msg.id}}'}, function(result){
+            $('#preview').show();
+            $('#preview .econtent').html(result.content);
+            $('#preview .esubject').html(result.subject);
+        });
+}
+$(function() {
+    $('#send-msg').click(function(){
+        jConfirm('Send message to clients?', 'Confirm', function(confirm) {
+            if(confirm) {
+                bb.post('admin/massmailer/send', {id:{{ msg.id }}}, function(result){
+                    bb.msg('Message was added to mail queue and will be sent with scheduled tasks.');
+                });
+            }
+        });
+        return false;
+    });
+    
+    $('#send-test-msg').click(function(){
+        jConfirm('Send test message?', 'Confirm', function(confirm) {
+            if(confirm) {
+                bb.post('admin/massmailer/send_test', {id:{{ msg.id }}}, function(result){
+                    bb.msg('Message was sent');
+                });
+            }
+        });
+        return false;
+    });
+});
+</script>
+{% endautoescape %}
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{ tld.tld }}{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'servicedomain'|alink }}">{% trans 'Domain management' %}</a></li>
+    <li class="lastB">{{ tld.tld }}</li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="widget">
+
+    <div class="head">
+        <h5>{{ tld.tld }} {% trans 'Top level domain management' %}</h5>
+    </div>
+
+    <form method="post" action="{{ 'api/admin/servicedomain/tld_update'|link }}" class="mainForm save api-form" data-api-msg="Top level domain settings updated">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{% trans 'Registrar' %}:</label>
+                <div class="formRight">
+                    <select name="tld_registrar_id">
+                        {% for id, title in admin.servicedomain_registrar_get_pairs %}
+                        <option value="{{id}}" {% if id == tld.registrar.id %}selected="selected"{% endif %}>{{ title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Registration price' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="price_registration" value="{{ tld.price_registration }}" required="required">
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Renewal price' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="price_renew" value="{{ tld.price_renew }}" required="required">
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Transfer price' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="price_transfer" value="{{ tld.price_transfer }}" required="required">
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Minimum years of registration' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="min_years" value="{{ tld.min_years }}" required="required">
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Allow registration' %}:</label>
+                <div class="formRight">
+                    <input type="radio" name="allow_register" value="1"{% if tld.allow_register %} checked="checked"{% endif %}/><label>Yes</label>
+                    <input type="radio" name="allow_register" value="0"{% if not tld.allow_register %} checked="checked"{% endif %} /><label>No</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Allow transfer' %}:</label>
+                <div class="formRight">
+                    <input type="radio" name="allow_transfer" value="1"{% if tld.allow_transfer %} checked="checked"{% endif %}/><label>Yes</label>
+                    <input type="radio" name="allow_transfer" value="0"{% if not tld.allow_transfer %} checked="checked"{% endif %} /><label>No</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Active' %}:</label>
+                <div class="formRight">
+                    <input type="radio" name="active" value="1"{% if tld.active %} checked="checked"{% endif %}/><label>Yes</label>
+                    <input type="radio" name="active" value="0"{% if not tld.active %} checked="checked"{% endif %} /><label>No</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+
+            <input type="hidden" name="tld" value="{{ tld.tld }}" />
+            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+        </fieldset>
+    </form>
+</div>
+
+{% endblock %}

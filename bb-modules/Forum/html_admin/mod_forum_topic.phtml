@@ -1,0 +1,238 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% set active_menu = 'support' %}
+{% block meta_title %}Forum topic{% endblock %}
+
+{% block content %}
+
+<div class="widget simpleTabs tabsRight">
+    <div class="head">
+        <h5>{{topic.title}}</h5>
+    </div>
+
+    <ul class="tabs">
+        <li><a href="#tab-info">{% trans 'Details' %}</a></li>
+        <li><a href="#tab-manage">{% trans 'Manage' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-info">
+            <div class="block">
+                <table class="tableStatic wide">
+                    <tbody>
+                    <tr class="noborder">
+                        <td style="width: 15%"><label>{% trans 'Forum' %}</label></td>
+                        <td><a href="{{ 'forum'|alink({'forum_id' : topic.forum.id }) }}">{{ topic.forum.title }}</a></td>
+                    </tr>
+
+                    <tr>
+                        <td><label>{% trans 'Title' %}</label></td>
+                        <td>{{ topic.title }}</td>
+                    </tr>
+
+                    <tr>
+                        <td><label>{% trans 'Started by' %}</label></td>
+                        <td>{{ topic.first.author.name }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Views' %}</td>
+                        <td>{{ topic.stats.views_count }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Messages' %}</td>
+                        <td>{{ topic.stats.posts_count }}</td>
+                    </tr>
+                    <tr>
+                        <td><label>{% trans 'Status' %}</label></td>
+                        <td>{{ mf.status_name(topic.status) }}</td>
+                    </tr>
+
+                    <tr>
+                        <td><label>{% trans 'Sticky' %}</label></td>
+                        <td>{{ mf.q(topic.sticky) }}</td>
+                    </tr>
+
+                    <tr>
+                        <td><label>{% trans 'Created at' %}</label></td>
+                        <td>{{ topic.created_at|date('Y-m-d') }}</td>
+                    </tr>
+
+                    <tr>
+                        <td><label>{% trans 'Updated at' %}</label></td>
+                        <td>{{ topic.due_at|date('Y-m-d') }}</td>
+                    </tr>
+
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2">
+                                <div class="aligncenter">
+                                    <a href="{{ 'forum'|link }}/{{ topic.forum.slug }}/{{ topic.slug }}" title="" class="btn55 mr10" target="_blank"><img src="images/icons/middlenav/preview.png" alt=""><span>View as client</span></a>
+                                    <a href="{{'api/admin/forum/topic_delete'|link({'id' : topic.id}) }}" class="btn55 mr10 api-link" data-api-confirm="Are you sure?" data-api-redirect="{{ 'forum'|alink }}"><img src="images/icons/middlenav/trash.png" alt=""><span>Delete</span></a>
+                                </div>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+        </div>
+
+        <div class="tab_content nopadding" id="tab-manage">
+
+            <form method="post" action="{{ 'api/admin/forum/topic_update'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'forum'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Forum' %}:</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('forum_id', admin.forum_get_pairs, topic.forum.id, 1) }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Title' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="title" value="{{topic.title}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Slug' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="slug" value="{{topic.slug}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Views' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="views" value="{{topic.stats.views_count}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Status' %}:</label>
+                        <div class="formRight">
+                            <input type="radio" name="status" value="active"{% if topic.status == 'active' %} checked="checked"{% endif %}/><label>Active</label>
+                            <input type="radio" name="status" value="locked"{% if topic.status == 'locked' %} checked="checked"{% endif %}/><label>Locked</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Sticky' %}:</label>
+                        <div class="formRight">
+                            <input type="radio" name="sticky" value="1"{% if topic.sticky %} checked="checked"{% endif %}/><label>Yes</label>
+                            <input type="radio" name="sticky" value="0"{% if not topic.sticky %} checked="checked"{% endif %}/><label>No</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="hidden" name="id" value="{{ topic.id }}" />
+                </fieldset>
+            </form>
+
+        </div>
+
+    </div>
+</div>
+
+<div class="conversation">
+{% set messages = guest.forum_get_topic_message_list({"forum_topic_id":topic.id, "page":request.page, "per_page":30}) %}
+{% for i, message in messages.list %}
+<div class="widget simpleTabs tabsRight" id="msg-{{ message.id }}">
+    <div class="head">
+        <h5 class="iSpeech">{{ message.author.name }}</h5>
+    </div>
+    <ul class="tabs">
+        <li><a href="#m-{{message.id}}"><img src="{{ message.author.email|gravatar }}?size=20" alt="{{ message.author.name }}" class="gravatar"/>#{{ i+1 }}</a></li>
+        <li><a href="#reply-{{message.id}}"><span class="iSpeech"></span>{% trans 'Reply' %}</a></li>
+        <li><a href="#quote-{{message.id}}"><span class="iBubbles"></span>{% trans 'Quote' %}</a></li>
+        <li><a href="#details-{{message.id}}"><span class="iPencil"></span>{% trans 'Details' %}</a></li>
+    </ul>
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="m-{{message.id}}">
+            <form method="post" action="{{ 'api/admin/forum/message_update'|link }}" class="mainForm api-form" data-api-msg="Message updated">
+                <fieldset>
+                    <textarea name="message" cols="5" rows="10" required="required" class="bb-textarea">{{ message.message }}</textarea>
+                    <input type="hidden" name="id" value="{{ message.id }}">
+                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+
+            <div class="clear"></div>
+            <div class="clear"></div>
+        </div>
+        <div class="tab_content nopadding" id="reply-{{message.id}}">
+            <form method="post" action="{{ 'api/admin/forum/message_create'|link }}" class="mainForm api-form" data-api-reload="1">
+                <fieldset>
+                    <textarea name="message" cols="5" rows="20" required="required" id="msg-area-{{message.id}}" class="bb-textarea">
+
+
+{{ profile.signature }}</textarea>
+                    <input type="hidden" name="forum_topic_id" value="{{ topic.id }}">
+                    <input type="submit" value="{% trans 'Post' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="tab_content nopadding" id="quote-{{message.id}}">
+            <form method="post" action="{{ 'api/admin/forum/message_create'|link }}" class="mainForm api-form" data-api-reload="1">
+                <fieldset>
+                    <textarea name="message" cols="5" rows="20" required="required" id="quote-area-{{message.id}}" class="bb-textarea">
+
+{{ profile.signature }}
+{{ mf.markdown_quote(message.message) }}</textarea>
+                    <input type="hidden" name="forum_topic_id" value="{{ topic.id }}">
+                    <input type="submit" value="{% trans 'Post' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="tab_content nopadding" id="details-{{message.id}}">
+            <table class="tableStatic wide">
+                <tbody>
+                <tr class="noborder">
+                    <td><label>{% trans 'ID' %}</label></td>
+                    <td>{{ message.id }}</td>
+                </tr>
+
+                <tr>
+                    <td><label>{% trans 'IP' %}</label></td>
+                    <td>{{ message.ip|default('-') }} {{ message.ip|ipcountryname|default('Unknown') }}</td>
+                </tr>
+
+                <tr>
+                    <td><label>{% trans 'Created at' %}</label></td>
+                    <td>{{ message.created_at|date("l, d F Y") }}</td>
+                </tr>
+
+                <tr>
+                    <td><label>{% trans 'Updated at' %}</label></td>
+                    <td>{{ message.updated_at|date("l, d F Y") }}</td>
+                </tr>
+
+                </tbody>
+
+                <tfoot>
+                    <tr>
+                        <td colspan="2">
+                            <div class="aligncenter">
+                                <a href="{{ 'api/admin/forum/message_delete'|link({ 'id' : message.id}) }}" data-api-confirm="Are you sure?"  title="" class="btn55 mr10 api-link" data-api-reload="1"><img src="images/icons/middlenav/trash.png" alt=""><span>Delete</span></a>
+                            </div>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+
+{% include "partial_pagination.phtml" with {'list': messages, 'url':'forum/topic/'~topic.id} %}
+
+{% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

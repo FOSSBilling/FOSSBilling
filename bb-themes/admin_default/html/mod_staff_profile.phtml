@@ -1,0 +1,120 @@
+{% extends "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Profile' %}{% endblock %}
+
+{# block top_content %}
+<div class="title"><h5>Manage your profile </h5></div>
+{% endblock #}
+
+{% block content %}
+
+<div class="widget simpleTabs">
+    <ul class="tabs">
+        <li><a href="#tab-profile">{% trans 'Profile' %}</a></li>
+        <li><a href="#tab-password">{% trans 'Change password' %}</a></li>
+        <li><a href="#tab-api">{% trans 'API' %}</a></li>
+        <li><a href="#tab-gravatar">{% trans 'Gravatar' %}</a></li>
+    </ul>
+
+    <div class="tab_container">
+        
+        <div id="tab-profile" class="tab_content nopadding">
+            <form method="post" action="{{ 'api/admin/profile/update'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Profile updated' %}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Name' %}</label>
+                        <div class="formRight">
+                            <input type="text" name="name" value="{{profile.name}}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Email' %}</label>
+                        <div class="formRight">
+                            
+                            <input type="text" name="email" value="{{profile.email}}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Signature' %}</label>
+                        <div class="formRight">
+                            <textarea name="signature" cols="5" rows="3">{{profile.signature}}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <input type="submit" value="{% trans 'Update profile' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+        
+        <div id="tab-password" class="tab_content nopadding">
+            <form method="post" action="{{ 'api/admin/profile/change_password'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Password changed' %}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Password' %}</label>
+                        <div class="formRight">
+                            <input type="password" name="password" value="" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Password confirm' %}</label>
+                        <div class="formRight">
+                            <input type="password" name="password_confirm" value="" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <input type="submit" value="{% trans 'Change password' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+        <div id="tab-api" class="tab_content nopadding">
+            
+            <div class="help">
+                <h3>{% trans 'API Key' %}</h3>
+                <p>{% trans 'API key allows integration with external applications. You will need this key for authentication.' %}</p>
+                <p>{% trans 'External application can control every aspect of BoxBilling using this API key.' %}</p>
+                <p>{% trans 'Warning! Resetting the key will break existing applications using it.' %}</p>
+            </div>
+  
+            <form method="post" action="{{ 'api/admin/profile/generate_api_key'|link }}" class="mainForm api-form" data-api-jsonp="onAfterKeyUpdate">
+            <fieldset>
+                <div class="rowElem noborder">
+                    <label>{% trans 'API Key' %}</label>
+                    <div class="formRight">
+                        <input type="text" value="{{ admin.profile_get.api_token }}" id="apikey"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <input type="submit" value="{% trans 'Generate new key' %}" class="greyishBtn submitForm" />
+            </fieldset>
+            </form>
+        </div>
+
+        <div id="tab-gravatar" class="tab_content">
+            <h1>{% trans 'Gravatar' %}</h1>
+            <p><img src="{{ profile.email|gravatar }}" /> {% trans 'Change your avatar at' %} <a target="_blank" href="http://www.gravatar.com">gravatar.com</a></p>
+        </div>
+    </div>
+    <div class="fix"></div>	 
+</div>
+{% endblock %}
+
+
+{% block js%}
+<script type="text/javascript">
+    function onAfterKeyUpdate(result)
+    {
+        bb.post('admin/profile/get', {}, function(result){
+            $('#apikey').val(result.api_token);
+            bb.msg('New API key generated. Applications using old key are now not working.');
+        })
+        
+    }
+</script>
+{% endblock %}

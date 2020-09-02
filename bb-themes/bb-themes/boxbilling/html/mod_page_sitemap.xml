@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+ <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{# products #}
+{% for i, product in guest.product_get_list({"per_page": 50}).list %}
+    <url>
+       <loc>{{ 'order'|link }}/{{product.slug}}</loc>
+       <lastmod>{{product.updated_at|date('Y-m-d')}}</lastmod>
+       <priority>0.9</priority>
+       <changefreq>weekly</changefreq>
+    </url>
+{% endfor %}
+
+{# news items #}
+{% if guest.extension_is_on({"mod":'news'}) %}
+{% for i, article in guest.news_get_list({"per_page": 50}).list %}
+    <url>
+       <loc>{{ 'news'|link }}/{{article.slug}}</loc>
+       <lastmod>{{article.updated_at|date('Y-m-d')}}</lastmod>
+       <priority>0.9</priority>
+       <changefreq>weekly</changefreq>
+    </url>
+{% endfor %}
+{% endif %}
+
+{# knowledge base items #}
+{% if guest.extension_is_on({"mod":'kb'}) %}
+{% for i, article in guest.kb_article_get_list({"per_page":50}).list %}
+    <url>
+       <loc>{{ 'kb'|link }}/{{article.category.slug}}/{{article.slug}}</loc>
+       <lastmod>{{article.updated_at|date('Y-m-d')}}</lastmod>
+       <priority>0.9</priority>
+       <changefreq>weekly</changefreq>
+    </url>
+{% endfor %}
+{% endif %}
+
+{# forum topics #}
+{% if guest.extension_is_on({"mod":'forum'}) %}
+{% for topic in guest.forum_get_topic_list({"per_page":100}).list %}
+    <url>
+        <loc>{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}</loc>
+        <lastmod>{{topic.created_at|date('Y-m-d')}}</lastmod>
+        <priority>0.9</priority>
+        <changefreq>daily</changefreq>
+    </url>
+{% endfor %}
+{% endif %}
+ </urlset>

@@ -1,0 +1,111 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Contact us' %}{% endblock %}
+{% block breadcrumb %}{% trans 'Contact us' %}{% endblock %}
+
+{% block content %}
+{% set company = guest.system_company %}
+<div class="content-block" role="main">
+    <div class="row">
+        <article class=" span12 data-block">
+            <div class="data-container">
+                <header>
+                    <h2>{% trans 'Contact us' %}</h2>
+                    <p>{{ company.signature }}</p>
+                </header>
+                <section>
+                    <form method="post" action="" id="public-ticket-create" class="form form-horizontal span6">
+                        <fieldset>
+                            <div class="control-group">
+                                <label for="name">{% trans 'Name' %}: </label>
+                                <div class="controls">
+                                    <input type="text" name="name" value="{{request.name}}" required="required" id="name">
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="email">{% trans 'Email' %}: </label>
+                                <div class="controls">
+                                    <input type="email" name="email" value="{{request.email}}" required="required" id="email">
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="subject">{% trans 'Subject' %}: </label>
+                                <div class="controls">
+                                    <input type="text" name="subject" value="{{request.subject}}" required="required" id="subject">
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="message">{% trans 'Message' %}: </label>
+                                <div class="controls">
+                                    <textarea name="message" cols="5" rows="5" required="required" id="message">{{request.message}}</textarea>
+                                </div>
+                            </div>
+
+
+                            {{ mf.recaptcha }}
+                            <div class="control-group">
+                                <div class="controls">
+                                    <button class="btn btn-primary btn-large pull-right" type="submit" value="{% trans 'Send' %}" data-loading-text="Loading...">{% trans 'Send' %}</button>
+                                </div>
+                            </div>
+
+
+                        </fieldset>
+
+                        <input type="hidden" name="anti-spam" value="1" id="anti-spam" required="required"/>
+                    </form>
+
+                    <strong>
+                        <dl class="span3 offset1">
+                            <dd>
+                                {{ company.name }}
+                            </dd>
+                            <dd>
+                                {{ company.address_1 }}
+                            </dd>
+                            <dd>
+                                {{ company.address_2 }}
+                            </dd>
+                            <dd>
+                                {{ company.address_3 }}
+                            </dd>
+                            <dd>
+                                {{ company.tel }}
+                            </dd>
+                            <dd>
+                                {{ company.www }}
+                            </dd>
+                            <dd>
+                                {{ company.email }}
+                            </dd>
+                        </dl>
+                    </strong>
+                </section>
+
+            </div>
+        </article>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+    $('#anti-spam').remove();
+    $('#public-ticket-create').bind('submit',function(event){
+        $('.wait').show();
+        bb.post(
+            'guest/support/ticket_create',
+            $(this).serialize(),
+            function(result) {
+                bb.redirect('{{ 'support/contact-us/conversation'|link }}' + '/' + result);
+            }
+        );
+        return false;
+    });
+});
+</script>
+{% endblock %}

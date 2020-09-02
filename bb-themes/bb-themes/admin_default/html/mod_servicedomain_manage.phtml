@@ -1,0 +1,342 @@
+<div class="help">
+    <h2>{% trans 'Domain details' %}</h2>
+</div>
+
+<table class="tableStatic wide">
+    <tbody>
+        <tr class="noborder">
+            <td style="width: 30%;">{% trans 'Domain' %}</td>
+            <td><a target="_blank" href="http://{{ service.domain }}">{{ service.domain }}</a> </td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Registrar' %}</td>
+            <td>{{ service.registrar }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Nameserver 1' %}</td>
+            <td>{{ service.ns1 }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Nameserver 2' %}</td>
+            <td>{{ service.ns2 }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Nameserver 3' %}</td>
+            <td>{{ service.ns3 }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Nameserver 4' %}</td>
+            <td>{{ service.ns4 }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Transfer code' %}</td>
+            <td>{{ service.transfer_code }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Privacy protected' %}</td>
+            <td id="privacy-value">{{ service.privacy }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Locked' %}</td>
+            <td id="locked-value">{{ service.locked }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Registration/Renewal years' %}</td>
+            <td>{{ service.period }}</td>
+        </tr>
+        
+        <tr>
+            <td>{% trans 'Registration date' %}</td>
+            <td>{{ service.registered_at|date('l, d F Y') }}</td>
+        </tr>
+
+        <tr>
+            <td>{% trans 'Expires at' %}</td>
+            <td>{{ service.expires_at|date('l, d F Y') }}</td>
+        </tr>
+
+    </tbody>
+    
+    
+    <tfoot>
+        <tr>
+            <td colspan="2">
+                <div class="aligncenter">
+                    {{ order_actions }}
+                    {% if order.status == 'active' %}
+                    <a class="btn55 mr10" type="button" id="get-epp"><img src="images/icons/middlenav/key.png" alt=""><span>Get EPP</span></a>
+                    <a class="btn55 mr10" type="button" id="domain-unlock" {% if service.locked == 0 %}style="display:none;"{% endif %}><img src="images/icons/middlenav/locked2.png" alt=""><span>{% trans 'Unlock' %}</span></a>
+                    <a class="btn55 mr10" type="button" id="domain-lock" {% if service.locked == 1 %}style="display:none;"{% endif %}><img src="images/icons/middlenav/unlocked.png" alt=""><span>{% trans 'Lock' %}</span></a>
+                    <a class="btn55 mr10" type="button" id="domain-disable-pp"><img src="images/icons/middlenav/umbrella.png" alt=""><span>{% trans 'Disable privacy protection' %}</span></a>
+                    <a class="btn55 mr10" type="button" id="domain-enable-pp"><img src="images/icons/middlenav/umbrella.png" alt=""><span>{% trans 'Enable privacy protection' %}</span></a>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+    </tfoot>
+    
+</table>
+
+{% if order.status == 'active' %}
+<div class="help">
+    <h2>{% trans 'Nameservers' %}</h2>
+</div>
+
+<form method="post" action="{{ 'api/admin/servicedomain/update_nameservers'|link }}" class="mainForm api-form" data-api-msg="Nameservers updated">
+    <fieldset>
+        <div class="rowElem">
+            <label>{% trans 'Nameserver 1' %}: </label>
+            <div class="formRight">
+                <input type="text" name="ns1" value="{{ request.ns1|default(service.ns1) }}" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Nameserver 2' %}: </label>
+            <div class="formRight">
+                <input type="text" name="ns2" value="{{ request.ns2|default(service.ns2) }}" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Nameserver 3' %}: </label>
+            <div class="formRight">
+                <input type="text" name="ns3" value="{{ request.ns3|default(service.ns3) }}">
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Nameserver 4' %}: </label>
+            <div class="formRight">
+                <input type="text" name="ns4" value="{{ request.ns4|default(service.ns4) }}">
+            </div>
+            <div class="fix"></div>
+        </div>
+            
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <input class="greyishBtn submitForm" type="submit" value="{% trans 'Update' %}">
+    </fieldset>
+</form>
+
+<div class="help">
+    <h2>{% trans 'Domain data' %}</h2>
+</div>
+<form method="post" action="{{ 'api/admin/servicedomain/update'|link }}" class="mainForm api-form" data-api-msg="Domain data updated">
+    <fieldset>
+        <div class="rowElem">
+            <label>{% trans 'Transfer code (EPP)' %}: </label>
+            <div class="formRight">
+                <input type="text" name="transfer_code" value="{{ request.transfer_code|default(service.transfer_code) }}" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Period' %}: </label>
+            <div class="formRight">
+                <input type="text" name="period" value="{{ request.period|default(service.period) }}">
+            </div>
+            <div class="fix"></div>
+        </div>
+
+
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <input class="greyishBtn submitForm" type="submit" value="{% trans 'Update' %}">
+    </fieldset>
+</form>
+
+<div class="help">
+    <h2>{% trans 'Update domain contact details' %}</h2>
+</div>
+<form method="post" action="{{ 'api/admin/servicedomain/update_contacts'|link }}" class="mainForm api-form" data-api-msg="Domain contact details updated">
+    <fieldset>
+        <div class="rowElem">
+            <label>{% trans 'First Name' %}: </label>
+            <div class="formRight">
+                <input type="text" name="contact[first_name]" value="{{ request.first_name|default(service.contact.first_name) }}" required="required">
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Last Name' %}: </label>
+            <div class="formRight">
+            <input type="text" name="contact[last_name]" value="{{ request.last_name|default(service.contact.last_name) }}" required="required" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Email' %}: </label>
+            <div class="formRight">
+            <input type="text" name="contact[email]" value="{{ request.email|default(service.contact.email) }}" required="required" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Company' %}: </label>
+            <div class="formRight">
+            <input type="text" name="contact[company]" value="{{ request.company|default(service.contact.company) }}" required="required" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Address Line 1' %}: </label>
+            <div class="formRight">
+            <input type="text" name="contact[address1]" value="{{ request.address1|default(service.contact.address1) }}" required="required" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Address Line 2' %}: </label>
+            <div class="formRight">
+            <input type="text" name="contact[address2]" value="{{ request.address2|default(service.contact.address2) }}" required="required" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Country' %}: </label>
+            <div class="formRight">
+                <input type="text" name="contact[country]" value="{{ request.country|default(service.contact.country) }}" required="required" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'City' %}: </label>
+            <div class="formRight">
+            <input type="text" name="contact[city]" value="{{ request.city|default(service.contact.city) }}" required="required" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'State' %}: </label>
+            <div class="formRight">
+            <input type="text" name="contact[state]" value="{{ request.state|default(service.contact.state) }}" required="required" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Zip' %}: </label>
+            <div class="formRight">
+            <input type="text" name="contact[postcode]" value="{{ request.postcode|default(service.contact.postcode) }}" required="required" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Phone Country Code' %}: </label>
+            <div class="formRight">
+            <input type="text" name="contact[phone_cc]" value="{{ request.phone_cc|default(service.contact.phone_cc) }}" required="required" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Phone number' %}: </label>
+            <div class="formRight">
+            <input type="text" name="contact[phone]" value="{{ request.phone|default(service.contact.phone) }}" required="required" >
+            </div>
+            <div class="fix"></div>
+        </div>
+
+
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <input class="greyishBtn submitForm" type="submit" value="{% trans 'Update' %}">
+    </fieldset>
+</form>
+
+{% endif %}
+
+<script type="text/javascript">
+$(function() {
+
+   {% if service.privacy == 0 %}
+       $('#domain-disable-pp').hide();
+   {% endif %}
+
+   {% if service.privacy == 1 %}
+       $('#domain-enable-pp').hide();
+   {% endif %}
+    
+    $('#domain-lock').bind('click',function(event){
+        bb.post(
+            'admin/servicedomain/lock',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Domain locked');
+                $('#domain-lock').toggle();
+                $('#domain-unlock').toggle();
+                $('#locked-value').text('1');
+            }
+        );
+    });
+
+    $('#domain-unlock').bind('click',function(event){
+        bb.post(
+            'admin/servicedomain/unlock',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Domain unlocked');
+                $('#domain-lock').toggle();
+                $('#domain-unlock').toggle();
+                $('#locked-value').text('0');
+            }
+        );
+    });
+
+    $('#domain-enable-pp').bind('click',function(event){
+        bb.post(
+            'admin/servicedomain/enable_privacy_protection',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Privacy Protection enabled');
+                $('#domain-enable-pp').toggle();
+                $('#domain-disable-pp').toggle();
+                $('#privacy-value').text('1');
+            }
+        );
+    });
+
+    $('#domain-disable-pp').bind('click',function(event){
+        bb.post(
+            'admin/servicedomain/disable_privacy_protection',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Privacy Protection disabled');
+                $('#domain-enable-pp').toggle();
+                $('#domain-disable-pp').toggle();
+                $('#privacy-value').text('0');
+            }
+        );
+    });
+
+    $('#get-epp').bind('click',function(event){
+        bb.post(
+            'admin/servicedomain/get_transfer_code',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Domain transfer code is: ' + result);
+            }
+        );
+    });
+});
+</script>

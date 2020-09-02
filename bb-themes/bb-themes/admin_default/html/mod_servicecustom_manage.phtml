@@ -1,0 +1,28 @@
+<div class="help">
+    <h2>{{ order.title }} {% trans 'management' %}</h2>
+</div>
+
+{#
+    "plugin" variable contains partial name, ie: plugin_PLUGINNAME_manage.html
+    "service" variable contains product configuration + order form values as key value pairs
+#}
+
+{# include plugin #}
+
+<form method="post" action="{{ 'api/admin/servicecustom/update'|link }}" class="mainForm save api-form" data-api-msg="Service updated">
+    <fieldset>
+
+        {% for name, value in service %}
+        <div class="rowElem">
+            <label class="topLabel">{{ name }}:</label>
+                <div class="formBottom">
+                    <textarea rows="2" cols="" name="config[{{ name }}]">{{ value }}</textarea>
+                </div>
+            <div class="fix"></div>
+        </div>
+        {% endfor %}
+
+        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+        <input type="hidden" name="order_id" value="{{ order.id }}"/>
+    </fieldset>
+</form>

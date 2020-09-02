@@ -1,0 +1,75 @@
+<ul class="main-navigation nav-collapse collapse">
+
+    {% if settings.side_menu_dashboard %}
+    <li class="main-menu">
+        <a class="no-submenu" href="{{ '/'|link }}"><span class="awe-home"></span>{% trans 'Dashboard' %}</a>
+    </li>
+    {% endif %}
+    
+    {% if settings.side_menu_order %}
+    <li class="main-menu">
+        <a href="#" class="order-button"><span class="awe-shopping-cart"></span>{% trans 'Order' %}</a>
+    </li>
+    {% endif %}
+
+    {% if settings.side_menu_support %}
+    <li class="main-menu">
+        <a href="{{ '/support'|link }}"><span class="awe-wrench"></span>{% trans 'Support' %}</a>
+    </li>
+    {% endif %}
+
+    {% if settings.side_menu_services %}
+    <li class="main-menu">
+        <a href="{{ '/order/service'|link }}"><span class="awe-cogs"></span>{% trans 'Services' %}</a>
+    </li>
+    {% endif %}
+
+    {% if settings.side_menu_invoices %}
+    <li class="main-menu">
+        <a href="{{ '/invoice'|link }}"><span class="awe-file-alt"></span>{% trans 'Invoices' %}</a>
+    </li>
+    {% endif %}
+
+    {% if settings.side_menu_emails %}
+    <li class="main-menu">
+        <a  href="{{ '/email'|link }}"><span class="awe-envelope-alt"></span>{% trans 'Emails' %}</a>
+    </li>
+    {% endif %}
+
+    {% if settings.side_menu_payments %}
+    <li class="main-menu">
+        <a href="{{ '/client/balance'|link }}"><span class="awe-credit-card"></span>{% trans 'Payments history' %}</a>
+    </li>
+    {% endif %}
+
+    {% if guest.extension_is_on({"mod":"news"}) %}
+    <li class="main-menu">
+        <a href="{{ '/news'|link }}"><span class="awe-edit"></span>{% trans 'Blog' %}</a>
+    </li>
+    {% endif %}
+
+    {% if guest.extension_is_on({"mod":"kb"}) %}
+    <li class="main-menu">
+        <a href="{{ '/kb'|link }}"><span class="awe-book"></span>{% trans 'Knowledge Base' %}</a>
+    </li>
+    {% endif %}
+
+    {% if guest.extension_is_on({"mod":"forum"}) %}
+    <li class="main-menu">
+        <a href="{{ '/forum'|link }}"><span class="awe-comments"></span>{% trans 'Forum' %}</a>
+    </li>
+    {% endif %}
+</ul>
+
+<script type="text/javascript">
+    $('.main-menu').each(function(index){
+        var menu_link = $(this).children('a').attr('href');
+        if ("{{ guest.system_current_url }}" =="{{ '/'|link }}"){
+            $('.main-menu:first').addClass("current");
+        }
+        else if ('{{ guest.system_current_url }}'.indexOf(menu_link) >= 0 && menu_link != "{{ '/'|link }}"){
+            $(this).addClass("current");
+      }
+    });
+
+</script>

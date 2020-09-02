@@ -1,0 +1,29 @@
+<a class="bb-button btn14" id="batch-delete-selected-btn" style="margin: 10px"><img src="images/icons/dark/trash.png" alt="" > {% trans 'Delete selected' %}</a>
+<script type="text/javascript">
+    $(function () {
+        $('#batch-delete-selected-btn').click(function () {
+            if ($('input.batch-delete-checkbox:checked').length) {
+                jConfirm('Are you sure?', 'Confirm Batch Delete', function (r) {
+                    if (r) {
+                        var ids = $('input.batch-delete-checkbox:checked').map(function () {
+                            return $(this).attr("data-item-id");
+                        }).get();
+                        bb.post(
+                            '{{ action }}',
+                            {ids: ids},
+                            function (result) {
+                                bb.reload();
+                            })
+                    }
+                });
+            } else {
+                jAlert('You need to select at least one item to delete');
+            }
+
+        });
+
+        $('input.batch-delete-master-checkbox').click(function () {
+            $('input.batch-delete-checkbox').prop('checked', this.checked);
+        });
+    });
+</script>

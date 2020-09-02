@@ -1,0 +1,16 @@
+{% block subject %}[{{ guest.system_company.name }}] Please confirm your email address {% endblock %}
+{% block content %}
+{% apply markdown %}
+Hello {{ c.first_name }} {{ c.last_name }},
+
+Please verify your email by clicking on the link below:
+
+{{email_confirmation_link}}
+
+To login, visit {{'login'|link({'email' : c.email }) }}
+Edit your profile at {{'client/me'|link}}
+
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

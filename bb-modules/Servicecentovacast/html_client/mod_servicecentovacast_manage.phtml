@@ -1,0 +1,109 @@
+{% if order.status == 'active' %}
+
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h1>{% trans 'Centova Cast server' %}</h1>
+            </header>
+            <section>
+                <div class="row">
+                    <article class="span12 data-block">
+                        <div class="data-container">
+                            <header>
+                                <h2>{% trans 'Details' %}</h2>
+                            </header>
+                            <section>
+                                <table class="table table-striped table-bordered table-condensed">
+                                    <tbody>
+                                    <tr>
+                                        <td>{% trans 'Username' %}:</td>
+                                        <td>{{ service.username }}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>{% trans 'Password' %}:</td>
+                                        <td>{{ service.pass }}</td>
+                                    </tr>
+                                    </tbody>
+
+                                    <tfoot>
+                                    <tr>
+                                        <td colspan="2">
+                                            <a href="{{client.servicecentovacast_control_panel_url({'order_id':order.id, 'try':1}) }}" target="_blank" class="btn btn-inverse btn-small">{% trans 'Open Control panel' %}</a>
+                                            <a href="{{ 'api/client/servicecentovacast/start'|link({'order_id' : order.id}) }}" data-api-msg="Started" class="btn btn-inverse btn-small api-link">{% trans 'Start' %}</a>
+                                            <a href="{{ 'api/client/servicecentovacast/stop'|link({'order_id' : order.id}) }}" data-api-msg="Stoped" class="btn btn-inverse btn-small api-link">{% trans 'Stop' %}</a>
+                                            <a href="{{ 'api/client/servicecentovacast/restart'|link({'order_id' : order.id}) }}" data-api-msg="Restarted" class="btn btn-inverse btn-small api-link">{% trans 'Restart' %}</a>
+                                            <a href="{{ 'api/client/servicecentovacast/reload'|link({'order_id' : order.id}) }}" data-api-msg="Reloaded" class="btn btn-inverse btn-small api-link"><{% trans 'Reload' %}</a>
+                                        </td>
+                                    </tr>
+                                    </tfoot>
+                                </table>
+                            </section>
+                        </div>
+                    </article>
+                    </div>
+
+                    <div class="row">
+                    <article class="span6 data-block">
+                        <div class="data-container">
+                            <header>
+                                <h2>{% trans 'Status' %}</h2>
+                            </header>
+                            <section>
+                                <table class="table table-striped table-bordered table-condensed">
+                                    <tbody>
+                                    {% for k,var in client.servicecentovacast_getstatus({"order_id":order.id, "try":1}) %}
+                                    {% if var|keys|length > 0 %}
+                                    {# for subkey,subvalue in var %}
+                                    <tr>
+                                        <td>{{ k }}.{{subkey}}</td>
+                                        <td>{{ subvalue }}</td>
+                                    </tr>
+                                    {% endfor #}
+                                    {% else %}
+                                    <tr>
+                                        <td>{{ k|title }}</td>
+                                        <td>{{ var }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% else %}
+                                    <tr>
+                                        <td>{% trans 'Unable to connect to server' %}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </section>
+                        </div>
+                    </article>
+
+                    <article class="span6 data-block">
+                        <div class="data-container">
+                            <header>
+                                <h2>{% trans 'Recent tracks' %}</h2>
+                            </header>
+                            <section>
+                                <table class="table table-striped table-bordered table-condensed">
+                                    <tbody>
+                                    {% for song in client.servicecentovacast_getsongs({"order_id":order.id, "try":1}) %}
+                                    <tr>
+                                        <td>{{ song.title }}</td>
+                                        <td>{{ song.time|date('Y-m-d H:i:s') }}</td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td>{% trans 'No recent tracks are available' %}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </section>
+                        </div>
+                    </article>
+                </div>
+            </section>
+        </div>
+    </article>
+</div>
+{% endif %}
