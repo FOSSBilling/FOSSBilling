@@ -42,7 +42,7 @@ class Box_Log
          self::DEBUG    => 'DEBUG',
     );
 
-    protected $_min_priority = array();
+    protected $_min_priority = 'NULL';
     
     protected $_writers = array();
 
@@ -120,9 +120,9 @@ class Box_Log
         }
     
            
-//if($this->di('config')('debug') === FALSE && $event('priority') > self::INFO) {
+if($this->di('config')('debug') === FALSE && $event('priority') > self::INFO) {
           //do not log debug level messages if debug is OFF
-          if($this->_min_priority && $priority > self::INFO) {
+//          if($this->_min_priority && $priority > self::INFO) {
             return ;
         }
 
