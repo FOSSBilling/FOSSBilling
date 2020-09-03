@@ -149,7 +149,7 @@ $di['twig'] = $di->factory(function () use ($di) {
       $twig->addExtension(new \Twig\Extension\StringLoaderExtension());
       $twig->addExtension(new Twig\Extension\DebugExtension());
       $twig->addExtension(new Twig\Extensions\I18nExtension());
-      $twig->addExtension($box_extensions);
+    $twig->addExtension($box_extensions);
       $twig->getExtension(Twig\Extension\CoreExtension::class)->setDateFormat($config['locale_date_format']);
       $twig->getExtension(Twig\Extension\CoreExtension::class)->setTimezone($config['timezone']);
   

@@ -1,8 +1,0 @@
-{
-    "id":           "cron",
-	"type":         "mod",
-    "name":         "Scheduled tasks",
-    "description":  "BoxBilling core module",
-    "icon_url":     "icon.png",
-    "version":      "1.0.0"
-}

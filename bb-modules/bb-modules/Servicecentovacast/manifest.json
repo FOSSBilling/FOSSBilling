@@ -1,8 +1,0 @@
-{
-    "id":           "servicecentovacast",
-	"type":         "mod",
-    "name":         "CentovaCast product",
-    "icon_url":     "icon.png",
-    "description":  "Sell CentovaCast services",
-    "version":      "1.0.0"
-}
