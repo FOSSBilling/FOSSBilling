@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<dataset>
-    <admin id="1" role="admin" admin_group_id="1" email="admin@boxbilling.com" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" status="active" name="Admin" api_token="phpunit" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
-    <client id="1" aid="1" role="client" email="client@boxbilling.com" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" status="active" first_name="Demo" last_name="Client" phone_cc="1" phone="646-123-4567" company="BoxBilling" address_1="Wall Street 45" city="New York" country="US" currency="USD" postcode="123456" api_token="phpunit" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
-    
-    <extension />
-    <extension_meta />
-    
-</dataset>

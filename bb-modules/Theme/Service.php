@@ -273,10 +273,10 @@ class Service implements InjectionAwareInterface
     public function getThemes($client = true)
     {
         $list = array();
-	        $path = $this->getThemesPath();
+        $path = $this->getThemesPath();
         if ($handle = opendir($path)) {
             while (false !== ($file = readdir($handle))) {
-                if(is_dir($path . DIRECTORY_SEPARATOR . $file) && $file != '.'){
+                if (is_dir($path . DIRECTORY_SEPARATOR . $file) && $file{0} != '.') {
 
                     try {
                         if (!$client && strpos($file, 'admin') !== false) {

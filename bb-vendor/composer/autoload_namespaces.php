@@ -9,7 +9,7 @@ return array(
     'tFPDF' => array($vendorDir . '/rev42/tfpdf/src'),
     'Twig_Extensions_' => array($vendorDir . '/twig/extensions/lib'),
     'Twig_' => array($vendorDir . '/twig/twig/lib'),
-    'Pimple' => array($vendorDir . '/pimple/pimple/src'),
+    'Pimple' => array($vendorDir . '/pimple/pimple/lib'),
     'Michelf' => array($vendorDir . '/michelf/php-markdown'),
     'JsonSerializable' => array($vendorDir . '/geoip2/geoip2/compat'),
     'Guzzle\\Tests' => array($vendorDir . '/guzzle/guzzle/tests'),

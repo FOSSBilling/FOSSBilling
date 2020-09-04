@@ -548,7 +548,6 @@ class Service implements \Box\InjectionAwareInterface
         $data['replies']  = $this->messageGetRepliesCount($model);
         $data['first']    = $this->messageToApiArray($firstSupportTicketMessage);
         $data['helpdesk'] = $this->helpdeskToApiArray($supportHelpdesk);
-        $data['client']     = $this->getClientApiArrayForTicket($model);
 
         if ($deep) {
             $messages = $this->messageGetTicketMessages($model);
@@ -560,6 +559,7 @@ class Service implements \Box\InjectionAwareInterface
         if ($identity instanceof \Model_Admin) {
             $data['rel']        = $this->_getRelDetails($model);
             $data['priority']   = $model->priority;
+            $data['client']     = $this->getClientApiArrayForTicket($model);
             $supportTicketNotes = $this->di['db']->find('SupportTicketNote', 'support_ticket_id = :support_ticket_id', array(':support_ticket_id' => $model->id));
 
             foreach ($supportTicketNotes as $note) {

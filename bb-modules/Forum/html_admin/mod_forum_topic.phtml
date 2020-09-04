@@ -25,7 +25,7 @@
                         <td style="width: 15%"><label>{% trans 'Forum' %}</label></td>
                         <td><a href="{{ 'forum'|alink({'forum_id' : topic.forum.id }) }}">{{ topic.forum.title }}</a></td>
                     </tr>
-
+                    
                     <tr>
                         <td><label>{% trans 'Title' %}</label></td>
                         <td>{{ topic.title }}</td>
@@ -47,7 +47,7 @@
                         <td><label>{% trans 'Status' %}</label></td>
                         <td>{{ mf.status_name(topic.status) }}</td>
                     </tr>
-
+                    
                     <tr>
                         <td><label>{% trans 'Sticky' %}</label></td>
                         <td>{{ mf.q(topic.sticky) }}</td>
@@ -131,9 +131,9 @@
                     <input type="hidden" name="id" value="{{ topic.id }}" />
                 </fieldset>
             </form>
-
+            
         </div>
-
+        
     </div>
 </div>
 
@@ -182,7 +182,7 @@
                 <fieldset>
                     <textarea name="message" cols="5" rows="20" required="required" id="quote-area-{{message.id}}" class="bb-textarea">
 
-{{ profile.signature }}
+{{ profile.signature }}       
 {{ mf.markdown_quote(message.message) }}</textarea>
                     <input type="hidden" name="forum_topic_id" value="{{ topic.id }}">
                     <input type="submit" value="{% trans 'Post' %}" class="greyishBtn submitForm" />
@@ -200,7 +200,7 @@
 
                 <tr>
                     <td><label>{% trans 'IP' %}</label></td>
-                    <td>{{ message.ip|default('-') }} {{ message.ip|ipcountryname|default('Unknown') }}</td>
+                    <td>{{ message.ip|default('-') }} {{ message.ip|ipcountryname }}</td>
                 </tr>
 
                 <tr>

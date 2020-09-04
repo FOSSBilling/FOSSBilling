@@ -58,7 +58,7 @@ final class NodeTraverser
     }
 
     /**
-     * @return Node|null
+     * @return Node|false
      */
     private function traverseForVisitor(NodeVisitorInterface $visitor, Node $node)
     {

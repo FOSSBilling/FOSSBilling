@@ -113,7 +113,7 @@ abstract class CallExpression extends AbstractExpression
         $compiler->raw($isArray ? ']' : ')');
     }
 
-    protected function getArguments($callable, $arguments)
+    protected function getArguments($callable = null, $arguments)
     {
         $callType = $this->getAttribute('type');
         $callName = $this->getAttribute('name');
@@ -259,8 +259,7 @@ abstract class CallExpression extends AbstractExpression
         $isPhpVariadic = false;
         if ($isVariadic) {
             $argument = end($parameters);
-            $isArray = $argument && $argument->hasType() && 'array' === $argument->getType()->getName();
-            if ($isArray && $argument->isDefaultValueAvailable() && [] === $argument->getDefaultValue()) {
+            if ($argument && $argument->isArray() && $argument->isDefaultValueAvailable() && [] === $argument->getDefaultValue()) {
                 array_pop($parameters);
             } elseif ($argument && $argument->isVariadic()) {
                 array_pop($parameters);

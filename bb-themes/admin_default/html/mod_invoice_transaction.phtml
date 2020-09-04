@@ -37,7 +37,7 @@
             </div>
             {% endif%}
 
-
+            
             <table class="tableStatic wide">
                 <tbody>
                     <tr {% if not transaction.error %}class="noborder"{% endif %}>
@@ -69,7 +69,7 @@
                         <td>{% trans 'Transaction status on payment gateway' %}</td>
                         <td>{{ mf.status_name(transaction.txn_status) }}</td>
                     </tr>
-
+                    
                     <tr>
                         <td>{% trans 'Status' %}</td>
                         <td>{{ mf.status_name(transaction.status) }}</td>
@@ -77,7 +77,7 @@
 
                     <tr>
                         <td>{% trans 'IP' %}</td>
-                        <td>{{ transaction.ip }} {{ transaction.ip|ipcountryname|default('Unknown') }}</td>
+                        <td>{{ transaction.ip }} {{ transaction.ip|ipcountryname }}</td>
                     </tr>
 
                     {% if transaction.note %}
@@ -140,7 +140,7 @@
                         <div class="fix"></div>
                     </div>
                 </fieldset>
-
+                
                 <fieldset>
                     <legend>{% trans 'Transaction processing information' %}</legend>
                     <div class="rowElem">
@@ -159,7 +159,7 @@
                         <div class="fix"></div>
                     </div>
                 </fieldset>
-
+                
                 <fieldset>
                     <legend>{% trans 'Transaction information on payment gateway' %}</legend>
                     <div class="rowElem">
@@ -212,7 +212,7 @@
 
         <div id="tab-ipn" class="tab_content nopadding">
 
-
+            
             <div class="help">
                 <h3>{% trans 'GET' %}</h3>
             </div>
@@ -233,7 +233,7 @@
             </div>
             {% endif %}
 
-
+            
             <div class="help">
                 <h3>{% trans 'POST' %}</h3>
             </div>
@@ -253,7 +253,7 @@
                 <p>{% trans 'No POST parameters received' %}</p>
             </div>
             {% endif %}
-
+            
             <div class="help">
                 <h3>{% trans 'SERVER' %}</h3>
             </div>
@@ -273,8 +273,8 @@
                 <p>{% trans 'No SERVER parameters logged' %}</p>
             </div>
             {% endif %}
-
-
+            
+            
             <div class="help">
                 <h3>{{ 'http_raw_post_data'|upper}}</h3>
             </div>

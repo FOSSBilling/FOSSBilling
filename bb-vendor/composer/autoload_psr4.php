@@ -12,8 +12,6 @@ return array(
     'Symfony\\Polyfill\\Ctype\\' => array($vendorDir . '/symfony/polyfill-ctype'),
     'Symfony\\Component\\EventDispatcher\\' => array($vendorDir . '/symfony/event-dispatcher'),
     'Stripe\\' => array($vendorDir . '/stripe/stripe-php/lib'),
-    'Psr\\Container\\' => array($vendorDir . '/psr/container/src'),
-    'PHPMailer\\PHPMailer\\' => array($vendorDir . '/phpmailer/phpmailer/src'),
     'MaxMind\\Db\\' => array($vendorDir . '/maxmind-db/reader/src/MaxMind/Db'),
     'Box\\Mod\\' => array($baseDir . '/bb-modules'),
 );

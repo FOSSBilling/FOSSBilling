@@ -97,10 +97,6 @@ class Box_TwigExtensions extends Twig\Extension\AbstractExtension implements \Bo
 
     function twig_ipcountryname_filter($value)
     {
-        if (empty($value)) {
-            return '';
-        }
-
         try {
             $record = $this->di['geoip']->country($value);
             return $record->country->name;
@@ -259,7 +255,7 @@ function twig_size_filter($value)
     return round($bytes, $precision) . ' ' . $units[$pow];
 }
 
-function twig_markdown_filter(Twig\Environment $env, $value)
+function twig_markdown_filter(Twig_Environment $env, $value)
 {
     $markdownParser = new \Michelf\MarkdownExtra;
     // Michelf Markdown version 1.7.0 and up
@@ -267,7 +263,7 @@ function twig_markdown_filter(Twig\Environment $env, $value)
     return $markdownParser->transform($value); //htmlspecialchars($value, ENT_NOQUOTES)
 }
 
-function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
+function twig_truncate_filter(Twig_Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
 {
     mb_internal_encoding("UTF-8");
     if (mb_strlen($value) > $length) {
@@ -286,7 +282,7 @@ function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $pres
 /**
  * BoxBilling markdown
  */
-function twig_bbmd_filter(Twig\Environment $env, $value)
+function twig_bbmd_filter(Twig_Environment $env, $value)
 {
     $value = twig_markdown_filter($env, $value);
     return $value;

@@ -207,7 +207,7 @@ class Parser
 
     public function peekBlockStack()
     {
-        return isset($this->blockStack[\count($this->blockStack) - 1]) ? $this->blockStack[\count($this->blockStack) - 1] : null;
+        return $this->blockStack[\count($this->blockStack) - 1];
     }
 
     public function popBlockStack()
@@ -279,8 +279,11 @@ class Parser
 
     public function getImportedSymbol($type, $alias)
     {
-        // if the symbol does not exist in the current scope (0), try in the main/global scope (last index)
-        return $this->importedSymbols[0][$type][$alias] ?? ($this->importedSymbols[\count($this->importedSymbols) - 1][$type][$alias] ?? null);
+        foreach ($this->importedSymbols as $functions) {
+            if (isset($functions[$type][$alias])) {
+                return $functions[$type][$alias];
+            }
+        }
     }
 
     public function isMainScope()

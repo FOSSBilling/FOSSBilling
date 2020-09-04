@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<dataset>
-    <post id="1" title="Test" status="active" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
-    <post id="2" title="Test" status="active" slug="boxbilling-is-customizable" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
-    
-    <extension id="1" type="mod" name="news" status="installed"/>
-</dataset>

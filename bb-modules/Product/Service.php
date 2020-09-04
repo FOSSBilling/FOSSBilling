@@ -345,13 +345,12 @@ class Service implements InjectionAwareInterface
     public function updateConfig(\Model_Product $model, $data)
     {
         /* add new config value */
-        $config = json_decode($model->config, true);
+        $config = json_decode($model->config, 1);
 
         if (isset($data['config']) && is_array($data['config'])) {
-            $config = array_intersect_key((array)$config, $data['config']);
             foreach ($data['config'] as $key => $val) {
                 $config[$key] = $val;
-                if (isset($config[$key]) && empty($val) && !is_numeric($val)) {
+                if (isset($config[$key]) && empty ($val)) {
                     unset ($config[$key]);
                 }
             }
@@ -962,7 +961,6 @@ class Service implements InjectionAwareInterface
         }
 
         $discount = 0;
-        $quantity = 1;
 
         switch ($promo->type) {
             case \Model_Promo::ABSOLUTE:
@@ -970,12 +968,7 @@ class Service implements InjectionAwareInterface
                 break;
 
             case \Model_Promo::PERCENTAGE:
-
-                if(isset($config['quantity']) && is_numeric($config['quantity'])){
-                    $quantity = $config['quantity'];
-                }
-                
-                $discount += round(($price * $quantity * $promo->value / 100), 2);
+                $discount += round(($price * $promo->value / 100), 2);
                 break;
 
             default:

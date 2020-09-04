@@ -5,7 +5,6 @@
     "keywords": ["templating"],
     "homepage": "https://twig.symfony.com",
     "license": "BSD-3-Clause",
-    "minimum-stability": "dev",
     "authors": [
         {
             "name": "Fabien Potencier",
@@ -15,6 +14,7 @@
         },
         {
             "name": "Twig Team",
+            "homepage": "https://twig.symfony.com/contributors",
             "role": "Contributors"
         },
         {
@@ -24,12 +24,13 @@
         }
     ],
     "require": {
-        "php": ">=7.1.3",
+        "php": "^7.0",
         "symfony/polyfill-mbstring": "^1.3",
         "symfony/polyfill-ctype": "^1.8"
     },
     "require-dev": {
-        "symfony/phpunit-bridge": "^4.4.9|^5.0.9",
+        "symfony/phpunit-bridge": "^3.4.19|^4.1.8",
+        "symfony/debug": "^2.7",
         "psr/container": "^1.0"
     },
     "autoload": {
@@ -41,13 +42,13 @@
         }
     },
     "autoload-dev": {
-        "psr-4" : {
-            "Twig\\Tests\\" : "tests/"
+        "psr-0" : {
+            "Twig_Tests_" : "test/"
         }
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "2.13-dev"
+            "dev-master": "2.9-dev"
         }
     }
 }

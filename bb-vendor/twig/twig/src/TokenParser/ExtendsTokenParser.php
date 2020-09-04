@@ -27,10 +27,8 @@ final class ExtendsTokenParser extends AbstractTokenParser
     {
         $stream = $this->parser->getStream();
 
-        if ($this->parser->peekBlockStack()) {
-            throw new SyntaxError('Cannot use "extend" in a block.', $token->getLine(), $stream->getSourceContext());
-        } elseif (!$this->parser->isMainScope()) {
-            throw new SyntaxError('Cannot use "extend" in a macro.', $token->getLine(), $stream->getSourceContext());
+        if (!$this->parser->isMainScope()) {
+            throw new SyntaxError('Cannot extend from a block.', $token->getLine(), $stream->getSourceContext());
         }
 
         if (null !== $this->parser->getParent()) {

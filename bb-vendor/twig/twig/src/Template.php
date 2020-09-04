@@ -85,6 +85,8 @@ abstract class Template
      * This method is for internal use only and should never be called
      * directly.
      *
+     * @param array $context
+     *
      * @return Template|TemplateWrapper|false The parent template or false if there is no parent
      */
     public function getParent(array $context)
@@ -221,11 +223,7 @@ abstract class Template
      */
     public function renderParentBlock($name, array $context, array $blocks = [])
     {
-        if ($this->env->isDebug()) {
-            ob_start();
-        } else {
-            ob_start(function () { return ''; });
-        }
+        ob_start();
         $this->displayParentBlock($name, $context, $blocks);
 
         return ob_get_clean();
@@ -246,11 +244,7 @@ abstract class Template
      */
     public function renderBlock($name, array $context, array $blocks = [], $useBlocks = true)
     {
-        if ($this->env->isDebug()) {
-            ob_start();
-        } else {
-            ob_start(function () { return ''; });
-        }
+        ob_start();
         $this->displayBlock($name, $context, $blocks, $useBlocks);
 
         return ob_get_clean();
@@ -322,7 +316,7 @@ abstract class Template
             }
 
             if ($template === $this->getTemplateName()) {
-                $class = static::class;
+                $class = \get_class($this);
                 if (false !== $pos = strrpos($class, '___', -1)) {
                     $class = substr($class, 0, $pos);
                 }
@@ -381,11 +375,7 @@ abstract class Template
     public function render(array $context)
     {
         $level = ob_get_level();
-        if ($this->env->isDebug()) {
-            ob_start();
-        } else {
-            ob_start(function () { return ''; });
-        }
+        ob_start();
         try {
             $this->display($context);
         } catch (\Throwable $e) {

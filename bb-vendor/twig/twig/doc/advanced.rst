@@ -182,7 +182,7 @@ If you want to access the current environment instance in your filter, set the
 ``needs_environment`` option to ``true``; Twig will pass the current
 environment as the first argument to the filter call::
 
-    $filter = new \Twig\TwigFilter('rot13', function (\Twig\Environment $env, $string) {
+    $filter = new \Twig\TwigFilter('rot13', function (Twig_Environment $env, $string) {
         // get the current charset for instance
         $charset = $env->getCharset();
 
@@ -201,7 +201,7 @@ the first argument to the filter call (or the second one if
         // ...
     }, ['needs_context' => true]);
 
-    $filter = new \Twig\TwigFilter('rot13', function (\Twig\Environment $env, $context, $string) {
+    $filter = new \Twig\TwigFilter('rot13', function (Twig_Environment $env, $context, $string) {
         // ...
     }, ['needs_context' => true, 'needs_environment' => true]);
 
@@ -326,20 +326,14 @@ When creating tests you can use the ``node_class`` option to provide custom test
 compilation. This is useful if your test can be compiled into PHP primitives.
 This is used by many of the tests built into Twig::
 
-    namespace App;
-    
-    use Twig\Environment;
-    use Twig\Node\Expression\TestExpression;
-    use Twig\TwigTest;
-    
-    $twig = new Environment($loader);
-    $test = new TwigTest(
+    $twig = new \Twig\Environment($loader);
+    $test = new \Twig\TwigTest(
         'odd',
         null,
-        ['node_class' => OddTestExpression::class]);
+        ['node_class' => \Twig\Node\Expression\Test\OddTest::class]);
     $twig->addTest($test);
 
-    class OddTestExpression extends TestExpression
+    class Twig_Node_Expression_Test_Odd extends \Twig\Node\Expression\TestExpression
     {
         public function compile(\Twig\Compiler $compiler)
         {
@@ -577,6 +571,11 @@ to host all the specific tags and filters you want to add to Twig.
     recompile your templates whenever you make a change to it (when
     ``auto_reload`` is enabled).
 
+.. note::
+
+    Before writing your own extensions, have a look at the Twig official
+    extension repository: https://github.com/twigphp/Twig-extensions.
+
 An extension is a class that implements the following interface::
 
     interface \Twig\Extension\ExtensionInterface
@@ -626,7 +625,7 @@ An extension is a class that implements the following interface::
 
 To keep your extension class clean and lean, inherit from the built-in
 ``\Twig\Extension\AbstractExtension`` class instead of implementing the interface as it provides
-empty implementations for all methods::
+empty implementations for all methods:
 
     class Project_Twig_Extension extends \Twig\Extension\AbstractExtension
     {
@@ -807,10 +806,10 @@ This is very convenient but not recommended as it makes template compilation
 depend on runtime dependencies even if they are not needed (think for instance
 as a dependency that connects to a database engine).
 
-You can decouple the extension definitions from their runtime implementations by
-registering a ``\Twig\RuntimeLoader\RuntimeLoaderInterface`` instance on the
-environment that knows how to instantiate such runtime classes (runtime classes
-must be autoload-able)::
+You can easily decouple the extension definitions from their runtime
+implementations by registering a ``\Twig\RuntimeLoader\RuntimeLoaderInterface`` instance on
+the environment that knows how to instantiate such runtime classes (runtime
+classes must be autoload-able)::
 
     class RuntimeLoader implements \Twig\RuntimeLoader\RuntimeLoaderInterface
     {
@@ -864,6 +863,49 @@ It is now possible to move the runtime logic to a new
         }
     }
 
+Overloading
+-----------
+
+To overload an already defined filter, test, operator, global variable, or
+function, re-define it in an extension and register it **as late as
+possible** (order matters)::
+
+    class MyCoreExtension extends \Twig\Extension\AbstractExtension
+    {
+        public function getFilters()
+        {
+            return [
+                new \Twig\TwigFilter('date', [$this, 'dateFilter']),
+            ];
+        }
+
+        public function dateFilter($timestamp, $format = 'F j, Y H:i')
+        {
+            // do something different from the built-in date filter
+        }
+    }
+
+    $twig = new \Twig\Environment($loader);
+    $twig->addExtension(new MyCoreExtension());
+
+Here, we have overloaded the built-in ``date`` filter with a custom one.
+
+If you do the same on the ``\Twig\Environment`` itself, beware that it takes
+precedence over any other registered extensions::
+
+    $twig = new \Twig\Environment($loader);
+    $twig->addFilter(new \Twig\TwigFilter('date', function ($timestamp, $format = 'F j, Y H:i') {
+        // do something different from the built-in date filter
+    }));
+    // the date filter will come from the above registration, not
+    // from the registered extension below
+    $twig->addExtension(new MyCoreExtension());
+
+.. caution::
+
+    Note that overloading the built-in Twig elements is not recommended as it
+    might be confusing.
+
 Testing an Extension
 --------------------
 
@@ -899,7 +941,7 @@ The ``IntegrationTest.php`` file should look like this::
 
         public function getFixturesDir()
         {
-            return __DIR__.'/Fixtures/';
+            return dirname(__FILE__).'/Fixtures/';
         }
     }
 
@@ -914,5 +956,5 @@ Testing the node visitors can be complex, so extend your test cases from
 `tests/Twig/Node`_ directory.
 
 .. _`rot13`:               https://secure.php.net/manual/en/function.str-rot13.php
-.. _`tests/Twig/Fixtures`: https://github.com/twigphp/Twig/tree/2.x/tests/Fixtures
-.. _`tests/Twig/Node`:     https://github.com/twigphp/Twig/tree/2.x/tests/Node
+.. _`tests/Twig/Fixtures`: https://github.com/twigphp/Twig/tree/2.x/test/Twig/Tests/Fixtures
+.. _`tests/Twig/Node`:     https://github.com/twigphp/Twig/tree/2.x/test/Twig/Tests/Node

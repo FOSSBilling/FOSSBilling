@@ -14,4 +14,4 @@
 /**
  * Class Box_Config
  */
-class Box_Config extends Pimple\Container {}
+class Box_Config extends Pimple {}

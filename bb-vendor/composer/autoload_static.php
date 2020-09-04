@@ -26,11 +26,6 @@ class ComposerStaticInit4f1998103e84395a5a74e198f3ab9015
             'Symfony\\Component\\EventDispatcher\\' => 34,
             'Stripe\\' => 7,
         ),
-        'P' => 
-        array (
-            'Psr\\Container\\' => 14,
-            'PHPMailer\\PHPMailer\\' => 20,
-        ),
         'M' => 
         array (
             'MaxMind\\Db\\' => 11,
@@ -66,14 +61,6 @@ class ComposerStaticInit4f1998103e84395a5a74e198f3ab9015
         array (
             0 => __DIR__ . '/..' . '/stripe/stripe-php/lib',
         ),
-        'Psr\\Container\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/psr/container/src',
-        ),
-        'PHPMailer\\PHPMailer\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
-        ),
         'MaxMind\\Db\\' => 
         array (
             0 => __DIR__ . '/..' . '/maxmind-db/reader/src/MaxMind/Db',
@@ -107,7 +94,7 @@ class ComposerStaticInit4f1998103e84395a5a74e198f3ab9015
         array (
             'Pimple' => 
             array (
-                0 => __DIR__ . '/..' . '/pimple/pimple/src',
+                0 => __DIR__ . '/..' . '/pimple/pimple/lib',
             ),
         ),
         'M' => 
@@ -145,6 +132,17 @@ class ComposerStaticInit4f1998103e84395a5a74e198f3ab9015
         0 => __DIR__ . '/../..' . '/bb-library',
     );
 
+    public static $classMap = array (
+        'EasyPeasyICS' => __DIR__ . '/..' . '/phpmailer/phpmailer/extras/EasyPeasyICS.php',
+        'PHPMailer' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.phpmailer.php',
+        'PHPMailerOAuth' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.phpmaileroauth.php',
+        'PHPMailerOAuthGoogle' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.phpmaileroauthgoogle.php',
+        'POP3' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.pop3.php',
+        'SMTP' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.smtp.php',
+        'ntlm_sasl_client_class' => __DIR__ . '/..' . '/phpmailer/phpmailer/extras/ntlm_sasl_client.php',
+        'phpmailerException' => __DIR__ . '/..' . '/phpmailer/phpmailer/class.phpmailer.php',
+    );
+
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
@@ -152,6 +150,7 @@ class ComposerStaticInit4f1998103e84395a5a74e198f3ab9015
             $loader->prefixDirsPsr4 = ComposerStaticInit4f1998103e84395a5a74e198f3ab9015::$prefixDirsPsr4;
             $loader->prefixesPsr0 = ComposerStaticInit4f1998103e84395a5a74e198f3ab9015::$prefixesPsr0;
             $loader->fallbackDirsPsr0 = ComposerStaticInit4f1998103e84395a5a74e198f3ab9015::$fallbackDirsPsr0;
+            $loader->classMap = ComposerStaticInit4f1998103e84395a5a74e198f3ab9015::$classMap;
 
         }, null, ClassLoader::class);
     }

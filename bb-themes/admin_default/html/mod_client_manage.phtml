@@ -34,7 +34,7 @@
             <div style="position: relative;">
             <img src="{{ client.email|gravatar }}?size=100" alt="{{ client.first_name }} {{ client.last_name }}" style="right: 0; margin: 15px 15px 0 15px; position: absolute; border: 2px solid white; box-shadow: 0px 0px 10px 0px;"/>
             </div>
-
+            
             <table class="tableStatic wide">
                 <tbody>
                     <tr class="noborder">
@@ -69,7 +69,7 @@
                     </tr>
                     <tr>
                         <td>IP:</td>
-                        <td>{{ client.ip|default('-') }} {{ client.ip|ipcountryname|default('Unknown') }}</td>
+                        <td>{{ client.ip|default('-') }} {{ client.ip|ipcountryname }}</td>
                     </tr>
                     <tr>
                         <td>API Key:</td>
@@ -158,7 +158,7 @@
                                 <li class="sep"></li>
                                 <li style="width: 245px"><input type="text" name="last_name" value="{{client.last_name}}" /></li>
                             </ul>
-                        </div>
+                        </div> 
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
@@ -179,12 +179,12 @@
                                 <li style="width: 150px"><input type="text" name="company_number" value="{{client.company_number}}"  title="Company number" placeholder="Company number"/></li>
                                 <li class="sep"></li>
                             </ul>
-                        </div>
+                        </div> 
                         <div class="fix"></div>
                     </div>
                     <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
                 </fieldset>
-
+                
                 <fieldset>
                     <legend>{% trans 'Address and contact details' %}</legend>
                     <div class="rowElem">
@@ -238,9 +238,9 @@
                                 <li><input type="text" name="phone_cc" value="{{client.phone_cc}}" /></li>
                                 <li class="sep"></li>
                                 <li style="width: 200px;"><input type="text" name="phone" value="{{client.phone}}" /></li>
-                            </ul>
-                        </div>
-                        <div class="fix"></div>
+                            </ul>  
+                        </div> 
+                        <div class="fix"></div>   
                     </div>
                     <div class="rowElem">
                         <label>{% trans 'Passport number' %}:</label>
@@ -251,25 +251,25 @@
                     </div>
                     <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
                 </fieldset>
-
+                
                 <fieldset>
                     <legend>{% trans 'Additional settings' %}</legend>
                     <div class="rowElem">
                         <label>{% trans 'Alternative ID' %}:</label>
                         <div class="formRight">
                             <input type="text" name="aid" value="{{client.aid}}" placeholder="{% trans 'Used to identify client on foreign system. Usually used by importers' %}"/>
-                        </div>
-                        <div class="fix"></div>
+                        </div> 
+                        <div class="fix"></div>   
                     </div>
-
+                    
                     <div class="rowElem">
                         <label>{% trans 'Currency' %}:</label>
                         <div class="formRight">
                             {{ mf.selectbox('currency', guest.currency_get_pairs, client.currency, 0, 'Select currency') }}
-                        </div>
+                        </div> 
                         <div class="fix"></div>
                     </div>
-
+                    
                     <div class="rowElem">
                         <label>{% trans 'Exempt from tax' %}:</label>
                         <div class="formRight">
@@ -296,7 +296,7 @@
                     <input type="hidden" name="id" value="{{ client.id }}"/>
                 </fieldset>
             </form>
-
+            
             <div class="help">
                 <h3>{% trans 'Change password' %}</h3>
             </div>
@@ -327,7 +327,7 @@
                 <h3>{% trans 'Custom fields' %}</h3>
                 <p>{% trans 'Use these fields to define custom client details' %}</p>
             </div>
-
+            
             <form method="post" action="{{ 'api/admin/client/update'|link }}" class="mainForm api-form save" data-api-msg="{% trans 'Client Profile custom fields updated' %}">
                 <fieldset>
                     {% for i in 1..10 %}
@@ -363,8 +363,8 @@
                 </thead>
 
                 <tbody>
-                    {% set payments = admin.client_balance_get_list({"per_page":20, "client_id":client.id}) %}
-                    {% for i, tx in payments.list %}
+                    {% set transactions = admin.client_balance_get_list({"per_page":20, "client_id":client.id}) %}
+                    {% for i, tx in transactions.list %}
                     <tr>
                         <td>{{mf.currency_format(tx.amount, tx.currency)}}</td>
                         <td>{{tx.description}}</td>
@@ -386,7 +386,7 @@
                     </tr>
                 </tfoot>
             </table>
-
+            
             <div class="help">
                 <h3>{% trans 'Add funds for client' %}</h3>
             </div>
@@ -400,7 +400,7 @@
                         </div>
                         <div class="fix"></div>
                     </div>
-
+                    
                     <div class="rowElem">
                         <label>{% trans 'Description' %}:</label>
                         <div class="formRight noborder">
@@ -448,7 +448,7 @@
                     </tr>
                     {% endfor %}
                 </tbody>
-
+                
                 <tfoot>
                     <tr>
                         <td colspan="6">
@@ -492,7 +492,7 @@
                     </tr>
                     {% endfor %}
                 </tbody>
-
+                
                 <tfoot>
                     <tr>
                         <td colspan="6">
@@ -517,7 +517,7 @@
                         <td>&nbsp;</td>
                     </tr>
                 </thead>
-
+                
                 <tbody>
                     {% set tickets = admin.support_ticket_get_list({"per_page":"20", "client_id":client.id}) %}
                     {% for ticket in tickets.list %}
@@ -534,7 +534,7 @@
                     </tr>
                     {% endfor %}
                 </tbody>
-
+                
                 <tfoot>
                     <tr>
                         <td colspan="5">
@@ -544,12 +544,12 @@
                 </tfoot>
             </table>
         </div>
-
+        
         <div class="tab_content nopadding" id="tab-history">
             <div class="help">
                 <h3>{% trans 'Logins history' %}</h3>
             </div>
-
+            
             <table class="tableStatic wide">
                 <thead>
                     <tr>
@@ -564,7 +564,7 @@
                     {% for i, login in logins.list %}
                     <tr>
                         <td>{{login.ip}}</td>
-                        <td>{{login.ip|ipcountryname|default('Unknown')}}</td>
+                        <td>{{login.ip|ipcountryname}}</td>
                         <td>{{login.created_at|date('l, d F Y')}}</td>
                     </tr>
                     {% else %}
@@ -682,7 +682,7 @@
                     </tr>
                     <tr>
                         <td>IP:</td>
-                        <td><span class="expire">{{ client.ip }} {{ client.ip|ipcountryname|default('Unknown') }}</span></td>
+                        <td><span class="expire">{{ client.ip }} {{ client.ip|ipcountryname }}</span></td>
                     </tr>
                     <tr>
                         <td>Address:</td>

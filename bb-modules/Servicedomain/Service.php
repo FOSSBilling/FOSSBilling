@@ -69,8 +69,7 @@ class Service implements \Box\InjectionAwareInterface
             }
 
             if (!$validator->isSldValid($data['owndomain_sld'])) {
-                $safe_dom = htmlspecialchars($data['owndomain_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
+                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['owndomain_sld']));
             }
 
             $required = array(
@@ -86,8 +85,7 @@ class Service implements \Box\InjectionAwareInterface
             }
 
             if (!$validator->isSldValid($data['transfer_sld'])) {
-                $safe_dom = htmlspecialchars($data['transfer_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
+                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['transfer_sld']));
             }
 
             $required = array(
@@ -117,8 +115,7 @@ class Service implements \Box\InjectionAwareInterface
             }
 
             if (!$validator->isSldValid($data['register_sld'])) {
-                $safe_dom = htmlspecialchars($data['register_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
+                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['register_sld']));
             }
 
             $required = array(
@@ -562,8 +559,7 @@ class Service implements \Box\InjectionAwareInterface
 
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
-            $safe_dom = htmlspecialchars($sld, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
+            throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $sld));
         }
 
         if (!$model->allow_register) {
