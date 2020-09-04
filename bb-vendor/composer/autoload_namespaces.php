@@ -6,14 +6,9 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'tFPDF' => array($vendorDir . '/rev42/tfpdf/src'),
+    'tFPDF' => array($vendorDir . '/docnet/tfpdf/src'),
     'Twig_Extensions_' => array($vendorDir . '/twig/extensions/lib'),
     'Twig_' => array($vendorDir . '/twig/twig/lib'),
     'Pimple' => array($vendorDir . '/pimple/pimple/src'),
-    'Michelf' => array($vendorDir . '/michelf/php-markdown'),
-    'JsonSerializable' => array($vendorDir . '/geoip2/geoip2/compat'),
-    'Guzzle\\Tests' => array($vendorDir . '/guzzle/guzzle/tests'),
-    'Guzzle' => array($vendorDir . '/guzzle/guzzle/src'),
-    'GeoIp2' => array($vendorDir . '/geoip2/geoip2/src'),
     '' => array($baseDir . '/bb-library', $baseDir . '/../tests/bb-library'),
 );

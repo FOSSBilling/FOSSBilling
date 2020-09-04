@@ -1,0 +1,930 @@
+[31-Aug-2020 12:21:26 UTC] 8192 Function get_magic_quotes_gpc() is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-load.php 141
+[31-Aug-2020 12:21:26 UTC] PHP Deprecated:  Function get_magic_quotes_gpc() is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-load.php on line 141
+[31-Aug-2020 12:21:26 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 12:21:26 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 12:21:26 UTC] 8192 Function get_magic_quotes_gpc() is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-load.php 141
+[31-Aug-2020 12:21:26 UTC] PHP Deprecated:  Function get_magic_quotes_gpc() is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-load.php on line 141
+[31-Aug-2020 12:21:26 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 12:21:26 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 12:21:26 UTC] 8192 Function get_magic_quotes_gpc() is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-load.php 141
+[31-Aug-2020 12:21:26 UTC] PHP Deprecated:  Function get_magic_quotes_gpc() is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-load.php on line 141
+[31-Aug-2020 12:21:26 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 12:21:26 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 12:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 12:30:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 12:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 12:40:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 12:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 12:50:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 12:55:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 13:00:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 13:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 13:10:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 13:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 13:17:11 UTC] 8192 Function get_magic_quotes_gpc() is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-load.php 141
+[31-Aug-2020 13:17:11 UTC] PHP Deprecated:  Function get_magic_quotes_gpc() is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-load.php on line 141
+[31-Aug-2020 13:20:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 13:20:22 UTC] 
+[31-Aug-2020 13:20:22 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 13:20:22 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 13:20:22 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 13:20:22 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 13:20:22 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 13:20:22 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 13:20:22 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 13:20:22 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 13:20:22 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 13:20:22 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 13:20:22 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 13:20:22 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 13:20:45 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 13:20:45 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 13:20:45 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 13:20:45 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 13:20:45 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 13:20:45 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 13:20:45 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 13:20:45 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 13:20:45 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 13:20:45 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 13:20:45 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 13:20:45 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 13:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 13:27:41 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:27:41 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:27:42 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:27:42 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:27:54 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:27:54 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:27:54 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:27:54 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:28:44 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:28:44 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:28:44 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:28:44 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:28:54 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:28:54 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:28:54 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:28:54 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:29:01 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:29:01 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:29:01 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:29:01 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:29:04 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:29:04 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:29:04 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:29:04 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:29:06 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:29:06 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:29:07 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:29:07 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:29:08 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:29:08 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:29:08 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:29:08 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:29:11 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:29:11 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:29:12 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:29:12 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 209
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 209
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 211
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 211
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 505
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 505
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 505
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 505
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 512
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 512
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 546
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 546
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 546
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 546
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 561
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 561
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 562
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 562
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 661
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 661
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 671
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 671
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 671
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 671
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 680
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 680
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 681
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 681
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 1068
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 1068
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 1463
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 1463
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 948
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 948
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 1349
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 1349
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 1374
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 1374
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 1785
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 1785
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 1787
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 1787
+[31-Aug-2020 13:29:13 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:29:13 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 13:30:20 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:30:20 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:30:20 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:30:20 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:30:22 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:30:22 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:30:22 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:30:22 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:30:23 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:30:23 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:30:23 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:30:23 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 209
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 209
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 211
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 211
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 505
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 505
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 505
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 505
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 512
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 512
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 546
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 546
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 546
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 546
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 561
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 561
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 562
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 562
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 661
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 661
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 671
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 671
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 671
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 671
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 680
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 680
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 681
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 681
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 1068
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 1068
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 1463
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 1463
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 948
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 948
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 1349
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 1349
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 1374
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 1374
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 1785
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 1785
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 1787
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 1787
+[31-Aug-2020 13:30:25 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:30:25 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:30:28 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:30:28 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:30:28 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:30:28 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:30:30 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:30:30 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:30:30 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:30:30 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 13:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 13:42:52 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:42:52 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:42:52 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php 279
+[31-Aug-2020 13:42:52 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Theme/Service.php on line 279
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 209
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 209
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 211
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 211
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 505
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 505
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 505
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 505
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 512
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 512
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 546
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 546
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 546
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 546
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 561
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 561
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 562
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 562
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 661
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 661
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 671
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 671
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 671
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 671
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 680
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 680
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 681
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 681
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 1068
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 1068
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php 1463
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/MarkdownExtra.php on line 1463
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 948
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 948
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 1349
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 1349
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 1374
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 1374
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 1785
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 1785
+[31-Aug-2020 13:44:09 UTC] 8192 Array and string offset access syntax with curly braces is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php 1787
+[31-Aug-2020 13:44:09 UTC] PHP Deprecated:  Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/michelf/php-markdown/Michelf/Markdown.php on line 1787
+[31-Aug-2020 13:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 13:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 13:53:02 UTC] 8192 Function get_magic_quotes_gpc() is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Requirements.php 80
+[31-Aug-2020 13:53:02 UTC] PHP Deprecated:  Function get_magic_quotes_gpc() is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Requirements.php on line 80
+[31-Aug-2020 13:53:13 UTC] <?xml version="1.0"?>
+<packet><server><get><stat/></get></server></packet>
+
+[31-Aug-2020 13:53:13 UTC] 2 count(): Parameter must be an array or an object that implements Countable /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 602
+[31-Aug-2020 13:53:13 UTC] PHP Warning:  count(): Parameter must be an array or an object that implements Countable in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php on line 602
+[31-Aug-2020 13:53:15 UTC] Connection to server failed 0
+[31-Aug-2020 13:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 14:00:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 14:05:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 14:10:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 14:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 14:20:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 14:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 14:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 14:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 14:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 14:45:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 14:50:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 14:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 15:00:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 15:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 15:10:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 15:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 15:19:28 UTC] 8192 Function get_magic_quotes_gpc() is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Requirements.php 80
+[31-Aug-2020 15:19:28 UTC] PHP Deprecated:  Function get_magic_quotes_gpc() is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Requirements.php on line 80
+[31-Aug-2020 15:19:28 UTC] 
+[31-Aug-2020 15:19:33 UTC] <?xml version="1.0"?>
+<packet><server><get><stat/></get></server></packet>
+
+[31-Aug-2020 15:19:33 UTC] 2 count(): Parameter must be an array or an object that implements Countable /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 602
+[31-Aug-2020 15:19:33 UTC] PHP Warning:  count(): Parameter must be an array or an object that implements Countable in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php on line 602
+[31-Aug-2020 15:19:36 UTC] Connection to server failed 0
+[31-Aug-2020 15:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 15:24:54 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 15:24:54 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 15:24:54 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[31-Aug-2020 15:24:54 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[31-Aug-2020 15:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 15:28:55 UTC] 8192 Function get_magic_quotes_gpc() is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Requirements.php 80
+[31-Aug-2020 15:28:55 UTC] PHP Deprecated:  Function get_magic_quotes_gpc() is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Requirements.php on line 80
+[31-Aug-2020 15:29:02 UTC] <?xml version="1.0"?>
+<packet><server><get><stat/></get></server></packet>
+
+[31-Aug-2020 15:29:02 UTC] 2 count(): Parameter must be an array or an object that implements Countable /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 602
+[31-Aug-2020 15:29:02 UTC] PHP Warning:  count(): Parameter must be an array or an object that implements Countable in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php on line 602
+[31-Aug-2020 15:29:04 UTC] Connection to server failed 0
+[31-Aug-2020 15:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 15:30:05 UTC] <?xml version="1.0"?>
+<packet><server><get><stat/></get></server></packet>
+
+[31-Aug-2020 15:30:08 UTC] Connection to server failed 0
+[31-Aug-2020 15:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[31-Aug-2020 15:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 00:30:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 00:35:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 00:37:41 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 00:37:41 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 00:37:41 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 00:37:41 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 00:37:41 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 00:37:41 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 00:37:41 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 00:37:41 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 00:40:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 00:40:46 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 00:40:46 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 00:40:46 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 00:40:46 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 00:40:46 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 00:40:46 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 00:40:46 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 00:40:46 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 00:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 00:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 00:54:23 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 00:54:23 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 00:54:23 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 00:54:23 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 00:54:23 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 00:54:23 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 00:54:23 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 00:54:23 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 00:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 01:00:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 01:02:50 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 01:02:50 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 01:02:50 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 01:02:50 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 01:02:50 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 01:02:50 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 01:02:50 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 01:02:50 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 01:04:42 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 01:04:42 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 01:04:42 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 01:04:42 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 01:04:42 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 01:04:42 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 01:04:42 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 123
+[01-Sep-2020 01:04:42 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 123
+[01-Sep-2020 01:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 01:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 01:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 01:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 01:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 01:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 01:33:35 UTC] 
+[01-Sep-2020 01:35:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 01:40:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 01:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 01:50:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 01:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 02:00:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 02:05:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 02:09:50 UTC] Hosting product is not configured completely. Configure server for hosting product. 701
+[01-Sep-2020 02:10:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 02:14:51 UTC] 16384 The "filter" tag in "__string_template__0ed430260a3625679a4b89b147c22b7ffeb0954b957951517b9f719bb9dce584" at line 2 is deprecated since Twig 2.9, use the "apply" tag instead. /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/twig/twig/src/TokenParser/FilterTokenParser.php 36
+[01-Sep-2020 02:14:51 UTC] Class 'PHPMailer' not found
+[01-Sep-2020 02:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 02:15:49 UTC] Order #40 has no active service
+[01-Sep-2020 02:16:35 UTC] Order #40 has no active service
+[01-Sep-2020 02:19:48 UTC] Class 'PHPMailer' not found
+[01-Sep-2020 02:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 02:25:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 02:26:48 UTC] Order #40 has no active service
+[01-Sep-2020 02:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 02:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 02:40:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 02:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 02:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 02:53:46 UTC] 
+[01-Sep-2020 02:54:13 UTC] Order #40 has no active service
+[01-Sep-2020 02:54:22 UTC] Order #40 has no active service
+[01-Sep-2020 02:55:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 02:55:15 UTC] Order #40 has no active service
+[01-Sep-2020 02:55:46 UTC] 16384 The "filter" tag in "__string_template__a5fa9baca248410a0311f6bf2d5c0dc7ad007aa35f31f4df6cd1cbf2f87e713b" at line 2 is deprecated since Twig 2.9, use the "apply" tag instead. /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/twig/twig/src/TokenParser/FilterTokenParser.php 36
+[01-Sep-2020 02:55:46 UTC] Class 'PHPMailer' not found
+[01-Sep-2020 02:55:59 UTC] Only pending setup or failed orders can be activated 0
+[01-Sep-2020 03:00:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 03:05:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 03:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 03:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 03:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 03:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 03:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 03:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 03:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 03:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 03:50:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 03:55:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 04:00:03 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 04:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 04:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 04:15:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 04:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 04:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 04:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 04:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 04:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 04:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 04:50:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 04:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 05:00:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 05:04:01 UTC] Unable to find template "mod_page_service.phtml" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-modules/Page/html_client).
+[01-Sep-2020 05:04:01 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/index.php(27): Box_App->run()
+#6 {main}
+[01-Sep-2020 05:04:01 UTC] Page /service not found
+[01-Sep-2020 05:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 05:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 05:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 05:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 05:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 05:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 05:31:04 UTC] syntax error, unexpected '->' (T_OBJECT_OPERATOR)
+[01-Sep-2020 05:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 05:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 05:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 05:50:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 05:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 06:00:03 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 06:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 06:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 06:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 06:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 06:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 06:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 06:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 06:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 06:42:02 UTC] Client is not logged in
+[01-Sep-2020 06:42:17 UTC] 
+[01-Sep-2020 06:45:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 06:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 06:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 07:00:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 07:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 07:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 07:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 07:20:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 07:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 07:30:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 07:35:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 07:40:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 07:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 07:50:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 07:55:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 08:00:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 08:05:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 08:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 08:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 08:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 08:25:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 08:30:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 08:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 08:40:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 08:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 08:50:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 08:55:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 09:00:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 09:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 09:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 09:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 09:20:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 09:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 09:30:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 09:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 09:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 09:45:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 09:50:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 09:55:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 10:00:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 10:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 10:10:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 10:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 10:20:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 10:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 10:30:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 10:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 10:40:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 10:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 10:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 10:55:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 11:00:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 11:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 11:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 11:15:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 11:20:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 11:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 11:30:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 11:35:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 11:40:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 11:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 11:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 11:55:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 12:00:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 12:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 12:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 12:15:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 12:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 12:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 12:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 12:35:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 12:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 12:45:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 12:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 12:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 13:00:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 13:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 13:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 13:15:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 13:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 13:25:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 13:30:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 13:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 13:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 13:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 13:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 13:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 14:00:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 14:05:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 14:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 14:15:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 14:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 14:25:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 14:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 14:35:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 14:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 14:45:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 14:50:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 14:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 15:00:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 15:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 15:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 15:15:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 15:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 15:25:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 15:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 15:35:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 15:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 15:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 15:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 15:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 16:00:03 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 16:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 16:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 16:14:47 UTC] 
+[01-Sep-2020 16:15:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 16:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 16:21:42 UTC] syntax error, unexpected ','
+[01-Sep-2020 16:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 16:25:34 UTC] syntax error, unexpected 'if' (T_IF), expecting function (T_FUNCTION) or const (T_CONST)
+[01-Sep-2020 16:26:11 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 122
+[01-Sep-2020 16:26:11 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 122
+[01-Sep-2020 16:26:11 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 122
+[01-Sep-2020 16:26:11 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 122
+[01-Sep-2020 16:26:12 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 122
+[01-Sep-2020 16:26:12 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 122
+[01-Sep-2020 16:26:12 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 122
+[01-Sep-2020 16:26:12 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 122
+[01-Sep-2020 16:26:12 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 122
+[01-Sep-2020 16:26:12 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 122
+[01-Sep-2020 16:26:12 UTC] 8 Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php 122
+[01-Sep-2020 16:26:12 UTC] PHP Notice:  Trying to access array offset on value of type null in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 122
+[01-Sep-2020 16:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 16:34:02 UTC] Bad log priority 0
+[01-Sep-2020 16:35:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 16:40:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 16:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 16:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 16:53:47 UTC] Bad log priority 0
+[01-Sep-2020 16:53:56 UTC] Bad log priority 0
+[01-Sep-2020 16:54:53 UTC] Bad log priority 0
+[01-Sep-2020 16:54:57 UTC] Bad log priority 0
+[01-Sep-2020 16:55:02 UTC] PHP Parse error:  syntax error, unexpected '(' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Log.php on line 122
+[01-Sep-2020 16:55:58 UTC] Call to undefined function Twig\Extension\CoreExtension()
+[01-Sep-2020 16:56:49 UTC] Undefined constant 'Twig\Extension\CoreExtension'
+[01-Sep-2020 17:00:03 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 17:01:31 UTC] syntax error, unexpected 'if' (T_IF), expecting function (T_FUNCTION) or const (T_CONST)
+[01-Sep-2020 17:02:54 UTC] Authentication Failed 201
+[01-Sep-2020 17:02:58 UTC] Authentication Failed 201
+[01-Sep-2020 17:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 17:10:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 17:15:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 17:18:05 UTC] 
+[01-Sep-2020 17:18:05 UTC] Function name must be a string
+[01-Sep-2020 17:19:36 UTC] Function name must be a string
+[01-Sep-2020 17:20:03 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 17:23:21 UTC] syntax error, unexpected '->' (T_OBJECT_OPERATOR), expecting ')'
+[01-Sep-2020 17:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 17:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 17:33:57 UTC] 
+[01-Sep-2020 17:33:58 UTC] 2 simplexml_load_string(): Entity: line 1: parser error : Start tag expected, '<' not found /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[01-Sep-2020 17:33:58 UTC] PHP Warning:  simplexml_load_string(): Entity: line 1: parser error : Start tag expected, '<' not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php on line 627
+[01-Sep-2020 17:33:58 UTC] 2 simplexml_load_string(): The file /usr/local/psa/admin/htdocs/enterprise/control/agent.php is part of Ple /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[01-Sep-2020 17:33:58 UTC] PHP Warning:  simplexml_load_string(): The file /usr/local/psa/admin/htdocs/enterprise/control/agent.php is part of Ple in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php on line 627
+[01-Sep-2020 17:33:58 UTC] 2 simplexml_load_string(): ^ /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[01-Sep-2020 17:33:58 UTC] PHP Warning:  simplexml_load_string(): ^ in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php on line 627
+[01-Sep-2020 17:33:58 UTC] Connection to server failed 0
+[01-Sep-2020 17:35:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 17:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 17:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 17:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 17:55:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 18:00:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 18:04:50 UTC] Admin is not logged in 0
+[01-Sep-2020 18:05:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 18:05:09 UTC] Admin is not logged in 0
+[01-Sep-2020 18:05:43 UTC] Check your login details 403
+[01-Sep-2020 18:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 18:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 18:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 18:25:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 18:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 18:35:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 18:40:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 18:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 18:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 18:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 19:00:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 19:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 19:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 19:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 19:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 19:25:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 19:30:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 19:35:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 19:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 19:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 19:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 19:55:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 20:00:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 20:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 20:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 20:15:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 20:20:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 20:25:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 20:30:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 20:35:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 20:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 20:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 20:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 20:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 21:00:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 21:05:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 21:10:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 21:15:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 21:20:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 21:25:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 21:30:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 21:35:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 21:40:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 21:45:01 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 21:50:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 21:55:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 22:00:02 UTC] PHP Parse error:  syntax error, unexpected 'class' (T_CLASS), expecting identifier (T_STRING) or variable (T_VARIABLE) or '{' or '$' in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-di.php on line 153
+[01-Sep-2020 22:06:11 UTC] 
+[02-Sep-2020 00:10:12 UTC] 
+[02-Sep-2020 00:10:12 UTC] Bad log priority 0
+[02-Sep-2020 00:12:35 UTC] Bad log priority 0
+[02-Sep-2020 00:18:22 UTC] Bad log priority 0
+[02-Sep-2020 00:20:20 UTC] Bad log priority 0
+[02-Sep-2020 01:53:03 UTC] 
+[02-Sep-2020 01:53:03 UTC] 
+[02-Sep-2020 01:53:03 UTC] 2 simplexml_load_string(): Entity: line 1: parser error : Start tag expected, '<' not found /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 01:53:03 UTC] 2 simplexml_load_string(): The file /usr/local/psa/admin/htdocs/enterprise/control/agent.php is part of Ple /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 01:53:03 UTC] 2 simplexml_load_string(): ^ /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 01:53:03 UTC] Connection to server failed 0
+[02-Sep-2020 01:54:51 UTC] 8192 Function get_magic_quotes_gpc() is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Requirements.php 80
+[02-Sep-2020 01:55:49 UTC] 
+[02-Sep-2020 01:55:49 UTC] 2 simplexml_load_string(): Entity: line 1: parser error : Start tag expected, '<' not found /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 01:55:49 UTC] 2 simplexml_load_string(): The file /usr/local/psa/admin/htdocs/enterprise/control/agent.php is part of Ple /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 01:55:49 UTC] 2 simplexml_load_string(): ^ /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 01:55:49 UTC] Connection to server failed 0
+[02-Sep-2020 01:59:08 UTC] 
+[02-Sep-2020 01:59:08 UTC] 2 simplexml_load_string(): Entity: line 1: parser error : Start tag expected, '<' not found /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 01:59:08 UTC] 2 simplexml_load_string(): The file /usr/local/psa/admin/htdocs/enterprise/control/agent.php is part of Ple /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 01:59:08 UTC] 2 simplexml_load_string(): ^ /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 01:59:08 UTC] Connection to server failed 0
+[02-Sep-2020 02:00:03 UTC] 
+[02-Sep-2020 02:00:04 UTC] 2 simplexml_load_string(): Entity: line 1: parser error : Start tag expected, '<' not found /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 02:00:04 UTC] 2 simplexml_load_string(): The file /usr/local/psa/admin/htdocs/enterprise/control/agent.php is part of Ple /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 02:00:04 UTC] 2 simplexml_load_string(): ^ /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 02:00:04 UTC] Connection to server failed 0
+[02-Sep-2020 02:00:25 UTC] 8192 Function get_magic_quotes_gpc() is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Requirements.php 80
+[02-Sep-2020 02:00:55 UTC] 
+[02-Sep-2020 02:00:55 UTC] 2 simplexml_load_string(): Entity: line 1: parser error : Start tag expected, '<' not found /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 02:00:55 UTC] 2 simplexml_load_string(): The file /usr/local/psa/admin/htdocs/enterprise/control/agent.php is part of Ple /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 02:00:55 UTC] 2 simplexml_load_string(): ^ /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 02:00:55 UTC] Connection to server failed 0
+[02-Sep-2020 02:01:36 UTC] 8192 Function get_magic_quotes_gpc() is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Requirements.php 80
+[02-Sep-2020 02:01:39 UTC] 8192 Function get_magic_quotes_gpc() is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Requirements.php 80
+[02-Sep-2020 02:02:26 UTC] 
+[02-Sep-2020 02:02:27 UTC] 2 simplexml_load_string(): Entity: line 1: parser error : Start tag expected, '<' not found /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 02:02:27 UTC] 2 simplexml_load_string(): The file /usr/local/psa/admin/htdocs/enterprise/control/agent.php is part of Ple /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 02:02:27 UTC] 2 simplexml_load_string(): ^ /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 02:02:27 UTC] Connection to server failed 0
+[02-Sep-2020 02:03:07 UTC] 8192 Function get_magic_quotes_gpc() is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Box/Requirements.php 80
+[02-Sep-2020 02:03:51 UTC] 
+[02-Sep-2020 02:03:51 UTC] 2 simplexml_load_string(): Entity: line 1: parser error : Start tag expected, '<' not found /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 02:03:51 UTC] 2 simplexml_load_string(): The file /usr/local/psa/admin/htdocs/enterprise/control/agent.php is part of Ple /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 02:03:51 UTC] 2 simplexml_load_string(): ^ /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-library/Server/Manager/Plesk.php 627
+[02-Sep-2020 02:03:51 UTC] Connection to server failed 0
+[02-Sep-2020 23:46:16 UTC] 
+[03-Sep-2020 00:21:45 UTC] 16384 The "filter" tag in "__string_template__bac521b54edaef4ebd3e851cddb9393ef0a2b0c43001f96e7730087232ae25d9" at line 2 is deprecated since Twig 2.9, use the "apply" tag instead. /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-vendor/twig/twig/src/TokenParser/FilterTokenParser.php 36
+[03-Sep-2020 00:21:46 UTC] Class 'PHPMailer' not found
+[04-Sep-2020 10:15:54 UTC] Unable to find template "mod_page_login_.phtml" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:15:54 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:15:54 UTC] Page /login/ not found
+[04-Sep-2020 10:15:55 UTC] Unable to find template "mod_page_bb-themes_huraga_assets_img_icons_apple-touch-icon-114-precomposed.png/" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:15:55 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:15:55 UTC] Page /bb-themes/huraga/assets/img/icons/apple-touch-icon-114-precomposed.png/ not found
+[04-Sep-2020 10:16:07 UTC] Unable to find template "mod_page_login_.phtml" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:16:07 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:16:07 UTC] Page /login/ not found
+[04-Sep-2020 10:17:14 UTC] Unable to find template "mod_page_login_.phtml" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:17:14 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:17:14 UTC] Page /login/ not found
+[04-Sep-2020 10:22:50 UTC] Unable to find template "mod_page_bb-themes_huraga_assets_img_icons_apple-touch-icon-114-precomposed.png/" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:22:50 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:22:50 UTC] Page /bb-themes/huraga/assets/img/icons/apple-touch-icon-114-precomposed.png/ not found
+[04-Sep-2020 10:22:50 UTC] Unable to find template "mod_page_bb-themes_huraga_assets_img_icons_apple-touch-icon-72-precomposed.png/" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:22:50 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:22:51 UTC] Page /bb-themes/huraga/assets/img/icons/apple-touch-icon-72-precomposed.png/ not found
+[04-Sep-2020 10:22:52 UTC] Unable to find template "mod_page_bb-themes_huraga_assets_img_icons_apple-touch-icon-57-precomposed.png/" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:22:52 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:22:52 UTC] Page /bb-themes/huraga/assets/img/icons/apple-touch-icon-57-precomposed.png/ not found
+[04-Sep-2020 10:42:43 UTC] Unable to find template "mod_page_login_.phtml" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:42:43 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:42:43 UTC] Page /login/ not found
+[04-Sep-2020 10:43:15 UTC] Unable to find template "mod_page_login_.phtml" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:43:15 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:43:15 UTC] Page /login/ not found
+[04-Sep-2020 10:44:01 UTC] Unable to find template "mod_page_login_.phtml" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:44:01 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:44:01 UTC] Page /login/ not found
+[04-Sep-2020 10:47:32 UTC] Unable to find template "mod_page_login_.phtml" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:47:32 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:47:32 UTC] Page /login/ not found
+[04-Sep-2020 10:47:36 UTC] Unable to find template "mod_page_login_.phtml" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:47:36 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:47:36 UTC] Page /login/ not found
+[04-Sep-2020 10:49:21 UTC] Unable to find template "mod_page_login_.phtml" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:49:21 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:49:21 UTC] Page /login/ not found
+[04-Sep-2020 10:59:07 UTC] Unable to find template "mod_page_login_.phtml" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:59:07 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:59:07 UTC] Page /login/ not found
+[04-Sep-2020 10:59:12 UTC] Unable to find template "mod_page_login_.phtml" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:59:12 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:59:12 UTC] Page /login/ not found
+[04-Sep-2020 10:59:13 UTC] Unable to find template "mod_page_login_.phtml" (looked into: /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-themes/huraga/html, /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Page/html_client).
+[04-Sep-2020 10:59:13 UTC] Box_Exception: Page not found in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php:77
+Stack trace:
+#0 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/AppClient.php(56): Box_AppClient->render()
+#1 [internal function]: Box_AppClient->get_custom_page()
+#2 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(220): ReflectionMethod->invokeArgs()
+#3 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(259): Box_App->execute()
+#4 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/App.php(143): Box_App->processRequest()
+#5 /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/index.php(27): Box_App->run()
+#6 {main}
+[04-Sep-2020 10:59:13 UTC] Page /login/ not found
+[04-Sep-2020 12:20:14 UTC] 8192 Function get_magic_quotes_gpc() is deprecated /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-load.php 141
+[04-Sep-2020 12:20:14 UTC] PHP Deprecated:  Function get_magic_quotes_gpc() is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-load.php on line 141
+[04-Sep-2020 12:20:14 UTC] Class 'Box_Request' not found
+[04-Sep-2020 12:29:54 UTC] Class 'Box_Request' not found
+[04-Sep-2020 12:32:57 UTC] Class 'Box_Request' not found
+[04-Sep-2020 12:33:42 UTC] Class 'Box_Request' not found
+[04-Sep-2020 12:36:37 UTC] Class 'Box_Request' not found
+[04-Sep-2020 12:40:24 UTC] Class 'Box_Request' not found
+[04-Sep-2020 12:42:25 UTC] Class 'Pimple' not found
+[04-Sep-2020 12:56:14 UTC] Class 'Pimple' not found
+[04-Sep-2020 12:59:50 UTC] Class 'Box_Request' not found
+[04-Sep-2020 13:04:53 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:07:44 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:09:13 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:10:49 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:12:14 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:19:35 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:19:50 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:24:03 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:24:05 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:26:26 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:29:00 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:40:33 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:46:54 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:50:11 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:54:56 UTC] Class 'Pimple' not found
+[04-Sep-2020 13:59:37 UTC] Class 'Pimple' not found
+[04-Sep-2020 14:02:20 UTC] Class 'Pimple' not found
+[04-Sep-2020 14:32:44 UTC] Class 'Pimple' not found
+[04-Sep-2020 14:42:21 UTC] Class 'Pimple' not found

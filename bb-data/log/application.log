@@ -1,0 +1,516 @@
+2020-08-31 13:20:22 DEBUG (7): onBeforeClientLogin: array (
+  'email' => 'timothy@webbhostingservices.com',
+  'password' => '987Um098',
+  'remember' => 'on',
+  'ip' => '66.169.61.212',
+)
+2020-08-31 13:20:22 DEBUG (7): onAfterClientLogin: array (
+  'id' => '7',
+  'ip' => '66.169.61.212',
+)
+2020-08-31 13:20:22 INFO (6): Client #7 logged in
+2020-08-31 13:20:45 DEBUG (7): onBeforeAdminLogin: array (
+  'email' => 'webmaster@webbhostingservices.com',
+  'password' => 'Mju7Cft6',
+  'ip' => '66.169.61.212',
+)
+2020-08-31 13:20:45 DEBUG (7): onAfterAdminLogin: array (
+  'id' => '1',
+  'ip' => '66.169.61.212',
+)
+2020-08-31 13:20:45 INFO (6): Staff member 1 logged in
+2020-08-31 15:24:54 INFO (6): Logged in as client #14
+2020-09-01 00:37:41 DEBUG (7): onAfterAdminSubscriptionCreate: array (
+  'id' => 5,
+)
+2020-09-01 00:37:41 INFO (6): Created subscription 5
+2020-09-01 00:40:46 DEBUG (7): onAfterAdminSubscriptionCreate: array (
+  'id' => 6,
+)
+2020-09-01 00:40:46 INFO (6): Created subscription 6
+2020-09-01 00:54:23 DEBUG (7): onAfterAdminSubscriptionCreate: array (
+  'id' => 7,
+)
+2020-09-01 00:54:23 INFO (6): Created subscription 7
+2020-09-01 01:02:50 DEBUG (7): onAfterAdminSubscriptionCreate: array (
+  'id' => 8,
+)
+2020-09-01 01:02:51 INFO (6): Created subscription 8
+2020-09-01 01:04:42 DEBUG (7): onAfterAdminSubscriptionCreate: array (
+  'id' => 9,
+)
+2020-09-01 01:04:42 INFO (6): Created subscription 9
+2020-09-01 01:05:22 DEBUG (7): onAfterAdminSubscriptionCreate: array (
+  'id' => 10,
+)
+2020-09-01 01:05:22 INFO (6): Created subscription 10
+2020-09-01 01:08:00 DEBUG (7): onAfterAdminSubscriptionDelete: array (
+  'id' => '5',
+)
+2020-09-01 01:08:00 INFO (6): Removed subscription 5
+2020-09-01 01:08:05 DEBUG (7): onAfterAdminSubscriptionDelete: array (
+  'id' => '6',
+)
+2020-09-01 01:08:05 INFO (6): Removed subscription 6
+2020-09-01 01:08:10 DEBUG (7): onAfterAdminSubscriptionDelete: array (
+  'id' => '7',
+)
+2020-09-01 01:08:10 INFO (6): Removed subscription 7
+2020-09-01 01:08:19 DEBUG (7): onAfterAdminSubscriptionDelete: array (
+  'id' => '8',
+)
+2020-09-01 01:08:19 INFO (6): Removed subscription 8
+2020-09-01 01:08:22 DEBUG (7): onAfterAdminSubscriptionDelete: array (
+  'id' => '9',
+)
+2020-09-01 01:08:22 INFO (6): Removed subscription 9
+2020-09-01 01:08:26 DEBUG (7): onAfterAdminSubscriptionDelete: array (
+  'id' => '10',
+)
+2020-09-01 01:08:26 INFO (6): Removed subscription 10
+2020-09-01 01:13:15 DEBUG (7): onAfterAdminSubscriptionCreate: array (
+  'id' => 11,
+)
+2020-09-01 01:13:15 INFO (6): Created subscription 11
+2020-09-01 01:16:18 INFO (6): Updated subscription 4
+2020-09-01 01:17:49 INFO (6): Updated subscription 4
+2020-09-01 01:33:35 INFO (6): Updated subscription 11
+2020-09-01 02:09:50 DEBUG (7): onBeforeProductAddedToCart: array (
+  'period' => '1M',
+  'domain' => 
+  array (
+    'action' => 'owndomain',
+    'owndomain_sld' => 'k12usjobs',
+    'owndomain_tld' => '.com',
+    'register_sld' => '',
+    'register_tld' => '.com',
+  ),
+  'multiple' => '1',
+  'id' => '7',
+  'cart_id' => '40',
+  'product_id' => '7',
+)
+2020-09-01 02:10:53 INFO (6): Updated product #7 configuration
+2020-09-01 02:11:13 DEBUG (7): onBeforeProductAddedToCart: array (
+  'period' => '1M',
+  'domain' => 
+  array (
+    'action' => 'owndomain',
+    'owndomain_sld' => 'k12usjobs',
+    'owndomain_tld' => '.com',
+    'register_sld' => '',
+    'register_tld' => '.com',
+  ),
+  'multiple' => '1',
+  'id' => '7',
+  'cart_id' => '40',
+  'product_id' => '7',
+)
+2020-09-01 02:11:13 INFO (6): Added "Dedicated Hosting" to shopping cart
+2020-09-01 02:11:13 DEBUG (7): onAfterProductAddedToCart: array (
+  'period' => '1M',
+  'domain' => 
+  array (
+    'action' => 'owndomain',
+    'owndomain_sld' => 'k12usjobs',
+    'owndomain_tld' => '.com',
+    'register_sld' => '',
+    'register_tld' => '.com',
+  ),
+  'multiple' => '1',
+  'id' => '7',
+  'cart_id' => '40',
+  'product_id' => '7',
+)
+2020-09-01 02:14:51 DEBUG (7): onBeforeAdminOrderCreate: array (
+  'invoice_option' => 'issue-invoice',
+  'activate' => '1',
+  'period' => '1M',
+  'config' => 
+  array (
+    'import' => '1',
+    'domain' => 
+    array (
+      'owndomain_sld' => 'k12usjobs',
+      'owndomain_tld' => '.com',
+      'action' => 'owndomain',
+    ),
+    'username' => '',
+    'password' => '',
+  ),
+  'client_id' => '5',
+  'product_id' => '7',
+)
+2020-09-01 02:14:51 DEBUG (7): onAfterAdminOrderCreate: array (
+  'id' => '40',
+)
+2020-09-01 02:14:51 INFO (6): Created order #40
+2020-09-01 02:14:51 DEBUG (7): onBeforeAdminInvoiceApprove: array (
+  'id' => '84',
+)
+2020-09-01 02:14:51 DEBUG (7): onAfterAdminInvoiceApprove: array (
+  'id' => '84',
+)
+2020-09-01 02:16:35 DEBUG (7): onBeforeAdminOrderUpdate: array (
+  'title' => 'Dedicated Hosting',
+  'status' => 'pending_setup',
+  'invoice_option' => 'issue-invoice',
+  'price' => '100.00',
+  'reason' => '',
+  'period' => '1M',
+  'expires_at' => '2020-09-30',
+  'created_at' => '2020-09-01',
+  'activated_at' => '2020-09-01',
+  'notes' => '',
+  'id' => '40',
+)
+2020-09-01 02:16:35 DEBUG (7): onAfterAdminOrderUpdate: array (
+  'id' => '40',
+)
+2020-09-01 02:16:35 INFO (6): Update order #40
+2020-09-01 02:19:02 DEBUG (7): onBeforeAdminInvoiceUpdate: array (
+  'status' => 'unpaid',
+  'approved' => '0',
+  'serie' => '',
+  'nr' => '84',
+  'taxname' => '',
+  'taxrate' => '7',
+  'gateway_id' => '',
+  'created_at' => '2020-09-01',
+  'due_at' => '2020-09-01',
+  'paid_at' => '',
+  'notes' => '',
+  'id' => '84',
+)
+2020-09-01 02:19:02 DEBUG (7): onAfterAdminInvoiceUpdate: array (
+  'id' => '84',
+)
+2020-09-01 02:19:02 INFO (6): Updated invoice "84"
+2020-09-01 02:19:13 DEBUG (7): onBeforeAdminInvoiceUpdate: array (
+  'items' => 
+  array (
+    97 => 
+    array (
+      'title' => 'Dedicated Hosting',
+      'price' => '100.00',
+      'taxed' => '1',
+    ),
+  ),
+  'new_item' => 
+  array (
+    'title' => '',
+    'price' => '',
+  ),
+  'id' => '84',
+)
+2020-09-01 02:19:13 DEBUG (7): onAfterAdminInvoiceUpdate: array (
+  'id' => '84',
+)
+2020-09-01 02:19:13 INFO (6): Updated invoice "84"
+2020-09-01 02:19:48 DEBUG (7): onBeforeAdminInvoiceApprove: array (
+  'id' => '84',
+)
+2020-09-01 02:19:48 DEBUG (7): onAfterAdminInvoiceApprove: array (
+  'id' => '84',
+)
+2020-09-01 02:20:01 DEBUG (7): onBeforeAdminInvoiceUpdate: array (
+  'status' => 'unpaid',
+  'approved' => '1',
+  'serie' => '',
+  'nr' => '84',
+  'taxname' => '',
+  'taxrate' => '7',
+  'gateway_id' => '',
+  'created_at' => '2020-09-01',
+  'due_at' => '2020-09-01',
+  'paid_at' => '',
+  'notes' => '',
+  'id' => '84',
+)
+2020-09-01 02:20:01 DEBUG (7): onAfterAdminInvoiceUpdate: array (
+  'id' => '84',
+)
+2020-09-01 02:20:01 INFO (6): Updated invoice "84"
+2020-09-01 02:22:53 INFO (6): Updated subscription 11
+2020-09-01 02:23:19 DEBUG (7): onAfterAdminSubscriptionDelete: array (
+  'id' => '4',
+)
+2020-09-01 02:23:19 INFO (6): Removed subscription 4
+2020-09-01 02:23:24 DEBUG (7): onAfterAdminSubscriptionDelete: array (
+  'id' => '3',
+)
+2020-09-01 02:23:24 INFO (6): Removed subscription 3
+2020-09-01 02:26:44 INFO (6): Logged in as client #5
+2020-09-01 02:31:56 DEBUG (7): onBeforeAdminTransactionCreate: array (
+  'skip_validation' => true,
+  'bb_invoice_id' => '30',
+  'bb_gateway_id' => '2',
+  'get' => 
+  array (
+    'bb_gateway_id' => '2',
+    'bb_invoice_id' => '30',
+  ),
+  'post' => 
+  array (
+    'txn_type' => 'subscr_modify',
+    'subscr_id' => 'I-AT5E5PS7GU1M',
+    'last_name' => 'Whiteside',
+    'residence_country' => 'US',
+    'mc_currency' => 'USD',
+    'item_name' => 'Payment for invoice Payment Due00030 [Reseller Hosting for sevensides.com]',
+    'business' => 'timothy@webbhostingservices.com',
+    'amount3' => '159.80',
+    'subscr_effective' => '02:00:00 Dec 24, 2020 PST',
+    'recurring' => '1',
+    'verify_sign' => 'A1839HyoM14oGfPdJKWxShZu0d7wAWc-6enNdW7VsrrMjYfNZS-DlCRv',
+    'payer_status' => 'verified',
+    'payer_email' => 'btwhiteside86@gmail.com',
+    'first_name' => 'Brian',
+    'receiver_email' => 'timothy@webbhostingservices.com',
+    'payer_id' => '4KZWZZZV2KAZA',
+    'reattempt' => '1',
+    'payer_business_name' => 'SevenSides',
+    'subscr_date' => '06:07:01 Dec 24, 2019 PST',
+    'charset' => 'windows-1252',
+    'notify_version' => '3.9',
+    'period3' => '1 Y',
+    'mc_amount3' => '159.80',
+    'ipn_track_id' => '31e720458f482',
+  ),
+  'server' => 
+  array (
+    'USER' => 'webmaster',
+    'HOME' => '/home/webmaster',
+    'HTTP_CONTENT_LENGTH' => '714',
+    'HTTP_CORRELATION_ID' => '31e720458f482',
+    'HTTP_USER_AGENT' => 'PayPal IPN ( https://www.paypal.com/ipn )',
+    'HTTP_CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+    'HTTP_ACCEPT' => '*/*',
+    'HTTP_HOST' => 'webbhostingservices.com',
+    'REDIRECT_STATUS' => '200',
+    'SERVER_NAME' => 'webbhostingservices.com',
+    'SERVER_PORT' => '443',
+    'SERVER_ADDR' => '10.142.0.20',
+    'REMOTE_PORT' => '27120',
+    'REMOTE_ADDR' => '173.0.81.1',
+    'SERVER_SOFTWARE' => 'nginx/1.18.0',
+    'GATEWAY_INTERFACE' => 'CGI/1.1',
+    'HTTPS' => 'on',
+    'REQUEST_SCHEME' => 'https',
+    'SERVER_PROTOCOL' => 'HTTP/1.1',
+    'DOCUMENT_ROOT' => '/var/www/vhosts/webbhostingservices.com/httpdocs',
+    'DOCUMENT_URI' => '/boxbilling/bb-ipn.php',
+    'REQUEST_URI' => '/boxbilling/bb-ipn.php?bb_gateway_id=2&bb_invoice_id=30',
+    'SCRIPT_NAME' => '/boxbilling/bb-ipn.php',
+    'CONTENT_LENGTH' => '714',
+    'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+    'REQUEST_METHOD' => 'POST',
+    'QUERY_STRING' => 'bb_gateway_id=2&bb_invoice_id=30',
+    'SCRIPT_FILENAME' => '/var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/bb-ipn.php',
+    'PATH_INFO' => '',
+    'FCGI_ROLE' => 'RESPONDER',
+    'PHP_SELF' => '/boxbilling/bb-ipn.php',
+    'REQUEST_TIME_FLOAT' => 1598927516.409901,
+    'REQUEST_TIME' => 1598927516,
+  ),
+  'http_raw_post_data' => 'txn_type=subscr_modify&subscr_id=I-AT5E5PS7GU1M&last_name=Whiteside&residence_country=US&mc_currency=USD&item_name=Payment+for+invoice+Payment+Due00030+%5BReseller+Hosting+for+sevensides.com%5D&business=timothy%40webbhostingservices.com&amount3=159.80&subscr_effective=02%3A00%3A00+Dec+24%2C+2020+PST&recurring=1&verify_sign=A1839HyoM14oGfPdJKWxShZu0d7wAWc-6enNdW7VsrrMjYfNZS-DlCRv&payer_status=verified&payer_email=btwhiteside86%40gmail.com&first_name=Brian&receiver_email=timothy%40webbhostingservices.com&payer_id=4KZWZZZV2KAZA&reattempt=1&payer_business_name=SevenSides&subscr_date=06%3A07%3A01+Dec+24%2C+2019+PST&charset=windows-1252&notify_version=3.9&period3=1+Y&mc_amount3=159.80&ipn_track_id=31e720458f482',
+)
+2020-09-01 02:31:56 INFO (6): Received transaction 20 from payment gateway 2
+2020-09-01 02:31:56 DEBUG (7): onAfterAdminTransactionCreate: array (
+  'id' => 20,
+)
+2020-09-01 02:31:58 DEBUG (7): onBeforeAdminTransactionUpdate: array (
+  'id' => '20',
+)
+2020-09-01 02:31:58 DEBUG (7): onAfterAdminTransactionUpdate: array (
+  'id' => '20',
+)
+2020-09-01 02:31:58 INFO (6): Updated transaction #20
+2020-09-01 02:31:58 DEBUG (7): onBeforeAdminTransactionUpdate: array (
+  'id' => '20',
+)
+2020-09-01 02:31:58 DEBUG (7): onAfterAdminTransactionUpdate: array (
+  'id' => '20',
+)
+2020-09-01 02:31:58 INFO (6): Updated transaction #20
+2020-09-01 02:53:46 DEBUG (7): onBeforeProductAddedToCart: array (
+  'period' => '1M',
+  'domain' => 
+  array (
+    'action' => 'owndomain',
+    'owndomain_sld' => 'k12usjobs',
+    'owndomain_tld' => '.com',
+    'register_sld' => '',
+    'register_tld' => '.com',
+  ),
+  'multiple' => '1',
+  'id' => '7',
+  'cart_id' => '40',
+  'product_id' => '7',
+)
+2020-09-01 02:53:46 INFO (6): Added "Dedicated Hosting" to shopping cart
+2020-09-01 02:53:46 DEBUG (7): onAfterProductAddedToCart: array (
+  'period' => '1M',
+  'domain' => 
+  array (
+    'action' => 'owndomain',
+    'owndomain_sld' => 'k12usjobs',
+    'owndomain_tld' => '.com',
+    'register_sld' => '',
+    'register_tld' => '.com',
+  ),
+  'multiple' => '1',
+  'id' => '7',
+  'cart_id' => '40',
+  'product_id' => '7',
+)
+2020-09-01 02:53:54 INFO (6): Removed product from shopping cart
+2020-09-01 02:53:57 INFO (6): Removed product from shopping cart
+2020-09-01 02:55:46 DEBUG (7): onBeforeAdminOrderActivate: array (
+  'id' => '40',
+)
+2020-09-01 02:55:46 DEBUG (7): onAfterAdminOrderActivate: array (
+  'id' => '40',
+  'username' => 'k12usjo3',
+  'password' => 'wyc4qOf+n&',
+)
+2020-09-01 02:56:23 DEBUG (7): onBeforeAdminOrderUpdate: array (
+  'title' => 'Dedicated Hosting',
+  'status' => 'active',
+  'invoice_option' => 'issue-invoice',
+  'price' => '100.00',
+  'reason' => '',
+  'period' => '1M',
+  'expires_at' => '2020-09-30',
+  'created_at' => '2020-09-01',
+  'activated_at' => '2020-09-01',
+  'notes' => '',
+  'id' => '40',
+)
+2020-09-01 02:56:23 DEBUG (7): onAfterAdminOrderUpdate: array (
+  'id' => '40',
+)
+2020-09-01 02:56:23 INFO (6): Update order #40
+2020-09-01 02:57:15 INFO (6): Logged in as client #5
+2020-09-01 06:42:17 DEBUG (7): onBeforeClientLogin: array (
+  'email' => 'timothy@webbhostingservices.com',
+  'password' => '987Um098',
+  'remember' => 'on',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 06:42:17 DEBUG (7): onAfterClientLogin: array (
+  'id' => '7',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 06:42:17 INFO (6): Client #7 logged in
+2020-09-01 06:43:15 DEBUG (7): onBeforeAdminLogin: array (
+  'email' => 'webmaster@webbhostingservices.com',
+  'password' => 'Mju7Cft6',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 06:43:16 DEBUG (7): onAfterAdminLogin: array (
+  'id' => '1',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 06:43:16 INFO (6): Staff member 1 logged in
+2020-09-01 06:43:29 INFO (6): Logged in as client #5
+2020-09-01 06:45:09 INFO (6): Logged in as client #3
+2020-09-01 16:14:48 DEBUG (7): onBeforeClientLogin: array (
+  'email' => 'timothy@webbhostingservices.com',
+  'password' => '987Um098',
+  'remember' => 'on',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 16:14:48 DEBUG (7): onAfterClientLogin: array (
+  'id' => '7',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 16:14:48 INFO (6): Client #7 logged in
+2020-09-01 16:26:11 DEBUG (7): onBeforeAdminLogin: array (
+  'email' => 'webmaster@webbhostingservices.com',
+  'password' => 'Mju7Cft6',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 16:26:12 DEBUG (7): onAfterAdminLogin: array (
+  'id' => '1',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 16:26:12 INFO (6): Staff member 1 logged in
+2020-09-01 16:55:58 DEBUG (7): onBeforeAdminLogin: array (
+  'email' => 'webmaster@webbhostingservices.com',
+  'password' => 'Mju7Cft6',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 16:55:58 DEBUG (7): onAfterAdminLogin: array (
+  'id' => '1',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 16:55:58 INFO (6): Staff member 1 logged in
+2020-09-01 17:03:07 DEBUG (7): onBeforeAdminLogin: array (
+  'email' => 'webmaster@webbhostingservices.com',
+  'password' => 'Mju7Cft6',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 17:03:07 DEBUG (7): onAfterAdminLogin: array (
+  'id' => '1',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 17:03:07 INFO (6): Staff member 1 logged in
+2020-09-01 17:03:13 INFO (6): Admin logged out
+2020-09-01 17:18:05 DEBUG (7): onBeforeAdminLogin: array (
+  'email' => 'webmaster@webbhostingservices.com',
+  'password' => 'Mju7Cft6',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 17:18:05 DEBUG (7): onAfterAdminLogin: array (
+  'id' => '1',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 17:18:05 INFO (6): Staff member 1 logged in
+2020-09-01 17:24:27 INFO (6): Admin logged out
+2020-09-01 17:24:32 DEBUG (7): onBeforeAdminLogin: array (
+  'email' => 'webmaster@webbhostingservices.com',
+  'password' => 'Mju7Cft6',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 17:24:33 DEBUG (7): onAfterAdminLogin: array (
+  'id' => '1',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 17:24:33 INFO (6): Staff member 1 logged in
+2020-09-01 17:39:25 INFO (6): Logged in as client #5
+2020-09-01 18:04:49 DEBUG (7): onBeforeClientLogin: array (
+  'email' => 'timothy@webbhostingservices.com',
+  'password' => '53d07002a9',
+  'remember' => 'on',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 18:04:49 DEBUG (7): onEventClientLoginFailed: array (
+  'email' => 'timothy@webbhostingservices.com',
+  'password' => '53d07002a9',
+  'remember' => 'on',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 18:05:08 DEBUG (7): onBeforeClientLogin: array (
+  'email' => 'timothy@webbhostingservices.com',
+  'password' => '53d07002a9',
+  'remember' => 'on',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 18:05:09 DEBUG (7): onEventClientLoginFailed: array (
+  'email' => 'timothy@webbhostingservices.com',
+  'password' => '53d07002a9',
+  'remember' => 'on',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 18:05:42 DEBUG (7): onBeforeAdminLogin: array (
+  'email' => 'webmaster@webbhostingservices.com',
+  'password' => 'Du@dm6SbtWBxu9c',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 18:05:43 DEBUG (7): onEventAdminLoginFailed: array (
+  'email' => 'webmaster@webbhostingservices.com',
+  'password' => 'Du@dm6SbtWBxu9c',
+  'ip' => '66.169.61.212',
+)
+2020-09-01 22:06:12 INFO (6): Client #7 logged in

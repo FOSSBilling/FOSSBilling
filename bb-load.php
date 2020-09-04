@@ -139,8 +139,7 @@ ini_set('error_log', BB_PATH_LOG . '/php_error.log');
 
 // Strip magic quotes from request data.
 /**Deprecated:Function get_magic_quotes_gpc()) is deprecated in php7.4.9**/
-//if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc())
- {
+//if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()){
     // Create lamba style unescaping function (for portability)
     $quotes_sybase = strtolower(ini_get('magic_quotes_sybase'));
 
@@ -168,4 +167,4 @@ ini_set('error_log', BB_PATH_LOG . '/php_error.log');
     $stripslashes_deep($_GET, $stripslashes_deep);
     $stripslashes_deep($_COOKIE, $stripslashes_deep);
     $stripslashes_deep($_REQUEST, $stripslashes_deep);
-}
+
