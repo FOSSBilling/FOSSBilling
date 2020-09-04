@@ -1,0 +1,32 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>tFPDF</title>
+<style type="text/css">
+body {font-family:"Times New Roman",serif}
+h1 {font:bold 135% Arial,sans-serif; color:#4000A0; margin-bottom:0.9em}
+h2 {font:bold 95% Arial,sans-serif; color:#900000; margin-top:1.5em; margin-bottom:1em}
+</style>
+</head>
+<body>
+<h1>tFPDF</h1>
+<h2>Informations</h2>
+Auteur : <a href="mailto:ian@bpm1.com?subject=tFPDF">Ian Back</a><br>
+Licence : LGPL
+<h2>Description</h2>
+Cette classe est une version modifiée de FPDF qui ajoute le support de l'UTF-8. De plus, elle
+incorpore dans le document uniquement les portions des polices qui sont effectivement utilisées,
+réduisant ainsi la taille du fichier PDF. Ces fonctionnalités ont été développées à l'origine
+pour le projet <a href="http://www.mpdf1.com/mpdf/" target="_blank">mPDF</a>.<br>
+<br>
+Pour utiliser une police Unicode dans votre script, passez le nom du fichier de police comme
+troisième paramètre à <code>AddFont()</code> et <code>true</code> comme quatrième paramètre.
+La police peut être située soit dans le répertoire font/unifont, soit directement dans le
+répertoire des polices systèmes (dans le cas où la constante <code>_SYSTEM_TTFONTS</code>
+a été définie). La famille de polices <a href="http://dejavu-fonts.org" target="_blank">DejaVu</a>
+est fournie dans l'archive.<br>
+<br>
+<strong>Note :</strong> cette classe requiert l'extension mbstring.
+</body>
+</html>

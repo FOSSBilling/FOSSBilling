@@ -1,0 +1,17 @@
+{
+    "name": "rev42/tFPDF",
+    "description": "tFPDF",
+    "keywords": ["pdf"],
+    "homepage": "http://fpdf.org/fr/script/script92.php",
+    "type": "library",
+    "license": "LGPL",
+    "authors": [
+        {
+            "name": "Ian Back",
+            "email": "ianb@bpm1.com"
+        }
+    ],
+    "autoload": {
+        "psr-0": { "tFPDF": "src/" }
+    }
+}
