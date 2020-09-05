@@ -10,7 +10,7 @@ return array (
   'locale' => 'en_US',
   'locale_date_format' => '%A, %d %B %G',
   'locale_time_format' => ' %T',
-  'path_data' => '/var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-data/',
+  'path_data' => '/var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-data',
   'path_logs' => '/var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-data/log/application.log',
   'log_to_db' => 'true',
   'db' => 
@@ -25,7 +25,7 @@ return array (
   array (
     'debug' => true,
     'auto_reload' => true,
-    'cache' => '/var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-data/cache/',
+    'cache' => '/var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-data/cache',
   ),
   'api' => 
   array (

@@ -10,8 +10,8 @@
  * with this source code in the file LICENSE
  */
 
-
 namespace Box\Mod\Invoice;
+
 use Box\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -139,13 +139,15 @@ class Service implements InjectionAwareInterface
         $row = $this->di['db']->toArray($invoice);
         
         $items = $this->di['db']->find('InvoiceItem', 'invoice_id = :iid', array('iid'=>$row['id']));
+        
         $lines = array();
         $total = $tax_total = 0;
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         foreach($items as $item) {
             $order_id = ($item->type == \Model_InvoiceItem::TYPE_ORDER) ? $item->rel_id : null;
-            $line_total = $item->price * $item->quantity;
-            $total += $line_total;
+                        
+            $line_total = $item->price * $item->quantity; 
+            $total +=  $line_total;
             $line_tax = $invoiceItemService->getTax($item) * $item->quantity;
             $tax_total += $line_tax;
             $line = array(
@@ -158,7 +160,7 @@ class Service implements InjectionAwareInterface
                 'tax'       =>  $line_tax,
                 'taxed'     =>  $item->taxed,
                 'charged'   =>  $item->charged,
-                'total'     =>  $item->price * $item->quantity,
+                'total'     =>  $line_total,
                 'order_id'  =>  $order_id,
                 'type'      =>  $item->type,
                 'rel_id'    =>  $item->rel_id,
@@ -224,7 +226,10 @@ class Service implements InjectionAwareInterface
             'account_number' => !empty($c['account_number']) ? $c['account_number'] : null,
         );
 
-        if($identity instanceof \Model_Admin){
+            /**
+             * Removed if($identity instanceof \Model_Admin) {}
+             * Generates error when this function is called by cron
+             */
             $client = $this->di['db']->load('Client', $row['client_id']);
             $clientService = $this->di['mod_service']('client');
             if($client instanceof \Model_Client) {
@@ -237,7 +242,6 @@ class Service implements InjectionAwareInterface
             $result['income'] = $row['base_income'] - $row['base_refund'];
             $result['refund'] = $row['refund'];
             $result['credit'] = $row['credit'];
-        }
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         $result['subscribable'] = $subscriptionService->isSubscribable($row['id']);
@@ -452,7 +456,7 @@ class Service implements InjectionAwareInterface
         $model->text_2 = $this->di['array_get']($data, 'text_2', $model->text_2);
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
-        $invoiceId = $this->di['db']->store($model);;
+        $invoiceId = $this->di['db']->store($model);
 
         $this->setInvoiceDefaults($model);
 
@@ -705,7 +709,7 @@ class Service implements InjectionAwareInterface
             //@deprecated
             case 'same_invoice':
                 $amount = $this->getTotalWithTax($invoice);
-                $invoice->refund = empty($amount) ? NULL : $amount;
+                $invoice->refund = empty($amount) ? null : $amount;
                 $invoice->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($invoice);
 
@@ -934,15 +938,6 @@ class Service implements InjectionAwareInterface
         $this->setInvoiceDefaults($proforma);
 
         $price = $order->price;
-        // apply discount for new invoice if promo code is recurrent
-        if($order->promo_recurring) {
-            $price = $order->price - $order->discount;
-            if($price < 0) {
-                $price = 0;
-            }
-            $order->promo_used +=1;
-            $this->di['db']->store($order);
-        }
 
         $invoiceItemService = $this->di['mod_service']('Invoice', "InvoiceItem");
         $invoiceItemService->generateFromOrder($proforma, $order, \Model_InvoiceItem::TASK_RENEW, $price);
@@ -1028,7 +1023,7 @@ class Service implements InjectionAwareInterface
             $this->di['events_manager']->fire(array('event'=>'onEventBeforeInvoiceIsDue', 'params'=>$params));
         }
 
-        $after_due_list = $this->di['db']->getAll("SELECT id, ABS(DATEDIFF(due_at, NOW())) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at < NOW()");
+        $after_due_list = $this->di['db']->getAll("SELECT id, ABS(DATEDIFF(due_at, NOW())) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0 ))");
         foreach($after_due_list as $params) {
             $this->di['events_manager']->fire(array('event'=>'onEventAfterInvoiceIsDue', 'params'=>$params));
         }

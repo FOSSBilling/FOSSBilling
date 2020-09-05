@@ -514,3 +514,14 @@
   'ip' => '66.169.61.212',
 )
 2020-09-01 22:06:12 INFO (6): Client #7 logged in
+2020-09-05 02:45:38 DEBUG (7): onBeforeClientLogin: array (
+  'email' => 'ross@k12usjobs.com',
+  'password' => 'Ff0o73%zFXtripgs',
+  'remember' => 'on',
+  'ip' => '66.169.61.212',
+)
+2020-09-05 02:45:38 DEBUG (7): onAfterClientLogin: array (
+  'id' => '5',
+  'ip' => '66.169.61.212',
+)
+2020-09-05 02:45:38 INFO (6): Client #5 logged in

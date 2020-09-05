@@ -18,7 +18,7 @@ define('BB_PATH_THEMES',    BB_PATH_ROOT . '/bb-themes');
 define('BB_PATH_MODS',      BB_PATH_ROOT . '/bb-modules');
 define('BB_PATH_LANGS',     BB_PATH_ROOT . '/bb-locale');
 define('BB_PATH_UPLOADS',   BB_PATH_ROOT . '/bb-uploads');
-define('BB_PATH_DATA',      BB_PATH_ROOT . '/bb-data');
+define('BB_PATH_DATA',   BB_PATH_ROOT . '/bb-data');
 
 function handler_error($number, $message, $file, $line)
 {
@@ -138,8 +138,11 @@ ini_set('html_errors', FALSE);
 ini_set('error_log', BB_PATH_LOG . '/php_error.log');
 
 // Strip magic quotes from request data.
-/**Deprecated:Function get_magic_quotes_gpc()) is deprecated in php7.4.9**/
-//if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()){
+/**
+Deprecated: Function get_magic_quotes_gpc() is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-load.php on line 141
+**/
+//if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) 
+{
     // Create lamba style unescaping function (for portability)
     $quotes_sybase = strtolower(ini_get('magic_quotes_sybase'));
 
@@ -167,4 +170,4 @@ ini_set('error_log', BB_PATH_LOG . '/php_error.log');
     $stripslashes_deep($_GET, $stripslashes_deep);
     $stripslashes_deep($_COOKIE, $stripslashes_deep);
     $stripslashes_deep($_REQUEST, $stripslashes_deep);
-
+}

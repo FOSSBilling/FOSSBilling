@@ -33,6 +33,7 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
         array (
             'Symfony\\Polyfill\\Mbstring\\' => 26,
             'Symfony\\Polyfill\\Ctype\\' => 23,
+            'Symfony\\Component\\EventDispatcher\\' => 34,
             'Stripe\\' => 7,
         ),
         'P' => 
@@ -44,23 +45,12 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
         ),
         'M' => 
         array (
-            'Michelf\\' => 8,
-            'MaxMind\\WebService\\' => 19,
-            'MaxMind\\Exception\\' => 18,
             'MaxMind\\Db\\' => 11,
-        ),
-        'G' => 
-        array (
-            'GeoIp2\\' => 7,
         ),
         'D' => 
         array (
             'Doctrine\\Instantiator\\' => 22,
             'DeepCopy\\' => 9,
-        ),
-        'C' => 
-        array (
-            'Composer\\CaBundle\\' => 18,
         ),
         'B' => 
         array (
@@ -95,6 +85,10 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-ctype',
         ),
+        'Symfony\\Component\\EventDispatcher\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/event-dispatcher',
+        ),
         'Stripe\\' => 
         array (
             0 => __DIR__ . '/..' . '/stripe/stripe-php/lib',
@@ -115,25 +109,9 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
         array (
             0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
         ),
-        'Michelf\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/michelf/php-markdown/Michelf',
-        ),
-        'MaxMind\\WebService\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/maxmind/web-service-common/src/WebService',
-        ),
-        'MaxMind\\Exception\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/maxmind/web-service-common/src/Exception',
-        ),
         'MaxMind\\Db\\' => 
         array (
             0 => __DIR__ . '/..' . '/maxmind-db/reader/src/MaxMind/Db',
-        ),
-        'GeoIp2\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/geoip2/geoip2/src',
         ),
         'Doctrine\\Instantiator\\' => 
         array (
@@ -142,10 +120,6 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
         'DeepCopy\\' => 
         array (
             0 => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy',
-        ),
-        'Composer\\CaBundle\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/composer/ca-bundle/src',
         ),
         'Box\\Mod\\' => 
         array (
@@ -158,7 +132,7 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
         array (
             'tFPDF' => 
             array (
-                0 => __DIR__ . '/..' . '/docnet/tfpdf/src',
+                0 => __DIR__ . '/..' . '/rev42/tfpdf/src',
             ),
         ),
         'T' => 
@@ -177,6 +151,35 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
             'Pimple' => 
             array (
                 0 => __DIR__ . '/..' . '/pimple/pimple/src',
+            ),
+        ),
+        'M' => 
+        array (
+            'Michelf' => 
+            array (
+                0 => __DIR__ . '/..' . '/michelf/php-markdown',
+            ),
+        ),
+        'J' => 
+        array (
+            'JsonSerializable' => 
+            array (
+                0 => __DIR__ . '/..' . '/geoip2/geoip2/compat',
+            ),
+        ),
+        'G' => 
+        array (
+            'Guzzle\\Tests' => 
+            array (
+                0 => __DIR__ . '/..' . '/guzzle/guzzle/tests',
+            ),
+            'Guzzle' => 
+            array (
+                0 => __DIR__ . '/..' . '/guzzle/guzzle/src',
+            ),
+            'GeoIp2' => 
+            array (
+                0 => __DIR__ . '/..' . '/geoip2/geoip2/src',
             ),
         ),
     );

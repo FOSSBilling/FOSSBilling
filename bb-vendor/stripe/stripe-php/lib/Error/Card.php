@@ -10,10 +10,9 @@ class Card extends Base
         $code,
         $httpStatus,
         $httpBody,
-        $jsonBody,
-        $httpHeaders = null
+        $jsonBody
     ) {
-        parent::__construct($message, $httpStatus, $httpBody, $jsonBody, $httpHeaders);
+        parent::__construct($message, $httpStatus, $httpBody, $jsonBody);
         $this->param = $param;
         $this->code = $code;
     }

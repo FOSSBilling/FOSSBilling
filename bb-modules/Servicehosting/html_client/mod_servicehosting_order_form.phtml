@@ -34,11 +34,7 @@
             <div class="row-fluid">
             <div class="controls">
                 <input type="text" name="domain[register_sld]" value="{{ request.register_sld }}" placeholder="{% trans 'mydomain' %}" class="span4">
-                {% if product.config.free_domain == 1 %}
-                    {% set tlds = guest.serviceHosting_free_tlds({'product_id' : product.id}) %}
-                {% else %}
                     {% set tlds = guest.serviceDomain_tlds({"allow_register":1})%}
-                {% endif %}
                 <select name="domain[register_tld]">
                     {% for tld in tlds%}
                         <option value="{{ tld.tld}}" label="{{ tld.tld}}">{{ tld.tld}}</option>
