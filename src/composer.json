@@ -20,7 +20,7 @@
         "pimple/pimple": "^v3.3.0",
         "twig/twig": "^v2.13.0",
         "twig/extensions": "^v1.5.4",
-        "tecnickcom/tc-lib-pdf": "dev-master",
+        "setasign/fpdf": "^v1.0.0",
         "geoip2/geoip2": "^v2.1.0",
         "ircmaxell/password-compat": "^v1.0.4",
         "phpmailer/phpmailer": "^v6.1.6",

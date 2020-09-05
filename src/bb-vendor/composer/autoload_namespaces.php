@@ -9,5 +9,5 @@ return array(
     'Twig_Extensions_' => array($vendorDir . '/twig/extensions/lib'),
     'Twig_' => array($vendorDir . '/twig/twig/lib'),
     'Pimple' => array($vendorDir . '/pimple/pimple/src'),
-    '' => array($baseDir . '/bb-library', $baseDir . '/../tests/bb-library'),
+    '' => array($baseDir . '/bb-library'),
 );
