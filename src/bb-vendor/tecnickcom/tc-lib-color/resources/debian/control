@@ -1,0 +1,16 @@
+Source: ~#PKGNAME#~
+Maintainer: Nicola Asuni <info@tecnick.com>
+Section: php
+Priority: optional
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.7
+Homepage: https://github.com/~#VENDOR#~/~#PROJECT#~
+Vcs-Git: https://github.com/~#VENDOR#~/~#PROJECT#~.git
+
+Package: ~#PKGNAME#~
+Provides: php-~#PROJECT#~
+Architecture: all
+Depends: php (>= 5.3.0), ${misc:Depends}
+Description: PHP Color library
+ This library includes PHP classes to parse and manipulate
+ various colors representations GRAY, RGB, HSL, CMYK.

@@ -1,0 +1,8 @@
+{
+    "id":           "massmailer",
+	"type":         "mod",
+    "name":         "Mass mail tool",
+    "icon_url":     "icon.png",
+    "description":  "Send batch email to filtered clients",
+    "version":      "1.0.0"
+}

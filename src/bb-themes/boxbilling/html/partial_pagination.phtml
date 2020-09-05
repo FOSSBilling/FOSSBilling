@@ -1,0 +1,18 @@
+{% if list.pages > 1 %}
+{% set page = list.page %}
+
+<div class="paginator">
+<ul>
+  {% for i in 1..list.pages %}
+    <li>
+    {% if i == page %}
+        <a class="bb-button bb-button-submit" href="#" onclick="return false;">{{ i }}</a>
+    {%else%}
+        <a class="bb-button" href="?{% for k,v in {}|merge(request)|merge({'page': i}) %}{{k}}={{v}}{% if loop.last == FALSE %}&{%endif%}{% endfor %}">{{ i }}</a>
+    {% endif %}
+    </li>
+  {% endfor %}
+</ul>
+    <div class="clear"></div>
+</div>
+{% endif %}

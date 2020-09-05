@@ -1,0 +1,120 @@
+.logo-PayGol{
+     background: transparent url("../img/gateway_logos/PayGol.png") no-repeat scroll 0% 0%;
+     background-size: contain;
+     width:80px;
+     height: 28px;
+     border: 0;
+     margin: 10px;
+}
+.logo-AlertPay{
+   background: transparent url("../img/gateway_logos/alertpay.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:120px;
+    height: 25px;
+    border: 0;
+    margin: 10px;
+}
+.logo-AliPay{
+   background: transparent url("../img/gateway_logos/alipay.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:85px;
+    height: 25px;
+    border: 0;
+    margin: 10px;
+}
+.logo-AuthorizeNet{
+   background: transparent url("../img/gateway_logos/authorizenet.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:100px;
+    height: 25px;
+    border: 0;
+    margin: 10px;
+}
+.logo-BluePay{
+   background: transparent url("../img/gateway_logos/bluepay.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:90px;
+    height: 30px;
+    border: 0;
+    margin: 10px;
+}
+.logo-Custom{
+    background: transparent url("../img/gateway_logos/custom.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:50px;
+    height: 50px;
+    border: 0;
+    margin: 10px;
+}
+.logo-Interkassa{
+   background: transparent url("../img/gateway_logos/interkassa.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:100px;
+    height: 25px;
+    border: 0;
+    margin: 10px;
+}
+.logo-Onebip{
+   background: transparent url("../img/gateway_logos/onebip.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:100px;
+    height: 25px;
+    border: 0;
+    margin: 10px;
+}
+.logo-PayPalEmail{
+   background: transparent url("../img/gateway_logos/paypal.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:85px;
+    height: 25px;
+    border: 0;
+    margin: 10px;
+}
+.logo-ClientBalance{
+   background: transparent url("../img/gateway_logos/clientbalance.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:50px;
+    height: 50px;
+    border: 0;
+    margin: 10px;
+}
+.logo-Payza{
+   background: transparent url("../img/gateway_logos/payza.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:100px;
+    height: 25px;
+    border: 0;
+    margin: 10px;
+}
+.logo-TwoCheckout{
+   background: transparent url("../img/gateway_logos/twocheckout.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:80px;
+    height: 28px;
+    border: 0;
+    margin: 10px;
+}
+.logo-Stripe{
+   background: transparent url("../img/gateway_logos/stripe.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:65px;
+    height: 30px;
+    border: 0;
+    margin: 10px;
+}
+.logo-WebMoney{
+   background: transparent url("../img/gateway_logos/webmoney.jpg") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:85px;
+    height: 25px;
+    border: 0;
+    margin: 10px;
+}
+.logo-WebToPay{
+   background: transparent url("../img/gateway_logos/webtopay.png") no-repeat scroll 0% 0%;
+    background-size: contain;
+    width:135px;
+    height: 25px;
+    border: 0;
+    margin: 10px;
+}

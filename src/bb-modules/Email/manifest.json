@@ -1,0 +1,8 @@
+{
+    "id":           "email",
+	"type":         "mod",
+    "name":         "Email",
+    "icon_url":     "icon.png",
+    "description":  "BoxBilling core module",
+    "version":      "1.0.0"
+}

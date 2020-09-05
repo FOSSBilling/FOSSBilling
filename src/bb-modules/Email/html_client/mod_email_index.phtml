@@ -1,0 +1,94 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Emails' %}{% endblock %}
+{% block breadcrumb %} <li class="active">{% trans 'Emails' %}</li>{% endblock %}
+
+{% set emails = client.email_get_list({"per_page":10, "page":request.page}) %}
+
+{% block content %}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h1>{% trans 'Emails' %}</h1>
+                <p>{% trans 'Here you can find all the emails we sent you. Please click on email topic in left column and it will be displayed in right side.' %}</p>
+            </header>
+            <section>
+                {% if emails.list is empty  %}
+                <div class="alert alert-info" id="information-block">{% trans 'There are no emails to display' %}</div>
+                {% else %}
+                <div class="tabbable tabs-left">
+                    <ul class="nav nav-tabs" >
+                        {% for i, email in emails.list %}
+                        <li class="email-title {% if loop.first%}active{% endif %}" style="line-height: 50%">
+                            <a href="#tab{{email.id}}" data-toggle="tab" style="padding-left: 0px; padding-bottom: 0px">
+                                    <p><strong>{{email.subject |slice(0,50) }}{% if email.subject | length > 50%}...{% endif%}</strong></p>
+                                    <p><small>{{email.created_at|bb_date}}</small></p>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="tab-content">
+                        {% for i, email in emails.list %}
+                        <div class="tab-pane {% if loop.first%}active{% endif %}" id="tab{{email.id}}"  >
+                            <div class="well well-small">
+                                <p><strong>{% trans 'From:' %}</strong> {{email.sender}}</p>
+                                <p><strong>{% trans 'To:' %}</strong> {{email.recipients}}</p>
+                                <p><strong>{% trans 'Created at:' %}</strong> {{email.created_at|bb_date}}</p>
+                            </div>
+                            <div class="well">
+                                <h3>{{ email.subject }}</h3>
+                                <p> {{email.content_html | raw}}</p>
+                            </div>
+                            <a class="btn btn-inverse email-resend" href="#" mail-id="{{email.id}}">{% trans 'Resend' %}</a>
+                            <a class="btn btn-danger email-delete" href="#"  mail-id="{{email.id}}">{% trans 'Delete' %}</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% include "partial_pagination.phtml" with {'list': emails} %}
+                {% endif %}
+            </section>
+    </article>
+</div>
+
+{% endblock %}
+{% block js %}
+{% autoescape "js" %}
+<script type="text/javascript">
+    $(function() {
+        $('.email-resend').click(function(e){
+            e.preventDefault();
+            $('.wait').show();
+            var email_id = $(this).attr('mail-id');
+            bb.post(
+                'client/email/resend',
+                {id: email_id },
+                function(result) {
+                    $('.wait').hide();
+                    bb.msg('Email resent');
+                    return false;
+                }
+            );
+        });
+        $('.email-delete').click(function(e){
+            e.preventDefault();
+            if (confirm('Are you sure?')){
+                $('.wait').show();
+                var email_id = $(this).attr('mail-id');
+                bb.post(
+                    'client/email/delete',
+                    {id: email_id },
+                    function(result) {
+                        bb.msg('Email deleted');
+                        bb.redirect('{{ 'email'|link }}');
+                        return false;
+                    }
+                );
+            };
+        });
+
+    });
+</script>
+{% endautoescape %}
+{% endblock %}

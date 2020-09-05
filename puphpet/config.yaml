@@ -1,0 +1,265 @@
+---
+vagrantfile-local:
+    vm:
+        box: puphpet/ubuntu1204-x64
+        box_url: puphpet/ubuntu1204-x64
+        hostname: 'boxbilling.test'
+        memory: '512'
+        cpus: '1'
+        chosen_provider: virtualbox
+        network:
+            private_network: 10.20.30.12
+            forwarded_port: {  }
+        post_up_message: ''
+        provider:
+            virtualbox:
+                modifyvm:
+                    natdnshostresolver1: on
+            vmware:
+                numvcpus: 1
+            parallels:
+                cpus: 1
+        provision:
+            puppet:
+                manifests_path: puphpet/puppet
+                manifest_file: site.pp
+                module_path: puphpet/puppet/modules
+                options:
+                    - '--verbose'
+                    - '--hiera_config /vagrant/puphpet/puppet/hiera.yaml'
+                    - '--parser future'
+        synced_folder:
+            Bf5PYkVhThJD:
+                source: ./
+                target: /var/www/boxbilling
+                sync_type: nfs
+                rsync:
+                    args:
+                        - '--verbose'
+                        - '--archive'
+                        - '-z'
+                    exclude:
+                        - .vagrant/
+                    auto: 'false'
+        usable_port_range:
+            start: 10200
+            stop: 10500
+    ssh:
+        host: null
+        port: null
+        private_key_path: null
+        username: vagrant
+        guest_port: null
+        keep_alive: true
+        forward_agent: false
+        forward_x11: false
+        shell: 'bash -l'
+    vagrant:
+        host: detect
+server:
+    install: '1'
+    packages:
+        - ant
+firewall:
+    install: '1'
+    rules: null
+apache:
+    install: '1'
+    settings:
+        user: www-data
+        group: www-data
+        default_vhost: true
+        manage_user: false
+        manage_group: false
+        sendfile: 0
+    modules:
+        - rewrite
+    vhosts:
+        1w1MdlPiYCVq:
+            servername: boxbilling.test
+            serveraliases:
+                - www.boxbilling.test                
+            docroot: /var/www/boxbilling/src
+            port: '80'
+            setenv:
+                - 'APPLICATION_ENV testing'
+            override:
+                - All
+            options:
+                - Indexes
+                - FollowSymLinks
+            engine: php
+            custom_fragment: ''
+            ssl: '0'
+            ssl_cert: ''
+            ssl_key: ''
+            ssl_chain: ''
+            ssl_certs_dir: ''
+    mod_pagespeed: 0
+nginx:
+    install: '0'
+    settings:
+        default_vhost: 1
+        proxy_buffer_size: 128k
+        proxy_buffers: '4 256k'
+    vhosts:
+        T032MJvkGmBx:
+            server_name: awesome.dev
+            server_aliases:
+                - www.awesome.dev
+            www_root: /var/www/awesome
+            listen_port: '80'
+            location: \.php$
+            index_files:
+                - index.html
+                - index.htm
+                - index.php
+            envvars:
+                - 'APP_ENV dev'
+            engine: php
+            ssl_cert: ''
+            ssl_key: ''
+php:
+    install: '1'
+    version: '54'
+    composer: '1'
+    composer_home: ''
+    modules:
+        php:
+            - cli
+            - intl
+            - mcrypt
+            - curl
+            - gd
+            - imagick
+            - mbstring
+            - mysql
+        pear: {  }
+        pecl:
+            - pecl_http
+            - PDO_MYSQL
+            - PDO
+            - bz2
+            - hash
+            - json
+            - phar
+    ini:
+        display_errors: On
+        error_reporting: '-1'
+        session.save_path: /var/lib/php/session
+    timezone: Europe/Helsinki
+    mod_php: '1'
+hhvm:
+    install: '0'
+    nightly: 0
+    composer: '1'
+    composer_home: ''
+    settings:
+        host: 127.0.0.1
+        port: '9000'
+    ini:
+        display_errors: On
+        error_reporting: '-1'
+    timezone: null
+xdebug:
+    install: '1'
+    settings:
+        xdebug.default_enable: '1'
+        xdebug.remote_autostart: '0'
+        xdebug.remote_connect_back: '1'
+        xdebug.remote_enable: '1'
+        xdebug.remote_handler: dbgp
+        xdebug.remote_port: '9000'
+        xdebug.idekey: 'PHPSTORM'
+xhprof:
+    install: '0'
+drush:
+    install: '0'
+    version: 6.3.0
+ruby:
+    install: '1'
+    versions:
+        0igyHxSEMlUd:
+            version: ''
+nodejs:
+    install: '1'
+    npm_packages: {  }
+python:
+    install: '1'
+    packages: {  }
+    versions:
+        F5MOcwFlKqNd:
+            version: ''
+mysql:
+    install: '1'
+    root_password: 'root'
+    adminer: 0
+    databases:
+        ezZDpKWl3kz1:
+            grant:
+                - ALL
+            name: boxbilling
+            host: localhost
+            user: foo
+            password: 'foo'
+            sql_file: /var/www/boxbilling/src/install/structure.sql
+postgresql:
+    install: '0'
+    settings:
+        root_password: '123'
+        user_group: postgres
+        encoding: UTF8
+        version: '9.3'
+    databases: {  }
+    adminer: 0
+mariadb:
+    install: '0'
+    root_password: '123'
+    adminer: 0
+    databases: {  }
+    version: '10.0'
+sqlite:
+    install: '0'
+    adminer: 0
+    databases: {  }
+mongodb:
+    install: '0'
+    settings:
+        auth: 1
+        port: '27017'
+    databases: {  }
+redis:
+    install: '0'
+    settings:
+        conf_port: '6379'
+mailcatcher:
+    install: '0'
+    settings:
+        smtp_ip: 0.0.0.0
+        smtp_port: 1025
+        http_ip: 0.0.0.0
+        http_port: '1080'
+        mailcatcher_path: /usr/local/rvm/wrappers/default
+        from_email_method: inline
+beanstalkd:
+    install: '0'
+    settings:
+        listenaddress: 0.0.0.0
+        listenport: '13000'
+        maxjobsize: '65535'
+        maxconnections: '1024'
+        binlogdir: /var/lib/beanstalkd/binlog
+        binlogfsync: null
+        binlogsize: '10485760'
+    beanstalk_console: 0
+    binlogdir: /var/lib/beanstalkd/binlog
+rabbitmq:
+    install: '0'
+    settings:
+        port: '5672'
+elastic_search:
+    install: '0'
+    settings:
+        java_install: true
+        autoupgrade: true
+

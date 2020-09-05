@@ -1,0 +1,268 @@
+{% extends "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% set active_menu = 'products' %}
+{% block meta_title %}{% trans 'Product configuration' %}{% endblock %}
+
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'product'|alink }}">{% trans 'Products' %}</a></li>
+    <li class="lastB">{{product.title}}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-settings">{% trans 'General settings' %}</a></li>
+        <li><a href="#tab-config">{% trans 'Configuration' %}</a></li>
+        <li><a href="#tab-addons">{% trans 'Addons' %}</a></li>
+        <li><a href="#tab-upgrades">{% trans 'Upgrades' %}</a></li>
+        <li><a href="#tab-links">{% trans 'Links' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <form method="post" action="admin/product/update" class="mainForm api-form save" data-api-msg="Product configuration updated" name="form">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-settings">
+
+            <div class="help">
+                <h5>{{ product.type|title }} {% trans 'General settings' %}</h5>
+            </div>
+
+            <fieldset>
+                <div class="rowElem noborder">
+                    <label>{% trans 'Category' %}:</label>
+                    <div class="formRight ">
+                        {{ mf.selectbox('product_category_id', guest.product_category_get_pairs, product.product_category_id, 0, 'None') }}
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                {% if guest.extension_is_on({"mod":"formbuilder"}) %}
+                <div class="rowElem">
+                    <label>{% trans 'Order Form' %}:</label>
+                    <div class="formRight">
+                        {% set tpl = "mod_service"~product.type~"_order_form.phtml" %}
+                        {% if guest.system_template_exists({"file":tpl}) %}
+                        <div class="nNote nInformation"><p>Please edit <strong>{{tpl}}</strong> file in order to change order form for <strong>{{product.type}}</strong> category products.</p></div>
+                       <a href="{{ 'filemanager/ide' | alink }}" class="button blueBtn">{% trans 'Open Editor' %}</a>
+                        {% else %}
+                       {{ mf.selectbox('form_id', admin.formbuilder_get_pairs, product.form_id, 0, 'None') }}
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <a href="{{'extension/settings/formbuilder' | alink}}{% if product.form_id %}?id={{product.form_id}}{% endif %}" class="button blueBtn" id="formbuilder_btn">{{ (product.form_id) ? 'Edit Form' : 'Add new form'}}</a>
+                        {% endif %}
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                {% endif %}
+                <div class="rowElem">
+                    <label>{% trans 'Status' %}:</label>
+                    <div class="formRight">
+                        <input type="radio" name="status" value="enabled"{% if product.status == 'enabled' %} checked="checked"{% endif %} id="status-enabled"/><label for="status-enabled">{% trans 'Enabled' %}</label>
+                        <input type="radio" name="status" value="disabled"{% if product.status == 'disabled' %} checked="checked"{% endif %} id="status-disabled"/><label for="status-disabled">{% trans 'Disabled' %}</label>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <div class="rowElem">
+                    <label>{% trans 'Hidden' %}:</label>
+                    <div class="formRight">
+                        <input type="radio" name="hidden" value="1"{% if product.hidden %} checked="checked"{% endif %} id="hidden-yes"/><label for="hidden-yes">{% trans 'Yes' %}</label>
+                        <input type="radio" name="hidden" value="0"{% if not product.hidden %} checked="checked"{% endif %} id="hidden-no"/><label for="hidden-no">{% trans 'No' %}</label>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <div class="rowElem">
+                    <label>{% trans 'Activation' %}:</label>
+                    <div class="formRight">
+                        <input type="radio" name="setup" value="after_order"{% if product.setup == 'after_order' %} checked="checked"{% endif %} id="activation-after-order"/><label for="activation-after-order">{% trans 'After order is placed' %}</label>
+                        <input type="radio" name="setup" value="after_payment"{% if product.setup == 'after_payment' %} checked="checked"{% endif %} id="activation-after-payment"/><label for="activation-after-payment">{% trans 'After payment is received' %}</label>
+                        <input type="radio" name="setup" value="manual"{% if product.setup == 'manual' %} checked="checked"{% endif %} id="activation-manual"/><label for="activation-manual">{% trans 'Manual activation' %}</label>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Icon/Image URL' %}:</label>
+                    <div class="formRight">
+                        <input type="text" name="icon_url" id="bb-icon" value="{{product.icon_url}}" placeholder="" style="width: 80%"/>
+                        <input type="button" value="{% trans 'Browse' %}" class="bHtml blueBtn button" />
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <div class="rowElem">
+                    <label>{% trans 'Title' %}:</label>
+                    <div class="formRight">
+                        <input type="text" name="title" value="{{product.title}}" required="required" placeholder=""/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <div class="rowElem">
+                    <label>{% trans 'Slug' %}:</label>
+                    <div class="formRight">
+                        <input type="text" name="slug" value="{{product.slug}}" required="required" placeholder=""/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                
+                {% include "partial_pricing.phtml" with {'product': product} %}
+
+            </fieldset>
+
+           <fieldset>
+               <legend>{% trans 'Product / service description' %}</legend>
+                <textarea name="description" cols="5" rows="5" class="bb-textarea">{{product.description}}</textarea>
+                
+                <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+           </fieldset>
+        <div class="fix"></div>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-addons">
+            <div class="help">
+                <h5>{% trans 'Choose which addons you would like to offer with' %} {{ product.title }}</h5>
+            </div>
+
+            <table class="tableStatic wide">
+                <tbody>
+                    {% for addon_id, addon_title in admin.product_addon_get_pairs %}
+                    <tr {% if loop.first %}class="noborder"{% endif %}>
+                        <td style="width:5%">
+                            <input type="hidden" name="addons[{{addon_id}}]" value="0">
+                            <input type="checkbox" name="addons[{{addon_id}}]" value="1" id="addon_{{ addon_id }}" {% if addon_id in assigned_addons %}checked="checked"{% endif %}/>
+                        </td>
+                        <td><label for="addon_{{ addon_id }}">{{addon_title}}</label></td>
+                        <td style="width:5%"><a class="bb-button btn14" href="{{ '/product/addon'|alink }}/{{addon_id}}"><img src="images/icons/dark/pencil.png" alt=""></a></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3">
+                            <a href="{{ 'product/addons'|alink }}#tab-new" title="" class="btnIconLeft mr10 mt5"><img src="images/icons/dark/settings2.png" alt="" class="icon"><span>{% trans 'Create new addon' %}</span></a>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+
+
+            <div class="fix"></div>
+        </div>
+
+        <div class="tab_content nopadding mainForm" id="tab-upgrades">
+            <div class="help">
+                <h5>{% trans 'Choose which products can client upgrade to' %}</h5>
+            </div>
+            <fieldset>
+                <div class="rowElem noborder">
+                    <label>{% trans 'Product Upgrades' %}</label>
+                    <div class="formRight">
+                        {% set products = admin.product_get_pairs %}
+                        <input type="hidden" name="upgrades" value="">
+                        <select name="upgrades[]" multiple="multiple" class="multiple" size="{{products|length}}">
+                            {% for id,ptitle in products %}
+                            <option value="{{id}}" {% if product.upgrades[id] %}selected="selected"{% endif %}>{{ptitle }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                <input type="hidden" name="id" value="{{ product.id }}" />
+            </fieldset>
+        </div>
+
+        <input type="hidden" name="id" value="{{ product.id }}" />
+        </form>
+
+        <div class="tab_content nopadding" id="tab-config">
+            {% set service_partial = "mod_service" ~ product.type ~ "_config.phtml" %}
+            {% if admin.system_template_exists({"file":service_partial}) %}
+                {% include service_partial with {'product': product} %}
+            {% else %}
+                <div class="help">
+                    <h5>{% trans 'No additional configuration for this product is required' %}</h5>
+                </div>
+            {% endif %}
+            <div class="fix"></div>
+        </div>
+        
+        <div class="tab_content nopadding mainForm" id="tab-links">
+            <fieldset>
+            <div class="help">
+                <h5>{% trans 'Product links' %}</h5>
+            </div>
+
+            <div class="rowElem noborder">
+                <label>{% trans 'Product ID' %}</label>
+                <div class="formRight">
+                    <input type="text" value="{{ product.id }}"/>
+                    <div class="fix"></div>
+                </div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Order page with ID' %}</label>
+                <div class="formRight">
+                    <input type="text" value="{{ 'order'|link }}/{{product.id}}"/>
+                    <div class="fix"></div>
+                </div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Order page with slug' %}</label>
+                <div class="formRight">
+                    <input type="text" value="{{ 'order'|link }}/{{product.slug}}"/>
+                    <div class="fix"></div>
+                </div>
+            </div>
+
+            </fieldset>
+            
+            <div class="body aligncenter">
+                <a href="{{ 'order'|link }}/{{product.slug}}" title="" class="btn55 mr10" target="_blank"><img src="images/icons/middlenav/preview.png" alt=""><span>{% trans 'View as client<' %}/span></a>
+            </div>
+
+            <div class="fix"></div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+	$(".bHtml").click( function() {
+		jAlert(bb.load('{{"filemanager/icons"|alink }}', {rel:"bb-icon"}), '{% trans "Select icon and click OK" %}');
+	});
+    $("[name='form_id']").change( function(){
+        var form_id = $(this).val();
+        var btn = $("#formbuilder_btn");
+            if (form_id !=""){
+            btn.html("Edit form");
+                var href = "{{'extension/settings/formbuilder' | alink({'id' : ''})}}" + form_id;
+                btn.attr('href', href);
+        }
+        else{
+                btn.html("Add new form");
+                btn.attr("href", "{{'extension/settings/formbuilder' | alink}}");
+            }
+
+    });
+
+});
+</script>
+{% endblock %}

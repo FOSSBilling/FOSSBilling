@@ -1,0 +1,22 @@
+{% extends "layout_login.phtml" %}
+{% block meta_title %}{% trans 'Error' %} {{ exception.getCode  }}{% endblock %}
+{% set help_query = exception.getMessage %}
+
+{% block content %}
+
+<!-- Error info area -->
+<div class="wrapper">
+    <div class="errorPage">
+        <h2 class="red errorTitle"><span>{% trans 'Something went wrong here' %}</span></h2>
+        <h1>{% if exception.getCode == 0%}500{% else %} {{ exception.getCode }} {% endif %}</h1>
+        <span class="bubbles"></span>
+        <p>{{ exception.getMessage }}!</p>
+        {% if exception.getCode == 403 %}
+        <div class="backToDash"><a href="{{ '/staff/login'|alink }}" title="" class="seaBtn button">{% trans 'Login' %}</a></div>
+        {% else %}
+        <div class="backToDash"><a href="{{ '/index'|alink }}" title="" class="seaBtn button">{% trans 'Back to Dashboard' %}</a></div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

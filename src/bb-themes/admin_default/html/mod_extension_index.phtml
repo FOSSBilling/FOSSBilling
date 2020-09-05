@@ -1,0 +1,190 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Extensions' %}{% endblock %}
+{% set active_menu = 'extensions' %}
+
+{% block content %}
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Extensions' %}</a></li>
+        <li><a href="#tab-core">{% trans 'Update BoxBilling' %}</a></li>
+        <li><a href="#tab-about">{% trans 'Learn more about extensions' %}</a></li>
+        <li><a href="#tab-hooks">{% trans 'Hooks' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+            <div class="help">
+                <h5>BoxBilling extensions</h5>
+                <p>{% trans %}Activate or deactivate extensions{% endtrans %}</p>
+            </div>
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td width="3%">&nbsp;</td>
+                        <td width="20%">{% trans 'Extension' %}</td>
+                        <td>{% trans 'Description' %}</td>
+                        <td style="width: 21%;">{% trans 'Actions' %}</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for ext in admin.extension_get_list %}
+                <tr>
+                    <td><img src="{{ ext.icon_url|default('images/icons/middlenav/cog.png') }}" alt="{{ext.name}}" style="width: 32px; height: 32px;"/></td>
+                    <td><strong>{{ ext.name }}</strong> {{ ext.version }}<br />by <a href="{{ ext.author_url }}" target="_blank">{{ ext.author }}</a></td>
+                    <td>
+                        {{ ext.description|bbmd }}
+                        <a href="{{ ext.project_url }}" target="_blank" title="Project details">Learn more</a>
+                    </td>
+                    <td>
+                        {% if ext.type == 'mod' %}
+                            {% if ext.status == 'installed' %}
+                            <a class="api-link bb-button btn14" href="{{ 'api/admin/extension/deactivate' |link({'type' : ext.type, 'id' : ext.id}) }}" data-api-confirm="Are you sure?" data-api-reload="Module was deactivated" title="{% trans 'Deactivate' %}"><img src="images/icons/dark/close.png" alt="" class="icon"></a>
+                            {% else %}
+                            <a class="btnIconLeft mr10 api-link" href="{{ 'api/admin/extension/activate' |link({'type' : ext.type, 'id' : ext.id}) }}" data-api-confirm="Are you sure?" data-api-jsonp="onAfterModuleActivated"><img src="images/icons/dark/cog.png" alt="" class="icon"><span>Activate</span></a>
+                            {% endif %}
+                        {% else %}
+                        &nbsp;
+                        {% endif %}
+
+                        {% if ext.has_settings %}
+                            <a class="bb-button btn14" href="{{ 'extension/settings'|alink }}/{{ext.id}}"><img src="images/icons/dark/pencil.png" alt="" class="icon" title="{% trans 'Module settings' %}"></a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4">
+                            {% trans 'The list is empty' %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4"></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="help">
+                <h5>BoxBilling modules on extension site</h5>
+            </div>
+            {% include "partial_extensions.phtml" %}
+        </div>
+
+        <div class="tab_content nopadding" id="tab-hooks">
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td>{% trans 'Extension' %}</td>
+                        <td>{% trans 'Hook' %}</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for hook in admin.hook_get_list({"per_page":90}).list %}
+                <tr>
+                    <td>
+                        {{ hook.rel_id | capitalize}}
+                    </td>
+                    <td>
+                        {{ hook.event }}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+            
+        <div class="tab_content nopadding" id="tab-core">
+            <div class="help">
+                <h3>{% trans 'Automatic update' %}</h3>
+                <p>{% trans %}Automatic updater is a tool to update BoxBilling to latest version in one click. Works on these hosting environments where PHP has permissions to overwrite files uploaded via FTP.{% endtrans %}</p>
+            </div>
+
+            <div class="body">
+                <a href="{{ 'api/admin/extension/update_core'|link }}" title="" class="btnIconLeft mr10 mt5 api-link" data-api-confirm="Make sure that you have made database and files backups before proceeding with automatic update. Click OK when you are ready to continue." data-api-msg="Update complete"><img src="images/icons/dark/cog.png" alt="" class="icon"><span>Update BoxBilling</span></a>
+            </div>
+
+            <div class="help">
+                <h3>{% trans %}Manual update{% endtrans %}</h3>
+                <p>{% trans %}Manual update is a solution when auto updater can not work on current installation environment{% endtrans %}</p>
+            </div>
+
+            <div class="body list arrowGreen">
+                <ul>
+                    <li>Download latest BoxBilling from <a href="http://www.boxbilling.com/download" target="_blank">www.boxbilling.com</a></li>
+                    <li>Extract files at your computer</li>
+                    <li>Upload (overwrite) extracted files via FTP to <strong>{{ constant('BB_PATH_ROOT') }}</strong></li>
+                    <li>When upload is complete, execute <a href="{{constant('BB_URL')}}bb-update.php" target="_blank">{{constant('BB_URL')}}bb-update.php</a> in your browser</li>
+                    <li>Your BoxBilling is now updated to latest version.</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="tab_content nopadding" id="tab-about">
+            <div class="help">
+                <h3>{% trans 'Extending BoxBilling' %}</h3>
+                <p>{% trans %}BoxBilling gives developers all the capabilities to customize, integrate & extend the core system into your own website & applications.{% endtrans %}</p>
+            </div>
+            <div class="body">
+                <h2 class="pt20">More extensions</h2>
+                <p>If you can not find extensions you are looking for in this admin area, please visit extensions site at <a href="http://extensions.boxbilling.com" target="_blank">http://extensions.boxbilling.com</a></p>
+
+                <h2 class="pt20">How to create new extension</h2>
+                <div class="pt20 list arrowGrey">
+                    <ul>
+                        <li>Create free account at <a href="https://github.com/signup/free" target="_blank">Github</a></li>
+                        <li>Create new public repository dedicated for extension only</li>
+                        <li>Repository must have plugin json file. <a href="http://extensions.boxbilling.com/article/getting-started" target="_blank">More information</a></li>
+                        <li>Login to <a href="http://extensions.boxbilling.com/" target="_blank">BoxBilling extensions site</a> with github account.</li>
+                        <li>If your repository contains valid json file, it can be registered in extensions site.</li>
+                        <li>Registered extensions can be visible in every BoxBilling admin area.</li>
+                    </ul>
+                </div>
+
+                <h2 class="pt20">Supported extension types</h2>
+                <div class="pt20 list arrowGrey">
+                    <ul>
+                        <li>Payment gateways</li>
+                        <li>Server managers</li>
+                        <li>Domain registrars</li>
+                        <li>Client area themes</li>
+                        <li>Admin area themes</li>
+                        <li>Translations for client and admin areas</li>
+                        <li>Event hooks - Hooks can be injected into the process, change its behaviour, stop executing actions</li>
+                        <li>API module - External program which uses BoxBilling API</li>
+                    </ul>
+                </div>
+
+                <h2 class="pt20">Extension support</h2>
+                <p>Contact extensions developers directly for support. You can find issue tracker on extension site.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+    function onAfterUpdate(result) {
+    
+    }
+
+    function onAfterModuleActivated(result) {
+        if(result.redirect && result.type == 'mod') {
+            bb.redirect("{{ '' | alink}}/" + result.id);
+        } else if(result.has_settings) {
+            bb.redirect("{{ 'extension/settings'|alink }}/"+result.id);
+        } else {
+            bb.reload();
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,83 @@
+<div class="box">
+    <div class="block pricing">
+
+        <div class="total">
+            {% if pricing.type == 'free' %}
+            
+                {% if product.allow_quantity_select %}
+                    <label>{% trans 'Quantity:' %}
+                        <input type="text" name="quantity" value="1" style="width:30px;"/>
+                    </label>
+                    <hr/>
+                {% endif %}
+                
+                <p>{% trans 'Total price:' %}</p>
+                <div class="currency">{{ 0 | money_convert }}</div>
+            {% endif %}
+
+            {% if pricing.type == 'once'  %}
+                {% if product.allow_quantity_select %}
+                    <label>{% trans 'Quantity:' %}
+                        <input type="text" name="quantity" value="1" style="width:30px;"/>
+                    </label>
+                    <hr/>
+                {% endif %}
+
+                <p>{% trans 'Total price:' %}</p>
+                <div class="currency">{{ (pricing.once.price + pricing.once.setup) | money_convert }}</div>
+            {% endif %}
+
+
+        {% if pricing.type == 'recurrent'  %}
+        
+        {% if product.allow_quantity_select %}
+            <label>{% trans 'Quantity:' %}
+                <input type="text" name="quantity" value="1" style="width:30px;"/>
+            </label>
+            <hr/>
+        {% endif %}
+                
+        <select name="period" id="period-selector">
+        {% for code,prices in pricing.recurrent %}
+            {% if prices.enabled %}
+            <option value="{{code}}"{% if request.period == code %} selected="selected"{% endif %}>{{ periods[code] }}</option>
+            {% endif %}
+        {% endfor %}
+        </select>
+
+        {% for code,prices in pricing.recurrent %}
+        {% if prices.enabled %}
+        {% if prices.setup > 0 %}
+        <div class="period {{code}}" style="display: none;">
+            <table>
+                <tr>
+                    <td>{% trans 'Price' %}</td>
+                    <td>{{ prices.price | money_convert }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans 'Setup Price' %}</td>
+                    <td>{{ prices.setup | money_convert }}</td>
+                </tr>
+            </table>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        {% endfor %}
+
+        <hr/>
+        <p>{% trans 'Total price:' %}</p>
+        {% for code,prices in pricing.recurrent %}
+        <div class="currency period {{code}}">{{ (prices.price + prices.setup) | money_convert }}</div>
+        {% endfor %}
+        
+        {% endif %}
+        </div>
+
+        {% if product.addons|length > 0 %}
+        <button class="bb-button bb-button-submit bb-button-big" type="submit" id="order-button">{% trans 'Continue' %}</button>
+        {% else %}
+        <button class="bb-button bb-button-submit bb-button-big" type="submit" id="order-button">{% trans 'Order now' %}</button>
+        {% endif %}
+        </div>
+    </div>

@@ -1,0 +1,22 @@
+{% block subject %}[{{ guest.system_company.name }}] {{ ticket.subject }}{% endblock %}
+{% block content %}
+{% apply markdown %}
+Hi {{ c.first_name }} {{ c.last_name }},
+
+Thank you for contacting our support team. 
+A support ticket has now been opened for your request. You will be notified when 
+a response is made by email. The details of your ticket are shown below.
+
+Ticket ID: #{{ticket.id}}   
+Department: {{ticket.helpdesk.name}}   
+Status: {{ticket.status|title}}
+
+Login to members area: {{'login'|link({'email' : c.email }) }}
+Reply Ticket at: {{'support/ticket'|link}}/{{ ticket.id }}
+
+Please do not reply to this email directly.
+      
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

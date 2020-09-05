@@ -1,0 +1,117 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{product.title}}{% endblock %}
+
+{% block content_before %}
+    {% include "partial_steps.phtml" with {'selected': 2} %}
+{% endblock %}
+
+{% block content %}
+
+    {% set periods = guest.system_periods %}
+    {% set pricing = product.pricing %}
+
+    <form method="post" action="" class="api_form" data-api-url="guest/cart/add_item" data-api-redirect="{{ 'cart'|link }}">
+
+        <div class="h-block">
+            <div class="h-block-header">
+                <div class="icon"><span class="number">2</span></div>
+                <h2>{{ product.title }}</h2>
+                <p>{% trans 'Please configure domain for your hosting account' %}</p>
+                {#{ product.description|bbmd }#}
+            </div>
+            <div class="block">
+
+                <div class="clear"></div>
+                <div class="grid_8 alpha">
+                    <div class="widget simpleTabs tabsRight" style="margin: 10px 0 10px 10px;">
+                        <div class="head">
+                            <h2 class="dark-icon i-services">{% trans 'Domain' %}</h2>
+                        </div>
+
+                        <ul class="tabs">
+                            <li><a href="#domain" rel="domain"><span class="dark-icon"></span>{% trans 'Host my own domain' %}</a></li>
+                            <li><a href="#subdomain" rel="subdomain"><span class="dark-icon"></span>{% trans 'Subdomain' %}</a></li>
+                        </ul>
+
+                        <div class="tabs_container">
+                            <div class="tab_content" id="subdomain">
+                                <fieldset>
+                                    <input type="text" name="subdomain" value="" placeholder="Subdomain"/> .
+                                    <select name="master_domain">
+                                        {% for d in guest.serviceyouhosting_master_domains %}
+                                            <option value="{{ d }}">{{ d }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </fieldset>
+                            </div>
+
+                            <div class="tab_content" id="domain">
+                                <fieldset>
+                                    <input type="text" name="domain" value="{{ request.domain|default('domain.com') }}" style="width: 95%">
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid_4 omega">
+                    {% include 'partial_pricing.phtml' with {'product': product} %}
+                </div>
+
+                <div class="clear"></div>
+            </div>
+        </div>
+
+        {% include 'partial_addons.phtml' with {'product': product} %}
+
+        <input type="hidden" name="domain_type" value="domain" />
+        <input type="hidden" name="id" value="{{ product.id }}" />
+    </form>
+{% endblock %}
+
+{% block sidebar2 %}
+    {% include 'partial_currency.phtml' %}
+{% endblock %}
+
+{% block js %}
+
+    {% set currency = guest.cart_get_currency %}
+    <script type="text/javascript">
+        $(function() {
+
+            $('ul.tabs li a').bind('click', function (){
+                $('input[name="domain_type"]').val($(this).attr('rel'));
+
+                $(this).parents('ul').find('span.dark-icon')
+                        .removeClass('i-check i-uncheck')
+                        .addClass('i-uncheck');
+
+                $(this).find('span')
+                        .removeClass('i-uncheck')
+                        .addClass('i-check');
+            });
+            $('ul.tabs li a:first').click();
+
+            if($(".addons").length && $(".addons").is(':hidden')) {
+                $('#order-button').one('click', function(){
+                    $(this).slideUp('fast');
+                    $('.addons').slideDown('fast');
+                    return false;
+                });
+            }
+
+            $('#period-selector').change(function(){
+                $('.period').hide();
+                $('.period.' + $(this).val()).show();
+            }).trigger('change');
+
+            $('.addon-period-selector').change(function(){
+                var r = $(this).attr('rel');
+                $('#' + r + ' span').hide();
+                $('#' + r + ' span.' + $(this).val()).fadeIn();
+            }).trigger('change');
+
+        });
+    </script>
+{% endblock %}

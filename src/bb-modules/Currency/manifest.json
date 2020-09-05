@@ -1,0 +1,8 @@
+{
+    "id":           "currency",
+	"type":         "mod",
+    "name":         "Currency",
+    "icon_url":     "icon.png",
+    "description":  "BoxBilling core module",
+    "version":      "1.0.0"
+}

@@ -1,0 +1,23 @@
+{% block subject %}[{{ guest.system_company.name }}] Invoice Due{% endblock %}
+{% block content %}
+{% apply markdown %}
+Hello {{ c.first_name }} {{ c.last_name }},
+
+This is a payment reminder that your proforma invoice **{{ invoice.serie_nr }}** is already
+due for {{ days_passed }} days.   
+
+Amount due: {{ invoice.total | money(invoice.currency) }}
+Due Date: {{ invoice.due_at|bb_date }}
+
+You can view and pay the invoice at: {{'invoice'|link}}/{{invoice.hash}}
+
+You may review your invoice history at any time by logging in to your client area.
+
+Login to members area: {{'login'|link({'email' : c.email }) }}
+View and manage invoices: {{'invoice'|link}}  
+
+
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

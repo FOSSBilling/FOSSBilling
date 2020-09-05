@@ -1,0 +1,158 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% set active_menu = 'system' %}
+{% block meta_title %}{% trans 'Currency settings' %}{% endblock %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li class="lastB">{% trans 'Currency settings' %}</li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-currencies">{% trans 'Currencies' %}</a></li>
+        <li><a href="#tab-new-currency">{% trans 'Add new currency' %}</a></li>
+        {#<li><a href="#tab-converter">{% trans 'Converter' %}</a></li>#}
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-currencies">
+
+            <div class="help">
+                <h3>{% trans 'Manage currencies' %}</h3>
+                <p>{% trans 'Default currency is the one you manage all your prices in admin area. If your client in client area chooses other than default currency, prices will be recalculated according to conversion rate. You can have only one default currency. You can not add same currency once again. Changing default currency is not recommended when active orders are available. Nothing is recalculated on default currency change. Your income is calculated in default currency. Changing default currency after you have paid invoices will distort income statistics. Currency rates are taken from Yahoo.' %}</p>
+            </div>
+
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <th>{% trans 'ISO code' %}</th>
+                        <th>{% trans 'Title' %}</th>
+                        <th>{% trans 'Conversion rate' %}</th>
+                        <th>{% trans 'Example price' %}</th>
+                        <th style="width:17%">&nbsp;</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for currency in admin.currency_get_list.list %}
+                  <tr>
+                      <td>{% if currency.default %}<strong>{{ currency.code }}</strong>{% else %}{{ currency.code }}{% endif %}</td>
+                      <td>{{ currency.title }}</td>
+                      <td>{{ currency.conversion_rate }}</td>
+                      <td>{{ mf.currency_format(1) }} = {{ mf.currency(1, currency.code) }}</td>
+                      <td class="actions">
+                          <a class="bb-button btn14" href="{{ '/currency/manage'|alink }}/{{currency.code}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                          <a class="bb-button btn14 bb-rm-tr api-link" data-api-redirect="{{'extension/settings/currency'|alink}}" data-api-confirm="Are you sure?" href="{{'api/admin/currency/delete'|link({'code' : currency.code})}}"><img src="images/icons/dark/trash.png" alt=""></a>
+                          {% if not currency.default %}
+                          <a class="bb-button btn14 api-link" data-api-redirect="{{'extension/settings/currency'|alink}}" href="{{'api/admin/currency/set_default' | link({'code' : currency.code})}}" title="Set as default" class="rightDir"><img src="images/icons/dark/star.png" alt=""></a>
+                          {% endif %}
+                      </td>
+                  </tr>
+                {% else %}
+                  <tr>
+                      <td colspan="5">
+                          {% trans 'The list is empty' %}
+                      </td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+
+                <tfoot>
+                    <tr>
+                        <td colspan="5">
+                            <div class="aligncenter">
+                                <a href="{{'api/admin/currency/update_rates'|link}}" data-api-redirect="{{'extension/settings/currency'|alink}}" class="btn55 mr10 api-link"><img src="images/icons/middlenav/refresh4.png" alt=""><span>{% trans 'Update Rates' %}</span></a>
+                            </div>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new-currency">
+
+            <form method="post" action="{{ 'api/admin/currency/create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'extension/settings/currency'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Code' %}:</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('code', admin.currency_get_pairs, 'USD', 1) }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Title' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="title" value="" required="required">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Conversion rate' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="conversion_rate" value="1" required="required">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Format' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="format" value="{{price|raw}} $" required="required">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <input type="submit" value="{% trans 'Add' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+
+
+        </div>
+        
+        <div class="tab_content nopadding" id="tab-converter">
+
+            <form method="post" action="" class="mainForm">
+                <fieldset>
+                    <div class="rowElem">
+                        <div class="moreFields">
+                            <ul>
+                                <li style="width: 100px"><input type="text" name="amount" value="" required="required" onkeyup="doConvert();" placeholder="{% trans 'Amount' %}"></li>
+                                <li class="sep txt">{{ guest.currency_get.code }} = </li>
+                                <li class="sep txt"></li>
+                                <li style="width: 100px"><input type="text" id="converted_result" value="" placeholder="{% trans 'Result' %}" readonly="readonly"></li>
+                                <li class="sep txt"></li>
+                                <li style="width: 100px">{{ mf.selectbox('to', guest.currency_get_pairs) }}</li>
+                            </ul>
+                        </div> 
+                        <div class="fix"></div>
+                    </div>
+                </fieldset>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+    function doConvert() {
+        var price = $('input[name="amount"]').val();
+        var code = $('select[name="to"]').val();
+        bb.post('guest/currency/format', {price:price, code: code}, function(result){
+            $('#converted_result').val(result);
+        });
+        return false;
+    };
+</script>
+{% endblock %}

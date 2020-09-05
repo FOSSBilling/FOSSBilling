@@ -1,0 +1,16 @@
+Source: ~#PKGNAME#~
+Maintainer: Nicola Asuni <info@tecnick.com>
+Section: php
+Priority: optional
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.6
+Homepage: https://github.com/tecnickcom/tc-lib-pdf-font
+Vcs-Git: https://github.com/tecnickcom/tc-lib-pdf-font.git
+
+Package: ~#PKGNAME#~
+Provides: php-~#PROJECT#~
+Architecture: all
+Depends: ${misc:Depends}
+Description: ~#FONT#~ fonts data for tc-lib-pdf-font
+ This package contains data extracted from the ~#FONT#~ fonts
+ for the tc-lib-pdf-font library.

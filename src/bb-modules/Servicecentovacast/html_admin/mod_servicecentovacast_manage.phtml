@@ -1,0 +1,230 @@
+<div class="help">
+    <h5>{% trans 'Centova Cast order details' %}</h5>
+    <p>{% trans 'Changing settings does not send actions to CentovaCast server.' %}</p>
+</div>
+
+<form method="post" action="admin/servicecentovacast/update" class="mainForm api-form save" data-api-msg="Service updated">
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'Server' %}:</label>
+            <div class="formRight">
+                <a href="{{'extension/settings/servicecentovacast'|alink}}">{{service.server_id}}</a>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Username' %}:</label>
+            <div class="formRight">
+                <input type="text" name="username" value="{{service.username}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Password' %}:</label>
+            <div class="formRight">
+                <input type="text" name="pass" value="{{service.pass}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <input type="hidden" name="order_id" value="{{ order.id }}" />
+        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+    </fieldset>
+</form>
+
+{% set account = admin.servicecentovacast_getaccount({"order_id":order.id, "try":1}) %}
+
+<div class="help">
+    <h5>{% trans 'Reconfigure' %}</h5>
+    <p>{% trans 'Changing CentovaCast server settings.' %}</p>
+</div>
+
+<form method="post" action="admin/servicecentovacast/reconfigure" class="mainForm api-form save" data-api-msg="Service updated">
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{% trans 'Hostname' %}:</label>
+            <div class="formRight">
+                <input type="text" name="hostname" value="{{account.hostname}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'IP Address' %}:</label>
+            <div class="formRight">
+                <input type="text" name="ipaddress" value="{{account.ipaddress}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Port' %}:</label>
+            <div class="formRight">
+                <input type="text" name="port" value="{{account.port}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Max clients' %}:</label>
+            <div class="formRight">
+                <input type="text" name="maxclients" value="{{account.maxclients}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Source password' %}:</label>
+            <div class="formRight">
+                <input type="text" name="sourcepassword" value="{{account.sourcepassword}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        {#
+        <div class="rowElem">
+            <label>{% trans 'adminpassword' %}:</label>
+            <div class="formRight">
+                <input type="text" name="adminpassword" value="{{service.pass}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        #}
+        <div class="rowElem">
+            <label>{% trans 'Max BitRate' %}:</label>
+            <div class="formRight">
+                <input type="text" name="maxbitrate" value="{{account.maxbitrate}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Transfer limit' %}:</label>
+            <div class="formRight">
+                <input type="text" name="transferlimit" value="{{account.transferlimit}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Disk quota' %}:</label>
+            <div class="formRight">
+                <input type="text" name="diskquota" value="{{account.diskquota}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Title' %}:</label>
+            <div class="formRight">
+                <input type="text" name="title" value="{{account.title}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Organization' %}:</label>
+            <div class="formRight">
+                <input type="text" name="organization" value="{{account.organization}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Email' %}:</label>
+            <div class="formRight">
+                <input type="text" name="email" value="{{account.email}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'URL' %}:</label>
+            <div class="formRight">
+                <input type="text" name="url" value="{{account.url}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'Auto rebuild list' %}:</label>
+            <div class="formRight">
+                <input type="radio" name="autorebuildlist" value="0" {% if account.autorebuildlist == 0 %}checked{% endif %}/><label>Do not automatically rebuild the playlist (unless no playlist exists)</label>
+                <div class="clear"></div>
+                <input type="radio" name="autorebuildlist" value="1" {% if account.autorebuildlist == 1 %}checked{% endif %}/><label>Automatically rebuild the playlist</label>
+                <div class="clear"></div>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        {#
+        <div class="rowElem">
+            <label>{% trans 'usesource' %}:</label>
+            <div class="formRight">
+                <input type="radio" name="usesource" value="0"{% if account.usesource == 0 %}checked{% endif %}/><label>Use of server-side streaming source is prohibited (off-site source must be provided)</label>
+                <div class="clear"></div>
+                <input type="radio" name="usesource" value="1"{% if account.usesource == 1 %}checked{% endif %}/><label>Use of server-side streaming source is permitted, and enabled by default</label>
+                <div class="clear"></div>
+                <input type="radio" name="usesource" value="2"{% if account.usesource == 2 %}checked{% endif %}/><label>Use of server-side streaming source is permitted, but disabled by default</label>
+                <div class="clear"></div>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'introfile' %}:</label>
+            <div class="formRight">
+                <input type="text" name="introfile" value="{{account.introfile}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="rowElem">
+            <label>{% trans 'fallbackfile' %}:</label>
+            <div class="formRight">
+                <input type="text" name="fallbackfile" value="{{account.fallbackfile}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        #}
+        
+        <input type="hidden" name="order_id" value="{{ order.id }}" />
+        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+    </fieldset>
+</form>
+
+<div class="help">
+    <h5>{% trans 'Account details' %}</h5>
+</div>
+
+<table class="tableStatic wide">
+    <thead>
+        <tr>
+            <th>{% trans 'Parameter' %}</th>
+            <th>{% trans 'Value' %}</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for k,var in account %}
+        {% if var|length == 0 or k == 'introfile' or k == 'fallbackfile' or k == 'mountpoints' %}
+        {% elseif var|keys|length > 0 %}
+            {% for subkey,subvalue in var %}
+                <tr>
+                    <td>{{ k }}.{{subkey}}</td>
+                    <td>{{ subvalue }}</td>
+                </tr>
+            {% endfor %}
+        
+        {% else %}
+            <tr>
+                <td>{{ k|title }}</td>
+                <td>{{ var }}</td>
+            </tr>
+        {% endif %}
+
+    {% endfor %}
+    </tbody>
+</table>

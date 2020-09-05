@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" backupStaticAttributes="false" colors="true" convertErrorsToExceptions="true" convertNoticesToExceptions="true" convertWarningsToExceptions="true" processIsolation="false" stopOnFailure="false" beStrictAboutChangesToGlobalState="true" bootstrap="tests/bootstrap.php" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
+  <coverage processUncoveredFiles="true">
+    <include>
+      <directory suffix=".php">src</directory>
+    </include>
+    <exclude>
+      <file>src/rb.php</file>
+      <file>src/bb-modules/Spamchecker/recaptchalib.php</file>
+      <file>src/bb-modules/Spamchecker/akismet.curl.class.php</file>
+      <file>src/bb-library/Box/Zip.php</file>
+      <directory>src/bb-vendor</directory>
+      <directory>src/bb-data</directory>
+      <directory>src/bb-library/Registrar/includes</directory>
+      <directory>src/bb-modules/Filemanager/src</directory>
+      <directory>src/bb-modules/Servicecentovacast/ccapiclient</directory>
+      <directory>src/bb-library/php-gettext</directory>
+      <directory>src/bb-themes</directory>
+      <directory>src/install</directory>
+    </exclude>
+  </coverage>
+  <testsuites>
+    <testsuite name="Library">
+      <directory>tests/bb-library</directory>
+    </testsuite>
+    <testsuite name="Integration">
+      <directory>tests/integration</directory>
+    </testsuite>
+  </testsuites>
+  <php>
+    <ini name="display_errors" value="On"/>
+    <ini name="display_startup_errors" value="On"/>
+  </php>
+</phpunit>

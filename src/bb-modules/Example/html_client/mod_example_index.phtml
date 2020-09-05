@@ -1,0 +1,48 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Example module' %}{% endblock %}
+{% block breadcrumb %} <li class="active">{% trans 'Example module' %}</li>{% endblock %}
+{% block page_header %}
+<article class="page-header">
+    <h1>{% trans 'Example module title' %}</h1>
+</article>
+{% endblock%}
+{% block content %}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h1>{% trans 'Example module title' %}</h1>
+                <p>{% trans 'Example module description' %}</p>
+            </header>
+            <section>
+                {{ guest.example_readme|markdown }}
+                {% if client %}
+                <a class="btn btn-primary" href="{{ 'example/protected'|link }}">{% trans 'See protected content' %}</a>
+                {% else %}
+                <a class="btn btn-primary" href="{{ 'login'|link }}">{% trans 'Login to client area' %}</a>
+                {% endif %}
+            </section>
+        </div>
+    </article>
+</div>
+
+
+
+
+{% if show_protected %}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h2>{% trans 'This content can be seen only if client is logged in' %}</h2>
+            </header>
+            <section>
+                <p>{% trans 'Your protected content' %}</p>
+                <p><a class="btn btn-inverse" href="{{ 'client/me'|link }}">{% trans 'Manage profile' %}</a></p>
+            </section>
+        </div>
+    </article>
+</div>
+{% endif %}
+{% endblock %}

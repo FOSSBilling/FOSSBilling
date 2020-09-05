@@ -1,0 +1,232 @@
+{% set company  = guest.system_company %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block meta_title %}{% endblock %} {{ settings.meta_title }}</title>
+
+    <meta property="bb:url" content="{{ constant('BB_URL') }}"/>
+    <meta property="bb:client_area" content="{{ '/'|link }}"/>
+    
+    <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}" />
+    <meta name="keywords" content="{% block meta_keywords %}{{ settings.meta_keywords }}{% endblock %}" />
+    <meta name="robots" content="index, follow" />
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+    <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}" />
+    <link href="https://fonts.googleapis.com/css?family=Cuprum" rel="stylesheet" type="text/css" />
+    {{ 'print.css' | asset_url | stylesheet_tag('print') }}
+    {{ 'style.css' | asset_url | stylesheet_tag }}
+    <!--[if IE 6]>{{ 'ie6.css' | asset_url | stylesheet_tag }}<![endif]-->
+    <!--[if IE 7]>{{ 'ie.css' | asset_url | stylesheet_tag }}<![endif]-->
+
+    {{ 'jquery.min.js' | asset_url | script_tag }}
+    {{ 'jquery.tipsy.js' | asset_url | script_tag }}
+    {{ 'bb-jquery.js' | asset_url | script_tag }}
+
+    {% block opengraph %}{% endblock %}
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+{% if guest.extension_is_on({"mod":"cookieconsent"}) %}
+    {% include 'mod_cookieconsent_index.phtml' ignore missing%}
+{% endif %}
+<div class="header">
+    <div class="container_16">
+        <div class="grid_4" >
+            <a href="{{''|link }}">
+                {% if company.logo_url %}
+                    <img src="{{company.logo_url}}" alt="{{company.name}}" style="max-height: 60px"/>
+                {% else %}
+                    <img src=" {{ 'images/logo.png' | asset_url }}" alt="{{company.name}}" style="max-height: 60px"/>
+                {% endif %}
+            </a>
+        </div>
+
+        <div class="grid_12">
+            {% if client %}
+            <ul class="middleNav">
+                <li>
+                    <a href="{{ ''|link }}" class="show-tip" title="{% trans 'Dashboard' %}"><span class="big-dark-icon i-home"></span></a>
+                </li>
+                <li>
+                    <a href="{{ 'cart'|link }}" class="show-tip" title="{% trans 'Shopping cart' %}"><span class="big-dark-icon i-cart"></span></a>
+                </li>
+                <li>
+                    <a href="{{ 'client/me'|link }}" class="show-tip" title="{% trans 'Profile' %}"><span class="big-dark-icon i-profile"></span></a>
+                </li>
+                <li>
+                    <a href="client/client/logout" class="show-tip api" title="{% trans 'Sign out' %}"><span class="big-dark-icon i-logout"></span></a>
+                </li>
+            </ul>
+
+            {% else %}
+            {% block header_buttons %}
+            <div class="top-buttons">
+                <a id="login-form-link" class="bb-button bb-button-submit" href="{{ 'login'|link }}">{% trans 'Sign in' %}</a>
+                <a class="bb-button bb-button-red" href="{{ 'login'|link({'register' : 1}) }}">{% trans 'Register' %}</a>
+            </div>
+            {% endblock %}
+            {% endif %}
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+
+<div id="main">
+    <div class="container_16">
+        {% block content_before %}{% endblock %}
+
+        <div class="grid_12">
+            {% include "partial_message.phtml" %}
+            {% block content %}{% endblock %}
+            {% block content_after %}{% endblock %}
+        </div>
+
+        <div class="grid_4">
+            {% block sidebar %}{% endblock %}
+
+            {% if not client %}
+            <div class="widget" id="login-form" style="display: none;" >
+                <div class="head">
+                    <h2 class="dark-icon i-profile">{% trans 'Login to client area' %}</h2>
+                </div>
+                <div class="block">
+                <form action="" method="post" class="api_form" data-api-url="{{ 'api/guest/client/login'|link }}" data-api-redirect="{{ ''|link }}">
+                    <fieldset>
+                        <legend>{% trans 'Login to client area' %}</legend>
+                        <p>
+                            <input type="email" name="email" value="{{ request.email }}" required="required" placeholder="{% trans 'Email address' %}">
+                        </p>
+                        <p>
+                            <input type="password" name="password" value="" required="required" placeholder="{% trans 'Password' %}">
+                        </p>
+                        <a class="bb-button" href="{{ 'reset-password'|link }}">{% trans 'Reset password' %}</a>
+                        <input type="hidden" name="remember" value="1" />
+                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Sign in' %}" style="float: right">
+                    </fieldset>
+                </form>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="gradient" style="margin-bottom: 10px;">
+                <nav>{% include "partial_menu.phtml" %}</nav>
+            </div>
+
+            {% set languages = guest.extension_languages %}
+            {% if languages|length > 1 %}
+            <div class="widget">
+                <div class="head">
+                    <h2 class="dark-icon i-drag">{% trans 'Select language' %}</h2>
+                </div>
+                <div class="block">
+                    <select name="lang" class="language_selector">
+                    {% for lang in languages %}
+                        <option value="{{ lang }}" class="lang_{{ lang }}">{{ lang|trans }}</option>
+                    {% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% block sidebar2 %}{% endblock %}
+
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+
+<div class="footer">
+    <div class="container_16">
+        {% if guest.extension_is_on({"mod":'kb'}) %}
+        <div class="grid_4">
+            <div class="box">
+                <h2>{% trans 'Popular articles' %}</h2>
+                <div class="block">
+                    <ul>
+                        {% for i, article in guest.kb_article_get_list({"per_page":4, "page" : 1}).list %}
+                            <li><a href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{article.title|truncate(30)}}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if guest.extension_is_on({"mod":'news'}) %}
+        <div class="grid_4">
+            <div class="box">
+                <h2>{% trans 'Recent posts' %}</h2>
+                <div class="block">
+                    <ul>
+                        {% set posts = guest.news_get_list({"per_page": 4, "page" : 1}) %}
+                        {% for i, post in posts.list %}
+                        <li>
+                            <a href="{{ '/news'|link }}/{{post.slug}}">{{post.title|truncate(30)}}</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="grid_4">
+            <div class="box">
+                <h2>{{ company.name }}</h2>
+                <div class="block">
+                    <ul>
+                        <li>
+                            <a href="{{ '/about-us'|link }}">{% trans 'About us' %}</a>
+                        </li>
+                        <li>
+                            <a href="{{ '/tos'|link }}">{% trans 'Terms and conditions' %}</a>
+                        </li>
+                        <li>
+                            <a href="{{ '/privacy-policy'|link }}">{% trans 'Privacy policy' %}</a>
+                        </li>
+                        {% if guest.extension_is_on({"mod":'branding'}) %}
+                        <li>
+                            <a href="http://www.boxbilling.com" title="Billing Software" target="_blank">Billing software</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid_4">
+            {% if guest.extension_is_on({"mod":'branding'}) %}
+            <p class="logo">
+                <a class="boxbilling" href="http://www.boxbilling.com" title="Invoicing software" target="_blank">{{ 'images/boxbilling-logo.png' | asset_url | img_tag('Business software') }}</a>
+            </p>
+            {% endif %}
+        </div>
+
+        <div class="clear"></div>
+    </div>
+</div>
+
+<div class="footer lower">
+    <div class="container_16">
+        <div class="grid_16">
+            <div class="box">
+                <div class="block">
+                    <p>
+                    {# Removing this link is allowed only for BoxBilling PRO license owners. #}
+                    {#<a href="http://www.boxbilling.com" title="Billing Software" target="_blank" style="float:right">Powered by BoxBilling</a>#}
+                    © {{ now|date('Y') }} {{ company.signature }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<div class="loading dim" style="display:none"><div class="popup_block"><h3>{% trans 'Loading ..' %}</h3></div></div>
+    {% block js %}{% endblock %}
+    <noscript>NOTE: Many features on BoxBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
+{% include 'partial_pending_messages.phtml' ignore missing %}
+</body>
+</html>

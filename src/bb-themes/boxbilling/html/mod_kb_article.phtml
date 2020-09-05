@@ -1,0 +1,63 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{{article.title}}{% endblock %}
+
+{% block content %}
+
+    <div class="h-block">
+        <div class="h-block-header">
+            <div class="icon"><span class="big-light-icon i-kb"></span></div>
+            <h2>{{article.title}}</h2>
+            <p class="meta">{{article.created_at|bb_date }} | {% trans 'Views' %}: {{ article.views }}</p>
+        </div>
+        <div class="block">
+
+            {#
+            <div class="block" style="text-align: center;">
+                <form method="get" action="{{ 'kb'|link }}" class="search">
+                    <p>
+                        <input class="search text" name="q" type="text" value="{{ request.q }}" placeholder="{% trans 'What are you looking for?' %}">
+                        <input class="bb-button bb-button-submit" value="{% trans 'Search'%}" type="submit">
+                    </p>
+                </form>
+            </div>
+            #}
+
+            <div class="box articles">
+                <div class="block article first last">
+                    {{article.content|bbmd}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p><a class="bb-button" href="{{ 'kb'|link }}"><span class="dark-icon i-arrow"></span> {% trans 'Back to list' %}</a></p>
+{% endblock %}
+
+{% block content_after %}
+    <div class="grid_6 alpha">
+        <div class="widget">
+            <div class="head">
+                <h2 class="dark-icon i-kb">{%trans 'Similar articles' %}</h2>
+            </div>
+            <ul class="menu">
+            {% for i, kbarticle in guest.kb_article_get_list({"kb_article_category_id":article.kb_article_category_id, "per_page":5}).list %}
+                <li><a href="{{ '/kb'|link }}/{{article.category.slug}}/{{kbarticle.slug}}">{{kbarticle.title|truncate(45)}}</a></li>
+            {% endfor %}
+            </ul>
+        </div>
+</div>
+<div class="grid_6 omega">
+        <div class="widget">
+            <div class="head">
+                <h2 class="dark-icon i-kb">{%trans 'Knowledge base categories'%}</h2>
+            </div>
+            <ul class="menu">
+            {% for i, category in guest.kb_category_get_list({"per_page":5}).list %}
+                <li><a href="{{ '/kb'|link }}#category-{{category.id}}">{{category.title}}</a></li>
+            {% endfor %}
+            </ul>
+        </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{ticket.subject}}{% endblock %}
+
+{% block content %}
+
+<div class="h-block forum">
+    <div class="h-block-header">
+        <div class="icon"><span class="big-light-icon i-support"></span></div>
+        <h2>{{ ticket.subject }}</h2>
+    </div>
+    <div class="block conversation">
+    {% for i, message in ticket.messages %}
+    <div class="widget simpleTabs tabsRight{% if loop.first %} first{% endif %}">
+        <div class="head">
+            <h2 class="dark-icon i-forum">{{ message.author.name }}</h2>
+            <h3>{{ message.created_at|bb_date }}</h3>
+        </div>
+        <ul class="tabs">
+            <li><a href="#m-{{message.id}}">{{ i+1 }}</a></li>
+            <li><a href="#reply-{{message.id}}"><span class="dark-icon i-support"></span>{% trans 'Reply' %}</a></li>
+            <li><a href="#quote-{{message.id}}"><span class="dark-icon i-quote"></span>{% trans 'Quote' %}</a></li>
+        </ul>
+        <div class="tabs_container">
+            <div class="tab_content" id="m-{{message.id}}">
+                <div class="grid_2 alpha">
+                    <img src="{{ message.author.email|gravatar }}?size=60" alt="{{ message.author.name }}" class="gravatar"/>
+                </div>
+                <div class="grid_10 omega">
+                    <div class="block message">
+                        <div class="body">
+                            {{ message.content|bbmd }}
+                            <div class="clear"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="clear"></div>
+            </div>
+            <div class="tab_content" id="reply-{{message.id}}">
+                <form method="post" action="" class="api_form" data-api-url="{{ 'api/guest/support/ticket_reply'|link }}" data-api-reload="1">
+                    <fieldset>
+                        <p>
+                            <textarea name="message" cols="5" rows="10" required="required"></textarea>
+                        </p>
+                        <input type="hidden" name="hash" value="{{ ticket.hash }}" />
+                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Post' %}">
+                    </fieldset>
+                </form>
+            </div>
+
+            <div class="tab_content" id="quote-{{message.id}}">
+                <form method="post" action="" class="api_form" data-api-url="{{ 'api/guest/support/ticket_reply'|link }}" data-api-reload="1">
+                    <fieldset>
+                        <p>
+                            <textarea name="message" cols="5" rows="10" required="required">{{ mf.markdown_quote(message.content) }}</textarea>
+                        </p>
+                        <input type="hidden" name="hash" value="{{ ticket.hash }}" />
+                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Post' %}">
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block content_after %}
+
+<div class="widget">
+    <div class="head">
+        <h2 class="dark-icon i-support">{% trans 'Ticket details' %}</h2>
+    </div>
+    <table>
+        <tbody>
+            <tr>
+                <td>{% trans 'Subject' %}</td>
+                <td><b>{{ticket.subject}}</b></td>
+            </tr>
+
+            <tr>
+                <td>{% trans 'Author' %}</td>
+                <td>{{ticket.author.name}}</td>
+            </tr>
+
+            <tr>
+                <td>{% trans 'Email' %}</td>
+                <td>{{ticket.author.email}}</td>
+            </tr>
+
+            <tr>
+                <td>{% trans 'Status' %}</td>
+                <td>{{mf.status_name(ticket.status) }}</td>
+            </tr>
+
+            <tr>
+                <td>{% trans 'Time opened' %}</td>
+                <td>{{ticket.created_at|bb_date }}</td>
+            </tr>
+         </tbody>
+         
+         {% if ticket.status != 'closed' %}
+         <tfoot>
+             <tr>
+                 <td colspan="2">
+                     <a class="bb-button api-link" href="{{ 'api/guest/support/ticket_close'|link({'hash' : ticket.hash}) }}" id="new-ticket-button" data-api-reload="1">{% trans 'Close ticket' %}</a>
+                 </td>
+             </tr>
+         </tfoot>
+         {% endif %}
+    </table>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+    $('#public-ticket-reply').bind('submit',function(event){
+        bb.post(
+            'guest/support/ticket_reply',
+            $(this).serialize(),
+            function(result) {
+                bb.reload();
+            }
+        );
+        return false;
+    });
+});
+</script>
+{% endblock %}

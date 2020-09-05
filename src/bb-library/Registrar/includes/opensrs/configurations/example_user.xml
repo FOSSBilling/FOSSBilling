@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+        <osrsRegular>
+                <osrs_username>test</osrs_username>
+		<osrs_key>3b6a2dd0ca99387940bb56fba15bfe8e5ac927201eac9772d7617d362c4986d78a7910b91c631abc293caf43f0dec81894901404bf4e9804</osrs_key>
+                <osrs_environment>TEST</osrs_environment>
+                <osrs_protocol>XCP</osrs_protocol>
+                <osrs_host>horizon.opensrs.net</osrs_host>
+                <osrs_port>55000</osrs_port>
+                <osrs_sslPort>55443</osrs_sslPort>
+                <osrs_baseClassVersion>2.8.0</osrs_baseClassVersion>
+                <osrs_version>XML:0.1</osrs_version>
+        </osrsRegular>
+        <osrsFastLookup>
+                <osrs_host>horizon.opensrs.net</osrs_host>
+                <osrs_port>51000</osrs_port>
+        </osrsFastLookup>
+        <osrsEMail>
+                <osrs_host>ssl://admin.test.hostedemail.com</osrs_host>
+                <osrs_port>4449</osrs_port>
+                <osrs_username>mail_user</osrs_username>
+                <osrs_password>mail_password</osrs_password>
+                <osrs_domain>mail_domain</osrs_domain>
+		<osrs_portwait>10</osrs_portwait>
+        </osrsEMail>
+</config>

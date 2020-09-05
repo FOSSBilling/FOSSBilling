@@ -1,0 +1,170 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}Forum - Client profile{% endblock %}
+{% set active_menu = 'support' %}
+
+{% block content %}
+
+{% set params = admin.extension_config_get({"ext":"mod_forum"}) %}
+{% set fp = admin.forum_profile_get({"client_id":client_id}) %}
+{% set posts = admin.forum_message_get_list({"client_id":client_id,"per_page":30, "page":request.page}|merge(request)) %}
+{% set last_message = posts.list[0] %}
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{{ fp.name }} profile</a></li>
+        <li><a href="#tab-points">Posts with points</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        
+        <div class="tab_content nopadding" id="tab-index">
+
+            <div style="position: relative;">
+            <a href="{{'client/manage'|alink}}/{{client_id}}"><img src="{{ fp.gravatar }}?size=100" alt="{{ fp.name }}" style="right: 0; margin: 15px 15px 0 15px; position: absolute; border: 2px solid white; box-shadow: 0px 0px 10px 0px;"/></a>
+            </div>
+            <table class="tableStatic wide">
+                <tbody>
+                    <tr class="noborder">
+                        <td style="width: 15%">Name</td>
+                        <td><a href="{{'client/manage'|alink}}/{{client_id}}">{{ fp.name }}</a></td>
+                    </tr>
+
+                    <tr>
+                        <td>Posts</td>
+                        <td><strong class="red">{{ fp.posts }}</strong></td>
+                    </tr>
+
+                    <tr>
+                        <td>Last Activity</td>
+                        <td>{% if last_message %}{{ last_message.created_at|bb_date }} ({{ last_message.created_at|timeago }} ago){% else %}-{% endif %}</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Joined</td>
+                        <td>{{ fp.created_at|bb_date }}</td>
+                    </tr>
+                    
+                    {% if params.forum_points_enable %}
+                    {% set points = fp.points %}
+                    <tr>
+                        <td>Points</td>
+                        <td><a href="#" onclick="$('#edit-points').toggle(); return false;"><span title="{% trans 'Approved' %}">{{ points }}</span></a></td>
+                    </tr>
+                    
+                    <tr style="display: none;" id="edit-points">
+                        <td>Edit points</td>
+                        <td>
+                            <form action="{{ 'api/admin/forum/points_update'|link }}" method="post" class="api-form">
+                            <input type="text" name="amount" value="{{points}}"/>
+                            <input type="submit" value="Update"/>
+                            <input type="hidden" name="client_id" value="{{client_id}}"/>
+                            </form>
+                        </td>
+                    </tr>
+                    
+                    {% endif %}
+                    
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+            
+            <div class="fix"></div>
+            
+            <div class="help">
+                <h3>{% trans 'Recent posts' %}</h3>
+            </div>
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td>{% trans 'Message' %}</td>
+                        <td>{% trans 'Date' %}</td>
+                        <td style="width: 13%">Actions</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    
+                {% for i, post in posts.list %}
+                <tr class="msg-id-{{post.id}}">
+                    <td>
+                        <a href="{{ 'forum/topic'|alink }}/{{post.forum_topic_id}}#msg-{{post.id}}" target="_blank">{{post.forum_title}}</a>
+                        <br/>
+                        {{ post.message|truncate(80) }}</td>
+                    <td>{{ post.created_at|timeago }} ago</td>
+                    <td class="actions">
+                        <a class="bb-button btn14" href="{{ '/forum/topic'|alink }}/{{post.forum_topic_id}}#msg-{{post.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                        <a class="bb-button btn14 bb-rm-tr api-link" href="{{ 'api/admin/forum/message_delete'|link({'id' : post.id }) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'forum'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                    </td>
+                </tr>
+
+                {% else %}
+                    <tr>
+                        <td colspan="3">
+                            {% trans 'The list is empty' %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% include "partial_pagination.phtml" with {'list': posts, 'url':'profile/'~client_id} %}
+        </div>
+        
+        
+        <div class="tab_content nopadding" id="tab-points">
+            {% if params.forum_points_enable %}
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <th>{% trans 'Message' %}</th>
+                        <th style="width: 5%">{% trans 'Actions' %}</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% set posts = admin.forum_message_get_list({"per_page":20, "client_id":client_id, "with_points":1}|merge(request)) %}
+                    {% for i, post in posts.list %}
+                    <tr>
+                        <td>
+                        <a href="{{ 'forum/topic'|alink }}/{{post.forum_topic_id}}#msg-{{post.id}}" target="_blank">{{post.forum_title}}</a> - <strong>{{post.points}} point(s)</strong>
+                        <br/>
+                        {{post.message}}
+                        </td>
+                        <td class="actions">
+                            <a title="Deduct points" class="bb-button btn14 bb-rm-tr api-link" href="{{ 'api/admin/forum/points_deduct'|link({'id' : post.id}) }}" data-api-confirm="Are you sure you want to remove points for this post?"><img src="images/icons/dark/close.png" alt=""></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="help">
+                <h3>{% trans 'Enable forum points feature in extension configuration page' %}</h3>
+                <p><a href="{{'extension/settings/forum'|alink}}">Forum settings</a></p>
+            </div>
+            {% endif %}
+        </div>
+        
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+    
+$(function() {
+
+});
+
+</script>
+{% endblock %}

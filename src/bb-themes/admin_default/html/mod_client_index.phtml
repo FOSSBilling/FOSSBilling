@@ -1,0 +1,335 @@
+{% import "macro_functions.phtml" as mf %}
+{% extends "layout_default.phtml" %}
+{% set active_menu = 'client' %}
+{% block meta_title %}{% trans 'Clients' %}{% endblock %}
+
+{% block top_content %}
+{% if request.show_filter %}
+<div class="widget filterWidget">
+    <div class="head"><h5 class="iMagnify">{% trans 'Filter clients' %}</h5></div>
+    <div class="body nopadding">
+
+        <form method="get" action="" class="mainForm">
+            <input type="hidden" name="_url" value="{{ request._url }}" />
+            <fieldset>
+                <div class="rowElem noborder">
+                    <label>{% trans 'ID' %}</label>
+                    <div class="formRight">
+                        <input type="text" name="id" value="{{ request.id }}">
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Name' %}</label>
+                    <div class="formRight">
+                        <input type="text" name="name" value="{{ request.name }}">
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                
+                <div class="rowElem">
+                    <label>{% trans 'Company name' %}</label>
+                    <div class="formRight">
+                        <input type="text" name="company" value="{{ request.company }}">
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Email' %}</label>
+                    <div class="formRight">
+                        <input type="text" name="email" value="{{ request.email }}" />
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Group' %}:</label>
+                    <div class="formRight">
+                        {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'All groups') }}
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Status' %}:</label>
+                    <div class="formRight">
+                        <input type="radio" name="status" value=""{% if not request.status %} checked="checked"{% endif %}/><label>{% trans 'All' %}</label>
+                        <input type="radio" name="status" value="active"{% if request.status == 'active' %} checked="checked"{% endif %}/><label>{% trans 'Active' %}</label>
+                        <input type="radio" name="status" value="suspended"{% if request.status == 'suspended' %} checked="checked"{% endif %} /><label>{% trans 'Suspended' %}</label>
+                        <input type="radio" name="status" value="canceled"{% if request.status == 'canceled' %} checked="checked"{% endif %} /><label>{% trans 'Canceled' %}</label>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{% trans 'Registration date' %}</label>
+                    <div class="formRight moreFields">
+                        <ul>
+                            <li style="width: 100px"><input type="text" name="date_from" value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
+                            <li class="sep">-</li>
+                            <li style="width: 100px"><input type="text" name="date_to" value="{% if request.date_to %}{{ request.date_to|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
+                        </ul>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                
+                <input type="hidden" name="show_filter" value="1" />
+                <input type="submit" value="{% trans 'Filter' %}" class="greyishBtn submitForm" />
+            </fieldset>
+        </form>
+        <div class="fix"></div>
+    </div>
+</div>
+{% else %}
+{% set count_clients = admin.client_get_statuses %}
+<div class="stats">
+    <ul>
+        <li><a href="{{ 'client'|alink({'status' : 'active'}) }}" class="count green" title="">{{ count_clients.active }}</a><span>{% trans 'Active' %}</span></li>
+        <li><a href="{{ 'client'|alink({'status' : 'suspended'}) }}" class="count blue" title="">{{ count_clients.suspended }}</a><span>{% trans 'Suspended' %}</span></li>
+        <li><a href="{{ 'client'|alink({'status' : 'canceled'}) }}" class="count red" title="">{{ count_clients.canceled }}</a><span>{% trans 'Canceled' %}</span></li>
+        <li class="last"><a href="{{ 'client'|alink }}" class="count grey" title="">{{count_clients.active + count_clients.canceled + count_clients.suspended}}</a><span>{% trans 'Total' %}</span></li>
+    </ul>
+    <div class="fix"></div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Clients' %}</a></li>
+        <li><a href="#tab-new">{% trans 'New client' %}</a></li>
+        <li><a href="#tab-groups">{% trans 'Groups' %}</a></li>
+        <li><a href="#tab-new-group">{% trans 'New group' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+            {{ mf.table_search }}
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
+                        <td colspan="2">{% trans 'Name' %}</td>
+                        <td>{% trans 'Company' %}</td>
+                        <td width="30%">{% trans 'Email' %}</td>
+                        <td>{% trans 'Status' %}</td>
+                        <td>{% trans 'Date' %}</td>
+                        <td width="13%">&nbsp;</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% set clients = admin.client_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+                    {% for client in clients.list %}
+                    <tr>
+                        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ client.id }}"/></td>
+                        <td>
+                            <a href="{{ 'client/manage'|alink }}/{{ client.id }}"><img src="{{ client.email|gravatar }}?size=20" alt="{{ client.id }}" /></a>
+                        </td>
+                        <td>
+                            <span class="flag flag-{{ client.country }}" title="{{ guest.system_countries[client.country] }}"></span>
+                            <a href="{{ 'client/manage'|alink }}/{{ client.id }}" title="{{ client.first_name }} {{ client.last_name }}">{{ client.first_name|truncate('1', null, '.') }} {{ client.last_name|truncate(15) }}</a></td>
+                        <td><a href="{{ 'client/manage'|alink }}/{{ client.id }}" title="{{ client.company }}">{{ client.company|default('-')|truncate(30) }}</a></td>
+                        <td><a href="{{ 'client/manage'|alink }}/{{ client.id }}" title="{{ client.email }}">{{ client.email|truncate(30) }}</a></td>
+                        <td>{{ mf.status_name(client.status) }}</td>
+                        <td>{{ client.created_at|date('Y-m-d') }}</td>
+                        <td>
+                            <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/client/delete'|link({'id' : client.id}) }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/trash.png" alt=""></a>
+                            <a class="btn14" href="{{ 'client/manage'|alink }}/{{ client.id }}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% include "partial_batch_delete.phtml" with {'action' : 'admin/client/batch_delete'} %}
+            {% include "partial_pagination.phtml" with {'list': clients, 'url':'client'} %}
+        </div>
+
+        <div class="fix"></div>
+
+        <div class="tab_content nopadding" id="tab-new">
+
+            <form method="post" action="{{ 'api/admin/client/create'|link }}" class="mainForm api-form save" data-api-redirect="{{ 'client'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Status' %}:</label>
+                        <div class="formRight noborder">
+                            <input type="radio" name="status" value="active" checked="checked"/><label>{% trans 'Active' %}</label>
+                            <input type="radio" name="status" value="canceled"/><label>{% trans 'Canceled' %}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Group' %}:</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'Select group') }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Email' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="email" value="{{request.email}}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Name' %}:</label>
+                        <div class="formRight moreFields">
+                            <ul>
+                                <li style="width: 200px"><input type="text" name="first_name" value="{{request.first_name}}" required="required"/></li>
+                                <li class="sep"></li>
+                                <li style="width: 200px"><input type="text" name="last_name" value="{{request.last_name}}"/></li>
+                            </ul>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Company' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="company" value="{{request.company}}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Address Line 1' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="address_1" value="{{request.address_1}}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Address Line 2' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="address_2" value="{{request.address_2}}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'City' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="city" value="{{request.city}}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'State' %}:</label>
+                        <div class="formRight">
+                            {# mf.selectbox('state', guest.system_states, request.state, 0, 'Select state') #}
+                            <input type="text" name="state" value="{{ request.state }}" />
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Country' %}:</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Select country') }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Postcode' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="postcode" value="{{request.postcode}}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Phone' %}:</label>
+                        <div class="formRight moreFields">
+                            <ul>
+                                <li><input type="text" name="phone_cc" value="{{request.phone_cc}}"/></li>
+                                <li class="sep"></li>
+                                <li style="width: 200px;"><input type="text" name="phone" value="{{request.phone}}"/></li>
+                            </ul>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Currency' %}:</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'Select currency') }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Password' %}:</label>
+                        <div class="formRight">
+                            <input type="password" name="password" value="" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-groups">
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td>{% trans 'Title' %}</td>
+                        <td width="13%">{% trans 'Actions' %}</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for id,group in admin.client_group_get_pairs %}
+                    <tr>
+                        <td>{{ group }}</td>
+                        <td>
+                            <a class="btn14" href="{{ 'client/group'|alink }}/{{ id }}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                            <a class="btn14 api-link bb-rm-tr" data-api-reload="1" data-api-confirm="Are you sure?" href="{{ 'api/admin/client/group_delete'|link({'id' : id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="tab_content nopadding" id="tab-new-group">
+
+            <form method="post" action="{{ 'api/admin/client/group_create'|link }}" class="mainForm api-form save" data-api-redirect="{{ 'client'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Title' %}:</label>
+                        <div class="formRight noborder">
+                            <input type="text" name="title" value="{{request.title}}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+
+
+
+{% endblock %}

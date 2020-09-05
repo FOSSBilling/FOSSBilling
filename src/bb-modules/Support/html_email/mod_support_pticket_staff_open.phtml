@@ -1,0 +1,20 @@
+{% block subject %}[{{ guest.system_company.name }}] {{ticket.subject}}{% endblock %}
+{% block content %}
+{% apply markdown %}
+
+Hi {{ ticket.author_name }},
+
+{{ticket.messages[0].content}}
+
+***
+
+You can track and respond to this conversation at:
+
+{{'support/contact-us/conversation'|link }}/{{ ticket.hash }}
+      
+Please do not reply to this email directly. Use the link provided above.
+      
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

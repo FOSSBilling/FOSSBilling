@@ -1,0 +1,77 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Paid support settings' %}{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li class="lastB">{% trans 'Paid support settings' %}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+
+<div class="widget">
+    <div class="head">
+        <h5 class="iCog">{% trans 'Paid support settings' %}</h5>
+    </div>
+
+    {% set params = admin.extension_config_get({"ext":"mod_paidsupport"}) %}
+    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="Settings updated">
+        <fieldset>
+        <div class="rowElem">
+            <label>{% trans 'Ticket price:' %}</label>
+            <div class="formRight">
+                <input type="text" name="ticket_price" value="{{ params.ticket_price }}" required="required"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        <div class="rowElem">
+            <label>{% trans 'Error message:' %}</label>
+            <div class="formRight">
+                <input type="text" name="error_msg" value="{{ params.error_msg }}" required="required" />
+            </div>
+            <div class="fix"></div>
+        </div>
+            <div class="tab_content nopadding" id="tab-addons">
+                <div class="help">
+                    <h5>{% trans 'Set paid supoprt for helpdesks: ' %}</h5>
+                </div>
+                <table class="tableStatic wide">
+                    <tbody>
+                    {% for id, title in admin.support_helpdesk_get_pairs %}
+                    <tr {% if loop.first %}class="noborder"{% endif %}>
+                        <td style="width:5%">
+                            <input type="hidden" name="helpdesk[{{id}}]" value="0">
+                            <input type="checkbox" name="helpdesk[{{id}}]" value="1" id="helpdesk_{{ id }}" {% if params.helpdesk[id] == 1 %}checked="checked"{% endif %}/>
+                        </td>
+                        <td><label for="helpdesk_{{ id }}">{{title}}</label></td>
+                        <td style="width:5%"><a class="bb-button btn14" href="{{ '/support/helpdesk'|alink }}/{{id}}"><img src="images/icons/dark/pencil.png" alt=""></a></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <td colspan="3">
+                            <a href="{{ 'extension/settings/support'|alink }}#tab-new-helpdesk" title="" class="btnIconLeft mr10 mt5"><img src="images/icons/dark/settings2.png" alt="" class="icon"><span>{% trans 'Create new helpdesk' %}</span></a>
+                        </td>
+                    </tr>
+                    </tfoot>
+                </table>
+                <div class="fix"></div>
+            </div>
+
+
+            <input type="hidden" name="ext" value="mod_paidsupport" />
+        <input type="submit" value="{% trans 'Update settings' %}" class="greyishBtn submitForm" />
+        </fieldset>
+    </form>
+</div>
+
+{% endblock %}

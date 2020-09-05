@@ -1,0 +1,152 @@
+{% import "macro_functions.phtml" as mf %}
+{% set profile = admin.profile_get %}
+{% set company = guest.system_company %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>{% block meta_title %}{% endblock %} - {{ company.name }}</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+
+    <link rel="shortcut icon" href="favicon.ico" />
+
+    {% include "partial_bb_meta.phtml" %}
+    
+    {% include "partial_styles.phtml" %}
+
+    <script type="text/javascript" src="js/boxbilling.min.js?v={{guest.system_version}}"></script>
+    <script type="text/javascript" src="js/bb-admin.js?v={{guest.system_version}}"></script>
+
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+{% if not admin %}
+<script type="text/javascript">$(function(){bb.redirect("{{ 'staff/login'|alink }}");});</script>
+{% else %}
+<div id="topNav">
+    <div class="fixed">
+        <div class="wrapper">
+            <div class="welcome">
+                <a href="{{ 'staff/profile'|alink }}" title=""><img src="{{ profile.email|gravatar }}?size=20" alt="{{ profile.name }}" /></a><span>{% trans 'Hi,' %} {{ profile.name }}!</span>
+                {% set languages = guest.extension_languages %}
+                {% if languages|length > 1 %}
+                <span>
+                    <select name="lang" class="language_selector" style="background-color: #262b2f; color:white;">
+                        {% for lang in languages %}
+                        <option value="{{ lang }}" class="lang_{{ lang }}">{{ lang|trans }}</option>
+                        {% endfor %}
+                    </select>
+                </span>
+                {% endif %}
+            </div>
+            <div class="userNav">
+                <ul>
+                    <li class="loading" style="display:none;"><img src="images/loader.gif" alt="" /><span>{% trans 'Loading ...' %}</span></li>
+                    <li class="dd"><span><i class="sprite-topnav sprite-topnav-register" style="margin-right: 5px;"></i>{% trans 'New' %}</span>
+                        {% include "partial_menu_top.phtml" %}
+                    </li>
+                    {% if admin.system_is_allowed({"mod":"system"}) %}
+                    <li class="dd"><span><i class="sprite-topnav sprite-topnav-settings" style="margin-right: 5px;"></i>{% trans 'Settings' %}</span>
+                        <ul class="menu_body">
+                            <li><a href="{{ 'system'|alink }}" title="">{% trans 'All settings' %}</a></li>
+                            <li><a href="{{ 'theme'|alink }}/{{ guest.extension_theme.code }}" title="">{% trans 'Theme settings' %}</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                    <li><a href="{{ '/'|link }}" title="" target="_blank"><span><i class="sprite-topnav sprite-topnav-mainWebsite" style="margin-right: 5px;"></i>{% trans 'Visit site' %}</span></a></li>
+                    <li><a href="{{ 'api/admin/profile/logout'|link }}" title="" class="api-link" data-api-redirect="{{ 'staff/login'|alink }}"><span><i class="sprite-topnav sprite-topnav-logout" style="margin-right: 5px;"></i>{% trans 'Logout' %}</span></a></li>
+                </ul>
+            </div>
+            <div class="fix"></div>
+        </div>
+    </div>
+</div>
+
+<div id="header" class="wrapper">
+    <div class="logo"><a href="{{ 'system'|alink }}" title=""><img src="{{ company.logo_url }}" alt="{{ company.name }}" style="max-height: 50px;"/></a></div>
+    <div class="middleNav">
+        
+    	<ul>
+            {% if admin.system_is_allowed({"mod":"notification"}) and guest.extension_is_on({"mod":"notification"}) %}
+            {% set count_notifications = admin.notification_get_list({"per_page":1}).total %}
+        	<li class="iMegaphone"><a href="{{ 'notification'|alink }}" title=""><span>{% trans 'Notifications' %}</span></a>{% if count_notifications %}<span class="numberMiddle">{{ count_notifications }}</span>{% endif %}</li>
+            {% endif %}
+            
+            {% if admin.system_is_allowed({"mod":"order"}) %}
+            {% set count_orders = admin.order_get_statuses.failed_setup %}
+        	<li class="iOrders"><a href="{{ 'order'|alink({'status' : 'failed_setup'}) }}" title=""><span><i class="sprite-23 sprite-23-basket2"></i>{% trans 'Orders' %}</span></a>{% if count_orders %}<span class="numberMiddle">{{ count_orders }}</span>{% endif %}</li>
+            {% endif %}
+            
+            {% if admin.system_is_allowed({"mod":"invoice"}) %}
+            {% set count_invoices = admin.invoice_get_statuses.unpaid %}
+        	<li class="iInvoices"><a href="{{ 'invoice'|alink({'status' : 'unpaid'}) }}" title=""><span><i class="sprite-23 sprite-23-money"></i>{% trans 'Invoices' %}</span></a>{% if count_invoices %}<span class="numberMiddle">{{ count_invoices }}</span>{% endif %}</li>
+            {% endif %}
+            
+            {% if admin.system_is_allowed({"mod":"support"}) %}
+            {% set count_tickets = admin.support_ticket_get_statuses.open %}
+            {% set count_ptickets = admin.support_public_ticket_get_statuses.open %}
+        	<li class="iSpeech"><a href="{{ 'support/public-tickets'|alink({'status' : 'open'}) }}" title=""><span><i class="sprite-23 sprite-23-speech"></i>{% trans 'Inquiries' %}</span></a>{% if count_ptickets %}<span class="numberMiddle">{{ count_ptickets }}</span>{% endif %}</li>
+        	<li class="iMes"><a href="{{ 'support'|alink({'status' : 'open'}) }}" title=""><span><i class="sprite-23 sprite-23-dialog"></i>{% trans 'Tickets' %}</span></a>{% if count_tickets %}<span class="numberMiddle">{{ count_tickets }}</span>{% endif %}</li>
+            {% endif %}
+            
+            {% if admin.system_is_allowed({"mod":"client"}) %}
+            <li><a href="{{ 'client'|alink }}" title=""><span><i class="sprite-23 sprite-23-user"></i>{% trans 'Clients' %}</span></a></li>
+            {% endif %}
+            
+        	<li><a href="{{ 'index'|alink }}" title=""><span><i class="sprite-23 sprite-23-home"></i>{% trans 'Dashboard' %}</span></a></li>
+        </ul>
+    </div>
+    <div class="fix"></div>
+</div>
+
+
+<div class="wrapper">
+    
+    {% if hide_menu %}
+    
+    {% block content_wide %}{% endblock %}
+    
+    {% else %}
+    <div class="leftNav">
+    {% block left_top %}{% endblock %}    
+    {% block nav %}{% include "partial_menu.phtml" %}{% endblock %}
+    {% block left_bottom %}{% endblock %}
+    </div>
+    
+    {% block before_content %}{% endblock %}
+    <div class="content">
+
+        <div class="breadCrumbHolder module">
+            <div class="breadCrumb module">
+                {% block breadcrumbs %}
+                <ul>
+                    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+                    <li class="lastB">{{ block('meta_title') }}</li>
+                </ul>
+                {% endblock %}
+            </div>
+        </div>
+
+        {% block top_content %}{% endblock %}
+        {% block content %}{% endblock %}
+    </div>
+    {% endif %}
+    <div class="fix"></div>
+</div>
+
+<div id="footer">
+	<div class="wrapper">
+        {% include "partial_footer.phtml" with {'product': product} %}
+    </div>
+</div>
+<div class="loading dim"></div>    
+    {% block js %}{% endblock %}
+    <noscript id="noscript">
+        <div class="msg error">
+        NOTE: Many features on BoxBilling require Javascript and cookies. You can enable both via your browser's preference settings.
+        </div>
+    </noscript>
+{% endif %}
+</body>
+</html>

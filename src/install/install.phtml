@@ -1,0 +1,368 @@
+{% extends "layout.phtml" %}
+
+{% block left %}
+        <div class="widget nomargin step step-1">
+            <div class="head"><h5 class="iAlert">BoxBilling installation</h5></div>
+            <div class="body">
+                <p>This setup will guide you through installation process of BoxBilling.</p>
+                <p>Check if your system meets minimum requirements to install and run billing software.</p>
+            </div>
+        </div>
+
+        <div class="widget nomargin step step-2">
+            <div class="head"><h5 class="iAlert">Database configuration</h5></div>
+            <div class="body">
+                <p>BoxBilling stores data in SQL database. You should already have an existing database before this step. If you do not have database prepared, you should do that now.</p>
+                <p>Installer will create all required tables in your database after correct connection details are provided.</p>
+                <h4 class="pt10">How to create database?</h4>
+                <p>Depending on your hosting provider database can be created in different ways.</p>
+                <p>Best way is to check the documentation available with your webhosting account. You can contact their support if you really get stuck.</p>
+            </div>
+        </div>
+
+        <div class="widget nomargin step step-3">
+            <div class="head"><h5 class="iAlert">Administrator account</h5></div>
+            <div class="body">
+                <p>This is the main user account to control all aspects of BoxBilling.</p>
+                <p>Email will be used to login to admin area.</p>
+                <p>Make sure password is strong.</p>
+            </div>
+        </div>
+
+        <div class="widget step step-3">
+            <div class="head"><h5 class="iAlert">BoxBilling license key</h5></div>
+            <div class="body">
+                <p>Get license key at <a href="http://www.boxbilling.com/order" target="_blank">www.boxbilling.com/order</a></p>
+                <p>License key is stored in <strong>bb-config.php</strong> file and it can be changed later</p>
+                <p>Like us on <a href="http://facebook.com/boxbilling" target="_blank">Facebook page</a> to get special offers and discounts</p>
+            </div>
+        </div>
+
+        <div class="widget nomargin step step-4">
+            <div class="head"><h5 class="iAlert">Well done!</h5></div>
+            <div class="body aligncenter">
+                <p>Thank you for choosing BoxBilling</p>
+                <a href="{{ live_site }}" title="" class="btnIconLeft mr10 mt10" target="_blank"><img src="images/user.png" alt="" class="icon"><span>Client area</span></a>
+                <a href="{{ admin_site }}" title="" class="btnIconLeft mr10 mt10" target="_blank"><img src="images/adminUser.png" alt="" class="icon"><span>Admin area</span></a>
+            </div>
+        </div>
+
+        <div class="widget step step-4">
+            <div class="head"><h5 class="iAlert">Find us on Facebook</h5></div>
+            <iframe src="//www.facebook.com/plugins/likebox.php?href=http%3A%2F%2Fwww.facebook.com%2Fboxbilling&amp;width=209&amp;height=258&amp;colorscheme=light&amp;show_faces=true&amp;border_color=%23ffffff&amp;stream=false&amp;header=false" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:209px; height:258px;" allowTransparency="true"></iframe>
+        </div>
+
+{% endblock %}
+
+
+{% block content %}
+        <form action="" class="mainForm" method="get" id="installer">
+            <fieldset>
+                <div class="widget nomargin">
+                    <div class="wizard swMain">
+                        <noscript>
+                            <div style="border:red solid 5px; padding: 10px">
+                                <p> For full functionality of this installer and most of BoxBilling features it is
+                                    necessary to enable JavaScript.<br/>
+                                    Here are the <a href="http://www.enable-javascript.com/" target="_blank">
+                                        instructions how to enable JavaScript in your web browser</a>. </p>
+                                <p>
+                                    If you can not enable JavaScript for some reason you can follow these steps in
+                                    order to setup BoxBilling: <br/>
+                                    * Rename "bb-config-sample.php" file to "bb-config.php", fill in the values and change this file permissions to read only (CHMOD 644).<br/>
+                                    * Import /install/structure.sql to your database<br/>
+                                    * Import /install/content.sql to your database<br/>
+                                    * Open browser <a href="{{constant("BB_URL")}}index.php?_url=/bb-admin">{{constant("BB_URL")}}index.php?_url=/bb-admin</a> to create new admin
+                                    account.<br/>
+                                    * Remove /install directory<br/>
+                                </p>
+                            </div>
+                        </noscript>
+                        <ul>
+                            <li><a href="#step-1" class="bordLeft wFirst"><h5 class="stepDesc iSettings">1. Preparation</h5></a></li>
+                            <li><a href="#step-2"><h5 class="stepDesc iDatabase">2. Database</h5></a></li>
+                            <li><a href="#step-3"><h5 class="stepDesc iAdminUser">3. Administrator</h5></a></li>
+                            <li><a href="#step-4" class="bordRight"><h5 class="stepDesc iFlag">4. Finish</h5></a></li>
+                        </ul>
+                        
+                        <div id="step-1">
+                            <table cellpadding="0" cellspacing="0" width="100%" class="tableStatic">
+                                <tbody>
+                                    <tr class="noborder">
+                                        <td>Operating system</td>
+                                        <td><strong class="{{ os_ok ? 'green' : 'red'}}">{{ os }}</strong></td>
+                                        <td>{% if not os_ok %}BoxBilling might not work properly on your operating system{% endif %}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>PHP version</td>
+                                        <td><strong class="{{ php_ver_ok ? 'green' : 'red'}}">{{ php_ver }}</strong></td>
+                                        <td>{% if not php_ver_ok %}Required PHP version >{{ php_ver_req }}{% endif %}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>PHP Safe mode</td>
+                                        <td><strong class="{{ php_safe_mode ? 'red' : 'green'}}">{{ php_safe_mode ? 'ON' : 'OFF'}}</strong></td>
+                                        <td>{% if php_safe_mode %}PHP safe mode should be OFF{% endif %}</td>
+                                    </tr>
+                                    
+                                    {% for ext,loaded in extensions %}
+                                    <tr>
+                                        <td>PHP Extension: <strong>{{ ext }}</strong></td>
+                                        <td><strong class="{{ loaded ? 'green' : 'red'}}">{{ loaded ? 'Ok' : 'Fail'}}</strong></td>
+                                        <td>{% if not loaded %}Contact your server administrator to enable <strong>PHP {{ ext }} extension</strong>{% endif %}</td>
+                                    </tr>
+                                    {% endfor %}
+
+                                    {% for file,writable in files %}
+                                    <tr>
+                                        <td>{{ file }}</td>
+                                        <td><strong class="{{ writable ? 'green' : 'red'}}">{{ writable ? 'Yes' : 'No'}}</strong></td>
+                                        <td>{% if not writable %}Please make sure that file exists and is writable.{%endif%}</td>
+                                    </tr>
+                                    {% endfor %}
+
+                                    {% for folder,writable in folders %}
+                                    <tr>
+                                        <td>{{ folder }}</td>
+                                        <td><strong class="{{ writable ? 'green' : 'red'}}">{{ writable ? 'Yes' : 'No'}}</strong></td>
+                                        <td>{% if not writable %}Please make sure that directory exists and is writable.{%endif%}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    
+                                </tbody>
+                            </table>
+    
+                            {% if tos %}
+                            <div class="rowElem">
+                                <label class="topLabel">Terms of service:</label>
+                                <div class="formBottom">
+                                    <textarea cols="5" rows="8">{{ tos }}</textarea>
+                                </div>
+                                <div class="formBottom">
+                                    <input type="hidden" name="agree" value="0"/>
+                                    <input id="agree" type="checkbox" name="agree" value="1"{% if agree %} checked="checked"{% endif %}/> I agree 
+                                </div>
+                            </div>
+                            {% endif %}
+                            <div class="fix"></div>
+                        </div>                     
+
+                        <div id="step-2">	
+                            <div class="rowElem nobg">
+                                <label>Database hostname:</label>
+                                <div class="formRight">
+                                    <input type="text" id="db_host" name="db_host" value="{{ db_host|default('localhost') }}" required="required" placeholder="localhost"/>
+                                </div>
+                                <div class="fix"></div>
+                            </div>
+                            <div class="rowElem">
+                                <label>Database name:</label>
+                                <div class="formRight">
+                                    <input type="text" id="db_name" name="db_name" value="{{ request.db_name|default(db_name) }}" required="required" placeholder="boxbilling"/>
+                                </div>
+                                <div class="fix"></div>
+                            </div>
+                            <div class="rowElem">
+                                <label>Database user:</label>
+                                <div class="formRight">
+                                    <input type="text" id="db_user" name="db_user" value="{{ request.db_user|default(db_user) }}" required="required" placeholder="username"/>
+                                </div>
+                                <div class="fix"></div>
+                            </div>
+                            <div class="rowElem">
+                                <label>Database password:</label>
+                                <div class="formRight">
+                                    <input type="password" id="db_pass" name="db_pass" value="{{ request.db_pass|default(db_pass) }}" placeholder="******"/>
+                                </div>
+                                <div class="fix"></div>
+                            </div>
+                            
+                            <div class="fix"></div>
+                        </div>
+                        
+                        <div id="step-3">
+                            <div class="rowElem nobg">
+                                <label>Administrator name:</label>
+                                <div class="formRight">
+                                    <input type="text" name="admin_name" id="admin_name" value="{{ request.admin_name|default(admin_name) }}" autocomplete="off" required="required" placeholder="Administrator Name"/>
+                                </div>
+                                <div class="fix"></div>
+                            </div>
+                            
+                            <div class="rowElem">
+                                <label>Email:</label>
+                                <div class="formRight">
+                                    <input type="text" name="admin_email" id="admin_email" value="{{ request.admin_email|default(admin_email) }}" autocomplete="off" required="required" placeholder="admin@yourdomain.com"/>
+                                </div>
+                                <div class="fix"></div>
+                            </div>
+                            
+                            <div class="rowElem">
+                                <label>Password:</label>
+                                <div class="formRight">
+                                    <input type="password" name="admin_pass" id="admin_pass" value="{{ request.admin_pass|default(admin_pass) }}" autocomplete="off" required="required" placeholder="Administrator password"/>
+                                </div>
+                                <div class="fix"></div>
+                            </div>
+
+                            <div class="rowElem">
+                                <label>License key:</label>
+                                <div class="formRight" style="margin-right: 0; width: 540px">
+                                    <input style="width: 427px;" type="text" name="license" id="license" value="{{ request.license|default(license) }}" required="required" placeholder="Obtain license key at www.boxbilling.com">
+                                    <a href="http://www.boxbilling.com/" target="_blank" class="greenBtn button">Get license</a>
+                                </div>
+                                <div class="fix"></div>
+                            </div>
+                            <div class="fix"></div>
+                        </div>
+                        <div id="step-4">
+                            <div class="body">
+                                <h1 class="pt10">Congratulations! BoxBilling was successfully installed.</h1>
+
+                                <p>Even though BoxBilling was installed successfully you must take a few more actions.</p>
+
+                                <h2 class="pt20">Remove installation module</h2>
+                                <p>Remove installation module for security reasons.</p>
+                                <pre>{{ install_module_path }}</pre>
+
+                                <h2 class="pt20">Change configuration file permissions</h2>
+                                <p>Change configuration file permissions to read-only (CHMOD 644)</p>
+                                <pre>{{ config_file_path }}</pre>
+
+                                <h2 class="pt20">Setup cron job</h2>
+                                <p>Setup this cron job to run every five minutes</p>
+                                <pre>*/5 * * * * php {{ cron_path }}</pre>
+                                
+                                <h2 class="pt20">Disable directory listing with .htaccess</h2>
+                                <p>Disable directory listing with .htaccess</p>
+                                <pre>Rename file htaccess.txt to .htaccess</pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+            </fieldset>
+        </form>
+{% endblock %}
+
+{% block js %}
+<div id="overlay" style="position: absolute; display: none; z-index: 1000; background-color: whitesmoke; width: 725px; height: 50px; opacity:0.5;"></div>
+<script src="jquery.min.js" type="text/javascript"></script>
+<script src="jquery.smartWizard.js" type="text/javascript"></script>
+<script type="text/javascript">
+$(function() {
+	$('.wizard').smartWizard({
+		selected: 0,  // Selected Step, 0 = first step
+		keyNavigation: true, // Enable/Disable key navigation(left and right keys are used if enabled)
+		enableAllSteps: false,  // Enable/Disable all steps on first load
+		transitionEffect: 'fade', // Effect on navigation, none/fade/slide/slideleft
+		contentURL:null, // specifying content url enables ajax content loading
+		contentCache:false, // cache step contents, if false content is fetched always from ajax url
+		cycleSteps: false, // cycle step navigation
+		enableFinishButton: false, // makes finish button enabled always
+		errorSteps:[],    // array of step numbers to highlighting as error steps
+		labelNext:'Next', // label for Next button
+		labelPrevious:'Previous', // label for Previous button
+		labelFinish:'Finish',  // label for Finish button        
+	  // Events
+		onLeaveStep: function(o, c){ if(c.fromStep < c.toStep) { return validateSteps(c.fromStep); } else { return true; } }, // triggers when leaving a step
+		onShowStep: function(o, c){ return showStep(c.toStep); },  // triggers when showing a step
+		onFinish: doFinish  // triggers when Finish button is clicked
+	 });
+
+    $("#overlay").ajaxStart(function(){
+        var o = $('.wizard').offset();
+        $(this).css('height', $('.wizard').height()-2).offset({top: o.top+1, left:o.left+1}).show();
+    }).ajaxStop(function(){
+        $(this).hide();
+    });
+});
+
+    function doFinish(){
+        $('#installer').hide();
+        $('.leftNav').animate({
+            width: '980px'
+        }, 400);
+        //$('.leftNav').css('width', '980px');
+        return false;
+    }
+    
+    function showStep(stepnumber){
+        $('.step').hide();
+        $('.step.step-'+stepnumber).fadeIn();
+    }
+    
+    function validateSteps(stepnumber){
+        var url = '{{constant("BB_URL_INSTALL")}}index.php?a=';
+        var data = $('#installer').serialize();
+        var ok = false;
+
+        if(stepnumber == 1){
+            if(!$('#agree').is(':checked')) {
+                alert('You must agree with terms of service');
+                return false;
+            }
+        }
+        
+        if(stepnumber == 2){
+            if(isEmpty('db_host')) return false;
+            if(isEmpty('db_name')) return false;
+            if(isEmpty('db_user')) return false;
+            
+            $.ajax({
+                async: false,
+                type: "POST",
+                url: url+'check-db',
+                data: data
+            }).done(function( msg ) {
+                if(msg != 'ok') {
+                    alert(msg);
+                } else {
+                    ok = true;
+                }
+            });
+            return ok;
+        }
+        
+        if(stepnumber == 3){
+            if(isEmpty('admin_name')) return false;
+            if(isEmpty('admin_email')) return false;
+            if(isEmpty('admin_pass')) return false;
+            if(isEmpty('license')) return false;
+            if(confirm('BoxBilling installer will create database. It may take some time. Do not close this window. Continue?')) {
+                $.ajax({
+                    async: false,
+                    type: "POST",
+                    url: url+'install',
+                    data: data
+                }).done(function( msg ) {
+                    if(msg != 'ok') {
+                        alert(msg);
+                    } else {
+                        $('.buttonNext').text('Installed');
+                        $('.buttonPrevious').hide();
+                        ok = true;
+                    }
+                });
+                return ok;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    function isEmpty(id)
+    {
+        if(!$('#'+id).val()) {
+            $('#'+id).addClass('error');
+            return true;
+        } else {
+            $('#'+id).removeClass('error');
+            return false;
+        }
+    }
+    
+</script>
+{% endblock %}

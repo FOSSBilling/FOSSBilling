@@ -1,0 +1,19 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% block meta_title %}{% trans 'About us' %}{% endblock %}
+
+{% block content %}
+
+<div class="h-block">
+    <div class="h-block-header">
+        <div class="icon"><span class="big-light-icon i-quote"></span></div>
+        <h2>{% trans 'About us' %}</h2>
+        <p>{{ company.signature }}</p>
+    </div>
+    <div class="block">
+        <div class="box">
+            {{ company.note|bbmd }}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

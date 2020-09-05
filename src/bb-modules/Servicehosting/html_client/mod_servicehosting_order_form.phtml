@@ -1,0 +1,122 @@
+{% set periods = guest.system_periods %}
+{% set pricing = product.pricing %}
+
+<section>
+
+{{ product_details }}
+
+<div class="well">
+
+    <strong>{% trans 'Domain configuration' %}</strong>
+    <div class="control-group">
+        <label class="radio">{% trans 'I will use my existing domain and update nameservers' %}
+            <input type="radio" name="domain[action]" value="owndomain" onclick="selectDomainAction(this);"/>
+        </label>
+
+        <label class="radio">{% trans 'I want to register a new domain' %}
+            <input type="radio" name="domain[action]" value="register" onclick="selectDomainAction(this);"/>
+        </label>
+
+
+    <div id="owndomain" class="domain_action" style="display: none;">
+        <fieldset>
+            <div class="row-fluid">
+            <div class="controls">
+                <input type="text" name="domain[owndomain_sld]" value="{{ request.owndomain_sld }}" placeholder="{% trans 'mydomain' %}" class="span4">
+                <input type="text" name="domain[owndomain_tld]" value="{{ request.owndomain_tld|default('.com') }}">
+            </div>
+            </div>
+        </fieldset>
+    </div>
+
+    <div id="register" class="domain_action" style="display: none;">
+        <fieldset>
+            <div class="row-fluid">
+            <div class="controls">
+                <input type="text" name="domain[register_sld]" value="{{ request.register_sld }}" placeholder="{% trans 'mydomain' %}" class="span4">
+                    {% set tlds = guest.serviceDomain_tlds({"allow_register":1})%}
+                <select name="domain[register_tld]">
+                    {% for tld in tlds%}
+                        <option value="{{ tld.tld}}" label="{{ tld.tld}}">{{ tld.tld}}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-inverse" type="button" id="domain-check">{% trans 'Check' %}</button>
+            </div>
+            </div>
+
+            <div id="domain-config" style="display:none;">
+                <div class="control-group">
+                    <label>{% trans 'Period' %}</label>
+                    <div class="controls">
+                        <select name="domain[register_years]"></select>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+    </div>
+</div>
+</div>
+</section>
+
+{% set currency = guest.cart_get_currency %}
+<script type="text/javascript">
+    function selectDomainAction(el)
+    {
+        $('.domain_action').hide();
+        $('#'+$(el).val()).show();
+    }
+
+$(function() {
+
+    $('#domain-check').bind('click',function(event){
+        var sld = $('input[name="domain[register_sld]"]').val();
+        var tld = $('select[name="domain[register_tld]"]').val();
+        var domain = sld + tld;
+        bb.post(
+            'guest/servicedomain/check',
+            { sld: sld, tld: tld },
+            function(result) {
+                setRegistrationPricing(tld);
+                $('#domain-config').fadeIn('slow');
+            }
+        );
+        return false;
+    });
+
+    if($(".addons").length && $(".addons").is(':hidden')) {
+        $('#order-button').one('click', function(){
+            $(this).slideUp('fast');
+            $('.addons').slideDown('fast');
+            return false;
+        });
+    }
+
+    $('#period-selector').change(function(){
+        $('.period').hide();
+        $('.period.' + $(this).val()).show();
+    }).trigger('change');
+
+    $('.addon-period-selector').change(function(){
+        var r = $(this).attr('rel');
+        $('#' + r + ' span').hide();
+        $('#' + r + ' span.' + $(this).val()).fadeIn();
+    }).trigger('change');
+
+    function setRegistrationPricing(tld)
+    {
+        bb.post(
+            'guest/servicedomain/pricing',
+            { tld: tld },
+            function(result) {
+                var s = $("select[name='domain[register_years]']");
+                s.find('option').remove();
+                for (i=1;i<6;i++) {
+                    var price = bb.currency(result.price_registration, {{ currency.conversion_rate }}, "{{ currency.code }}", i);
+                    s.append(new Option(i + "{% trans ' Year/s @ ' %}" + price, i));
+                }
+            }
+        );
+    }
+
+});
+</script>

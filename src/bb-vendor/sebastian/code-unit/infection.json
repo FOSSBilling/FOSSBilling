@@ -1,0 +1,22 @@
+{
+    "source": {
+        "directories": [
+            "src"
+        ]
+    },
+    "mutators": {
+        "@default": true,
+        "Break_": {
+            "ignore": [
+                "SebastianBergmann\\CodeUnit\\Mapper::classAndParentClassesAndTraits"
+            ]
+        },
+        "UnwrapArrayValues": {
+            "ignore": [
+                "SebastianBergmann\\CodeUnit\\Mapper::codeUnitsToSourceLines"
+            ]
+        }
+    },
+    "minMsi": 100,
+    "minCoveredMsi": 100
+}
