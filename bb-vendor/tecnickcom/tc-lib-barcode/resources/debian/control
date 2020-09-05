@@ -1,0 +1,23 @@
+Source: ~#PKGNAME#~
+Maintainer: Nicola Asuni <info@tecnick.com>
+Section: php
+Priority: optional
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.7
+Homepage: https://github.com/~#VENDOR#~/~#PROJECT#~
+Vcs-Git: https://github.com/~#VENDOR#~/~#PROJECT#~.git
+
+Package: ~#PKGNAME#~
+Provides: php-~#PROJECT#~
+Architecture: all
+Depends: php (>= 5.4.0), php-bcmath, php-date, php-gd, php-tecnickcom-tc-lib-color (<< 2.0.0), php-tecnickcom-tc-lib-color (>= 1.12.15), ${misc:Depends}
+Description: PHP Barcode library
+ This library includes PHP classes to generate linear
+ and bidimensional barcodes:
+ CODE 39, ANSI MH10.8M-1983, USD-3, 3 of 9, CODE 93,
+ USS-93, Standard 2 of 5, Interleaved 2 of 5, CODE 128 A/B/C,
+ 2 and 5 Digits UPC-Based Extension, EAN 8, EAN 13, UPC-A,
+ UPC-E, MSI, POSTNET, PLANET, RMS4CC (Royal Mail 4-state Customer Code),
+ CBC (Customer Bar Code), KIX (Klant index - Customer index),
+ Intelligent Mail Barcode, Onecode, USPS-B-3200, CODABAR, CODE 11,
+ PHARMACODE, PHARMACODE TWO-TRACKS, Datamatrix ECC200, QR-Code, PDF417.

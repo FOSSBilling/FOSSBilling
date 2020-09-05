@@ -1,0 +1,79 @@
+{
+  "name": "tecnickcom/tc-lib-barcode",
+  "description": "PHP library to generate linear and bidimensional barcodes",
+  "type": "library",
+  "homepage": "http://www.tecnick.com",
+  "license": "LGPL-3.0",
+  "keywords": [
+    "tc-lib-barcode",
+    "barcode",
+    "CODE 39",
+    "ANSI MH10.8M-1983",
+    "USD-3",
+    "3 of 9",
+    "CODE 93",
+    "USS-93",
+    "Standard 2 of 5",
+    "Interleaved 2 of 5",
+    "CODE 128 A B C",
+    "UPC",
+    "EAN 8",
+    "EAN 13",
+    "UPC-A",
+    "UPC-E",
+    "MSI",
+    "POSTNET",
+    "PLANET",
+    "RMS4CC",
+    "Royal Mail",
+    "CBC",
+    "KIX",
+    "Klant",
+    "Intelligent Mail Barcode",
+    "Onecode",
+    "USPS-B-3200",
+    "CODABAR",
+    "CODE 11",
+    "PHARMACODE",
+    "PHARMACODE TWO-TRACKS",
+    "Datamatrix",
+    "ECC200",
+    "QR-Code",
+    "PDF417"
+  ],
+  "authors": [
+    {
+      "name": "Nicola Asuni",
+      "email": "info@tecnick.com",
+      "role": "lead"
+    }
+  ],
+  "require": {
+    "php": ">=5.4",
+    "ext-bcmath": "*",
+    "ext-date": "*",
+    "ext-gd": "*",
+    "ext-pcre": "*",
+    "tecnickcom/tc-lib-color": "^1.12.15"
+  },
+  "require-dev": {
+    "apigen/apigen": "^2.8.1 || ^4.1.2",
+    "bartlett/php-compatinfo": "^4.5.2 || ^5.0.10 || ^5.0.12",
+    "pdepend/pdepend": "^2.5.2",
+    "phploc/phploc": "^2.1 || ^3.0 || ^4.0",
+    "phpmd/phpmd": "^2.6.0",
+    "phpunit/phpunit": "^4.8 || ^5.7 || ^6.5 || ^7.1",
+    "sebastian/phpcpd": "^2.0 || ^3.0 || ^4.0",
+    "squizlabs/php_codesniffer": "^2.8.0 || ^3.2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Com\\Tecnick\\Barcode\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Test\\": "test"
+    }
+  }
+}

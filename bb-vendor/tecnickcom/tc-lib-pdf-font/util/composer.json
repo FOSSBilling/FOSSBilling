@@ -1,0 +1,45 @@
+{
+  "name": "tecnickcom/tc-lib-pdf-font",
+  "description": "Import TTF font files to be converted for tc-lib-pdf-font",
+  "type": "library",
+  "homepage": "http://www.tecnick.com",
+  "keywords": [
+    "tc-lib-pdf-font-data",
+    "PDF",
+    "font",
+    "TTF",
+    "AFM",
+    "PFB",
+    "import"
+  ],
+  "authors": [
+    {
+      "name": "Nicola Asuni",
+      "email": "info@tecnick.com",
+      "role": "lead"
+    }
+  ],
+  "require": {
+    "font": "dev-master"
+  },
+  "require-dev": {},
+  "repositories": [
+    {
+      "type": "package",
+      "package": {
+        "name": "font",
+        "version": "master",
+        "dist": {
+          "type": "zip",
+          "url": "https://github.com/tecnickcom/tc-font-mirror/archive/master.zip",
+          "reference": "master"
+        },
+        "autoload": {
+          "classmap": [
+            "."
+          ]
+        }
+      }
+    }
+  ]
+}

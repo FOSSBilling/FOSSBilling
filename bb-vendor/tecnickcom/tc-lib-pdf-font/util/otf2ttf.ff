@@ -1,0 +1,46 @@
+#!/usr/bin/env fontforge
+
+# FontForge script used to convert Noto CJK OTF fonts into TTF format
+# FROM: https://gist.github.com/mojavelinux/c74162d44ca77d1a7c25
+
+# PDF Flags
+# * 0x90  - Neither OpenType or Apple
+# * 0x800 - Generate old-style 'kern' table
+# * 0x08  - Exclude TrueType instructions
+genflags = 0x90 + 0x08 + 0x800
+
+src_file = $1
+dst_file = $1:r + ".ttf"
+
+Open(src_file)
+CIDFlatten()
+SelectAll()
+ClearInstrs()
+SelectNone()
+
+# Remove glyphs we'll later truncate to get under glyph limit
+SelectMore(0u1f190,0u1f199)
+Clear()
+SelectNone()
+
+Generate(dst_file, "", genflags)
+Close()
+
+Open(dst_file)
+
+# Add missing space glyph
+Select(0u00a0)
+Copy()
+Select(0u0020)
+Paste()
+SetWidth(0)
+SelectNone()
+
+# select lesser range of glyphs
+#SelectMore(0u0020,0uffee)
+#SelectInvert()
+#Clear()
+#SelectNone()
+
+Generate(dst_file, "", genflags)
+Close()

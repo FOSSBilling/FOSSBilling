@@ -1,0 +1,14 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: ~#PROJECT#~
+Source: https://github.com/tecnickcom/tc-lib-pdf-font
+
+Files: *
+Copyright: © 0000 Please check the README file for copyright information.
+License: ~#LICENSE#~
+
+License: ~#LICENSE#~
+ The font files in this package are free software:
+ you can redistribute it and/or modify it under the terms of the
+ ~#LICENSE#~ License.
+ Please check the README and LICENSE file for further information.
+ Common licenses can be also found in: /usr/share/common-licenses

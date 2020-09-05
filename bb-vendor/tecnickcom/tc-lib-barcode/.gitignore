@@ -1,0 +1,15 @@
+composer.lock
+vendor
+target
+phpunit.xml
+**/auth.json
+**/.vagrant
+**/nbproject
+**/.idea
+**/.DS_Store
+**/.#*
+**/._*
+**/*.tmp
+**/*.bak
+**/temp.php
+example/test.php
