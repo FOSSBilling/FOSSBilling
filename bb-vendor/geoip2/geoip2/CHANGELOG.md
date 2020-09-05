@@ -1,6 +1,155 @@
 CHANGELOG
 =========
 
+2.10.0 (2019-12-12)
+-------------------
+
+* PHP 5.6 or greater is now required.
+* The `network` property was added to `GeoIp2\Record\Traits`,
+  `GeoIp2\Model\AnonymousIp`, `GeoIp2\Model\Asn`,
+  `GeoIp2\Model\ConnectionType`, `Geoip2\Model\Domain`,
+  and `GeoIp2\Model\Isp`. This is a string in CIDR format representing the
+  largest network where all of the properties besides `ipAddress` have the
+  same value.
+* Updated documentation of anonymizer properties - `isAnonymousVpn`
+  and `isHostingProvider` - to be more descriptive.
+* The `userCount` property was added to `GeoIp2\Record\Traits`. This is an
+  integer which indicates the estimated number of users sharing the
+  IP/network during the past 24 hours. This output is available from GeoIP2
+  Precision Insights.
+* The `staticIpScore` property was added to `GeoIp2\Record\Traits`. This is
+  a float which indicates how static or dynamic an IP address is. This
+  output is available from GeoIP2 Precision Insights.
+
+2.9.0 (2018-04-10)
+------------------
+
+* Refer to account IDs using the terminology "account" rather than "user".
+
+2.8.0 (2018-01-18)
+------------------
+
+* The `isInEuropeanUnion` property was added to `GeoIp2\Record\Country`
+  and `GeoIp2\Record\RepresentedCountry`. This property is `true` if the
+  country is a member state of the European Union.
+
+2.7.0 (2017-10-27)
+------------------
+
+* The following new anonymizer properties were added to `GeoIp2\Record\Traits`
+  for use with GeoIP2 Precision Insights: `isAnonymous`, `isAnonymousVpn`,
+  `isHostingProvider`, `isPublicProxy`, and `isTorExitNode`.
+
+2.6.0 (2017-07-10)
+-----------------
+
+* Code clean-up and tidying.
+* Set minimum required PHP version to 5.4 in `composer.json`. Previously,
+  5.3 would work but was not tested. Now 5.4 is hard minimum version.
+
+2.5.0 (2017-05-08)
+------------------
+
+* Support for PHP 5.3 was dropped.
+* Added support for GeoLite2 ASN database.
+
+2.4.5 (2017-01-31)
+------------------
+
+* Additional error checking on the data returned from `MaxMind\Db\Reader`
+  was added to help detect corrupt databases. GitHub #83.
+
+2.4.4 (2016-10-11)
+------------------
+
+* `isset()` on `mostSpecificSubdivision` attribute now returns the
+  correct value. Reported by Juan Francisco Giordana. GitHub #81.
+
+2.4.3 (2016-10-11)
+------------------
+
+* `isset()` on `name` attribute now returns the correct value. Reported by
+  Juan Francisco Giordana. GitHub #79.
+
+2.4.2 (2016-08-17)
+------------------
+
+* Updated documentation to clarify what the accuracy radius refers to.
+* Upgraded `maxmind/web-service-common` to 0.3.0. This version uses
+  `composer/ca-bundle` rather than our own CA bundle. GitHub #75.
+* Improved PHP documentation generation.
+
+2.4.1 (2016-06-10)
+------------------
+
+* Corrected type annotations in documentation. GitHub #66.
+* Updated documentation to reflect that the accuracy radius is now included
+  in City.
+* Upgraded web service client, which supports setting a proxy. GitHub #59.
+
+2.4.0 (2016-04-15)
+------------------
+
+* Added support for the GeoIP2 Enterprise database.
+
+2.3.3 (2015-09-24)
+------------------
+
+* Corrected case on `JsonSerializable` interface. Reported by Axel Etcheverry.
+  GitHub #56.
+
+2.3.2 (2015-09-23)
+------------------
+
+* `JsonSerializable` compatibility interface was moved to `GeoIp2\Compat`
+  rather than the global namespace to prevent autoloading issues. Reported by
+  Tomas Buteler. GitHub #54.
+* Missing documentation for the `$postal` property was added to the
+  `GeoIp2\Model\City` class. Fix by Roy Sindre Norangshol. GitHub #51.
+* In the Phar distribution, source files for this module no longer have their
+  documentation stripped, allowing IDE introspection to work properly.
+  Reported by Dominic Black. GitHub #52.
+
+2.3.1 (2015-06-30)
+------------------
+
+* Updated `maxmind/web-service-common` to version with fixes for PHP 5.3 and
+  5.4.
+
+2.3.0 (2015-06-29)
+------------------
+
+* Support for demographics fields `averageIncome` and `populationDensity` in
+  the `Location` record, returned by the Insights endpoint.
+* The `isAnonymousProxy` and `isSatelliteProvider` properties on
+  `GeoIP2\Record\Traits` have been deprecated. Please use our [GeoIP2
+  Anonymous IP database](https://www.maxmind.com/en/geoip2-anonymous-ip-database)
+  to determine whether an IP address is used by an anonymizing service.
+
+2.2.0-beta1 (2015-06-09)
+------------------------
+
+* Typo fix in documentation.
+
+2.2.0-alpha2 (2015-06-01)
+-------------------------
+
+* `maxmind-ws/web-service-common` was renamed to `maxmind/web-service-common`.
+
+2.2.0-alpha1 (2015-05-22)
+-------------------------
+
+* The library no longer uses Guzzle and instead uses curl directly.
+* Support for `timeout` and `connectTimout` were added to the `$options` array
+  passed to the `GeoIp2\WebService\Client` constructor. Pull request by Will
+  Bradley. GitHub #36.
+
+2.1.1 (2014-12-03)
+------------------
+
+* The 2.1.0 Phar builds included a shebang line, causing issues when loading
+  it as a library. This has been corrected. GitHub #33.
+
 2.1.0 (2014-10-29)
 ------------------
 

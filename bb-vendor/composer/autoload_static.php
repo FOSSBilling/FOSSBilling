@@ -33,7 +33,6 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
         array (
             'Symfony\\Polyfill\\Mbstring\\' => 26,
             'Symfony\\Polyfill\\Ctype\\' => 23,
-            'Symfony\\Component\\EventDispatcher\\' => 34,
             'Stripe\\' => 7,
         ),
         'P' => 
@@ -45,12 +44,34 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
         ),
         'M' => 
         array (
+            'Michelf\\' => 8,
+            'MaxMind\\WebService\\' => 19,
+            'MaxMind\\Exception\\' => 18,
             'MaxMind\\Db\\' => 11,
+        ),
+        'G' => 
+        array (
+            'GeoIp2\\' => 7,
         ),
         'D' => 
         array (
             'Doctrine\\Instantiator\\' => 22,
             'DeepCopy\\' => 9,
+        ),
+        'C' => 
+        array (
+            'Composer\\CaBundle\\' => 18,
+            'Com\\Tecnick\\Unicode\\Data\\' => 25,
+            'Com\\Tecnick\\Unicode\\' => 20,
+            'Com\\Tecnick\\Pdf\\Page\\' => 21,
+            'Com\\Tecnick\\Pdf\\Image\\' => 22,
+            'Com\\Tecnick\\Pdf\\Graph\\' => 22,
+            'Com\\Tecnick\\Pdf\\Font\\' => 21,
+            'Com\\Tecnick\\Pdf\\Encrypt\\' => 24,
+            'Com\\Tecnick\\Pdf\\' => 16,
+            'Com\\Tecnick\\File\\' => 17,
+            'Com\\Tecnick\\Color\\' => 18,
+            'Com\\Tecnick\\Barcode\\' => 20,
         ),
         'B' => 
         array (
@@ -85,10 +106,6 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-ctype',
         ),
-        'Symfony\\Component\\EventDispatcher\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/symfony/event-dispatcher',
-        ),
         'Stripe\\' => 
         array (
             0 => __DIR__ . '/..' . '/stripe/stripe-php/lib',
@@ -109,9 +126,25 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
         array (
             0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
         ),
+        'Michelf\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/michelf/php-markdown/Michelf',
+        ),
+        'MaxMind\\WebService\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/maxmind/web-service-common/src/WebService',
+        ),
+        'MaxMind\\Exception\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/maxmind/web-service-common/src/Exception',
+        ),
         'MaxMind\\Db\\' => 
         array (
             0 => __DIR__ . '/..' . '/maxmind-db/reader/src/MaxMind/Db',
+        ),
+        'GeoIp2\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/geoip2/geoip2/src',
         ),
         'Doctrine\\Instantiator\\' => 
         array (
@@ -121,6 +154,54 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
         array (
             0 => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy',
         ),
+        'Composer\\CaBundle\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/composer/ca-bundle/src',
+        ),
+        'Com\\Tecnick\\Unicode\\Data\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tecnickcom/tc-lib-unicode-data/src',
+        ),
+        'Com\\Tecnick\\Unicode\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tecnickcom/tc-lib-unicode/src',
+        ),
+        'Com\\Tecnick\\Pdf\\Page\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tecnickcom/tc-lib-pdf-page/src',
+        ),
+        'Com\\Tecnick\\Pdf\\Image\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tecnickcom/tc-lib-pdf-image/src',
+        ),
+        'Com\\Tecnick\\Pdf\\Graph\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tecnickcom/tc-lib-pdf-graph/src',
+        ),
+        'Com\\Tecnick\\Pdf\\Font\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tecnickcom/tc-lib-pdf-font/src',
+        ),
+        'Com\\Tecnick\\Pdf\\Encrypt\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tecnickcom/tc-lib-pdf-encrypt/src',
+        ),
+        'Com\\Tecnick\\Pdf\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tecnickcom/tc-lib-pdf/src',
+        ),
+        'Com\\Tecnick\\File\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tecnickcom/tc-lib-file/src',
+        ),
+        'Com\\Tecnick\\Color\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tecnickcom/tc-lib-color/src',
+        ),
+        'Com\\Tecnick\\Barcode\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tecnickcom/tc-lib-barcode/src',
+        ),
         'Box\\Mod\\' => 
         array (
             0 => __DIR__ . '/../..' . '/bb-modules',
@@ -128,13 +209,6 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
     );
 
     public static $prefixesPsr0 = array (
-        't' => 
-        array (
-            'tFPDF' => 
-            array (
-                0 => __DIR__ . '/..' . '/rev42/tfpdf/src',
-            ),
-        ),
         'T' => 
         array (
             'Twig_Extensions_' => 
@@ -151,35 +225,6 @@ class ComposerStaticInitd025dea45a31447fa4961b5fce4f57c3
             'Pimple' => 
             array (
                 0 => __DIR__ . '/..' . '/pimple/pimple/src',
-            ),
-        ),
-        'M' => 
-        array (
-            'Michelf' => 
-            array (
-                0 => __DIR__ . '/..' . '/michelf/php-markdown',
-            ),
-        ),
-        'J' => 
-        array (
-            'JsonSerializable' => 
-            array (
-                0 => __DIR__ . '/..' . '/geoip2/geoip2/compat',
-            ),
-        ),
-        'G' => 
-        array (
-            'Guzzle\\Tests' => 
-            array (
-                0 => __DIR__ . '/..' . '/guzzle/guzzle/tests',
-            ),
-            'Guzzle' => 
-            array (
-                0 => __DIR__ . '/..' . '/guzzle/guzzle/src',
-            ),
-            'GeoIp2' => 
-            array (
-                0 => __DIR__ . '/..' . '/geoip2/geoip2/src',
             ),
         ),
     );
