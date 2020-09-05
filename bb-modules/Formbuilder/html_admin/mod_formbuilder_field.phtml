@@ -1,0 +1,225 @@
+<form method="post" action="" name="field_form{{ field.id }}" class="field-form update-field">
+<div class="head"><h5><span class="awe-edit"></span> {% trans 'Edit field' %}</h5><a href="#" class="floatright close-field-form"><span class="ui-icon ui-icon-closethick ui-icon" ></span></a></div>
+<div class="element">
+
+<div class="manage highlight">
+
+<div class="rowElem">
+
+    <label for="name">{% trans 'Name' %}</label>
+
+    <div class="formRight moreFields">
+        <ul>
+            <li style="width: 300px">
+                <input type="text" name="name" value="{{field.name}}" id="name"/>
+            </li>
+            <li class="sep">
+                {% trans 'Please keep in mind that field name can not start with number. Special characters will be replaced with underscrore ( _ )' %}
+            </li>
+        </ul>
+    </div>
+
+</div>
+<div class="rowElem">
+<label for="label">{% trans 'Label' %}</label>
+
+    <div class="formRight moreFields">
+
+        <ul>
+            <li style="width: 300px">
+                <input type="text" name="label" value="{{ field.label }}" id="label"/>
+            </li>
+
+        </ul>
+
+    </div>
+</div>
+    <div class="fix"></div>
+
+
+
+{% if field.type == "checkbox" or field.type=="radio" or field.type=="select" %}
+<div class="rowElem">
+    <label>{{ field.type|capitalize }} {% trans 'options' %}</label>
+
+    <div class="formRight moreFields">
+        <div class="rowElem noborder">
+            <ul>
+                <li style="width: 200px">
+                    <label>{% trans 'Label' %}</label>
+                </li>
+                <li class="sep"></li>
+                <li style="width: 200px">
+                    <label>{% trans 'Value' %}</label>
+                </li>
+            </ul>
+        </div>
+        {% for k,v in field.options %}
+        <div class="rowElem noborder">
+            <ul>
+                <li style="width: 200px">
+                    <input type="text" name="labels[]" value="{{k}}"/>
+                </li>
+                <li class="sep">=</li>
+                <li style="width: 200px">
+                    <input type="text" name="values[]" value="{{v}}"/>
+                </li>
+            </ul>
+        </div>
+        {% endfor %}
+        <div class="rowElem noborder copyfields">
+            <ul>
+                <li style="width: 200px">
+                    <input type="text" name="labels[]"/>
+                </li>
+                <li class="sep">=</li>
+                <li style="width: 200px">
+                    <input type="text" name="values[]"/>
+                </li>
+            </ul>
+        </div>
+        <div class="rowElem noborder">
+            <ul>
+                <li style="width: 200px">
+                    <label>
+                        <a href="#" class="new-field button greyishBtn" rel="{{i}}">{% trans '+ Add new option' %}</a>
+                    </label>
+                </li>
+            </ul>
+        </div>
+        <div class="fix"></div>
+    </div>
+    <div class="fix"></div>
+
+</div>
+{% endif %}
+
+<div class="rowElem">
+    <label>{% trans 'Options' %}</label>
+
+    <div class="formRight moreFields">
+
+                <input type="checkbox" name="required" value="1" id="required" value="1" {{ (field.required == 1)? 'checked="checked"' : "" }}/>
+                <label for="required">{% trans 'Required' %}</label>
+
+                <input type="checkbox" name="hide_label" value="1" id="hide_label" value="1" {{ (field.hide_label == 1)? 'checked="checked"' : "" }}/>
+                <label for="hide_label">{% trans 'Hide label' %}</label>
+
+                <input type="checkbox" name="readonly" value="1" id="readonly" value="1" {{ (field.readonly == 1)? 'checked="checked"' : "" }}/>
+                <label for="readonly">{% trans 'Read only' %}</label>
+
+    </div>
+    <div class="fix"></div>
+
+</div>
+{% if field.type == "text" %}
+<div class="rowElem">
+    <label>{% trans 'Additional settings' %}</label>
+
+
+    <div class="formRight moreFields">
+        <ul>
+            <label for="prefix_text">{% trans 'Prepend text' %}</label>
+            <li style="width: 100px">
+                <input type="text" name="prefix" value="{{field.prefix}}" id="prefix_text"/>
+            </li>
+            <li class="sep"></li>
+            <label for="suffix_text">{% trans 'Append text' %}</label>
+            <li style="width: 100px">
+                <input type="text" name="suffix" value="{{field.suffix}}" id="suffix_text"/>
+            </li>
+
+        </ul>
+
+    </div>
+    <div class="fix"></div>
+
+</div>
+{% endif %}
+{% if field.type == "textarea" %}
+<div class="rowElem">
+    <label>{% trans 'Textarea size' %}</label>
+
+
+    <div class="formRight moreFields">
+        <ul>
+            <label for="textarea-height">{% trans 'Width' %}</label>
+            <li style="width: 100px">
+                <input type="text" name="textarea_size[]" value="{{field.options.width}}" id="textarea-width"/>
+                <input type="hidden" name="textarea_option[]" value="width"/>
+            </li>
+            <li class="sep">{% trans 'px' %}</li>
+            <label for="textarea-width">{% trans 'Height' %}</label>
+            <li style="width: 100px">
+                <input type="text" name="textarea_size[]" value="{{field.options.height}}" id="textarea-height"/>
+                <input type="hidden" name="textarea_option[]" value="height"/>
+            </li>
+            <li class="sep">{% trans 'px' %}</li>
+        </ul>
+    </div>
+    <div class="fix"></div>
+
+</div>
+{% endif %}
+
+<div class="rowElem">
+    <label for="default_value">{% trans 'Default value/option' %}</label>
+
+    <div class="formRight moreFields">
+        <ul>
+            {% if field.type == "text"%}
+                    <li class="sep" id="prepended_text">{{field.prefix}}</li>
+                    <li style="width: 50%"><input type="text" name="default_value" value="{{ field.default_value }}"  id="default_value"/></li>
+                    <li class="sep" id="appended_text">{{field.suffix}}</li>
+            {% elseif field.type == "checkbox" %}
+            {% for k,v in field.options %}
+                <input type="checkbox" name="default_value[]" value="{{v}}" id="{{k}}_{{v}}" {% if v in field.default_value %}checked="checked"{% endif %}>
+                <label for="{{k}}_{{v}}">{{k}}</label>
+            {% endfor %}
+            {% elseif field.type == "radio" %}
+                {% for k,v in field.options %}
+                <input type="radio" name="default_value" value="{{v}}" id="{{k}}_{{v}}" {% if v == field.default_value %}checked="checked"{% endif %}>
+                <label for="{{k}}_{{v}}">{{k}}</label>
+                {% endfor %}
+            {% elseif field.type == "select" %}
+                <select name="default_value">
+                    <option value="">---</option>
+                    {% for k,v in field.options %}
+                    <option value="{{v}}"
+                    {{ (field.default_value == v) ? 'selected' : '' }}>{{k}}</option>
+                    {% endfor %}
+                </select>
+            {% elseif field.type == "textarea" %}
+            <li style="width: auto; max-width:500px; overflow: scroll;">
+                <textarea name="default_value" style="width: {{field.options.width}}px; height: {{field.options.height}}px; ">{{ field.default_value}}</textarea>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <div class="fix"></div>
+</div>
+<div class="rowElem">
+    <label for="description">{% trans 'Description' %}</label>
+
+    <div class="formRight moreFields">
+        <ul>
+            <li style="width: 300px">
+                <input type="text" name="description" value="{{ field.description}}" id="description"/>
+            </li>
+        </ul>
+    </div>
+    <div class="fix"></div>
+</div>
+
+<div class="rowElem pull-right">
+    <input type="submit" class="button blueBtn save-field-form" value="{% trans 'Save' %}">
+    <div class="fix"></div>
+</div>
+</div>
+</div>
+
+<input type="hidden" name="id" value="{{ field.id }}">
+<input type="hidden" name="form_id" value="{{ form.id }}">
+<input type="hidden" name="type" value="{{ field.type }}"/>
+</form>

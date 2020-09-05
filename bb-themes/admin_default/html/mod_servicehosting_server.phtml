@@ -1,0 +1,177 @@
+{% extends "layout_default.phtml" %}
+{% block meta_title %}Hosting management{% endblock %}
+{% set active_menu = 'system' %}
+
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'servicehosting'|alink }}">{% trans 'Hosting plans and servers' %}</a></li>
+    <li class="lastB">{{ server.name }}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget">
+    <div class="head">
+        <h5>Server management</h5>
+    </div>
+
+    <form method="post" action="{{ 'api/admin/servicehosting/server_update'|link }}" id="server-update" class="mainForm save api-form" data-api-msg="Server updated">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{% trans 'Name' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="name" value="{{ server.name }}" required="required" placeholder="Unique name to identify this server">
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Hostname' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="hostname" value="{{ server.hostname }}" placeholder="server1.yourserverdomain.com">
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'IP' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="ip" value="{{ server.ip }}" required="required" placeholder="Primary IP address of the server used to connect to it like: 123.123.123.123">
+                </div>
+                <div class="fix"></div>
+            </div>
+            {#
+            <div class="rowElem">
+                <label>{% trans 'Assigned IP Addresses' %}:</label>
+                <div class="formRight">
+                    <textarea name="assigned_ips" cols="5" rows="5" placeholder="List the IP Addresses assigned to the server (One per line)">{% for v in server.assigned_ips %}{{ v }}{{constant("PHP_EOL")}}{% endfor %}</textarea>
+                </div>
+                <div class="fix"></div>
+            </div>
+            #}
+            <div class="rowElem">
+                <label>{% trans 'Enable/Disable' %}:</label>
+                    <div class="formRight">
+                        <input type="radio" name="active" value="1" {% if server.active %}checked="checked"{% endif %}/><label>Yes</label>
+                        <input type="radio" name="active" value="0" {% if not server.active %}checked="checked"{% endif %}/><label>No</label>
+                    </div>
+                <div class="fix"></div>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Server manager</legend>
+            <div class="rowElem">
+                <label>{% trans 'Server manager' %}:</label>
+                <div class="formRight">
+                    <select name="manager">
+                        {% for code, manager in admin.servicehosting_manager_get_pairs %}
+                        <option value="{{code}}" {% if server.manager == code %}selected="selected"{% endif %}>{{ manager.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Username' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="username" value="{{ server.username }}" placeholder="Login username to your server: root/reseller">
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Password' %}:</label>
+                <div class="formRight">
+                    <input type="password" name="password" value="{{ server.password }}" placeholder="Login password to your server">
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Access Hash (Instead of password for cPanel servers)' %}:</label>
+                <div class="formRight">
+                    <textarea name="accesshash" cols="5" rows="5">{{ server.accesshash }}</textarea>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Connection port' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="port" value="{{ server.port }}" placeholder="Custom port. Use blank to use default. Used to connect to API">
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Use Secure connection' %}:</label>
+                    <div class="formRight">
+                        <input type="radio" name="secure" value="1" {% if server.secure %}checked="checked"{% endif %}/><label>Yes</label>
+                        <input type="radio" name="secure" value="0" {% if not server.secure %}checked="checked"{% endif %}/><label>No</label>
+                    </div>
+                <div class="fix"></div>
+            </div>
+
+            <input type="button" value="{% trans 'Update and test connection' %}" class="greyishBtn submitForm" id="test-connection"/>
+        </fieldset>
+
+
+        <fieldset>
+            <legend>Nameservers</legend>
+            <div class="rowElem">
+                <label>{% trans 'Nameserver 1' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="ns1" value="{{ server.ns1 }}" placeholder="ns1.yourdomain.com">
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Nameserver 2' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="ns2" value="{{ server.ns2 }}" placeholder="ns2.yourdomain.com">
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{% trans 'Nameserver 3' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="ns3" value="{{ server.ns3 }}" placeholder="ns3.yourdomain.com">
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Nameserver 4' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="ns4" value="{{ server.ns4 }}" placeholder="ns4.yourdomain.com">
+                </div>
+                <div class="fix"></div>
+            </div>
+            <input type="submit" value="{% trans 'Update server' %}" class="greyishBtn submitForm" />
+        </fieldset>
+
+        <input type="hidden" name="id" value="{{ server.id }}" />
+    </form>
+</div>
+
+{% endblock %}
+
+{% block js%}
+<script type="text/javascript">
+$(function() {
+
+    $('#test-connection').click(function(){
+        $('#server-update').submit();
+        bb.post('admin/servicehosting/server_test_connection', {id:{{server.id}}}, function(result){
+            bb.msg('Successfully connected to server');
+        });
+        return false;
+    });
+
+});
+</script>
+
+{% endblock %}

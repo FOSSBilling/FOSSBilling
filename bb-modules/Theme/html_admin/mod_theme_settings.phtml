@@ -1,0 +1,54 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% block meta_title %}{% trans 'Themes' %}{% endblock %}
+{% set active_menu = 'system' %}
+
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
+    <li class="lastB">{% trans 'Themes' %}</li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+<div class="widget">
+    <div class="head"><h5 class="iPaintBrush">{% trans 'Client area themes' %}</h5></div>
+
+    <table class="tableStatic wide">
+        <thead>
+        <tr>
+            <td>{% trans 'Name' %}</td>
+            <td>{% trans 'Actions' %}</td>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% set themes = admin.theme_get_list({"per_page":100}) %}
+        {% for i, theme in themes.list %}
+
+        <tr>
+            <td>{% if guest.extension_theme.code == theme.code %}<strong>{{ theme.code }}</strong>{% else %}{{ theme.code }}{% endif %}</td>
+            <td class="actions">
+                <a class="btnIconLeft mr10" href="{{ 'theme'|alink }}/{{theme.code}}"><img src="images/icons/dark/cog.png" alt="" class="icon"><span>{% trans 'Settings' %}</span></a>
+                {% if guest.extension_theme.code != theme.code %}
+                <a class="btnIconLeft mr10 api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}" href="{{ 'api/admin/theme/select'|link({'code' : theme.code}) }}"><img src="images/icons/dark/star.png" alt="" class="icon"><span>{% trans 'Set as default' %}</span></a>
+                {% endif %}
+            </td>
+        </tr>
+        </tbody>
+
+        {% else %}
+        <tbody>
+        <tr>
+            <td colspan="5">
+                {% trans 'The list is empty' %}
+            </td>
+        </tr>
+        </tbody>
+        {% endfor %}
+    </table>
+
+</div>
+{% endblock %}

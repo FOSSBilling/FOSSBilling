@@ -1,0 +1,141 @@
+{% macro q(bool) %}
+{% if bool %}{% trans 'Yes' %}{% else %}{% trans 'No' %}{% endif %}
+{% endmacro %}
+
+{% macro selectbox(name, options, selected, required, nullOption) %}
+    <select name="{{ name }}" id="{{ name }}" {% if required %}required="required"{% endif%}>
+        {% if nullOption %}<option value="">-- {{ nullOption }} --</option>{% endif %}
+        {% for val,label in options %}
+        <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
+        {% endfor %}
+    </select>
+{% endmacro %}
+
+{% macro selectboxtld(name, options, selected, required) %}
+    <select name="{{ name }}" {% if required %}required="required"{% endif%} style="width:80px;">
+        {% for data in options %}
+        <option value="{{ data.tld }}" label="{{ data.tld }}" {% if selected == data.tld %}selected="selected"{% endif %}>{{ data.tld }}</option>
+        {% endfor %}
+    </select>
+{% endmacro %}
+
+{% macro table_search() %}
+<div style="position: relative;">
+    <div class="dataTables_filter">
+        <form method="get" action="">
+            <input type="hidden" name="_url" value="{{request._url}}"/>
+            <label>{% trans %}Search:{% endtrans %} <input type="text" name="search" placeholder="{% trans %}Enter search text..{% endtrans %}" value="{{request.search}}"><div class="srch"></div></label>
+        </form>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro build_form(elements, values) %}
+    {% for name, element in elements %}
+    <div class="rowElem">
+            {% if element[0] == 'select'%}
+            <label class="topLabel">{{ element[1].label }}{% if element[1].description %} - {{ element[1].description }}{% endif %}</label>
+            <div class="formBottom">
+                <select name="config[{{ name }}]">
+                {% for k,v in element[1].multiOptions %}
+                    <option value="{{ k }}" {% if k == values[name] %}selected="selected"{% endif %}/><label>{{ v }}</label>
+                {% endfor %}
+                </select>
+            </div>
+            <div class="fix"></div>
+            {% elseif element[0] == 'radio'%}
+            <label>{{ element[1].label }}{% if element[1].description %} - {{ element[1].description }}{% endif %}</label>
+            <div class="formRight">
+                {% for k,v in element[1].multiOptions %}
+                    <input id="el-{{ name }}" type="radio" name="config[{{ name }}]" value="{{ k }}" {% if k == values[name] %}checked="checked"{% endif %}/><label>{{ v }}</label>
+                {% endfor %}
+            </div>
+            <div class="fix"></div>
+            {% elseif element[0] == 'textarea'%}
+            <label class="topLabel" for="el-{{ name }}">{{ element[1].label }}{% if element[1].description %} - {{ element[1].description }}{% endif %}</label>
+            <div class="formBottom">
+                <textarea id="el-{{ name }}" name="config[{{ name }}]" cols="5" rows="20" required="required">{{ values[name] }}</textarea>
+            </div>
+            <div class="fix"></div>
+            {% else %}
+            <label class="topLabel" for="el-{{ name }}">{{ element[1].label }}{% if element[1].description %} - {{ element[1].description }}{% endif %}</label>
+            <div class="formBottom">
+                <input id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}" {% if not element[1].required is defined and not element[1].required == 'false' %}required="required"{% endif %}/>
+            </div>
+            <div class="fix"></div>
+            {% endif %}
+    </div>
+    {% endfor %}
+{% endmacro %}
+
+{% macro currency_format(price, currency) %}
+    {% set c = guest.currency_get({"code":currency}) %}
+    {% set p = (price)|number %}
+    {% if c.price_format == 1 %}
+        {% set p = p|number('2', '.', '') %}
+    {% elseif c.price_format == 2 %}
+        {% set p = p|number('2', '.', ',') %}
+    {% elseif c.price_format == 3 %}
+        {% set p = p|number('2', ',', '.') %}
+    {% elseif c.price_format == 4 %}
+        {% set p = p|number('0', '', ',') %}
+    {% elseif c.price_format == 5 %}
+        {% set p = p|number(0, '', '') %}
+    {% endif %}
+    {{ c.format|replace({'{{price}}': p }) }}
+{% endmacro %}
+
+{% macro currency(price, currency) %}
+    {% if currency == NULL %}
+        {% set c = guest.cart_get_currency %}
+    {% else %}
+        {% set c = guest.currency_get({"code":currency}) %}
+    {% endif %}
+
+    {% set p = (price * c.conversion_rate) %}
+    
+    {% if c.price_format == 1 %}
+        {% set p = p|number('2', '.', '') %}
+    {% elseif c.price_format == 2 %}
+        {% set p = p|number('2', '.', ',') %}
+    {% elseif c.price_format == 3 %}
+        {% set p = p|number('2', ',', '.') %}
+    {% elseif c.price_format == 4 %}
+        {% set p = p|number('0', '', ',') %}
+    {% elseif c.price_format == 5 %}
+        {% set p = p|number(0, '', '') %}
+    {% endif %}
+    
+    {{ c.format|replace({'{{price}}': p }) }}
+{% endmacro %}
+
+{% macro status_name(status) %}{% if status %}{{ status|replace({'_': " "})|title|trans }}{% else %}-{% endif %}{% endmacro %}
+
+{% macro period_name(period) %}
+    {{ guest.system_period_title({"code":period}) }}
+{% endmacro %}
+
+{% macro markdown_quote(text) %}
+
+
+
+{% for line in text|split('\n') %}
+> {{ line }}
+{% endfor %}
+{% endmacro %}
+
+{% macro bb_editor(selector) %}
+{% if guest.extension_is_on({"mod":"wysiwyg"}) %}
+{% include "mod_wysiwyg_js.phtml" with {"class":selector|trim('.#')} %}
+{% else %}
+<link rel="stylesheet" type="text/css" href="js/markitup/skins/boxbilling/style.css" />
+<link rel="stylesheet" type="text/css" href="js/markitup/sets/markdown/style.css" />
+<script src="js/markitup/jquery.markitup.js" type="text/javascript"></script>
+<script src="js/markitup/sets/markdown/set.js" type="text/javascript"></script>
+<script type="text/javascript" >
+    $(document).ready(function() {
+        $("{{selector}}").markItUp(mySettings);
+    });
+</script>
+{% endif %}
+{% endmacro %}

@@ -1,0 +1,93 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% set active_menu = 'order' %}
+{% import "macro_functions.phtml" as mf %}
+
+{% block breadcrumbs %}
+    <ul>
+        <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+        <li><a href="{{ 'order'|alink }}">{% trans 'Orders' %}</a></li>
+        <li class="lastB">{% trans 'Create new order' %}</li>
+    </ul>
+{% endblock %}
+
+{% block meta_title %}{% trans 'Create new order' %}{% endblock %}
+
+{% block content %}
+<div class="widget">
+    <div class="head"><h5 class="iFrames">{% trans 'Create new order' %}</h5></div>
+            <div class="help">
+                <h2>"{{ product.title }}" {% trans 'for' %} {{ client.first_name }} {{ client.last_name }}</h2>
+            </div>
+    <form method="get" action="{{ 'api/admin/order/create'|link }}" class="mainForm api-form" data-api-jsonp="onAfterOrderPlaced">
+        <fieldset>
+
+            <div class="rowElem noborder">
+                <label>{% trans 'Invoice option' %}</label>
+                <div class="formRight noborder">
+                    {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, order.invoice_option) }}
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            <div class="rowElem">
+                <label>{% trans 'Activate order' %}:</label>
+                <div class="formRight">
+                    <input type="radio" name="activate" value="1" checked="checked"/><label>Yes</label>
+                    <input type="radio" name="activate" value="0" /><label>No</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            {% if product.pricing.type == 'recurrent' %}
+            <div class="rowElem">
+                <label>{% trans 'Period' %}</label>
+                <div class="formRight">
+                    <select name="period" id="period" required="required">
+                        {% for val,label in guest.system_periods %}
+                        <option value="{{ val }}" label="{{ label|e }}" data-price="{{product.pricing.recurrent[val].price}}" data-status="{{product.pricing.recurrent[val].enabled}}" {% if request.period == val %}selected="selected"{% endif %}>{{ label|e }}</option>
+                        {% endfor %}
+                    </select>
+                    <span id="period-info" class="help"></span>
+                </div>
+                <div class="fix"></div>
+            </div>
+            {% endif %}
+            
+            {% set product_order = 'mod_service'~product.type~'_order.phtml' %}
+            {% if admin.system_template_exists({"file":product_order}) %}
+                {% include product_order %}
+            {% endif %}
+            
+            <input type="submit" value="{% trans 'Place new order' %}" class="greyishBtn submitForm" />
+            <input type="hidden" name="client_id" value="{{ client.id }}" />
+            <input type="hidden" name="product_id" value="{{ product.id }}" />
+        </fieldset>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block js%}
+<script type="text/javascript">
+
+    function onAfterOrderPlaced(id) {
+        bb.redirect("{{'order/manage/'|alink}}/"+id);
+    }
+
+    $('#period').on('change', function(){
+        var optionSelected = $("option:selected", this);
+        var periodNotification = $('#period-info');
+        var spanElem = $('<span />').css({'padding-left' : '20px', 'line-height' : '28px', 'float' : 'left'});
+
+        periodNotification.text('');
+        if (optionSelected.data('price') == 0){
+            spanElem.clone().text("{% trans 'Selected price is 0.00'%}").appendTo(periodNotification);
+        }
+        if (optionSelected.data('status') == 0){
+            spanElem.clone().text("{% trans 'Product is disabled in configuration'%}").appendTo(periodNotification);
+        }
+
+    });
+    
+</script>
+{% endblock %}

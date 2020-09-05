@@ -1,0 +1,278 @@
+{% import "macro_functions.phtml" as mf %}
+{% extends "layout_default.phtml" %}
+{% block meta_title %}{% trans 'Hosting plans and servers' %}{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block content %}
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Hosting plans and servers' %}</a></li>
+        <li><a href="#tab-new-server">{% trans 'New server' %}</a></li>
+        <li><a href="#tab-new-plan">{% trans 'New hosting plan' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+
+            <div class="help">
+                <h5>{% trans 'Servers' %}</h5>
+            </div>
+
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <th>{% trans 'Name' %}</th>
+                        <th>{% trans 'IP' %}</th>
+                        <th>{% trans 'Server manager' %}</th>
+                        <th>{% trans 'Active' %}</th>
+                        <th style="width:22%">&nbsp;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set servers = admin.servicehosting_server_get_list({"per_page":100}) %}
+                    {% for server in servers.list %}
+                    <tr>
+                        <td>{{server.name}}</td>
+                        <td>{{server.ip}}</td>
+                        <td>{{ mf.status_name(server.manager) }}</td>
+                        <td>{{ mf.q(server.active) }}</td>
+                        <td class="actions">
+                            <a class="bb-button btn14" href="{{server.cpanel_url}}" target="_blank"><img src="images/icons/dark/cog.png" alt=""></a>
+                            <a class="bb-button btn14 api-link" data-api-msg="Connected" href="{{ 'api/admin/servicehosting/server_test_connection'|link({'id' : server.id}) }}" title="Test connection"><img src="images/icons/dark/signal.png" alt=""></a>
+                            <a class="bb-button btn14" href="{{ '/servicehosting/server'|alink }}/{{server.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                            <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" data-api-redirect="{{ 'servicehosting'|alink }}" href="{{ 'api/admin/servicehosting/server_delete'|link({'id' : server.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="7"></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="help">
+                <h5>{% trans 'Hosting plans' %}</h5>
+            </div>
+
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td>{% trans 'Title' %}</td>
+                        <td>{% trans 'Addon domains' %}</td>
+                        <td>{% trans 'Disk space' %}</td>
+                        <td>{% trans 'Bandwidth' %}</td>
+                        <td style="width:13%">&nbsp;</td>
+                    </tr>
+                </thead>
+                
+                <tbody>
+                    {% set hps = admin.servicehosting_hp_get_list({"per_page":100}) %}
+                    {% for hp in hps.list %}
+                    <tr>
+                        <td>{{hp.name}}</td>
+                        <td>{{hp.max_addon}}</td>
+                        <td>{{hp.quota}}</td>
+                        <td>{{hp.bandwidth}}</td>
+                        <td class="actions">
+                            <a class="bb-button btn14" href="{{ '/servicehosting/plan'|alink }}/{{hp.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                            <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" data-api-redirect="{{ 'servicehosting'|alink }}" href="{{ 'api/admin/servicehosting/hp_delete'|link({'id' : hp.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new-server">
+            <form method="post" action="admin/servicehosting/server_create" class="mainForm api-form" data-api-redirect="{{ 'servicehosting'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Name' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="name" value="" required="required" placeholder="{% trans 'Unique name to identify this server' %}">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Hostname' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="hostname" value="" placeholder="{% trans 'server1.yourserverdomain.com' %}">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'IP' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="ip" value="" required="required" placeholder="{% trans 'Primary IP address of the server used to connect to it like: 123.123.123.123' %}">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Assigned IP Addresses' %}:</label>
+                        <div class="formRight">
+                            <textarea name="assigned_ips" cols="5" rows="5" placeholder="{% trans 'List the IP Addresses assigned to the server (One per line)' %}"></textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Enable/Disable' %}:</label>
+                            <div class="formRight">
+                                <input type="radio" name="active" value="1" checked="checked"/><label>{% trans 'Yes' %}</label>
+                                <input type="radio" name="active" value="0"/><label>{% trans 'No' %}</label>
+                            </div>
+                        <div class="fix"></div>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Nameservers</legend>
+                    <div class="rowElem">
+                        <label>{% trans 'Nameserver 1' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="ns1" value="" placeholder="{% trans 'ns1.yourdomain.com' %}">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Nameserver 2' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="ns2" value="" placeholder="{% trans 'ns2.yourdomain.com' %}">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Nameserver 3' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="ns3" value="" placeholder="{% trans 'ns3.yourdomain.com' %}">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Nameserver 4' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="ns4" value="" placeholder="{% trans 'ns4.yourdomain.com' %}">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Server manager</legend>
+                    <div class="rowElem">
+                        <label>{% trans 'Server manager' %}:</label>
+                        <div class="formRight">
+                            <select name="manager">
+                                {% for code, manager in admin.servicehosting_manager_get_pairs %}
+                                <option value="{{code}}">{{ manager.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{% trans 'Username' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="username" value="" placeholder="{% trans 'Login username to your server: root/reseller' %}">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Password' %}:</label>
+                        <div class="formRight">
+                            <input type="password" name="password" value="" placeholder="{% trans 'Login password to your server' %}">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Access Hash (Instead of password for cPanel servers)' %}:</label>
+                        <div class="formRight">
+                            <textarea name="accesshash" cols="5" rows="5"></textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Use Secure connection' %}:</label>
+                            <div class="formRight">
+                                <input type="radio" name="secure" value="1"/><label>{% trans 'Yes' %}</label>
+                                <input type="radio" name="secure" value="0" checked="checked"/><label>{% trans 'No' %}</label>
+                            </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="submit" value="{% trans 'Add server' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new-plan">
+            <div class="help">
+                <h3>{% trans 'Adding new hosting plan' %}</h3>
+                <p>{% trans 'Depending on server manager used to setup hosting account you may require provide additional parameters in next step. In this step provide basic hosting plan information.' %}</p>
+            </div>
+            <form method="post" action="{{ 'api/admin/servicehosting/hp_create'|link}}" class="mainForm api-form" data-api-jsonp="onAfterHostingPlanCreate">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Name' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="name" value="" required="required" placeholder="{% trans 'Unique name to identify this hosting plan' %}">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Disk quota (MB)' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="quota" value="1024" placeholder="">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Bandwidth (MB)' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="bandwidth" value="1024" placeholder="">
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <input type="submit" value="{% trans 'Create hosting plan' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}
+
+
+{% block js%}
+<script type="text/javascript">
+$(function() {
+
+});
+
+function onAfterHostingPlanCreate(id) {
+    bb.redirect("{{ 'servicehosting/plan'|alink}}/"+id);
+}
+</script>
+{% endblock %}

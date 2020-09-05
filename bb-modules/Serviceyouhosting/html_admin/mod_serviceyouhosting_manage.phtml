@@ -1,0 +1,38 @@
+<div class="help">
+    <h2>{% trans 'Details' %}</h2>
+</div>
+
+<table class="tableStatic wide">
+    <tbody>
+        <tr class="noborder">
+            <td style="width: 30%">{% trans 'Domain' %}:</td>
+            <td>
+                <a href="http://{{ order.config.full_domain }}" target="_blank">{{ order.config.full_domain }}</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td>{% trans 'Account Id' %}:</td>
+            <td>{{ order.meta.yh_account_id }}</td>
+        </tr>
+
+    </tbody>
+    <tfoot>
+    <tr>
+        <td colspan="2">
+            <div class="aligncenter">
+                <a href="{{ 'api/admin/serviceyouhosting/cpanel_url'|link({'order_id' : order.id}) }}" data-api-jsonp="onAfterLoginUrlRetrieve" class="btn55 mr10 api-link"><img src="images/icons/middlenav/logoff.png" alt=""><span>Go to cPanel</span></a>
+                <a href="{{ 'api/admin/serviceyouhosting/sync'|link({'order_id' : order.id}) }}" data-api-msg="Synchronization completed" class="btn55 mr10 api-link"><img src="images/icons/middlenav/cog.png" alt=""><span>Sync</span></a>
+            </div>
+        </td>
+    </tr>
+    </tfoot>
+</table>
+
+<script type="text/javascript">
+    function onAfterLoginUrlRetrieve(url)
+    {
+        window.open(url, '_blank', 'width=400,height=200');
+        return false;
+    }
+</script>

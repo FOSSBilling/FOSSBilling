@@ -1,0 +1,60 @@
+{% extends "layout_login.phtml" %}
+
+{% block meta_title %}{% trans 'Login' %}{% endblock %}
+
+{% block content %}
+
+<!-- Login form area -->
+<div class="loginWrapper">
+    <div class="loginLogo"><img src="{{ guest.system_company.logo_url }}" alt="" style="max-height: 75px"/></div>
+    <div class="loginPanel">
+        {% if create_admin %}
+        <div class="head"><h5 class="iUser">{% trans 'Create main administrator account' %}</h5></div>
+        <form class="mainForm api-form" action="{{ 'api/guest/staff/create'|link }}" method="post" data-api-redirect="{{ 'index'|alink }}">
+            <fieldset>
+                <div class="loginRow noborder">
+                    <label for="req1">{% trans 'Email' %}:</label>
+                    <div class="loginInput"><input id="req1" type="email" name="email" value="{{ request.email }}" placeholder="{% trans 'Enter your email address' %}"/></div>
+                    <div class="fix"></div>
+                </div>
+                
+                <div class="loginRow">
+                    <label for="req2">{% trans 'Password' %}:</label>
+                    <div class="loginInput"><input id="req2" type="password" name="password" value="{{ request.password }}" placeholder="{% trans 'Enter your password' %}"/></div>
+                    <div class="fix"></div>
+                </div>
+                
+                <div class="loginRow">
+                    <input type="submit" value="{% trans 'Create administrator account' %}" class="greyishBtn submitForm" />
+                    <div class="fix"></div>
+                </div>
+            </fieldset>
+        </form>
+        {% else %}
+        <div class="head"><h5 class="iUser"><i class="dark-sprite-icon sprite-user" style="margin-left: -25px; margin-right: 11px;"></i>{% trans 'Login' %}</h5></div>
+        <form class="mainForm api-form" action="{{ 'api/guest/staff/login'|link }}" method="post" data-api-redirect="{{ 'index'|alink }}">
+            <fieldset>
+                <div class="loginRow noborder">
+                    <label for="req1">{% trans 'Email' %}:</label>
+                    <div class="loginInput"><input id="req1" type="email" name="email" value="{{ request.email }}" placeholder="{% trans 'Enter your email address' %}" autofocus/></div>
+                    <div class="fix"></div>
+                </div>
+                
+                <div class="loginRow">
+                    <label for="req2">{% trans 'Password' %}:</label>
+                    <div class="loginInput"><input id="req2" type="password" name="password" value="{{ request.password }}" placeholder="{% trans 'Enter your password' %}"/></div>
+                    <div class="fix"></div>
+                </div>
+                
+                <div class="loginRow">
+                    <div class="rememberMe"><input type="checkbox" id="remember" name="remember" value="1" checked="checked"/><label for="remember">{% trans 'Remember me' %}</label></div>
+                    <input type="submit" value="{% trans 'Log me in' %}" class="greyishBtn submitForm" />
+                    <div class="fix"></div>
+                </div>
+            </fieldset>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

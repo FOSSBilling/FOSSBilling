@@ -1,0 +1,13 @@
+{% block subject %}[{{ guest.system_company.name }}] {{ ticket.subject }}{% endblock %}
+{% block content %}
+{% apply markdown %}
+Hi {{ staff.name }},
+
+ **{{ ticket.client.first_name }} {{ ticket.client.last_name }}** closed support ticket #{{ ticket.id }}
+
+Review the ticket at {{'support/ticket'|alink }}/{{ ticket.id }}
+
+{{ guest.system_company.signature }}
+
+{% endapply %}
+{% endblock %}

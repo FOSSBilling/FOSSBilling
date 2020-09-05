@@ -1,0 +1,133 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'support'|alink }}">{% trans 'Support' %}</a></li>
+    <li class="lastB">{% trans 'Canned responses' %}</li>
+</ul>
+{% endblock %}
+
+{% set active_menu = 'support' %}
+{% block meta_title %}Canned responses{% endblock %}
+
+{% block content %}
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Canned responses' %}</a></li>
+        <li><a href="#tab-new">{% trans 'New response' %}</a></li>
+        <li><a href="#tab-new-category">{% trans 'New category' %}</a></li>
+        <li><a href="#tab-categories">{% trans 'Categories' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+
+        {{ mf.table_search }}
+        <table class="tableStatic wide">
+            <thead>
+                <tr>
+                    <td>{% trans 'Title' %}</td>
+                    <td>{% trans 'Category' %}</td>
+                    <td style="width: 13%">&nbsp;</td>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% set responses = admin.support_canned_get_list({"per_page":90, "page":request.page}|merge(request)) %}
+            {% for i, response in responses.list %}
+            <tr>
+                <td>{{ response.title }}</td>
+                <td><a href="{{ '/support/canned-category'|alink }}/{{response.category.id}}">{{response.category.title}}</a></td>
+                <td class="actions">
+                    <a class="bb-button btn14" href="{{ '/support/canned'|alink }}/{{response.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                    <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/support/canned_delete'|link({'id' : response.id}) }}" data-api-redirect="{{ 'support/canned-responses'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3">
+                    {% trans 'The list is empty' %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% include "partial_pagination.phtml" with {'list': responses, 'url':'support/canned-responses'} %}
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new">
+
+            <form method="post" action="{{ 'api/admin/support/canned_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Category' %}:</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('category_id', admin.support_canned_category_pairs, '', 1) }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Title' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{% trans 'Content' %}</label>
+                        <div class="formRight">
+                            <textarea name="content" cols="5" rows="10">{{ request.content }}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new-category">
+
+            <form method="post" action="{{ 'api/admin/support/canned_category_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Title' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+        
+        <div class="tab_content nopadding" id="tab-categories">
+            <table class="tableStatic wide">
+                <tbody>
+                    {% for cat_id, cat_title in admin.support_canned_category_pairs %}
+                    <tr {% if loop.first %}class="noborder"{% endif %}>
+                        <td>{{cat_title}}</td>
+                        <td style="width:13%">
+                            <a class="bb-button btn14" href="{{ '/support/canned-category'|alink }}/{{cat_id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                            <a class="bb-button btn14 api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/support/canned_category_delete'|link({'id' : cat_id}) }}" data-api-redirect="{{ 'support/canned-responses'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

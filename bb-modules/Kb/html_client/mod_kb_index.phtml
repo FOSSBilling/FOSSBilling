@@ -1,0 +1,59 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{%trans 'Knowledge base'%}{% endblock %}
+{% block breadcrumb %}{%trans 'Knowledge base'%}{% endblock %}
+
+{% block content %}
+
+    {% if request.q %}
+        {% set kbcategories = guest.kb_category_get_list({"q": request.q}) %}
+    {% else %}
+        {% set kbcategories = guest.kb_category_get_list %}
+    {% endif %}
+
+<div class="content-block" role="main">
+    <div class="row">
+        <article class=" span12 data-block">
+            <div class="data-container">
+                <header>
+                    <h1>{% trans 'Knowledge base' %}</h1><br/>
+                    {% trans 'Please try to read related topics in knowledge base before contacting support.' %}
+                    <form method="get" action="" class="form form-search pull-right" style="background: none; border: 0px">
+                        <p>
+                            <input class="" name="_url" type="hidden" value="/kb">
+                            <input class="search-query text" name="q" type="text" value="{{ request.q }}" placeholder="{% trans 'What are you looking for?' %}">
+                            <input class="btn btn-primary" value="{% trans 'Search'%}" type="submit">
+                        </p>
+                    </form>
+                </header>
+                <section>
+
+                    <div class="row" >
+                        {% for i, category in kbcategories.list %}
+                        <article class="data-block">
+                            <div class="data-container">
+                                <header>
+                                    <h2 id="category-{{category.id}}"><a href="{{ 'kb'|link }}/{{ category.slug }}">{{category.title}}</a></h2>
+                                </header>
+                                <section>
+                                    <ul>
+                                        {% for i, article in category.articles %}
+                                        <li><a href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}">{{article.title}}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </section>
+                            </div>
+                        </article>
+                        {% else %}
+                        <p class="alert alert-block alert-danger">
+                            {% trans 'Try using other keyword. No matches found for keyword:' %}
+                            <strong>{{ request.q }}</strong>
+                        </p>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+        </article>
+    </div>
+</div>
+{% endblock %}

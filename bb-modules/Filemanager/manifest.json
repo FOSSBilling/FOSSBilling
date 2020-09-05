@@ -1,0 +1,7 @@
+{
+    "id":           "filemanager",
+	"type":         "mod",
+    "name":         "File manager",
+    "description":  "BoxBilling core module",
+    "version":      "1.0.0"
+}

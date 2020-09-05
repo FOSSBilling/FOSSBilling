@@ -1,0 +1,58 @@
+{% set periods = guest.system_periods %}
+{% set pricing = product.pricing %}
+
+<section>
+    <div class="well">
+        <strong>{{ product.title }}</strong>
+        {{ product.description | bbmd }}
+
+        {% if product.pricing.type == 'recurrent' %}
+        <select name="period" id="period-selector">
+            {% for code,prices in product.pricing.recurrent %}
+            {% if prices.enabled %}
+            <option value="{{code}}" data-bb-price="{{ prices.price | money_convert }}" name="period">{{ periods[code] }} - {{ prices.price | money_convert }}</option>
+            {% endif %}
+            {% endfor %}
+        </select>
+        {% elseif product.pricing.type == 'free' %}
+        <span class="label label-info">{% trans 'FREE' %}</span>
+        {% else %}
+        <span class="label label-info">{{ product.pricing.once.price | money_convert }}</span>
+        {% endif %}
+        <div class="row-fluid">
+        <label class="control-label">{% trans 'Vps hostname' %} </label>
+            <div class="controls">
+                <input type="text" name="hostname" value="{{ request.hostname }}" placeholder="{% trans 'mydomain.com' %}">
+            </div>
+        </div>
+        <div class="row-fluid">
+        <label>{% trans 'OS template' %} </label>
+            <div class="controls">
+            <select name="template">
+                {% for t in guest.servicesolusvm_get_templates({"type" : product.config.vtype}) %}
+                <option value="{{t}}">{{ t|title }}</option>
+                {% endfor %}
+            </select>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" name="single" value="1" />
+    <input type="hidden" name="id" value="{{ product.id }}" />
+</section>
+
+
+<script type="text/javascript">
+$(function() {
+    $('#period-selector').change(function(){
+        $('.period').hide();
+        $('.period.' + $(this).val()).show();
+    }).trigger('change');
+
+    $('.addon-period-selector').change(function(){
+        var r = $(this).attr('rel');
+        $('#' + r + ' span').hide();
+        $('#' + r + ' span.' + $(this).val()).fadeIn();
+    }).trigger('change');
+});
+</script>

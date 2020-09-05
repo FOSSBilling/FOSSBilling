@@ -1,0 +1,94 @@
+{% extends "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{ post.title}}{% endblock %}
+{% set active_menu = 'support' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'news'|alink }}">{% trans 'News' %}</a></li>
+    <li class="lastB">{{ post.title}}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget">
+    
+    <div class="head">
+        <h5>{{ post.title}}</h5>
+    </div>
+    
+    <form method="post" action="{{ 'api/admin/news/update'|link }}" class="mainForm save api-form" data-api-msg="{% trans 'Post updated' %}">
+        <fieldset>
+            <p>If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.</p>
+            <br/>
+            <textarea name="content" cols="5" rows="20" class="bb-textarea">{{ post.content }}</textarea>
+            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+            <input type="hidden" name="id" value="{{ post.id }}"/>
+        </fieldset>
+    </form>
+</div>
+
+<div class="widget">
+    
+    <div class="head">
+        <h5>{{ post.title}}</h5>
+    </div>
+    
+    <form method="post" action="{{ 'api/admin/news/update'|link }}" class="mainForm save api-form" data-api-msg="{% trans 'Post updated' %}">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{% trans 'Title' %}</label>
+                <div class="formRight">
+                    <input type="text" name="title" value="{{ post.title }}" required="required"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            <div class="rowElem">
+                <label>{% trans 'Slug' %}</label>
+                <div class="formRight">
+                    <input type="text" name="slug" value="{{ post.slug }}" required="required"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Image' %}</label>
+                <div class="formRight">
+                    <input type="text" name="image" value="{{ post.image }}" id="post_image" placeholder="{% trans 'http://www.yourdomain.com/image.jpg' %}"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Status' %}</label>
+                <div class="formRight">
+                    <input type="radio" name="status" value="draft"{% if post.status == 'draft' %} checked="checked"{% endif %}/><label>Draft</label>
+                    <input type="radio" name="status" value="active"{% if post.status == 'active' %} checked="checked"{% endif %} /><label>Active</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Post created' %}</label>
+                <div class="formRight">
+                    <input type="text" name="created_at" value="{{post.created_at|date('Y-m-d')}}" required="required" class="datepicker"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Last update' %}</label>
+                <div class="formRight">
+                    <input type="text" name="updated_at" value="{{post.updated_at|date('Y-m-d')}}" required="required" class="datepicker"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+            <input type="hidden" name="id" value="{{ post.id }}"/>
+        </fieldset>
+    </form>
+    <div class="body">
+        <a href="{{ 'news'|alink }}"  title="" class="btnIconLeft mr10"><img src="images/icons/dark/arrowLeft.png" alt="" class="icon"><span>{% trans 'Go back' %}</span></a>
+    </div>
+</div>
+{% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

@@ -1,0 +1,105 @@
+<link rel="stylesheet" href="{{ constant('BB_URL') }}bb-modules/Servicesolusvm/resources/style.css" type="text/css">
+
+{% set periods = guest.system_periods %}
+{% set pricing = product.pricing %}
+{% set slider = guest.product_get_slider({"type":"solusvm"}) %}
+
+<form method="get" action="{{'order'|link}}" id="vps-order">
+        <div class="block">
+            <div class="order_vps">
+                <h2 id="product_title"></h2>
+                <div class="slider_bg">
+                    <div id="slider"></div>
+                </div>
+            </div>
+            
+            <div class="params">
+                <div class="box first">
+                    <h4>{% trans 'CPU' %}:</h4>
+                    <div id="cpu"></div>	    
+                </div>
+                <div class="box">
+                    <h4>{% trans 'RAM' %}:</h4>
+                    <div id="ram"></div>
+                </div>
+                <div class="box">
+                    <h4>{% trans 'Disk space' %}:</h4>
+                    <div id="hdd"></div>
+                </div>
+                <div class="box">
+                    <h4>{% trans 'Bandwidth' %}:</h4>
+                    <div id="bandwidth"></div>
+                </div>
+                <div class="box last">
+                    <h4>{% trans 'Monthly price' %}:</h4>
+                    <div id="price"></div>
+                </div>
+                <div class="clear"></div>
+            </div>
+            <div class="clear"></div>
+        </div>
+    
+        <div class="block">
+            <button class="bb-button bb-button-submit bb-button-big" type="submit" id="order-button" style="float:right;">{% trans 'Order now' %}</button>
+            <div class="desc">
+                <div id="product_desc"></div>
+            </div>
+            <div class="clear"></div>
+        </div>
+        <div class="clear"></div>
+    <input type="hidden" name="_url" value="/order" />
+    <input type="hidden" name="period" value="1M" />
+</form>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.js"></script>
+<script type="text/javascript">
+$(function() {
+    var data = '{{ guest.product_get_slider({"format":"json", "type":"solusvm"})|raw }}';
+    var obj = $.parseJSON(data);
+    var max = obj.length;
+    var slider = $( "#slider" ).slider({
+        min: 1,
+        value: 1,
+        max: max,
+        slide: function( event, ui ) {
+            $('#cpu').html(obj[ui.value-1].cpu);
+            $('#ram').html(obj[ui.value-1].ram);
+            $('#hdd').html(obj[ui.value-1].hdd);
+            $('#bandwidth').html(obj[ui.value-1].bandwidth);
+            $('#product_id').val(obj[ui.value-1].product_id);
+            $('#product_title').html(obj[ui.value-1].title);
+            if(obj[ui.value-1].desc){
+                $('#product_desc').html(obj[ui.value-1].desc);
+            } else {
+                $('#product_desc').html('');
+            }
+            $('#vps-order').attr('action', '{{"order"|link}}/' + obj[ui.value-1].slug);
+            $('#vps-order input[name=_url]').val('/order/'+obj[ui.value-1].slug);
+            
+            var pricing = obj[ui.value-1].pricing;
+            if(pricing.type == 'free') {
+                $('#price').html(0);
+            } else if (pricing.type == 'once'){
+                $('#price').html(pricing.once.price);
+            } else {
+                $('#price').html(pricing.recurrent['1M'].price);
+            }
+        }
+    });
+    var selected = 1;
+    slider.slider('value',selected);
+    slider.slider('option','slide').call(slider,null,{ handle: $('.ui-slider-handle', slider), value: selected });
+    
+    var div_len = 622;
+    var spacing = div_len / (max - 1);
+    for(var i = 0; i < max; i++){
+        var num = i + 1;
+        var margin = spacing * i + 0;
+        var lnmargin = spacing * i + 20;
+        $('.slider_bg').append('<div class="ln" style="margin-left:'+lnmargin+'px"></div>');
+        if(i == 0){
+            $('#slb_1').addClass('active');
+        }
+    }
+});
+</script>

@@ -1,0 +1,74 @@
+{% extends "layout_default.phtml" %}
+{% set active_menu = 'products' %}
+{% block meta_title %}Product addon management{% endblock %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'product'|alink }}">{% trans 'Products' %}</a></li>
+    <li><a href="{{ 'product/addons'|alink }}">{% trans 'Addons' %}</a></li>
+    <li class="lastB">{{product.title}}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget">
+
+    <div class="head">
+        <h5>{% trans 'Edit product addon' %}</h5>
+    </div>
+
+<form method="post" action="{{ 'api/admin/product/addon_update'|link }}" class="mainForm api-form save" data-api-msg="Addon updated">
+    <fieldset>
+        <div class="rowElem">
+            <label>{% trans 'Status' %}:</label>
+            <div class="formRight">
+                <input type="radio" name="status" value="enabled"{% if product.status == 'enabled' %} checked="checked"{% endif %}/><label>Enabled</label>
+                <input type="radio" name="status" value="disabled"{% if product.status == 'disabled' %} checked="checked"{% endif %} /><label>Disabled</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+        <div class="rowElem">
+            <label>{% trans 'Activation' %}:</label>
+            <div class="formRight">
+                <input type="radio" name="setup" value="after_order"{% if product.setup == 'after_order' %} checked="checked"{% endif %}/><label>After order is placed</label>
+                <input type="radio" name="setup" value="after_payment"{% if product.setup == 'after_payment' %} checked="checked"{% endif %} /><label>After payment is received</label>
+                <input type="radio" name="setup" value="manual"{% if product.setup == 'manual' %} checked="checked"{% endif %} /><label>Manual activation</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{% trans 'Icon' %}:</label>
+            <div class="formRight">
+                <input type="text" name="icon_url" value="{{product.icon_url}}" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        <div class="rowElem">
+            <label>{% trans 'Title' %}:</label>
+            <div class="formRight">
+                <input type="text" name="title" value="{{product.title}}" required="required" placeholder=""/>
+            </div>
+            <div class="fix"></div>
+        </div>
+        <div class="rowElem">
+            <label>{% trans 'Description' %}:</label>
+            <div class="formRight">
+                <textarea name="description" cols="5" rows="5">{{product.description}}</textarea>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        {% include "partial_pricing.phtml" with {'product': product} %}
+
+        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+    </fieldset>
+
+    <input type="hidden" name="id" value="{{ product.id }}" />
+</form>
+</div>
+
+
+
+{% endblock %}
