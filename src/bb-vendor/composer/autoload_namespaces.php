@@ -9,5 +9,10 @@ return array(
     'Twig_Extensions_' => array($vendorDir . '/twig/extensions/lib'),
     'Twig_' => array($vendorDir . '/twig/twig/lib'),
     'Pimple' => array($vendorDir . '/pimple/pimple/src'),
-    '' => array($baseDir . '/bb-library'),
+    'Michelf' => array($vendorDir . '/michelf/php-markdown'),
+    'JsonSerializable' => array($vendorDir . '/geoip2/geoip2/compat'),
+    'Guzzle\\Tests' => array($vendorDir . '/guzzle/guzzle/tests'),
+    'Guzzle' => array($vendorDir . '/guzzle/guzzle/src'),
+    'GeoIp2' => array($vendorDir . '/geoip2/geoip2/src'),
+    '' => array($baseDir . '/bb-library', $baseDir . '/../tests/bb-library'),
 );
