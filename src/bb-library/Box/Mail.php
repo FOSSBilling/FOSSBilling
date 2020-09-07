@@ -27,6 +27,10 @@
  * @license   http://www.boxbilling.com/LICENSE.txt
  * @version   $Id$
  */
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 class Box_Mail
 {
     private $_bodyHtml  = NULL;
