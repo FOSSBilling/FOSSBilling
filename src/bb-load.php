@@ -139,7 +139,7 @@ ini_set('error_log', BB_PATH_LOG . '/php_error.log');
 
 // Strip magic quotes from request data.
 /**
-Deprecated: Function get_magic_quotes_gpc() is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-load.php on line 141
+Deprecated: Function get_magic_quotes_gpc() is deprecated
 **/
 //if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) 
 // Create lamba style unescaping function (for portability)
