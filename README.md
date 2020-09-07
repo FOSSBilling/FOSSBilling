@@ -7,16 +7,11 @@ Open Source billing software
 Requirements
 ================================================================================
 
-<<<<<<< HEAD
-* PHP 7.2
-* Linux Operating System (64-bit) | Does not support Windows Operating Systems.
-=======
 * PHP 7.4.9 (cli) (built: Aug  7 2020 14:29:36) ( NTS )
 Copyright (c) The PHP Group
 Zend Engine v3.4.0, Copyright (c) Zend Technologies
     with Zend OPcache v7.4.9, Copyright (c), by Zend Technologies
 * Ubuntu Codename:bionic (x86_64) Release:18.04| Does not support Windows Operating Systems.
->>>>>>> 4fc1b2175df4fe7935fe36c54c89be7a94e53dab
 * PHP extensions:
   * openssl
   * curl
@@ -28,11 +23,7 @@ Zend Engine v3.4.0, Copyright (c) Zend Technologies
 Recommended
 ================================================================================
 
-<<<<<<< HEAD
-* PHP 7.2
-=======
 * PHP 7.4.9
->>>>>>> 4fc1b2175df4fe7935fe36c54c89be7a94e53dab
 * CentOS 64-bit Operating System
 * PHP Extensions
   * openssl
@@ -60,8 +51,8 @@ Contributing
 Roadmap
 ================================================================================
 
-* [ ] Support latest PHP version 7.3
-* [ ] Add support for composer package manager
+* [*] Support latest PHP version 7.3
+* [*] Add support for composer package manager
 
 Using Vagrant
 ================================================================================
