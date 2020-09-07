@@ -45,7 +45,7 @@ function handler_exception($e)
         print json_encode($result);
         return false;
     }
-}
+
     $page = "<!DOCTYPE html>
     <html lang=en>
     <meta charset=utf-8>
@@ -70,7 +70,7 @@ function handler_exception($e)
         print sprintf('<p>Line: "%s"</p>', $e->getLine());
         print sprintf('Trace: <pre>%s</pre>', $e->getTraceAsString());
     }
-
+}
 
 set_exception_handler("handler_exception");
 set_error_handler('handler_error');
@@ -139,7 +139,7 @@ ini_set('error_log', BB_PATH_LOG . '/php_error.log');
 
 // Strip magic quotes from request data.
 /**
-Deprecated: Function get_magic_quotes_gpc() is deprecated
+Deprecated: Function get_magic_quotes_gpc()
 **/
 //if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) 
 // Create lamba style unescaping function (for portability)
