@@ -276,7 +276,12 @@ class Service implements InjectionAwareInterface
         $path = $this->getThemesPath();
         if ($handle = opendir($path)) {
             while (false !== ($file = readdir($handle))) {
+<<<<<<< HEAD
                 if (is_dir($path . DIRECTORY_SEPARATOR . $file) && $file{0} != '.') {
+=======
+//**Deprecated: Array and string offset access syntax with curly braces is deprecated in /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-modules/Theme/Service.php on line 279 *//
+                if (is_dir($path . DIRECTORY_SEPARATOR . $file) && $file(0) != '.') {
+>>>>>>> 4fc1b2175df4fe7935fe36c54c89be7a94e53dab
 
                     try {
                         if (!$client && strpos($file, 'admin') !== false) {

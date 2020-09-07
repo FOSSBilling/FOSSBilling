@@ -4,36 +4,111 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
+<<<<<<< HEAD
     "content-hash": "61556a0e814aa34603e8a0f8ce034fbc",
+=======
+    "content-hash": "e4d658685b5cd4d534ed61bd3df3734d",
+>>>>>>> 4fc1b2175df4fe7935fe36c54c89be7a94e53dab
     "packages": [
         {
-            "name": "geoip2/geoip2",
-            "version": "v2.1.0",
+            "name": "composer/ca-bundle",
+            "version": "1.2.8",
             "source": {
                 "type": "git",
-                "url": "https://github.com/maxmind/GeoIP2-php.git",
-                "reference": "64f226209342c4a2f54b82ba3f0707db944f7d70"
+                "url": "https://github.com/composer/ca-bundle.git",
+                "reference": "8a7ecad675253e4654ea05505233285377405215"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/maxmind/GeoIP2-php/zipball/64f226209342c4a2f54b82ba3f0707db944f7d70",
-                "reference": "64f226209342c4a2f54b82ba3f0707db944f7d70",
+                "url": "https://api.github.com/repos/composer/ca-bundle/zipball/8a7ecad675253e4654ea05505233285377405215",
+                "reference": "8a7ecad675253e4654ea05505233285377405215",
                 "shasum": ""
             },
             "require": {
-                "guzzle/guzzle": "3.*",
-                "maxmind-db/reader": "~1.0",
-                "php": ">=5.3.1"
+                "ext-openssl": "*",
+                "ext-pcre": "*",
+                "php": "^5.3.2 || ^7.0 || ^8.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "4.2.*",
-                "satooshi/php-coveralls": "dev-master"
+                "phpunit/phpunit": "^4.8.35 || ^5.7 || 6.5 - 8",
+                "psr/log": "^1.0",
+                "symfony/process": "^2.5 || ^3.0 || ^4.0 || ^5.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Composer\\CaBundle\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jordi Boggiano",
+                    "email": "j.boggiano@seld.be",
+                    "homepage": "http://seld.be"
+                }
+            ],
+            "description": "Lets you find a path to the system CA bundle, and includes a fallback to the Mozilla CA bundle.",
+            "keywords": [
+                "cabundle",
+                "cacert",
+                "certificate",
+                "ssl",
+                "tls"
+            ],
+            "funding": [
+                {
+                    "url": "https://packagist.com",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/composer",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/composer/composer",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2020-08-23T12:54:47+00:00"
+        },
+        {
+            "name": "geoip2/geoip2",
+            "version": "v2.10.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/maxmind/GeoIP2-php.git",
+                "reference": "419557cd21d9fe039721a83490701a58c8ce784a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/maxmind/GeoIP2-php/zipball/419557cd21d9fe039721a83490701a58c8ce784a",
+                "reference": "419557cd21d9fe039721a83490701a58c8ce784a",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "maxmind-db/reader": "~1.5",
+                "maxmind/web-service-common": "~0.6",
+                "php": ">=5.6"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "2.*",
+                "phpunit/phpunit": "5.*",
+                "squizlabs/php_codesniffer": "3.*"
             },
             "type": "library",
             "autoload": {
-                "psr-0": {
-                    "GeoIp2": "src/",
-                    "JsonSerializable": "compat/"
+                "psr-4": {
+                    "GeoIp2\\": "src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -44,7 +119,7 @@
                 {
                     "name": "Gregory J. Oschwald",
                     "email": "goschwald@maxmind.com",
-                    "homepage": "http://www.maxmind.com/"
+                    "homepage": "https://www.maxmind.com/"
                 }
             ],
             "description": "MaxMind GeoIP2 PHP API",
@@ -56,103 +131,7 @@
                 "geolocation",
                 "maxmind"
             ],
-            "time": "2014-10-29T17:11:44+00:00"
-        },
-        {
-            "name": "guzzle/guzzle",
-            "version": "v3.9.3",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/guzzle/guzzle3.git",
-                "reference": "0645b70d953bc1c067bbc8d5bc53194706b628d9"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/guzzle3/zipball/0645b70d953bc1c067bbc8d5bc53194706b628d9",
-                "reference": "0645b70d953bc1c067bbc8d5bc53194706b628d9",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "php": ">=5.3.3",
-                "symfony/event-dispatcher": "~2.1"
-            },
-            "replace": {
-                "guzzle/batch": "self.version",
-                "guzzle/cache": "self.version",
-                "guzzle/common": "self.version",
-                "guzzle/http": "self.version",
-                "guzzle/inflection": "self.version",
-                "guzzle/iterator": "self.version",
-                "guzzle/log": "self.version",
-                "guzzle/parser": "self.version",
-                "guzzle/plugin": "self.version",
-                "guzzle/plugin-async": "self.version",
-                "guzzle/plugin-backoff": "self.version",
-                "guzzle/plugin-cache": "self.version",
-                "guzzle/plugin-cookie": "self.version",
-                "guzzle/plugin-curlauth": "self.version",
-                "guzzle/plugin-error-response": "self.version",
-                "guzzle/plugin-history": "self.version",
-                "guzzle/plugin-log": "self.version",
-                "guzzle/plugin-md5": "self.version",
-                "guzzle/plugin-mock": "self.version",
-                "guzzle/plugin-oauth": "self.version",
-                "guzzle/service": "self.version",
-                "guzzle/stream": "self.version"
-            },
-            "require-dev": {
-                "doctrine/cache": "~1.3",
-                "monolog/monolog": "~1.0",
-                "phpunit/phpunit": "3.7.*",
-                "psr/log": "~1.0",
-                "symfony/class-loader": "~2.1",
-                "zendframework/zend-cache": "2.*,<2.3",
-                "zendframework/zend-log": "2.*,<2.3"
-            },
-            "suggest": {
-                "guzzlehttp/guzzle": "Guzzle 5 has moved to a new package name. The package you have installed, Guzzle 3, is deprecated."
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "3.9-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Guzzle": "src/",
-                    "Guzzle\\Tests": "tests/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Michael Dowling",
-                    "email": "mtdowling@gmail.com",
-                    "homepage": "https://github.com/mtdowling"
-                },
-                {
-                    "name": "Guzzle Community",
-                    "homepage": "https://github.com/guzzle/guzzle/contributors"
-                }
-            ],
-            "description": "PHP HTTP client. This library is deprecated in favor of https://packagist.org/packages/guzzlehttp/guzzle",
-            "homepage": "http://guzzlephp.org/",
-            "keywords": [
-                "client",
-                "curl",
-                "framework",
-                "http",
-                "http client",
-                "rest",
-                "web service"
-            ],
-            "abandoned": "guzzlehttp/guzzle",
-            "time": "2015-03-18T18:23:50+00:00"
+            "time": "2019-12-12T18:48:39+00:00"
         },
         {
             "name": "ircmaxell/password-compat",
@@ -257,31 +236,75 @@
             "time": "2020-08-07T22:10:05+00:00"
         },
         {
-            "name": "michelf/php-markdown",
-            "version": "1.7.0",
+            "name": "maxmind/web-service-common",
+            "version": "v0.7.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/michelf/php-markdown.git",
-                "reference": "1f51cc520948f66cd2af8cbc45a5ee175e774220"
+                "url": "https://github.com/maxmind/web-service-common-php.git",
+                "reference": "74c996c218ada5c639c8c2f076756e059f5552fc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/michelf/php-markdown/zipball/1f51cc520948f66cd2af8cbc45a5ee175e774220",
-                "reference": "1f51cc520948f66cd2af8cbc45a5ee175e774220",
+                "url": "https://api.github.com/repos/maxmind/web-service-common-php/zipball/74c996c218ada5c639c8c2f076756e059f5552fc",
+                "reference": "74c996c218ada5c639c8c2f076756e059f5552fc",
+                "shasum": ""
+            },
+            "require": {
+                "composer/ca-bundle": "^1.0.3",
+                "ext-curl": "*",
+                "ext-json": "*",
+                "php": ">=5.6"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "2.*",
+                "phpunit/phpunit": "^4.8.36 || ^5.7 || ^6.5 || ^7.0",
+                "squizlabs/php_codesniffer": "3.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "MaxMind\\Exception\\": "src/Exception",
+                    "MaxMind\\WebService\\": "src/WebService"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Gregory Oschwald",
+                    "email": "goschwald@maxmind.com"
+                }
+            ],
+            "description": "Internal MaxMind Web Service API",
+            "homepage": "https://github.com/maxmind/web-service-common-php",
+            "time": "2020-05-06T14:07:26+00:00"
+        },
+        {
+            "name": "michelf/php-markdown",
+            "version": "1.9.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/michelf/php-markdown.git",
+                "reference": "c83178d49e372ca967d1a8c77ae4e051b3a3c75c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/michelf/php-markdown/zipball/c83178d49e372ca967d1a8c77ae4e051b3a3c75c",
+                "reference": "c83178d49e372ca967d1a8c77ae4e051b3a3c75c",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.0"
             },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-lib": "1.4.x-dev"
-                }
+            "require-dev": {
+                "phpunit/phpunit": ">=4.3 <5.8"
             },
+            "type": "library",
             "autoload": {
-                "psr-0": {
-                    "Michelf": ""
+                "psr-4": {
+                    "Michelf\\": "Michelf/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -305,7 +328,7 @@
             "keywords": [
                 "markdown"
             ],
-            "time": "2016-10-29T18:58:20+00:00"
+            "time": "2019-12-02T02:32:27+00:00"
         },
         {
             "name": "mustangostang/spyc",
@@ -356,16 +379,16 @@
         },
         {
             "name": "phpmailer/phpmailer",
-            "version": "v6.1.6",
+            "version": "v6.1.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPMailer/PHPMailer.git",
-                "reference": "c2796cb1cb99d7717290b48c4e6f32cb6c60b7b3"
+                "reference": "2c2370ba3df7034f9eb7b8f387c97b52b2ba5ad0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/c2796cb1cb99d7717290b48c4e6f32cb6c60b7b3",
-                "reference": "c2796cb1cb99d7717290b48c4e6f32cb6c60b7b3",
+                "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/2c2370ba3df7034f9eb7b8f387c97b52b2ba5ad0",
+                "reference": "2c2370ba3df7034f9eb7b8f387c97b52b2ba5ad0",
                 "shasum": ""
             },
             "require": {
@@ -420,7 +443,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2020-05-27T12:24:03+00:00"
+            "time": "2020-07-14T18:50:27+00:00"
         },
         {
             "name": "pimple/pimple",
@@ -522,55 +545,56 @@
             "time": "2017-02-14T16:28:37+00:00"
         },
         {
-            "name": "rev42/tfpdf",
-            "version": "v1.24",
+            "name": "setasign/fpdf",
+            "version": "1.8.2",
             "source": {
                 "type": "git",
-                "url": "https://github.com/rev42/tfpdf.git",
-                "reference": "a6c61aa39be95a8604fb863026e8c2b969ae4113"
+                "url": "https://github.com/Setasign/FPDF.git",
+                "reference": "d77904018090c17dc9f3ab6e944679a7a47e710a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rev42/tfpdf/zipball/a6c61aa39be95a8604fb863026e8c2b969ae4113",
-                "reference": "a6c61aa39be95a8604fb863026e8c2b969ae4113",
+                "url": "https://api.github.com/repos/Setasign/FPDF/zipball/d77904018090c17dc9f3ab6e944679a7a47e710a",
+                "reference": "d77904018090c17dc9f3ab6e944679a7a47e710a",
                 "shasum": ""
             },
             "type": "library",
             "autoload": {
-                "psr-0": {
-                    "tFPDF": "src/"
-                }
+                "classmap": [
+                    "fpdf.php"
+                ]
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "LGPL"
+                "MIT"
             ],
             "authors": [
                 {
-                    "name": "Ian Back",
-                    "email": "ianb@bpm1.com"
+                    "name": "Olivier Plathey",
+                    "email": "oliver@fpdf.org",
+                    "homepage": "http://fpdf.org/"
                 }
             ],
-            "description": "tFPDF",
-            "homepage": "http://fpdf.org/fr/script/script92.php",
+            "description": "FPDF is a PHP class which allows to generate PDF files with pure PHP. F from FPDF stands for Free: you may use it for any kind of usage and modify it to suit your needs.",
+            "homepage": "http://www.fpdf.org",
             "keywords": [
+                "fpdf",
                 "pdf"
             ],
-            "abandoned": "docnet/tFPDF",
-            "time": "2014-01-19T09:18:44+00:00"
+            "time": "2019-12-08T10:32:10+00:00"
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v2.1.1",
+            "version": "v2.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "9d468f2faa25b2b5447c033bf70aaded6139dd6b"
+                "reference": "9d76444550a09a6f9c55dd98113ba0901908e60a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/9d468f2faa25b2b5447c033bf70aaded6139dd6b",
-                "reference": "9d468f2faa25b2b5447c033bf70aaded6139dd6b",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/9d76444550a09a6f9c55dd98113ba0901908e60a",
+                "reference": "9d76444550a09a6f9c55dd98113ba0901908e60a",
                 "shasum": ""
             },
             "require": {
@@ -612,67 +636,7 @@
                 "payment processing",
                 "stripe"
             ],
-            "time": "2015-03-02T05:44:40+00:00"
-        },
-        {
-            "name": "symfony/event-dispatcher",
-            "version": "v2.8.52",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/symfony/event-dispatcher.git",
-                "reference": "a77e974a5fecb4398833b0709210e3d5e334ffb0"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/symfony/event-dispatcher/zipball/a77e974a5fecb4398833b0709210e3d5e334ffb0",
-                "reference": "a77e974a5fecb4398833b0709210e3d5e334ffb0",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.9"
-            },
-            "require-dev": {
-                "psr/log": "~1.0",
-                "symfony/config": "^2.0.5|~3.0.0",
-                "symfony/dependency-injection": "~2.6|~3.0.0",
-                "symfony/expression-language": "~2.6|~3.0.0",
-                "symfony/stopwatch": "~2.3|~3.0.0"
-            },
-            "suggest": {
-                "symfony/dependency-injection": "",
-                "symfony/http-kernel": ""
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.8-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Symfony\\Component\\EventDispatcher\\": ""
-                },
-                "exclude-from-classmap": [
-                    "/Tests/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Fabien Potencier",
-                    "email": "fabien@symfony.com"
-                },
-                {
-                    "name": "Symfony Community",
-                    "homepage": "https://symfony.com/contributors"
-                }
-            ],
-            "description": "Symfony EventDispatcher Component",
-            "homepage": "https://symfony.com",
-            "time": "2018-11-21T14:20:20+00:00"
+            "time": "2015-07-07T01:13:32+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",
@@ -884,16 +848,16 @@
         },
         {
             "name": "twig/twig",
-            "version": "v2.13.0",
+            "version": "v2.13.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twigphp/Twig.git",
-                "reference": "46a612ba1bbf6ee1c58acabacd868212ff8a2911"
+                "reference": "57e96259776ddcacf1814885fc3950460c8e18ef"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/Twig/zipball/46a612ba1bbf6ee1c58acabacd868212ff8a2911",
-                "reference": "46a612ba1bbf6ee1c58acabacd868212ff8a2911",
+                "url": "https://api.github.com/repos/twigphp/Twig/zipball/57e96259776ddcacf1814885fc3950460c8e18ef",
+                "reference": "57e96259776ddcacf1814885fc3950460c8e18ef",
                 "shasum": ""
             },
             "require": {
@@ -947,18 +911,6 @@
             ],
             "funding": [
                 {
-                    "url": "https://certification.symfony.com/",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://live.symfony.com/",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://symfony.com/cloud/",
-                    "type": "custom"
-                },
-                {
                     "url": "https://github.com/fabpot",
                     "type": "github"
                 },
@@ -967,7 +919,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2020-07-05T13:08:05+00:00"
+            "time": "2020-08-05T15:09:04+00:00"
         }
     ],
     "packages-dev": [
@@ -1461,6 +1413,7 @@
         },
         {
             "name": "phpunit/php-code-coverage",
+<<<<<<< HEAD
             "version": "9.1.3",
             "source": {
                 "type": "git",
@@ -1471,6 +1424,18 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/4abbce3b0ad05f2e7143ea5f775d5513cb5261e4",
                 "reference": "4abbce3b0ad05f2e7143ea5f775d5513cb5261e4",
+=======
+            "version": "9.1.7",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sebastianbergmann/php-code-coverage.git",
+                "reference": "2ef92bec3186a827faf7362ff92ae4e8ec2e49d2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/2ef92bec3186a827faf7362ff92ae4e8ec2e49d2",
+                "reference": "2ef92bec3186a827faf7362ff92ae4e8ec2e49d2",
+>>>>>>> 4fc1b2175df4fe7935fe36c54c89be7a94e53dab
                 "shasum": ""
             },
             "require": {
@@ -1530,7 +1495,11 @@
                     "type": "github"
                 }
             ],
+<<<<<<< HEAD
             "time": "2020-08-10T17:45:51+00:00"
+=======
+            "time": "2020-09-03T07:09:19+00:00"
+>>>>>>> 4fc1b2175df4fe7935fe36c54c89be7a94e53dab
         },
         {
             "name": "phpunit/php-file-iterator",
@@ -2880,7 +2849,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=7.2.0",
+        "php": "^v7.2.0",
         "ext-curl": "*",
         "ext-zlib": "*",
         "ext-pdo": "*",
