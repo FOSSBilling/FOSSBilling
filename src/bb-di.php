@@ -20,6 +20,7 @@ $di['logger'] = function () use ($di) {
     $logFile = $di['config']['path_logs'];
     $writer  = new Box_LogStream($logFile);
     $log     = new Box_Log();
+    $log->setDi($di);
     $log->addWriter($writer);
 
     $log_to_db = isset($di['config']['log_to_db']) && $di['config']['log_to_db'];
