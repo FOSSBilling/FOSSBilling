@@ -19,9 +19,9 @@ jobs:
 
     - name: Cache Composer packages
       id: composer-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v2.1.1
       with:
-        path: vendor/bin/*
+        path: vendor
         key: ${{ runner.os }}-php-${{ hashFiles('**composer.lock') }}
         restore-keys: |
           ${{ runner.os }}-php-
