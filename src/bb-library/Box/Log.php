@@ -41,8 +41,8 @@ class Box_Log
          self::INFO     => 'INFO',
          self::DEBUG    => 'DEBUG',
     );
-/**Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/Log.php 123**/
-    protected $_min_priority = 'NULL';
+
+    protected $_min_priority = NULL;
     
     protected $_writers = array();
 
@@ -120,8 +120,8 @@ class Box_Log
         }
 
         //do not log debug level messages if debug is OFF
-/**Trying to access array offset on value of type null /var/www/vhosts/webbhostingservices.com/httpdocs/boxbilling/src/bb-library/Box/Log.php 123**/
-        if($this->di('config')('debug') === FALSE && $event('priority') > self::INFO) {
+
+        if($this->di['config']['debug'] === FALSE && $event['priority'] > self::INFO) {
             return ;
         }
 

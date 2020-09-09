@@ -10,6 +10,7 @@ src/bb-data/log/*
 src/bb-data/cache/*
 src/bb-data/tmp.txt
 src/bb-test.php
+src/bb-vendor/
 build
 composer.phar
 public
