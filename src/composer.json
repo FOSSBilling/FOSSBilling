@@ -12,7 +12,8 @@
         }
     ],
     "require": {
-        "php": ">=7.2.0",
+
+        "php": ">=7.4.9",
         "ext-curl": "*",
         "ext-zlib": "*",
         "ext-PDO": "*",
@@ -21,13 +22,14 @@
         "twig/twig": "v2.13.0",
         "twig/extensions": "1.5.4",
         "mpdf/mpdf": "v8.0.4",
-        "geoip2/geoip2": "v2.1.0",
+        "geoip2/geoip2": "v2.10.0",
         "ircmaxell/password-compat": "v1.0.4",
         "phpmailer/phpmailer": "6.1.6",
         "mustangostang/spyc": "0.5.1",
         "michelf/php-markdown": "1.7.0",
         "stripe/stripe-php": "2.1.1",
-	"guzzlehttp/guzzle": "*"
+	      "guzzlehttp/guzzle": "^v3.8.1"
+
     },
     "suggest": {
         "ext-gettext": "*"
