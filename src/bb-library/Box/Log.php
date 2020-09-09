@@ -120,6 +120,7 @@ class Box_Log
         }
 
         //do not log debug level messages if debug is OFF
+
         if($this->di['config']['debug'] === FALSE && $event['priority'] > self::INFO) {
             return ;
         }

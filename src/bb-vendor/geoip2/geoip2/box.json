@@ -1,0 +1,36 @@
+{
+    "alias": "geoip2.phar",
+    "main": "phar-stub.php",
+    "output": "geoip2.phar",
+    "compactors": [
+        "Herrera\\Box\\Compactor\\Composer",
+        "Herrera\\Box\\Compactor\\Json",
+        "Herrera\\Box\\Compactor\\Php"
+    ],
+    "files": [
+        "LICENSE"
+    ],
+    "finder": [
+        {
+            "name": [
+                "LICENSE",
+                "LICENSE.*",
+                "*.php",
+                "*.pem",
+                "*.pem.md5"
+            ],
+            "exclude": [
+                "phpunit",
+                "satooshi",
+                "Tests",
+                "tests",
+                "yaml"
+            ],
+            "in": "vendor"
+            }
+    ],
+
+    "directories": ["compat", "src/"],
+    "git-version": "git-version",
+    "stub": true
+}

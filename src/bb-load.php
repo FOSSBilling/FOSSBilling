@@ -144,6 +144,9 @@ Deprecated: Function get_magic_quotes_gpc()
 //if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) 
 // Create lamba style unescaping function (for portability)
 //  $quotes_sybase = strtolower(ini_get('magic_quotes_sybase'));
+{
+    // Create lamba style unescaping function (for portability)
+    $quotes_sybase = strtolower(ini_get('magic_quotes_sybase'));
 
     /* create_function deprecated in PHP 7.2
     $unescape_function = (empty($quotes_sybase) || $quotes_sybase === 'off') ? 'stripslashes($value)' : 'str_replace("\'\'","\'",$value)';

@@ -12,6 +12,7 @@
         }
     ],
     "require": {
+
         "php": ">=7.4.9",
         "ext-curl": "*",
         "ext-zlib": "*",
@@ -27,7 +28,8 @@
         "mustangostang/spyc": "0.5.1",
         "michelf/php-markdown": "1.7.0",
         "stripe/stripe-php": "2.1.1",
-	"guzzlehttp/guzzle": "^v3.8.1"
+	      "guzzlehttp/guzzle": "^v3.8.1"
+
     },
     "suggest": {
         "ext-gettext": "*"
