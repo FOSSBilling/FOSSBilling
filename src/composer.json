@@ -26,7 +26,8 @@
         "phpmailer/phpmailer": "6.1.6",
         "mustangostang/spyc": "0.5.1",
         "michelf/php-markdown": "1.7.0",
-        "stripe/stripe-php": "2.1.1"
+        "stripe/stripe-php": "2.1.1",
+	"guzzlehttp/guzzle": "*"
     },
     "suggest": {
         "ext-gettext": "*"
