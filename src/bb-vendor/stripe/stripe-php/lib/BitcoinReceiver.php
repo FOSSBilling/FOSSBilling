@@ -2,7 +2,7 @@
 
 namespace Stripe;
 
-class BitcoinReceiver extends ExternalAccount
+class BitcoinReceiver extends ApiResource
 {
     /**
      * @return string The class URL for this resource. It needs to be special
@@ -19,15 +19,25 @@ class BitcoinReceiver extends ExternalAccount
      */
     public function instanceUrl()
     {
-        $result = parent::instanceUrl();
-        if ($result) {
-            return $result;
-        } else {
-            $id = $this['id'];
-            $id = Util\Util::utf8($id);
-            $extn = urlencode($id);
+        $id = $this['id'];
+        if (!$id) {
+            $class = get_class($this);
+            $msg = "Could not determine which URL to request: $class instance "
+             . "has invalid ID: $id";
+            throw new Error\InvalidRequest($msg, null);
+        }
+
+        $id = ApiRequestor::utf8($id);
+        $extn = urlencode($id);
+
+        if (!$this['customer']) {
             $base = BitcoinReceiver::classUrl();
             return "$base/$extn";
+        } else {
+            $base = Customer::classUrl();
+            $parent = ApiRequestor::utf8($this['customer']);
+            $parentExtn = urlencode($parent);
+            return "$base/$parentExtn/sources/$extn";
         }
     }
 
@@ -62,5 +72,26 @@ class BitcoinReceiver extends ExternalAccount
     public static function create($params = null, $opts = null)
     {
         return self::_create($params, $opts);
+    }
+
+    /**
+     * @param array|null $params
+     * @param array|string|null $opts
+     *
+     * @return BitcoinReceiver The deleted Bitcoin Receiver item.
+     */
+    public function delete($params = null, $opts = null)
+    {
+        return $this->_delete($params, $opts);
+    }
+
+    /**
+     * @param array|string|null $opts
+     *
+     * @return BitcoinReceiver The saved Bitcoin Receiver item.
+     */
+    public function save($opts = null)
+    {
+        return $this->_save($opts);
     }
 }

@@ -1,28 +1,3 @@
-### 2.3.0 2015-07-06
-
-* Add request ID to all Stripe exceptions
-
-### 2.2.0 2015-06-01
-
-* Add support for Alipay accounts as sources
-* Add support for bank accounts as sources (private beta)
-* Add support for bank accounts and cards as external_accounts on Account objects
-
-### 2.1.4 2015-05-13
-
-* Fix CA certificate file path (thanks @lphilps & @matthewarkin)
-
-### 2.1.3 2015-05-12
-
-* Fix to account updating to permit `tos_acceptance` and `personal_address` to be set properly
-* Fix to Transfer reversal creation (thanks @neatness!)
-* Network requests are now done through a swappable class for easier mocking
-
-### 2.1.2 2015-04-10
-
-* Remove SSL cert revokation checking (all pre-Heartbleed certs have expired)
-* Bug fixes to account updating
-
 ### 2.1.1 2015-02-27
 * Support transfer reversals
 

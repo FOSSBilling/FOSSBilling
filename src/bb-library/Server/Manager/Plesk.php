@@ -599,8 +599,8 @@ class Server_Manager_Plesk extends Server_Manager
     	curl_setopt ($ch, CURLOPT_URL, $this->getLoginUrl());
     	curl_setopt ($ch, CURLOPT_RETURNTRANSFER, true);
     	curl_setopt ($ch, CURLOPT_TIMEOUT, 60);
-        curl_setopt ($ch, CURLOPT_POST, count($xml));
     	curl_setopt ($ch, CURLOPT_POSTFIELDS, $xml);
+        curl_setopt ($ch, CURLOPT_POST, count($xml));
 
 		$result = curl_exec($ch);
 

@@ -24,7 +24,7 @@ class Collection extends ApiResource
     {
         list($url, $params) = $this->extractPathAndUpdateParams($params);
 
-        $id = Util\Util::utf8($id);
+        $id = ApiRequestor::utf8($id);
         $extn = urlencode($id);
         list($response, $opts) = $this->_request(
             'get',

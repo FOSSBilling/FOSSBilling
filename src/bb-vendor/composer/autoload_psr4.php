@@ -6,18 +6,18 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'setasign\\Fpdi\\' => array($vendorDir . '/setasign/fpdi/src'),
     'Twig\\Extensions\\' => array($vendorDir . '/twig/extensions/src'),
     'Twig\\' => array($vendorDir . '/twig/twig/src'),
     'Symfony\\Polyfill\\Mbstring\\' => array($vendorDir . '/symfony/polyfill-mbstring'),
     'Symfony\\Polyfill\\Ctype\\' => array($vendorDir . '/symfony/polyfill-ctype'),
+    'Symfony\\Component\\EventDispatcher\\' => array($vendorDir . '/symfony/event-dispatcher'),
     'Stripe\\' => array($vendorDir . '/stripe/stripe-php/lib'),
+    'Psr\\Log\\' => array($vendorDir . '/psr/log/Psr/Log'),
     'Psr\\Container\\' => array($vendorDir . '/psr/container/src'),
     'PHPMailer\\PHPMailer\\' => array($vendorDir . '/phpmailer/phpmailer/src'),
-    'Michelf\\' => array($vendorDir . '/michelf/php-markdown/Michelf'),
-    'MaxMind\\WebService\\' => array($vendorDir . '/maxmind/web-service-common/src/WebService'),
-    'MaxMind\\Exception\\' => array($vendorDir . '/maxmind/web-service-common/src/Exception'),
+    'Mpdf\\' => array($vendorDir . '/mpdf/mpdf/src'),
     'MaxMind\\Db\\' => array($vendorDir . '/maxmind-db/reader/src/MaxMind/Db'),
-    'GeoIp2\\' => array($vendorDir . '/geoip2/geoip2/src'),
-    'Composer\\CaBundle\\' => array($vendorDir . '/composer/ca-bundle/src'),
+    'DeepCopy\\' => array($vendorDir . '/myclabs/deep-copy/src/DeepCopy'),
     'Box\\Mod\\' => array($baseDir . '/bb-modules'),
 );

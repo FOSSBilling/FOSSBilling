@@ -18,8 +18,8 @@ class Subscription extends ApiResource
                 null
             );
         }
-        $id = Util\Util::utf8($id);
-        $customer = Util\Util::utf8($customer);
+        $id = ApiRequestor::utf8($id);
+        $customer = ApiRequestor::utf8($customer);
 
         $base = Customer::classUrl();
         $customerExtn = urlencode($customer);

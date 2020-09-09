@@ -21,12 +21,7 @@ class Object implements ArrayAccess
     public static function init()
     {
         self::$permanentAttributes = new Util\Set(array('_opts', 'id'));
-        self::$nestedUpdatableAttributes = new Util\Set(array(
-            'metadata', 'legal_entity', 'address', 'dob', 'transfer_schedule', 'verification',
-            'tos_acceptance', 'personal_address',
-            // will make the array into an AttachedObject: weird, but works for now
-            'additional_owners', 0, 1, 2, 3, 4 // Max 3, but leave the 4th so errors work properly
-        ));
+        self::$nestedUpdatableAttributes = new Util\Set(array('metadata'));
     }
 
     protected $_opts;
@@ -90,7 +85,7 @@ class Object implements ArrayAccess
         $this->_transientValues->add($k);
         $this->_unsavedValues->discard($k);
     }
-    public function &__get($k)
+    public function __get($k)
     {
         if (array_key_exists($k, $this->_values)) {
             return $this->_values[$k];
@@ -216,13 +211,8 @@ class Object implements ArrayAccess
 
         // Get nested updates.
         foreach (self::$nestedUpdatableAttributes->toArray() as $property) {
-            if (isset($this->$property)) {
-                if ($this->$property instanceof Object) {
-                    $serialized = $this->$property->serializeParameters();
-                    if ($serialized) {
-                        $params[$property] = $serialized;
-                    }
-                }
+            if (isset($this->$property) && $this->$property instanceof Object) {
+                $params[$property] = $this->$property->serializeParameters();
             }
         }
 
