@@ -133,7 +133,7 @@ class Service implements InjectionAwareInterface
         try {
             $orderModel = $di['db']->load('ClientOrder', $params['id']);
             $orderTicketService = $di['mod_service']('order');
-            $order = $orderTicketService->toApiArray($orderModel, true, $di['loggedin_admin']);
+            $order = $orderTicketService->toApiArray($orderModel, true);
 
             $email = array();
             $email['to_staff']  = true;
