@@ -2,21 +2,21 @@
 /**
  * @group Core
  */
-class Box_PeriodTest extends PHPUnit_Framework_TestCase
+class Box_PeriodTest extends PHPUnit\Framework\TestCase
 {
-    /**
-     * @expectedException \Box_Exception
-     */
+    
     public function testException()
     {
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Invalid period code. Period definition must be 2 chars length');
         $p = new Box_Period('1');
-    }
 
-    /**
-     * @expectedException \Box_Exception
-     */
+    }
+    
     public function testException2()
     {
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Period Error. Unit Z is not defined');
         $p = new Box_Period('1Z');
     }
 

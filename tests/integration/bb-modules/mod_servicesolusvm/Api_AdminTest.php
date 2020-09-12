@@ -117,6 +117,8 @@ class Api_Admin_ServiceSolusvmTest extends BBDbApiTestCase
     
     public function testImporters()
     {
+        $this->assertTrue(true);
+
         //$bool = $this->api_admin->servicesolusvm_import_servers($data);
         //$this->assertTrue($bool);
         

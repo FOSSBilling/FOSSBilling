@@ -53,7 +53,7 @@ class AdminTest extends \BBTestCase
         $data = array();
 
         $result = $admin_Client->get_list($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
     }
 
@@ -72,7 +72,7 @@ class AdminTest extends \BBTestCase
 
         $data   = array('id' => 1);
         $result = $admin_Client->get_pairs($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget()
@@ -91,7 +91,7 @@ class AdminTest extends \BBTestCase
         $admin_Client->setService($serviceMock);
 
         $result = $admin_Client->get(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testlogin()
@@ -132,7 +132,7 @@ class AdminTest extends \BBTestCase
 
         $data   = array('id' => 1);
         $result = $admin_Client->login($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCreate()
@@ -164,7 +164,7 @@ class AdminTest extends \BBTestCase
 
         $result = $admin_Client->create($data);
 
-        $this->assertInternalType('int', $result, 'create() returned: ' . $result);
+        $this->assertIsInt($result, 'create() returned: ' . $result);
     }
 
     public function testCreateEmailRegisteredException()
@@ -188,7 +188,8 @@ class AdminTest extends \BBTestCase
         $admin_Client->setDi($di);
         $admin_Client->setService($serviceMock);
 
-        $this->setExpectedException('\Box_Exception', 'Email is already registered.');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Email is already registered.');
         $admin_Client->create($data);
     }
 
@@ -392,7 +393,8 @@ class AdminTest extends \BBTestCase
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Can not change email. It is already registered.');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Can not change email. It is already registered.');
         $admin_Client->update($data);
     }
 
@@ -408,7 +410,8 @@ class AdminTest extends \BBTestCase
         $di['validator'] = new \Box_Validate();
         $admin_Client->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Id required');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Id required');
         $admin_Client->update($data);
     }
 
@@ -475,7 +478,8 @@ class AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $admin_Client->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Passwords do not match');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Passwords do not match');
         $admin_Client->change_password($data);
     }
 
@@ -517,7 +521,7 @@ class AdminTest extends \BBTestCase
         $admin_Client->setDi($di);
 
         $result = $admin_Client->balance_get_list($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testbalance_delete()
@@ -641,7 +645,7 @@ class AdminTest extends \BBTestCase
         $admin_Client->setService($serviceMock);
 
         $result = $admin_Client->login_history_get_list($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_statuses()
@@ -657,7 +661,7 @@ class AdminTest extends \BBTestCase
         $admin_Client->setDi($di);
 
         $result = $admin_Client->get_statuses(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgroup_get_pairs()
@@ -673,7 +677,7 @@ class AdminTest extends \BBTestCase
         $admin_Client->setDi($di);
 
         $result = $admin_Client->group_get_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgroup_create()
@@ -698,7 +702,7 @@ class AdminTest extends \BBTestCase
         $admin_Client->setDi($di);
         $result = $admin_Client->group_create($data);
 
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newGroupId, $result);
     }
 
@@ -802,7 +806,7 @@ class AdminTest extends \BBTestCase
 
         $result = $admin_Client->group_get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testlogin_history_delete()

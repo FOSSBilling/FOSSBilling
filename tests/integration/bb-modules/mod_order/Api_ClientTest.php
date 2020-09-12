@@ -13,7 +13,7 @@ class Api_Client_OrderTest extends BBDbApiTestCase
             'per_page'   =>  10,
         );
         $array = $this->api_client->order_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'page'       =>  1,
@@ -21,16 +21,16 @@ class Api_Client_OrderTest extends BBDbApiTestCase
             'expiring'   =>  1,
         );
         $array = $this->api_client->order_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $data = array(
             'id'       =>  1,
         );
         $array = $this->api_client->order_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_client->order_addons($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testDelete()
@@ -59,7 +59,7 @@ class Api_Client_OrderTest extends BBDbApiTestCase
 
 
         $result = $this->api_client->order_service($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertNotEmpty($result);
 
         $this->assertEquals($expected, $result);
@@ -72,7 +72,7 @@ class Api_Client_OrderTest extends BBDbApiTestCase
         );
 
         $result = $this->api_client->order_upgradables($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
 }

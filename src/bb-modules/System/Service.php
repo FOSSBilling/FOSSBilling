@@ -48,7 +48,7 @@ class Service
         }
         return $results;
     }
-    
+
     public function setParamValue($param, $value, $createIfNotExists = true)
     {
         $pdo = $this->di['pdo'];
@@ -69,10 +69,10 @@ class Service
                 }
             }
         }
-        
+
         return true;
     }
-    
+
     public function paramExists($param)
     {
         $pdo = $this->di['pdo'];
@@ -257,8 +257,8 @@ class Service
             $msgs['info'][] = sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install);
         }
 
-        if(!extension_loaded('mcrypt')) {
-            $msgs['info'][] = sprintf('BoxBilling requires %s extension to be enabled on this server for security reasons.', 'php mcrypt');
+        if(!extension_loaded('openssl')) {
+            $msgs['info'][] = sprintf('BoxBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl');
         }
 
         return $this->di['array_get']($msgs, $type, array());
@@ -304,9 +304,24 @@ class Service
         }
 
         try {
-            $template = $twig->loadTemplate($tpl);
+            $template = $twig->load($tpl);
             $parsed   = $template->render($vars);
         } catch (\Exception $e) {
+            //$twig->load throws error when $tpl is string
+            $parsed = $this->createTemplateFromString($tpl, $try_render, $vars);
+
+        }
+
+        return $parsed;
+    }
+
+    public function createTemplateFromString($tpl, $try_render, $vars){
+        try{
+                $twig = $this->di['twig'];
+                $template = $twig->createTemplate($tpl);
+                $parsed   = $template->render($vars);
+        }
+        catch(\Exception $e){
             $parsed = $tpl;
             if (!$try_render) {
                 throw $e;
@@ -326,7 +341,7 @@ class Service
     {
         if(isset($ip)) {
             try {
-                return $this->di['tools']->get_url('http://www.biranchi.com/ip.php', 2);
+                return $this->di['tools']->get_url('https://api.ipify.org', 2);
             } catch(\Exception $e) {
                 return '';
             }

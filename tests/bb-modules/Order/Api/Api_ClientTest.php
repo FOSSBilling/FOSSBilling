@@ -6,14 +6,14 @@
  * Date: 8/5/14
  * Time: 4:52 PM
  */
-class ClientTest extends PHPUnit_Framework_TestCase
+class Api_ClientTest extends PHPUnit\Framework\TestCase
 {
     /**
      * @var \Box\Mod\Order\Api\Client
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api = new \Box\Mod\Order\Api\Client();
     }
@@ -71,7 +71,7 @@ class ClientTest extends PHPUnit_Framework_TestCase
 
         $result = $this->api->get_list(array());
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testGet_listExpiring()
@@ -105,7 +105,7 @@ class ClientTest extends PHPUnit_Framework_TestCase
         );
         $result = $this->api->get_list($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testGet()
@@ -130,7 +130,7 @@ class ClientTest extends PHPUnit_Framework_TestCase
         );
         $result = $apiMock->get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testAddons()
@@ -157,8 +157,8 @@ class ClientTest extends PHPUnit_Framework_TestCase
         );
         $result = $apiMock->addons($data);
 
-        $this->assertInternalType('array', $result);
-        $this->assertInternalType('array', $result[0]);
+        $this->assertIsArray($result);
+        $this->assertIsArray($result[0]);
     }
 
     public function testService()
@@ -187,7 +187,7 @@ class ClientTest extends PHPUnit_Framework_TestCase
         );
         $result = $apiMock->service($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testUpgradables()
@@ -222,7 +222,7 @@ class ClientTest extends PHPUnit_Framework_TestCase
         $data = array();
 
         $result = $apiMock->upgradables($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testDelete()
@@ -251,9 +251,6 @@ class ClientTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testDeleteNotPendingException()
     {
         $order = new Model_ClientOrder();
@@ -273,7 +270,9 @@ class ClientTest extends PHPUnit_Framework_TestCase
 
         $data   = array(
             'id' => rand(1, 100)
-        );
+        );        
+        
+        $this->expectException(\Box_Exception::class);
         $result = $apiMock->delete($data);
 
         $this->assertTrue($result);
@@ -315,9 +314,6 @@ class ClientTest extends PHPUnit_Framework_TestCase
         $this->api->get($data);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testGetOrderNotFoundException()
     {
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -348,6 +344,8 @@ class ClientTest extends PHPUnit_Framework_TestCase
         $data = array(
             'id' => rand(1, 100)
         );
+
+        $this->expectException(\Box_Exception::class);
         $this->api->get($data);
     }
 }

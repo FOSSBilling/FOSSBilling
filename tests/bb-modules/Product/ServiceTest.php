@@ -11,7 +11,7 @@ class ServiceTest extends \BBTestCase
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Product\Service();
     }
@@ -60,7 +60,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->getPairs($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expectArray, $result);
     }
 
@@ -68,14 +68,11 @@ class ServiceTest extends \BBTestCase
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
             ->setMethods(array(
-                             'getAddonsApiArray',
                              'getStartingFromPrice',
                              'getUpgradablePairs',
                              'toProductPaymentApiArray',))
             ->getMock();
 
-        $serviceMock->expects($this->any())
-            ->method('getAddonsApiArray');
         $serviceMock->expects($this->atLeastOnce())
             ->method('getStartingFromPrice');
         $serviceMock->expects($this->atLeastOnce())
@@ -121,7 +118,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $result = $serviceMock->toApiArray($model, true, new \Model_Admin());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetTypes()
@@ -152,7 +149,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->getTypes();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expectedArray, $result);
     }
 
@@ -183,7 +180,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $result = $this->service->getPaymentTypes();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -226,7 +223,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->createProduct('title', 'domain');
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newProductId, $result);
 
     }
@@ -253,7 +250,8 @@ class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
 
-        $this->setExpectedException('\Box_Exception', 'Pricing type is required');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Pricing type is required');
         $serviceMock->updateProduct($modelProduct, $data);
     }
 
@@ -426,7 +424,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->getAddons();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -460,7 +458,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->createAddon('title');
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newProductId, $result);
     }
 
@@ -478,7 +476,8 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Can not remove product which has active orders.');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Can not remove product which has active orders.');
         $this->service->deleteProduct($model);
     }
 
@@ -505,7 +504,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->getProductCategoryPairs();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expectArray, $result);
     }
 
@@ -529,7 +528,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->updateCategory($model, 'title', 'decription', 'http://urltoimg.com/img.jpg');
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
 
     }
@@ -563,7 +562,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $this->service->createCategory('title');
 
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newCategoryId, $result);
     }
 
@@ -585,7 +584,8 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Can not remove product category with products');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Can not remove product category with products');
         $this->service->removeProductCategory($modelProductCategory);
 
     }
@@ -612,7 +612,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->removeProductCategory($modelProductCategory);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -632,8 +632,8 @@ class ServiceTest extends \BBTestCase
 
         list($sql, $params) = $this->service->getPromoSearchQuery($data);
 
-        $this->assertInternalType('string', $sql);
-        $this->assertInternalType('array', $params);
+        $this->assertIsString($sql);
+        $this->assertIsArray($params);
     }
 
     public function testcreatePromo()
@@ -665,7 +665,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->createPromo('code', 'percentage', 50, array(), array(), array(), array());
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newPromoId, $result);
     }
 
@@ -688,7 +688,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->toPromoApiArray($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testupdatePromo()
@@ -725,7 +725,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->updatePromo($model, $data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -746,7 +746,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->deletePromo($model);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -767,8 +767,8 @@ class ServiceTest extends \BBTestCase
 
         list($sql, $params) = $this->service->getProductSearchQuery($data);
 
-        $this->assertInternalType('string', $sql);
-        $this->assertInternalType('array', $params);
+        $this->assertIsString($sql);
+        $this->assertIsArray($params);
     }
 
     public function testtoProductCategoryApiArray()
@@ -811,7 +811,7 @@ class ServiceTest extends \BBTestCase
 
         $serviceMock->setDi($di);
         $result = $serviceMock->toProductCategoryApiArray($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
 
@@ -870,7 +870,7 @@ class ServiceTest extends \BBTestCase
 
         $serviceMock->setDi($di);
         $result = $serviceMock->toProductCategoryApiArray($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($min, $result['price_starting_from']);
     }
 
@@ -913,8 +913,8 @@ class ServiceTest extends \BBTestCase
     {
         list($sql, $params) = $this->service->getProductCategorySearchQuery(array());
 
-        $this->assertInternalType('string', $sql);
-        $this->assertInternalType('array', $params);
+        $this->assertIsString($sql);
+        $this->assertIsArray($params);
         $this->assertEquals(array(), $params);
     }
 
@@ -940,7 +940,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
         $result = $this->service->getStartingFromPrice($productModel);
 
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals('0', $result);
     }
 
@@ -985,7 +985,7 @@ class ServiceTest extends \BBTestCase
         $expected = array();
 
         $result = $this->service->getUpgradablePairs($productModel);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -1020,7 +1020,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->getProductTitlesByIds($ids);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetCategoryProducts()
@@ -1041,7 +1041,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->getCategoryProducts($productCategoryModel);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testtoProductPaymentApiArray()
@@ -1050,7 +1050,7 @@ class ServiceTest extends \BBTestCase
         $productPaymentModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $result = $this->service->toProductPaymentApiArray($productPaymentModel);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetStartingPrice()
@@ -1077,7 +1077,7 @@ class ServiceTest extends \BBTestCase
         $productPaymentModel->tria_price   = 14;
 
         $result = $this->service->getStartingPrice($productPaymentModel);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($minPrice, $result);
     }
 
@@ -1092,7 +1092,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->getSavePath($filename);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertNotEmpty($result);
         $this->assertEquals($expected, $result);
     }
@@ -1114,7 +1114,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->removeOldFile($config);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -1133,7 +1133,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->removeOldFile($config);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertFalse($result);
     }
 

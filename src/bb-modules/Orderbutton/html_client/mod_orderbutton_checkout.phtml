@@ -4,9 +4,6 @@
         <a class="accordion-toggle" href="#checkout" data-parent="#accordion1" data-toggle="collapse"><span class="awe-shopping-cart"></span> {% trans 'Cart' %} <span class="label label-warning pull-right">{{ cart.items | length }}</span></a>
     </div>
     {% if cart.items %}
-		{% set cart = cart|merge({'total':0})%}
-		{% set temp_total_discount =0 %}
-		{% set temp_cart_total =0 %}
     <div id="checkout" class="accordion-body collapse {% if request.checkout and client %}in{%endif%}">
         <div class="accordion-inner" id="checkout-inner">
 
@@ -20,7 +17,6 @@
                 </thead>
                 <tbody>
                 {% for i, item in cart.items %}
-					{% set temp_cart_total = temp_cart_total + (item.price*item.quantity) %}
                 <tr>
                     <td>
                         {{ item.title }}
@@ -34,16 +30,12 @@
                     </td>
                     <td>
                         {% if item.discount_price %}
-						{% set temp_discount = (item.price * item.quantity ) %}
-							{% set temp_total_discount = temp_total_discount + temp_discount %}
-							{% set item = item|merge({'discount_price': temp_discount}) %}
-								{% set cart =cart|merge({'discount':temp_discount}) %}
-                            <del>{{ (item.price * item.quantity) | money_convert }}</del>
-                            <strong class="text-success">{{ (item.price * item.quantity - item.discount_price) | money_convert }}</strong>
+                        <del>{{ item.total | money_convert }}</del>
+                        <strong class="text-success">{{ (item.total-item.discount_price) | money_convert }}</strong>
 							
 								
                         {% else %}
-                            {{ (item.price * item.quantity) | money_convert }}
+                            {{ (item.total) | money_convert }}
                         {% endif %}
                     </td>
                     <td><button data-cart-item-id="{{ item.id }}" class="btn btn-inverse btn-mini remove-cart-item" title="{% trans 'Remove item' %}"><strong><i class="awe-remove"></i></strong></button></td>
@@ -108,9 +100,6 @@
                 </tr>
                 {% endif %}
 			
-			{% set cart= cart|merge({'total':temp_cart_total})%}
-			{% set cart= cart|merge({'discount':temp_total_discount})%}
-				
                 {% endfor %}
                 </tbody>
             </table>
@@ -151,7 +140,7 @@
                         {% if cart.discount >0 %}
                         <tr>
                             <td><strong>{% trans 'Subtotal:' %}</strong></td>
-                            <td><strong>{{ (cart.total)| money_convert }}</strong></td>
+                            <td><strong>{{ (cart.subtotal)| money_convert }}</strong></td>
                         </tr>
                         <tr>
                             <td><strong>{% trans 'Discount:' %}</strong></td>
@@ -170,7 +159,6 @@
                         {% endif %}
                         <tr>
                             <td><strong>{% trans 'Total:' %}</strong></td>
-							{% set cart= cart|merge({'total':temp_cart_total - temp_total_discount})%}
                             <td><strong>{{ (cart.total + tax_amount) | money_convert }}</strong></td>
                         </tr>
 

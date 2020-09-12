@@ -346,6 +346,8 @@ class Service implements InjectionAwareInterface
         $data['title']          = $model->title;
         $data['meta']           = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', array(':id' => $model->id));
         $data['active_tickets'] = $supportService->getActiveTicketsCountForOrder($model);
+        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
+        $data['client'] = $clientService->toApiArray($client, false);
 
         if ($identity instanceof \Model_Admin) {
             $data['config'] = $this->getConfig($model);
@@ -1062,15 +1064,15 @@ class Service implements InjectionAwareInterface
     public function rmInvoiceItemByOrder(\Model_ClientOrder $order)
     {
         $bindings = array(
-            ':type'   => 'order',
             ':rel_id' => $order->id,
             ':status' => \Model_InvoiceItem::STATUS_PENDING_PAYMENT
         );
 
-        $item = $this->di['db']->findOne('InvoiceItem', 'type = :type AND rel_id = :rel_id AND status = :status', $bindings);
-
+        $items = $this->di['db']->find('InvoiceItem', 'rel_id = :rel_id AND status = :status', $bindings);
+        foreach($items as $item){
         if ($item instanceof \Model_InvoiceItem) {
             $this->di['db']->trash($item);
+            }
         }
     }
 

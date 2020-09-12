@@ -2,11 +2,11 @@
 /**
  * @group Core
  */
-class Box_LogTest extends PHPUnit_Framework_TestCase
+class Box_LogTest extends PHPUnit\Framework\TestCase
 {
     public function testLog()
     {
-        $service_mock = $this->getMockBuilder('Box\\Mod\\Activity\\Service')->getMock();
+        $service_mock = $this->getMockBuilder(Box\Mod\Activity\Service::class)->getMock();
         $service_mock->expects($this->atLeastOnce())
             ->method('logEvent')
             ->will($this->returnValue(true));

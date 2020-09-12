@@ -51,7 +51,7 @@
                       <td>{{ mf.currency_format(1) }} = {{ mf.currency(1, currency.code) }}</td>
                       <td class="actions">
                           <a class="bb-button btn14" href="{{ '/currency/manage'|alink }}/{{currency.code}}"><img src="images/icons/dark/pencil.png" alt=""></a>
-                          <a class="bb-button btn14 bb-rm-tr api-link" data-api-redirect="{{extension/settings/currency|alink}}" data-api-confirm="Are you sure?" href="{{'api/admin/currency/delete'|link({'code' : currency.code})}}"><img src="images/icons/dark/trash.png" alt=""></a>
+                          <a class="bb-button btn14 bb-rm-tr api-link" data-api-redirect="{{'extension/settings/currency'|alink}}" data-api-confirm="Are you sure?" href="{{'api/admin/currency/delete'|link({'code' : currency.code})}}"><img src="images/icons/dark/trash.png" alt=""></a>
                           {% if not currency.default %}
                           <a class="bb-button btn14 api-link" data-api-redirect="{{'extension/settings/currency'|alink}}" href="{{'api/admin/currency/set_default' | link({'code' : currency.code})}}" title="Set as default" class="rightDir"><img src="images/icons/dark/star.png" alt=""></a>
                           {% endif %}
@@ -106,7 +106,7 @@
                     <div class="rowElem">
                         <label>{% trans 'Format' %}:</label>
                         <div class="formRight">
-                            <input type="text" name="format" value="{%raw%}{{price}}{%endraw%} $" required="required">
+                            <input type="text" name="format" value="{{price|raw}} $" required="required">
                         </div>
                         <div class="fix"></div>
                     </div>

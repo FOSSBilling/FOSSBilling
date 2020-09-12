@@ -20,7 +20,7 @@
                     {{ addon.description|bbmd }}
                 </td>
                 <td>
-                    {% if addon.pricing.type is sameas('recurrent') %}
+                    {% if addon.pricing.type is same as('recurrent') %}
                     <select name="addons[{{ addon.id }}][period]" class="addon-period-selector" rel="addon-periods-{{ addon.id }}">
                     {% for code,prices in addon.pricing.recurrent %}
                         {% if prices.enabled %}
@@ -31,7 +31,7 @@
                     {% endif %}
                 </td>
                 <td class="currency" style="width: 20%">
-                    {% if addon.pricing.type is sameas('recurrent') %}
+                    {% if addon.pricing.type is same as('recurrent') %}
                     <div id="addon-periods-{{ addon.id }}">
                     {% for code,prices in addon.pricing.recurrent %}
                         <span class="{{code}}">{{ (prices.price + prices.setup) | money_convert }}</span>
@@ -39,11 +39,11 @@
                     </div>
                     {% endif %}
 
-                    {% if addon.pricing.type is sameas('once') %}
+                    {% if addon.pricing.type is same as('once') %}
                         {{ (addon.pricing.once.price + addon.pricing.once.setup) | money_convert }}
                     {% endif %}
 
-                    {% if addon.pricing.type is sameas('free') %}
+                    {% if addon.pricing.type is same as('free') %}
                         {{ 0 | money_convert }}
                     {% endif %}
                 </td>

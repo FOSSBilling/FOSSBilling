@@ -11,7 +11,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $service->setDi($this->di);
         $themeModel = $service->getTheme('boxbilling');
         $result = $service->getCurrentThemePreset($themeModel);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertNotEmpty($result);
     }
 
@@ -21,7 +21,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $service->setDi($this->di);
         $themeModel = $service->getTheme('boxbilling');
         $result = $service->getThemePresets($themeModel);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertNotEmpty($result);
     }
 
@@ -31,7 +31,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $service->setDi($this->di);
         $themeModel = $service->getTheme('boxbilling');
         $result = $service->getThemeSettings($themeModel);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testuploadAssets()
@@ -97,7 +97,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $service->setDi($this->di);
 
         $result = $service->getCurrentAdminAreaTheme();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals('admin_default', $result['code']);
         $this->assertEquals($this->di['config']['url'].'bb-themes/admin_default/', $result['url']);
     }

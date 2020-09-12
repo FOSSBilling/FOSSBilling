@@ -11,7 +11,7 @@ class ServiceTest extends \BBTestCase
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service= new \Box\Mod\Serviceboxbillinglicense\Service();
     }
@@ -88,7 +88,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->getModuleConfig();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('api_key', $result);
     }
 
@@ -114,7 +114,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $result = $this->service->getModuleConfig();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('api_key', $result);
     }
 }

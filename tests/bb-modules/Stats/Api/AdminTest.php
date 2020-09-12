@@ -10,7 +10,7 @@ class AdminTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api= new \Box\Mod\Stats\Api\Admin();
     }
@@ -33,7 +33,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->get_summary();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_summary_income()
@@ -46,7 +46,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->get_summary_income();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_orders_statuses()
@@ -60,7 +60,7 @@ class AdminTest extends \BBTestCase {
 
         $data = array();
         $result = $this->api->get_orders_statuses($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_product_summary()
@@ -74,7 +74,7 @@ class AdminTest extends \BBTestCase {
 
         $data = array();
         $result = $this->api->get_product_summary($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_product_sales()
@@ -88,7 +88,7 @@ class AdminTest extends \BBTestCase {
 
         $data = array();
         $result = $this->api->get_product_sales($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_income_vs_refunds()
@@ -102,7 +102,7 @@ class AdminTest extends \BBTestCase {
 
         $data = array();
         $result = $this->api->get_income_vs_refunds($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_refunds()
@@ -116,7 +116,7 @@ class AdminTest extends \BBTestCase {
 
         $data = array();
         $result = $this->api->get_refunds($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_income()
@@ -130,7 +130,7 @@ class AdminTest extends \BBTestCase {
 
         $data = array();
         $result = $this->api->get_income($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_orders()
@@ -144,7 +144,7 @@ class AdminTest extends \BBTestCase {
 
         $data = array();
         $result = $this->api->get_orders($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_clients()
@@ -158,7 +158,7 @@ class AdminTest extends \BBTestCase {
 
         $data = array();
         $result = $this->api->get_clients($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testclient_countries()
@@ -172,7 +172,7 @@ class AdminTest extends \BBTestCase {
 
         $data = array();
         $result = $this->api->client_countries($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testsales_countries()
@@ -186,7 +186,7 @@ class AdminTest extends \BBTestCase {
 
         $data = array();
         $result = $this->api->sales_countries($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_invoices()
@@ -200,7 +200,7 @@ class AdminTest extends \BBTestCase {
 
         $data = array();
         $result = $this->api->get_invoices($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_tickets()
@@ -214,7 +214,7 @@ class AdminTest extends \BBTestCase {
 
         $data = array();
         $result = $this->api->get_tickets($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 }
  

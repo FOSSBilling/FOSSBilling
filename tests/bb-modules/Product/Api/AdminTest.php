@@ -11,7 +11,7 @@ class AdminTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api= new \Box\Mod\Product\Api\Admin();
     }
@@ -48,7 +48,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
         $result = $this->api->get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_pairs()
@@ -61,7 +61,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->get_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget()
@@ -92,7 +92,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_types()
@@ -105,7 +105,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->get_types();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testprepareDomainProductAlreadyCreated()
@@ -129,7 +129,9 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
 
-        $this->setExpectedException('\Box_Exception', 'You have already created domain product', 413);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(413);
+        $this->expectExceptionMessage('You have already created domain product');
         $this->api->prepare($data);
     }
 
@@ -159,7 +161,9 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
 
-        $this->setExpectedException('\Box_Exception', sprintf('Product type %s is not registered', $data['type']), 413);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(413);
+        $this->expectExceptionMessage(sprintf('Product type %s is not registered', $data['type']));
         $this->api->prepare($data);
     }
 
@@ -198,7 +202,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->prepare($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newProductId, $result);
     }
 
@@ -229,7 +233,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->update($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -237,7 +241,8 @@ class AdminTest extends \BBTestCase {
     {
         $data = array();
 
-        $this->setExpectedException('\Box_Exception', 'priority params is missing');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('priority params is missing');
         $this->api->update_priority($data);
     }
 
@@ -255,7 +260,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->update_priority($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -287,7 +292,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->update_config($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -301,7 +306,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->addon_get_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testaddon_create()
@@ -327,7 +332,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->addon_create($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newAddonId, $result);
     }
 
@@ -361,7 +366,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->addon_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testaddon_update()
@@ -397,7 +402,7 @@ class AdminTest extends \BBTestCase {
         $apiMock->setDi($di);
 
         $result = $apiMock->addon_update($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testaddon_delete()
@@ -411,7 +416,7 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue(true));
 
         $result = $apiMock->addon_delete(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -444,7 +449,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->delete($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -458,7 +463,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->category_get_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testcategory_update()
@@ -493,7 +498,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->category_update($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -526,7 +531,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->category_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testcategory_create()
@@ -552,7 +557,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->category_create($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newCategoryId, $result);
     }
 
@@ -585,7 +590,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->category_delete($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -612,7 +617,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
         $result = $this->api->promo_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testpromo_create()
@@ -641,7 +646,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->promo_create($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newPromoId, $result);
     }
 
@@ -649,7 +654,8 @@ class AdminTest extends \BBTestCase {
     {
         $data = array();
 
-        $this->setExpectedException('\Box_Exception', 'Promo id is missing');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Promo id is missing');
         $this->api->promo_get($data);
     }
 
@@ -682,7 +688,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->promo_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testpromo_update()
@@ -713,7 +719,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->promo_update($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -744,7 +750,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->promo_delete($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 

@@ -11,4 +11,4 @@
  */
 
 
-class Box_Di extends Pimple {}
+class Box_Di extends Pimple\Container {}

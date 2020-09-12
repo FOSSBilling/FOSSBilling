@@ -34,19 +34,28 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $model = $service->create($order);
         $this->assertInstanceOf('RedBeanPHP\OODBBean', $model);
 
-        $this->setExpectedException('\Box_Exception', 'Could not activate order. Service was not created', 7456);
+
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(7456);
+        $this->expectExceptionMessage('Could not activate order. Service was not created');
         $service->activate($order, null);
 
         $result = $service->activate($order, $model);
         $this->assertTrue($result);
 
-        $this->setExpectedException('\Box_Exception', 'Could not activate order. Service was not created', 7456);
+
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(7456);
+        $this->expectExceptionMessage('Could not activate order. Service was not created');
         $service->suspend($order, null);
 
         $result = $service->suspend($order, $model);
         $this->assertTrue($result);
 
-        $this->setExpectedException('\Box_Exception', 'Could not activate order. Service was not created', 7456);
+
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(7456);
+        $this->expectExceptionMessage('Could not activate order. Service was not created');
         $service->unsuspend($order, null);
 
         $result = $service->unsuspend($order, $model);
@@ -56,13 +65,13 @@ class ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $this->assertTrue($result);
 
         $result = $service->licenseDetails($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $result = $service->licenseReset($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $result = $service->toApiArray($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('id', $result);
         $this->assertArrayHasKey('oid', $result);
 

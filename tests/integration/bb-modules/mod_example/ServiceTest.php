@@ -2,7 +2,7 @@
 /**
  * @group Core
  */
-class Box_Mod_Activity_ServiceTest extends BBDbApiTestCase
+class ServiceTest extends BBDbApiTestCase
 {
     protected $_initialSeedFile = 'example.xml';
 
@@ -31,8 +31,8 @@ class Box_Mod_Activity_ServiceTest extends BBDbApiTestCase
             'client_id' => 1
         );
         list($sql, $params) = $service->getSearchQuery($data);
-        $this->assertInternalType('string', $sql);
-        $this->assertInternalType('array', $params);
+        $this->assertIsString($sql);
+        $this->assertIsArray($params);
         $this->assertArrayHasKey(':client_id', $params);
         $this->assertEquals($params[':client_id'], $data['client_id']);
     }

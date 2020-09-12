@@ -36,7 +36,7 @@ class AdminTest extends \BBTestCase {
         $result = $controller->fetchNavigation();
 
         $this->assertArrayHasKey('subpages', $result);
-        $this->assertInternalType('array', $result['subpages']);
+        $this->assertIsArray($result['subpages']);
     }
 
     public function testregister()
@@ -104,7 +104,8 @@ class AdminTest extends \BBTestCase {
         $di['is_admin_logged']  = true;
 
         $controller->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'File does not exist', 404);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('File does not exist', 404);
         $controller->get_editor($boxAppMock);
     }
 
@@ -126,7 +127,8 @@ class AdminTest extends \BBTestCase {
         $di['is_admin_logged']  = true;
 
         $controller->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'File does not exist', 405);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('File does not exist', 405);
         $controller->get_editor($boxAppMock);
     }
 
@@ -156,7 +158,7 @@ class AdminTest extends \BBTestCase {
 
         $controller->setDi($di);
         $result = $controller->get_editor($boxAppMock);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
     }
 
     public function testget_editor_TypeisImage()
@@ -182,7 +184,7 @@ class AdminTest extends \BBTestCase {
 
         $controller->setDi($di);
         $result = $controller->get_editor($boxAppMock);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
     }
 }
  

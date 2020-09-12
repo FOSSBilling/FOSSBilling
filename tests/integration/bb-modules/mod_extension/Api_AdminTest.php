@@ -36,6 +36,8 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
             'id'    =>  'news',
         );
         $bool = $this->api_admin->extension_uninstall($data);
+
+        $this->assertTrue($bool);
     }
     
     public function testUpdate()
@@ -85,7 +87,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
         
         $array = $this->api_admin->extension_config_get($data);
         $array['ext'] = 'mod_email';
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertEquals($data, $array);
     }
     
@@ -96,7 +98,7 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
             'type'  =>  'mod',
         );
         $array = $this->api_admin->extension_activate($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $bool = $this->api_guest->extension_is_on($data);
         $this->assertTrue($bool);
         
@@ -112,28 +114,28 @@ class Api_Admin_ExtensionTest extends BBDbApiTestCase
             'type' => 'server-manager',
         );
         $array = $this->api_admin->extension_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->extension_get_list(array('active'=>true, 'type'=>'mod', 'search'=>'f'));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->extension_get_list(array('installed'=>true));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->extension_get_list(array('has_settings'=>true));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->extension_get_latest();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->extension_get_navigation();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->extension_languages();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->extension_languages();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testUpdate_Core()

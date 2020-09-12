@@ -10,7 +10,7 @@ class ClientTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api = new \Box\Mod\Invoice\Api\Client();
     }
@@ -51,7 +51,7 @@ class ClientTest extends \BBTestCase {
 
         $data['hash'] = md5(1);
         $result = $this->api->get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetInvoiceNotFound()
@@ -75,7 +75,8 @@ class ClientTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->setExpectedException('\Box_Exception', 'Invoice was not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Invoice was not found');
         $this->api->get($data);
     }
 
@@ -109,7 +110,7 @@ class ClientTest extends \BBTestCase {
 
         $data['hash'] = md5(1);
         $result = $this->api->update($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue(true);
     }
 
@@ -134,7 +135,8 @@ class ClientTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->setExpectedException('\Box_Exception', 'Invoice was not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Invoice was not found');
         $this->api->update($data);
     }
 
@@ -160,7 +162,8 @@ class ClientTest extends \BBTestCase {
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5(1);
-        $this->setExpectedException('\Box_Exception', 'Paid Invoice can not be modified');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Paid Invoice can not be modified');
         $this->api->update($data);
     }
 
@@ -205,7 +208,7 @@ class ClientTest extends \BBTestCase {
 
         $data['order_id'] = 1;
         $result = $this->api->renewal_invoice($data);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals($generatedHash, $result);
     }
 
@@ -237,7 +240,8 @@ class ClientTest extends \BBTestCase {
 
         $data['order_id'] = 1;
 
-        $this->setExpectedException('\Box_Exception', sprintf('Order %d is free. No need to generate invoice.', $clientOrder->id));
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf('Order %d is free. No need to generate invoice.', $clientOrder->id));
         $this->api->renewal_invoice($data);
 
     }
@@ -268,7 +272,8 @@ class ClientTest extends \BBTestCase {
 
         $data['order_id'] = 1;
 
-        $this->setExpectedException('\Box_Exception', 'Order not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Order not found');
         $this->api->renewal_invoice($data);
     }
 
@@ -303,7 +308,7 @@ class ClientTest extends \BBTestCase {
 
         $data['amount'] = 10;
         $result = $this->api->funds_invoice($data);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals($generatedHash, $result);
     }
 
@@ -340,7 +345,7 @@ class ClientTest extends \BBTestCase {
 
         $data['hash'] = md5(1);
         $result = $this->api->delete($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -369,7 +374,7 @@ class ClientTest extends \BBTestCase {
         $identity->loadBean(new \RedBeanPHP\OODBBean());
         $this->api->setIdentity($identity);
         $result = $this->api->transaction_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_tax_rate()

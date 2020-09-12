@@ -54,7 +54,7 @@ class ServiceBalance implements InjectionAwareInterface
 
     public function rmByClient(\Model_Client $client)
     {
-        $clientBalances = $this->di['db']->find('ClientBalance', 'client_id', array($client->id));
+        $clientBalances = $this->di['db']->find('ClientBalance', 'client_id = ?', array($client->id));
         foreach ($clientBalances as $balanceModel){
             $this->di['db']->trash($balanceModel);
         }

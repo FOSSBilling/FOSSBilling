@@ -11,7 +11,7 @@ class AdminTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api= new \Box\Mod\Example\Api\Admin();
     }
@@ -21,7 +21,7 @@ class AdminTest extends \BBTestCase {
         $data = array('microsoft' => '');
         $expected = array('apple', 'google', 'facebook', 'microsoft');
         $result = $this->api->get_something($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 }

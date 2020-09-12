@@ -2,14 +2,14 @@
 namespace Box\Tests\Mod\Servicecustom\Api;
 
 
-class ClientTest extends \BBTestCase
+class Api_ClientTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Servicecustom\Api\Client
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api = new \Box\Mod\Servicecustom\Api\Client();
     }
@@ -35,9 +35,6 @@ class ClientTest extends \BBTestCase
         $this->api->__call('delete', $arguments);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCallArgumentsNotSetException()
     {
         $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->getMock();
@@ -51,13 +48,10 @@ class ClientTest extends \BBTestCase
         $arguments = array();
 
         $this->api->setService($serviceMock);
-
+        $this->expectException(\Exception::class);
         $this->api->__call('delete', $arguments);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCallOrderIdNotSetException()
     {
         $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->getMock();
@@ -73,7 +67,7 @@ class ClientTest extends \BBTestCase
         );
 
         $this->api->setService($serviceMock);
-
+        $this->expectException(\Exception::class);
         $this->api->__call('delete', $arguments);
     }
 }

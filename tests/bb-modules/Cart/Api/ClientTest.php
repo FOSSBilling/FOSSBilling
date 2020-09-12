@@ -8,7 +8,7 @@ class ClientTest extends \BBTestCase {
      */
     protected $clientApi = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->clientApi = new \Box\Mod\Cart\Api\Client();
     }
@@ -51,7 +51,7 @@ class ClientTest extends \BBTestCase {
         $this->clientApi->setDi($di);
         $result = $this->clientApi->checkout($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 }
  

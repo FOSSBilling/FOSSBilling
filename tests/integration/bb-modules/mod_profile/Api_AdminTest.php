@@ -9,7 +9,7 @@ class Api_Admin_ProfileTest extends BBDbApiTestCase
     public function testProfile()
     {
         $array = $this->api_admin->profile_get();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $bool = $this->api_admin->profile_logout();
         $this->assertTrue($bool);

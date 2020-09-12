@@ -11,10 +11,10 @@ class Box_Mod_Redirect_Api_AdminTest extends BBModTestCase
     public function testRedirect()
     {
         $array = $this->api_admin->redirect_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $int = $this->api_admin->redirect_create(array('path'=>'/forum', 'target'=>'new-forum'));
-        $this->assertInternalType('int', $int);
+        $this->assertIsInt($int);
         
         $r = $this->api_admin->redirect_get(array('id'=>$int));
         $this->assertTrue(isset($r['id']));

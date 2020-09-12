@@ -72,7 +72,9 @@ class Box_Mod_Invoice_ServiceTest extends BBDbApiTestCase
             'post'                  =>  $transactionIpn['post'],
         );
 
-        $this->setExpectedException('Payment_Exception', 'IPN is duplicate');
+        $this->expectException(Payment_Exception::class);
+        $this->expectExceptionMessage('IPN is duplicate');
+
         $newId = $service->createAndProcess($ipn);
 
         $transactionModel = $this->di['db']->load('Transaction', $newId);

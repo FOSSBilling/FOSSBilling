@@ -10,7 +10,7 @@ class ClientTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api= new \Box\Mod\Servicedownloadable\Api\Client();
     }
@@ -27,7 +27,8 @@ class ClientTest extends \BBTestCase {
     {
         $data = array();
 
-        $this->setExpectedException('\Box_Exception', 'Order id is required');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Order id is required');
         $this->api->send_file($data);
     }
 
@@ -50,7 +51,8 @@ class ClientTest extends \BBTestCase {
         $this->api->setIdentity($modelClient);
         $this->api->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Order not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Order not found');
         $this->api->send_file($data);
     }
 
@@ -79,7 +81,8 @@ class ClientTest extends \BBTestCase {
         $this->api->setDi($di);
         $this->api->setIdentity($modelClient);
 
-        $this->setExpectedException('\Box_Exception', 'Order is not activated');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Order is not activated');
         $this->api->send_file($data);
     }
 
@@ -116,7 +119,7 @@ class ClientTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->send_file($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
 
     }

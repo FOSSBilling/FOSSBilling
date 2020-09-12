@@ -2,14 +2,14 @@
 namespace Box\Tests\Mod\Support\Api;
 
 
-class ClientTest extends \BBTestCase
+class Api_ClientTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Support\Api\Client
      */
     protected $clientApi = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->clientApi = new \Box\Mod\Support\Api\Client();
     }
@@ -59,7 +59,7 @@ class ClientTest extends \BBTestCase
         $data   = array();
         $result = $this->clientApi->ticket_get_list($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testTicket_get()
@@ -92,7 +92,7 @@ class ClientTest extends \BBTestCase
         );
         $result = $this->clientApi->ticket_get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testHelpdesk_get_pairs()
@@ -106,7 +106,7 @@ class ClientTest extends \BBTestCase
 
         $result = $this->clientApi->helpdesk_get_pairs();
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testTicket_create()
@@ -145,7 +145,7 @@ class ClientTest extends \BBTestCase
         );
         $result = $this->clientApi->ticket_create($data);
 
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
     }
 
     public function testTicket_reply()
@@ -185,13 +185,10 @@ class ClientTest extends \BBTestCase
         );
         $result = $this->clientApi->ticket_reply($data);
 
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testTicket_replyCanNotBeReopenedException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
@@ -227,9 +224,10 @@ class ClientTest extends \BBTestCase
             'content' => 'Content',
             'id'      => rand(1, 100),
         );
+        $this->expectException(\Box_Exception::class);
         $result = $this->clientApi->ticket_reply($data);
 
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
     }
 
 
@@ -264,7 +262,7 @@ class ClientTest extends \BBTestCase
         );
         $result = $this->clientApi->ticket_close($data);
 
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
     }
 
 

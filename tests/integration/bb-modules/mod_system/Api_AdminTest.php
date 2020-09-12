@@ -85,16 +85,16 @@ class Api_Admin_SystemTest extends BBDbApiTestCase
     public function testInfos()
     {
         $array = $this->api_admin->system_env();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->system_messages();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->system_license_info();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->system_get_params();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $string = $this->api_admin->system_param(array('key'=>'db_version'));
         $this->assertEquals('2', '2');

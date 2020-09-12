@@ -265,7 +265,7 @@ class Service implements InjectionAwareInterface
     public function getExpiredPasswordReminders()
     {
         $expire_after_hours = 2;
-        $expired = $this->di['db']->find('ClientPasswordReset', 'UNIX_TIMESTAMP() - ? > created_at', array($expire_after_hours * 60 * 60));
+        $expired = $this->di['db']->find('ClientPasswordReset', 'UNIX_TIMESTAMP() - ? > UNIX_TIMESTAMP(created_at)', array($expire_after_hours * 60 * 60));
         return $expired;
     }
 

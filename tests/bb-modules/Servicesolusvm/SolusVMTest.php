@@ -25,7 +25,7 @@ class SolusVMTest extends \BBTestCase {
 
         $solusVm = new SolusVM();
         $result = $solusVm->buildUrl($config);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertNotEmpty($result);
 
         $expected = $config['protocol'] ."://". $config['ipaddress'] . ":" . $config['port'] . "/api/" . $config['usertype'] . "/command.php";

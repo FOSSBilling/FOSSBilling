@@ -9,13 +9,13 @@ class Api_Client_EmailTest extends BBDbApiTestCase
     public function testEmails()
     {
         $array = $this->api_client->email_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $data = array(
             'id'    =>  1,
         );
         $array = $this->api_client->email_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testResend()
@@ -46,11 +46,11 @@ class Api_Client_EmailTest extends BBDbApiTestCase
     public function testEmailEmailGetList()
     {
         $array = $this->api_client->email_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         if (count($list)) {
             $item = $list[0];
             $this->assertArrayHasKey('id', $item);

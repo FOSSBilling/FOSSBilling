@@ -23,7 +23,7 @@ class Box_Mod_Client_ServiceTest extends ApiTestCase
         $service = new \Box\Mod\Client\Service();
         $service->setDi($this->di);
         $link = $service->generateEmailConfirmationLink(1);
-        $this->assertInternalType('string', $link);
+        $this->assertIsString($link);
         $this->assertEquals(strpos($link, 'http://'), 0);
     }
 
@@ -48,7 +48,7 @@ class Box_Mod_Client_ServiceTest extends ApiTestCase
         $data['config'] = array();
 
         $orderId = $this->api_admin->order_create($data);
-        $this->assertInternalType('int', $orderId);
+        $this->assertIsInt($orderId);
 
         //Client has invoice with items for order
         $invoiceModel = $this->di['db']->findOne('Invoice', 'client_id = ?', array($id));

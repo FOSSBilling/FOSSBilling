@@ -10,7 +10,7 @@ class GuestTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api= new \Box\Mod\Product\Api\Guest();
     }
@@ -46,7 +46,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
         $result = $this->api->get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_pairs()
@@ -59,14 +59,15 @@ class GuestTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->get_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetMissingRequiredParams()
     {
         $data = array();
 
-        $this->setExpectedException('\Box_Exception', 'Product ID or slug is missing');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Product ID or slug is missing');
         $this->api->get($data);
     }
 
@@ -93,7 +94,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetWithSetSlug()
@@ -119,7 +120,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetProductNotFound()
@@ -141,7 +142,8 @@ class GuestTest extends \BBTestCase {
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
-        $this->setExpectedException('\Box_Exception', 'Product not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Product not found');
         $this->api->get($data);
     }
 
@@ -183,7 +185,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setService($serviceMock);
         $this->api->setDi($di);
         $result = $this->api->category_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testcategory_get_pairs()
@@ -195,7 +197,7 @@ class GuestTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->category_get_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_sliderEmptyList()
@@ -214,7 +216,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->get_slider(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals(array(), $result);
     }
 
@@ -248,7 +250,7 @@ class GuestTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->get_slider(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget_sliderJsonFormat()
@@ -282,11 +284,11 @@ class GuestTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->get_slider(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $result = $this->api->get_slider(array('format' => 'json'));
-        $this->assertInternalType('string', $result);
-        $this->assertInternalType('array', json_decode($result, 1));
+        $this->assertIsString($result);
+        $this->assertIsArray(json_decode($result, 1));
     }
 }
  

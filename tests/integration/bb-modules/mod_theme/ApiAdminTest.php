@@ -10,17 +10,17 @@ class Api_Admin_ThemeTest extends BBDbApiTestCase
     {
         $code = 'boxbilling';
         $array = $this->api_admin->theme_get(array('code'=> $code));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertEquals($array['code'], $code);
 
         $array = $this->api_admin->theme_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $bool = $this->api_admin->theme_select(array('code'=>'boxbilling'));
         $this->assertTrue($bool);
         
         $array = $this->api_admin->theme_get_list(array('type'=>'admin'));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
     }
 

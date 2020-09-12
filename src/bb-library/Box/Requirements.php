@@ -38,10 +38,10 @@ class Box_Requirements implements \Box\InjectionAwareInterface
                     'curl',
                     'zlib',
                     'gettext',
-                    'mcrypt',
+                    'openssl',
                  ),
                 'version'       =>  PHP_VERSION,
-                'min_version'   =>  '5.3',
+                'min_version'   =>  '7.2',
                 'safe_mode'     =>  ini_get('safe_mode'),
             ),
             'writable_folders' => array(
@@ -93,7 +93,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
             'pdo_mysql'     => extension_loaded('pdo_mysql'),
             'zlib'          => extension_loaded('zlib'),
             'mbstring'      => extension_loaded('mbstring'),
-            'mcrypt'        => extension_loaded('mcrypt'),
+            'openssl'        => extension_loaded('openssl'),
             'gettext'       => extension_loaded('gettext'),
         );
         

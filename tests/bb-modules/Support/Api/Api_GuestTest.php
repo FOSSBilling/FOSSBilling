@@ -3,14 +3,14 @@
 namespace Box\Tests\Mod\Support\Api;
 
 
-class GuestTest extends \BBTestCase
+class Api_GuestTest extends \BBTestCase
 {
     /**
      * @var \Box\Mod\Support\Api\Guest
      */
     protected $guestApi = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->guestApi = new \Box\Mod\Support\Api\Guest();
     }
@@ -42,13 +42,10 @@ class GuestTest extends \BBTestCase
         );
         $result = $this->guestApi->ticket_create($data);
 
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals(strlen($result), 40);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testTicket_createMessageTooShortException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
@@ -74,9 +71,11 @@ class GuestTest extends \BBTestCase
             'subject' => 'Subject',
             'message' => '',
         );
+
+        $this->expectException(\Box_Exception::class);
         $result = $this->guestApi->ticket_create($data);
 
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals(strlen($result), 40);
     }
 
@@ -106,7 +105,7 @@ class GuestTest extends \BBTestCase
         );
         $result = $this->guestApi->ticket_get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testTicket_close()
@@ -135,7 +134,7 @@ class GuestTest extends \BBTestCase
         );
         $result = $this->guestApi->ticket_close($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testTicket_reply()
@@ -165,7 +164,7 @@ class GuestTest extends \BBTestCase
         );
         $result = $this->guestApi->ticket_reply($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 }
  
