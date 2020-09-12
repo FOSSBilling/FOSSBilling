@@ -108,11 +108,29 @@
                     <div class="formRight" id="mailer">
                         <input type="radio" name="mailer" value="sendmail" {% if params.mailer == 'sendmail' or not params.mailer %}checked="checked"{% endif %}/><label>{% trans 'SendMail' %}</label>
                         <input type="radio" name="mailer" value="smtp" {% if params.mailer == 'smtp'%}checked="checked"{% endif %} /><label>{% trans 'SMTP' %}</label>
+                        <input type="radio" name="mailer" value="sendgrid" {% if params.mailer == 'sendgrid'%}checked="checked"{% endif %} /><label>{% trans 'SendGrid' %}</label>
                     </div>
                     <div class="fix"></div>
                 </div>
                 </fieldset>
-
+                
+                <fieldset class="sendgrid" {% if params.mailer != 'sendgrid'%}style="display:none;"{% endif %} >
+                <div class="rowElem">
+                    <label class="topLabel">{% trans %}SendGrid Username{% endtrans %}</label>
+                    <div class="formBottom">
+                        <input type="text" name="sendgrid_username" value="{{params.sendgrid_username}}" placeholder="username"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <div class="rowElem">
+                    <label class="topLabel">{% trans %}SendGrid Password{% endtrans %}</label>
+                    <div class="formBottom">
+                        <input type="password" name="sendgrid_password" value="{{params.sendgrid_password}}" placeholder="password"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                </fieldset>
+                
                 <fieldset class="smtp" {% if params.mailer != 'smtp'%}style="display:none;"{% endif %} >
                 <div class="rowElem">
                     <label class="topLabel">{% trans %}SMTP Hostname{% endtrans %}</label>

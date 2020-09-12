@@ -1,2 +1,5 @@
-php_flag engine off
+<Files *>
+    SetHandler default-handler
+</Files>
 Options -Indexes
+AllowOverride None

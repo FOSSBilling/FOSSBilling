@@ -2,16 +2,27 @@ BoxBilling [![Download Latest](http://i.imgur.com/djy4ExU.png)](https://github.c
 ================================================================================
 *If you want to download BoxBilling for use please click on `Download BoxBilling` button above instead of `git pull` command or GitHub's `Download ZIP` button!*
 
-[![Build Status](https://travis-ci.org/boxbilling/boxbilling.svg?branch=master)](https://travis-ci.org/boxbilling/boxbilling)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/boxbilling/boxbilling/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/boxbilling/boxbilling/?branch=master)
-
 Open Source billing software
 
 Requirements
 ================================================================================
 
-* PHP >=5.3.3
+* PHP 5.6 | Does not support PHP 7.x
+* Linux Operating System (64-bit) | Does not support Windows Operating Systems.
 * PHP extensions:
+  * mcrypt
+  * curl
+  * zlib
+  * PDO
+  * gettext
+* MySQL or any PDO compatible SQL server
+
+Recommended
+================================================================================
+
+* PHP 5.6
+* CentOS 64-bit Operating System
+* PHP Extensions
   * mcrypt
   * curl
   * zlib
@@ -22,7 +33,7 @@ Requirements
 Getting started
 ================================================================================
 
-Please read documentation at http://docs.boxbilling.com to get started
+Please read our installation instructions located at http://docs.boxbilling.com to get started
 with BoxBilling
 
 Contributing
@@ -81,3 +92,14 @@ Licensing
 ================================================================================
 
 BoxBilling is licensed under the Apache License, Version 2.0. See LICENSE for full license text.
+
+End User License Agreement & Other Restrictions
+================================================================================
+   Those that wish to distribute a modified version of BoxBilling must gain 
+   permission from BoxBilling before releasing the software. All 
+   authorised modified versions of BoxBilling must retain this copyright
+   notice. All modified releases of BoxBilling must release the software under 
+   the same license as the BoxBilling software (Apache License 2.0)
+   
+   Copyright © 2011-2018 BoxBilling. All rights reserved.
+   www.boxbilling.com

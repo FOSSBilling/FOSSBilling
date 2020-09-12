@@ -2,38 +2,43 @@
 
 language: php
 
+dist: trusty
+
 php:
-  - 5.3
   - 5.4
   - 5.5
   - 5.6
   - 7.0
-  - hhvm
+  - 7.1
+  - 7.2
 
 matrix:
   allow_failures:
-    - php: hhvm
     - php: 7.0
+    - php: 7.1
+    - php: 7.2
 
 sudo: false
 
 install:
+  - ant
   - composer self-update
-  - composer require 'satooshi/php-coveralls:0.7.*@dev'
+  - composer require --dev phpunit/phpunit ^6.0 php-coveralls/php-coveralls ^2.1
+  - composer install --dev
 
 before_script:
   - mysql --user=root -e "CREATE USER 'foo'@'localhost' IDENTIFIED BY 'foo';"
   - mysql --user=root -e "GRANT ALL PRIVILEGES ON *.* TO 'foo'@'localhost'"
   - mysql -e 'create database IF NOT EXISTS boxbilling'
+  - mysql -D boxbilling < src/install/structure.sql
+  - mysql -D boxbilling < src/install/content.sql
+  - mv ./src/bb-config-sample.php ./src/bb-config.php
 
 script:
-  - ant
-  - sh -c 'if [ "$TRAVIS_PHP_VERSION" = "5.6" ]; then src/bb-vendor/bin/phpunit --coverage-clover=build/logs/clover.xml tests/; fi;'
+  - ./vendor/bin/phpunit --coverage-clover ./tests/logs/clover.xml
 
 after_script:
-  - sh -c 'if [ "$TRAVIS_PHP_VERSION" = "5.6" ]; then php vendor/bin/coveralls -v; fi;'
-  - sh -c 'if [ "$TRAVIS_PHP_VERSION" = "5.6" ]; then wget https://scrutinizer-ci.com/ocular.phar; fi;'
-  - sh -c 'if [ "$TRAVIS_PHP_VERSION" = "5.6" ]; then php ocular.phar code-coverage:upload --format=php-clover build/logs/clover.xml; fi;'
+  - php vendor/bin/coveralls -v
 
 notifications:
   email: false
@@ -44,6 +49,7 @@ before_deploy:
   - npm install
   - grunt
   - ant release
+
 deploy:
   provider: releases
   api-key:
@@ -53,4 +59,4 @@ deploy:
   on:
     tags: true
     all_branches: true
-    php: 5.3
+    php: 5.6
