@@ -32,7 +32,9 @@ class Guest extends \Api_Abstract
 
         if (isset($config['yh_ips'])) {
             $allowed_ips = explode(PHP_EOL, $config['yh_ips']);
-            array_walk($allowed_ips, create_function('&$val', '$val = trim($val);'));
+            array_walk($allowed_ips, function(&$val){ 
+                $val = trim($val);
+            });
         } else {
             $allowed_ips = array(
                 '212.1.209.2',
