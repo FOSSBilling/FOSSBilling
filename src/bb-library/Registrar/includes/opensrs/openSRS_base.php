@@ -349,7 +349,7 @@ class openSRS_base {
 				}
 
 				if (preg_match('/^\s*Content-Length:\s+(\d+)\s*\r\n/i', $line, $matches ) ) {
-					$header{'content-length'} = (int)$matches[1];
+					$header['content-length'] = (int)$matches[1];
 				} else {
 					trigger_error ("oSRS Error - UNEXPECTED READ: No Content-Length.", E_USER_WARNING);
 					return false;
@@ -381,14 +381,14 @@ class openSRS_base {
 		/* PHP doesn't have timeout for fread ... we just set the timeout for the socket */
 		socket_set_timeout($fh, $timeout);
 		$header = $this->readHeader($fh, $timeout);
-		if (!$header || !isset($header{'content-length'}) || (empty($header{'content-length'}))) {
+		if (!$header || !isset($header['content-length']) || (empty($header['content-length']))) {
                         if ($this->crypt_type == "SSL")
                             trigger_error ("oSRS Error - UNEXPECTED ERROR: No Content-Length header provided! Please make sure IP is whitelisted in RWI.", E_USER_WARNING);
                         else
                             trigger_error ("oSRS Error - No Content-Length header returned. Please make sure IP is whitelisted in RWI. Check the osrs_key and osrs_username in the config file as well.", E_USER_WARNING);
 		}
 
-		$len = (int)$header{'content-length'};
+		$len = (int)$header['content-length'];
 		$line = '';
 		while (strlen($line) < $len) {
 			$line .= fread($fh, $len);
