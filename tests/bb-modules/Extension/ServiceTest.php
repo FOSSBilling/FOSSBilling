@@ -594,17 +594,17 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtract()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(TRUE));
@@ -615,7 +615,7 @@ class ServiceTest extends \BBTestCase {
 
 
 
-        $toolsMock = $this->getMockBuilder('\Box_tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
             ->will($this->returnValue(false));
@@ -638,17 +638,17 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtractTypeExceptionNotDefinedTypeException()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(TRUE));
@@ -670,17 +670,17 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtractTranslationException()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(TRUE));
@@ -691,7 +691,7 @@ class ServiceTest extends \BBTestCase {
 
 
 
-        $toolsMock = $this->getMockBuilder('\Box_tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
             ->will($this->returnValue(false));
@@ -718,17 +718,17 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtractThemeTypeException()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(TRUE));
@@ -739,7 +739,7 @@ class ServiceTest extends \BBTestCase {
 
 
 
-        $toolsMock = $this->getMockBuilder('\Box_tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
             ->will($this->returnValue(false));
@@ -762,17 +762,17 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtractRenameException()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(TRUE));
@@ -783,7 +783,7 @@ class ServiceTest extends \BBTestCase {
 
 
 
-        $toolsMock = $this->getMockBuilder('\Box_tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
             ->will($this->returnValue(false));
@@ -806,17 +806,17 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtractFileExistsException()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(TRUE));
@@ -827,7 +827,7 @@ class ServiceTest extends \BBTestCase {
 
 
 
-        $toolsMock = $this->getMockBuilder('\Box_tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
             ->will($this->returnValue(true));
@@ -847,17 +847,17 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtractExceptionExtract()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(false));
@@ -875,7 +875,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtractDownloadUrlMisssing()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
@@ -885,13 +885,14 @@ class ServiceTest extends \BBTestCase {
         $di['extension'] = $extensionMock;
 
         $this->service->setDi($di);
-        $this->expectException('\Exception', 'Extensions download url is not valid');
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Extensions download url is not valid');
         $this->service->downloadAndExtract('mod', 'extensionId');
     }
 
     public function testgetInstalledMods()
     {
-        $pdoStatment = $this->getMockBuilder('\Box\Mod\Extension\PdoStatmentsMock')->getMock();
+        $pdoStatment = $this->getMockBuilder(\Box\Mod\Extension\PdoStatmentsMock::class)->getMock();
         $pdoStatment->expects($this->atLeastOnce())
             ->method('execute');
         $pdoStatment->expects($this->atLeastOnce())
@@ -933,7 +934,7 @@ class ServiceTest extends \BBTestCase {
             ->method('activate')
             ->will($this->returnValue(array()));
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->will($this->returnValue($model));
@@ -941,7 +942,7 @@ class ServiceTest extends \BBTestCase {
             ->method('store')
             ->will($this->returnValue(1));
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->getMockBuilder(\Box_EventManager::class)->getMock();
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
@@ -976,7 +977,7 @@ class ServiceTest extends \BBTestCase {
             ->method('activate')
             ->will($this->throwException(new \Exception()));
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->getMockBuilder(\Box_EventManager::class)->getMock();
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
@@ -998,16 +999,16 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_ExtensionMeta();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
+        $cryptMock = $this->getMockBuilder(\Box_Crypt::class)->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->will($this->returnValue(array()));
@@ -1033,7 +1034,7 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_ExtensionMeta();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue(null));
@@ -1060,26 +1061,26 @@ class ServiceTest extends \BBTestCase {
             'ext' => 'extensionName',
         );
 
-        $serviceMock = $this->getMockBuilder('Box\Mod\Extension\Service')->setMethods(array('getConfig'))->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->setMethods(['getConfig'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->will($this->returnValue(array()));
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_Tools::class)->getMock();
 
-        $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
+        $cryptMock = $this->getMockBuilder(\Box_Crypt::class)->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt')
             ->will($this->returnValue('encryptedConfig'));
 
         $model = new \Model_ExtensionMeta();
         $model->loadBean(new \RedBeanPHP\OODBBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('exec')
             ->will($this->returnValue(array()));
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->getMockBuilder(\Box_EventManager::class)->getMock();
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
