@@ -277,7 +277,6 @@ class Service implements InjectionAwareInterface
         if ($handle = opendir($path)) {
             while (false !== ($file = readdir($handle))) {
                 if (is_dir($path . DIRECTORY_SEPARATOR . $file) && $file[0] != '.') {
-
                     try {
                         if (!$client && strpos($file, 'admin') !== false) {
                             $list[] = $this->_loadTheme($file);

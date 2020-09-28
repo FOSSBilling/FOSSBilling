@@ -89,7 +89,7 @@ if((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || (php_sapi_name() =
     if(file_exists($predictConfigPath)) {
         $configPath = $predictConfigPath;
     }
-}
+
 
 // check if config is available
 if(!file_exists($configPath) || 0 == filesize( $configPath )) {
