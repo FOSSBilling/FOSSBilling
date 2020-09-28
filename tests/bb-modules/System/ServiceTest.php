@@ -277,7 +277,7 @@ class ServiceTest extends \BBTestCase {
         $twigMock->expects($this->atLeastOnce())
             ->method('addGlobal');
         $twigMock->method('createTemplate')
-                 ->will($this->throwException(new \Twig\Error\SyntaxError('SyntaxError')));
+                 ->will($this->throwException(new \Error('Error')));
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -290,7 +290,7 @@ class ServiceTest extends \BBTestCase {
         $di['api_client'] = new \Model_Client();
         $this->service->setDi($di);
 
-        $this->expectException(\Twig\Error\SyntaxError::class);
+        $this->expectException(\Error::class);
         $this->service->renderString('test', false, $vars);
     }
 
@@ -303,6 +303,8 @@ class ServiceTest extends \BBTestCase {
         $twigMock->expects($this->atLeastOnce())
             ->method('addGlobal');
         $twigMock->method('createTemplate')
+                 ->willReturn(new \FakeTemplateWrapper('test'));
+        $twigMock->method('load')
                  ->willReturn(new \FakeTemplateWrapper('test'));
                  
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
