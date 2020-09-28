@@ -19,16 +19,16 @@
         "ext-PDO": "*",
         "ext-mbstring" : "*",
         "pimple/pimple": "v3.3.0",
-        "twig/twig": "v2.13.0",
-        "twig/extensions": "1.5.4",
+        "twig/twig": "^v2.13.0",
+        "twig/extensions": "^1.5.4",
         "mpdf/mpdf": "v8.0.4",
         "geoip2/geoip2": "v2.10.0",
         "ircmaxell/password-compat": "v1.0.4",
         "phpmailer/phpmailer": "6.1.6",
         "mustangostang/spyc": "0.5.1",
-        "michelf/php-markdown": "1.7.0",
+        "michelf/php-markdown": "1.9.0",
         "stripe/stripe-php": "2.1.1",
-	      "guzzlehttp/guzzle": "^v3.8.1"
+	    "guzzlehttp/guzzle": "^v3.8.1"
 
     },
     "suggest": {
