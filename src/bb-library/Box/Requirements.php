@@ -77,6 +77,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
             'allow_url_fopen'   =>  ini_get('allow_url_fopen'),
             'safe_mode'         =>  ini_get('safe_mode'),
             'memory_limit'      =>  ini_get('memory_limit'),
+            'magic_quotes'      =>  (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()),
         );
 
         $data['permissions']    = array(
