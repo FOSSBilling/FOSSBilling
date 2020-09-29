@@ -7,11 +7,7 @@ Open Source billing software
 Requirements
 ================================================================================
 
-* PHP 7.4.9 (cli) (built: Aug  7 2020 14:29:36) ( NTS )
-Copyright (c) The PHP Group
-Zend Engine v3.4.0, Copyright (c) Zend Technologies
-    with Zend OPcache v7.4.9, Copyright (c), by Zend Technologies
-* Ubuntu Codename:bionic (x86_64) Release:18.04| Does not support Windows Operating Systems.
+* PHP >= 7.4.0
 * PHP extensions:
   * openssl
   * curl
@@ -24,7 +20,7 @@ Recommended
 ================================================================================
 
 * PHP 7.4.9
-* CentOS 64-bit Operating System
+* Ubuntu Codename:bionic (x86_64) Release:18.04| Does not support Windows Operating Systems.
 * PHP Extensions
   * openssl
   * curl
