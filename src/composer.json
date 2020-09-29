@@ -28,7 +28,8 @@
         "mustangostang/spyc": "0.5.1",
         "michelf/php-markdown": "1.9.0",
         "stripe/stripe-php": "2.1.1",
-	    "guzzlehttp/guzzle": "^v3.8.1"
+	"guzzlehttp/guzzle": "*",
+        "zendframework/zend-httphandlerrunner": "^1.1"
 
     },
     "suggest": {
@@ -51,4 +52,3 @@
         "psr-0": { "": "../tests/bb-library" }
     }
 }
-
