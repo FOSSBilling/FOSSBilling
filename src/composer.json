@@ -13,7 +13,7 @@
     ],
     "require": {
 
-        "php": ">=7.4.9",
+        "php": ">=7.4.0",
         "ext-curl": "*",
         "ext-zlib": "*",
         "ext-PDO": "*",
