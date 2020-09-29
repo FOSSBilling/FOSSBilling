@@ -156,30 +156,40 @@ class Registrar_Adapter_srsx extends Registrar_Adapter_Resellerclub
 		}
     }
  
-     //untuk daftar domain
+     //for register domain
      public function registerDomain(Registrar_Domain $domain)
      {
          
-         # Cek apakah user sudah terdaftar di SRS-X
+        $c = $domain->getContactRegistrar();
+        $company = $c->getCompany();
+        if (!isset($company) || strlen(trim($company)) == 0 ){
+            $company = 'N/A';
+        }
+        $phoneNum = $c->getTel();
+        $phoneNum = preg_replace( "/[^0-9]/", "", $phoneNum);
+        $phoneNum = substr($phoneNum, 0, 12);
+
+         # check if available on srsx
          $postfields = array(
-             "user_username" => $this->client_data["email"]
+             "user_username" => $c->getEmail()
          );
          $userinfoResult = $this->_callApi("user/info",$postfields);
          if (sprintf($userinfoResult->result->resultCode)!=1000) {
-             # Buat user baru
+             # create new user
              $postfields = array(
-                 "user_username" => $this->client_data["email"],
-                 "user_password" => $this->client_data["password"],
-                 "fname"         => $this->client_data["firstname"],
-                 "lname"         => $this->client_data["lastname"],
-                 "company"       => $this->client_data["companyname"],
-                 "address"       => $this->client_data["address1"],
-                 "address2"      => $this->client_data["address2"],
-                 "city"          => $this->client_data["city"],
-                 "province"      => $this->client_data["state"],
-                 "country"       => $this->client_data["country"],
-                 "postal_code"   => $this->client_data["postcode"],
-                 "phone"         => $this->client_data["phonenumber"]
+                 "user_username" => $c->getEmail(),
+                 "user_password" =>  $c->getPassword(),
+                 "fname"         => $c->getFirstName(),
+                 "lname"         => $c->getLastName(), 
+                 "company"       => $company,
+                 "address"       => $c->getAddress1(),
+                 "address2"      => $c->getAddress2(),
+                 "city"          => $c->getCity(),
+                 "province"      =>  $c->getState(),
+                 "country"       => $c->getCountry(),
+                 "postal_code"   => $c->getZip(),
+                 "phone"         => $phoneNum
+
              );
              $usercreate = $this->_callApi("user/create",$postfields);
              if (sprintf($usercreate->result->resultCode)!=1000) {
@@ -543,22 +553,21 @@ class Registrar_Adapter_srsx extends Registrar_Adapter_Resellerclub
         return ($data['currentstatus'] == 'Active');
     }
 
-    protected function _callApi($query=false,$postfields=false) {
+    protected function _callApi($query=true,$postfields=true) {
  
 		if ($query && is_array($postfields)) {
 			# Get URL
-			$apiUrl = "http://srb{$this->config["resellerId"]}.srs-x.com";
+			$apiUrl = "https://srb{$this->config["resellerId"]}.srs-x.com";
 			# Basic authentication
 			$postfields["username"] = $this->config["apiUsername"];
             $postfields["password"] = hash('sha256',$this->config["apiPassword"]);
  
 			# CURL
             $ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, "{$apiUrl}/api/{$query}");
 			curl_setopt($ch, CURLOPT_POST, true);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 300);
 			curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_URL, "{$apiUrl}/api/{$query}");
 			curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postfields));
 			$apiXml = curl_exec($ch);
 			curl_close($ch);
