@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * SRSX REGISTRAR MODULE FOR BOXBILLING
  *
  * LICENSE
  *
@@ -12,9 +12,11 @@
  * obtain it through the world-wide-web, please send an email
  * to license@boxbilling.com so we can send you a copy immediately.
  *
- * @copyright Copyright (c) 2010-2012 BoxBilling (http://www.boxbilling.com)
+ * @copyright Copyright (c) 2010-2020 BoxBilling (http://www.boxbilling.com)
  * @license   http://www.boxbilling.com/LICENSE.txt
  * @version   $Id$
+ * Created by bayamsoftware.com & @timothygwebb
+ * For free hosting please visit host.bayamsoftware.com
  */
  
 /**
@@ -84,7 +86,7 @@ class Registrar_Adapter_srsx extends Registrar_Adapter_Resellerclub
         );
     } 
  
- 
+     #still not fixed 
     public function synchInfo() {
 		# Get domain information
 		$postfields = array(
@@ -156,7 +158,7 @@ class Registrar_Adapter_srsx extends Registrar_Adapter_Resellerclub
 		}
     }
  
-     //for register domain
+     //for register domain -- still not fixed
      public function registerDomain(Registrar_Domain $domain)
      {
          
@@ -199,7 +201,8 @@ class Registrar_Adapter_srsx extends Registrar_Adapter_Resellerclub
          }
          # Get domain ID
          $domainid = $this->getDomainId();
-         # Register domain
+         # Register domain  
+         #$this->client_data wut by timothy? 
          $postfields = array(
              "domain"           => $this->options["sld"].".".$this->options["tld"],
              "api_id"           => $domainid,
@@ -258,7 +261,7 @@ class Registrar_Adapter_srsx extends Registrar_Adapter_Resellerclub
          }
      }
  
- 
+    #still not fixed
     public function modifyNs(Registrar_Domain $domain)
     {
         $ns = array();
@@ -279,7 +282,8 @@ class Registrar_Adapter_srsx extends Registrar_Adapter_Resellerclub
         $result = $this->_callApi('domain/updatens', $params, 'POST');
         return ($result['status'] == 'Success');
     }
- 
+   
+     #still not fixed
     public function modifyContact(Registrar_Domain $domain)
     {
         $customer = $this->_getCustomerDetails($domain);
@@ -555,6 +559,7 @@ class Registrar_Adapter_srsx extends Registrar_Adapter_Resellerclub
 
     protected function _callApi($query=true,$postfields=true) {
  
+
 		if ($query && is_array($postfields)) {
 			# Get URL
 			$apiUrl = "https://srb{$this->config["resellerId"]}.srs-x.com";
@@ -594,4 +599,3 @@ class Registrar_Adapter_srsx extends Registrar_Adapter_Resellerclub
 	}
  
 }
- 
