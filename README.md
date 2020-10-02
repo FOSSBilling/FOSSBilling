@@ -93,6 +93,7 @@ Support
 * [Official website](http://www.boxbilling.com/)
 * [Twitter](https://twitter.com/boxbilling)
 * [Facebook](https://www.facebook.com/boxbilling)
+* [Discord community](https://discord.gg/PYNcFVM)
 
 Licensing
 ================================================================================
