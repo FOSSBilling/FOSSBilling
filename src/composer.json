@@ -27,7 +27,7 @@
         "mustangostang/spyc": "0.5.1",
         "michelf/php-markdown": "1.9.0",
         "stripe/stripe-php": "2.1.1",
-	"guzzlehttp/guzzle": "*",
+	    "guzzlehttp/guzzle": "*",
         "laminas/laminas-httphandlerrunner": "^1.2.0"
 
     },
