@@ -41,10 +41,10 @@ class Guest extends \Api_Abstract
      * Return active theme info
      * @return array
      */
-    public function theme()
+    public function theme($client = true)
     {
         $systemService = $this->di['mod_service']('theme');
-        return $systemService->getThemeConfig(true, null);
+        return $systemService->getThemeConfig($client, null);
     }
 
     /**
