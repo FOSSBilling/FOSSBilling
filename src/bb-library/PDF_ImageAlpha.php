@@ -1,5 +1,5 @@
 <?php
-require('fpdf.php');
+require('tfpdf.php');
 
 class PDF_ImageAlpha extends FPDF
 {
