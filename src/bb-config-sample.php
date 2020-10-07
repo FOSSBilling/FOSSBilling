@@ -15,7 +15,7 @@ return array(
     /**
      * Set BoxBilling license key. Get license key at http://www.boxbilling.com
      */
-    'license'     => 'PRO-wfe1RJ6aqG1wurwlocc9lwouNeTcUtklsp9ujy33clb8c57fdV',
+    'license'     => '',
 
     'salt'        => '',
 
