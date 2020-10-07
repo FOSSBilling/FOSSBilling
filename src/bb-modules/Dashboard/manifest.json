@@ -1,0 +1,7 @@
+{
+    "id":           "dashboard",
+	"type":         "mod",
+    "name":         "Client dashboard module",
+    "description":  "Displays a dashboard for clients that are loggedin",
+    "version":      "1.0.0"
+}
