@@ -7,8 +7,7 @@ Open Source billing software
 Requirements
 ================================================================================
 
-* PHP 7.2
-* Linux Operating System (64-bit) | Does not support Windows Operating Systems.
+* PHP ≥ 7.4.0
 * PHP extensions:
   * openssl
   * curl
@@ -16,12 +15,13 @@ Requirements
   * PDO
   * gettext
 * MySQL or any PDO compatible SQL server
+* A device with Linux operating system. BoxBilling does not support Windows.
 
 Recommended
 ================================================================================
 
-* PHP 7.2
-* CentOS 64-bit Operating System
+* PHP 7.4.9
+* Ubuntu 18.04 (Bionic Beaver) (x86_64) or higher
 * PHP Extensions
   * openssl
   * curl
@@ -39,7 +39,7 @@ with BoxBilling
 Contributing
 ================================================================================
 
-1. Fork it
+1. Fork the repository
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
@@ -48,8 +48,8 @@ Contributing
 Roadmap
 ================================================================================
 
-* [ ] Support latest PHP version 7.3
-* [ ] Add support for composer package manager
+* [*] Support latest PHP version 7.3
+* [*] Add support for composer package manager
 
 Using Vagrant
 ================================================================================
@@ -91,8 +91,9 @@ Support
 
 * [Documentation](http://docs.boxbilling.com/)
 * [Official website](http://www.boxbilling.com/)
-* [@boxbilling](https://twitter.com/boxbilling)
+* [Twitter](https://twitter.com/boxbilling)
 * [Facebook](https://www.facebook.com/boxbilling)
+* [Discord community](https://discord.gg/PYNcFVM)
 
 Licensing
 ================================================================================
@@ -107,5 +108,5 @@ End User License Agreement & Other Restrictions
    notice. All modified releases of BoxBilling must release the software under 
    the same license as the BoxBilling software (Apache License 2.0)
    
-   Copyright © 2011-2018 BoxBilling. All rights reserved.
+   Copyright © 2011-2020 BoxBilling. All rights reserved.
    www.boxbilling.com

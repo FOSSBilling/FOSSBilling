@@ -1,0 +1,62 @@
+# http://docs.travis-ci.com/user/build-configuration/
+
+language: php
+
+dist: trusty
+
+php:
+  - 5.4
+  - 5.5
+  - 5.6
+  - 7.0
+  - 7.1
+  - 7.2
+
+matrix:
+  allow_failures:
+    - php: 7.0
+    - php: 7.1
+    - php: 7.2
+
+sudo: false
+
+install:
+  - ant
+  - composer self-update
+  - composer require --dev phpunit/phpunit ^6.0 php-coveralls/php-coveralls ^2.1
+  - composer install --dev
+
+before_script:
+  - mysql --user=root -e "CREATE USER 'foo'@'localhost' IDENTIFIED BY 'foo';"
+  - mysql --user=root -e "GRANT ALL PRIVILEGES ON *.* TO 'foo'@'localhost'"
+  - mysql -e 'create database IF NOT EXISTS boxbilling'
+  - mysql -D boxbilling < src/install/structure.sql
+  - mysql -D boxbilling < src/install/content.sql
+  - mv ./src/bb-config-sample.php ./src/bb-config.php
+
+script:
+  - ./vendor/bin/phpunit --coverage-clover ./tests/logs/clover.xml
+
+after_script:
+  - php vendor/bin/coveralls -v
+
+notifications:
+  email: false
+  slack: boxbilling:vsdKszFU9Pm308ye5rNSpr8n
+
+before_deploy:
+  - npm install -g grunt-cli
+  - npm install
+  - grunt
+  - ant release
+
+deploy:
+  provider: releases
+  api-key:
+    secure: tVzZ+3U0ndBGvoUpFqA6ikg6fDKnPgMoNqK1pvTdEp0xmrFtjMP/fuc8+awObhj89iEC+MyzfsOP57CZbHR/UjmUSHPQew+BvTwxYmTUzgUeyUrYsTEI7WJgB7tsL35aRgrpxk102tlSmlX7EonufUT0svPOAQ1p4NgZRm3GI3A=
+  file: ./build/distribution/BoxBilling.zip
+  skip_cleanup: true
+  on:
+    tags: true
+    all_branches: true
+    php: 5.6

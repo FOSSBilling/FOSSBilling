@@ -89,7 +89,7 @@ if((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || (php_sapi_name() =
     if(file_exists($predictConfigPath)) {
         $configPath = $predictConfigPath;
     }
-}
+
 
 // check if config is available
 if(!file_exists($configPath) || 0 == filesize( $configPath )) {
@@ -136,34 +136,4 @@ if($config['debug']) {
 ini_set('log_errors', '1');
 ini_set('html_errors', FALSE);
 ini_set('error_log', BB_PATH_LOG . '/php_error.log');
-
-// Strip magic quotes from request data.
-if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
-    // Create lamba style unescaping function (for portability)
-    $quotes_sybase = strtolower(ini_get('magic_quotes_sybase'));
-
-    /* create_function deprecated in PHP 7.2
-    $unescape_function = (empty($quotes_sybase) || $quotes_sybase === 'off') ? 'stripslashes($value)' : 'str_replace("\'\'","\'",$value)';
-    $stripslashes_deep = create_function('&$value, $fn', '
-        if (is_string($value)) {
-            $value = ' . $unescape_function . ';
-        } else if (is_array($value)) {
-            foreach ($value as &$v) $fn($v, $fn);
-        }
-    ');  */
-
-    $stripslashes_deep = function(&$value, $fn){
-        if (is_string($value)) {
-            $value = (empty($quotes_sybase) || $quotes_sybase === 'off') ? stripslashes($value) : str_replace("\'\'","\'",$value);
-        } else if (is_array($value)) {
-            foreach ($value as &$v) $fn($v, $fn);
-        }
-    };
-
-
-    // Unescape data
-    $stripslashes_deep($_POST, $stripslashes_deep);
-    $stripslashes_deep($_GET, $stripslashes_deep);
-    $stripslashes_deep($_COOKIE, $stripslashes_deep);
-    $stripslashes_deep($_REQUEST, $stripslashes_deep);
 }

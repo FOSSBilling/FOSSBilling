@@ -907,7 +907,7 @@ class Service implements \Box\InjectionAwareInterface
 
     public function registrarGetAvailable()
     {
-        $query = "SELECT tr.registrar, tr.name FROM tld_registrar tr GROUP BY registrar";
+        $query = "SELECT 'registrar', 'name' FROM tld_registrar GROUP BY registrar";
 
         $exists = $this->di['db']->getAssoc($query);
 

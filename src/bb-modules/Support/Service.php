@@ -355,7 +355,7 @@ class Service implements \Box\InjectionAwareInterface
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
 
-        $query .= " GROUP BY st.id ORDER BY stm.created_at DESC, st.priority ASC, st.id DESC";
+        $query .= " GROUP BY st.id ORDER BY st.priority ASC, st.id DESC";
 
         return array($query, $bindings);
     }
@@ -400,7 +400,7 @@ class Service implements \Box\InjectionAwareInterface
     public function countByStatus($status)
     {
         $query = "SELECT COUNT(m.id) as counter FROM support_ticket
-                WHERE status = :status GROUP BY status LIMIT 1";
+                WHERE 'status' = :'status' GROUP BY 'status' LIMIT 1";
 
         return $this->di['db']->getCell($query, array(':status' => $status));
     }
@@ -1055,7 +1055,7 @@ class Service implements \Box\InjectionAwareInterface
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
 
-        $query .= " GROUP BY spt.id ORDER BY spt.id DESC, sptm.id ASC";
+        $query .= " GROUP BY spt.id, sptm.id ORDER BY spt.id DESC, sptm.id ASC";
 
         return array($query, $bindings);
     }

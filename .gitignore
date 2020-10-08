@@ -9,8 +9,9 @@ src/bb-config*
 src/bb-data/log/*
 src/bb-data/cache/*
 src/bb-data/tmp.txt
-src/bb-vendor
 src/bb-test.php
+src/bb-vendor/*
+bb-test.php
 build
 composer.phar
 public
