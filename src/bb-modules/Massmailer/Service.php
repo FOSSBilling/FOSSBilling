@@ -129,12 +129,12 @@ class Service implements \Box\InjectionAwareInterface
         $vars = array();
         $vars['c'] = $clientArr;
         $vars['_tpl'] = $model->subject;
-        $ps = $systemService->renderString($vars['_tpl'], true, $vars);
+        $ps = $systemService->renderString($vars['_tpl'], false, $vars);
         
         $vars = array();
         $vars['c'] = $clientArr;
         $vars['_tpl'] = $model->content;
-        $pc = $systemService->renderString($vars['_tpl'], true, $vars);
+        $pc = $systemService->renderString($vars['_tpl'], false, $vars);
         
         return array($ps, $pc);
     }
