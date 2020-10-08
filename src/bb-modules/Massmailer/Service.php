@@ -128,13 +128,11 @@ class Service implements \Box\InjectionAwareInterface
 
         $vars = array();
         $vars['c'] = $clientArr;
-        $vars['_client_id'] = $client->id;
         $vars['_tpl'] = $model->subject;
         $ps = $systemService->renderString($vars['_tpl'], true, $vars);
         
         $vars = array();
         $vars['c'] = $clientArr;
-        $vars['_client_id'] = $client->id;
         $vars['_tpl'] = $model->content;
         $pc = $systemService->renderString($vars['_tpl'], true, $vars);
         
@@ -171,11 +169,6 @@ class Service implements \Box\InjectionAwareInterface
             return true;
         }
 
-		/**
-		By: Samuel A.
-		Modified: 07.07.2019
-		Log email to database
-		*/ 
 		$mod      = $this->di['mod']('email');
         $settings = $mod->getConfig();
 
