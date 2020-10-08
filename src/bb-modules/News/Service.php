@@ -52,8 +52,8 @@ class Service
         }
 
         if(NULL !== $search) {
-            $sql .= ' AND (m.title LIKE %:search% OR m.content LIKE %:search%)';
-            $params['search'] = $search;
+            $sql .= ' AND (m.title LIKE :search OR m.content LIKE :search)';
+            $params['search'] = '%'.$search.'%';
         }
 
         $sql .= ' ORDER BY created_at DESC';
