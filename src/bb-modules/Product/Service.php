@@ -516,8 +516,8 @@ class Service implements InjectionAwareInterface
         }
 
         if ($search) {
-            $sql .= ' AND code like %:search%';
-            $params['search'] = $search;
+            $sql .= ' AND code like :search';
+            $params['search'] = '%'.$search.'%';
         }
 
         switch ($status) {
@@ -689,8 +689,8 @@ class Service implements InjectionAwareInterface
         }
 
         if ($search) {
-            $sql .= ' AND m.title LIKE %:search%';
-            $params[':search'] = $search;
+            $sql .= ' AND m.title LIKE :search';
+            $params[':search'] = '%'.$search.'%';
         }
 
         $sql .= ' ORDER BY m.priority ASC';
