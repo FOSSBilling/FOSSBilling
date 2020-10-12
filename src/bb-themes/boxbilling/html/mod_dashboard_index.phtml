@@ -1,0 +1,248 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Client Area' %}{% endblock %}
+{% import "macro_functions.phtml" as mf %}
+
+{% block content %}
+<div class="dashboard">
+    
+    {% set tickets = client.support_ticket_get_list({"status":'on_hold'}) %}
+    {% if tickets.total > 0 %}
+        <div class="widget">
+            <div class="head">
+                <h2 class="dark-icon i-support">{% trans 'Tickets waiting your reply' %}</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>{% trans 'Id' %}</th>
+                        <th>{% trans 'Subject' %}</th>
+                        <th>{% trans 'Help desk' %}</th>
+                        <th>{% trans 'Status' %}</th>
+                        <th>{% trans 'Submitted' %}</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for i, ticket in tickets.list %}
+
+                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <td>{{ticket.id}}</td>
+                        <td><a href="{{ 'support/ticket'|link }}/{{ticket.id}}">{{ticket.subject}}</a></td>
+                        <td>{{ticket.helpdesk.name}}</td>
+                        <td>{{mf.status_name(ticket.status)}}</td>
+                        <td>{{ticket.created_at|bb_date}}</td>
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+                        <td colspan="5">{% trans 'The list is empty' %}</td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {% set profile = client.client_get %}
+    <div class="grid_6 alpha">
+        <div class="widget">
+            <div class="head">
+                <h2 class="dark-icon i-profile">{% trans 'Profile' %}</h2>
+            </div>
+
+            <table>
+                <tbody>
+                    <tr>
+                        <td>{% trans 'ID' %}</td>
+                        <td>#{{ profile.id }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Email' %}</td>
+                        <td>{{ profile.email }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Balance' %}</td>
+                        <td>{{ profile.balance | money(profile.currency) }}</td>
+                    </tr>
+                </tbody>
+
+                <tfoot>
+                    <tr>
+                        <td colspan="2">
+                            <a class="bb-button" href="{{ 'client/me'|link }}">{% trans 'Manage profile' %}</a>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="grid_6 omega">
+        <div class="widget">
+            <div class="head">
+                <h2 class="dark-icon i-invoice">{% trans 'Invoices' %}</h2>
+            </div>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>{% trans 'Total' %}</td>
+                        <td>{{ client.invoice_get_list().total }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Paid' %}</td>
+                        <td>{{ client.invoice_get_list({"status":"paid"}).total }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Unpaid' %}</td>
+                        <td>{{ client.invoice_get_list({"status":"unpaid"}).total }}</td>
+                    </tr>
+                </tbody>
+
+                <tfoot>
+                    <tr>
+                        <td colspan="2">
+                            <a class="bb-button" href="{{ 'invoice'|link }}">{% trans 'All Invoices' %}</a>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="grid_6 alpha">
+        <div class="widget">
+            <div class="head">
+                <h2 class="dark-icon i-services">{% trans 'Services' %}</h2>
+            </div>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>{% trans 'Total' %}</td>
+                        <td>{{ client.order_get_list({"hide_addons":1}).total }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Active' %}</td>
+                        <td>{{ client.order_get_list({"hide_addons":1, "status":"active"}).total }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Soon expires' %}</td>
+                        <td>{{ client.order_get_list({"expiring":1}).total }}</td>
+                    </tr>
+                </tbody>
+
+                <tfoot>
+                    <tr>
+                        <td colspan="2">
+                            <a class="bb-button" href="{{ 'order/service'|link }}">{% trans 'All services' %}</a>
+                            <a class="bb-button bb-button-submit" href="{{ 'order'|link }}">{% trans 'New order' %}</a>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="grid_6 omega">
+        <div class="widget">
+            <div class="head">
+                <h2 class="dark-icon i-support">{% trans 'Tickets' %}</h2>
+            </div>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>{% trans 'Total' %}</td>
+                        <td>{{ client.support_ticket_get_list().total }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'Open' %}</td>
+                        <td>{{ client.support_ticket_get_list({"status":'open'}).total }}</td>
+                    </tr>
+                    <tr>
+                        <td>{% trans 'On Hold' %}</td>
+                        <td>{{ client.support_ticket_get_list({"status":'on_hold'}).total }}</td>
+                    </tr>
+                </tbody>
+
+                <tfoot>
+                    <tr>
+                        <td colspan="2">
+                            <a class="bb-button" href="{{ 'support'|link }}">{% trans 'All tickets' %}</a>
+                            <a class="bb-button bb-button-submit" href="{{ 'support'|link({'ticket' : 1}) }}">{% trans 'New ticket' %}</a>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="grid_6 alpha">
+        <div class="widget">
+            <div class="head">
+                <h2 class="dark-icon i-order">{% trans 'Recent orders' %}</h2>
+            </div>
+            <table>
+                <tbody>
+                    {% for i, order in client.order_get_list({"per_page":5, "page":request.page, "hide_addons":1}).list %}
+                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <td><a href="{{ 'order/service/manage'|link }}/{{order.id}}">{{ order.title|truncate(30) }}</a></td>
+                        <td>{{ mf.status_name(order.status) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="grid_6 omega">
+        <div class="widget">
+            <div class="head">
+                <h2 class="dark-icon i-email">{% trans 'Recent emails' %}</h2>
+            </div>
+            <table>
+                <tbody>
+                    {% for i, email in client.email_get_list({"per_page":5}).list %}
+                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <td><a href="{{ 'email'|link }}/{{email.id}}">{{email.subject|truncate(30)}}</a></td>
+                        <td title="{{ email.created_at|bb_date }}">{{ email.created_at|timeago }} {% trans 'ago' %}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="clear"></div>
+    
+</div>
+{% endblock %}
+
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+
+    $('#client-login').bind('submit',function(event){
+        bb.post(
+            'guest/client/login',
+            $(this).serialize(),
+            function(result) {
+                bb.redirect();
+            }
+        );
+        return false;
+    });
+
+});
+</script>
+{% endblock %}
