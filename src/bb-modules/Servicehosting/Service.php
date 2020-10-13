@@ -464,7 +464,7 @@ class Service implements InjectionAwareInterface
 
     public function toHostingServerApiArray(\Model_ServiceHostingServer $model, $deep = false, $identity = null)
     {
-        list($cpanel_url, $whm_url) = $this->getMangerUrls($model);
+        list($cpanel_url, $whm_url) = $this->getManagerUrls($model);
         $result = array(
             'name'                  =>  $model->name,
             'hostname'              =>  $model->hostname,
@@ -881,7 +881,7 @@ class Service implements InjectionAwareInterface
         return $manager;
     }
 
-    public function getMangerUrls(\Model_ServiceHostingServer $model)
+    public function getManagerUrls(\Model_ServiceHostingServer $model)
     {
         try {
             $m = $this->getServerManager($model);
