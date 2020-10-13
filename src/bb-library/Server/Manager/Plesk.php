@@ -575,35 +575,35 @@ class Server_Manager_Plesk extends Server_Manager
         throw new Server_Exception('Server manager does not support ip changes');
     }
     
-    private function _makeRequest($params) {
-    	$headers = array(
-    		'HTTP_AUTH_LOGIN: ' . $this->_config['username'],
-    		'HTTP_AUTH_PASSWD: ' . $this->_config['password'],
-    		'HTTP_PRETTY_PRINT: TRUE',
-    		'Content-Type: text/xml'
-    	);
-
-    	$xml = $this->_arrayToXml($params, new SimpleXMLElement('<packet />'))
-    				->asXML();
-        error_log($xml);
-    	$ch = curl_init ();
-    	curl_setopt ($ch, CURLOPT_SSL_VERIFYHOST, 0);
-    	curl_setopt ($ch, CURLOPT_SSL_VERIFYPEER, false);
-    	curl_setopt ($ch, CURLOPT_HTTPHEADER, $headers);
-    	curl_setopt ($ch, CURLOPT_URL, $this->getLoginUrl());
-    	curl_setopt ($ch, CURLOPT_RETURNTRANSFER, true);
-    	curl_setopt ($ch, CURLOPT_TIMEOUT, 60);
-    	curl_setopt ($ch, CURLOPT_POSTFIELDS, $xml);
-        curl_setopt ($ch, CURLOPT_POST, $xml);
-
-		$result = curl_exec($ch);
-
-		if (curl_errno ($ch)) {
-			throw new Server_Exception('cURL error: ' . curl_errno ($ch) . ' - ' . curl_error ($ch));
-		}
-
-		return $this->_parseResponse($result);
-    }
+//    private function _makeRequest($params) {
+//    	$headers = array(
+//    		'HTTP_AUTH_LOGIN: ' . $this->_config['username'],
+//    		'HTTP_AUTH_PASSWD: ' . $this->_config['password'],
+//    		'HTTP_PRETTY_PRINT: TRUE',
+//    		'Content-Type: text/xml'
+//    	);
+//
+//    	$xml = $this->_arrayToXml($params, new SimpleXMLElement('<packet />'))
+//    				->asXML();
+//        error_log($xml);
+//    	$ch = curl_init ();
+//    	curl_setopt ($ch, CURLOPT_SSL_VERIFYHOST, 0);
+//    	curl_setopt ($ch, CURLOPT_SSL_VERIFYPEER, false);
+//    	curl_setopt ($ch, CURLOPT_HTTPHEADER, $headers);
+//    	curl_setopt ($ch, CURLOPT_URL, $this->getLoginUrl());
+//    	curl_setopt ($ch, CURLOPT_RETURNTRANSFER, true);
+//    	curl_setopt ($ch, CURLOPT_TIMEOUT, 60);
+//    	curl_setopt ($ch, CURLOPT_POSTFIELDS, $xml);
+//      curl_setopt ($ch, CURLOPT_POST, $xml);
+//
+//		$result = curl_exec($ch);
+//
+//		if (curl_errno ($ch)) {
+//			throw new Server_Exception('cURL error: ' . curl_errno ($ch) . ' - ' . curl_error ($ch));
+//		}
+//
+//		return $this->_parseResponse($result);
+//  }
 
     private function _arrayToXml(array $arr, SimpleXMLElement $xml) {
     	$numbers = array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17);
@@ -1006,17 +1006,17 @@ class Server_Manager_Plesk extends Server_Manager
      * @param string $request
      * @return string
      */
-    public function request($request)
+    public function _makeRequest($request)
     {
         $curl = curl_init();
 
-        curl_setopt($curl, CURLOPT_URL, "$this->_protocol://$this->_host:$this->_port/enterprise/control/agent.php");
+        curl_setopt($curl, CURLOPT_URL, '"$this->_protocol://$this->_host:$this->_port/enterprise/control/agent.php"');
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
         curl_setopt($curl, CURLOPT_HTTPHEADER, $this->_getHeaders());
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, '$request');
 
         $result = curl_exec($curl);
 
