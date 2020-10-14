@@ -168,16 +168,36 @@ $di['twig'] = $di->factory(function () use ($di) {
 
 $di['is_client_logged'] = function() use($di) {
     if(!$di['auth']->isClientLoggedIn()) {
-        $url = $di['url']->link('login');
-        header("Location: $url");  
-        throw new Exception('Client is not logged in');
+        $api_str = '/api/';
+        $url = $di['request']->getQuery('_url');
+        if (strncasecmp($url, $api_str , strlen($api_str)) === 0) {
+            //Throw Exception if api request
+            throw new Exception('Client is not logged in');
+        }
+        else {            
+            //Redirect to login page if browser request
+            $login_url = $di['url']->link('login');
+            header("Location: $login_url");
+        }
+
     }
     return true;
 };
 
 $di['is_admin_logged'] = function() use($di) {
+    
     if(!$di['auth']->isAdminLoggedIn()) {
+    $api_str = '/api/';
+    $url = $di['request']->getQuery('_url');
+    if (strncasecmp($url, $api_str , strlen($api_str)) === 0) {
+        //Throw Exception if api request
         throw new Exception('Admin is not logged in');
+    }
+    else {
+        //Redirect to login page if browser request
+        $login_url = $di['url']->adminLink('staff/login');
+        header("Location: $login_url");
+        }
     }
     return true;
 };
