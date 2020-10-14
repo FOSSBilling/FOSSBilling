@@ -285,6 +285,7 @@ class Service
     public function renderString($tpl, $try_render, $vars)
     {
         $twig = $this->di['twig'];
+        //add client api if _client_id is set
         if(isset($vars['_client_id'])) {
             $identity = $this->di['db']->load('Client', $vars['_client_id']);
             if($identity instanceof \Model_Client) {
@@ -296,11 +297,13 @@ class Service
                 }
             }
         }
-
+        else{
+            // attempt adding admin api to twig
         try {
             $twig->addGlobal('admin', $this->di['api_admin']);
         } catch(\Exception $e) {
             //skip if admin is not logged in
+        }
         }
 
         try {
