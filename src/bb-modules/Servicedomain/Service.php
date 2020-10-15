@@ -970,7 +970,8 @@ class Service implements \Box\InjectionAwareInterface
         if (!$registrar instanceof \Registrar_AdapterAbstract) {
             throw new \Box_Exception('Registrar adapter :adapter should extend Registrar_AdapterAbstract', array(':adapter' => $class));
         }
-
+        
+        $registrar->setLog($this->di['logger']);
 
         if (isset($r->test_mode) && $r->test_mode) {
             $registrar->enableTestMode();
