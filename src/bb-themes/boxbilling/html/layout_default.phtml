@@ -14,14 +14,14 @@
 
     <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}" />
     <link href="https://fonts.googleapis.com/css?family=Cuprum" rel="stylesheet" type="text/css" />
-    {{ 'print.css' | asset_url | stylesheet_tag('print') }}
-    {{ 'style.css' | asset_url | stylesheet_tag }}
-    <!--[if IE 6]>{{ 'ie6.css' | asset_url | stylesheet_tag }}<![endif]-->
-    <!--[if IE 7]>{{ 'ie.css' | asset_url | stylesheet_tag }}<![endif]-->
+    {{ 'css/print.css' | asset_url | stylesheet_tag('print') }}
+    {{ 'css/style.css' | asset_url | stylesheet_tag }}
+    <!--[if IE 6]>{{ 'css/ie6.css' | asset_url | stylesheet_tag }}<![endif]-->
+    <!--[if IE 7]>{{ 'css/ie.css' | asset_url | stylesheet_tag }}<![endif]-->
 
-    {{ 'jquery.min.js' | asset_url | script_tag }}
-    {{ 'jquery.tipsy.js' | asset_url | script_tag }}
-    {{ 'bb-jquery.js' | asset_url | script_tag }}
+    {{ 'js/jquery.min.js' | asset_url | script_tag }}
+    {{ 'js/jquery.tipsy.js' | asset_url | script_tag }}
+    {{ 'js/bb-jquery.js' | asset_url | script_tag }}
 
     {% block opengraph %}{% endblock %}
     {% block head %}{% endblock %}
