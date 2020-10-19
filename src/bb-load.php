@@ -89,7 +89,7 @@ if((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || (php_sapi_name() =
     if(file_exists($predictConfigPath)) {
         $configPath = $predictConfigPath;
     }
-
+}
 
 // check if config is available
 if(!file_exists($configPath) || 0 == filesize( $configPath )) {
@@ -136,4 +136,3 @@ if($config['debug']) {
 ini_set('log_errors', '1');
 ini_set('html_errors', FALSE);
 ini_set('error_log', BB_PATH_LOG . '/php_error.log');
-}
