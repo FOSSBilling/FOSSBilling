@@ -30,7 +30,6 @@
         "laminas/laminas-httphandlerrunner": "^1.2.0",
         "fpdf/fpdf": "^1.82",
         "docnet/tfpdf": "^2.2",
-        "rev42/tfpdf": "^1.25",
         "setasign/fpdf": "^1.8"
 
     },
