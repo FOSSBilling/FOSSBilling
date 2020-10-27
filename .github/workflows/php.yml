@@ -16,7 +16,7 @@ jobs:
 
     - name: Validate composer.json and composer.lock
       run: composer validate
-
+      working-directory: ./src
     - name: Cache Composer packages
       id: composer-cache
       uses: actions/cache@v2
