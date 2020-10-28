@@ -32,6 +32,8 @@ jobs:
       working-directory: ./src
     # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
     # Docs: https://getcomposer.org/doc/articles/scripts.md
-    - name: Run test suite
-      run: composer install --prefer-dist --no-progress --no-suggest
+    - name: Run test suite for composer updates.
+      run: composer install --prefer-dist --no-progress --no-suggest 
+    - name: Run test suite for bb-modules
+      run: php ./src/bb-vendor/bin/phpunit ./tests/bb-modules/
       working-directory: ./src
