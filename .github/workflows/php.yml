@@ -33,5 +33,5 @@ jobs:
     # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
     # Docs: https://getcomposer.org/doc/articles/scripts.md
     - name: Run test suite
-      run: bb-vendor/bin/phpunit bb-vendor/autoload.php
+      run: composer install --prefer-dist --no-progress --no-suggest bb-vendor/bin/phpunit bb-vendor/autoload.php
       working-directory: ./src
