@@ -1818,7 +1818,9 @@ class ServiceTest extends \BBTestCase
             ->setMethods(array('registrarGetConfiguration'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetConfiguration')
             ->will($this->returnValue(array()));
-
+        $di           = new \Box_Di();
+        $di['logger'] = $this->getMockBuilder(\Box_Log::class)->getMock();
+        $serviceMock->setDi($di);
         $model = new \Model_TldRegistrar();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $model->registrar = 'Custom';
