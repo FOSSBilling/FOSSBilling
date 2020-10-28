@@ -1111,6 +1111,7 @@ class ServiceTest extends \BBTestCase
         $model->config   = '{}';
         $model->price    = 10;
         $model->quantity = 1;
+        $model->client_id = 1;
 
         $clientService = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $clientService->expects($this->atLeastOnce())
@@ -1122,7 +1123,7 @@ class ServiceTest extends \BBTestCase
             ->method('getActiveTicketsCountForOrder')
             ->willReturn(1);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
             ->willReturn(array());
@@ -1138,10 +1139,11 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->withConsecutive(array('Product'))
             ->willReturnOnConsecutiveCalls($modelProduct);
+        $exceptionError = 'Client not found';
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->withConsecutive(array('Client'))
-            ->willReturnOnConsecutiveCalls($modelClient);
+            ->with('Client', $model->client_id, $exceptionError)
+            ->willReturn($modelClient);
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())

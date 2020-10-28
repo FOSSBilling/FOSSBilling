@@ -34,6 +34,16 @@ jobs:
     # Docs: https://getcomposer.org/doc/articles/scripts.md
     - name: Run test suite for composer updates.
       run: composer install --prefer-dist --no-progress --no-suggest 
-    - name: Run test suite for bb-modules
-      run: php ./src/bb-vendor/bin/phpunit ./tests/bb-modules/
       working-directory: ./src
+    - name: Configure environment for Tests
+      run: |
+        cp ./src/bb-config-sample.php ./src/bb-config.php
+        mkdir ./src/bb-data/cache
+        mkdir ./src/bb-data/log
+        echo > ./src/bb-data/log/license.log
+        echo > ./src/bb-data/log/application.log
+        echo > ./src/bb-data/log/php_error.log
+    
+    - name: Run test suite for bb-modules
+      run: |
+        php ./src/bb-vendor/bin/phpunit ./tests/bb-modules/
