@@ -377,7 +377,7 @@ class GuestTest extends \BBTestCase {
             'vat' => 'VATnumber',
         );
 
-        $guzzleMock = $this->getMockBuilder('\Guzzle\Http\Client')->disableOriginalConstructor()->getMock();
+        $guzzleMock = $this->getMockBuilder(\Guzzle\Http\Client::class)->disableOriginalConstructor()->getMock();
         $guzzleMock->expects($this->atLeastOnce())->method('get')->will($this->returnValue(true));
 
         $di = new \Box_Di();
