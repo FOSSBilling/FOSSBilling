@@ -25,13 +25,16 @@ jobs:
         path: ./src/bb-vendor
         key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
         restore-keys: |
-          ${{ runner.os }}-php-    
-
+          ${{ runner.os }}-php-
     - name: Install dependencies
       if: steps.composer-cache.outputs.cache-hit != 'true'
       run: composer install --prefer-dist --no-progress --no-suggest
       working-directory: ./src
-    
+    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
+    # Docs: https://getcomposer.org/doc/articles/scripts.md
+    - name: Run test suite for composer updates.
+      run: composer install --prefer-dist --no-progress --no-suggest 
+      working-directory: ./src
     - name: Configure environment for Tests
       run: |
         cp ./src/bb-config-sample.php ./src/bb-config.php
@@ -44,7 +47,3 @@ jobs:
     - name: Run test suite for bb-modules
       run: |
         php ./src/bb-vendor/bin/phpunit ./tests/bb-modules/
-        
-    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
-    # Docs: https://getcomposer.org/doc/articles/scripts.md
-      
