@@ -48,8 +48,7 @@ Contributing
 Roadmap
 ================================================================================
 
-* [*] Support latest PHP version 7.3
-* [*] Add support for composer package manager
+[Roadmap](https://github.com/orgs/boxbilling/projects/1)
 
 Using Vagrant
 ================================================================================
@@ -93,7 +92,7 @@ Support
 * [Official website](http://www.boxbilling.com/)
 * [Twitter](https://twitter.com/boxbilling)
 * [Facebook](https://www.facebook.com/boxbilling)
-* [Discord community](https://discord.gg/PYNcFVM)
+* [Slack](https://boxbilling.slack.com/)
 
 Licensing
 ================================================================================
