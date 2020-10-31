@@ -7,7 +7,7 @@ $config = include $pathAppRoot . '/bb-config.php';
 
 $structureSql = '/structure.sql';
 $contentSql = '/content_test.sql';
-if (isset($argv[1]) && $argv[1] = 'production') {
+if (isset($argv[1]) && $argv[1] == 'production') {
     $contentSql = '/content.sql';
     echo "Production content" . PHP_EOL;
 }
