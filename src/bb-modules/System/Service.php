@@ -185,25 +185,9 @@ class Service
 
     public function getLicenseInfo($data)
     {
-        $details = $this->di['license']->getDetails();
-        $owner = null;
-        $expires_at = null;
-        if(isset($details['expires_at']) && $details['expires_at']) {
-            if(is_numeric($details['expires_at'])) {
-                $expires_at = date('Y-m-d H:i:s', $details['expires_at']);
-            } else {
-                $expires_at = $details['expires_at'];
-            }
-        }
-
-        if(isset($details['licensed_to']) && $details['licensed_to']) {
-            $owner = $details['licensed_to'];
-        }
-
         $result = array(
-            'licensed_to'   =>  $owner,
-            'key'           =>  $this->di['config']['license'],
-            'expires_at'    =>  $expires_at,
+            'licensed_to'   =>  'BoxBilling CE',
+            'key'           =>  'BoxBilling CE',
         );
         return $result;
     }
@@ -1539,14 +1523,7 @@ class Service
      */
     public function checkLimits($model, $limit = 2)
     {
-        if (!$this->di['license']->isPro()) {
-            $model = str_replace('Model_', '', $model);
-            $count = count($this->di['db']->find($model));
 
-            if ($count >= $limit) {
-                throw new \Box_Exception('You have reached free version limit. Upgrade to PRO version of BoxBilling if you want this limit removed.', null, 875);
-            }
-        }
     }
 
     public function getNameservers()
