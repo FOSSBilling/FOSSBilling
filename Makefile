@@ -32,7 +32,7 @@ exec-db:        ## Enter DB container shell
 	$(DOCKER_DB_CONTAINER_EXEC) bash
 
 install: start  ## Install app after start
-	$(DOCKER_PHP_CONTAINER_EXEC) composer install
+	$(DOCKER_PHP_CONTAINER_EXEC) composer install --working-dir=src
 ifeq (,$(wildcard ./src/bb-config.php))
 	cp ./src/bb-config-sample.php ./src/bb-config.php
 	$(DOCKER_PHP_CONTAINER_EXEC) $(DOCKER_PHP_EXECUTABLE_CMD) ./bin/prepare.php
