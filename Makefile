@@ -52,7 +52,6 @@ test: start	## Run app tests
 build:          ## Build App with Docker CI image
 	docker run --rm \
 		--mount type=bind,source=$(PWD),target=/opt -w /opt \
-		-e TRAVIS_BUILD_NUMBER \
 		-e TRAVIS_TAG \
 		fordnox/docker-builder-ci \
 		make release
