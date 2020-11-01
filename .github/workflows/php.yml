@@ -16,6 +16,7 @@ jobs:
 
     - name: Validate composer.json and composer.lock
       run: composer validate
+      working-directory: ./src
 
     - name: Cache Composer packages
       id: composer-cache
@@ -28,10 +29,12 @@ jobs:
     - name: Install dependencies
       if: steps.composer-cache.outputs.cache-hit != 'true'
       run: composer install --prefer-dist --no-progress --no-suggest
+      working-directory: ./src
     # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
     # Docs: https://getcomposer.org/doc/articles/scripts.md
     - name: Run test suite for composer updates.
-      run: composer install --prefer-dist --no-progress --no-suggest 
+      run: composer install --prefer-dist --no-progress --no-suggest
+      working-directory: ./src
     - name: Configure environment for Tests
       run: |
         cp ./src/bb-config-sample.php ./src/bb-config.php

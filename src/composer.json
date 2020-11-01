@@ -37,11 +37,11 @@
         "ext-gettext": "*"
     },
     "config": {
-        "vendor-dir": "src/bb-vendor"
+        "vendor-dir": "bb-vendor"
     },
     "autoload": {
-        "psr-0": {"": "src/bb-library"},
-        "psr-4": {"Box\\Mod\\": "src/bb-modules"}
+        "psr-0": {"": "bb-library"},
+        "psr-4": {"Box\\Mod\\": "bb-modules"}
     },
 
     "require-dev": {
