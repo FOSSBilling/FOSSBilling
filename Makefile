@@ -32,7 +32,7 @@ exec-db:        ## Enter DB container shell
 	$(DOCKER_DB_CONTAINER_EXEC) bash
 
 install: start  ## Install app after start
-	$(DOCKER_PHP_CONTAINER_EXEC) composer install --working-dir=src --no-progress --no-suggest --optimize-autoloader --prefer-dist --no-dev
+	$(DOCKER_PHP_CONTAINER_EXEC) composer install --working-dir=src --no-progress --no-suggest --prefer-dist --no-dev
 ifeq (,$(wildcard ./src/bb-config.php))
 	cp ./src/bb-config-sample.php ./src/bb-config.php
 	$(DOCKER_PHP_CONTAINER_EXEC) $(DOCKER_PHP_EXECUTABLE_CMD) ./bin/prepare.php
@@ -46,15 +46,20 @@ test: install	## Run app tests
 	echo "Running unit tests"
 	echo > ./src/bb-data/log/application.log
 	echo > ./src/bb-data/log/php_error.log
-	$(DOCKER_PHP_CONTAINER_EXEC) composer install --working-dir=src --no-progress --no-suggest --optimize-autoloader --prefer-dist
+	$(DOCKER_PHP_CONTAINER_EXEC) composer install --working-dir=src --no-progress --no-suggest --prefer-dist
 	$(DOCKER_PHP_CONTAINER_EXEC) ./src/bb-vendor/bin/phpunit --dont-report-useless-tests ./tests/bb-modules/
 
-release:		## App release
-	echo $(TRAVIS_BUILD_DIR)
-	echo $(TRAVIS_BUILD_ID)
-	echo $(TRAVIS_BUILD_NUMBER)
-	echo $(TRAVIS_JOB_ID)
-	echo $(TRAVIS_TAG)
+build:          ## Build App with Docker CI image
+	docker run --rm \
+		--mount type=bind,source=$(PWD),target=/opt -w /opt \
+		-e TRAVIS_BUILD_NUMBER \
+		-e TRAVIS_TAG \
+		fordnox/docker-builder-ci \
+		make release
+
+release:        ## App release
+	echo "TRAVIS_BUILD_NUMBER:" $(TRAVIS_BUILD_NUMBER)
+	echo "TRAVIS_TAG:" $(TRAVIS_TAG)
 	npm install -g grunt-cli
 	npm install
 	grunt
