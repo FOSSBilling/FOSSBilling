@@ -261,7 +261,7 @@ $di['validator'] = function () use ($di){
     return $validator;
 };
 $di['guzzle_client'] = function () {
-    return new \Guzzle\Http\Client();
+    return new GuzzleHttp\Client();
 };
 $di['mail'] = function () {
     return new Box_Mail();

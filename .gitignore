@@ -17,6 +17,7 @@ composer.phar
 public
 report/*
 data/db
+.phpunit.result.cache
 
 ### node_moduels ###
 node_modules
