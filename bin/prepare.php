@@ -24,13 +24,12 @@ $iter = 30;
 $connected = false;
 while ($connected == false && $iter > 0) {
 
-    $dbh = new PDO($type . ':host=' . $host, $user, $password,        array(
-        PDO::MYSQL_ATTR_USE_BUFFERED_QUERY         => true,
-        PDO::ATTR_ERRMODE                          => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE               => PDO::FETCH_ASSOC,
-    ));
-
     try {
+        $dbh = new PDO($type . ':host=' . $host, $user, $password,        array(
+            PDO::MYSQL_ATTR_USE_BUFFERED_QUERY         => true,
+            PDO::ATTR_ERRMODE                          => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE               => PDO::FETCH_ASSOC,
+        ));
         $dbh->query('select 1;');
         $connected = true;
     } catch (Exception $e) {
