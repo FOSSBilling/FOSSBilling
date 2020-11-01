@@ -17,6 +17,8 @@ deploy:
   file: ./build/distribution/BoxBilling.zip
   draft: true
   overwrite: true
+  name: ${TRAVIS_TAG}
+  skip_cleanup: true
   on:
     tags: false
     all_branches: true
