@@ -18,7 +18,8 @@ deploy:
   draft: true
   overwrite: true
   on:
-    tags: true
+    tags: false
+    all_branches: true
 
 notifications:
   email: false
