@@ -25,6 +25,25 @@ $dbh = new PDO($type . ':host=' . $host, $user, $password,        array(
     PDO::ATTR_DEFAULT_FETCH_MODE               => PDO::FETCH_ASSOC,
 ));
 
+$iter = 5;
+$connected = false;
+while ($connected == false && $iter > 0) {
+    try {
+        $dbh->query('select 1;');
+        $connected = true;
+    } catch (Exception $e) {
+        $message = $e->getMessage();
+        $message = "SQLSTATE[HY000] [2002] Connection refused in /var/www/html/bin/prepare.php:23";
+        if(strpos($e->getMessage(), "Connection refused") !== false) {
+            sleep(1); // mysql container might still not be up, lets wait
+            $iter--;
+            echo "Waiting for database container to go up ".$iter . PHP_EOL;
+        } else {
+            throw $e;
+        }
+    }
+}
+
 echo sprintf("Dropping database %s", $dbname) . PHP_EOL;
 $sql = sprintf("DROP DATABASE IF EXISTS %s;", $dbname);
 $dbh->exec($sql);
