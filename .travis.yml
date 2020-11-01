@@ -8,7 +8,19 @@ before_script:
   - docker version
 
 script:
+  - make test
   - make all
+
+before_deploy:
+  - make release
+
+deploy:
+  provider: releases
+  token: tVzZ+3U0ndBGvoUpFqA6ikg6fDKnPgMoNqK1pvTdEp0xmrFtjMP/fuc8+awObhj89iEC+MyzfsOP57CZbHR/UjmUSHPQew+BvTwxYmTUzgUeyUrYsTEI7WJgB7tsL35aRgrpxk102tlSmlX7EonufUT0svPOAQ1p4NgZRm3GI3A=
+  file: ./build/distribution/BoxBilling.zip
+  draft: true
+  on:
+    tags: false
 
 notifications:
   email: false

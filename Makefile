@@ -41,3 +41,13 @@ endif
 reinstall:      ## Reinstall app
 	rm -rf ./src/bb-config.php
 	make install
+
+test:			## Run app tests
+	echo "Running unit tests"
+
+release:		## App release
+	npm install -g grunt-cli
+	npm install
+	grunt
+	ant release
+
