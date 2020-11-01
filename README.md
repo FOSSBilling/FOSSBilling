@@ -1,100 +1,45 @@
-BoxBilling [![Download Latest](http://i.imgur.com/djy4ExU.png)](https://github.com/boxbilling/boxbilling/releases/latest) 
-================================================================================
-*If you want to download BoxBilling for use please click on `Download BoxBilling` button above instead of `git pull` command or GitHub's `Download ZIP` button!*
+# BoxBilling 
 
-Open Source billing software
+[![Build Status](https://travis-ci.org/boxbilling/boxbilling.svg?branch=master)](https://travis-ci.org/boxbilling/boxbilling)
+[![Download Latest](https://img.shields.io/github/downloads/boxbilling/boxbilling/total)](https://github.com/boxbilling/boxbilling/releases/latest)
+[![BoxBilling Issues](https://img.shields.io/github/issues/boxbilling/boxbilling.svg?style=popout)](https://github.com/boxbilling/boxbilling/issues)
+[![BoxBilling Demo](https://img.shields.io/badge/boxbilling-demo-blue)](https://demo.boxbilling.com)
+[![BoxBilling Roadmap](https://img.shields.io/badge/boxbilling-roadmap-blue)](https://github.com/orgs/boxbilling/projects/1)
+![BoxBilling Size](https://img.shields.io/github/repo-size/boxbilling/boxbilling.svg?style=popout)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Requirements
-================================================================================
+Open source billing and client management software
 
-* PHP ≥ 7.4.0
-* PHP extensions:
-  * openssl
-  * curl
-  * zlib
-  * PDO
-  * gettext
-* MySQL or any PDO compatible SQL server
-* A device with Linux operating system. BoxBilling does not support Windows.
+## Getting started
 
-Recommended
-================================================================================
+Follow [getting started instructions](https://docs.boxbilling.com)
 
-* PHP 7.4.9
-* Ubuntu 18.04 (Bionic Beaver) (x86_64) or higher
-* PHP Extensions
-  * openssl
-  * curl
-  * zlib
-  * PDO
-  * gettext
-* MySQL or any PDO compatible SQL server
+## Download
 
-Getting started
-================================================================================
+[![Download Latest](http://i.imgur.com/djy4ExU.png)](https://github.com/boxbilling/boxbilling/releases/latest) 
 
-Please read our installation instructions located at http://docs.boxbilling.com to get started
-with BoxBilling
+## Contribute
 
-Contributing
-================================================================================
+Follow [contributors guidelines](https://github.com/boxbilling/boxbilling/blob/master/CONTRIBUTING.md)
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request to **develop** branch
+## Docker run
 
-Roadmap
-================================================================================
+Assuming you already have [Docker](https://docs.docker.com/get-docker/) and [GNU make](https://www.gnu.org/software/make/) installed
 
-[Roadmap](https://github.com/orgs/boxbilling/projects/1)
+```console
+make all
+open http://localhost/
+```
 
-Using Vagrant
-================================================================================
-Vagrant is [very well documented](https://docs.vagrantup.com/v2/) but here are a few common commands:
+## Support
 
-* `vagrant up` starts the virtual machine and provisions it
-* `vagrant suspend` will essentially put the machine to 'sleep' with `vagrant resume` waking it back up
-* `vagrant halt` attempts a graceful shutdown of the machine and will need to be brought back with `vagrant up`
-* `vagrant ssh` gives you shell access to the virtual machine
-
-Install vagrant-hostmanager plugin
-    
-    $ vagrant plugin install vagrant-hostmanager
-    
-to update /etc/hosts file 
-
-Using Grunt
-===========
-To create minified js and css files for theme admin_default run:
-`./node_modules/.bin/grunt` from project root directory
-
-If you want to use not minified versions of admin_default theme:
-* [separate JS files in layout](https://github.com/boxbilling/boxbilling/blob/5e19912e7287b76e6b760899a7f9d2a4f3c1125c/src/bb-themes/admin_default/html/layout_default.phtml#L17-L24)
-* [separate CSS](https://github.com/boxbilling/boxbilling/blob/2636cae130a94cdd827fb5f4acf46b0cdfebbb30/src/bb-themes/admin_default/html/partial_styles.phtml)
-
-----
-##### Virtual Machine Specifications #####
-
-* OS     - Ubuntu 12.04
-* PHP    - 5.4.* 
-* Apache
-* MySQL 5.6
-* IP - 10.20.30.12
-* servername - boxbilling.test
-* target folder - /var/www/boxbilling
-
-Support
-================================================================================
-
-* [Documentation](http://docs.boxbilling.com/)
-* [Official website](http://www.boxbilling.com/)
+* [Website](https://www.boxbilling.com/)
+* [Documentation](https://docs.boxbilling.com/)
+* [Slack](https://boxbilling.slack.com/)
 * [Twitter](https://twitter.com/boxbilling)
 * [Facebook](https://www.facebook.com/boxbilling)
-* [Slack](https://boxbilling.slack.com/)
 
-Licensing
+License
 ================================================================================
 
 BoxBilling is licensed under the Apache License, Version 2.0. See LICENSE for full license text.

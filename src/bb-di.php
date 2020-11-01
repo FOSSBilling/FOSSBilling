@@ -17,11 +17,8 @@ $di['config'] = function() {
     return new Box_Config($array);
 };
 $di['logger'] = function () use ($di) {
-    $logFile = $di['config']['path_logs'];
-    $writer  = new Box_LogStream($logFile);
     $log     = new Box_Log();
     $log->setDi($di);
-    $log->addWriter($writer);
 
     $log_to_db = isset($di['config']['log_to_db']) && $di['config']['log_to_db'];
     if ($log_to_db) {
@@ -36,6 +33,10 @@ $di['logger'] = function () use ($di) {
             $log->setEventItem('client_id', $client->id);
         }
         $log->addWriter($writer2);
+    } else {
+        $logFile = $di['config']['path_logs'];
+        $writer  = new Box_LogStream($logFile);
+        $log->addWriter($writer);
     }
 
     return $log;

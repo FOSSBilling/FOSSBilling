@@ -22,7 +22,7 @@ return array(
     /**
      * Full URL where BoxBilling is installed with trailing slash
      */
-    'url'     => 'http://www.boxbilling.test/',
+    'url'     => 'http://localhost/',
 
     'admin_area_prefix' =>  '/bb-admin',
 
@@ -78,22 +78,22 @@ return array(
         /**
          * Database hostname. Don't change this if in doubt.
          */
-        'host'   =>'127.0.0.1',
+        'host'   => getenv('DB_HOST') ?: '127.0.0.1',
 
         /**
          * The name of the database for BoxBilling
          */
-        'name'   =>'boxbilling',
+        'name'   => getenv('DB_NAME') ?: 'boxbilling',
 
         /**
          * Database username
          */
-        'user'   =>'foo',
+        'user'   => getenv('DB_USER') ?: 'foo',
 
         /**
          * Database password
          */
-        'password'   =>'foo',
+        'password'   => getenv('DB_PASS') ?: 'foo',
     ),
 
     'twig'   =>  array(
