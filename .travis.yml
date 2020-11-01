@@ -4,24 +4,26 @@ language: shell
 services:
   - docker
 
-before_script:
-  - docker version
-
 script:
   - make test
-  - make all
 
 before_deploy:
-  - make release
+  - echo "$TRAVIS_TAG" "$TRAVIS_BUILD_NUMBER" "$TRAVIS_COMMIT"
+  - make build
 
 deploy:
   provider: releases
   token: tVzZ+3U0ndBGvoUpFqA6ikg6fDKnPgMoNqK1pvTdEp0xmrFtjMP/fuc8+awObhj89iEC+MyzfsOP57CZbHR/UjmUSHPQew+BvTwxYmTUzgUeyUrYsTEI7WJgB7tsL35aRgrpxk102tlSmlX7EonufUT0svPOAQ1p4NgZRm3GI3A=
   file: ./build/distribution/BoxBilling.zip
   draft: true
+  overwrite: true
   on:
     tags: true
 
 notifications:
   email: false
   slack: boxbilling:vsdKszFU9Pm308ye5rNSpr8n
+
+branches:
+  only:
+    - master
