@@ -487,10 +487,6 @@ class Service implements InjectionAwareInterface
 
     public function createOrder(\Model_Client $client, \Model_Product $product, array $data)
     {
-        if (!$this->di['license']->isPro()) {
-            throw new \Box_Exception('This feature is available in BoxBilling PRO version.', null, 876);
-        }
-
         $currencyService = $this->di['mod_service']('currency');
         if (isset($data['currency']) && !empty($data['currency'])) {
             $currency = $currencyService->getByCode($data['currency']);
