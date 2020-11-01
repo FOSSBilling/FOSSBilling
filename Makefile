@@ -12,6 +12,10 @@ all: start-recreate reinstall
 
 start:          ## Start app
 	$(DOCKER_COMPOSE) up -d
+ifeq (,$(wildcard ./src/bb-config.php))
+	cp ./src/bb-config-sample.php ./src/bb-config.php
+	$(DOCKER_PHP_CONTAINER_EXEC) $(DOCKER_PHP_EXECUTABLE_CMD) ./bin/prepare.php
+endif
 
 start-recreate: ## Start app with full rebuild
 	$(DOCKER_COMPOSE) up -d  --build --force-recreate --remove-orphans
@@ -33,16 +37,12 @@ exec-db:        ## Enter DB container shell
 
 install: start  ## Install app after start
 	$(DOCKER_PHP_CONTAINER_EXEC) composer install --working-dir=src --no-progress --no-suggest --prefer-dist --no-dev
-ifeq (,$(wildcard ./src/bb-config.php))
-	cp ./src/bb-config-sample.php ./src/bb-config.php
-	$(DOCKER_PHP_CONTAINER_EXEC) $(DOCKER_PHP_EXECUTABLE_CMD) ./bin/prepare.php
-endif
 
 reinstall:      ## Reinstall app
 	rm -rf ./src/bb-config.php
 	make install
 
-test: install	## Run app tests
+test: start	## Run app tests
 	echo "Running unit tests"
 	echo > ./src/bb-data/log/application.log
 	echo > ./src/bb-data/log/php_error.log
