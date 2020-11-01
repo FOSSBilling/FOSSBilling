@@ -20,7 +20,7 @@ deploy:
   file: ./build/distribution/BoxBilling.zip
   draft: true
   on:
-    tags: false
+    tags: true
 
 notifications:
   email: false

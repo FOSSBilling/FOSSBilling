@@ -37,7 +37,7 @@
         "ext-gettext": "*"
     },
     "config": {
-        "vendor-dir": "src/bb-vendor"
+        "vendor-dir": "bb-vendor"
     },
     "autoload": {
         "psr-0": {"": "bb-library"},
