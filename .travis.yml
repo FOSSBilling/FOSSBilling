@@ -20,7 +20,7 @@ deploy:
   name: ${TRAVIS_TAG}
   skip_cleanup: true
   on:
-    tags: false
+    tags: true
     all_branches: true
 
 notifications:
@@ -30,3 +30,4 @@ notifications:
 branches:
   only:
     - master
+    - /^v.*$/
