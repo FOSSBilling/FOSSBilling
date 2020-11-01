@@ -59,7 +59,3 @@ release:		## App release
 	npm install
 	grunt
 	ant release
-
-release-open:
-	docker run -d -p 8741:80 --mount type=bind,source="$(PWD)"/build/source,target=/var/www/public pensiero/apache-php-mysql:php7.4
-	open http://localhost:8741/install/
