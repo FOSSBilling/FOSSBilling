@@ -71,3 +71,15 @@ tag:	## Tag new release on GitHub
 	#git tag $NEW_TAG
 	#git push --tags
 	#git push
+
+build-run: 		## Run app in LAMP container after build
+	# used to test app after build
+	# run `make build` before running this target
+	# mysql user: admin pass: admin
+	# access phpmyadmin http://localhost/phpmyadmin/
+	docker container stop boxbilling &>/dev/null || true
+	docker container rm -f boxbilling &>/dev/null || true
+	docker run -i -t --name boxbilling -p "80:80" \
+		-v ${PWD}/build/source:/app \
+		-e MYSQL_ADMIN_PASS=admin \
+		mattrayner/lamp:latest
