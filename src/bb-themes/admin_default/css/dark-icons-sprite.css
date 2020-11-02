@@ -1,23 +1,30 @@
 /*
 Icon classes can be used entirely standalone. They are named after their original file names.
 
-```html
-<!-- `display: block` sprite -->
+Example usage in HTML:
+
+`display: block` sprite:
 <div class="icon-home"></div>
 
-<!-- `display: inline-block` sprite -->
-<img class="icon-home" />
-```
+To change `display` (e.g. `display: inline-block;`), we suggest using a common CSS class:
+
+// CSS
+.icon {
+  display: inline-block;
+}
+
+// HTML
+<i class="icon icon-home"></i>
 */
 .sprite-abacus {
   background-image: url(../sprites/dark-icons-sprite.png);
-  background-position: -14px 0px;
+  background-position: 0px 0px;
   width: 14px;
   height: 14px;
 }
 .sprite-add {
   background-image: url(../sprites/dark-icons-sprite.png);
-  background-position: -168px -70px;
+  background-position: -14px 0px;
   width: 14px;
   height: 14px;
 }
@@ -905,7 +912,7 @@ Icon classes can be used entirely standalone. They are named after their origina
 }
 .sprite-ipad {
   background-image: url(../sprites/dark-icons-sprite.png);
-  background-position: 0px 0px;
+  background-position: -168px -70px;
   width: 14px;
   height: 14px;
 }
@@ -1475,13 +1482,13 @@ Icon classes can be used entirely standalone. They are named after their origina
 }
 .sprite-signPost {
   background-image: url(../sprites/dark-icons-sprite.png);
-  background-position: -56px -210px;
+  background-position: -70px -210px;
   width: 14px;
   height: 14px;
 }
 .sprite-signal {
   background-image: url(../sprites/dark-icons-sprite.png);
-  background-position: -70px -210px;
+  background-position: -56px -210px;
   width: 14px;
   height: 14px;
 }
