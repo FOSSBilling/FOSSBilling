@@ -480,7 +480,7 @@ class Service implements InjectionAwareInterface
         if (!empty($where)) {
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
-        $query .= " GROUP by co.id ORDER BY co.id DESC";
+        $query .= " ORDER BY co.id DESC";
 
         return array($query, $bindings);
     }

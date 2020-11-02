@@ -355,7 +355,7 @@ class Service implements \Box\InjectionAwareInterface
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
 
-        $query .= " GROUP BY st.id ORDER BY st.priority ASC, st.id DESC";
+        $query .= " ORDER BY st.priority ASC, st.id DESC";
 
         return array($query, $bindings);
     }
@@ -1055,7 +1055,7 @@ class Service implements \Box\InjectionAwareInterface
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
 
-        $query .= " GROUP BY spt.id, sptm.id ORDER BY spt.id DESC, sptm.id ASC";
+        $query .= " ORDER BY spt.id DESC, sptm.id ASC";
 
         return array($query, $bindings);
     }
