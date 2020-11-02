@@ -63,3 +63,11 @@ release:        ## App release
 	npm install
 	grunt
 	ant release
+
+tag:	## Tag new release on GitHub
+	sh ./bin/next-tag.sh
+	#NEW_TAG=$(shell ./bin/next-tag.sh);
+	#echo $(NEW_TAG)
+	#git tag $NEW_TAG
+	#git push --tags
+	#git push
