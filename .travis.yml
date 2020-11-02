@@ -30,4 +30,4 @@ notifications:
 branches:
   only:
     - master
-    - /^v.*$/
+    - /^\d+.\d+.\d+$/
