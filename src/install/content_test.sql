@@ -35,8 +35,8 @@ LOCK TABLES `admin` WRITE;
 
 INSERT INTO `admin` (`id`, `role`, `admin_group_id`, `email`, `pass`, `salt`, `name`, `signature`, `protected`, `status`, `api_token`, `permissions`, `created_at`, `updated_at`)
 VALUES
-	(1,'admin',1,'admin@boxbilling.com','89e495e7941cf9e40e6980d14a16bf023ccd4c91',NULL,'Demo Administrator','Sincerely Yours, Demo Administrator',1,'active','644846a924e9f4ca76f04f39b3f9c8ac',NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00'),
-	(2,'cron',1,'FOF2T4t2@d4mTXP4s.com','3e7a6bf4f5dee94e8169af2c3263424a63f5979a',NULL,'System Cron Job','',1,'active',NULL,NULL,'2014-09-16T06:33:40-04:00','2014-09-16T06:33:40-04:00');
+	(1,'admin',1,'admin@boxbilling.com','$2y$10$/waO8c5q41HngeC2TTvnnuYyz3drDIe6jEMXyh8X6RO/YPoiC.bL.',NULL,'Demo Administrator','Sincerely Yours, Demo Administrator',1,'active','644846a924e9f4ca76f04f39b3f9c8ac',NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00'),
+	(2,'cron',1,'FOF2T4t2@d4mTXP4s.com','$2y$10$gp1mj9ikImkOgg/hoMFvtODEAhMoBhzHji/aF.Ujkqv0h2rzb719e',NULL,'System Cron Job','',1,'active',NULL,NULL,'2014-09-16T06:33:40-04:00','2014-09-16T06:33:40-04:00');
 
 /*!40000 ALTER TABLE `admin` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -79,8 +79,8 @@ LOCK TABLES `client` WRITE;
 
 INSERT INTO `client` (`id`, `aid`, `client_group_id`, `role`, `auth_type`, `email`, `pass`, `salt`, `status`, `email_approved`, `tax_exempt`, `type`, `first_name`, `last_name`, `gender`, `birthday`, `phone_cc`, `phone`, `company`, `company_vat`, `company_number`, `address_1`, `address_2`, `city`, `state`, `postcode`, `country`, `document_type`, `document_nr`, `notes`, `currency`, `lang`, `ip`, `api_token`, `referred_by`, `custom_1`, `custom_2`, `custom_3`, `custom_4`, `custom_5`, `custom_6`, `custom_7`, `custom_8`, `custom_9`, `custom_10`, `created_at`, `updated_at`)
 VALUES
-	(1,NULL,1,'client',NULL,'client@boxbilling.com','89e495e7941cf9e40e6980d14a16bf023ccd4c91',NULL,'active',NULL,0,NULL,'Demo','Client',NULL,'1985-02-25','214','15551212','BoxBilling',NULL,NULL,'Holywood','Stairway to heaven','Holywood','LA','95012','US',NULL,NULL,'BoxBilling demo client','USD',NULL,NULL,'client_api_token',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00'),
-	(2,NULL,1,'client',NULL,'john.smith@boxbilling.com','89e495e7941cf9e40e6980d14a16bf023ccd4c91',NULL,'active',NULL,0,NULL,'John','Smith',NULL,NULL,'261','4106851180','John\'s Company Inc.',NULL,NULL,'1734 Maryland Avenue',NULL,'Baltimore','MD','21201','US',NULL,NULL,NULL,'USD',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00');
+	(1,NULL,1,'client',NULL,'client@boxbilling.com','$2y$10$/waO8c5q41HngeC2TTvnnuYyz3drDIe6jEMXyh8X6RO/YPoiC.bL.',NULL,'active',NULL,0,NULL,'Demo','Client',NULL,'1985-02-25','214','15551212','BoxBilling',NULL,NULL,'Holywood','Stairway to heaven','Holywood','LA','95012','US',NULL,NULL,'BoxBilling demo client','USD',NULL,NULL,'client_api_token',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00'),
+	(2,NULL,1,'client',NULL,'john.smith@boxbilling.com','$2y$10$/waO8c5q41HngeC2TTvnnuYyz3drDIe6jEMXyh8X6RO/YPoiC.bL.',NULL,'active',NULL,0,NULL,'John','Smith',NULL,NULL,'261','4106851180','John\'s Company Inc.',NULL,NULL,'1734 Maryland Avenue',NULL,'Baltimore','MD','21201','US',NULL,NULL,NULL,'USD',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00');
 
 /*!40000 ALTER TABLE `client` ENABLE KEYS */;
 UNLOCK TABLES;
