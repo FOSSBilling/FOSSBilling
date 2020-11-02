@@ -64,13 +64,29 @@ release:        ## App release
 	grunt
 	ant release
 
-tag:	## Tag new release on GitHub
-	sh ./bin/next-tag.sh
-	#NEW_TAG=$(shell ./bin/next-tag.sh);
-	#echo $(NEW_TAG)
-	#git tag $NEW_TAG
-	#git push --tags
-	#git push
+revbump:
+	set -e ;\
+		git tag --sort=v:refname | tail -1
+		NEW_VERSION=$$( git tag --sort=v:refname | tail -1 | awk 'BEGIN{FS=OFS="."}{print $$1,$$2,$$3+1}' ) ;\
+		echo "unstable release $$NEW_VERSION" ;\
+		git tag $$NEW_VERSION
+		git push --tags
+
+minorbump:
+	set -e ;\
+		git tag --sort=v:refname | tail -1
+		NEW_VERSION=$$( git tag --sort=v:refname | tail -1 | awk 'BEGIN{FS=OFS="."}{print $$1,$$2+1,0}' ) ;\
+		echo "unstable release $$NEW_VERSION" ;\
+		git tag $$NEW_VERSION
+		git push --tags
+
+majorbump:
+	set -e ;\
+		git tag --sort=v:refname | tail -1
+		NEW_VERSION=$$( git tag --sort=v:refname | tail -1 | awk 'BEGIN{FS=OFS="."}{print $$1+1,0,0}' ) ;\
+		echo "release $$NEW_VERSION" ;\
+		git tag $$NEW_VERSION
+		git push --tags
 
 build-run: 		## Run app in LAMP container after build
 	# used to test app after build
