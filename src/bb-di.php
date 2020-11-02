@@ -17,11 +17,8 @@ $di['config'] = function() {
     return new Box_Config($array);
 };
 $di['logger'] = function () use ($di) {
-    $logFile = $di['config']['path_logs'];
-    $writer  = new Box_LogStream($logFile);
     $log     = new Box_Log();
     $log->setDi($di);
-    $log->addWriter($writer);
 
     $log_to_db = isset($di['config']['log_to_db']) && $di['config']['log_to_db'];
     if ($log_to_db) {
@@ -36,6 +33,10 @@ $di['logger'] = function () use ($di) {
             $log->setEventItem('client_id', $client->id);
         }
         $log->addWriter($writer2);
+    } else {
+        $logFile = $di['config']['path_logs'];
+        $writer  = new Box_LogStream($logFile);
+        $log->addWriter($writer);
     }
 
     return $log;
@@ -246,11 +247,6 @@ $di['api_guest'] = function() use ($di) { return $di['api']('guest'); };
 $di['api_client'] = function() use ($di) { return $di['api']('client');};
 $di['api_admin'] = function() use ($di) { return $di['api']('admin'); };
 $di['api_system'] = function() use ($di) { return $di['api']('system'); };
-$di['license'] = function () use ($di) {
-    $service = new Box_License();
-    $service->setDi($di);
-    return $service;
-};
 
 $di['tools'] = function () use ($di){
     $service = new Box_Tools();
@@ -264,7 +260,7 @@ $di['validator'] = function () use ($di){
     return $validator;
 };
 $di['guzzle_client'] = function () {
-    return new \Guzzle\Http\Client();
+    return new GuzzleHttp\Client();
 };
 $di['mail'] = function () {
     return new Box_Mail();

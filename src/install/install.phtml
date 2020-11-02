@@ -29,15 +29,6 @@
             </div>
         </div>
 
-        <div class="widget step step-3">
-            <div class="head"><h5 class="iAlert">BoxBilling license key</h5></div>
-            <div class="body">
-                <p>Get license key at <a href="http://www.boxbilling.com/order" target="_blank">www.boxbilling.com/order</a></p>
-                <p>License key is stored in <strong>bb-config.php</strong> file and it can be changed later</p>
-                <p>Like us on <a href="http://facebook.com/boxbilling" target="_blank">Facebook page</a> to get special offers and discounts</p>
-            </div>
-        </div>
-
         <div class="widget nomargin step step-4">
             <div class="head"><h5 class="iAlert">Well done!</h5></div>
             <div class="body aligncenter">
@@ -206,14 +197,6 @@
                                 <div class="fix"></div>
                             </div>
 
-                            <div class="rowElem">
-                                <label>License key:</label>
-                                <div class="formRight" style="margin-right: 0; width: 540px">
-                                    <input style="width: 427px;" type="text" name="license" id="license" value="{{ request.license|default(license) }}" required="required" placeholder="Obtain license key at www.boxbilling.com">
-                                    <a href="http://www.boxbilling.com/" target="_blank" class="greenBtn button">Get license</a>
-                                </div>
-                                <div class="fix"></div>
-                            </div>
                             <div class="fix"></div>
                         </div>
                         <div id="step-4">
@@ -329,7 +312,6 @@ $(function() {
             if(isEmpty('admin_name')) return false;
             if(isEmpty('admin_email')) return false;
             if(isEmpty('admin_pass')) return false;
-            if(isEmpty('license')) return false;
             if(confirm('BoxBilling installer will create database. It may take some time. Do not close this window. Continue?')) {
                 $.ajax({
                     async: false,

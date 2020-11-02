@@ -23,14 +23,13 @@
         "geoip2/geoip2": "v2.10.0",
         "ircmaxell/password-compat": "v1.0.4",
         "phpmailer/phpmailer": "6.1.6",
-        "mustangostang/spyc": "0.5.1",
+        "mustangostang/spyc": "^0.6.3",
         "michelf/php-markdown": "1.9.0",
         "stripe/stripe-php": "2.1.1",
 	    "guzzlehttp/guzzle": "*",
         "laminas/laminas-httphandlerrunner": "^1.2.0",
         "fpdf/fpdf": "^1.82",
         "docnet/tfpdf": "^2.2",
-        "rev42/tfpdf": "^1.25",
         "setasign/fpdf": "^1.8"
 
     },

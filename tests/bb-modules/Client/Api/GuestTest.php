@@ -370,32 +370,6 @@ class GuestTest extends \BBTestCase {
         $client->confirm_reset($data);
     }
 
-    public function testis_vat()
-    {
-        $data = array(
-            'country' => 'DE',
-            'vat' => 'VATnumber',
-        );
-
-        $guzzleMock = $this->getMockBuilder('\Guzzle\Http\Client')->disableOriginalConstructor()->getMock();
-        $guzzleMock->expects($this->atLeastOnce())->method('get')->will($this->returnValue(true));
-
-        $di = new \Box_Di();
-        $di['guzzle_client'] = $guzzleMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-        $di['validator'] = $validatorMock;
-
-        $client = new \Box\Mod\Client\Api\Guest();
-        $client->setDi($di);
-
-        $result = $client->is_vat($data);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-    }
-
     public function testrequired()
     {
         $configArr = array();

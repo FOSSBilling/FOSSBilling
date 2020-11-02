@@ -14,7 +14,16 @@
             </div>
         </div>
     </div>
-
+    {% if client %}
+    <div class="grid_6 omega">
+        <div class="box">
+            <h2 class="big-dark-icon i-profile"><a href="{{ 'client/me'|link }}">{% trans 'Profile' %}</a></h2>
+            <div class="block">
+                <p>{% trans 'Manage your profile and keep it up to date' %}</p>
+            </div>
+        </div>
+    </div>
+    {% else %}
     <div class="grid_6 omega">
         <div class="box">
             <h2 class="big-dark-icon i-profile"><a href="{{ '/login'|link({'register' : 1}) }}">{% trans 'Register' %}</a></h2>
@@ -23,6 +32,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
     <div class="grid_6 alpha">
         <div class="box">
             <h2 class="big-dark-icon i-email"><a href="{{ '/support/contact-us'|link }}">{% trans 'Contact Us' %}</a></h2>

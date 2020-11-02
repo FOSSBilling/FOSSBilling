@@ -7,7 +7,7 @@ $config = include $pathAppRoot . '/bb-config.php';
 
 $structureSql = '/structure.sql';
 $contentSql = '/content_test.sql';
-if (isset($argv[1]) && $argv[1] = 'production') {
+if (isset($argv[1]) && $argv[1] == 'production') {
     $contentSql = '/content.sql';
     echo "Production content" . PHP_EOL;
 }
@@ -19,11 +19,31 @@ $user = $config['db']['user'];
 $password = $config['db']['password'];
 
 echo sprintf("Connecting to database %s@%s/%s", $user, $host, $dbname) . PHP_EOL;
-$dbh = new PDO($type . ':host=' . $host, $user, $password,        array(
-    PDO::MYSQL_ATTR_USE_BUFFERED_QUERY         => true,
-    PDO::ATTR_ERRMODE                          => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE               => PDO::FETCH_ASSOC,
-));
+
+$iter = 30;
+$connected = false;
+while ($connected == false && $iter > 0) {
+
+    try {
+        $dbh = new PDO($type . ':host=' . $host, $user, $password,        array(
+            PDO::MYSQL_ATTR_USE_BUFFERED_QUERY         => true,
+            PDO::ATTR_ERRMODE                          => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE               => PDO::FETCH_ASSOC,
+        ));
+        $dbh->query('select 1;');
+        $connected = true;
+    } catch (Exception $e) {
+        $message = $e->getMessage();
+        $message = "SQLSTATE[HY000] [2002] Connection refused in /var/www/html/bin/prepare.php:23";
+        if(strpos($e->getMessage(), "Connection refused") !== false) {
+            sleep(1); // mysql container might still not be up, lets wait
+            $iter--;
+            echo "Waiting for database container to go up ".$iter . PHP_EOL;
+        } else {
+            throw $e;
+        }
+    }
+}
 
 echo sprintf("Dropping database %s", $dbname) . PHP_EOL;
 $sql = sprintf("DROP DATABASE IF EXISTS %s;", $dbname);

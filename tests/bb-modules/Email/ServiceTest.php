@@ -1001,11 +1001,6 @@ class ServiceTest extends \BBTestCase
             ->method('logEmail')
             ->will($this->returnValue(true));
 
-        $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
-        $licenseMock->expects($this->atLeastOnce())
-            ->method('isPro')
-            ->will($this->returnValue(false));
-
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
@@ -1030,7 +1025,6 @@ class ServiceTest extends \BBTestCase
         $di['mod'] = $di->protect(function () use ($modMock) {
            return $modMock;
         });
-        $di['license'] = $licenseMock;
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
@@ -1120,11 +1114,6 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-       $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
-        $licenseMock->expects($this->atLeastOnce())
-            ->method('isPro')
-            ->will($this->returnValue(false));
-
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
         $modMock->expects($this->atLeastOnce())
             ->method('getConfig')
@@ -1143,7 +1132,6 @@ class ServiceTest extends \BBTestCase
         $di['mod'] = $di->protect(function () use ($modMock) {
             return $modMock;
         });
-        $di['license'] = $licenseMock;
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
