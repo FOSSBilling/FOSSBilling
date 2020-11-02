@@ -72,7 +72,6 @@ $di['pdo'] = function() use ($di) {
         $pdo->exec( 'SET character_set_server = utf8' );
         $pdo->exec( 'SET SESSION interactive_timeout = 28800' );
         $pdo->exec( 'SET SESSION wait_timeout = 28800' );
-        $pdo->exec( 'SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,"ONLY_FULL_GROUP_BY",""));' );
     }
 
     return $pdo;
