@@ -31,7 +31,7 @@ define('BB_PATH_ROOT', realpath(dirname(__FILE__) . '/..'));
 define('BB_PATH_LIBRARY', BB_PATH_ROOT . '/bb-library');
 define('BB_PATH_VENDOR', BB_PATH_ROOT . '/bb-vendor');
 define('BB_PATH_THEMES', BB_PATH_ROOT . '/install');
-define('BB_PATH_LICENSE', BB_PATH_ROOT . '/LICENSE.txt');
+define('BB_PATH_LICENSE', BB_PATH_ROOT . '/LICENSE');
 define('BB_PATH_SQL', BB_PATH_ROOT . '/install/structure.sql');
 define('BB_PATH_SQL_DATA', BB_PATH_ROOT . '/install/content.sql');
 define('BB_PATH_INSTALL', BB_PATH_ROOT . '/install');
@@ -104,14 +104,7 @@ final class Box_Installer
                         $this->session->set('admin_name', $admin_name);
                     }
 
-                    //license
-                    $license = $_POST['license'];
-                    if (!$this->isValidLicense($license)) {
-                        throw new Exception('License Key is not valid');
-                    } else {
-                        $this->session->set('license', $license);
-                    }
-
+                    $this->session->set('license', "BoxBilling CE");
                     $this->makeInstall($this->session);
                     $this->generateEmailTemplates();
                     session_destroy();
@@ -333,7 +326,6 @@ final class Box_Installer
     {
         $data = [
             'debug' => false,
-            'license' => $ns->get('license'),
             'salt' => md5(uniqid()),
             'url' => BB_URL,
             'admin_area_prefix' => '/bb-admin',
@@ -431,10 +423,6 @@ final class Box_Installer
 
         if (!$this->isValidAdmin($ns->get('admin_email'), $ns->get('admin_pass'), $ns->get('admin_name'))) {
             throw new Exception('Administrators account is not valid');
-        }
-
-        if (!$this->isValidLicense($ns->get('license'))) {
-            throw new Exception('License Key is not valid');
         }
     }
 
