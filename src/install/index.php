@@ -215,14 +215,6 @@ final class Box_Installer
         return true;
     }
 
-    private function isValidLicense($license)
-    {
-        if (empty($license)) {
-            return false;
-        }
-        return true;
-    }
-
     private function checkConfig()
     {
         if (!file_exists(BB_PATH_CONFIG)) {
