@@ -590,7 +590,7 @@ VALUES
 	(20,'invoice_series_paid','PAID-',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
 	(21,'issue_invoice_days_before_expire','7',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
 	(22,'tax_enabled','1',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
-	(23,'theme','huraga',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
+	(23,'theme','boxbilling',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
 	(24,'admin_theme','admin_default',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
 	(25,'enable_wysiwyg','0',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
 	(26,'nameserver_1','ns1.1freehosting.com',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),

@@ -375,7 +375,7 @@ VALUES
 	(14,'invoice_due_days','5',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
 	(15,'invoice_auto_approval','1',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
 	(16,'invoice_issue_days_before_expire','14',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
-	(17,'theme','huraga',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
+	(17,'theme','boxbilling',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
 	(18,'issue_invoice_days_before_expire','7',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
 	(19,'invoice_refund_logic','credit_note',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
 	(20,'invoice_cn_series','CN-',0,NULL,NULL,'2012-01-01 12:00:00','2012-01-01 12:00:00'),
