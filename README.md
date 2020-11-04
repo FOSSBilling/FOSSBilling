@@ -20,16 +20,17 @@ Follow [getting started instructions](https://docs.boxbilling.com)
 
 ## Contribute
 
-Follow [contributors guidelines](https://github.com/boxbilling/boxbilling/blob/master/CONTRIBUTING.md)
+Follow [contributors' guidelines](https://github.com/boxbilling/boxbilling/blob/master/CONTRIBUTING.md)
 
-## Docker run
+## Running with Docker
 
-Assuming you already have [Docker](https://docs.docker.com/get-docker/) and [GNU make](https://www.gnu.org/software/make/) installed
+Assuming you already have [Docker](https://docs.docker.com/get-docker/) and [GNU make](https://www.gnu.org/software/make/) installed,
 
 ```console
 make all
-open http://localhost/
 ```
+Now, you can navigate to [localhost](http://localhost/).
+
 
 ## Support
 
