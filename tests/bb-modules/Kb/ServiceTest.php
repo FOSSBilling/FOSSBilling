@@ -351,7 +351,7 @@ class ServiceTest extends \BBTestCase
                 '
                 SELECT kac.*
                 FROM kb_article_category kac
-                LEFT JOIN kb_article ka ON kac.id  = ka.kb_article_category_id GROUP BY kac.id ORDER BY kac.id DESC',
+                LEFT JOIN kb_article ka ON kac.id  = ka.kb_article_category_id ORDER BY kac.id DESC',
                 array(),
             ),
             array(
@@ -361,7 +361,7 @@ class ServiceTest extends \BBTestCase
                 'SELECT kac.*
                  FROM kb_article_category kac
                  LEFT JOIN kb_article ka ON kac.id  = ka.kb_article_category_id
-                 WHERE ka.status = :status GROUP BY kac.id ORDER BY kac.id DESC',
+                 WHERE ka.status = :status ORDER BY kac.id DESC',
                 array(
                     ':status' => 'active',
                 ),
@@ -373,7 +373,7 @@ class ServiceTest extends \BBTestCase
                 'SELECT kac.*
                  FROM kb_article_category kac
                  LEFT JOIN kb_article ka ON kac.id  = ka.kb_article_category_id
-                 WHERE (ka.title LIKE :title OR ka.content LIKE :content) GROUP BY kac.id ORDER BY kac.id DESC',
+                 WHERE (ka.title LIKE :title OR ka.content LIKE :content) ORDER BY kac.id DESC',
                 array(
                     ':title'   => '%search query%',
                     ':content' => '%search query%',
@@ -387,7 +387,7 @@ class ServiceTest extends \BBTestCase
                 'SELECT kac.*
                  FROM kb_article_category kac
                  LEFT JOIN kb_article ka ON kac.id  = ka.kb_article_category_id
-                 WHERE ka.status = :status AND (ka.title LIKE :title OR ka.content LIKE :content) GROUP BY kac.id ORDER BY kac.id DESC',
+                 WHERE ka.status = :status AND (ka.title LIKE :title OR ka.content LIKE :content) ORDER BY kac.id DESC',
                 array(
                     ':title'   => '%search query%',
                     ':content' => '%search query%',

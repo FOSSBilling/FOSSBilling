@@ -67,7 +67,7 @@ class Model_ForumTopicTable implements \Box\InjectionAwareInterface
         if (!empty($where)) {
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
-        $query .= " GROUP BY ft.id ORDER BY ft.sticky DESC, ftm.id DESC";
+        $query .= " ORDER BY ft.sticky DESC, ftm.id DESC";
 
         return array($query, $bindings);
     }
