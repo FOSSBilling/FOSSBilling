@@ -44,7 +44,7 @@ jobs:
         echo > ./src/bb-data/log/application.log
         echo > ./src/bb-data/log/php_error.log
     
-    - name: Run test suite for bb-modules
+    - name: Run test suite for bb-modules and bb-library
       run: |
         php ./src/bb-vendor/bin/phpunit ./tests/bb-modules/
     
