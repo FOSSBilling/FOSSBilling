@@ -1,0 +1,91 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Order' %}{% endblock %}
+
+{% set periods = guest.system_periods %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% trans 'Select Product' %}
+                    <small>{% trans 'Choose products we offer for selling' %}</small>
+                </h1>
+				{% include "partial_steps.phtml" with {'selected': 1} %}
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+
+        <!-- Content Row -->
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel-group" id="accordion">
+				{% for i, category in guest.product_category_get_list.list %}
+					<div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4 class="panel-title">
+                                <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapse-cat{{category.id}}"><strong>{{ category.title }}</strong> {{ category.description|bbmd }}</a>
+                            </h4>
+                        </div>
+                        <div id="collapse-cat{{category.id}}" class="panel-collapse collapse">
+							{% set listing_template = 'mod_service'~category.type~'_listing.phtml' %}
+							{% if guest.system_template_exists({"file":listing_template}) %}
+							<div class="mod_service{{category.type}} panel-body">{% include listing_template %}</div>
+							{% else %}
+							<ul class="list-group">
+							{% for product in category.products %}
+								<li class="list-group-item">
+									<div class="row">
+										<div class="col-md-9">
+											<h4 class="list-group-item-heading">{{ product.title }}</h4>
+											<div class="list-group-item-text">
+												{% if product.icon_url %}
+												<div class="pull-left">
+													{{ product.icon_url | img_tag }}
+												</div>
+												{% endif %}
+												{{ product.description|bbmd }}
+											</div>
+										</div>	
+										<div class="col-md-3 text-center">	
+											<p>{% if product.pricing.type == 'recurrent' %}
+												{% trans 'Starting from' %} 
+												<select name="period" id="period-selector" class="form-control">
+												{% for code,prices in product.pricing.recurrent %}
+													{% if prices.enabled %}<option value="{{code}}">{{ prices.price | money_convert }} {{ periods[code] }}</option>{% endif %}
+												{% endfor %}
+												</select>	
+											{% else %}
+												{% trans 'Starting from' %} <strong>{{ product.price_starting_from | money_convert }}</strong>
+											{% endif %}</p>
+											<a class="btn btn-success pull-right" href="{{ '/order'|link }}/{{ product.slug }}"><i class="fa fa-shopping-cart"></i> {% trans 'Order now' %}</a>
+										</div>
+									</div>	
+								</li>
+							{% endfor %}
+							</ul>
+							{% endif %}		
+							
+
+                        </div>
+                    </div>
+                    <!-- /.panel -->
+					
+				{% endfor %}
+
+                </div>
+                <!-- /.panel-group -->
+            </div>
+            <!-- /.col-lg-12 -->
+        </div>
+        <!-- /.row -->
+		
+{% endblock %}
+
+{% block sidebar %}
+	<div class="well">
+		{% include 'partial_currency.phtml' %}
+	</div>
+{% endblock %}

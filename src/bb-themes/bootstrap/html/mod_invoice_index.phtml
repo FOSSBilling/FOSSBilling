@@ -1,0 +1,60 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Invoices' %}{% endblock %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% trans 'Invoices' %}
+					<small>{% trans 'List of invoices' %}</small>
+				<h1>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+
+		<!-- Service Tabs -->
+        <div class="row">
+            <div class="col-lg-12">
+				{% if client.invoice_get_list({"status":"unpaid"}).total > 0 %}
+					<div>
+						<h2>{% trans 'Unpaid' %}</h2>
+						<div class="list-group">
+							{% set unpaid_invoices = client.invoice_get_list({"status":"unpaid"}).list %}
+							{% for i, invoice in unpaid_invoices %}
+							<a href="{{ 'invoice'|link }}/{{ invoice.hash }}" class="list-group-item list-group-item-danger">
+								<strong>{{ "Invoice #%05s"|format(invoice.id) }}</strong>
+								- <i>{% trans 'Issue Date' %}:</i> {{ invoice.created_at|date('Y-m-d h:i') }} - <i>{% trans 'Due Date' %}:</i> <strong>{{ invoice.due_at|date('Y-m-d h:i') }}</strong>
+								
+								<span class="pull-right btn btn-danger btn-xs">{% trans 'Pay' %}: <strong>{{ invoice.total | money(invoice.currency) }}</strong></span>
+							</a>
+							{% else %}{% trans 'The list is empty' %}
+							{% endfor %}
+						</div>
+					</div>
+					<hr>
+				{% endif %}
+		
+				<h2>{% trans 'Paid' %}</h2>
+				<div class="list-group">
+					{% set paid_invoices = client.invoice_get_list({"per_page":10, "page":request.page, "status":"paid"}) %}
+					{% for i, invoice in paid_invoices.list %}
+					<a href="{{ 'invoice'|link }}/{{ invoice.hash }}" class="list-group-item list-group-item-success">
+						<strong>{{ "Invoice #%05s"|format(invoice.id) }}</strong>
+						- <i>{% trans 'Issue Date' %}:</i> {{ invoice.created_at|date('Y-m-d h:i') }} - <i>{% trans 'Paid at' %}:</i> {{ invoice.paid_at|date('Y-m-d h:i') }}
+						<span class="pull-right btn btn-success btn-xs">{% trans 'Paid' %}: <strong>{{ invoice.total | money(invoice.currency) }}</strong></span>
+					</a>
+					{% else %}{% trans 'The list is empty' %}
+					{% endfor %}
+				</div>
+				{% include "partial_pagination.phtml" with {'list': paid_invoices} %}
+            </div>
+        </div>
+		
+		<div class="text-center">
+			<a href="{{ '/client/balance'|link }}" title="{% trans 'Payment history' %}" class="btn btn-success" ><i class="fa fa-archive"></i> {% trans 'Payment history' %}</a>
+		</div>
+
+{% endblock %}

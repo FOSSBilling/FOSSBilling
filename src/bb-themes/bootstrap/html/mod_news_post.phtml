@@ -1,0 +1,74 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{{post.title}}{% endblock %}
+
+{% block opengraph %}
+
+    <meta property="og:title" content="{{ post.title }}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="{{ guest.system_current_url }}" />
+    <meta property="og:image" content="{{post.image}}" />
+    <meta property="article:author" content="{{ post.author.name }}" />
+    
+    {% if post.published_at %}<meta property="article:published_time" content="{{post.published_at}}" />{% endif %}
+    {% if post.updated_at %}<meta property="article:modified_time" content="{{post.updated_at}}" />{% endif %}
+    {% if post.expires_at %}<meta property="article:expiration_time" content="{{post.expires_at}}" />{% endif %}
+    {% if post.section %}<meta property="article:section" content="{{ post.section }}" />{% endif %}
+    {% if post.tags %}<meta property="article:tag" content="{{ post.tags|join(', ') }}" />{% endif %}
+    
+{% endblock %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{{post.title}}
+                    <small>{{post.created_at|date('Y-m-d h:i')}} {% trans 'by '%} {{ post.author.name }}</small>
+                </h1>
+				<ol class="breadcrumb">
+					<li><a href="{{ '/news'|link }}">{% trans 'Announcements' %}</a></li>
+					<li class="active">{{ post.title }}</li>
+				</ol>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+
+		<!-- Preview Image -->
+		{% if post.image %}
+		<div class="center-block">
+			<img class="img-responsive" src="{{post.image}}" alt="{{post.title}}">
+		</div><hr>{% endif %}
+		
+		<!-- Post Content -->
+		<p>
+			{{ post.content|bbmd }}
+			{# if post.tags %}Tags: {{ post.tags|join(', ') }}{% endif #}
+		</p>
+		<p class="lead">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ducimus, vero, obcaecati, aut, error quam sapiente nemo saepe quibusdam sit excepturi nam quia corporis eligendi eos magni recusandae laborum minus inventore?</p>
+		<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ut, tenetur natus doloremque laborum quos iste ipsum rerum obcaecati impedit odit illo dolorum ab tempora nihil dicta earum fugiat. Temporibus, voluptatibus.</p>
+		<hr>
+		
+
+		
+		<div class="text-center">
+			<a class="btn btn-default" href="{{ 'news'|link }}"><i class="fa fa-arrow-left"></i> {% trans 'Back to list' %}</a>
+		</div>
+
+		{% if guest.extension_is_on({"mod":"comment"}) %}{% include "mod_comment_block.phtml" %}{% endif %}
+
+{% endblock %}
+
+{% block sidebar2 %}
+	<div class="well well-sm">
+		<h4>{% trans 'Other recent posts' %}</h4>
+		<div class="list-group">
+        {% set posts = guest.news_get_list({"per_page": 5}) %}
+        {% for i, post in posts.list %}
+			<a href="{{ '/news'|link }}/{{post.slug}}" class="list-group-item">{{post.title}}</a>
+        {% endfor %}
+		</div>
+	</div>
+
+{% endblock %}

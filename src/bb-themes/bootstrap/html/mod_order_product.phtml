@@ -1,0 +1,76 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{ product.title }}{% endblock %}
+
+{% set periods = guest.system_periods %}
+{% set pricing = product.pricing %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% trans 'Configure' %}
+                    <small>{{ product.title }}</small>
+                </h1>
+				{% include "partial_steps.phtml" with {'selected': 2, 'product': product} %}
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+		
+		<!-- Content Row -->
+        <div class="row">
+            <div class="col-lg-12">
+			<form method="post" action="" class="api_form" data-api-url="guest/cart/add_item" data-api-redirect="{{ 'cart'|link }}">
+				<div class="row">
+						<div class="col-md-8">
+							{{ product.description|bbmd }}
+							{% if product.form_id and guest.extension_is_on({"mod":"formbuilder"}) %}
+								{% include 'mod_formbuilder_build.phtml' with product %}
+							{% endif %}
+						</div>
+						<div class="col-md-4">
+							<div class="well text-center">
+								{% include 'partial_currency.phtml' %}
+								<hr>
+								{% include 'partial_pricing.phtml' with {'product': product} %}
+								
+							</div>
+						</div>
+						<div class="col-md-8">
+							{% include 'partial_addons.phtml' with {'product': product} %}
+						</div>
+				</div>
+				<input type="hidden" name="id" value="{{ product.id }}" />
+			</form>
+            </div>
+        </div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+
+    if($(".addons").length && $(".addons").is(':hidden')) {
+        $('#order-button').one('click', function(){
+            $(this).hide();
+            $('.addons').slideDown('fast');
+            return false;
+        });
+    }
+
+    $('#period-selector').on('change', function() {
+        $('.period').hide();
+        $('.period.' + $(this).val()).show();
+    });
+
+    $('.addon-period-selector').change(function(){
+        var r = $(this).attr('rel');
+        $('#' + r + ' span').hide();
+        $('#' + r + ' span.' + $(this).val()).fadeIn();
+    }).trigger('change');
+});
+</script>
+{% endblock %}

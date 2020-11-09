@@ -1,0 +1,93 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{ topic.title }}{% endblock %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{{ topic.title }}
+					<small>{{ forum.title }}</small>
+				</h1>
+				<ol class="breadcrumb">
+					<li><a href="{{ 'forum'|link }}">{% trans 'Forum' %}</a></li>
+					<li><a href="{{ '/forum'|link }}/{{forum.slug}}">{{ forum.title }}</a></li>
+					<li class="active">{{ topic.title }}</li>
+				</ol>
+			</div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+		
+		<div class="well well-sm">
+		<ul class="list-inline">
+			<li><img src="{{ topic.first.author.email|gravatar }}?size=20" alt="{{ message.author.name }}"></li>
+			<li>{{topic.created_at|date('Y-m-d h:i')}}</li>
+			<li><strong>{{ topic.stats.views_count }}</strong> {% trans 'Views' %}</li>
+			<li><strong>{{ topic.stats.posts_count }}</strong> {% trans 'Messages' %}</li>
+			{% if client %}
+				{% if client.forum_is_favorite({"id":topic.id}) %}
+				<li><a href="{{ 'api/client/forum/favorite_remove'|link({'id' : topic.id}) }}" class="api" data-api-reload="1">Remove from favorites</a></li>
+				{% else %}
+				<li><a href="{{ 'api/client/forum/favorite_add'|link({'id' : topic.id}) }}" class="api" data-api-reload="1">Add to favorites</a></li>
+				{% endif %}
+				{% if client.forum_is_subscribed({"id":topic.id}) %}
+				<li><a href="{{ 'api/client/forum/unsubscribe'|link({'id' : topic.id}) }}" class="api" data-api-reload="1">Disable notifications for this topic</a></li>
+				{% else %}
+				<li><a href="{{ 'api/client/forum/subscribe'|link({'id' : topic.id}) }}" class="api" data-api-reload="1">Subscribe to notifications</a></li>
+				{% endif %}
+			{% endif %}
+		</ul>
+		</div>		
+		<hr>
+		
+        {% set messages = guest.forum_get_topic_message_list({"forum_topic_id":topic.id, "page":request.page, "per_page":10}) %}
+        {% for i, message in messages.list %}
+		<div class="media">
+            <a class="pull-left" href="#">
+                <img class="media-object" src="{{ message.author.email|gravatar }}?size=64" alt="{{ message.author.name }}">
+            </a>
+            <div class="media-body">
+                <h4 class="media-heading">{{ message.author.name }}
+                    <small class="pull-right">{{ message.created_at|date('Y-m-d h:i') }}</small>
+                </h4>
+                <p>{{ message.message|bbmd }}</p>
+			</div>	
+        </div>
+		<hr>
+        {% else %}
+            <div class="box">
+                <div class="block">{% trans 'No replies in this topic' %}</div>
+            </div>
+        {% endfor %}
+		{% include "partial_pagination.phtml" with {'list': messages} %}
+		<p class="text-center">
+			<a class="btn btn-default" href="{{ '/forum'|link }}/{{forum.slug}}"><i class="fa fa-arrow-left"></i> {{ forum.title }}</a>
+			{% if client %}
+				{% if topic.status != "locked" %}
+					<a class="btn btn-primary" role="button" data-toggle="collapse" href="#reply" aria-expanded="false" aria-controls="reply">{% trans 'Reply' %}</a>
+				{% else %}
+					<button class="btn btn-danger" disabled="disabled" >{{ mf.status_name(topic.status) }}</button>
+				{% endif %}
+			{% else %}
+				<a class="btn btn-primary" href="" data-toggle="modal" data-target="#login">{% trans 'Login' %}</a>
+			{% endif %}
+		</p>
+		
+		<div class="collapse well" id="reply">
+			<h4>{% trans 'Post new message in forum' %}</h4>
+			<form method="post" action="" class="api_form" data-api-url="client/forum/post_message" data-api-reload="1">
+				<div class="control-group form-group">
+					<div class="controls">
+						<textarea rows="10" cols="100" class="form-control" name="message" style="resize:none" required="required" data-provide="markdown" data-iconlibrary="fa"></textarea>
+					</div>
+				</div>
+				<input type="hidden" name="forum_topic_id" value="{{ topic.id }}">
+				<input class="btn btn-primary" type="submit" value="{% trans 'Post' %}">
+			</form>
+		</div>
+
+    
+
+{% endblock %}

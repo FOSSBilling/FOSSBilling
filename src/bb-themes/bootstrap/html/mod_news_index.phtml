@@ -1,0 +1,52 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Blog'%}{% endblock %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% trans 'News & Announcements' %}
+                    <small>{% trans 'Track our latest posts' %}</small>
+                </h1>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+		
+		<!-- Blog Post Row -->
+    {% set posts = guest.news_get_list({"page":request.page,"per_page": 5}) %}
+    {% for i, post in posts.list %}
+		<div class="row">
+			{% if post.image %}
+			<div class="col-md-6">
+                <a href="{{ '/news'|link }}/{{post.slug}}">
+                   <img class="img-responsive img-hover" src="{{post.image}}" alt="{{post.title}}">
+                </a>
+            </div>
+			<div class="col-md-6">
+			{% else %}
+            <div class="col-md-12">
+			{% endif %}
+                <h3><a href="{{ '/news'|link }}/{{post.slug}}">{{post.title}}</a><h3>
+				<h4>{{post.updated_at|date('Y-m-d h:i')}}</h4>
+                <p>
+					{% if post.excerpt %}
+						{{post.excerpt|bbmd}}
+					{% else %}
+						{{ post.content|bbmd }}
+					{% endif %}
+				</p>
+                <a class="btn btn-primary" href="{{ '/news'|link }}/{{post.slug}}">{% trans 'Read more..' %} <i class="fa fa-angle-right"></i></a>
+            </div>
+        </div>
+		{% if not loop.last %}<hr>{% endif %}
+    {% else %}
+    <p>The list is empty</p>
+    {% endfor %}
+        <!-- /.row -->
+		
+	{% include "partial_pagination.phtml" with {'list': posts} %}
+
+{% endblock %}

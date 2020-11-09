@@ -1,0 +1,64 @@
+
+        <div class="total">
+            {% if pricing.type == 'free' %}
+            
+                {% if product.allow_quantity_select %}
+                    <h4>{% trans 'Quantity:' %}</h4>
+                    <input type="text" name="quantity" value="1" class="form-control"/>
+                    <hr/>
+                {% endif %}
+                
+                <h2><strong>{% trans 'Total price:' %}</strong><br />{{ 0 | money_convert }}</h2>
+            {% endif %}
+
+            {% if pricing.type == 'once'  %}
+                {% if product.allow_quantity_select %}
+                    <h4>{% trans 'Quantity:' %}</h4>
+                    <input type="text" name="quantity" value="1" class="form-control"/>
+                    <hr/>
+                {% endif %}
+
+                <h2><strong>{% trans 'Total price:' %}</strong><br /> {{ (pricing.once.price + pricing.once.setup) | money_convert }}</h2>
+            {% endif %}
+
+
+        {% if pricing.type == 'recurrent'  %}
+			{% if product.allow_quantity_select %}
+				<h4>{% trans 'Quantity:' %}</h4>
+				<input type="text" name="quantity" value="1" class="form-control"/>
+				<hr/>
+			{% endif %}
+					
+			<select name="period" id="period-selector" class="form-control">
+			{% for code,prices in pricing.recurrent %}
+				{% if prices.enabled %}
+				<option value="{{code}}"{% if request.period == code %} selected="selected"{% endif %}>{{ (prices.price + prices.setup) | money_convert }} {{ periods[code] }}</option>
+				{% endif %}
+			{% endfor %}
+			</select>
+			<hr>
+			
+
+			{% for code,prices in pricing.recurrent if prices.enabled and prices.setup > 0 %}
+					<div class="period {{code}}" style="{% if not loop.first %}display: none;{% endif %}">
+						<table class="table">
+							<tr>
+								<td>{% trans 'Price' %}</td>
+								<td>{{ prices.price | money_convert }}</td>
+							</tr>
+							<tr>
+								<td>{% trans 'Setup Price' %}</td>
+								<td>{{ prices.setup | money_convert }}</td>
+							</tr>
+						</table>
+					</div>
+			{% endfor %}
+        
+        {% endif %}
+        </div>
+
+        {% if product.addons|length > 0 %}
+			<button class="btn btn-success btn-lg" type="submit" id="order-button">{% trans 'Continue' %}</button>
+        {% else %}
+			<button class="btn btn-success btn-lg" type="submit" id="order-button">{% trans 'Order now' %}</button>
+        {% endif %}

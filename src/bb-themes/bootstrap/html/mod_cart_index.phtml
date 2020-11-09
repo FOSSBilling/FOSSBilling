@@ -1,0 +1,338 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% import "macro_functions.phtml" as mf %}
+
+{% block meta_title %}{%trans 'Order confirm' %}{% endblock %}
+
+{% set cart = guest.cart_get %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% if cart.items|length > 0 %}{% trans 'Select Product' %}{% else %}{% trans 'You have not selected any product' %}{% endif %}
+                    <small>{% trans 'Choose products we offer for selling' %}</small>
+                </h1>
+				{% include "partial_steps.phtml" with {'selected': 3} %}
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}	
+
+{% if cart.items|length > 0 %}
+	
+		<div class="row">
+			<div class="col-md-12">
+				<div class="well">
+					<h4><i class="fa fa-shopping-cart"></i> {% trans 'Shopping cart' %}</h4>
+					<ul class="list-group">
+						{% set total_discount = 0 %}
+						{% for i, item in cart.items %}
+						<li class="list-group-item">
+							{{ item.title }} {% if item.quantity > 1 %}<span class="label label-default">x{{ item.quantity }}</span>{% endif %}
+							<span class="pull-right">
+								<strong>
+								{% if item.discount_price %}
+									{% if item.quantity > 1 %}
+										{{ item.quantity }}x {{ item.price | money_convert }} = 
+										<del>{{ (item.quantity*item.price) | money_convert }}</del>
+										{{ (item.quantity*(item.price - item.discount_price)) | money_convert }}
+									{% else %}
+										<del>{{ item.price | money_convert }}</del>
+										{{ (item.price - item.discount_price) | money_convert }}
+									{% endif %}
+								{% else %}
+									{% if item.quantity > 1 %}
+										{{ item.quantity }}x {{ item.price | money_convert }} = {{ (item.quantity*item.price) | money_convert }}
+									{% else %}
+										{{ item.price | money_convert }}
+									{% endif %}
+								{% endif %}
+								</strong>
+								{% if item.period | period_title != '-' %}{{ item.period | period_title }}{% endif %}
+							</span>
+						</li>
+						{% if item.setup_price != 0 %}
+						<li class="list-group-item">
+							{{ item.title }} {% trans 'setup' %}
+							<span class="pull-right">
+								<strong>{% if item.discount_setup %}
+									<del>{{ item.setup_price | money_convert }}</del>
+									{{ (item.setup_price - item.discount_setup) | money_convert }}
+								{% else %}
+									{{ item.setup_price | money_convert }}
+								{% endif %}</strong>
+							</span>
+						</li>
+						{% endif %}
+						{% if item.discount_price or item.discount_setup %}{% set total_discount = total_discount + item.discount_price + item.discount_setup %}{% endif %}
+						{% endfor %}
+					</ul>
+				{% if client %}
+				<div class="row">
+					<div class="col-md-6">
+						{% include 'partial_currency.phtml' %}
+						<p><form action="{{ 'api/guest/cart/apply_promo'|link }}" method="post" class="api-form form-inline" data-api-reload="1">
+							<h4>{% trans 'Have a promo code?' %}</h4>
+							<div class="form-group">
+									<input type="text" class="form-control" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" required="required">
+							</div>
+							{% if cart.promocode %}
+								<a href="{{ 'api/guest/cart/remove_promo'|link }}" class="btn btn-danger btn-sm api-link" data-api-reload="1">{% trans 'Reset' %}</a>
+							{% else %}
+								<button class="btn btn-primary btn-sm" type="submit">{% trans 'Apply' %}</button>
+							{% endif %}
+						</form></p><br />
+					</div>
+					<div class="col-md-6 text-right">
+						<h4>{% trans 'Total' %}</h4>
+						<div class=" alert alert-info">
+							{% if total_discount > 0 %}{% trans 'Discount' %}: -{{ total_discount | money_convert }}<br />{% endif %}
+								{% set tax_amount = 0 %}
+								{% if client.client_is_taxable %}
+									{% set tax_rate = client.invoice_get_tax_rate %}
+									{% set tax_amount = cart.total * tax_rate / 100 %}
+									{% trans 'VAT'%} ({{ tax_rate }}%): {{ tax_amount | money_convert }}<br />
+							{% endif %}
+							<strong>{% trans 'Total:' %}</strong> {{ (cart.total + tax_amount) | money_convert }}
+						</div>
+					
+						<form method="post" action="{{ 'api/client/cart/checkout'|link }}" class="api-form" data-api-jsonp="onAfterCartCheckout">
+							<div class="list-group text-left">
+								{% set enough_in_balance = client.client_balance_get_total >= cart.total %}
+								{% if cart.total and not enough_in_balance  %}
+								{% for gtw in guest.invoice_gateways %}
+									{% if cart.currency.code in gtw.accepted_currencies %}
+									<label class="list-group-item">
+										<input type="radio" name="gateway_id" value="{{gtw.id}}" {{loop.first ? 'checked' : ''}} />
+										{% trans 'Pay by' %} {{gtw.title}}
+										{% if gtw.title == "Custom" %}
+											<i class="fa fa-university fa-2x pull-right"></i>
+										{% elseif gtw.title == "PayPal" %}
+											<i class="fa fa-paypal fa-2x pull-right"></i>
+										{% elseif gtw.title == "Stripe" %}
+											<i class="fa fa-cc-stripe fa-2x pull-right"></i>
+										{% endif %}
+									</label>
+									{% endif %}
+								{% endfor %}
+								{% endif %}
+								{% if enough_in_balance %}
+								<p>{% trans 'Total amount will be deducted from account balance' %}</p>
+								{% endif %}
+							</div>
+							<p><button class="btn btn-success btn-lg" type="submit"><i class="fa fa-shopping-cart"></i> {% trans 'Checkout' %} {{ (cart.total + tax_amount) | money_convert }}</button></p>
+						</form>
+						{% else %}	
+						<div class="text-right"><strong>{% trans 'Total:' %}</strong> {{ (cart.total + tax_amount) | money_convert }} ({% trans 'No VAT'%})</div>	
+						{% endif %}	
+					</div>
+				</div>
+			</div>
+			
+			
+            {% if not client %}
+			<p class="text-center">
+					<a class="btn btn-primary btn-lg" data-toggle="tab" href="#signin">{% trans 'Sign in' %}</a>
+					<a class="btn btn-success btn-lg" data-toggle="tab" href="#register">{% trans 'Register' %}</a>
+				</p>
+				<div id="myTabContent" class="tab-content">
+					<div class="tab-pane well" id="signin">
+						<form method="post" action="" class="api_form form-horizontal" data-api-url="guest/client/login" data-api-reload="1">
+							<div class="form-group">
+								<label for="email" class="col-sm-4 control-label">{% trans 'Email Address' %}: </label>
+								<div class="col-sm-8">
+									<input type="email" name="email" value="{{ request.email }}" required="required" class="form-control">
+								</div>
+							</div>
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'Password' %}: </label>
+								<div class="col-sm-8">
+									<input type="password" class="form-control" name="password" value="{{ request.password }}" required="required" class="form-control">
+								</div>
+							</div>
+							<div class="text-right">
+								<input type="hidden" name="remember" value="1" />
+								<a class="btn btn-warning" href="{{ 'reset-password'|link }}">{% trans 'Reset password' %}</a>
+								<input class="btn btn-primary" type="submit" value="{% trans 'Login' %}">
+							</div>
+						</form>
+					</div>
+					<div class="tab-pane well" id="register">
+						<form method="post" action="" class="api_form form-horizontal" data-api-url="guest/client/create" data-api-reload="1">
+							{% set r = guest.client_required %}
+							<div class="form-group">
+								<label for="email" class="col-sm-4 control-label">{% trans 'Email Address' %}: </label>
+								<div class="col-sm-8">
+									<input type="email" name="email" value="{{ request.email }}" required="required" id="reg-email" class="form-control">
+								</div>
+							</div>
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'First Name' %}: </label>
+								<div class="col-sm-8">
+									<input type="text" name="first_name" value="{{ request.first_name }}" required="required" class="form-control">
+								</div>
+							</div>
+							{% if 'last_name' in r %}
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'Last Name' %}: </label>
+								<div class="col-sm-8">
+									<input type="text" name="last_name" value="{{ request.last_name }}" required="required" class="form-control">
+								</div>
+							</div>
+							{% endif %}
+							
+							{% if 'company' in r %}
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'Company' %}: </label>
+								<div class="col-sm-8">
+									<input type="text" name="company" value="{{ request.company }}" required="required" class="form-control">
+								</div>
+							</div>
+							{% endif %}
+							
+							{% if 'birthday' in r %}
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'Birthday' %}: </label>
+								<div class="col-sm-8">
+									<input type="text" name="birthday" value="" class="form-control">
+								</div>
+							</div>
+							{% endif %}
+							
+							{% if 'gender' in r %}
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'You are' %}: </label>
+								<div class="col-sm-8">
+									<select name="gender" class="form-control">
+										<option value="male">Male</option>
+										<option value="female">Female</option>
+									</select>
+								</div>
+							</div>
+							{% endif %}
+
+							{% set custom_fields = guest.client_custom_fields %}
+							{% for field_name, field in custom_fields %}
+							{% if field.active %}
+							<div class="form-group">
+								<label class="col-sm-4 control-label" for="{{ field_name }}">{% if field.title is not empty %}{{ field.title }}{% else %} {{ field_name | capitalize }} {% endif %}</label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" name="{{ field_name }}" id="{{ field_name }}" value="{{ attribute(request, field_name) }}" {% if field.required %}required="required"{% endif %}>
+								</div>
+							</div>
+							{% endif %}
+							{% endfor %}
+							
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'Password' %}: </label>
+								<div class="col-sm-8">
+									<input type="password" class="form-control" name="password" value="" required="required" id="reg-password" class="form-control">
+								</div>
+							</div>
+							
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'Password confirm' %}: </label>
+								<div class="col-sm-8">
+									<input type="password" class="form-control" name="password_confirm" value="" required="required" class="form-control">
+								</div>
+							</div>			
+							{{ mf.recaptcha }}
+
+							{% if 'address_1' in r %}
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'Address' %}: </label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" name="address_1" value="{{ request.address_1 }}">
+								</div>
+							</div>
+							{% endif %}
+								
+							{% if 'address_2' in r %}
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'Address 2' %}: </label>
+								<div class="col-sm-8">
+										<input type="text" class="form-control" name="address_2" value="{{ request.address_2 }}">
+								</div>
+							</div>
+							{% endif %}
+								
+							{% if 'city' in r %}
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'City' %}: </label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" name="city" value="{{ request.city }}">
+								</div>
+							</div>
+							{% endif %}
+								
+							{% if 'country' in r %}
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'Country' %}: </label>
+								<div class="col-sm-8">
+									{{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Select country') }}
+								</div>
+							</div>
+							{% endif %}
+								
+							{% if 'state' in r %}
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'State' %}: </label>
+									 {# mf.selectbox('state', guest.system_states, request.state, 0, 'Select state') #}
+								<div class="col-sm-8">
+									<input type="text" class="form-control" name="state" value="{{ request.state }}" />
+								</div>
+							</div>
+							{% endif %}
+								
+							{% if 'postcode' in r %}
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'Zip/Postal Code' %}: </label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" name="postcode" value="{{ request.postcode }}">
+								</div>
+							</div>
+							{% endif %}
+								
+							{% if 'phone' in r %}
+							<div class="form-group">
+								<label class="col-sm-4 control-label">{% trans 'Phone Number' %}: </label>
+								<div class="col-sm-8">
+									<input type="text" class="form-control" name="phone_cc" value="{{ request.phone_cc }}" style="width: 40px"> <input type="text" name="phone" value="{{ request.phone }}" style="width: 233px">
+								</div>
+							</div>
+							{% endif %}
+							
+							<div class="text-right">
+								<input class="btn btn-success" type="submit" value="{% trans 'Register' %}">
+							</div>
+							
+						</form>
+					</div>
+				</div>
+            {% endif %}
+			
+		</div>
+		</div>
+{% else %}
+
+    <div class="text-center">
+		<a class="btn btn-success btn-lg" href="{{ 'order'|link }}">{% trans 'Order new service' %}</a>
+    </div>
+
+{% endif %}
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+function onAfterCartCheckout(result)
+{
+    if(result.invoice_hash) {
+        bb.redirect('{{"invoice"|link}}' + '/' + result.invoice_hash + '&auto_redirect=1');
+    } else {
+        bb.redirect('{{"order/service/manage"|link}}' + '/' + result.order_id );
+    }
+}
+</script>
+{% endblock %}

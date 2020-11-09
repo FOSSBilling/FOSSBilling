@@ -1,0 +1,41 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% import "macro_functions.phtml" as mf %}
+
+{% block meta_title %}{% trans 'My Products & Services' %}{% endblock %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% trans 'Ordered Services' %}</h1>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+
+        <div class="list-group">
+                {% set orders = client.order_get_list({"per_page":10, "page":request.page, "hide_addons":1}) %}
+                {% for i, order in orders.list %}
+                <a href="{{ '/order/service/manage'|link }}/{{order.id}}" class="list-group-item {% if order.status == "active" %}list-group-item-success{% elseif order.status == "pending_setup" %}list-group-item-warning{% elseif order.status == "failed_setup" %}list-group-item-danger{% endif %}">
+					<strong>{{order.title}}</strong> - {{  order.total | money(order.currency) }} {% if order.period%}{{ order.period | period_title }}{% endif %}
+                    {% if order.expires_at %}
+						- <i>{% trans 'Expires at' %}: {{order.expires_at|date('Y-m-d h:i')}}</i>
+					{% endif %}
+					<span class="pull-right label {% if order.status == "active" %}label-success{% elseif order.status == "pending_setup" %}label-warning{% elseif order.status == "failed_setup" %}label-danger{% else %}label-default{% endif %}">{{ mf.status_name(order.status) }}</span>
+                </a>
+                {% else %}{% trans 'The list is empty' %}
+                {% endfor %}
+        </div>
+
+		{% include "partial_pagination.phtml" with {'list': orders} %}
+		
+		
+        <div class="text-center">
+            <a class="btn btn-success" href="{{ 'order'|link }}"><i class="fa fa-shopping-cart"></i> {% trans 'New order' %}</a>
+        </div>
+
+
+
+{% endblock %}

@@ -1,0 +1,15 @@
+{% if list.pages > 1 %}
+{% set page = list.page %}
+
+<div class="text-center">
+	<ul class="pagination">
+	  {% for i in 1..list.pages %}
+		{% if i == page %}
+		<li class="active"><a href="#" onclick="return false;">{{ i }}</a></li>
+		{%else%}
+		<li><a href="?{% for k,v in {}|merge(request)|merge({'page': i}) %}{{k}}={{v}}{% if loop.last == FALSE %}&{%endif%}{% endfor %}">{{ i }}</a></li>
+		{% endif %}
+	  {% endfor %}
+	</ul>
+</div>
+{% endif %}
