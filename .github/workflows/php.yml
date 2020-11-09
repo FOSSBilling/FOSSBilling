@@ -47,3 +47,7 @@ jobs:
     - name: Run test suite for bb-modules
       run: |
         php ./src/bb-vendor/bin/phpunit ./tests/bb-modules/
+    
+    - name: Run test suite for bb-library
+      run: |
+        php ./src/bb-vendor/bin/phpunit ./tests/bb-library/    
