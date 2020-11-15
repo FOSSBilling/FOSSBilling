@@ -145,6 +145,7 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception('Order :id has no active service', array(':id'=>$order->id));
         }
         //@todo ?
+
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         return true;
