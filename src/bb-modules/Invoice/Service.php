@@ -130,7 +130,7 @@ class Service implements InjectionAwareInterface
             $params['search'] = $search;
         }
         
-        $sql .= ' GROUP BY p.id ORDER BY p.id DESC';
+        $sql .= ' ORDER BY p.id DESC';
         return array($sql, $params);
     }
 
@@ -1136,6 +1136,11 @@ class Service implements InjectionAwareInterface
         if (method_exists($adapter, 'setDi')) {
             $adapter->setDi($this->di);
         }
+        
+        if (method_exists($adapter, 'setLog')) {
+            $adapter->setLog($this->di['logger']);
+        }
+
         $pgc = $adapter->getConfig();
 
         //@since v2.9.15

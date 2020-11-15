@@ -175,7 +175,7 @@ class Service implements InjectionAwareInterface
     {
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Product', 5);
-        $sql      = "SELECT MAX(priority) FROM product GROUP BY priority ORDER BY priority DESC LIMIT 1";
+        $sql      = "SELECT MAX(priority) FROM product LIMIT 1";
         $priority = $this->di['db']->getCell($sql);
 
         $modelPayment       = $this->di['db']->dispense('ProductPayment');

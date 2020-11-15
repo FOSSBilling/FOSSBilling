@@ -17,11 +17,8 @@ $di['config'] = function() {
     return new Box_Config($array);
 };
 $di['logger'] = function () use ($di) {
-    $logFile = $di['config']['path_logs'];
-    $writer  = new Box_LogStream($logFile);
     $log     = new Box_Log();
     $log->setDi($di);
-    $log->addWriter($writer);
 
     $log_to_db = isset($di['config']['log_to_db']) && $di['config']['log_to_db'];
     if ($log_to_db) {
@@ -36,6 +33,10 @@ $di['logger'] = function () use ($di) {
             $log->setEventItem('client_id', $client->id);
         }
         $log->addWriter($writer2);
+    } else {
+        $logFile = $di['config']['path_logs'];
+        $writer  = new Box_LogStream($logFile);
+        $log->addWriter($writer);
     }
 
     return $log;
@@ -168,16 +169,36 @@ $di['twig'] = $di->factory(function () use ($di) {
 
 $di['is_client_logged'] = function() use($di) {
     if(!$di['auth']->isClientLoggedIn()) {
-        $url = $di['url']->link('login');
-        header("Location: $url");  
-        throw new Exception('Client is not logged in');
+        $api_str = '/api/';
+        $url = $di['request']->getQuery('_url');
+        if (strncasecmp($url, $api_str , strlen($api_str)) === 0) {
+            //Throw Exception if api request
+            throw new Exception('Client is not logged in');
+        }
+        else {            
+            //Redirect to login page if browser request
+            $login_url = $di['url']->link('login');
+            header("Location: $login_url");
+        }
+
     }
     return true;
 };
 
 $di['is_admin_logged'] = function() use($di) {
+    
     if(!$di['auth']->isAdminLoggedIn()) {
+    $api_str = '/api/';
+    $url = $di['request']->getQuery('_url');
+    if (strncasecmp($url, $api_str , strlen($api_str)) === 0) {
+        //Throw Exception if api request
         throw new Exception('Admin is not logged in');
+    }
+    else {
+        //Redirect to login page if browser request
+        $login_url = $di['url']->adminLink('staff/login');
+        header("Location: $login_url");
+        }
     }
     return true;
 };
@@ -226,11 +247,6 @@ $di['api_guest'] = function() use ($di) { return $di['api']('guest'); };
 $di['api_client'] = function() use ($di) { return $di['api']('client');};
 $di['api_admin'] = function() use ($di) { return $di['api']('admin'); };
 $di['api_system'] = function() use ($di) { return $di['api']('system'); };
-$di['license'] = function () use ($di) {
-    $service = new Box_License();
-    $service->setDi($di);
-    return $service;
-};
 
 $di['tools'] = function () use ($di){
     $service = new Box_Tools();
@@ -244,7 +260,7 @@ $di['validator'] = function () use ($di){
     return $validator;
 };
 $di['guzzle_client'] = function () {
-    return new \Guzzle\Http\Client();
+    return new GuzzleHttp\Client();
 };
 $di['mail'] = function () {
     return new Box_Mail();

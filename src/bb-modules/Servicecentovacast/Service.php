@@ -30,10 +30,6 @@ class Service implements \Box\InjectionAwareInterface
     
     public function install()
     {
-        if(!$this->di['license']->isPro()) {
-            throw new \Exception('This extension can only be enabled by PRO license owners', 509);
-        }
-        
         $sql="
         CREATE TABLE IF NOT EXISTS `service_centovacast` (
         `id` bigint(20) NOT NULL AUTO_INCREMENT,

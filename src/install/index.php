@@ -31,7 +31,7 @@ define('BB_PATH_ROOT', realpath(dirname(__FILE__) . '/..'));
 define('BB_PATH_LIBRARY', BB_PATH_ROOT . '/bb-library');
 define('BB_PATH_VENDOR', BB_PATH_ROOT . '/bb-vendor');
 define('BB_PATH_THEMES', BB_PATH_ROOT . '/install');
-define('BB_PATH_LICENSE', BB_PATH_ROOT . '/LICENSE.txt');
+define('BB_PATH_LICENSE', BB_PATH_ROOT . '/LICENSE');
 define('BB_PATH_SQL', BB_PATH_ROOT . '/install/structure.sql');
 define('BB_PATH_SQL_DATA', BB_PATH_ROOT . '/install/content.sql');
 define('BB_PATH_INSTALL', BB_PATH_ROOT . '/install');
@@ -65,7 +65,7 @@ final class Box_Installer
                 $pass = $_POST['db_pass'];
                 $name = $_POST['db_name'];
                 if (!$this->canConnectToDatabase($host, $name, $user, $pass)) {
-                    print 'Could not connect to database. Please check database details.';
+                    print 'Could not connect to database. Please check database details. You might need to create database first.';
                 } else {
                     $this->session->set('db_host', $host);
                     $this->session->set('db_name', $name);
@@ -104,14 +104,7 @@ final class Box_Installer
                         $this->session->set('admin_name', $admin_name);
                     }
 
-                    //license
-                    $license = $_POST['license'];
-                    if (!$this->isValidLicense($license)) {
-                        throw new Exception('License Key is not valid');
-                    } else {
-                        $this->session->set('license', $license);
-                    }
-
+                    $this->session->set('license', "BoxBilling CE");
                     $this->makeInstall($this->session);
                     $this->generateEmailTemplates();
                     session_destroy();
@@ -195,13 +188,46 @@ final class Box_Installer
         return file_get_contents($path);
     }
 
+    private function getPdo($host, $db, $user, $pass)
+    {
+        $pdo = new \PDO('mysql:host='.$host,
+            $user,
+            $pass,
+            array(
+                \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY         => true,
+                \PDO::ATTR_ERRMODE                          => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_DEFAULT_FETCH_MODE               => \PDO::FETCH_ASSOC,
+            )
+        );
+
+        $pdo->exec( 'SET NAMES "utf8"' );
+        $pdo->exec( 'SET CHARACTER SET utf8' );
+        $pdo->exec( 'SET CHARACTER_SET_CONNECTION = utf8' );
+        $pdo->exec( 'SET CHARACTER_SET_DATABASE = utf8' );
+        $pdo->exec( 'SET character_set_results = utf8' );
+        $pdo->exec( 'SET character_set_server = utf8' );
+        $pdo->exec( 'SET SESSION interactive_timeout = 28800' );
+        $pdo->exec( 'SET SESSION wait_timeout = 28800' );
+
+        // try create database if permissions allows
+        try {
+            $pdo->exec("CREATE DATABASE `$db` CHARACTER SET utf8 COLLATE utf8_general_ci;");
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+        }
+
+        $pdo->query("USE $db;");
+        return $pdo;
+    }
+
     private function canConnectToDatabase($host, $db, $user, $pass)
     {
-        $con = new mysqli($host, $user, $pass, $db);
-        if ($con->connect_error) {
+        try {
+            $this->getPdo($host, $db, $user, $pass);
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
             return false;
         }
-        $con->close();
         return true;
     }
 
@@ -222,14 +248,6 @@ final class Box_Installer
         return true;
     }
 
-    private function isValidLicense($license)
-    {
-        if (empty($license)) {
-            return false;
-        }
-        return true;
-    }
-
     private function checkConfig()
     {
         if (!file_exists(BB_PATH_CONFIG)) {
@@ -242,15 +260,7 @@ final class Box_Installer
         $this->_isValidInstallData($ns);
         $this->_createConfigurationFile($ns);
 
-        $link = new mysqli($ns->get('db_host'), $ns->get('db_user'), $ns->get('db_pass'), $ns->get('db_name'));
-
-        if ($link->connect_error) {
-            throw new Exception("Connect Error (" . $link->connect_errno . ") " . $link->connect_error);
-        }
-
-        $link->set_charset('utf8');
-        $link->query("SET CHARSET SET utf8");
-        $link->query("SET NAMES utf8");
+        $pdo = $this->getPdo($ns->get('db_host'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'));
 
         $sql = file_get_contents(BB_PATH_SQL);
         if (!$sql) {
@@ -272,29 +282,22 @@ final class Box_Installer
                 continue;
             }
 
-            $res = $link->query($query);
-            if ($link->errno) {
-                $err .= "DB Error(" . $link->errno . "): " . $link->error;
-            }
+            $res = $pdo->query($query);
         }
 
-        if (!empty($err)) {
-            throw new Exception($err);
-        }
         $passwordObject = new \Box_Password();
-        $sql = "INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', '%s', '%s', '%s', 1, NOW(), NOW());";
-        $sql = sprintf($sql, $link->escape_string($ns->get('admin_name')), $link->escape_string($ns->get('admin_email')), $link->escape_string($passwordObject->hashIt($ns->get('admin_pass'))));
-        $res = $link->query($sql);
-        if (!$res) {
-            throw new Exception($link->error);
-        }
-
-        $link->close();
+        $stmt = $pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', :admin_name, :admin_email, :admin_pass, 1, NOW(), NOW());");
+        $stmt->execute(array(
+            'admin_name'  => $ns->get('admin_name'),
+            'admin_email' => $ns->get('admin_email'),
+            'admin_pass'  => $passwordObject->hashIt($ns->get('admin_pass')),
+        ));
 
         try {
             $this->_sendMail($ns);
         } catch (Exception $e) {
             // email was not sent but that is not a problem
+            error_log($e->getMessage());
         }
 
         return true;
@@ -313,7 +316,7 @@ final class Box_Installer
         $content .= "Email: " . $admin_email . PHP_EOL;
         $content .= "Password: " . $admin_pass . PHP_EOL . PHP_EOL;
 
-        $content .= "Read BoxBilling documentation to get started http://docs.boxbilling.com/" . PHP_EOL;
+        $content .= "Read BoxBilling documentation to get started https://docs.boxbilling.com/" . PHP_EOL;
         $content .= "Thank You for using BoxBilling." . PHP_EOL;
 
         $subject = sprintf('BoxBilling is ready at "%s"', BB_URL);
@@ -333,7 +336,6 @@ final class Box_Installer
     {
         $data = [
             'debug' => false,
-            'license' => $ns->get('license'),
             'salt' => md5(uniqid()),
             'url' => BB_URL,
             'admin_area_prefix' => '/bb-admin',
@@ -373,56 +375,6 @@ final class Box_Installer
         return $output;
     }
 
-    private function _getConfigOutputOld($ns)
-    {
-        $cf = PHP_EOL . "/* %s */" . PHP_EOL;
-        $bf = "define('%s', %s);" . PHP_EOL;
-        $f = "define('%s', '%s');" . PHP_EOL;
-
-        $output = '<?php ' . PHP_EOL;
-        $output .= sprintf($cf, 'BoxBilling Configuration File');
-        $output .= sprintf($cf, 'More information on this file at http://docs.boxbilling.com/');
-
-        $output .= sprintf($cf, 'Define timezone');
-        $output .= sprintf("date_default_timezone_set('%s');", 'UTC');
-
-        $output .= sprintf($cf, 'Set default date format');
-        $output .= sprintf($f, 'BB_DATE_FORMAT', 'l, d F Y');
-
-        $output .= sprintf($cf, 'Database');
-        $output .= sprintf($f, 'BB_DB_NAME', $ns->get('db_name'));
-        $output .= sprintf($f, 'BB_DB_USER', $ns->get('db_user'));
-        $output .= sprintf($f, 'BB_DB_PASSWORD', $ns->get('db_pass'));
-        $output .= sprintf($f, 'BB_DB_HOST', $ns->get('db_host'));
-        $output .= sprintf($f, 'BB_DB_TYPE', 'mysql');
-
-        $output .= sprintf($cf, 'Live site URL with trailing slash');
-        $output .= sprintf($f, 'BB_URL', BB_URL);
-
-        $output .= sprintf($cf, 'BoxBilling license key');
-        $output .= sprintf($f, 'BB_LICENSE', $ns->get('license'));
-
-        $output .= sprintf($cf, 'Enable or disable warning messages');
-        $output .= sprintf($bf, 'BB_DEBUG', 'TRUE');
-
-        $output .= sprintf($cf, 'Enable or disable pretty urls. Please configure .htaccess before enabling this feature.');
-        $output .= sprintf($bf, 'BB_SEF_URLS', 'FALSE');
-
-        $output .= sprintf($cf, 'Default application locale');
-        $output .= sprintf($bf, 'BB_LOCALE', "'en_US'");
-
-        $output .= sprintf($cf, 'Translatable locale format');
-        $output .= sprintf($bf, 'BB_LOCALE_DATE_FORMAT', "'%A, %d %B %G'");
-
-        $output .= sprintf($cf, 'Translatable time format');
-        $output .= sprintf($bf, 'BB_LOCALE_TIME_FORMAT', "' %T'");
-
-        $output .= sprintf($cf, 'Default location to store application data. Must be protected from public.');
-        $output .= sprintf($bf, 'BB_PATH_DATA', "dirname(__FILE__) . '/bb-data'");
-
-        return $output;
-    }
-
     private function _isValidInstallData($ns)
     {
         if (!$this->canConnectToDatabase($ns->get('db_host'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'))) {
@@ -431,10 +383,6 @@ final class Box_Installer
 
         if (!$this->isValidAdmin($ns->get('admin_email'), $ns->get('admin_pass'), $ns->get('admin_name'))) {
             throw new Exception('Administrators account is not valid');
-        }
-
-        if (!$this->isValidLicense($ns->get('license'))) {
-            throw new Exception('License Key is not valid');
         }
     }
 

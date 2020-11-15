@@ -148,7 +148,6 @@ class Client implements InjectionAwareInterface
     {
         $this->_loadConfig();
         $this->checkAllowedIps();
-        $this->di['license']->check();
 
         $service = $this->di['mod_service']('api');
         $service->logRequest();

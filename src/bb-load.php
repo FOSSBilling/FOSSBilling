@@ -53,7 +53,7 @@ function handler_exception($e)
     <style>
     *{margin:0;padding:0}html,code{font:15px/22px arial,sans-serif}html{background:#fff;color:#222;padding:15px}body{margin:7% auto 0;min-height:180px;padding:30px 0 15px}* > body{padding-right:205px}p{margin:11px 0 22px;overflow:hidden}ins{color:#777;text-decoration:none}a img{border:0} em{font-weight:bold}@media screen and (max-width:772px){body{background:none;margin-top:0;max-width:none;padding-right:0}}pre{ width: 100%; overflow:auto; }
     </style>
-    <a href=//www.boxbilling.com/ target='_blank'><img src='https://sites.google.com/site/boxbilling/_/rsrc/1308483006796/home/logo_boxbilling.png' alt='BoxBilling' style='height:60px'></a>
+    <a href=//www.boxbilling.com/ target='_blank'><img src='/bb-themes/boxbilling/assets/images/logo.png' alt='BoxBilling' style='height:60px'></a>
     ";
     $page = str_replace(PHP_EOL, "", $page);
     print $page;
@@ -89,7 +89,7 @@ if((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || (php_sapi_name() =
     if(file_exists($predictConfigPath)) {
         $configPath = $predictConfigPath;
     }
-
+}
 
 // check if config is available
 if(!file_exists($configPath) || 0 == filesize( $configPath )) {
@@ -136,4 +136,3 @@ if($config['debug']) {
 ini_set('log_errors', '1');
 ini_set('html_errors', FALSE);
 ini_set('error_log', BB_PATH_LOG . '/php_error.log');
-}

@@ -81,8 +81,8 @@ class Service implements InjectionAwareInterface
             $sql .= ' AND c.first_name LIKE :first_char';
             $params['first_char'] = $first_char.'%';
         }
-        
-        $sql .= ' GROUP BY c.id ORDER BY c.first_name DESC ';
+
+        $sql .= ' ORDER BY c.first_name DESC ';
         return array($sql, $params);
     }
     

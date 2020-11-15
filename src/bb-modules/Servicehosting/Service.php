@@ -47,7 +47,7 @@ class Service implements InjectionAwareInterface
 
         return $product->title;
     }
-    
+
     public function validateOrderData(array &$data)
     {
         if(!isset($data['server_id'])) {
@@ -108,13 +108,13 @@ class Service implements InjectionAwareInterface
         if(isset($c['password']) && !empty($c['password'])) {
             $pass = $c['password'];
         }
-        
+
         if(isset($c['username']) && !empty($c['username'])) {
             $username = $c['username'];
         } else {
             $username = $this->_generateUsername($model->sld.$model->tld);
-        }        
-        
+        }
+
         $model->username = $username;
         $model->pass = $pass;
         $this->di['db']->store($model);
@@ -123,7 +123,7 @@ class Service implements InjectionAwareInterface
             list($adapter, $account) = $this->_getAM($model);
             $adapter->createAccount($account);
         }
-        
+
         return array(
             'username'  =>  $username,
             'password'  =>  $pass,
@@ -266,7 +266,7 @@ class Service implements InjectionAwareInterface
             list($adapter, $account) = $this->_getAM($model);
             $adapter->changeAccountUsername($account, $u);
         }
-        
+
         $model->username = $u;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -287,7 +287,7 @@ class Service implements InjectionAwareInterface
             list($adapter, $account) = $this->_getAM($model);
             $adapter->changeAccountIp($account, $ip);
         }
-        
+
         $model->ip = $ip;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -309,7 +309,7 @@ class Service implements InjectionAwareInterface
             list($adapter, $account) = $this->_getAM($model);
             $adapter->changeAccountDomain($account, $sld.$tld);
         }
-        
+
         $model->sld = $sld;
         $model->tld = $tld;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -351,7 +351,7 @@ class Service implements InjectionAwareInterface
         if($account->getIp() != $updated->getIp()) {
             $model->ip = $updated->getIp();
         }
-        
+
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Synchronizing hosting account %s with server', $model->id);
@@ -378,7 +378,7 @@ class Service implements InjectionAwareInterface
     {
         return ($order->status != \Model_ClientOrder::STATUS_FAILED_SETUP);
     }
-    
+
     /**
      * Generate username by domain
      *
@@ -464,7 +464,7 @@ class Service implements InjectionAwareInterface
 
     public function toHostingServerApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null)
     {
-        list($cpanel_url, $whm_url) = $this->getManagerUrls($model);
+        list($cpanel_url, $whm_url) = $this->getMangerUrls($model);
         $result = array(
             'name'                  =>  $model->name,
             'hostname'              =>  $model->hostname,
@@ -881,7 +881,7 @@ class Service implements InjectionAwareInterface
         return $manager;
     }
 
-    public function getManagerUrls(\Model_ServiceHosting $model)
+    public function getManagerUrls(\Model_ServiceHostingServer $model)
     {
         try {
             $m = $this->getServerManager($model);
