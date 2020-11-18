@@ -1,0 +1,67 @@
+{% if guest.extension_is_on({"mod":"formbuilder"}) %}
+{% set form = guest.formbuilder_get({"id":product.form_id}) %}
+
+{% if form.style.show_title != "0" %}
+    <h5>{{form.name}}</h5>
+{% endif %}
+
+<div class="control-group form-group">
+    <div class="controls">
+	{% for field in form.fields %}
+		{% if field.hide_label!=1 %}<label {% if form.style.type == 'horizontal' %}class="control-label"{% endif %} for="{{ field.name }}">{{ field.label }}</label>{% endif %}
+
+		{% if field.type == "text" %}
+			<input type="text" class="form-control" name="{{ field.name }}" value="{{field.default_value}}" aria-describedby="help-{{ field.name }}"
+			{% if field.required==1 %}required="required"{% endif %}
+			{% if field.readonly==1%}readonly{% endif %}
+			/>
+
+		{% elseif field.type == "select" %}
+			<select class="form-control" name="{{ field.name }}" aria-describedby="help-{{ field.name }}"
+			{% if field.required==1 %}required="required"{% endif %}>
+			{% for k,v in field.options %}
+				<option value="{{v}}" {% if v == field.default_value %}selected="selected"{%endif%}>{{k}}</option>
+			{% endfor %}
+			</select>
+
+		{% elseif field.type == "checkbox" %}
+			{% for k,v in field.options %}
+			<div class="checkbox">
+				<label>
+					<input type="checkbox" name="{{field.name}}[]" value="{{v}}" aria-describedby="help-{{ field.name }}"
+					{% if field.readonly==1 %}readonly="readonly"{% endif %}
+					{% if v in field.default_value %}checked="checked"{% endif %}
+					/>{{k}}
+				</label>
+			</div>
+			{% endfor %}
+
+		{% elseif field.type == "radio" %}
+			{% for k,v in field.options %}
+			<div class="radio">
+				<label>
+					<input type="radio" name="{{field.name}}" value="{{v}}" aria-describedby="help-{{ field.name }}"
+					{% if field.default_value == v %}checked{% endif %}
+					{% if field.required==1 %}required="required"{% endif %}
+					{% if field.readonly==1%}readonly="readonly"{% endif %}
+					/>
+					{{k}}
+				</label>
+			</div>
+			{% endfor %}
+
+		{% elseif field.type == "textarea" %}
+			<textarea id="{{field.name}}" class="form-control" name="{{field.name}}" cols="{{field.options.cols}}" rows="{{field.options.rows}}" aria-describedby="help-{{ field.name }}"
+			{% if field.required==1 %}required="required"{% endif %}
+			{% if field.readonly==1%}readonly="readonly"{% endif %}
+			>{{field.default_value}}</textarea>
+		{% endif %}
+
+		<span id="help-{{field.name}}" class="help-block">{{field.description}}</span>
+	<br/>
+	{% endfor %}
+	</div>
+</div>
+<input type="hidden" name="form_id" value="{{ form.id }}" />
+<input type="hidden" name="id" value="{{ product.id }}" />
+{% endif %}

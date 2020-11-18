@@ -1,0 +1,53 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{{category.title}}{% endblock %}
+
+{% block content_before %}
+<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{{category.title}}
+                    <small>{{category.description }}</small>
+                </h1>
+				<ol class="breadcrumb">
+					<li><a href="{{ 'kb'|link }}">{% trans 'Knowledge base' %}</a></li>
+					<li class="active">{{ category.title }}</li>
+				</ol>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+
+				{% for i, article in category.articles %}
+                <div class="list-group">
+					{% for i, article in category.articles %}
+						<a href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}" class="list-group-item">{{article.title}}</a>
+					{% endfor %}
+				</div>
+
+                <hr>
+				{% else %}
+					<p>
+						{% trans 'Try using other keyword. No matches not for keyword:' %}
+						<b>{{ request.q }}</b>
+					</p>
+				{% endfor %}
+	
+	<div class="well">
+        <h4>{% trans 'What are you looking for?' %}</h4>
+		<form method="get" action="{{ 'kb'|link }}">
+            <div class="input-group">
+				<input name="q" type="text" class="form-control" value="{{ request.q }}" placeholder="{% trans 'What are you looking for?' %}">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
+                </span>
+            </div>
+		</form>
+    </div>
+			
+	<div class="text-center">
+		<a class="btn btn-default" href="{{ 'kb'|link }}"><i class="fa fa-arrow-left"></i> {% trans 'Back to list' %}</a>
+	</div>
+{% endblock %}
+

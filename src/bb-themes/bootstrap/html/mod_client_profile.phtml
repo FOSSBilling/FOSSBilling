@@ -1,0 +1,193 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Profile details' %}{% endblock %}
+
+{% import "macro_functions.phtml" as mf %}
+{% set profile = client.client_get %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% trans 'Profile details' %}
+					<small>{% trans 'Keep your profile up to date' %}</small>
+				</h1>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+
+        <div class="row">
+            <div class="col-lg-12">
+
+                <ul id="myTab" class="nav nav-tabs nav-justified">
+					<li class="active"><a href="#tab-details" data-toggle="tab"><i class="fa fa-user"></i> {% trans 'Details' %}</a></li>
+					<li><a href="#tab-password" data-toggle="tab"><i class="fa fa-key"></i> {% trans 'Password' %}</a></li>
+					<li><a href="#tab-gravatar" data-toggle="tab"><i class="fa fa-camera"></i> {% trans 'Gravatar' %}</a></li>
+					<li><a href="#tab-currency" data-toggle="tab"><i class="fa fa-money"></i> {% trans 'Currency' %}</a></li>
+					<li><a href="#tab-api" data-toggle="tab"><i class="fa fa-plug"></i> {% trans 'API' %}</a></li>
+                </ul>
+
+                <div id="myTabContent" class="tab-content">
+                    <div class="tab-pane fade active in" id="tab-details">
+						<h4>{% trans 'Update profile' %}</h4>
+						<form method="post" action="" class="api_form" data-api-url="client/client/update" data-api-msg="{% trans 'Profile updated' %}">
+						<div class="well row">
+							<div class="col-md-6">
+									<div class="control-group form-group">
+										<div class="controls">
+											<label>{% trans 'Email Address' %}:</label>
+											<input type="email" class="form-control" name="email" value="{{ profile.email }}" required="required">
+										</div>
+									</div>
+									<div class="control-group form-group">
+										<div class="controls">
+											<label>{% trans 'First Name' %}:</label>
+											<input type="text" class="form-control" name="first_name" value="{{ profile.first_name }}" required="required">
+										</div>
+									</div>
+									<div class="control-group form-group">
+										<div class="controls">
+											<label>{% trans 'Last Name' %}:</label>
+											<input type="text" class="form-control" name="last_name" value="{{ profile.last_name }}" required="required">
+										</div>
+									</div>
+									<div class="control-group form-group">
+										<div class="controls">
+											<label>{% trans 'Company Name' %}:</label>
+											<input type="text" class="form-control" name="company" value="{{ profile.company }}">
+										</div>
+									</div>
+									<div class="control-group form-group">
+										<div class="controls">
+											<label>{% trans 'Phone Country Code' %}:</label>
+											<input type="text" class="form-control" name="phone_cc" value="{{ profile.phone_cc }}" required="required">
+										</div>
+									</div>
+									<div class="control-group form-group">
+										<div class="controls">
+											<label>{% trans 'Phone Number' %}:</label>
+											<input type="text" class="form-control" name="phone" value="{{ profile.phone }}" required="required">
+										</div>
+									</div>
+									
+							</div>
+							<div class="col-md-6">
+									<div class="control-group form-group">
+										<div class="controls">
+											<label>{% trans 'Address' %}:</label>
+											<input type="text" class="form-control" name="address_1" value="{{ profile.address_1 }}" required="required">
+										</div>
+									</div>
+									<div class="control-group form-group">
+										<div class="controls">
+											<label>{% trans 'Address 2' %}:</label>
+											<input type="text" class="form-control" name="address_2" value="{{ profile.address_2 }}">
+										</div>
+									</div>
+									<div class="control-group form-group">
+										<div class="controls">
+											<label>{% trans 'City' %}:</label>
+											<input type="text" class="form-control" name="city" value="{{ profile.city }}" required="required">
+										</div>
+									</div>
+									<div class="control-group form-group">
+										<div class="controls">
+											<label>{% trans 'Country' %}:</label>
+											{{ mf.selectbox('country', guest.system_countries, profile.country, 1, 'Select country') }}
+										</div>
+									</div>
+									<div class="control-group form-group">
+										<div class="controls">
+											<label>{% trans 'State' %}:</label>
+											{# mf.selectbox('state', guest.system_states, profile.state, 0, 'Select state') #}
+											<input type="text" class="form-control" name="state" value="{{ profile.state }}">
+										</div>
+									</div>
+									<div class="control-group form-group">
+										<div class="controls">
+											<label>{% trans 'Zip/Postal Code' %}:</label>
+											<input type="text" class="form-control" name="postcode" value="{{ profile.postcode }}" required="required">
+										</div>
+									</div>
+							</div>
+							<div class="col-md-12 text-center">
+								<input class="btn btn-primary" type="submit" value="{% trans 'Update profile' %}">
+							</div>
+						</div>
+						</form>
+					</div>
+                    <div class="tab-pane fade" id="tab-password">
+                        <h4>{% trans 'Change password' %}</h4>
+						<form method="post" action="" class="api_form" data-api-url="client/client/change_password" data-api-msg="{% trans 'Password changed' %}">
+							<div class="well">
+								<div class="control-group form-group">
+									<div class="controls">
+										<label>{% trans 'Password' %}: </label>
+										<input type="password" class="form-control" name="password" value="" required="required">
+									</div>
+								</div>
+								<div class="control-group form-group">
+									<div class="controls">
+										<label>{% trans 'Password confirm' %}: </label>
+										<input type="password" class="form-control" name="password_confirm" value="" required="required">
+									</div>
+								</div>
+								<div class="text-center">
+									<input class="btn btn-primary" type="submit" value="{% trans 'Change password' %}">
+								</div>
+							</div>
+						</form>
+					</div>
+                    <div class="tab-pane fade" id="tab-gravatar">
+						<h4>{% trans 'Gravatar' %}</h4>
+						<div class="well text-center">
+							<p><img src="{{ profile.email|gravatar }}" alt="Gravatar" /></p>
+							<p>{% trans 'Please register with'%} <b>{{ profile.email }}</b> {% trans 'at ' %} <a target="_blank" href="http://gravatar.com">Gravatar.com</a> {% trans 'to change your profile image. Gravatar image updates may not appear immediately.' %}</p>
+						</div>
+					</div>
+					<div class="tab-pane fade" id="tab-currency">
+						<h4>{% trans 'Currency' %}</h4>
+						<div class="well">
+							{% if profile.currency %}
+								<p>{% trans 'Your profile currency is' %} <em>{{ profile.currency }}</em></p>
+								<p>{% trans 'Create new client profile if you want to manage your money in other currency' %}</p>
+							{% else %}
+								<p>{% trans 'Your profile currency will be defined after your first order. Once your currency is set, all your profile accounting will be managed in that currency and can not be changed.' %}</p>
+							{% endif %}
+						</div>
+					</div>
+                    <div class="tab-pane fade" id="tab-api">
+						<h4>{% trans 'API key' %}</h4>
+						<div class="well">
+							<p>{% trans 'API key allows integration with external applications. You will need this key for authentication.' %}</p>
+							<p>{% trans 'Warning! Resetting the key will break existing applications using it.' %}</p>
+							{% if client.client_api_key_get is not empty %}
+								<p class="alert alert-info text-center">
+									<strong>{% trans 'Your API key' %}:</strong><br />{{ client.client_api_key_get }}
+								</p>
+								<form method="post" action="" class="api_form" data-api-url="client/client/api_key_reset" data-api-msg="{% trans 'API key was changed. Please refresh the page.' %}">
+									<div class="text-center">
+										<input class="btn btn-danger" type="submit" value="{% trans 'Reset key' %}">
+									</div>
+								</form>
+							{% else %}
+								<p class="alert alert-info text-center">
+									<strong>{% trans 'No API key yet' %}</strong>
+								</p>
+								<form method="post" action="" class="api_form" data-api-url="client/client/api_key_reset" data-api-msg="{% trans 'API key was changed. Please refresh the page.' %}">
+									<div class="text-center">
+										<input class="btn btn-success" type="submit" value="{% trans 'Create API key' %}">
+									</div>
+								</form>
+							{% endif %}
+						</div>
+						
+					</div>
+                </div>
+
+            </div>
+        </div>
+
+{% endblock %}

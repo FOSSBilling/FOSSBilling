@@ -1,0 +1,77 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{ticket.subject}}{% endblock %}
+{% set profile = client.client_get %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{{ ticket.subject }}
+					<small>{{ticket.helpdesk.name}}</small>
+				</h1>
+				<ol class="breadcrumb">
+					<li><a href="{{ '/support'|link }}">{% trans 'Support tickets' %}</a></li>
+					<li class="active">{{ ticket.subject }}</li>
+				</ol>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+		<ul class=" breadcrumb list-inline">
+			<li>{% trans 'Status' %}:<span class="label {% if ticket.status == "open" %}label-danger{% elseif ticket.status == "on_hold" %}label-warning{% elseif ticket.status == "closed" %}label-success{% else %}label-default{% endif %}">{{ mf.status_name(ticket.status) }}</span></li>
+			<li>{{ticket.created_at|date('Y-m-d h:i')}}</li>
+			{% if ticket.rel_type == 'order' and ticket.rel_id %}<li><strong>{% trans 'Related to' %}:</strong> <a href="{{ 'order/service/manage'|link }}/{{ ticket.rel_id }}">{% trans 'Service #' %} {{ ticket.rel_id }}</a></li>{% endif %}
+		</ul>		
+		<hr>
+
+		<div class="well">
+			<div class="row">
+				{% for i, message in ticket.messages %}
+				<div class="col-sm-10{% if message.author.name != (profile.first_name ~ " " ~ profile.last_name) %} col-sm-offset-2{% endif %}">
+					<div class="panel {% if message.author.name != (profile.first_name ~ " " ~ profile.last_name) %}panel-success{% else %}panel-default{% endif %}">
+						<div class="panel-heading">
+							<img src="{{ message.author.email|gravatar }}?size=20" alt="{{ message.author.name }}" class="gravatar"/>
+							{{ message.author.name }}
+							<small class="pull-right">{{ message.created_at }}</small>
+						</div>
+						<div class="panel-body">
+							{{ message.content|bbmd }}
+						</div>
+					</div>
+				</div>
+				{% endfor %}
+				{% if ticket.status != "closed" %}
+					<div class="col-sm-10">
+						<form method="post" action="" class="api_form" data-api-url="{{ 'api/client/support/ticket_reply'|link }}" data-api-reload="1">
+							<div class="control-group form-group">
+								<div class="controls">
+									<textarea rows="10" cols="100" class="form-control" name="content" maxlength="999" style="resize:none" required="required" data-provide="markdown" data-iconlibrary="fa"></textarea>
+								</div>
+							</div>
+							<input type="hidden" name="id" value="{{ ticket.id }}">
+						<input class="btn btn-primary" type="submit" value="{% trans 'Post' %}">
+						</form>
+					</div>
+				{% else %}
+				<div class="col-sm-2 col-sm-offset-10">
+					<div class="alert alert-success text-center">
+					<i class="fa fa-check"></i> {{ mf.status_name(ticket.status) }}
+					<p><small>{{ ticket.updated_at|timeago }} {% trans 'ago' %}</small></p>
+					</div>
+				</div>
+				{% endif %}
+			</div>
+		</div>
+
+		<hr />
+		
+		
+		<div class="text-center">
+			<a class="btn btn-default" href="{{ '/support'|link }}"><i class="fa fa-arrow-left"></i> {% trans 'Tickets list' %}</a>
+			{% if ticket.status != 'closed' %}
+			<a class="btn btn-success api" type="button" href="{{ 'api/client/support/ticket_close'|link({'id' : ticket.id}) }}" data-api-redirect="{{ 'support'|link }}" ><i class="fa fa-times"></i> {% trans 'Close ticket' %}</a>
+			{% endif %}
+		</div>
+{% endblock %}

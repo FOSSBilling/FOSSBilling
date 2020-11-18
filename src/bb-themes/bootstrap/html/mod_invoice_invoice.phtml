@@ -1,0 +1,259 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Proforma invoice' %}{% endblock %}
+
+
+{% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
+{% set seller = invoice.seller %}
+{% set buyer = invoice.buyer %}
+{% set company  = guest.system_company %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+				{% if invoice.status == 'unpaid' %}
+				<h1 class="page-header">{% trans 'Proforma Invoice' %}
+					<small>{% trans 'Please choose payment type and pay for your chosen products.' %}</small>
+				</h1>
+				{% include "partial_steps.phtml" with {'selected': 4} %}
+				{% else %}
+				<h1 class="page-header">{% trans 'Invoice' %} {{ nr }}
+					<small>{% trans 'Invoice is paid' %}</small>
+				</h1>
+				<ol class="breadcrumb">
+					<li><a href="{{ '/invoice'|link }}">{% trans 'Invoices' %}</a></li>
+					<li class="active">{{ "Invoice #%05s"|format(invoice.id) }}</li>
+				</ol>
+				{% endif %}
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+	
+	{% if invoice.status == 'unpaid' %}
+			<div class="alert alert-warning text-center">
+				<h4>{% trans 'Unpaid' %}</h4>
+				{% if invoice.gateway_id and not request.change_payment_method %}
+				{% set payment = guest.invoice_payment({"gateway_id" : invoice.gateway_id, "hash":invoice.hash, "auto_redirect":request.auto_redirect }) %}
+
+						{% if payment.type == 'html' %}
+							{{ payment.result|replace({'bb-button': 'btn btn-warning'})|raw }}
+						{% endif %}
+							{% if payment.type == 'form' %}
+							<h2>{% trans 'Redirecting to payment gateway..' %}</h2>
+							<form name="payment_form" action="{{payment.service_url}}" method="post">
+								{% for key, value in payment.result %}
+								<input type="hidden" name="{{key}}" value="{{value}}" />
+								{% endfor %}
+								<input class="btn btn-warning" type="submit" value="{% trans 'Please click here to continue if this page does not redirect automatically in 5 seconds' %}" id="payment_button"/>
+							</form>
+
+							<script type="text/javascript">
+								$(document).ready(function(){
+									
+									document.getElementById('payment_button').style.display = 'none';
+									document.forms["payment_form"].submit();
+								});
+							</script>
+							{% endif %}
+				{% endif %}
+
+				{% if request.change_payment_method %}
+					<form method="post" action="{{ 'api/guest/invoice/update'|link }}" class="api-form" data-api-redirect="{{ ('invoice/'~invoice.hash)|link({'auto_redirect' : 1}) }}">
+						<div class="list-group">
+							{% for gtw in guest.invoice_gateways %}
+								{% if invoice.currency in gtw.accepted_currencies %}
+								<label class="list-group-item list-group-item">
+									<input type="radio" name="gateway_id" value="{{gtw.id}}" {{loop.first ? 'checked' : ''}} />
+									{% trans 'Pay by' %} {{gtw.title}}
+									{% if gtw.title == "Custom" %}
+										<i class="fa fa-university fa-2x pull-right"></i>
+									{% elseif gtw.title == "PayPal" %}
+										<i class="fa fa-paypal fa-2x pull-right"></i>
+									{% elseif gtw.title == "Stripe" %}
+										<i class="fa fa-cc-stripe fa-2x pull-right"></i>
+									{% endif %}
+								</label>
+								{% endif %}
+							{% endfor %}
+						</div>
+						<button class="btn btn-warning btn-lg" type="submit"><i class="fa fa-credit-card"></i> {% trans 'Pay now' %} - {% trans 'Total:' %} <strong>{{ invoice.total | money(invoice.currency) }}</strong></button>
+						<input type="hidden" name="hash" value="{{invoice.hash}}"/>
+					</form>
+				{% endif %}
+			</div>
+	{% endif %}
+	
+		<div class="panel panel-default">
+		<div class="panel-body">
+		<div class="row">
+			<div class="col-md-6">
+				{% if company.logo_url %}
+                <img src="{{company.logo_url}}" alt="{{company.name}}" style="max-width: 100%; max-height: 100%"/>
+                {% else %}
+                <img src=" {{ 'images/logo.png' | asset_url }}" alt="{{company.name}}" style="max-width: 100%; max-height: 100%"/>
+                {% endif %}
+			</div>
+			<div class="col-md-6 text-right">
+				<h2>{% trans 'Invoice' %} {{ invoice.serie_nr }}</h2>
+                <p>
+					{% if invoice.paid_at %}
+					{{ invoice.paid_at | date('Y-m-d h:i') }}
+					{% else %}
+					{{ invoice.created_at | date('Y-m-d h:i') }}
+					{% endif %}
+                </p>
+				<h2 class="invoice_{{invoice.status }}">{% if invoice.status == 'unpaid' %}{% trans 'Unpaid' %}{% else %}{% trans 'Paid' %}{% endif %}</h2>
+			</div>
+			<div class="col-md-12">
+				<hr />
+			</div>
+			<div class="col-md-6">
+				<address>
+					{% if seller.company %}<strong>{{ seller.company }}</strong><br />{% endif %}
+					{% if seller.address %}{{ seller.address }}<br />{% endif %}
+					{% if seller.phone %}{{ seller.phone }}<br />{% endif %}
+					{% if seller.email %}{{ seller.email }}<br />{% endif %}					
+					{% if company.account_number %}{% trans 'Account' %}: {{ company.account_number }}<br />{% endif %}
+					{% if company.number %}{% trans 'Company number' %}: {{ company.number }}<br />{% endif %}
+					{% if company.vat_number %}{% trans 'VAT' %}: {{ company.vat_number }}<br />{% endif %}
+					{# Company note #}{# if company.note %}{{ company.note }}<br />{% endif #}
+				</address>
+			</div>
+			<div class="col-md-6 text-right">
+				<address>
+					{% if buyer.company %}<strong>{{ buyer.company }}</strong><br />{% endif %}
+					{% if buyer.first_name or buyer.last_name %}<strong>{{ buyer.first_name }} {{ buyer.last_name }}</strong><br />{% endif %}
+					{% if buyer.email %}{{ buyer.email }}<br />{% endif %}
+					{% if buyer.address %}{{ buyer.address }} {{ buyer.city }} {{ buyer.state }} {{ buyer.postcode }} {{ buyer.country }}<br />{% endif %}					
+					{% if buyer.phone %}{{ buyer.phone }}<br />{% endif %}
+				</address>
+			</div>
+			
+			{% if invoice.text_1 %}
+			<div class="col-md-12">
+				{{ invoice.text_1|markdown }}
+			</div>
+			{% endif %}
+
+			<div class="col-md-12">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						{% trans 'Invoice' %}
+					</div>
+					<div class="panel-body">
+						<table class="table table-hover">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>{% trans 'Title' %}</th>
+									<th class="currency">{% trans 'Price' %}</th>
+									<th class="currency">{% trans 'Total' %}</th>
+								</tr>
+							</thead>
+
+							<tbody>
+								{% for i, item in invoice.lines %}
+
+								<tr class="{{ cycle(['odd', 'even'], i) }}">
+									<td>{{ i+1 }}.</td>
+									<td>
+										{% if item.order_id%}
+										<a href="{{ '/order/service'|link }}/manage/{{item.order_id}}">{{ item.title }}</a>
+										{% else %}
+										{{ item.title }}
+										{% endif %}
+									</td>
+									<td class="currency">
+										{{ item.price | money(invoice.currency) }}
+										{% if item.quantity > 1 %}
+										x {{ item.quantity }} {# item.unit #}
+										{% endif %}
+									</td>
+									<td class="currency">{{ item.total | money(invoice.currency) }}</td>
+								</tr>
+
+								{% endfor %}
+							</tbody>
+
+							<tfoot>
+							{% if invoice.tax > 0 %}
+								<tr>
+									<th colspan="3">{{ invoice.taxname }} {{ invoice.taxrate }}%</th>
+									<th class="currency">{{ invoice.tax | money(invoice.currency) }}</th>
+								</tr>
+							{% endif %}
+							
+							{% if invoice.discount > 0 %}
+								<tr>
+									<th colspan="3">{% trans 'Discount' %}</th>
+									<th class="currency">{{ invoice.discount | money(invoice.currency) }}</th>
+								</tr>
+							{% endif %}
+								<tr class="total">
+									<th colspan="3" class="text-right">{% trans 'Total' %}</th>
+									<th class="currency">{{ invoice.total | money(invoice.currency) }}</th>
+								</tr>
+							</tfoot>
+						</table>
+					</div>
+				</div>
+			</div>
+			
+			{% if invoice.text_2 %}
+			<div class="col-md-12">
+				{{ invoice.text_2|markdown }}
+			</div>
+			{% endif %}
+			
+		</div>
+		</div>
+		<div class="panel-footer text-center">
+			<p>
+				{% if invoice.status == 'unpaid' %}
+				<a class="btn btn-primary" href="{{ ('invoice/'~invoice.hash)|link({'change_payment_method' : 1}) }}"><i class="fa fa-credit-card"></i> {% trans 'Change payment method' %}</a>
+				{% endif %}
+				<a class="btn btn-info" href="{{ 'invoice/pdf' | link }}/{{invoice.hash}}"><i class="fa fa-file-pdf-o"></i> {% trans 'Download PDF' %}</a>
+			</p>
+		</div>
+		</div>
+<div class="text-center">
+	<a class="btn btn-default" href="{{ '/invoice'|link }}"><i class="fa fa-arrow-left"></i> {% trans 'List of invoices' %}</a>
+</div>
+{% set transactions = client.invoice_transaction_get_list({"invoice_id":invoice.id, "type":"payment","per_page":100 }).list %}
+
+{% if transactions|length > 0 %}
+
+<div class="well">
+    <h2>{% trans 'Transactions' %}</h2>
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>{% trans 'Transaction Date' %}</th>
+                <th>{% trans 'Transaction ID' %}</th>
+                <th>{% trans 'Gateway' %}</th>
+                <th>{% trans 'Amount' %}</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for i, tx in transactions %}
+            <tr class="{{ cycle(['odd', 'even'], i) }}">
+                <td>{{tx.created_at|date('Y-m-d h:i') }}</td>
+                <td>{{tx.txn_id}}</td>
+                <td>{{tx.gateway|default('-')}}</td>
+                <td>{{ tx.amount | money(tx.currency) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+
+
