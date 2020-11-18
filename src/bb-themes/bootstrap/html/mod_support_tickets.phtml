@@ -1,0 +1,97 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Support tickets' %}{% endblock %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% trans 'Support tickets' %}
+					<small>{% trans 'Need an answer? We are here to help' %}</small>
+				<h1>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+
+    <div class="list-group">
+		{% set tickets = client.support_ticket_get_list({"per_page":10, "page":request.page}) %}
+        {% for i, ticket in tickets.list %}
+		<a href="{{ 'support/ticket'|link }}/{{ticket.id}}" class="list-group-item {% if ticket.status == "closed" %}list-group-item-success{% elseif ticket.status == "on_hold" %}list-group-item-warning{% elseif ticket.status == "open" %}list-group-item-danger{% endif %}">
+			<span class="label label-default">{{ticket.helpdesk.name}}</span>
+			<strong>{{ticket.subject}}</strong>
+			- {% trans 'Last post' %} {{ ticket.updated_at|timeago }} {% trans 'ago' %} 
+			<span class="pull-right label {% if ticket.status == "open" %}label-danger{% elseif ticket.status == "on_hold" %}label-warning{% elseif ticket.status == "closed" %}label-success{% else %}label-default{% endif %}">{{ mf.status_name(ticket.status) }}</span>
+		</a>
+		{% else %}{% trans 'The list is empty' %}
+		{% endfor %}
+	</div>
+	
+	<div class="text-center">
+		{% include "partial_pagination.phtml" with {'list': tickets} %}
+		<p>
+			{% if guest.extension_is_on({"mod":'kb'}) %}<a class="btn btn-info" data-toggle="collapse" data-target="#kb" aria-expanded="false" aria-controls="kb">{% trans 'Knowledge Base' %}</a>{% endif %}
+			<a class="btn btn-danger" data-toggle="modal" data-target="#tickets">{% trans 'Submit new ticket' %}</a>
+		</p>
+	</div>
+	
+	{% if guest.extension_is_on({"mod":'kb'}) %}
+	<div class="collapse well" id="kb">
+		<h4>{% trans 'Knowledge Base' %}</h4>
+		<div class="input-group">
+			<input type="text" class="form-control">
+			<span class="input-group-btn"><button class="btn btn-default" type="button"><i class="fa fa-search"></i></button></span>
+		</div>
+		<hr>
+		<div class="list-group panel" id="kb">
+		{% for i, category in guest.kb_category_get_list.list %}
+			<a href="#category-{{category.id}}" class="list-group-item text-center" data-toggle="collapse" data-parent="#kb"><strong>{{category.title}}</strong></a>
+			<div class="collapse" id="category-{{category.id}}">
+			{% for i, article in category.articles %}
+				<a href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}" class="list-group-item">{{article.title}}</a>
+			{% endfor %}
+			</div>
+		{% endfor %}
+		</div>		
+    </div> 
+	{% endif %}
+
+	<div class="modal fade" id="tickets" tabindex="-1" role="dialog" aria-labelledby="{% trans 'Open new support ticket regarding this order' %}">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title" id="myModalLabel">{% trans 'Submit new support ticket' %}</h4>
+				</div>
+				<div class="modal-body">
+					<form method="post" action="" class="api_form" data-api-url="client/support/ticket_create" data-api-tocreated="{{ 'support/ticket'|link }}">
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Help desk' %}:</label>
+								{{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Subject' %}:</label>
+								<input type="text" class="form-control" name="subject" value="" required="required">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Reason' %}:</label>
+								<textarea rows="10" cols="100" class="form-control" name="content" maxlength="999" style="resize:none" required="required" data-provide="markdown" data-iconlibrary="fa">{{ request.content|e }}</textarea>
+							</div>
+						</div>
+				</div>
+				<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i></button>
+						<input class="btn btn-danger" type="submit" value="{% trans 'Submit' %}">
+					</form>
+				</div>
+			</div>
+		</div>
+    </div>
+
+{% endblock %}

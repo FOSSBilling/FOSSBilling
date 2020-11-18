@@ -1,0 +1,25 @@
+{% extends "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Error' %}{% endblock %}
+
+{% block content_before %}
+        <!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">404</h1>
+				<ol class="breadcrumb">
+					<li><a href="{{''|link }}">{% trans 'Home' %}</a></li>
+					<li class="active">404</li>
+				</ol>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+
+<div class="jumbotron">
+    <h1>{% trans 'Looks like we have a misunderstanding here' %}</h1>
+	<p>{{ exception.getMessage }}</p>
+</div>
+
+{% endblock %}
