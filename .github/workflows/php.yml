@@ -43,6 +43,7 @@ jobs:
         echo > ./src/bb-data/log/license.log
         echo > ./src/bb-data/log/application.log
         echo > ./src/bb-data/log/php_error.log
+        rm -rf ./src/install
     
     - name: Run test suite for bb-modules
       run: |
