@@ -31,7 +31,7 @@ return array(
      * Configure .htaccess file before enabling this feature
      * Set to TRUE if using nginx
      */
-    'sef_urls'  => false,
+    'sef_urls'  => true,
 
     /**
      * Application timezone
