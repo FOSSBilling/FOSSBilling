@@ -78,12 +78,12 @@ function handler_exception($e)
             margin: 0;
           }
           
-          #notfound {
+          #error {
             position: relative;
             height: 100vh;
           }
           
-          #notfound .notfound {
+          #error .error {
             position: absolute;
             left: 50%;
             top: 50%;
@@ -92,14 +92,14 @@ function handler_exception($e)
                     transform: translate(-50%, -50%);
           }
           
-          .notfound {
+          .error {
             max-width: 560px;
             width: 100%;
             padding-left: 160px;
             line-height: 1.1;
           }
           
-          .notfound .notfound-404 {
+          .error .error-container {
             position: absolute;
             left: 0;
             top: 0;
@@ -110,7 +110,7 @@ function handler_exception($e)
             background-size: cover;
           }
           
-          .notfound .notfound-404:before {
+          .error .error-container:before {
             content: '';
             position: absolute;
             width: 100%;
@@ -123,7 +123,7 @@ function handler_exception($e)
             z-index: -1;
           }
           
-          .notfound h1 {
+          .error h1 {
             font-family: 'Nunito', sans-serif;
             font-size: 65px;
             font-weight: 700;
@@ -133,7 +133,7 @@ function handler_exception($e)
             text-transform: uppercase;
           }
           
-          .notfound h2 {
+          .error h2 {
             font-family: 'Nunito', sans-serif;
             font-size: 21px;
             font-weight: 400;
@@ -142,13 +142,13 @@ function handler_exception($e)
             color: #151723;
           }
           
-          .notfound p {
+          .error p {
             font-family: 'Nunito', sans-serif;
             color: #999fa5;
             font-weight: 400;
           }
           
-          .notfound a {
+          .error a {
             font-family: 'Nunito', sans-serif;
             display: inline-block;
             font-weight: 700;
@@ -158,11 +158,11 @@ function handler_exception($e)
           }
           
           @media only screen and (max-width: 767px) {
-            .notfound .notfound-404 {
+            .error .error-container {
               width: 110px;
               height: 110px;
             }
-            .notfound {
+            .error {
               padding-left: 15px;
               padding-right: 15px;
               padding-top: 110px;
@@ -173,9 +173,9 @@ function handler_exception($e)
     </head>
     <body>
 
-    <div id=\"notfound\">
-        <div class=\"notfound\">
-            <div class=\"notfound-404\"></div>
+    <div id=\"error\">
+        <div class=\"error\">
+            <div class=\"error-container\"></div>
             <h1>Error</h1>";
     $page = str_replace(PHP_EOL, "", $page);
     print $page;
