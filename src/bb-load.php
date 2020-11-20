@@ -231,6 +231,11 @@ if(!file_exists($configPath) || 0 == filesize( $configPath )) {
     throw new Exception($msg, 101);
 }
 
+// Try to check if /install directory still exists, even after the installation was completed
+if(file_exists($configPath) && 0 !== filesize($configPath) && file_exists(BB_PATH_ROOT.'/install/index.php')) {
+    throw new Exception("For safety reasons, you have to delete the <b><em>/install</em></b> directory to start using BoxBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.", 102);
+}
+
 $config = require_once $configPath;
 require BB_PATH_VENDOR . '/autoload.php';
 
