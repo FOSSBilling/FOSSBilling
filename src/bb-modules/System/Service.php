@@ -241,6 +241,10 @@ class Service
             $msgs['info'][] = sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install);
         }
 
+        if($this->getVersion() == "0.0.1") {
+            $msgs['info'][] = 'BoxBilling couldn\'t find valid version information. This is okay if you\'ve brought a copy of BoxBilling directly from the master branch, and not from releases. But beware, master branch may not be stable enough to be used for production use.';
+        }
+
         if(!extension_loaded('openssl')) {
             $msgs['info'][] = sprintf('BoxBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl');
         }
