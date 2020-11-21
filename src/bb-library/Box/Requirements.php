@@ -110,6 +110,15 @@ class Box_Requirements implements \Box\InjectionAwareInterface
         return version_compare($current, $required, '>=');
     }
 
+    public function isBoxVersionOk()
+    {
+        $current = Box_Version::VERSION;
+        if ($current == "0.0.1") {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * What extensions must be loaded for BoxBilling o function correctly
      */
