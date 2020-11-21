@@ -32,6 +32,9 @@ logs:           ## Show app logs
 exec-php:       ## Enter PHP container shell
 	$(DOCKER_PHP_CONTAINER_EXEC) bash
 
+cache-flush:       ## Flush Twig cache
+	$(DOCKER_PHP_CONTAINER_EXEC) rm -fr src/bb-data/cache/*
+
 exec-db:        ## Enter DB container shell
 	$(DOCKER_DB_CONTAINER_EXEC) bash
 
@@ -46,6 +49,7 @@ test: start	## Run app tests
 	echo "Running unit tests"
 	echo > ./src/bb-data/log/application.log
 	echo > ./src/bb-data/log/php_error.log
+	rm -rf src/install
 	$(DOCKER_PHP_CONTAINER_EXEC) composer install --working-dir=src --no-progress --no-suggest --prefer-dist
 	$(DOCKER_PHP_CONTAINER_EXEC) ./src/bb-vendor/bin/phpunit --dont-report-useless-tests ./tests/bb-modules/
 
