@@ -103,15 +103,15 @@
                                         <td>{% if php_safe_mode %}PHP safe mode should be OFF{% endif %}</td>
                                     </tr>
                                     
-                                    {% for ext,loaded in extensions %}
+                                    {% for ext, loaded in extensions %}
                                     <tr>
-                                        <td>PHP Extension: <strong>{{ ext }}</strong></td>
+                                        <td>PHP extension: <strong>{{ ext }}</strong></td>
                                         <td><strong class="{{ loaded ? 'green' : 'red'}}">{{ loaded ? 'Ok' : 'Fail'}}</strong></td>
                                         <td>{% if not loaded %}Contact your server administrator to enable <strong>PHP {{ ext }} extension</strong>{% endif %}</td>
                                     </tr>
                                     {% endfor %}
 
-                                    {% for file,writable in files %}
+                                    {% for file, writable in files %}
                                     <tr>
                                         <td>{{ file }}</td>
                                         <td><strong class="{{ writable ? 'green' : 'red'}}">{{ writable ? 'Yes' : 'No'}}</strong></td>
@@ -119,7 +119,7 @@
                                     </tr>
                                     {% endfor %}
 
-                                    {% for folder,writable in folders %}
+                                    {% for folder, writable in folders %}
                                     <tr>
                                         <td>{{ folder }}</td>
                                         <td><strong class="{{ writable ? 'green' : 'red'}}">{{ writable ? 'Yes' : 'No'}}</strong></td>
@@ -188,7 +188,7 @@
                             </div>
                             
                             <div class="rowElem">
-                                <label>Email:</label>
+                                <label>E-mail:</label>
                                 <div class="formRight">
                                     <input type="text" name="admin_email" id="admin_email" value="{{ request.admin_email|default(admin_email) }}" autocomplete="off" required="required" placeholder="admin@yourdomain.com"/>
                                 </div>
@@ -209,10 +209,10 @@
                             <div class="body">
                                 <h1 class="pt10">Congratulations! BoxBilling was successfully installed.</h1>
 
-                                <p>Even though BoxBilling was installed successfully you must take a few more actions.</p>
+                                <p>Even though BoxBilling was installed successfully, you must take a few more actions.</p>
 
                                 <h2 class="pt20">Remove installation module</h2>
-                                <p>Remove installation module for security reasons.</p>
+                                <p>For security reasons, you <b>have to</b> delete the installer from your web server before getting started.</p>
                                 <pre>{{ install_module_path }}</pre>
 
                                 <h2 class="pt20">Change configuration file permissions</h2>
@@ -222,10 +222,6 @@
                                 <h2 class="pt20">Setup cron job</h2>
                                 <p>Setup this cron job to run every five minutes</p>
                                 <pre>*/5 * * * * php {{ cron_path }}</pre>
-                                
-                                <h2 class="pt20">Disable directory listing with .htaccess</h2>
-                                <p>Disable directory listing with .htaccess</p>
-                                <pre>Rename file htaccess.txt to .htaccess</pre>
                             </div>
                         </div>
                     </div>
@@ -243,7 +239,7 @@
 $(function() {
 	$('.wizard').smartWizard({
 		selected: 0,  // Selected Step, 0 = first step
-		keyNavigation: true, // Enable/Disable key navigation(left and right keys are used if enabled)
+		keyNavigation: true, // Enable/Disable key navigation (left and right keys are used if enabled)
 		enableAllSteps: false,  // Enable/Disable all steps on first load
 		transitionEffect: 'fade', // Effect on navigation, none/fade/slide/slideleft
 		contentURL:null, // specifying content url enables ajax content loading
