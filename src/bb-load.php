@@ -201,6 +201,12 @@ function handler_exception($e)
 set_exception_handler("handler_exception");
 set_error_handler('handler_error');
 
+// Check for Composer packages
+$vendorPath = BB_PATH_ROOT.'/bb-vendor';
+if(!file_exists($vendorPath)) {
+  throw new Exception("It seems like Composer packages are missing. You have to run \"<code>composer install</code>\" in order to install them. For detailed instruction, you can see <a href=\"https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies\">Composer's getting started guide</a>.<br /><br />If you have downloaded BoxBilling from <a href=\"https://github.com/boxbilling/boxbilling/releases\">GitHub releases</a>, this shouldn't happen.", 103);
+}
+
 // Multisite support. Load new configuration depending on the current hostname
 // If being run from CLI, first parameter must be the hostname
 $configPath = BB_PATH_ROOT.'/bb-config.php';
@@ -218,7 +224,7 @@ if((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || (php_sapi_name() =
 }
 
 // Try to check if configuration is available
-if(!file_exists($configPath) || 0 == filesize( $configPath )) {
+if(!file_exists($configPath) || 0 == filesize($configPath)) {
     
     // Try to create an empty configuration file
     @file_put_contents($configPath, '');
@@ -255,11 +261,11 @@ if($config['sef_urls']) {
 }
 
 if($config['debug']) {
-    error_reporting( E_ALL );
+    error_reporting(E_ALL);
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');
 } else {
-    error_reporting( E_RECOVERABLE_ERROR );
+    error_reporting(E_RECOVERABLE_ERROR);
     ini_set('display_errors', '0');
     ini_set('display_startup_errors', '0');
 }
