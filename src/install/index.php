@@ -338,7 +338,7 @@ final class Box_Installer
             'salt' => md5(uniqid()),
             'url' => BB_URL,
             'admin_area_prefix' => '/bb-admin',
-            'sef_urls' => false,
+            'sef_urls' => true,
             'timezone' => 'UTC',
             'locale' => 'en_US',
             'locale_date_format' => '%A, %d %B %G',
