@@ -951,7 +951,7 @@ class Service implements InjectionAwareInterface
             $serviceDomainService = $this->di['mod_service']('Servicedomain');
             foreach ($tlds as $model) {
                 $result[] = $serviceDomainService->tldToApiArray($model);
-            }
+		    
         }
         return $result;
     }
