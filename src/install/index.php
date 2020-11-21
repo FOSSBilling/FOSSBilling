@@ -78,13 +78,13 @@ final class Box_Installer
 
             case 'install':
                 try {
-                    //db
+                    // Initializing database connection
                     $user = $_POST['db_user'];
                     $host = $_POST['db_host'];
                     $pass = $_POST['db_pass'];
                     $name = $_POST['db_name'];
                     if (!$this->canConnectToDatabase($host, $name, $user, $pass)) {
-                        throw new Exception('Could not connect to database or database does not exist');
+                        throw new Exception('Could not connect to the database, or the database does not exist');
                     } else {
                         $this->session->set('db_host', $host);
                         $this->session->set('db_name', $name);
@@ -92,12 +92,12 @@ final class Box_Installer
                         $this->session->set('db_pass', $pass);
                     }
 
-                    // admin config
+                    // Configuring administrator's account
                     $admin_email = $_POST['admin_email'];
                     $admin_pass = $_POST['admin_pass'];
                     $admin_name = $_POST['admin_name'];
                     if (!$this->isValidAdmin($admin_email, $admin_pass, $admin_name)) {
-                        throw new Exception('Administrators account is not valid');
+                        throw new Exception('Administrator\'s account is not valid');
                     } else {
                         $this->session->set('admin_email', $admin_email);
                         $this->session->set('admin_pass', $admin_pass);
@@ -128,6 +128,8 @@ final class Box_Installer
                     'files' => $se->files(),
                     'os' => PHP_OS,
                     'os_ok' => true,
+                    'box_ver' => Box_Version::VERSION,
+                    'box_ver_ok' => $se->isBoxVersionOk(),
                     'php_ver' => $options['php']['version'],
                     'php_ver_req' => $options['php']['min_version'],
                     'php_safe_mode' => $options['php']['safe_mode'],
@@ -263,12 +265,9 @@ final class Box_Installer
         $pdo = $this->getPdo($ns->get('db_host'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'));
 
         $sql = file_get_contents(BB_PATH_SQL);
-        if (!$sql) {
-            throw new Exception('Could not read structure.sql file');
-        }
-
         $sql_content = file_get_contents(BB_PATH_SQL_DATA);
-        if (!$sql_content) {
+
+        if (!$sql || !$sql_content) {
             throw new Exception('Could not read structure.sql file');
         }
 
@@ -296,7 +295,7 @@ final class Box_Installer
         try {
             $this->_sendMail($ns);
         } catch (Exception $e) {
-            // email was not sent but that is not a problem
+            // E-mail was not sent, but that is not a problem
             error_log($e->getMessage());
         }
 
@@ -313,7 +312,7 @@ final class Box_Installer
         $content .= "You have successfully setup BoxBilling at " . BB_URL . PHP_EOL;
         $content .= "Access client area at: " . BB_URL . PHP_EOL;
         $content .= "Access admin area at: " . BB_URL_ADMIN . " with login details:" . PHP_EOL;
-        $content .= "Email: " . $admin_email . PHP_EOL;
+        $content .= "E-mail: " . $admin_email . PHP_EOL;
         $content .= "Password: " . $admin_pass . PHP_EOL . PHP_EOL;
 
         $content .= "Read BoxBilling documentation to get started https://docs.boxbilling.com/" . PHP_EOL;
@@ -328,7 +327,7 @@ final class Box_Installer
     {
         $output = $this->_getConfigOutput($data);
         if (!@file_put_contents(BB_PATH_CONFIG, $output)) {
-            throw new Exception('Configuration file is not writable or does not exists. Please create file ' . BB_PATH_CONFIG . ' and make it writable', 101);
+            throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . BB_PATH_CONFIG . ' and make it writable', 101);
         }
     }
 
