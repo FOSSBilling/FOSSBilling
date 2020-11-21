@@ -250,13 +250,6 @@ final class Box_Installer
         return true;
     }
 
-    private function checkConfig()
-    {
-        if (!file_exists(BB_PATH_CONFIG)) {
-            throw new Exception('Create configuration file bb-config.php with content provided during installation.');
-        }
-    }
-
     private function makeInstall($ns)
     {
         $this->_isValidInstallData($ns);
