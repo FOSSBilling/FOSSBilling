@@ -30,6 +30,11 @@ BoxBilling is self-hosted — all you need is a [compatible](#requirements) web 
 - [Licensing](#licensing)
 - [Links](#links)
 
+## Requirements
+Although BoxBilling *may* work in lower or smaller conditions, we **highly recommend** you to ensure that your environment has the following software installed:
+* PHP 7.2, or higher.
+* MySQL 8, or higher.
+
 ## Installation
 
 ### Running with Docker
