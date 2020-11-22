@@ -47,7 +47,7 @@ Although BoxBilling *may* work in lower or smaller conditions, we **highly recom
 ### Running from the source code
 To clone and run BoxBilling, you'll first need to [download an up-to-date ZIP archive](https://github.com/boxbilling/boxbilling/archive/master.zip) and save it to your computer locally.
 
-Then, extract the contents of the **"src"** folder inside the ZIP archive to your web server's public folder (usually, that's called *htdocs* or *public_html*). Your web directory's structure will now look like this:
+Then, extract the contents of the **"src"** folder inside the ZIP archive to your web server's public folder (usually, that's called **"htdocs"** or **"public_html"**). Your web directory's structure will now look like this:
 
 - htdocs
     - bb-data
@@ -61,7 +61,7 @@ If you don't have Composer installed, or it's your first time with Composer, you
 
 If you don't have SSH access to your server, or your webmaster in your shared hosting environment doesn't let you use Composer, you may not be able to install the required packages for BoxBilling. In that case, you probably should install BoxBilling by [obtaining a ready-to-install copy from GitHub releases](#obtaining-a-copy-from-github-releases).
 
-If you've already installed Composer, head over to the folder where you copied the content of the **src** folder to, and run the following command to download the required packages to your web server:
+If you've already installed Composer, head over to the folder where you copied the content of the **"src"** folder to, and run the following command to download the required packages to your web server:
 
 ```bash
 $ composer install
