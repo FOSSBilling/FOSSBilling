@@ -49,11 +49,24 @@ Although BoxBilling *may* work in lower or smaller conditions, we **highly recom
 ## Installation
 
 ### Obtaining a copy from GitHub releases
+We make new releases of BoxBilling whenever we have some new cool stuff to introduce you to, or when we fix some bugs 🐞. If you're planning to use BoxBilling in a production environment, [downloading BoxBilling from the source code](#running-from-the-source-code) and using it may not be a good choice. Going with releases instead of the master branch will likely be better as releases are intended to be more secure and stable. However, if you're [planning to contribute](#contributing), you will likely want to go with the [source code](#running-from-the-source-code) instead.
+
+First, you should [download the latest release](https://github.com/boxbilling/boxbilling/releases/latest) from our GitHub repository. Our releases typically have a file called "BoxBilling.zip" attached to them, and that's exactly what you need to download. Unlike the source code itself, releases include Composer packages, so you won't need to run Composer to install PHP packages. If you're going to use BoxBilling in a shared hosting environment, you'll most likely not have an option to access Composer, so obtaining a copy from GitHub releases would be your best option.
+
+After you downloaded the release, unzip it somewhere, and copy the content of the ZIP archive to your web server's public folder (usually, that's called **"htdocs"** or **"public_html"**). Your web directory's structure should now look like this:
+
+- htdocs
+    - bb-data
+    - bb-library
+    - bb-module
+    - **...**
+
+Now, as you have everything ready to start the installation of BoxBilling, head over to your web server, and follow on-screen instructions to complete the installation using web installer. Ta-da, you've done it! 🎉
 
 ### Running from the source code
 To clone and run BoxBilling, you'll first need to [download an up-to-date ZIP archive](https://github.com/boxbilling/boxbilling/archive/master.zip) and save it to your computer locally.
 
-Then, extract the contents of the **"src"** folder inside the ZIP archive to your web server's public folder (usually, that's called **"htdocs"** or **"public_html"**). Your web directory's structure will now look like this:
+Then, extract the contents of the **"src"** folder inside the ZIP archive to your web server's public folder (usually, that's called **"htdocs"** or **"public_html"**). Your web directory's structure should now look like this:
 
 - htdocs
     - bb-data
