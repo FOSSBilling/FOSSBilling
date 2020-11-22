@@ -71,12 +71,22 @@ Now, as you have everything ready to start the installation of BoxBilling, head 
 
 ### Running with Docker
 
-Assuming you already have [Docker](https://docs.docker.com/get-docker/) and [GNU make](https://www.gnu.org/software/make/) installed,
+This guide assumes you already have [Docker](https://docs.docker.com/get-docker/), [Git](https://git-scm.com) and [GNU make](https://www.gnu.org/software/make/) installed.
 
-```console
-make all
+To clone the repository, first run these commands in your command line:
+
+```bash
+# Clone this repository
+$ git clone https://github.com/boxbilling/boxbilling
+
+# Navigate to the local repository
+$ cd boxbilling
+
+# Run the app with some help from Docker
+$ make all
 ```
-Now, you can navigate to [localhost](http://localhost/).
+
+Now, you can navigate to your web server in your browser. If you're using a PC, or directly a server without a server manager like Plesk, this address will probably be [localhost](http://localhost).
 
 ## Contributing
 
