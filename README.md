@@ -45,14 +45,29 @@ Although BoxBilling *may* work in lower or smaller conditions, we **highly recom
 ### Obtaining a copy from GitHub releases
 
 ### Running from the source code
-To clone and run BozBilling, you'll first need to [download an up-to-date ZIP archive](https://github.com/boxbilling/boxbilling/archive/master.zip) and save it to your computer locally.
+To clone and run BoxBilling, you'll first need to [download an up-to-date ZIP archive](https://github.com/boxbilling/boxbilling/archive/master.zip) and save it to your computer locally.
 
-Then, 
+Then, extract the contents of the **"src"** folder inside the ZIP archive to your web server's public folder (usually, that's called *htdocs* or *public_html*). Your web directory's structure will now look like this:
+
+- htdocs
+    - bb-data
+    - bb-library
+    - bb-module
+    - **...**
+
+We do not store the Composer packages we use in our GitHub repository, we use [Composer](https://getcomposer.org/) for that. Composer is a dependency manager for PHP, just like the NPM of Node.js, or PIP of Python.
+
+If you don't have Composer installed, or it's your first time with Composer, you probably may want to read Composer's [getting started guide](https://getcomposer.org/doc/00-intro.md).
+
+If you don't have SSH access to your server, or your webmaster in your shared hosting environment doesn't let you use Composer, you may not be able to install the required packages for BoxBilling. In that case, you probably should install BoxBilling by [obtaining a ready-to-install copy from GitHub releases](#obtaining-a-copy-from-github-releases).
+
+If you've already installed Composer, head over to the folder where you copied the content of the **src** folder to, and run the following command to download the required packages to your web server:
 
 ```bash
-# Install Composer packages
 $ composer install
 ```
+
+Now, as you have everything ready to start the installation of BoxBilling, head over to your web server, and follow on-screen instructions to complete the installation using web installer. Ta-da, you've done it! 🎉
 
 ### Running with Docker
 
