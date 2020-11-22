@@ -1,9 +1,10 @@
-<a href="https://boxbilling.com/">
-    <img align="right" width="50" height="50" src="https://raw.githubusercontent.com/boxbilling/boxbilling/master/src/bb-themes/boxbilling/assets/images/box.png">
-</a>
-
-BoxBilling
-======================
+<h1 align="center">
+  <br>
+  <a href="https://boxbilling.com/"><img src="https://raw.githubusercontent.com/boxbilling/boxbilling/master/src/bb-themes/boxbilling/assets/images/box.png" alt="BoxBilling" width="125"></a>
+  <br>
+  BoxBilling
+  <br>
+</h1>
 
 [![Build Status](https://travis-ci.org/boxbilling/boxbilling.svg?branch=master)](https://travis-ci.org/boxbilling/boxbilling)
 [![Download Latest](https://img.shields.io/github/downloads/boxbilling/boxbilling/total)](https://github.com/boxbilling/boxbilling/releases/latest)
