@@ -16,6 +16,7 @@ BoxBilling
 **BoxBilling** is an open source billing and client management software which helps any kind of companies, startups or even individuals who wish to automate their billing process along with tools and features which will allow you starting your business today!
 
 You can simplify your web hosting business by putting your billing cycle in control by integrating your favorite server management software to BoxBilling.
+
 BoxBilling is self-hosted — all you need is a compatible web server, and a MySQL database. For further information, check the [requirements](#requirements) section.
 
 ## Table of content
