@@ -28,6 +28,7 @@ BoxBilling is self-hosted — all you need is a [compatible](#requirements) web 
 
 - [Requirements](#requirements)
 - [Installation](#installation)
+    - [Obtaining a copy from GitHub releases](#obtaining-a-copy-from-github-releases)
     - [Running from the source code](#running-from-the-source-code)
     - [Running with Docker](#running-with-docker)
 - [Contributing](#contributing)
@@ -40,6 +41,18 @@ Although BoxBilling *may* work in lower or smaller conditions, we **highly recom
 * MySQL 8, or higher.
 
 ## Installation
+
+### Obtaining a copy from GitHub releases
+
+### Running from the source code
+To clone and run BozBilling, you'll first need to [download an up-to-date ZIP archive](https://github.com/boxbilling/boxbilling/archive/master.zip) and save it to your computer locally.
+
+Then, 
+
+```bash
+# Install Composer packages
+$ composer install
+```
 
 ### Running with Docker
 
