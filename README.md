@@ -13,21 +13,23 @@ BoxBilling
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/boxbilling/boxbilling/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/boxbilling/boxbilling/?branch=master)
 
-Open source billing and client management software
+**BoxBilling** is an open source billing and client management software which helps any kind of companies, startups or even individuals who wish to automate their billing process along with tools and features which will allow you starting your business today!
 
-## Getting started
+You can simplify your web hosting business by putting your billing cycle in control by integrating your favorite server management software to BoxBilling.
+BoxBilling is self-hosted — all you need is a compatible web server, and a MySQL database. For further information, check the [requirements](#requirements) section.
 
-Follow [getting started instructions](https://docs.boxbilling.com)
+## Table of content
 
-## Download
+- [Installation](#installation)
+    - [Running from the source code](#running-from-the-source-code)
+    - [Running with Docker](#running-with-docker)
+- [Contributing](#contributing)
+- [Licensing](#licensing)
+- [Links](#links)
 
-[![Download Latest](http://i.imgur.com/djy4ExU.png)](https://github.com/boxbilling/boxbilling/releases/latest) 
+## Installation
 
-## Contribute
-
-Follow [contributors' guidelines](https://github.com/boxbilling/boxbilling/blob/master/CONTRIBUTING.md)
-
-## Running with Docker
+### Running with Docker
 
 Assuming you already have [Docker](https://docs.docker.com/get-docker/) and [GNU make](https://www.gnu.org/software/make/) installed,
 
@@ -36,16 +38,18 @@ make all
 ```
 Now, you can navigate to [localhost](http://localhost/).
 
+## Contributing
 
-## Support
+Follow [contributors' guidelines](https://github.com/boxbilling/boxbilling/blob/master/CONTRIBUTING.md)
+
+## Licensing
+
+BoxBilling is licensed under the Apache License, Version 2.0. See LICENSE for full license text.
+
+## Links
 
 * [Website](https://www.boxbilling.com/)
 * [Documentation](https://docs.boxbilling.com/)
 * [Slack](https://boxbilling.slack.com/)
 * [Twitter](https://twitter.com/boxbilling)
 * [Facebook](https://www.facebook.com/boxbilling)
-
-License
-================================================================================
-
-BoxBilling is licensed under the Apache License, Version 2.0. See LICENSE for full license text.
