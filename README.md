@@ -22,7 +22,7 @@
 
 You can simplify your web hosting business by putting your billing cycle in control by integrating your favorite server management software to BoxBilling.
 
-BoxBilling is self-hosted — all you need is a [compatible](#requirements) web server, and a MySQL database. For further information, check the [requirements](#requirements) section.
+📥 BoxBilling is self-hosted — all you need is a [compatible](#requirements) web server, and a MySQL database. For further information, check the [requirements](#requirements) section.
 
 ## Table of content
 
@@ -47,6 +47,11 @@ Although BoxBilling *may* work in lower or smaller conditions, we **highly recom
     - openssl
 
 ## Installation
+Installing BoxBilling is pretty easy.
+
+- If you are in a shared hosting environment, you'll most likely want to install the latest stable version from **[releases](#obtaining-a-copy-from-github-releases)**.
+- If you are familiar with Docker, you can also go with Docker. **[We have a guide for that](#running-with-docker)**.
+- If you're planning to contribute BoxBilling's development, and wanting to make pull requests in the future, please directly **[run BoxBilling from the source code](#running-from-the-source-code)** instead.
 
 ### Obtaining a copy from GitHub releases
 We make new releases of BoxBilling whenever we have some new cool stuff to introduce you to, or when we fix some bugs 🐞. If you're planning to use BoxBilling in a production environment, [downloading BoxBilling from the source code](#running-from-the-source-code) and using it may not be a good choice. Going with releases instead of the master branch will likely be better as releases are intended to be more secure and stable. However, if you're [planning to contribute](#contributing), you will likely want to go with the [source code](#running-from-the-source-code) instead.
@@ -109,8 +114,17 @@ $ make all
 Now, you can navigate to your web server in your browser. If you're using a PC, or directly a server without a server manager like Plesk, this address will probably be [localhost](http://localhost).
 
 ## Contributing
+🖥️ Welcome, fellow developer! 🙂
 
-Follow [contributors' guidelines](https://github.com/boxbilling/boxbilling/blob/master/CONTRIBUTING.md)
+First of all, thank you for your interest, and taking your time to contribute to BoxBilling.
+
+BoxBilling is developing and reviving day to day, with the help of everyone. We have a set of guidelines for those wishing to contribute to BoxBilling. If you want to read them, please head over to **[contributors' guidelines](https://github.com/boxbilling/boxbilling/blob/master/CONTRIBUTING.md)**.
+
+Your [pull requests](https://github.com/boxbilling/boxbilling/pulls) will be highly welcomed. If you're looking for something to start with, you can check the [open issues](https://github.com/boxbilling/boxbilling/issues) on our GitHub repository.
+
+Questions? Don't hesitate to create an [issue](https://github.com/boxbilling/boxbilling/issues), or join us on [Slack](https://boxbilling.slack.com/) to say hi.
+
+⭐ Not a developer? Feel free to help by starring the repository. It helps us catching attention of new developers who'd like to contribute. 
 
 ## Licensing
 
