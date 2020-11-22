@@ -1,5 +1,5 @@
 <a href="https://boxbilling.com/">
-    <img align="right" width="75" height="75" src="https://raw.githubusercontent.com/boxbilling/boxbilling/master/src/bb-themes/boxbilling/assets/images/box.png">
+    <img align="right" width="50" height="50" src="https://raw.githubusercontent.com/boxbilling/boxbilling/master/src/bb-themes/boxbilling/assets/images/box.png">
 </a>
 
 BoxBilling
