@@ -17,10 +17,11 @@ BoxBilling
 
 You can simplify your web hosting business by putting your billing cycle in control by integrating your favorite server management software to BoxBilling.
 
-BoxBilling is self-hosted — all you need is a compatible web server, and a MySQL database. For further information, check the [requirements](#requirements) section.
+BoxBilling is self-hosted — all you need is a [compatible](#requirements) web server, and a MySQL database. For further information, check the [requirements](#requirements) section.
 
 ## Table of content
 
+- [Requirements](#requirements)
 - [Installation](#installation)
     - [Running from the source code](#running-from-the-source-code)
     - [Running with Docker](#running-with-docker)
