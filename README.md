@@ -76,6 +76,7 @@ $ composer install
 Now, as you have everything ready to start the installation of BoxBilling, head over to your web server, and follow on-screen instructions to complete the installation using web installer. Ta-da, you've done it! 🎉
 
 ### Running with Docker
+<a href="https://www.docker.com/"><img align="right" src="https://www.docker.com/sites/default/files/d8/styles/role_icon/public/2019-07/horizontal-logo-monochromatic-white.png" alt="Docker logo" width="125"></a>
 
 This guide assumes you already have [Docker](https://docs.docker.com/get-docker/), [Git](https://git-scm.com) and [GNU make](https://www.gnu.org/software/make/) installed.
 
