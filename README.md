@@ -18,7 +18,7 @@
 
 </div>
 
-**BoxBilling** is an open source, and free billing and client management software which helps any kind of companies, startups or even individuals who wish to automate their billing process along with tools and features which will allow you starting your business today!
+**BoxBilling** is an open source, free billing and client management software which helps any kind of company whether they are startups or even individuals who wish to automate their billing process along with tools and features which will allow you start automating your business processes today!
 
 You can simplify your web hosting business by putting your billing cycle in control by integrating your favorite server management software to BoxBilling.
 
