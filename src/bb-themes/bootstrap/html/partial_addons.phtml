@@ -11,7 +11,7 @@
 				</h4>
 				<p class="list-group-item-text form-inline">
 					{{ addon.description|bbmd }}
-					{% if addon.pricing.type is sameas('recurrent') %}
+					{% if addon.pricing.type is same as('recurrent') %}
 					<div class="form-group">
 						<div class="input-group">
 							<select name="addons[{{ addon.id }}][period]" class="addon-period-selector form-control" rel="addon-periods-{{ addon.id }}">
@@ -30,11 +30,11 @@
 					</div>
 					{% endif %}
 
-					{% if addon.pricing.type is sameas('once') %}
+					{% if addon.pricing.type is same as('once') %}
 						<h4 class="text-right"><strong>{{ (addon.pricing.once.price + addon.pricing.once.setup) | money_convert }}</strong></h4>
 					{% endif %}
 
-					{% if addon.pricing.type is sameas('free') %}
+					{% if addon.pricing.type is same as('free') %}
 						<h4 class="text-right"><strong>{{ 0 | money_convert }}</strong></h4>
 					{% endif %}	
 				</p>	
