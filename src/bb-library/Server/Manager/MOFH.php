@@ -149,7 +149,7 @@ class Server_Manager_MOFH extends Server_Manager
 
 		$request = $this->MOFHclient->suspend([
 			'username' => $this->domainToID($a->getDomain()),
-			'reason' => $a->getNote(),
+			'reason' => "Triggered by BoxBilling.",
 			'linked' => false
 		]);
 
