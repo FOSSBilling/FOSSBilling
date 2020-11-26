@@ -16,7 +16,6 @@ class Server_Account
     private $password   = NULL;
     private $domain     = NULL;
     private $ip         = NULL;
-    private $api_def    = NULL;
 
     /**
      * @var Server_Package
@@ -77,17 +76,6 @@ class Server_Account
     public function getIp()
     {
         return $this->ip;
-    }
-
-    public function setAPIdef($param)
-    {
-        $this->api_def = $param;
-        return $this;
-    }
-
-    public function getAPIdef()
-    {
-        return $this->api_def;
     }
 
     /**
