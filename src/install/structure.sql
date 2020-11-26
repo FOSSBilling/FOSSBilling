@@ -1085,6 +1085,7 @@ CREATE TABLE `service_hosting` (
   `tld` varchar(255) DEFAULT NULL,
   `ip` varchar(45) DEFAULT NULL,
   `username` varchar(255) DEFAULT NULL,
+  `panel_username` varchar(255) DEFAULT NULL,
   `pass` varchar(255) DEFAULT NULL,
   `reseller` tinyint(1) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
