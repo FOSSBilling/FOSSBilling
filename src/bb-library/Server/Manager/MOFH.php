@@ -81,7 +81,7 @@ class Server_Manager_MOFH extends Server_Manager
         $this->client = $a->getClient();
 
 		$request = $this->MOFHclient->createAccount([
-			'username' => $a->getId(),
+			'username' => $a->getAPIdef(),
 			'password' => $a->getPassword(),
 			'domain' => $a->getDomain(),
 			'email' => $this->client->getEmail(),
@@ -91,7 +91,7 @@ class Server_Manager_MOFH extends Server_Manager
 		$response = $request->send();
 
 		$this->client = $a->getClient();
-        $this->client->setId($a->getUsername());
+        $this->client->setAPIdef($a->getUsername());
         $this->client->setUsername($response->getVpUsername());
 
 		if (!$response->isSuccessful()) {
@@ -104,7 +104,7 @@ class Server_Manager_MOFH extends Server_Manager
 	public function suspendAccount(Server_Account $a, $suspend = true) {
 
 		$request = $this->MOFHclient->suspend([
-			'username' => $a->getId(),
+			'username' => $a->getAPIdef(),
 			'reason' => $a->getNote(),
 			'linked' => false
 		]);
@@ -121,7 +121,7 @@ class Server_Manager_MOFH extends Server_Manager
 	public function unsuspendAccount(Server_Account $a) {
 
 		$request = $this->MOFHclient->unsuspend([
-			'username' => $a->getId()
+			'username' => $a->getAPIdef()
 		]);
 
 		$response = $request->send();
@@ -146,7 +146,7 @@ class Server_Manager_MOFH extends Server_Manager
 
 	public function changeAccountPassword(Server_Account $a, $new) {
 		$request = $this->MOFHclient->password([
-			'username' => $a->getId(),
+			'username' => $a->getAPIdef(),
 			'password' => $new,
 		]);
 		
