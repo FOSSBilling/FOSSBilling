@@ -10,6 +10,18 @@
  * with this source code in the file LICENSE
  */
 
+/**
+ * The unnamed new release
+*/
+class BBPatch_24 extends BBPatchAbstract
+{
+    public function patch()
+    {
+        $q = "ALTER TABLE `service_hosting` ADD `api_def` VARCHAR(255) NULL DEFAULT NULL AFTER `username`;";
+        $this->execSql($q);
+    }
+}
+
 class BBPatch_23 extends BBPatchAbstract
 {
     public function patch()
