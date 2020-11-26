@@ -63,7 +63,7 @@ class Server_Manager_MOFH extends Server_Manager
     public static function getForm()
     {
         return array(
-            'label'     =>  'MyOwnFreeHost',
+			'label'		=>	'MyOwnFreeHost',
         );
     }
 
@@ -119,14 +119,14 @@ class Server_Manager_MOFH extends Server_Manager
 			};
 			
 			// Setting the username to the one that is being used in the client area.
-			$a->username = $response->getUsername();
+			$a->setUsername($response->getUsername());
 		}
 
 		// If something went wrong, we'll catch the error, and display it.
 		if (!$response->isSuccessful()) {
 			throw new Server_Exception($response->getMessage());
 		}
-		
+
         return $a;
     }
 
@@ -158,7 +158,7 @@ class Server_Manager_MOFH extends Server_Manager
 		$response = $request->send();
 
 		// Setting the username to the one that is being used in the client area.
-		$a->username = $response->getVpUsername();
+		$a->setUsername($response->getVpUsername());
 
 		// If something went wrong, we'll catch the error, and display it.
 		if (!$response->isSuccessful()) {
