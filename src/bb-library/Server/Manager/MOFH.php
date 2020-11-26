@@ -101,6 +101,32 @@ class Server_Manager_MOFH extends Server_Manager
 	public function synchronizeAccount(Server_Account $a)
     {
         $this->getLog()->info('Synchronizing account with server '.$a->getUsername());
+		$this->client = $a->getClient();
+
+		$request = $this->MOFHclient->getDomainUser([
+			'domain' => $a->getDomain(),
+		]);
+
+		// Let's send the request, and store the response.
+		$response = $request->send();
+
+		if ($response->isFound()) {
+
+			if ($response->getStatus() == "ACTIVE") {
+				$a->setSuspended(false);
+			} else if ($response->getStatus() == "SUSPENDED") {
+				$a->setSuspended(true);
+			};
+			
+			// Setting the username to the one that is being used in the client area.
+			$a->username = $response->getUsername();
+		}
+
+		// If something went wrong, we'll catch the error, and display it.
+		if (!$response->isSuccessful()) {
+			throw new Server_Exception($response->getMessage());
+		}
+		
         return $a;
     }
 
@@ -132,7 +158,7 @@ class Server_Manager_MOFH extends Server_Manager
 		$response = $request->send();
 
 		// Setting the username to the one that is being used in the client area.
-        $a->setUsername($response->getVpUsername());
+		$a->username = $response->getVpUsername();
 
 		// If something went wrong, we'll catch the error, and display it.
 		if (!$response->isSuccessful()) {
@@ -142,7 +168,7 @@ class Server_Manager_MOFH extends Server_Manager
 		// It's all done. We can now unsuspend the account.
 		$a->setSuspended(false);
 
-		return true;
+		return $a;
 	}
 
 	public function suspendAccount(Server_Account $a, $suspend = true) {
