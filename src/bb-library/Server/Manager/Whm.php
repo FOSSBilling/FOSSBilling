@@ -25,15 +25,15 @@ class Server_Manager_Whm extends Server_Manager
         }
 
         if(empty($this->_config['host'])) {
-            throw new Server_Exception('Server manager "WHM" is not configured properly. Hostname is not set');
+            throw new Server_Exception('Server manager "cPanel WHM" is not configured properly. Hostname is not set');
         }
 
         if(empty($this->_config['username'])) {
-            throw new Server_Exception('Server manager "WHM" is not configured properly. Username is not set');
+            throw new Server_Exception('Server manager "cPanel WHM" is not configured properly. Username is not set');
         }
 
         if(empty($this->_config['password']) && empty($this->_config['accesshash'])) {
-            throw new Server_Exception('Server manager "WHM" is not configured properly. Authentication is not set');
+            throw new Server_Exception('Server manager "cPanel WHM" is not configured properly. Authentication is not set');
         }
 
         if(!empty($this->_config['accesshash'])) {
@@ -75,7 +75,7 @@ class Server_Manager_Whm extends Server_Manager
     public static function getForm()
     {
         return array(
-            'label'     =>  'cPanel (WHM)',
+            'label'     =>  'cPanel WHM',
         );
     }
 
@@ -95,7 +95,7 @@ class Server_Manager_Whm extends Server_Manager
         );
 		$result = $this->_request($action, $var_hash);
         if(!isset($result->acct[0])) {
-            error_log('Could not synchronize account with WHM server. Account does not exist.');
+            error_log('Could not synchronize account with cPanel server. Account does not exist.');
             return $a;
         }
 
