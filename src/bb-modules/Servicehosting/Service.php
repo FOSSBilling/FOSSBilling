@@ -696,7 +696,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getServerManager(\Model_ServiceHostingServer $model)
+    public function getServerManager(\Model_ServiceHosting $model)
     {
         if(empty($model->manager)) {
             throw new \Box_Exception('Invalid server manager. Server was not configured properly.', null, 654);
