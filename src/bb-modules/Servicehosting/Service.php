@@ -99,7 +99,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if(!$model instanceof \Model_ServiceHosting) {
+        if(!$model instanceof \RedBean_SimpleModel) {
             throw new \Box_Exception('Could not activate order. Service was not created');
         }
 
