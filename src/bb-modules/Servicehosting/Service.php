@@ -881,7 +881,7 @@ class Service implements InjectionAwareInterface
         return $manager;
     }
 
-    public function getMangerUrls(\Model_ServiceHostingServer $model)
+    public function getMangerUrls(\Model_ServiceHosting $model)
     {
         try {
             $m = $this->getServerManager($model);
