@@ -28,7 +28,8 @@
         "stripe/stripe-php": "2.1.1",
         "guzzlehttp/guzzle": "*",
         "laminas/laminas-httphandlerrunner": "^1.2.0",
-        "docnet/tfpdf": "^2.2"
+        "docnet/tfpdf": "^2.2",
+        "infinityfree/mofh-client": "^0.7.0"
     },
     "suggest": {
         "ext-gettext": "*"
