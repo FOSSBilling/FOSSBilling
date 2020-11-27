@@ -558,7 +558,7 @@ class Service implements InjectionAwareInterface
     }
 
 
-    public function getServerManager($manager)
+    public function getServerManagers()
     {
         $d = array();
         foreach($this->_getServerManagers() as $p) {
