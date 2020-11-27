@@ -239,7 +239,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function changeAccountPlan(\Model_ClientOrder $order, \Model_ServiceHosting $model, \Model_ServiceHostingHp $hp)
+    public function changeAccountPlan(\Model_ClientOrder $order, \Model_ServiceHostingServer $model, \Model_ServiceHostingHp $hp)
     {
         $model->service_hosting_hp_id = $hp->id;
         if($this->_performOnService($order)){
@@ -254,7 +254,7 @@ class Service implements InjectionAwareInterface
         return TRUE;
     }
 
-    public function changeAccountUsername(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
+    public function changeAccountUsername(\Model_ClientOrder $order, \Model_ServiceHostingServer $model, $data)
     {
         if(!isset($data['username']) || empty($data['username'])) {
             throw new \Box_Exception('Account password is missing or is not valid');
@@ -275,7 +275,7 @@ class Service implements InjectionAwareInterface
         return TRUE;
     }
 
-    public function changeAccountIp(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
+    public function changeAccountIp(\Model_ClientOrder $order, \Model_ServiceHostingServer $model, $data)
     {
         if(!isset($data['ip']) || empty($data['ip'])) {
             throw new \Box_Exception('Account ip is missing or is not valid');
@@ -295,7 +295,7 @@ class Service implements InjectionAwareInterface
         return TRUE;
     }
 
-    public function changeAccountDomain(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
+    public function changeAccountDomain(\Model_ClientOrder $order, \Model_ServiceHostingServer $model, $data)
     {
         if(!isset($data['tld']) || empty($data['tld']) ||
            !isset($data['sld']) || empty($data['sld'])) {
@@ -318,7 +318,7 @@ class Service implements InjectionAwareInterface
         return TRUE;
     }
 
-    public function changeAccountPassword(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
+    public function changeAccountPassword(\Model_ClientOrder $order, \Model_ServiceHostingServer $model, $data)
     {
         if(!isset($data['password']) || !isset($data['password_confirm'])
                 || $data['password'] != $data['password_confirm']) {
