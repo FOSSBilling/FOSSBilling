@@ -264,7 +264,14 @@ function twig_markdown_filter(Twig\Environment $env, $value)
     $markdownParser = new \Michelf\MarkdownExtra;
     // Michelf Markdown version 1.7.0 and up
     $markdownParser->hard_wrap = true;
-    return $markdownParser->transform($value); //htmlspecialchars($value, ENT_NOQUOTES)
+    $result = $markdownParser->transform(htmlspecialchars($value, ENT_NOQUOTES));
+    $result = preg_replace_callback('/(?<=href=")(.*)(?=")/', function($match) {
+        if(!filter_var($match[0], FILTER_VALIDATE_URL)) {
+            $match[0] = '#';
+        }
+        return $match[0];
+    }, $result);
+    return $result;
 }
 
 function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
