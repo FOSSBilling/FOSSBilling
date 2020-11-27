@@ -229,7 +229,7 @@ if(!file_exists($configPath) || 0 == filesize($configPath)) {
     // Try to create an empty configuration file
     @file_put_contents($configPath, '');
     
-    $base_url = "http://".$_SERVER['HTTP_HOST'];
+    $base_url = "http".(isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on' || $_SERVER['HTTPS'] == 1) || isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https' ? 's' : '')."://".$_SERVER['HTTP_HOST'];
     $base_url .= preg_replace('@/+$@','',dirname($_SERVER['SCRIPT_NAME']));
     $url = $base_url . '/install/index.php';
     $configFile = pathinfo($configPath, PATHINFO_BASENAME);
