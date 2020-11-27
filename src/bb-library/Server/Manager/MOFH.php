@@ -86,7 +86,7 @@ class Server_Manager_MOFH extends Server_Manager
 	public function testConnection()
     {
 		$request = $this->MOFHclient->availability([
-			'domain' => 'tedmosbyisnotajerk.com',
+			'domain' => 'boxbilling.com',
 		]);
 
 		$response = $request->send();
