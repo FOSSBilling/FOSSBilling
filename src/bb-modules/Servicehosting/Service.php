@@ -462,7 +462,7 @@ class Service implements InjectionAwareInterface
         );
     }
 
-    public function toHostingServerApiArray(\Model_ServiceHostingServer $model, $deep = false, $identity = null)
+    public function toHostingServerApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null)
     {
         list($cpanel_url, $whm_url) = $this->getMangerUrls($model);
         $result = array(
