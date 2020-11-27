@@ -392,7 +392,7 @@ class Service implements InjectionAwareInterface
         return $username;
     }
 
-    public function _getAM(\Model_ServiceHostingServer $model, \Model_ServiceHostingHp $hp = null)
+    public function _getAM(\Model_ServiceHosting $model, \Model_ServiceHostingHp $hp = null)
     {
         if(null === $hp) {
             $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $model->service_hosting_hp_id, 'Hosting plan not found');
