@@ -76,7 +76,7 @@ class Service implements InjectionAwareInterface
         $c = $orderService->getConfig($order);
         $this->validateOrderData($c);
 
-        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $c['server_id'], 'Server from order configuration was not found');
+        $server = $this->di['db']->getExistingModelById('ServiceHosting', $c['server_id'], 'Server from order configuration was not found');
 
         $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $c['hosting_plan_id'], 'Hosting plan from order configuration was not found');
 
@@ -398,7 +398,7 @@ class Service implements InjectionAwareInterface
             $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $model->service_hosting_hp_id, 'Hosting plan not found');
         }
 
-        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
+        $server = $this->di['db']->getExistingModelById('ServiceHosting', $model->service_hosting_server_id, 'Server not found');
         $c = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
 
         $hp_config = $hp->config;
@@ -621,7 +621,7 @@ class Service implements InjectionAwareInterface
 
     public function createServer($name, $ip, $manager, $data)
     {
-        $model = $this->di['db']->dispense('ServiceHostingServer');
+        $model = $this->di['db']->dispense('ServiceHosting');
         $model->name = $name;
         $model->ip = $ip;
 
