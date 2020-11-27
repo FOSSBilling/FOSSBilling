@@ -239,7 +239,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function changeAccountPlan(\Model_ClientOrder $order, \Model_ServiceHostingServer $model, \Model_ServiceHostingHp $hp)
+    public function changeAccountPlan(\Model_ClientOrder $order, \Model_ServiceHosting $model, \Model_ServiceHostingHp $hp)
     {
         $model->service_hosting_hp_id = $hp->id;
         if($this->_performOnService($order)){
@@ -254,7 +254,7 @@ class Service implements InjectionAwareInterface
         return TRUE;
     }
 
-    public function changeAccountUsername(\Model_ClientOrder $order, \Model_ServiceHostingServer $model, $data)
+    public function changeAccountUsername(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if(!isset($data['username']) || empty($data['username'])) {
             throw new \Box_Exception('Account password is missing or is not valid');
@@ -275,7 +275,7 @@ class Service implements InjectionAwareInterface
         return TRUE;
     }
 
-    public function changeAccountIp(\Model_ClientOrder $order, \Model_ServiceHostingServer $model, $data)
+    public function changeAccountIp(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if(!isset($data['ip']) || empty($data['ip'])) {
             throw new \Box_Exception('Account ip is missing or is not valid');
@@ -295,7 +295,7 @@ class Service implements InjectionAwareInterface
         return TRUE;
     }
 
-    public function changeAccountDomain(\Model_ClientOrder $order, \Model_ServiceHostingServer $model, $data)
+    public function changeAccountDomain(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if(!isset($data['tld']) || empty($data['tld']) ||
            !isset($data['sld']) || empty($data['sld'])) {
@@ -318,7 +318,7 @@ class Service implements InjectionAwareInterface
         return TRUE;
     }
 
-    public function changeAccountPassword(\Model_ClientOrder $order, \Model_ServiceHostingServer $model, $data)
+    public function changeAccountPassword(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if(!isset($data['password']) || !isset($data['password_confirm'])
                 || $data['password'] != $data['password_confirm']) {
@@ -392,7 +392,7 @@ class Service implements InjectionAwareInterface
         return $username;
     }
 
-    public function _getAM(\Model_ServiceHostingServer $model, \Model_ServiceHostingHp $hp = null)
+    public function _getAM(\Model_ServiceHosting $model, \Model_ServiceHostingHp $hp = null)
     {
         if(null === $hp) {
             $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $model->service_hosting_hp_id, 'Hosting plan not found');
@@ -652,7 +652,7 @@ class Service implements InjectionAwareInterface
         return $newId;
     }
 
-    public function deleteServer(\Model_ServiceHostingServer $model)
+    public function deleteServer(\Model_ServiceHosting $model)
     {
         $id = $model->id;
         $this->di['db']->trash($model);
@@ -660,7 +660,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateServer(\Model_ServiceHostingServer $model, array $data)
+    public function updateServer(\Model_ServiceHosting $model, array $data)
     {
         $model->name     = $this->di['array_get']($data, 'name', $model->name);
         $model->ip       = $this->di['array_get']($data, 'ip', $model->ip);
@@ -720,7 +720,7 @@ class Service implements InjectionAwareInterface
         return $manager;
     }
 
-    public function testConnection(\Model_ServiceHostingServer $model)
+    public function testConnection(\Model_ServiceHosting $model)
     {
         $m = $this->getServerManager($model);
         return $m->testConnection();
@@ -871,7 +871,7 @@ class Service implements InjectionAwareInterface
         return $p;
     }
 
-    public function getServerManagerWithLog(\Model_ServiceHostingServer $model, \Model_ClientOrder $order)
+    public function getServerManagerWithLog(\Model_ServiceHosting $model, \Model_ClientOrder $order)
     {
         $manager = $this->getServerManager($model);
 
