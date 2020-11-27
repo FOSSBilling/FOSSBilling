@@ -214,7 +214,6 @@ class Server_Manager_MOFH extends Server_Manager
 	public function changeAccountPackage(Server_Account $a, Server_Package $p)
     {
 		throw new Server_Exception("Unfortunately, MyOwnFreeHost API does not support changing account packages. You may log into your reseller panel, and execute the action there.");
-
 	}
 
 	public function changeAccountPassword(Server_Account $a, $new) {
