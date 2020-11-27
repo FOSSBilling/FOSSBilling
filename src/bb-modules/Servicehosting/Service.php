@@ -442,7 +442,7 @@ class Service implements InjectionAwareInterface
         return array($adapter, $a);
     }
 
-    public function toApiArray(\Model_ServiceHostingServer $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null)
     {
         $serviceHostingServerModel = $this->di['db']->load('ServiceHostingServer', $model->service_hosting_server_id);
         $serviceHostingHpModel = $this->di['db']->load('ServiceHostingHp', $model->service_hosting_hp_id);
@@ -462,7 +462,7 @@ class Service implements InjectionAwareInterface
         );
     }
 
-    public function toHostingServerApiArray(\Model_ServiceHostingServer $model, $deep = false, $identity = null)
+    public function toHostingServerApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null)
     {
         list($cpanel_url, $whm_url) = $this->getMangerUrls($model);
         $result = array(
@@ -871,7 +871,7 @@ class Service implements InjectionAwareInterface
         return $p;
     }
 
-    public function getServerManagerWithLog(\Model_ServiceHostingServer $model, \Model_ClientOrder $order)
+    public function getServerManagerWithLog(\Model_ServiceHosting $model, \Model_ClientOrder $order)
     {
         $manager = $this->getServerManager($model);
 
@@ -881,7 +881,7 @@ class Service implements InjectionAwareInterface
         return $manager;
     }
 
-    public function getMangerUrls(\Model_ServiceHostingServer $model)
+    public function getMangerUrls(\Model_ServiceHosting $model)
     {
         try {
             $m = $this->getServerManager($model);
