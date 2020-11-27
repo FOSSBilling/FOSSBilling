@@ -392,13 +392,13 @@ class Service implements InjectionAwareInterface
         return $username;
     }
 
-    public function _getAM(\Model_ServiceHosting $model, \Model_ServiceHostingHp $hp = null)
+    public function _getAM(\Model_ServiceHostingServer $model, \Model_ServiceHostingHp $hp = null)
     {
         if(null === $hp) {
             $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $model->service_hosting_hp_id, 'Hosting plan not found');
         }
 
-        $server = $this->di['db']->getExistingModelById('ServiceHosting', $model->service_hosting_server_id, 'Server not found');
+        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
         $c = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
 
         $hp_config = $hp->config;
@@ -462,7 +462,7 @@ class Service implements InjectionAwareInterface
         );
     }
 
-    public function toHostingServerApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null)
+    public function toHostingServerApiArray(\Model_ServiceHostingServer $model, $deep = false, $identity = null)
     {
         list($cpanel_url, $whm_url) = $this->getMangerUrls($model);
         $result = array(
@@ -621,7 +621,7 @@ class Service implements InjectionAwareInterface
 
     public function createServer($name, $ip, $manager, $data)
     {
-        $model = $this->di['db']->dispense('ServiceHosting');
+        $model = $this->di['db']->dispense('ServiceHostingServer');
         $model->name = $name;
         $model->ip = $ip;
 
@@ -660,7 +660,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateServer(\Model_ServiceHosting $model, array $data)
+    public function updateServer(\Model_ServiceHostingServer $model, array $data)
     {
         $model->name     = $this->di['array_get']($data, 'name', $model->name);
         $model->ip       = $this->di['array_get']($data, 'ip', $model->ip);
