@@ -9,7 +9,6 @@
 
     <ul class="tabs">
         <li><a href="#tab-index">{% trans 'Settings' %}</a></li>
-        <li><a href="#tab-license">{% trans 'License' %}</a></li>
     </ul>
 
     <div class="tabs_container">
@@ -28,44 +27,6 @@
                 </tbody>
             </table>
         </div>
-
-        <div id="tab-license" class="tab_content nopadding">
-
-            <div class="help">
-                <h3>{% trans 'License' %}</h3>
-                <p>{% trans 'After purchase you have received an e-mail with license key. Update license key to unlock all features of BoxBilling' %}</p>
-                <p>{% trans 'To change license key, change <em>BB_LICENSE</em> value in <em>bb-config.php</em> file' %}. </p>
-                <p><a href="{{ 'filemanager/ide'|alink({'open' : 'bb-config.php'}) }}" target="_blank" target="_blank">{% trans 'Edit bb-config.php file' %}</a> (File must be writable by web server)</p>
-            </div>
-
-            {% set env = admin.system_env %}
-            {% set license = admin.system_license_info %}
-            <table class="tableStatic wide">
-                <tbody>
-                    <tr class="noborder">
-                        <td>{% trans 'Licensed to' %}</td>
-                        <td align="right">{{ license.licensed_to }}</td>
-                    </tr>
-                    <tr>
-                        <td>{% trans 'Key' %}</td>
-                        <td align="right">{{ license.key }}</td>
-                    </tr>
-
-                    {% if license.expires_at %}
-                    <tr>
-                        <td>{% trans 'Expires at' %}</td>
-                        <td align="right">{{ license.expires_at }}</td>
-                    </tr>
-                    {% endif %}
-                    
-                    <tr>
-                        <td>{% trans 'IP' %}</td>
-                        <td align="right">{{ env.ip }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
     </div>
     
 </div>
