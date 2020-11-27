@@ -75,7 +75,7 @@ class Server_Manager_MOFH extends Server_Manager
 			$protocol = 'http';
 		}
 		$host     = $this->_config['host'];
-		return $protocol . '://' . $host;
+		return $protocol . '://cpanel.' . $host;
     }
 
     public function getResellerLoginUrl()
@@ -86,7 +86,7 @@ class Server_Manager_MOFH extends Server_Manager
 	public function testConnection()
     {
 		$request = $this->MOFHclient->availability([
-			'domain' => 'boxbilling.com',
+			'domain' => 'tedmosbyisnotajerk.com',
 		]);
 
 		$response = $request->send();
