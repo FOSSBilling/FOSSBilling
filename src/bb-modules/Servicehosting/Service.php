@@ -358,7 +358,7 @@ class Service implements InjectionAwareInterface
         return TRUE;
     }
 
-    private function _getDomainOrderId(\Model_ServiceHostingServer $model)
+    private function _getDomainOrderId(\Model_ServiceHosting $model)
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
