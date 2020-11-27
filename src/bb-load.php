@@ -231,7 +231,7 @@ if(!file_exists($configPath) || 0 == filesize($configPath)) {
     
     $base_url = "http://".$_SERVER['HTTP_HOST'];
     $base_url .= preg_replace('@/+$@','',dirname($_SERVER['SCRIPT_NAME']));
-    $url = $base_url . 'install/index.php';
+    $url = $base_url . '/install/index.php';
     $configFile = pathinfo($configPath, PATHINFO_BASENAME);
     $msg = sprintf("The <em>$configFile</em> path seems to be invalid. You may have not generated the configuration file yet, or the configuration file may not contain the required configuration parameters. BoxBilling needs to have a valid configuration file present in order to function properly.</p><p>Need some help with the installation? <a target='_blank' href='http://docs.boxbilling.com/en/latest/reference/installation.html'>We got it</a>. You can create the configuration file using the interactive installer, or manually create the configuration file.</p><p>If it's your first time setting up BoxBilling, you can <a href='%s' class='button'>continue with the web-based interactive BoxBilling installation</a>.", $url);
     throw new Exception($msg, 101);
