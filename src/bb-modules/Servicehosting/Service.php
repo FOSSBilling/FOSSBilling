@@ -558,7 +558,7 @@ class Service implements InjectionAwareInterface
     }
 
 
-    public function getServerManagers()
+    public function getServerManager($manager)
     {
         $d = array();
         foreach($this->_getServerManagers() as $p) {
@@ -720,7 +720,7 @@ class Service implements InjectionAwareInterface
         return $manager;
     }
 
-    public function testConnection(\Model_ServiceHosting $model)
+    public function testConnection(\Model_ServiceHostingServer $model)
     {
         $m = $this->getServerManager($model);
         return $m->testConnection();
@@ -871,7 +871,7 @@ class Service implements InjectionAwareInterface
         return $p;
     }
 
-    public function getServerManagerWithLog(\Model_ServiceHosting $model, \Model_ClientOrder $order)
+    public function getServerManagerWithLog(\Model_ServiceHostingServer $model, \Model_ClientOrder $order)
     {
         $manager = $this->getServerManager($model);
 
@@ -881,7 +881,7 @@ class Service implements InjectionAwareInterface
         return $manager;
     }
 
-    public function getMangerUrls(\Model_ServiceHosting $model)
+    public function getMangerUrls(\Model_ServiceHostingServer $model)
     {
         try {
             $m = $this->getServerManager($model);
