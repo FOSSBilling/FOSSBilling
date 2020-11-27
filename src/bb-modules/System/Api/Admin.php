@@ -19,16 +19,6 @@ namespace Box\Mod\System\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Returns licensing information
-     * 
-     * @return array
-     */
-    public function license_info($data)
-    {
-       return $this->getService()->getLicenseInfo($data);
-    }
-
-    /**
      * Return system setting param
      * @deprecated
      * @param string $key - parameter key name
