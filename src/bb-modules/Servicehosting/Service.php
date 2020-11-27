@@ -442,9 +442,9 @@ class Service implements InjectionAwareInterface
         return array($adapter, $a);
     }
 
-    public function toApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null)
+    public function toApiArray(\Model_ServiceHostingServer $model, $deep = false, $identity = null)
     {
-        $serviceHostingServerModel = $this->di['db']->load('ServiceHostingServer', $model->service_hosting_server_id);
+        $serviceHostingServerModel = $this->di['db']->load('ServiceHosting', $model->service_hosting_server_id);
         $serviceHostingHpModel = $this->di['db']->load('ServiceHostingHp', $model->service_hosting_hp_id);
         $server = $this->toHostingServerApiArray($serviceHostingServerModel, $deep, $identity);
         $hp = $this->toHostingHpApiArray($serviceHostingHpModel, $deep, $identity);
