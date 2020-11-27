@@ -47,7 +47,7 @@ class Service implements InjectionAwareInterface
 
         return $product->title;
     }
-
+    
     public function validateOrderData(array &$data)
     {
         if(!isset($data['server_id'])) {
@@ -76,7 +76,7 @@ class Service implements InjectionAwareInterface
         $c = $orderService->getConfig($order);
         $this->validateOrderData($c);
 
-        $server = $this->di['db']->getExistingModelById('ServiceHosting', $c['server_id'], 'Server from order configuration was not found');
+        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $c['server_id'], 'Server from order configuration was not found');
 
         $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $c['hosting_plan_id'], 'Hosting plan from order configuration was not found');
 
@@ -108,13 +108,13 @@ class Service implements InjectionAwareInterface
         if(isset($c['password']) && !empty($c['password'])) {
             $pass = $c['password'];
         }
-
+        
         if(isset($c['username']) && !empty($c['username'])) {
             $username = $c['username'];
         } else {
             $username = $this->_generateUsername($model->sld.$model->tld);
-        }
-
+        }        
+        
         $model->username = $username;
         $model->pass = $pass;
         $this->di['db']->store($model);
@@ -123,7 +123,7 @@ class Service implements InjectionAwareInterface
             list($adapter, $account) = $this->_getAM($model);
             $adapter->createAccount($account);
         }
-
+        
         return array(
             'username'  =>  $username,
             'password'  =>  $pass,
@@ -266,7 +266,7 @@ class Service implements InjectionAwareInterface
             list($adapter, $account) = $this->_getAM($model);
             $adapter->changeAccountUsername($account, $u);
         }
-
+        
         $model->username = $u;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -287,7 +287,7 @@ class Service implements InjectionAwareInterface
             list($adapter, $account) = $this->_getAM($model);
             $adapter->changeAccountIp($account, $ip);
         }
-
+        
         $model->ip = $ip;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -309,7 +309,7 @@ class Service implements InjectionAwareInterface
             list($adapter, $account) = $this->_getAM($model);
             $adapter->changeAccountDomain($account, $sld.$tld);
         }
-
+        
         $model->sld = $sld;
         $model->tld = $tld;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -351,7 +351,7 @@ class Service implements InjectionAwareInterface
         if($account->getIp() != $updated->getIp()) {
             $model->ip = $updated->getIp();
         }
-
+        
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Synchronizing hosting account %s with server', $model->id);
@@ -378,7 +378,7 @@ class Service implements InjectionAwareInterface
     {
         return ($order->status != \Model_ClientOrder::STATUS_FAILED_SETUP);
     }
-
+    
     /**
      * Generate username by domain
      *
@@ -392,7 +392,7 @@ class Service implements InjectionAwareInterface
         return $username;
     }
 
-    public function _getAM(\Model_ServiceHostingServer $model, \Model_ServiceHostingHp $hp = null)
+    public function _getAM(\Model_ServiceHosting $model, \Model_ServiceHostingHp $hp = null)
     {
         if(null === $hp) {
             $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $model->service_hosting_hp_id, 'Hosting plan not found');
@@ -652,7 +652,7 @@ class Service implements InjectionAwareInterface
         return $newId;
     }
 
-    public function deleteServer(\Model_ServiceHosting $model)
+    public function deleteServer(\Model_ServiceHostingServer $model)
     {
         $id = $model->id;
         $this->di['db']->trash($model);
@@ -696,7 +696,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getServerManager(\Model_ServiceHosting $model)
+    public function getServerManager(\Model_ServiceHostingServer $model)
     {
         if(empty($model->manager)) {
             throw new \Box_Exception('Invalid server manager. Server was not configured properly.', null, 654);
