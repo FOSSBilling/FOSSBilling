@@ -185,7 +185,7 @@ final class Box_Installer
     {
         $path = BB_PATH_LICENSE;
         if (!file_exists($path)) {
-            return 'Please visit http://www.boxbilling.com for licensing information';
+            return 'BoxBilling is licensed under the Apache License, Version 2.0.'.PHP_EOL.'Please visit https://github.com/boxbilling/boxbilling/blob/master/LICENSE for full license text.';
         }
         return file_get_contents($path);
     }
