@@ -182,16 +182,7 @@ class Service
 
         return $details;
     }
-
-    public function getLicenseInfo($data)
-    {
-        $result = array(
-            'licensed_to'   =>  'BoxBilling CE',
-            'key'           =>  'BoxBilling CE',
-        );
-        return $result;
-    }
-
+    
     public function getParams($data)
     {
         $query = "SELECT param, value

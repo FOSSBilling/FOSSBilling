@@ -3259,16 +3259,6 @@ msgstr ""
 msgid "Module settings"
 msgstr ""
 
-msgid ""
-"After purchase you have received an e-mail with license key. Update license "
-"key to unlock all features of BoxBilling"
-msgstr ""
-
-msgid ""
-"To change license key, change <em>BB_LICENSE</em> value in <em>bb-config."
-"php</em> file"
-msgstr ""
-
 msgid "Edit bb-config.php file"
 msgstr ""
 
