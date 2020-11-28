@@ -1,0 +1,106 @@
+{% import "macro_functions.phtml" as mf %}
+{% extends "layout_default.phtml" %}
+{% set active_menu = 'extensions' %}
+{% block meta_title %}{% trans 'Custom Pages' %}{% endblock %}
+
+{% block content %}
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{% trans 'Custom Pages' %}</a></li>
+        <li><a href="#tab-new">{% trans 'New Custom Page' %}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+            {{ mf.table_search }}
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
+                        <td>{% trans 'ID' %}</td>
+                        <td>{% trans 'Title' %}</td>
+                        <td>{% trans 'Slug' %}</td>
+                        <td width="13%">&nbsp;</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% set pages = admin.custompages_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+                    {% for page in pages.list %}
+                    <tr>
+                        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ page.id }}"/></td>
+                        <td>{{ page.id }}</td>
+                        <td>{{ page.title }}</td>
+                        <td>{{ page.slug }}</td>
+                        <td>
+                            <a class="btn14" href="{{ 'page'|link }}/{{ page.slug }}" title="{% trans 'View' %}"><img src="images/icons/dark/view.png" alt=""></a>
+                            <a class="btn14" href="{{ 'custompages'|alink }}/{{ page.id }}" title="{% trans 'Edit' %}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                            <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/custompages/delete'|link({'id' : page.id}) }}" title="{% trans 'Delete' %}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/trash.png" alt=""></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7">{% trans 'The list is empty' %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% include "partial_batch_delete.phtml" with {'action' : 'admin/custompages/batch_delete'} %}
+            {% include "partial_pagination.phtml" with {'list': pages, 'url':'custompages'} %}
+        </div>
+
+        <div class="fix"></div>
+
+        <div class="tab_content nopadding" id="tab-new">
+
+            <form method="post" action="{{ 'api/admin/custompages/create'|link }}" class="mainForm api-form save" data-api-redirect="{{ 'custompages'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{% trans 'Title' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="title" value="{{request.title}}" required="required" placeholder="{% trans 'Enter page title here.' %}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Meta Description' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="description" value="{{request.description}}" placeholder="{% trans 'Enter page meta description here.' %}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Meta Keywords' %}:</label>
+                        <div class="formRight">
+                            <input type="text" name="keywords" value="{{request.keywords}}" placeholder="{% trans 'Enter page meta keywords here.' %}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{% trans 'Content' %}:</label>
+                        <div class="formRight">
+                            <textarea class="bb-textarea" name="content" cols="5" rows="5" required="required" placeholder="{% trans 'Enter page content here.' %}"></textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+
+
+
+{% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

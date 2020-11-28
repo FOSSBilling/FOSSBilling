@@ -1,0 +1,12 @@
+{
+    "id":           "custompages",
+	"type":         "mod",
+    "name":         "Custom Pages",
+    "description":  "Module allows you to create custom pages.",
+    "icon_url":     "icon.png",
+    "homepage_url": "https://github.com/boxbilling/",
+    "author":       "BoxBilling",
+    "author_url":   "https://github.com/boxbilling/",
+    "license":      "GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
+    "version":      "1.0.0"
+}
