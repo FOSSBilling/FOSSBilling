@@ -17,7 +17,7 @@ class BBPatch_24 extends BBPatchAbstract
 {
     public function patch()
     {
-        $q = "CREATE TABLE IF NOT EXISTS `custom_pages` (`id` int(11) NOT NULL AUTO_INCREMENT, `title` varchar(255) NOT NULL, `description` varchar(555) NOT NULL, `keywords` varchar(555) NOT NULL, `content` text NOT NULL, `slug` varchar(255) NOT NULL, `created_at` timestamp NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (`id`)) DEFAULT CHARSET=utf8";
+        $q = "CREATE TABLE IF NOT EXISTS `custom_pages` (`id` int(11) NOT NULL AUTO_INCREMENT, `title` varchar(255) NOT NULL, `description` varchar(555) NOT NULL, `keywords` varchar(555) NOT NULL, `content` text NOT NULL, `slug` varchar(255) NOT NULL, `created_at` timestamp NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (`id`)) ENGINE=MyISAM DEFAULT CHARSET=utf8";
         $this->execSql($q);
     }
 }
