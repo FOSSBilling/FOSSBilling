@@ -100,7 +100,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if(!$model instanceof \RedBean_SimpleModel) {
-            throw new \Box_Exception('Could not activate order. Service was not created');
+            throw new \Box_Exception('Order :id has no active service', array(':id'=>$order->id));
         }
 
         $pass = $this->di['tools']->generatePassword(10, 4);
