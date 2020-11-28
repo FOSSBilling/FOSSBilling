@@ -247,7 +247,6 @@
         </li>
         {% endif %}
 
-        {# Removing this link is allowed only for BoxBilling PRO license owners. #}
         {% if guest.extension_is_on({"mod":'branding'}) %}
         <li>
             <a href="http://www.boxbilling.com" title="Billing Software" target="_blank">{% trans 'Powered by BoxBilling' %}</a>
