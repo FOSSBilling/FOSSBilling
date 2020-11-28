@@ -562,7 +562,7 @@ class ServiceTest extends \BBTestCase {
         $data = array();
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Account password is missing or is not valid');
+        $this->expectExceptionMessage('Account username is missing or is not valid');
         $this->service->changeAccountUsername($orderModel, $model, $data);
     }
 

@@ -257,7 +257,7 @@ class Service implements InjectionAwareInterface
     public function changeAccountUsername(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if(!isset($data['username']) || empty($data['username'])) {
-            throw new \Box_Exception('Account password is missing or is not valid');
+            throw new \Box_Exception('Account username is missing or is not valid');
         }
 
         $u = strtolower($data['username']);
