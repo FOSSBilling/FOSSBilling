@@ -108,11 +108,34 @@ final class Box_Installer
                     $this->makeInstall($this->session);
                     $this->generateEmailTemplates();
                     session_destroy();
+                    // Try to remove install folder
+                    function rmAllDir($dir) {
+                        if (is_dir($dir)) {
+                          $contents = scandir($dir);
+                          foreach ($contents as $content) {
+                            if ($content != '.' && $content != '..') {
+                              if (filetype($dir.'/'.$content) == 'dir') {
+                                rmAllDir($dir.'/'.$content); 
+                              }
+                              else {
+                                unlink($dir.'/'.$content);
+                              }
+                            }
+                          }
+                          reset($contents);
+                          rmdir($dir);
+                        }
+                    }
+                    try {
+                        rmAllDir('../install');
+                    }
+                    catch(Exception $e) {
+                        // do nothing
+                    }
                     print 'ok';
                 } catch (Exception $e) {
                     print $e->getMessage();
                 }
-
                 break;
 
             case 'index':
