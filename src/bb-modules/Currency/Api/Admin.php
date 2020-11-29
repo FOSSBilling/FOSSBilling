@@ -166,7 +166,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Automatically update all currency rates by Google exchange rates
+     * Automatically update all currency rates.
      * 
      * @return bool
      */

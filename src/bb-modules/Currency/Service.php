@@ -499,4 +499,18 @@ class Service implements InjectionAwareInterface
 
         return true;
     }
+
+    public static function onBeforeAdminCronRun(\Box_Event $event)
+    {
+        $di               = $event->getDi();
+        $currencyService  = $di['mod_service']('currency');
+
+        try {
+            $currencyService->updateCurrencyRates();
+        } catch (\Exception $e) {
+            error_log($e);
+        }
+
+        return true;
+    }
 }
