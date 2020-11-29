@@ -11,7 +11,7 @@
  */
 
 /**
- *Currency management 
+ * Currency management 
  */
 namespace Box\Mod\Currency\Api;
 
@@ -143,6 +143,26 @@ class Admin extends \Api_Abstract
         $conversionRate = $this->di['array_get']($data, 'conversion_rate');
 
         return $this->getService()->updateCurrency($data['code'], $format, $title, $priceFormat, $conversionRate);
+    }
+
+    /**
+     * Gets the API key for currencylayer
+     * 
+     * @return string
+     */
+    public function get_key($data)
+    {   
+        return $this->getService()->getKey();
+    }
+
+    /**
+     * Updates the API key for currencylayer
+     * 
+     * @return bool
+     */
+    public function update_key($data)
+    {   
+        return $this->getService()->updateKey($this->di['array_get']($data, 'currencylayer_key'));
     }
 
     /**
