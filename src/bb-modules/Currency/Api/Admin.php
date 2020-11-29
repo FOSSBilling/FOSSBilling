@@ -160,9 +160,29 @@ class Admin extends \Api_Abstract
      * 
      * @return bool
      */
-    public function update_key($data)
+    public function update_rate_settings($data)
     {   
-        return $this->getService()->updateKey($this->di['array_get']($data, 'currencylayer_key'));
+        $this->getService()->updateKey($this->di['array_get']($data, 'currencylayer_key'));
+        
+        if ($this->di['array_get']($data, 'crons_enabled') == "1") {
+            $set = "1";
+        } else {
+            $set = "0";
+        }
+        
+        $this->getService()->setCron($set);
+        
+        return true;
+    }
+
+    /**
+     * See if CRON jobs are enabled for currency rates
+     * 
+     * @return string (0/1)
+     */
+    public function is_cron_enabled($data)
+    {   
+        return $this->getService()->isCronEnabled();
     }
 
     /**

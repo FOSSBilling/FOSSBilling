@@ -125,7 +125,7 @@
                 <p>BoxBilling uses data grabbed from <a href="https://www.ecb.europa.eu/home/html/index.en.html">European Central Bank</a> for conversions from Euro to other currencies, and <a href="https://currencylayer.com/">currencylayer</a> for conversations from US Dollar to other currencies.<br />If you choose Euro as your default currency, data from European Central Bank will be used, if you choose US Dollar, data from currencylayer will be used.<br />While European Central Bank decided to keep it's API free to everyone, you won't need an autorization key to use ECB's data. However, you'll need an API key to use currencylayer.<br />You can <a href="https://currencylayer.com/product">grab your API key</a> from currencylayer's website. BoxBilling doesn't make any profits from your purchases on currencylayer.com</p>
                 <p><b>BoxBilling does not take any responsibilities for data grabbed from 3rd party sources, including European Central Bank and currencylayer.</b></p>
             </div>
-            <form method="post" action="{{ 'api/admin/currency/update_key'|link }}" class="mainForm save api-form" data-api-msg="Successfully updated the keys">
+            <form method="post" action="{{ 'api/admin/currency/update_rate_settings'|link }}" class="mainForm save api-form" data-api-msg="Successfully updated settings">
             <fieldset>
                 <div class="rowElem noborder">
                     <label>{% trans 'API key for currencylayer' %}:</label>
@@ -134,6 +134,15 @@
                     </div>
                     <div class="fix"></div>
                 </div>
+                <div class="rowElem">
+                <label>{% trans 'Enable CRON jobs' %}:</label>
+                <p>If you enable this, conversion rates will be automatically updated whenever the CRON job fires up.</p>
+                <div class="formRight">
+                    <input type="radio" name="crons_enabled" value="1" {% if admin.currency_is_cron_enabled == 1 %}checked="checked"{% endif %}><label>Enabled</label>
+                    <input type="radio" name="crons_enabled" value="0" {% if admin.currency_is_cron_enabled == 0 %}checked="checked"{% endif %}><label>Disabled</label>
+                </div>
+                <div class="fix"></div>
+            </div>
                 <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
             </fieldset>
             </form>

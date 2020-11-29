@@ -350,6 +350,36 @@ class Service implements InjectionAwareInterface
         $currency = $db->exec($sql, $values);
     }
 
+    public function isCronEnabled()
+    {
+        $sql = "SELECT `param`, `value` FROM setting";
+        $db  = $this->di['db'];
+
+        $pairs = $db->getAssoc($sql);
+
+        if (isset($pairs['currency_cron_enabled']) && $pairs['currency_cron_enabled'] == "1") {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function setCron($data)
+    {
+        $sql    = "INSERT INTO `setting` (`param`, `value`, `public`, `created_at`, `updated_at`) VALUES ('currency_cron_enabled', :key, '0', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()) ON DUPLICATE KEY UPDATE `value`=:key, `updated_at`=CURRENT_TIMESTAMP()";
+        
+        if ($data == "1") {
+            $key = "1";
+        } else {
+            $key = "0";
+        }
+
+        $values = array(':key' => $key);
+
+        $db       = $this->di['db'];
+        $currency = $db->exec($sql, $values);
+    }
+
     public function toApiArray(\Model_Currency $model)
     {
         return array(
@@ -506,7 +536,9 @@ class Service implements InjectionAwareInterface
         $currencyService  = $di['mod_service']('currency');
 
         try {
-            $currencyService->updateCurrencyRates();
+            if ($currencyService->isCronEnabled()) {
+                $currencyService->updateCurrencyRates("");
+            }
         } catch (\Exception $e) {
             error_log($e);
         }
