@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "28b4af5f035ec4db05fb0f54c8d17a8e",
+    "content-hash": "f628e09f5dff007c1c3b51f040151cbd",
     "packages": [
         {
             "name": "composer/ca-bundle",
@@ -425,6 +425,48 @@
                 "source": "https://github.com/guzzle/psr7/tree/1.7.0"
             },
             "time": "2020-09-30T07:37:11+00:00"
+        },
+        {
+            "name": "infinityfree/mofh-client",
+            "version": "0.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/InfinityFreeHosting/mofh-client.git",
+                "reference": "94a8081dbc1461ad7fa32c8301ae467fbd2c64b3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/InfinityFreeHosting/mofh-client/zipball/94a8081dbc1461ad7fa32c8301ae467fbd2c64b3",
+                "reference": "94a8081dbc1461ad7fa32c8301ae467fbd2c64b3",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "~6.0|~7.0"
+            },
+            "require-dev": {
+                "fzaninotto/faker": "^1.7",
+                "mockery/mockery": "^1.3",
+                "phpunit/phpunit": "^7.0|^8.0|^9.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "InfinityFree\\MofhClient\\": "src/",
+                    "InfinityFree\\MofhClient\\Tests\\": "tests/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Hans Adema",
+                    "email": "hans@infinityfree.net"
+                }
+            ],
+            "description": "A WHM API client for MyOwnFreeHost in PHP",
+            "time": "2020-09-12T15:50:56+00:00"
         },
         {
             "name": "ircmaxell/password-compat",
@@ -3666,5 +3708,5 @@
         "ext-mbstring": "*"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.0.0"
+    "plugin-api-version": "1.1.0"
 }

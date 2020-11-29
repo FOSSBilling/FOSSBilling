@@ -108,11 +108,34 @@ final class Box_Installer
                     $this->makeInstall($this->session);
                     $this->generateEmailTemplates();
                     session_destroy();
+                    // Try to remove install folder
+                    function rmAllDir($dir) {
+                        if (is_dir($dir)) {
+                          $contents = scandir($dir);
+                          foreach ($contents as $content) {
+                            if ($content != '.' && $content != '..') {
+                              if (filetype($dir.'/'.$content) == 'dir') {
+                                rmAllDir($dir.'/'.$content); 
+                              }
+                              else {
+                                unlink($dir.'/'.$content);
+                              }
+                            }
+                          }
+                          reset($contents);
+                          rmdir($dir);
+                        }
+                    }
+                    try {
+                        rmAllDir('../install');
+                    }
+                    catch(Exception $e) {
+                        // do nothing
+                    }
                     print 'ok';
                 } catch (Exception $e) {
                     print $e->getMessage();
                 }
-
                 break;
 
             case 'index':
@@ -185,7 +208,7 @@ final class Box_Installer
     {
         $path = BB_PATH_LICENSE;
         if (!file_exists($path)) {
-            return 'Please visit http://www.boxbilling.com for licensing information';
+            return 'BoxBilling is licensed under the Apache License, Version 2.0.'.PHP_EOL.'Please visit https://github.com/boxbilling/boxbilling/blob/master/LICENSE for full license text.';
         }
         return file_get_contents($path);
     }

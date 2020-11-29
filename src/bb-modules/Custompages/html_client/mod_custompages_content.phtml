@@ -1,0 +1,25 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{{ page.title }}{% endblock %}
+{% block meta_description %}{{ page.description }}{% endblock %}
+{% block meta_keywords %}{{ page.keywords }}{% endblock %}
+{% block breadcrumb %} <li class="active">{% trans 'Example module' %}</li>{% endblock %}
+{% block page_header %}
+<article class="page-header">
+    <h1>{% trans 'Example module title' %}</h1>
+</article>
+{% endblock%}
+{% block content %}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h1>{{ page.title }}</h1>
+            </header>
+            <section>
+                {{ page.content | bbmd }}
+            </section>
+        </div>
+    </article>
+</div>
+{% endblock %}

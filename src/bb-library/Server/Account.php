@@ -32,7 +32,7 @@ class Server_Account
     private $ns_2       = NULL;
     private $ns_3       = NULL;
     private $ns_4       = NULL;
-    private $note       = 'Client created via BoxBilling';
+    private $note       = NULL;
     
     public function setUsername($param)
     {

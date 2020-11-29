@@ -54,11 +54,11 @@
         </div>
         <div class="body">
         <h5 class="pt12">Data from API and passed to template from controller</h5>
-        <pre>{% debug list_from_controller %}</pre>
+        <pre>{{ dump(list_from_controller) }}</pre>
 
         <h5 class="pt12">Data from API accessed directly from template file</h5>
         {% set list = admin.example_get_something({"microsoft":1}) %}
-        <pre>{% debug list %}</pre>
+        <pre>{{ dump(list) }}</pre>
         </div>
     {% endif %}
 </div>

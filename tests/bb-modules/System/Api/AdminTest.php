@@ -23,22 +23,6 @@ class AdminTest extends \BBTestCase {
         $this->assertEquals($di, $getDi);
     }
 
-    public function testlicense_info()
-    {
-        $data = array(
-
-        );
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getLicenseInfo')
-            ->will($this->returnValue(array()));
-
-        $this->api->setService($serviceMock);
-
-        $result = $this->api->license_info($data);
-        $this->assertIsArray($result);
-    }
-
     public function testparam()
     {
         $data = array(
