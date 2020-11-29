@@ -17,11 +17,17 @@ $di = include dirname(__FILE__) . '/bb-di.php';
 $di['translate']();
 
 try {
+    if (php_sapi_name() == 'cli') {
+        print ("\e[33m- Welcome to BoxBilling.\n");
+    }
     $interval = isset($argv[1]) ? $argv[1] : null;
     $service = $di['mod_service']('cron');
+    if (php_sapi_name() == 'cli') {
+        print ("\e[34mLast executed: " . $service->getLastExecutionTime() . ".\e[0m");
+    }
     $service->runCrons($interval);
  } catch (Exception $exception) {
-    throw new Expection($exception);
+    throw new Exception($exception);
  } finally {
     if (php_sapi_name() == 'cli') {
         print ("\e[32mSuccessfully ran the cron jobs.\e[0m");
