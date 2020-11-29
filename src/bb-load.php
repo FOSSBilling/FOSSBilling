@@ -39,7 +39,7 @@ function handler_error(int $number, string $message, string $file, int $line)
 function handler_exception($e)
 {
   if (isCLI) {
-    echo "Error #[". $e->getLine() ."] occurred in [". $e->getFile() ."] at line [". $e->getLine() ."]: [". trim(strip_tags($e->getMessage())) ."]";
+    echo "Error #[". $e->getCode() ."] occurred in [". $e->getFile() ."] at line [". $e->getLine() ."]: [". trim(strip_tags($e->getMessage())) ."]";
   } else {
     if(APPLICATION_ENV == 'testing') {
         print $e->getMessage() . PHP_EOL;
