@@ -476,11 +476,6 @@ VALUES
 UNLOCK TABLES;
 
 
-# Dump of table service_boxbillinglicense
-# ------------------------------------------------------------
-
-
-
 # Dump of table service_custom
 # ------------------------------------------------------------
 

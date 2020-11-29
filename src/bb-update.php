@@ -115,7 +115,6 @@ class BBPatch_20 extends BBPatchAbstract
             'promo'                     => array('start_at', 'end_at', 'created_at', 'updated_at'),
             'queue'                     => array('created_at', 'updated_at'),
             'queue_message'             => array('execute_at', 'created_at', 'updated_at'),
-            'service_boxbillinglicense' => array('created_at', 'updated_at'),
             'service_custom'            => array('created_at', 'updated_at'),
             'service_domain'            => array('synced_at', 'registered_at', 'expires_at', 'created_at', 'updated_at'),
             'service_downloadable'      => array('created_at', 'updated_at'),
