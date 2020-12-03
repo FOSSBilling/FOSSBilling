@@ -11,7 +11,7 @@
  */
 
 /**
- *Currency management 
+ * Currency management 
  */
 namespace Box\Mod\Currency\Api;
 
@@ -146,7 +146,47 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Automatically update all currency rates by Google exchange rates
+     * Gets the API key for currencylayer
+     * 
+     * @return string
+     */
+    public function get_key($data)
+    {   
+        return $this->getService()->getKey();
+    }
+
+    /**
+     * Updates the API key for currencylayer
+     * 
+     * @return bool
+     */
+    public function update_rate_settings($data)
+    {   
+        $this->getService()->updateKey($this->di['array_get']($data, 'currencylayer_key'));
+        
+        if ($this->di['array_get']($data, 'crons_enabled') == "1") {
+            $set = "1";
+        } else {
+            $set = "0";
+        }
+        
+        $this->getService()->setCron($set);
+        
+        return true;
+    }
+
+    /**
+     * See if CRON jobs are enabled for currency rates
+     * 
+     * @return string (0/1)
+     */
+    public function is_cron_enabled($data)
+    {   
+        return $this->getService()->isCronEnabled();
+    }
+
+    /**
+     * Automatically update all currency rates.
      * 
      * @return bool
      */

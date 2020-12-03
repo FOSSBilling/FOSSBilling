@@ -10,7 +10,6 @@
  * with this source code in the file LICENSE
  */
 
-
 namespace Box\Mod\Cron;
 
 class Service
@@ -86,8 +85,12 @@ class Service
     {
         try {
             $api->{$method}($params);
-        } catch(\Exception $e) {
-            error_log($e);
+        } catch(Exception $e) {
+            throw new Exception($e);
+        } finally {
+            if (php_sapi_name() == 'cli') {
+                print ("\e[32mSuccessfully ran " . $method . "(" . $params . ")" . ".\e[0m\n");
+            }
         }
     }
 
