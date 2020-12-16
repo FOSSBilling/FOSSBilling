@@ -5,10 +5,10 @@ $pathAppRoot = $pathApp . '/src';
 $pathAppInstall = $pathApp . '/src/install';
 $config = include $pathAppRoot . '/bb-config.php';
 
-$structureSql = '/structure.sql';
-$contentSql = '/content_test.sql';
+$structureSql = '/sql/structure.sql';
+$contentSql = '/sql/content_test.sql';
 if (isset($argv[1]) && $argv[1] == 'production') {
-    $contentSql = '/content.sql';
+    $contentSql = '/sql/content.sql';
     echo "Production content" . PHP_EOL;
 }
 

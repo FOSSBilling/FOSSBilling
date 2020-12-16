@@ -11,6 +11,7 @@ src/bb-data/cache/*
 src/bb-data/tmp.txt
 src/bb-test.php
 src/bb-vendor/*
+src/install/logs/*
 bb-test.php
 build
 composer.phar

@@ -4,8 +4,8 @@
  *
  * If you are not using the web-installer, you can rename this file
  * to "bb-config.php" and fill in the values.
- * Import /install/structure.sql to your database
- * Import /install/content.sql to your database
+ * Import /install/sql/structure.sql to your database
+ * Import /install/sql/content.sql to your database
  * Open browser http://www.yourdomain.com/index.php?_url=/bb-admin to create new admin account.
  * Remove /install directory
  */
