@@ -541,8 +541,6 @@ class Service implements \Box\InjectionAwareInterface
         $this->di['db']->store($queue);
 
         $queue->content .= PHP_EOL;
-        $queue->content .= 'Powered by BoxBilling. Client management, invoicing and support software. https://www.boxbilling.com/';
-        $queue->content .= PHP_EOL;
 
         $mod      = $this->di['mod']('email');
         $settings = $mod->getConfig();
