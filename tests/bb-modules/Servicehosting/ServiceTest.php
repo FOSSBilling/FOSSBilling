@@ -400,7 +400,7 @@ class ServiceTest extends \BBTestCase {
 
         $hostingServerModel = new \Model_ServiceHostingServer();
         $hostingServerModel->loadBean(new \RedBeanPHP\OODBBean());
-        $hostingPlansModel = new \Model_ServiceHostingHp();
+        $hostingPlansModel = new \Model_ServiceHosting();
         $hostingPlansModel->loadBean(new \RedBeanPHP\OODBBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -483,7 +483,7 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
-        $modelHp = new \Model_ServiceHostingHp();
+        $modelHp = new \Model_ServiceHosting();
         $modelHp->loadBean(new \RedBeanPHP\OODBBean());;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
