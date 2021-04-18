@@ -483,7 +483,7 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_ServiceHostingHp();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
-        $modelHp = new \Model_ServiceHostingHp();
+        $modelHp = new \Model_ServiceHosting();
         $modelHp->loadBean(new \RedBeanPHP\OODBBean());;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -778,7 +778,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testtoApiArray()
     {
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ServiceHostingHp();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $hostingServer = new \Model_ServiceHostingServer();
