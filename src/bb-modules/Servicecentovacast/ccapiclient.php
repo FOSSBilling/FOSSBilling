@@ -44,8 +44,8 @@ class CCBaseAPIClient {
 			'</centovacast>',
 			htmlentities($this->classname),
 			htmlentities($methodname),
-			$this->debug ? ' debug="enabled"' : '' .
-			$this->debugconsole ? ' debugconsole="'.htmlentities($this->debugconsole).'"' : '',
+			($this->debug ? ' debug="enabled"' : '') .
+			($this->debugconsole ? ' debugconsole="'.htmlentities($this->debugconsole).'"' : ''),
 			$payload
 		);
 	}
