@@ -987,7 +987,7 @@ ul.listData li { display: inline-block; padding: 0 6px 1px 6px!important; border
 .plupload_add:hover { background-position: 0 -25px; }
 .plupload_add:active { background-position: 0 -50px; }
 
-.plupload_wrapper { font-size: 11px;; width: 100%; }
+.plupload_wrapper { font-size: 11px; width: 100%; }
 
 .plupload_container {  }
 .plupload_container input { border: 1px solid #DDD; font-size: 11px; width: 98%; }
