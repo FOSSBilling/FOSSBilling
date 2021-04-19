@@ -50,7 +50,7 @@ var bb = {
         return $('meta[property="bb:url"]').attr("content") + 'index.php?_url=/api/' + url;
     },
     reload: function() {
-        window.location.href=window.location.href
+	window.location = document.URL;
     },
     redirect: function(url) {
         if(url === undefined) {
