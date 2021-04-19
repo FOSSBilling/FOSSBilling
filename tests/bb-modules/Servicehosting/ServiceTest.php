@@ -126,7 +126,7 @@ class ServiceTest extends \BBTestCase {
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('generatePassword')
-            ->will($this->returnValue('generatedPass'));
+            ->will($this->returnValue('generatedPassword'));
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
