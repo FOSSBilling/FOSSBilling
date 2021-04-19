@@ -480,7 +480,7 @@ class ServiceTest extends \BBTestCase {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ServiceHosting();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $modelHp = new \Model_ServiceHosting();
@@ -522,7 +522,7 @@ class ServiceTest extends \BBTestCase {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ServiceHosting();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
@@ -575,7 +575,7 @@ class ServiceTest extends \BBTestCase {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ServiceHosting();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
@@ -611,7 +611,7 @@ class ServiceTest extends \BBTestCase {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ServiceHosting();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $this->expectException(\Box_Exception::class);
@@ -629,7 +629,7 @@ class ServiceTest extends \BBTestCase {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ServiceHosting();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')
