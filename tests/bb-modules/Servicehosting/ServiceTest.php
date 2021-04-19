@@ -449,7 +449,7 @@ class ServiceTest extends \BBTestCase {
         $orderModel->loadBean(new \RedBeanPHP\OODBBean());
         $orderModel->status = 'active';
 
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ServiceHosting();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
@@ -557,7 +557,7 @@ class ServiceTest extends \BBTestCase {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $model = new \Model_ServiceHostingHp();
+        $model = new \Model_ServiceHosting();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $data = array();
 
