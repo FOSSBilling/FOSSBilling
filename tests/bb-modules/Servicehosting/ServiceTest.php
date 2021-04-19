@@ -778,13 +778,13 @@ class ServiceTest extends \BBTestCase {
 
     public function testtoApiArray()
     {
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ServiceHostingHp();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $hostingServer = new \Model_ServiceHostingServer();
         $hostingServer->loadBean(new \RedBeanPHP\OODBBean());
         $hostingServer->manager = 'Custom';
-        $hostingHp = new\Model_ServiceHosting();
+        $hostingHp = new \Model_ServiceHostingHp();
         $hostingHp->loadBean(new \RedBeanPHP\OODBBean());
 
 
