@@ -37,7 +37,7 @@ You can simplify your web hosting business by putting your billing cycle in cont
 
 ## Requirements
 Although BoxBilling *may* work in lower or smaller conditions, we **highly recommend** you to ensure that your environment has the following software installed:
-- PHP 7.2, or higher.
+- PHP 7.2, or higher. PHP 8 is not supported at the moment.
 - MySQL 8, or higher.
 - Following PHP extensions:
     - pdo_mysql
