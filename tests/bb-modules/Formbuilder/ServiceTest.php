@@ -544,6 +544,7 @@ class ServiceTest extends \BBTestCase {
         $newFieldId = 4;
         $fields = array(
             'options' => '',
+		'form_id' => 1,
         );
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Formbuilder\Service')
