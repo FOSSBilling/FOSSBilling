@@ -533,7 +533,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertIsArray($result);
     }
 
-    public function testdublicateForm()
+    public function testduplicateForm()
     {
         $data = array(
             'form_id' => 1,
@@ -543,7 +543,7 @@ class ServiceTest extends \BBTestCase {
         $newFormId = 3;
         $newFieldId = 4;
         $fields = array(
-            'options' => '',
+            'options' => array(),
         );
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Formbuilder\Service')
@@ -566,7 +566,7 @@ class ServiceTest extends \BBTestCase {
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
-        $result = $serviceMock->dublicateForm($data);
+        $result = $serviceMock->duplicateForm($data);
         $this->assertIsInt($result);
         $this->assertEquals($newFormId, $result);
     }

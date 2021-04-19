@@ -366,7 +366,7 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->getAll($sql);
     }
 
-    public function dublicateForm($data)
+    public function duplicateForm($data)
     {
 
         $fields = $this->getFormFields($data['form_id']);

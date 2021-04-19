@@ -126,7 +126,7 @@ class ServiceTest extends \BBTestCase {
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('generatePassword')
-            ->will($this->returnValue('generatedPass'));
+            ->will($this->returnValue('generatedPassword'));
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -163,7 +163,7 @@ class ServiceTest extends \BBTestCase {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ServiceHostingHp();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
@@ -784,7 +784,7 @@ class ServiceTest extends \BBTestCase {
         $hostingServer = new \Model_ServiceHostingServer();
         $hostingServer->loadBean(new \RedBeanPHP\OODBBean());
         $hostingServer->manager = 'Custom';
-        $hostingHp = new\Model_ServiceHostingHp();
+        $hostingHp = new \Model_ServiceHostingHp();
         $hostingHp->loadBean(new \RedBeanPHP\OODBBean());
 
 
