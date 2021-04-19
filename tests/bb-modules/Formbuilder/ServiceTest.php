@@ -537,7 +537,7 @@ class ServiceTest extends \BBTestCase {
     {
         $data = array(
             'form_id' => 1,
-            'name' => 'testForm',
+            'form_name' => 'testForm',
         );
 
         $newFormId = 3;
