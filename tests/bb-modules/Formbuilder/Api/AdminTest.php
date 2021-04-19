@@ -319,7 +319,7 @@ class AdminTest extends \BBTestCase {
 
         $serviceMock = $this->getServiceMock();
         $serviceMock->expects($this->atLeastOnce())
-            ->method('dublicateForm')
+            ->method('duplicateForm')
             ->will($this->returnValue($newFormId));
 
         $this->api->setService($serviceMock);
