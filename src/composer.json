@@ -17,7 +17,7 @@
         "ext-zlib": "*",
         "ext-PDO": "*",
         "ext-mbstring" : "*",
-        "pimple/pimple": "v3.3.0",
+        "pimple/pimple": "^3.3",
         "twig/twig": "^v2.13.0",
         "twig/extensions": "^1.5.4",
         "geoip2/geoip2": "v2.10.0",
