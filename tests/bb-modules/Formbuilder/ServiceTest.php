@@ -566,7 +566,7 @@ class ServiceTest extends \BBTestCase {
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
-        $result = $serviceMock->dublicateForm('$data');
+        $result = $serviceMock->dublicateForm($data);
         $this->assertIsInt($result);
         $this->assertEquals($newFormId, $result);
     }
