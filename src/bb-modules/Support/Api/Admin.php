@@ -137,6 +137,8 @@ class Admin extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
+        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', $data['content']);
+
         $ticket = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->ticketReply($ticket, $this->getIdentity(), $data['content']);
@@ -187,6 +189,8 @@ class Admin extends \Api_Abstract
             'support_helpdesk_id' => 'Ticket support_helpdesk_id is required'
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', $data['content']);
 
         $client   = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
         $helpdesk = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
