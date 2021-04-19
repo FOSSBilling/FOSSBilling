@@ -784,7 +784,7 @@ class ServiceTest extends \BBTestCase {
         $hostingServer = new \Model_ServiceHostingServer();
         $hostingServer->loadBean(new \RedBeanPHP\OODBBean());
         $hostingServer->manager = 'Custom';
-        $hostingHp = new\Model_ServiceHostingHp();
+        $hostingHp = new\Model_ServiceHosting();
         $hostingHp->loadBean(new \RedBeanPHP\OODBBean());
 
 
