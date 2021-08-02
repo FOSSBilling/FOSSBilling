@@ -66,18 +66,29 @@ class Server_Manager_CWP extends Server_Manager
         return 'https://'.$host.':2031';
     }
 
+    /*
+	 * CWP Doesn't have a function to test the connection, so we simply ask it to list the server type and check the response
+	 */
     public function testConnection()
     {
-        return TRUE;
+		$APIKey = $this->_config['accesshash'];	
+		
+		$host = $this->_config['host'];
+		$port = $this->_config['port'];
+
+        $data = array(
+            'key'     => $APIKey,
+            'action'  => 'list',
+        );
+		
+		return makeAPIRequest($host, $port, 'typeserver', $data);
     }
 
-    /*
-	 * I don't really know where this function is used, so I'm not completely sure if this is right
-	 * For now simply returns the original.
-	 */
     public function synchronizeAccount(Server_Account $a)
     {
         $this->getLog()->info('Synchronizing account with server '.$a->getUsername());
+		
+		$APIKey = $this->_config['accesshash'];	
 		
 		$host = $this->_config['host'];
 		$port = $this->_config['port'];
@@ -89,11 +100,15 @@ class Server_Manager_CWP extends Server_Manager
         );
 		
 		$new = clone $a;
-		
 		$acc = makeAPIRequest($host, $port, 'accountdetail', $data);
 
-        //$new->setDomain($acc->domain);
-        //$new->setUsername($acc->user);
+		if($acc['account_info']['state'] == 'suspended'){
+		    $new->setSuspended(true);
+		} else {
+		   	$new->setSuspended(false);
+		}
+		
+        $new->setDomain($acc['domains']['0']['domain']);
 
         return $new;
     }
@@ -185,7 +200,10 @@ class Server_Manager_CWP extends Server_Manager
 		);
         return makeAPIRequest($host, $port, 'account', $data);
 	}
-
+    
+	/*
+	 * For unknown reasons, this doesn't work.
+	 */
 	public function changeAccountPackage(Server_Account $a, Server_Package $p)
     {
 		$this->getLog()->info('Changing package on account '.$a->getUsername());
@@ -257,16 +275,30 @@ class Server_Manager_CWP extends Server_Manager
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt ($ch, CURLOPT_POSTFIELDS, http_build_query($data));
 		curl_setopt ($ch, CURLOPT_POST, 1);
-		$response = json_decode(curl_exec($ch));
+		$response = json_decode(curl_exec($ch), true);
 		curl_close($ch);
-		
-		if($response->status == 'OK' && $func != 'accountdetail'){
-			return 1;
+        
+		if(!empty($response['status'])){
+			$status = $response['status'];
 		} else {
-			if($func == 'accountdetail'){
-		       return $response->status;
+		    $status = 'Error';
+		}
+		if(!empty($response['result'])){
+			$result = $response['result'];
+		} else {
+		    $result = null;	
+		}
+
+		if($status == 'OK' && $func != 'accountdetail'){
+			return true;
+			error_log('OK',0);
+		} else {
+			if($status == 'Error'){
+				error_log('Error',0);
+		        return 0;
 			} else {
-			   return 0;
+			    error_log('Results',0);
+			    return $result;
 			}
 		}
 	}
