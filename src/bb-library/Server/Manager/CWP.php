@@ -34,12 +34,11 @@ class Server_Manager_CWP extends Server_Manager
 
 		if(!$this->_config['secure']){
 			/*
-			 * Is this true? Docs specify the API port is for SSL and list no other alternative.
-			 * Regardless, I have no plan to test it as anyone is an idiot if they plan to provide hosting and not use SSL to secure things.
+			 * CWP will simply return an error if you try to connect via a HTTP connection
 			 */
 			throw new Server_Exception('Server manager "CWP" is not configured properly. CWP API will only accept a secure connection!');
 		}
-		/* 
+		/*
 		 * Default API port. Not sure if it can be overridden, but I've opted to leave the option anyways.
 		 */
 		if(empty($this->_config['port'])){
@@ -71,8 +70,8 @@ class Server_Manager_CWP extends Server_Manager
 	 */
 	public function testConnection()
 	{
-		$APIKey = $this->_config['accesshash'];	
-		
+		$APIKey = $this->_config['accesshash'];
+
 		$host = $this->_config['host'];
 		$port = $this->_config['port'];
 
@@ -80,16 +79,16 @@ class Server_Manager_CWP extends Server_Manager
 			'key'     => $APIKey,
 			'action'  => 'list',
 		);
-		
+
 		return makeAPIRequest($host, $port, 'typeserver', $data);
 	}
 
 	public function synchronizeAccount(Server_Account $a)
 	{
 		$this->getLog()->info('Synchronizing account with server '.$a->getUsername());
-		
-		$APIKey = $this->_config['accesshash'];	
-		
+
+		$APIKey = $this->_config['accesshash'];
+
 		$host = $this->_config['host'];
 		$port = $this->_config['port'];
 
@@ -98,7 +97,7 @@ class Server_Manager_CWP extends Server_Manager
 			'action'  => 'list',
 			'user'    => $a->getUsername()
 		);
-		
+
 		$new = clone $a;
 		$acc = makeAPIRequest($host, $port, 'accountdetail', $data);
 
@@ -107,7 +106,7 @@ class Server_Manager_CWP extends Server_Manager
 		} else {
 		   	$new->setSuspended(false);
 		}
-		
+
 		$new->setDomain($acc['domains']['0']['domain']);
 
 		return $new;
@@ -116,11 +115,11 @@ class Server_Manager_CWP extends Server_Manager
 	public function createAccount(Server_Account $a)
 	{
 		$this->getLog()->info('Creating account '.$a->getUsername());
-		
+
 		$client = $a->getClient();
 		$package = $a->getPackage()->getName();
 
-		$APIKey = $this->_config['accesshash'];	
+		$APIKey = $this->_config['accesshash'];
 
 		$host = $this->_config['host'];
 		$port = $this->_config['port'];
@@ -128,11 +127,11 @@ class Server_Manager_CWP extends Server_Manager
 
 		$data = array(
 		    'key'          => $APIKey,
-			'action'       => 'add', 
-			'domain'       => $a->getDomain(), 
-			'user'         => $a->getUsername(), 
-			'pass'         => $a->getPassword(), 
-			'email'        => $client->getEmail(), 
+			'action'       => 'add',
+			'domain'       => $a->getDomain(),
+			'user'         => $a->getUsername(),
+			'pass'         => $a->getPassword(),
+			'email'        => $client->getEmail(),
 			'package'      => $package,
 			'server_ips'   => $ip,
 			'encodepass'   => false
@@ -148,7 +147,7 @@ class Server_Manager_CWP extends Server_Manager
 		$this->getLog()->info('Suspending account '.$a->getUsername());
 
 		$client = $a->getClient();
-		
+
 		$APIKey = $this->_config['accesshash'];
 
 		$host = $this->_config['host'];
@@ -167,7 +166,7 @@ class Server_Manager_CWP extends Server_Manager
 		$this->getLog()->info('Un-suspending account '.$a->getUsername());
 
 		$client = $a->getClient();
-		
+
 		$APIKey = $this->_config['accesshash'];
 
 		$host = $this->_config['host'];
@@ -186,7 +185,7 @@ class Server_Manager_CWP extends Server_Manager
 		$this->getLog()->info('Canceling account '.$a->getUsername());
 
 		$client = $a->getClient();
-		
+
 		$APIKey = $this->_config['accesshash'];
 
 		$host = $this->_config['host'];
@@ -200,7 +199,7 @@ class Server_Manager_CWP extends Server_Manager
 		);
 		return makeAPIRequest($host, $port, 'account', $data);
 	}
-	
+
 	/*
 	 * For unknown reasons, this doesn't work.
 	 */
@@ -231,7 +230,7 @@ class Server_Manager_CWP extends Server_Manager
 		$client = $a->getClient();
 
 		$APIKey = $this->_config['accesshash'];
-		
+
 		$host = $this->_config['host'];
 		$port = $this->_config['port'];
 
@@ -277,7 +276,7 @@ class Server_Manager_CWP extends Server_Manager
 		curl_setopt ($ch, CURLOPT_POST, 1);
 		$response = json_decode(curl_exec($ch), true);
 		curl_close($ch);
-		
+
 		if(!empty($response['status'])){
 			$status = $response['status'];
 		} else {
@@ -286,18 +285,15 @@ class Server_Manager_CWP extends Server_Manager
 		if(!empty($response['result'])){
 			$result = $response['result'];
 		} else {
-		    $result = null;	
+		    $result = null;
 		}
 
 		if($status == 'OK' && $func != 'accountdetail'){
-			return true;
-			error_log('OK',0);
+			return 1;
 		} else {
 			if($status == 'Error'){
-				error_log('Error',0);
 		        return 0;
 			} else {
-			    error_log('Results',0);
 			    return $result;
 			}
 		}
