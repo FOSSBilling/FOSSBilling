@@ -17,19 +17,19 @@
 class Server_Manager_CWP extends Server_Manager
 {
 	public function init()
-    {
-        if (!extension_loaded('curl')) {
-            throw new Server_Exception('cURL extension is not enabled');
-        }
+	{
+		if (!extension_loaded('curl')) {
+			throw new Server_Exception('cURL extension is not enabled');
+		}
 
-        if(empty($this->_config['host'])) {
-            throw new Server_Exception('Server manager "CWP" is not configured properly. Hostname is not set!');
-        }
+		if(empty($this->_config['host'])) {
+			throw new Server_Exception('Server manager "CWP" is not configured properly. Hostname is not set!');
+		}
 
-        if(empty($this->_config['accesshash'])) {
+		if(empty($this->_config['accesshash'])) {
 			throw new Server_Exception('Server manager "CWP" is not configured properly. API Key / Access Hash is not set!');
-        } else {
-            $this->_config['accesshash'] = preg_replace("'(\r|\n)'","",$this->_config['accesshash']);
+		} else {
+			$this->_config['accesshash'] = preg_replace("'(\r|\n)'","",$this->_config['accesshash']);
 		}
 
 		if(!$this->_config['secure']){
@@ -47,57 +47,57 @@ class Server_Manager_CWP extends Server_Manager
 		}
 	}
 
-    public static function getForm()
-    {
-        return array(
-            'label'     =>  'CWP',
-        );
-    }
+	public static function getForm()
+	{
+		return array(
+			'label'     =>  'CWP',
+		);
+	}
 
-    public function getLoginUrl()
-    {
-        $host = $this->_config['host'];
-        return 'https://'.$host.':2083';
-    }
+	public function getLoginUrl()
+	{
+		$host = $this->_config['host'];
+		return 'https://'.$host.':2083';
+	}
 
-    public function getResellerLoginUrl()
-    {
-        $host = $this->_config['host'];
-        return 'https://'.$host.':2031';
-    }
+	public function getResellerLoginUrl()
+	{
+		$host = $this->_config['host'];
+		return 'https://'.$host.':2031';
+	}
 
-    /*
+	/*
 	 * CWP Doesn't have a function to test the connection, so we simply ask it to list the server type and check the response
 	 */
-    public function testConnection()
-    {
+	public function testConnection()
+	{
 		$APIKey = $this->_config['accesshash'];	
 		
 		$host = $this->_config['host'];
 		$port = $this->_config['port'];
 
-        $data = array(
-            'key'     => $APIKey,
-            'action'  => 'list',
-        );
+		$data = array(
+			'key'     => $APIKey,
+			'action'  => 'list',
+		);
 		
 		return makeAPIRequest($host, $port, 'typeserver', $data);
-    }
+	}
 
-    public function synchronizeAccount(Server_Account $a)
-    {
-        $this->getLog()->info('Synchronizing account with server '.$a->getUsername());
+	public function synchronizeAccount(Server_Account $a)
+	{
+		$this->getLog()->info('Synchronizing account with server '.$a->getUsername());
 		
 		$APIKey = $this->_config['accesshash'];	
 		
 		$host = $this->_config['host'];
 		$port = $this->_config['port'];
 
-        $data = array(
-            'key'     => $APIKey,
-            'action'  => 'list',
-            'user'    => $a->getUsername()
-        );
+		$data = array(
+			'key'     => $APIKey,
+			'action'  => 'list',
+			'user'    => $a->getUsername()
+		);
 		
 		$new = clone $a;
 		$acc = makeAPIRequest($host, $port, 'accountdetail', $data);
@@ -108,23 +108,23 @@ class Server_Manager_CWP extends Server_Manager
 		   	$new->setSuspended(false);
 		}
 		
-        $new->setDomain($acc['domains']['0']['domain']);
+		$new->setDomain($acc['domains']['0']['domain']);
 
-        return $new;
-    }
+		return $new;
+	}
 
 	public function createAccount(Server_Account $a)
-    {
+	{
 		$this->getLog()->info('Creating account '.$a->getUsername());
-        
+		
 		$client = $a->getClient();
-        $package = $a->getPackage()->getName();
+		$package = $a->getPackage()->getName();
 
 		$APIKey = $this->_config['accesshash'];	
 
 		$host = $this->_config['host'];
 		$port = $this->_config['port'];
-        $ip = $this->_config['ip'];
+		$ip = $this->_config['ip'];
 
 		$data = array(
 		    'key'          => $APIKey,
@@ -138,13 +138,13 @@ class Server_Manager_CWP extends Server_Manager
 			'encodepass'   => false
 		);
 		if($a->getReseller()) {
-            $data['reseller'] = 1;
-        }
-        return makeAPIRequest($host, $port, 'account', $data);
+			$data['reseller'] = 1;
+		}
+		return makeAPIRequest($host, $port, 'account', $data);
 	}
 
 	public function suspendAccount(Server_Account $a)
-    {
+	{
 		$this->getLog()->info('Suspending account '.$a->getUsername());
 
 		$client = $a->getClient();
@@ -159,11 +159,11 @@ class Server_Manager_CWP extends Server_Manager
 			'action'   => 'susp',
 			'user'     => $a->getUsername()
 		);
-        return makeAPIRequest($host, $port, 'account', $data);
+		return makeAPIRequest($host, $port, 'account', $data);
 	}
 
 	public function unsuspendAccount(Server_Account $a)
-    {
+	{
 		$this->getLog()->info('Un-suspending account '.$a->getUsername());
 
 		$client = $a->getClient();
@@ -178,11 +178,11 @@ class Server_Manager_CWP extends Server_Manager
 			'action'   => 'unsp',
 			'user'     => $a->getUsername()
 		);
-        return makeAPIRequest($host, $port, 'account', $data);
-    }
+		return makeAPIRequest($host, $port, 'account', $data);
+	}
 
 	public function cancelAccount(Server_Account $a)
-    {
+	{
 		$this->getLog()->info('Canceling account '.$a->getUsername());
 
 		$client = $a->getClient();
@@ -198,17 +198,17 @@ class Server_Manager_CWP extends Server_Manager
 			'user'    => $a->getUsername(),
 			'email'   => $client->getEmail()
 		);
-        return makeAPIRequest($host, $port, 'account', $data);
+		return makeAPIRequest($host, $port, 'account', $data);
 	}
-    
+	
 	/*
 	 * For unknown reasons, this doesn't work.
 	 */
 	public function changeAccountPackage(Server_Account $a, Server_Package $p)
-    {
+	{
 		$this->getLog()->info('Changing package on account '.$a->getUsername());
 
-        $package = $a->getPackage()->getName();
+		$package = $a->getPackage()->getName();
 
 		$APIKey = $this->_config['accesshash'];
 
@@ -221,11 +221,11 @@ class Server_Manager_CWP extends Server_Manager
 			'user'     => $a->getUsername(),
 			'package'  => $package
 		);
-        return makeAPIRequest($host, $port, 'changepack', $data);
+		return makeAPIRequest($host, $port, 'changepack', $data);
 	}
 
-    public function changeAccountPassword(Server_Account $a, $new)
-    {
+	public function changeAccountPassword(Server_Account $a, $new)
+	{
 		$this->getLog()->info('Changing password on account '.$a->getUsername());
 
 		$client = $a->getClient();
@@ -241,33 +241,33 @@ class Server_Manager_CWP extends Server_Manager
 			'user'    => $a->getUsername(),
 			'pass'    => $new
 		);
-        return makeAPIRequest($host, $port, 'changepass', $data);
-    }
+		return makeAPIRequest($host, $port, 'changepass', $data);
+	}
 
-    /*
+	/*
 	 * Function graveyard for things CWP doesn't support
 	 */
-    public function changeAccountUsername(Server_Account $a, $new)
-    {
-        throw new Server_Exception('CWP Does not support username changes through the API');
-    }
+	public function changeAccountUsername(Server_Account $a, $new)
+	{
+		throw new Server_Exception('CWP Does not support username changes through the API');
+	}
 
-    public function changeAccountDomain(Server_Account $a, $new)
-    {
-        throw new Server_Exception('CWP Does not support changing the primary domain name');
-    }
+	public function changeAccountDomain(Server_Account $a, $new)
+	{
+		throw new Server_Exception('CWP Does not support changing the primary domain name');
+	}
 
-    public function changeAccountIp(Server_Account $a, $new)
-    {
-        throw new Server_Exception('CWP Does not support changing the IP');
-    }
+	public function changeAccountIp(Server_Account $a, $new)
+	{
+		throw new Server_Exception('CWP Does not support changing the IP');
+	}
 }
 	/**
 	 * Makes the CURL request to the server
 	 */
-    function makeAPIRequest($host, $port, $func, $data)
+	function makeAPIRequest($host, $port, $func, $data)
 	{
-        $url = 'https://'.$host.":".$port.'/v1/'.$func;
+		$url = 'https://'.$host.":".$port.'/v1/'.$func;
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -277,7 +277,7 @@ class Server_Manager_CWP extends Server_Manager
 		curl_setopt ($ch, CURLOPT_POST, 1);
 		$response = json_decode(curl_exec($ch), true);
 		curl_close($ch);
-        
+		
 		if(!empty($response['status'])){
 			$status = $response['status'];
 		} else {
