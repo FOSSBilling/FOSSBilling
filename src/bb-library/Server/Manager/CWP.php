@@ -22,6 +22,10 @@ class Server_Manager_CWP extends Server_Manager
 			throw new Server_Exception('cURL extension is not enabled');
 		}
 
+		if(empty($this->_config['ip'])) {
+			throw new Server_Exception('Server manager "CWP" is not configured properly. IP address is not set!');
+		}
+
 		if(empty($this->_config['host'])) {
 			throw new Server_Exception('Server manager "CWP" is not configured properly. Hostname is not set!');
 		}
@@ -33,12 +37,12 @@ class Server_Manager_CWP extends Server_Manager
 		}
 
 		if(!$this->_config['secure']){
-			/*
+			/**
 			 * CWP will simply return an error if you try to connect via a HTTP connection
 			 */
 			throw new Server_Exception('Server manager "CWP" is not configured properly. CWP API will only accept a secure connection!');
 		}
-		/*
+		/**
 		 * Default API port. Not sure if it can be overridden, but I've opted to leave the option anyways.
 		 */
 		if(empty($this->_config['port'])){
@@ -53,6 +57,9 @@ class Server_Manager_CWP extends Server_Manager
 		);
 	}
 
+    /**
+     * We can actually generate a direct log-in link from CWP, but I'm not sure if that's a secure thing to do here.
+     */
 	public function getLoginUrl()
 	{
 		$host = $this->_config['host'];
@@ -65,8 +72,9 @@ class Server_Manager_CWP extends Server_Manager
 		return 'https://'.$host.':2031';
 	}
 
-	/*
-	 * CWP Doesn't have a function to test the connection, so we simply ask it to list the server type and check the response
+	/**
+	 * CWP doesn't have a connection test function, so we ask what kind of server it is (EX: KVM / OpenVZ)
+     * No error means the connection worked and we can continue
 	 */
 	public function testConnection()
 	{
@@ -82,7 +90,11 @@ class Server_Manager_CWP extends Server_Manager
 
 		return makeAPIRequest($host, $port, 'typeserver', $data);
 	}
-
+    
+    /**
+     * BoxBilling will only sync usernames and IP address, neither can be changed or synced from CWP
+     * That makes this function useless, but we still set what we can incase they are ever used in the future
+     */
 	public function synchronizeAccount(Server_Account $a)
 	{
 		$this->getLog()->info('Synchronizing account with server '.$a->getUsername());
@@ -106,12 +118,15 @@ class Server_Manager_CWP extends Server_Manager
 		} else {
 		   	$new->setSuspended(false);
 		}
-
-		$new->setDomain($acc['domains']['0']['domain']);
-
+        
+        $new->setPackage($acc['account_info']['package_name']);
+        $new->setReseller($acc['account_info']['reseller']);
 		return $new;
 	}
-
+    
+    /**
+     * Package name must match on both CWP and BoxBilling!
+     */
 	public function createAccount(Server_Account $a)
 	{
 		$this->getLog()->info('Creating account '.$a->getUsername());
@@ -126,7 +141,7 @@ class Server_Manager_CWP extends Server_Manager
 		$ip = $this->_config['ip'];
 
 		$data = array(
-		    'key'          => $APIKey,
+			'key'          => $APIKey,
 			'action'       => 'add',
 			'domain'       => $a->getDomain(),
 			'user'         => $a->getUsername(),
@@ -154,7 +169,7 @@ class Server_Manager_CWP extends Server_Manager
 		$port = $this->_config['port'];
 
 		$data = array(
-		    'key'      => $APIKey,
+			'key'      => $APIKey,
 			'action'   => 'susp',
 			'user'     => $a->getUsername()
 		);
@@ -173,7 +188,7 @@ class Server_Manager_CWP extends Server_Manager
 		$port = $this->_config['port'];
 
 		$data = array(
-		    'key'      => $APIKey,
+			'key'      => $APIKey,
 			'action'   => 'unsp',
 			'user'     => $a->getUsername()
 		);
@@ -192,7 +207,7 @@ class Server_Manager_CWP extends Server_Manager
 		$port = $this->_config['port'];
 
 		$data = array(
-		    'key'     => $APIKey,
+			'key'     => $APIKey,
 			'action'  => 'del',
 			'user'    => $a->getUsername(),
 			'email'   => $client->getEmail()
@@ -200,8 +215,10 @@ class Server_Manager_CWP extends Server_Manager
 		return makeAPIRequest($host, $port, 'account', $data);
 	}
 
-	/*
-	 * For unknown reasons, this doesn't work.
+	/**
+	 * Probably works, but my CWP instance doesn't even return an error to this function let along change the package
+	 * Ticket has been put in with CWP
+	 * TODO: Update this comment when the issue is resolved
 	 */
 	public function changeAccountPackage(Server_Account $a, Server_Package $p)
 	{
@@ -215,7 +232,7 @@ class Server_Manager_CWP extends Server_Manager
 		$port = $this->_config['port'];
 
 		$data = array(
-		    'key'      => $APIKey,
+			'key'      => $APIKey,
 			'action'   => 'upd',
 			'user'     => $a->getUsername(),
 			'package'  => $package
@@ -235,7 +252,7 @@ class Server_Manager_CWP extends Server_Manager
 		$port = $this->_config['port'];
 
 		$data = array(
-		    'key'     => $APIKey,
+			'key'     => $APIKey,
 			'action'  => 'udp',
 			'user'    => $a->getUsername(),
 			'pass'    => $new
@@ -243,12 +260,12 @@ class Server_Manager_CWP extends Server_Manager
 		return makeAPIRequest($host, $port, 'changepass', $data);
 	}
 
-	/*
+	/**
 	 * Function graveyard for things CWP doesn't support
 	 */
 	public function changeAccountUsername(Server_Account $a, $new)
 	{
-		throw new Server_Exception('CWP Does not support username changes through the API');
+		throw new Server_Exception('CWP Does not support username changes');
 	}
 
 	public function changeAccountDomain(Server_Account $a, $new)
@@ -282,6 +299,7 @@ class Server_Manager_CWP extends Server_Manager
 		} else {
 		    $status = 'Error';
 		}
+
 		if(!empty($response['result'])){
 			$result = $response['result'];
 		} else {
