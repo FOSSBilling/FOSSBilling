@@ -74,7 +74,7 @@ class Server_Manager_CWP extends Server_Manager
 
 	/**
 	 * CWP doesn't have a connection test function, so we ask what kind of server it is (EX: KVM / OpenVZ)
-     * No error means the connection worked and we can continue
+	 * No error means the connection worked and we can continue
 	 */
 	public function testConnection()
 	{
@@ -218,7 +218,7 @@ class Server_Manager_CWP extends Server_Manager
 	/**
 	 * Probably works, but my CWP instance doesn't even return an error to this function let along change the package
 	 * Ticket has been put in with CWP
-	 * TODO: Update this comment when the issue is resolved
+	 * I will update this comment when the issue is resolved
 	 */
 	public function changeAccountPackage(Server_Account $a, Server_Package $p)
 	{
