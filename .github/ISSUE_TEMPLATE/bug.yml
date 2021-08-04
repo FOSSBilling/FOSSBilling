@@ -1,0 +1,46 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for choosing BoxBilling, please fill out the information below to get the best assistance we can provide
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you see!
+      value: "Please describe the problem"
+    validations:
+      required: true
+  - type: dropdown
+    id: version
+    attributes:
+      label: BoxBilling Version
+      description: What version of BoxBilling are you running?
+      options:
+        - v4.21
+        - v4.22-beta.1
+        - Current Master Branch
+    validations:
+      required: true
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: What version of PHP are you running?
+      description: We only support between version 7.2 and 7.4, any other version will cause issues and not work.
+      multiple: false
+      options:
+        - 7.2x
+        - 7.3x
+        - 7.4x
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Please provide any additional notes. Important things to know include what theme you are using and software your server is running
+      placeholder: This doesn't show up so idonno what it is
+      value: "Additional notes"
