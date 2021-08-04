@@ -249,10 +249,11 @@ class Box_Request implements \Box\InjectionAwareInterface
 
     /**
      * Gets most possible client IPv4 Address. This method search in $_SERVER[‘REMOTE_ADDR’] and optionally in $_SERVER[‘HTTP_X_FORWARDED_FOR’]
-     * @param bool $trustForwardedHeader - should we trust forwarded header?
+     * @param bool $trustForwardedHeader - No by default because this can be changed to anything extremely easy, making it unreliable for tracking and adding a potential source for external data to be executed.
+     * Please see: https://stackoverflow.com/questions/3003145/how-to-get-the-client-ip-address-in-php
      * return string
      */
-    public function getClientAddress($trustForwardedHeader = true)
+    public function getClientAddress($trustForwardedHeader = false)
     {
         $address = null;
         if($trustForwardedHeader) {
