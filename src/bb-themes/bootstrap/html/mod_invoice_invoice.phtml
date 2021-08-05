@@ -215,7 +215,7 @@
 				{% if invoice.status == 'unpaid' %}
 				<a class="btn btn-primary" href="{{ ('invoice/'~invoice.hash)|link({'change_payment_method' : 1}) }}"><i class="fa fa-credit-card"></i> {% trans 'Change payment method' %}</a>
 				{% endif %}
-				<a class="btn btn-info" href="{{ 'invoice/pdf' | link }}/{{invoice.hash}}"><i class="fa fa-file-pdf-o"></i> {% trans 'Download PDF' %}</a>
+				<a class="btn btn-info" href="{{ 'invoice/pdf' | link }}/{{invoice.hash}}"><i class="fa fa-file-pdf-o"></i> {% trans 'Download PDF' %}</a> <a class="btn btn-info" href="{{ 'invoice/print' | link }}/{{invoice.hash}}"><i class="fa fa-print"></i> {% trans 'Print' %}</a>
 			</p>
 		</div>
 		</div>
