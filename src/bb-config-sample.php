@@ -112,7 +112,7 @@ return array(
 
         /**
          * Note about rate limiting login attempts:
-         * When the limit is reach, a simple 2 second delay is added to the request. 
+         * When the limit is reach, a default delay of 2 seconds is added to the request. 
          * This makes brute forcing a password basically useless while not outright blocking legitimate traffic.
          * When calculating, ensure the rate limited traffic can still make enough requests to stay rate limited
          * Ex: One request every 2 seconds is more than 20 times in 1 minute, so the IP will remain throttled
