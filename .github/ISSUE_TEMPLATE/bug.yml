@@ -1,6 +1,6 @@
 name: Bug Report
 description: File a bug report
-title: "[Bug]: "
+title: "[Bug] "
 labels: [bug]
 body:
   - type: markdown
@@ -37,10 +37,13 @@ body:
         - 7.2x
         - 7.3x
         - 7.4x
+        - Something unsupported
+    validations:
+      required: true
   - type: textarea
     id: notes
     attributes:
       label: Additional Notes
       description: Please provide any additional notes. Important things to know include what theme you are using and software your server is running
-      placeholder: This doesn't show up so idonno what it is
+      placeholder: Additional notes
       value: "Additional notes"
