@@ -154,8 +154,8 @@ class ServiceTest extends \BBTestCase {
         $orderModel->config = $confArr;
         $result = $serviceMock->action_activate($orderModel);
         $this->assertIsArray($result);
-        $this->assertNotEmpty($result[]);
-        $this->assertNotEmpty($result[]);
+        $this->assertNotEmpty($result['sld']);
+        $this->assertNotEmpty($result['tld']);
     }
 
     public function testaction_renew()
