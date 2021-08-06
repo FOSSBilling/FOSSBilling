@@ -108,7 +108,9 @@ class ServiceTest extends \BBTestCase {
             'server_id' => 1,
             'hosting_plan_id' => 2,
             'sld' => 'great',
-            'tld' => 'com'
+            'tld' => 'com',
+            'username' => 'username',
+            'password' => 'password'
         );
         
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
