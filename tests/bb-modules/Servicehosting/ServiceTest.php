@@ -120,7 +120,7 @@ class ServiceTest extends \BBTestCase {
         $servhostingModel->loadBean(new \RedBeanPHP\OODBBean());
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue($servhostingModel));
+            ->will($this->returnValue($servicehostingModel));
 
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
