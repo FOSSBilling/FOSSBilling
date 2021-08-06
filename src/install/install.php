@@ -383,6 +383,9 @@ final class Box_Installer
                 'allowed_ips' => [],
                 'rate_span' => 60 * 60,
                 'rate_limit' => 1000,
+                'throttle_delay' => 2,
+                'rate_span_login' =>  60,
+                'rate_limit_login' => 20,
             ],
         ];
         $output = '<?php ' . PHP_EOL;

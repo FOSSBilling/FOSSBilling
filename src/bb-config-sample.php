@@ -109,5 +109,22 @@ return array(
 
         // How many requests allowed per time span
         'rate_limit'        =>  1000,
+
+        /**
+         * Note about rate limiting login attempts:
+         * When the limit is reach, a default delay of 2 seconds is added to the request. 
+         * This makes brute forcing a password basically useless while not outright blocking legitimate traffic.
+         * When calculating, ensure the rate limited traffic can still make enough requests to stay rate limited
+         * Ex: One request every 2 seconds is more than 20 times in 1 minute, so the IP will remain throttled
+         */
+
+        // Throttling delay
+        'throttle_delay'         =>  2,
+
+        // Time span login for limit in seconds
+        'rate_span_login'         =>  60,
+
+        // How many login requests allowed per time span
+        'rate_limit_login'        =>  20,
     ),
 );

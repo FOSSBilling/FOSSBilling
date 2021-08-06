@@ -95,16 +95,24 @@ class Client implements InjectionAwareInterface
         }
     }
 
-    private function checkRateLimit()
+    private function checkRateLimit($method=null)
     {
-        $rate_span  = $this->_api_config['rate_span'];
-        $rate_limit = $this->_api_config['rate_limit'];
+        $isLoginMethod = false;
+        if($method == 'staff_login' || $method == 'client_login'){
+            $rate_span  = $this->_api_config['rate_span_login'];
+            $rate_limit = $this->_api_config['rate_limit_login'];
+            $isLoginMethod = true;
+        } else {
+            $rate_span  = $this->_api_config['rate_span'];
+            $rate_limit = $this->_api_config['rate_limit'];
+        }
+
         $service = $this->di['mod_service']('api');
-        $requests = $service->getRequestCount(time() - $rate_span, $this->_getIp());
+        $requests = $service->getRequestCount(time() - $rate_span, $this->_getIp(), $isLoginMethod);
         $requests_left = $rate_limit - $requests;
         $this->_requests_left = $requests_left;
         if ($requests_left < 0) {
-            throw new \Box_Exception('Request limit reached', null, 1003);
+            sleep($this->_api_config['throttle_delay']);
         }
         return true;
     }
@@ -151,7 +159,7 @@ class Client implements InjectionAwareInterface
 
         $service = $this->di['mod_service']('api');
         $service->logRequest();
-        $this->checkRateLimit();
+        $this->checkRateLimit($method);
         $this->checkHttpReferer();
         $this->isRoleAllowed($role);
 
