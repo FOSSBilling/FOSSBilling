@@ -120,7 +120,7 @@ class ServiceTest extends \BBTestCase {
         $servhostingModel->loadBean(new \RedBeanPHP\OODBBean());
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
-            ->will($this->returnValue($servicehostingModel));
+            ->will($this->returnValue($servhostingModel));
 
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
@@ -154,8 +154,8 @@ class ServiceTest extends \BBTestCase {
         $orderModel->config = $confArr;
         $result = $serviceMock->action_activate($orderModel);
         $this->assertIsArray($result);
-        $this->assertNotEmpty($result['username']);
-        $this->assertNotEmpty($result['password']);
+        $this->assertNotEmpty($result[]);
+        $this->assertNotEmpty($result[]);
     }
 
     public function testaction_renew()
