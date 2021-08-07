@@ -1262,7 +1262,7 @@ class Service implements InjectionAwareInterface
         $pdf->MultiCell(60, 10, "\n" . $buyer_info, 0, "L", 0);
 
         $header = array(__('#'), __('Title'), __('Price'), __('Total'));
-        $pdf->SetXY($left, 150);
+        $pdf->SetXY($left, 175);
         $w = array(10, 120, 30, 30);
 
         $counted = count($header);
