@@ -1206,7 +1206,7 @@ class Service implements InjectionAwareInterface
         if (isset($company['logo_url']) && !empty($company['logo_url'])) {
             $url = $company['logo_url'];
             if (substr($url, -4) === '.png') {
-                $pdf->ImagePngWithAlpha($url, $left + 75, 35, 50);
+                $pdf->ImagePngWithAlpha($_SERVER['DOCUMENT_ROOT'] . $url, $left + 75, 35, 50);
             } else {
                 //Converting to .png
                 $img = imagecreatefromstring(file_get_contents($url));
