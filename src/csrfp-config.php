@@ -18,7 +18,7 @@ return array(
 	"cookieConfig" => array(
 		"path" => '',
 		"domain" => '',
-		"secure" => true,
+		"secure" => false,
 		"expire" => '',
 	),
 	"disabledJavascriptMessage" => "This site attempts to protect users against <a href=\"https://www.owasp.org/index.php/Cross-Site_Request_Forgery_%28CSRF%29\">
