@@ -348,7 +348,6 @@ if (!defined('__CSRF_PROTECTOR__')) {
                     // Send 403 header
                     header('HTTP/1.0 403 Forbidden');
                     exit("<h2>403 Access Forbidden by CSRFProtector!</h2>");
-                    break;
                 case csrfpAction::ClearParametersAction:
                     // Unset the query parameters and forward
                     if (self::$requestType === 'GET') {
@@ -362,16 +361,13 @@ if (!defined('__CSRF_PROTECTOR__')) {
                     $location  = self::$config['errorRedirectionPage'];
                     header("location: $location");
                     exit(self::$config['customErrorMessage']);
-                    break;
                 case csrfpAction::CustomErrorMessageAction:
                     // Send custom error message
                     exit(self::$config['customErrorMessage']);
-                    break;
                 case csrfpAction::InternalServerErrorResponseAction:
                     // Send 500 header -- internal server error
                     header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
                     exit("<h2>500 Internal Server Error!</h2>");
-                    break;
                 default:
                     // Unset the query parameters and forward
                     if (self::$requestType === 'GET') {
