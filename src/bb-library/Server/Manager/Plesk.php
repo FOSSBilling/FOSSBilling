@@ -692,7 +692,7 @@ class Server_Manager_Plesk extends Server_Manager
     	);
 
     	$response = $this->_makeRequest($params);
-    	if (isset($response->system->status) && $response->system->status = 'error') {
+    	if (isset($response->system->status) && $response->system->status == 'error') {
 			throw new Server_Exception('Plesk error: ' . $response->system->errcode . ' - ' .
     									   $response->system->errtext);
     	}

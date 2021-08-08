@@ -147,7 +147,7 @@ class bulkChange extends openSRS_base {
 			trigger_error ("oSRS Error - change type is dns_zone_record but dns_record_data is not defined.", E_USER_WARNING);
 			$allDnsZoneRecordPassed = false;
 		}
-		return $allDnsZoneRecordCheck;
+		return $allDnsZoneRecordPassed;
 	}
 
 	private function _allDomainContactsCheck(){

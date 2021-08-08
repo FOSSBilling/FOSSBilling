@@ -108,7 +108,7 @@ class Box_Mail
             'subject'   => $this->_subject,
             'html'      => $this->_bodyHtml . 'Reply Address: ' . $this->_from,
             'text'      => $this->_bodyHtml . 'Reply Address: ' . $this->_from,
-            'from'      => $replyaddy,
+            'from'      => $this->_from,
         );
         
         // create the request URL

@@ -332,7 +332,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
             $bool = $this->api_admin->invoice_transaction_process_all();
             $this->assertTrue($bool);
         } catch (Exception $e) {
-
+            assertEquals("testProcess failed: ", $e->getMessage());
         }
 
         $bool = $this->api_admin->invoice_batch_activate_paid();

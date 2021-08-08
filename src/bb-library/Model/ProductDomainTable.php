@@ -148,7 +148,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         $tld                    = $this->di['array_get']($item['config'], 'tld', null);
         $free_tlds              = $this->di['array_get']($item['config'], 'free_tlds', array());
 
-        if($tld != null && !!$free_domain && is_array($free_tlds) && in_array($tld, $free_tlds)) {
+        if($tld != null && !$free_domain && is_array($free_tlds) && in_array($tld, $free_tlds)) {
         return true;
         } else {
             return false;
