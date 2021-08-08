@@ -88,8 +88,7 @@
                                     <tr>
                                         <td>BoxBilling version</td>
                                         <td><strong class="{{ box_ver_ok ? 'green' : 'red'}}">{{ box_ver }}</strong></td>
-                                        <td>{% if not box_ver_ok %}BoxBilling couldn't find valid version information. This is okay if you've brought a copy of BoxBilling directly from the master branch, and not from releases. But beware, master branch may not be stable enough to be used for production use.{% endif %}</td>
-                                    </tr>
+					<td>{% if not box_ver_ok %}BoxBilling couldn't find valid version information. This is okay if you downloaded BoxBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.{% endif %}</td>                                    </tr>
 
                                     <tr>
                                         <td>PHP version</td>
