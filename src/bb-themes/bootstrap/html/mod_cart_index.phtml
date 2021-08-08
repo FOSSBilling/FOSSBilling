@@ -122,6 +122,8 @@
 								<p>{% trans 'Total amount will be deducted from account balance' %}</p>
 								{% endif %}
 							</div>
+                            <input type="checkbox" id="tos" name="tos" required>
+                            <label for="tos">I agree to the <a href="{{ '/tos'|link }}" target="_blank">{% trans 'Terms and Conditions' %}</a></label>
 							<p><button class="btn btn-success btn-lg" type="submit"><i class="fa fa-shopping-cart"></i> {% trans 'Checkout' %} {{ (cart.total + tax_amount) | money_convert }}</button></p>
 						</form>
 						{% else %}	

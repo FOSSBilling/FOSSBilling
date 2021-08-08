@@ -62,13 +62,6 @@
 	
 	{% block js %}{% endblock %}
 
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-
     {% block opengraph %}{% endblock %}
     {% block head %}{% endblock %}
 </head>
@@ -107,7 +100,6 @@
 						{% if settings.side_menu_support %}<li class="visible-xs"><a href="{{ 'support'|link }}" title="{% trans 'Tickets' %}"><i class="fa fa-life-ring"></i> {% trans 'Support' %}</a></li>{% endif %}
 						{% if settings.side_menu_invoices %}<li class="visible-xs"><a href="{{ 'invoice'|link }}" title="{% trans 'Invoices' %}"><i class="fa fa-credit-card"></i> {% trans 'Invoices' %}</a></li>{% endif %}
 						<li><a href="{{ ''|link }}" title="{% trans 'Dashboard' %}"><i class="fa fa-home"></i> {% trans 'Dashboard' %}</a></li>
-						<li><a href="{{ 'cart'|link }}" title="{% trans 'Shopping cart' %}"><i class="fa fa-shopping-cart"></i> {% trans 'Shopping cart' %}</a></li>
 						<li class="dropdown">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-user"></i> {{ (profile.first_name ~ " " ~ profile.last_name) }} <span class="caret"></span></a>
 							<ul class="dropdown-menu">
@@ -223,8 +215,8 @@
 					</p>
 					<ul class="list-inline">
                         <li><a href="{{ '/about-us'|link }}">{% trans 'About us' %}</a></li>
-                        <li><a href="{{ '/tos'|link }}">{% trans 'Terms and conditions' %}</a></li>
-                        <li><a href="{{ '/privacy-policy'|link }}">{% trans 'Privacy policy' %}</a></li><br />
+                        <li><a href="{{ '/tos'|link }}">{% trans 'Terms and Conditions' %}</a></li>
+                        <li><a href="{{ '/privacy-policy'|link }}">{% trans 'Privacy Policy' %}</a></li><br />
 						{% for i in 1..5 %}
 							{% if settings['footer_link_' ~ loop.index ~ '_enabled'] %}
 							<li>

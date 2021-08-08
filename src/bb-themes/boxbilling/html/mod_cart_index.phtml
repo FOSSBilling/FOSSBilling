@@ -114,6 +114,8 @@
                         </div>
                         {% endif %}
                         <br/>
+                        <input type="checkbox" id="tos" name="tos" required>
+                        <label for="tos">I agree to the <a href="{{ '/tos'|link }}" target="_blank">{% trans 'Terms and Conditions' %}</a></label>
                         <button class="bb-button bb-button-submit bb-button-big" type="submit">{% trans 'Checkout' %}</button>
                         {% if enough_in_balance %}
                         <p>{% trans 'Total amount will be deducted from account balance' %}</p>

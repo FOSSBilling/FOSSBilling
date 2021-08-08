@@ -98,6 +98,7 @@
 		</div>
     </div>
 
+    <div class="widget open-ticket">
     <div class="modal fade" id="tickets" tabindex="-1" role="dialog" aria-labelledby="{% trans 'Open new support ticket regarding this order' %}">
 		<div class="modal-dialog" role="document">
 			<div class="modal-content">
@@ -137,6 +138,7 @@
 				</div>
 			</div>
 		</div>
+    </div>
     </div>
 
     <div class="modal fade" id="upgrades" tabindex="-1" role="dialog" aria-labelledby="{% trans 'Request upgrade' %}">
@@ -217,6 +219,19 @@ $(function() {
 				);
 			}
 		}); 
+    });
+
+    $('.open-ticket form').submit(function(){
+        bb.post(
+            'client/support/ticket_create',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Ticket was submitted. If you want to track conversation please go to support section');
+                $('div.open-ticket').fadeOut();
+                $('#open-ticket').fadeOut();
+            }
+        );
+        return false;
     });
 });
 </script>

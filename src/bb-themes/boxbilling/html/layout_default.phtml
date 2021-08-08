@@ -16,8 +16,6 @@
     <link href="https://fonts.googleapis.com/css?family=Cuprum" rel="stylesheet" type="text/css" />
     {{ 'css/print.css' | asset_url | stylesheet_tag('print') }}
     {{ 'css/style.css' | asset_url | stylesheet_tag }}
-    <!--[if IE 6]>{{ 'css/ie6.css' | asset_url | stylesheet_tag }}<![endif]-->
-    <!--[if IE 7]>{{ 'css/ie.css' | asset_url | stylesheet_tag }}<![endif]-->
 
     {{ 'js/jquery.min.js' | asset_url | script_tag }}
     {{ 'js/jquery.tipsy.js' | asset_url | script_tag }}
@@ -181,10 +179,10 @@
                             <a href="{{ '/about-us'|link }}">{% trans 'About us' %}</a>
                         </li>
                         <li>
-                            <a href="{{ '/tos'|link }}">{% trans 'Terms and conditions' %}</a>
+                            <a href="{{ '/tos'|link }}">{% trans 'Terms and Conditions' %}</a>
                         </li>
                         <li>
-                            <a href="{{ '/privacy-policy'|link }}">{% trans 'Privacy policy' %}</a>
+                            <a href="{{ '/privacy-policy'|link }}">{% trans 'Privacy Policy' %}</a>
                         </li>
                         {% if guest.extension_is_on({"mod":'branding'}) %}
                         <li>

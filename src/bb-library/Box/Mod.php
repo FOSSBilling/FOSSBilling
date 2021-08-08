@@ -29,7 +29,6 @@ class Box_Mod
         'currency',
         'email',
         'extension',
-        'filemanager',
         'hook',
         'index',
         'invoice',
