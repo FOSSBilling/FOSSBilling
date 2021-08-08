@@ -91,9 +91,9 @@ function Image($file, $x=null, $y=null, $w=0, $h=0, $type='', $link='', $isMask=
 // pixel-wise operation, not very fast
 function ImagePngWithAlpha($file,$x,$y,$w=0,$h=0,$link='')
 {
-    $tmp_alpha = tempnam('.', 'mska');
+    $tmp_alpha = tempnam(sys_get_temp_dir(), 'mska');
     $this->tmpFiles[] = $tmp_alpha;
-    $tmp_plain = tempnam('.', 'mskp');
+    $tmp_plain = tempnam(sys_get_temp_dir(), 'mskp');
     $this->tmpFiles[] = $tmp_plain;
 
     list($wpx, $hpx) = getimagesize($file);

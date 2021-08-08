@@ -1206,7 +1206,7 @@ class Service implements InjectionAwareInterface
         if (isset($company['logo_url']) && !empty($company['logo_url'])) {
             $url = $company['logo_url'];
             if (substr($url, -4) === '.png') {
-                $pdf->ImagePngWithAlpha($url, $left + 75, 35, 50);
+                $pdf->ImagePngWithAlpha($_SERVER['DOCUMENT_ROOT'] . $url, $left + 75, 35, 50);
             } else {
                 //Converting to .png
                 $img = imagecreatefromstring(file_get_contents($url));
@@ -1262,7 +1262,7 @@ class Service implements InjectionAwareInterface
         $pdf->MultiCell(60, 10, "\n" . $buyer_info, 0, "L", 0);
 
         $header = array(__('#'), __('Title'), __('Price'), __('Total'));
-        $pdf->SetXY($left, 150);
+        $pdf->SetXY($left, 175);
         $w = array(10, 120, 30, 30);
 
         $counted = count($header);

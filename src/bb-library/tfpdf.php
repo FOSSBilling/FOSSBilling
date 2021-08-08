@@ -8,6 +8,7 @@
 *           Tycho Veltmeijer <tfpdf@tychoveltmeijer.nl> (versions 1.30+)       *
 * License:  LGPL                                                               *
 *******************************************************************************/
+require_once(BB_PATH_LIBRARY .'/font/unifont/ttfonts.php');
 
 define('tFPDF_VERSION','1.32');
 
