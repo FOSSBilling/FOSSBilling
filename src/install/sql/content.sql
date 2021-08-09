@@ -233,7 +233,6 @@ INSERT INTO `pay_gateway` (`id`, `name`, `gateway`, `accepted_currencies`, `enab
 VALUES
 	(1,'Custom','Custom',NULL,1,1,1,0,NULL),
 	(2,'PayPal','PayPalEmail',NULL,0,1,1,0,NULL),
-	(3,'AlertPay','AlertPay',NULL,0,1,1,0,NULL);
 
 /*!40000 ALTER TABLE `pay_gateway` ENABLE KEYS */;
 UNLOCK TABLES;
