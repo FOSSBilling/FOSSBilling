@@ -6,14 +6,6 @@
      border: 0;
      margin: 10px;
 }
-.logo-AlertPay{
-   background: transparent url("../img/gateway_logos/alertpay.png") no-repeat scroll 0% 0%;
-    background-size: contain;
-    width:120px;
-    height: 25px;
-    border: 0;
-    margin: 10px;
-}
 .logo-AliPay{
    background: transparent url("../img/gateway_logos/alipay.png") no-repeat scroll 0% 0%;
     background-size: contain;
@@ -107,22 +99,6 @@
     background-size: contain;
     width:85px;
     height: 25px;
-    border: 0;
-    margin: 10px;
-}
-.logo-WebToPay{
-   background: transparent url("../img/gateway_logos/webtopay.png") no-repeat scroll 0% 0%;
-    background-size: contain;
-    width:135px;
-    height: 25px;
-    border: 0;
-    margin: 10px;
-}
-.logo-SimplePay{
-   background: transparent url("../img/gateway_logos/simplepay.png") no-repeat scroll 0% 0%;
-    background-size: contain;
-    width:130px;
-    height: 30px;
     border: 0;
     margin: 10px;
 }
