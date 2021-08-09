@@ -19,6 +19,9 @@ return array(
      */
     'url'     => 'http://localhost/',
 
+    /**
+     * The URL prefix to access the BB admin area. Ex: '/bb-admin' = https://example.com/bb-admin
+     */
     'admin_area_prefix' =>  '/bb-admin',
 
     /**
