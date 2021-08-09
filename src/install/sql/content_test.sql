@@ -364,8 +364,6 @@ VALUES
 	(2,'BankLink','Custom',NULL,1,1,1,0,'{\"single\":\"Transfer {{invoice.total}} {{invoice.currency}}\", \"recurrent\":\"Recurrent payment information\"}'),
 	(3,'Authorize.net','AuthorizeNet',NULL,0,1,1,0,NULL),
 	(4,'PayPal','PayPalEmail',NULL,1,1,1,0,'{\"email\":\"sales@boxbilling.com\"}'),
-	(5,'WebToPay','WebToPay',NULL,0,1,1,1,NULL),
-	(6,'AlertPay','AlertPay',NULL,0,1,1,0,NULL);
 
 /*!40000 ALTER TABLE `pay_gateway` ENABLE KEYS */;
 UNLOCK TABLES;
