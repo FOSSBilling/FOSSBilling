@@ -6108,18 +6108,6 @@ msgstr ""
 msgid "Solved tickets"
 msgstr ""
 
-msgid ""
-"Payment gateway \"AlertPay\" is not configured properly. Please update "
-"configuration parameter \"AlertPay Email address\" at \"Configuration -> "
-"Payments\"."
-msgstr ""
-
-msgid ""
-"Payment gateway \"AlertPay\" is not configured properly. Please update "
-"configuration parameter \"IPN Security Code\" at \"Configuration -> Payments"
-"\"."
-msgstr ""
-
 msgid "Not implemented yet"
 msgstr ""
 
@@ -6228,19 +6216,6 @@ msgid ""
 msgstr ""
 
 msgid "WebMoney IPN is not valid"
-msgstr ""
-
-msgid ""
-"Payment gateway \"WebToPay\" is not configured properly. Please update "
-"configuration parameter \"Project ID\" at \"Configuration -> Payments\"."
-msgstr ""
-
-msgid ""
-"Payment gateway \"WebToPay\" is not configured properly. Please update "
-"configuration parameter \"Sign Password\" at \"Configuration -> Payments\"."
-msgstr ""
-
-msgid "WebToPay payment gateway do not support recurrent payments"
 msgstr ""
 
 msgid "Return URL for payment gateway was not set"
