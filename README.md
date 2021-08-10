@@ -40,7 +40,7 @@ BoxBilling is designed to be extensible and to integrate easily with your favour
 
 ## Requirements
 
-The following environment is highly recommended for running BoXBilling. It *may* be possible to install and run the software in other entironments, but it will be untested nad unsupported. 
+The following environment is highly recommended for running BoxBilling. It *may* be possible to install and run the software in other environments, but it will be untested nad unsupported. 
 
 - A suitable web server (Apache/Nginx/LSWS)
 - PHP 7.2, or higher. *Note: PHP 8 is not yet supported.*
