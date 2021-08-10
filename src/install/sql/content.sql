@@ -147,6 +147,16 @@ UNLOCK TABLES;
 # Dump of table extension_meta
 # ------------------------------------------------------------
 
+LOCK TABLES `extension_meta` WRITE;
+/*!40000 ALTER TABLE `extension_meta` DISABLE KEYS */;
+
+INSERT INTO `extension_meta` (`id`, `client_id`, `extension`, `rel_type`, `rel_id`, `meta_key`, `meta_value`, `created_at`, `updated_at`)
+VALUES
+    (NULL, NULL, 'mod_wysiwyg', NULL, NULL, 'config', 'dNq7URCo4O7nGcZisvdnNjIQ4cw2IRiQiVHtN36go0mx91RAb9hjSxHoQbB0i2jQOCMKqHP0Hnuj16BvdSPHjg==', '2021-01-01 00:00:00', '2021-01-01 00:00:00') 
+
+/*!40000 ALTER TABLE `extension_meta` ENABLE KEYS */;
+UNLOCK TABLES;
+
 
 
 # Dump of table form
