@@ -18,7 +18,11 @@ class Admin extends \Api_Abstract
     {
         $mod = $this->di['mod']('wysiwyg');
         $config = $mod->getConfig();
-        return $this->di['array_get']($config, 'editor', 'CKEditor');
+        if (empty($this->di['array_get']($config, 'editor', 'CKEditor')) || !(defined($this->di['array_get']($config, 'editor', 'CKEditor')))) {
+            return 'ckeditor';
+        } else {
+            return $this->di['array_get']($config, 'editor', 'CKEditor');
+        }
     }
 
     public function editors()
