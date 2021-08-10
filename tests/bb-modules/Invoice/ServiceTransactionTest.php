@@ -489,13 +489,10 @@ class ServiceTransactionTest extends \BBTestCase
     public function paymentsAdapterProvider_withoutProcessTransaction()
     {
         return array(
-            array('\Payment_Adapter_AlertPay'),
             array('\Payment_Adapter_AliPay'),
             array('\Payment_Adapter_AuthorizeNet'),
             array('\Payment_Adapter_Interkassa'),
             array('\Payment_Adapter_Onebip'),
-            array('\Payment_Adapter_Payza'),
-            array('\Payment_Adapter_WebToPay'),
             array('\Payment_Adapter_Custom'),
         );
     }
