@@ -1,5 +1,5 @@
 # en_US translation of BoxBilling Application
-# Copyright 2011 -2015 BoxBilling <info@boxbilling.com>
+# Copyright 2011-2021 BoxBilling <info@boxbilling.com>
 #
 #, fuzzy
 msgid ""
