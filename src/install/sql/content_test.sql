@@ -80,7 +80,7 @@ LOCK TABLES `client` WRITE;
 INSERT INTO `client` (`id`, `aid`, `client_group_id`, `role`, `auth_type`, `email`, `pass`, `salt`, `status`, `email_approved`, `tax_exempt`, `type`, `first_name`, `last_name`, `gender`, `birthday`, `phone_cc`, `phone`, `company`, `company_vat`, `company_number`, `address_1`, `address_2`, `city`, `state`, `postcode`, `country`, `document_type`, `document_nr`, `notes`, `currency`, `lang`, `ip`, `api_token`, `referred_by`, `custom_1`, `custom_2`, `custom_3`, `custom_4`, `custom_5`, `custom_6`, `custom_7`, `custom_8`, `custom_9`, `custom_10`, `created_at`, `updated_at`)
 VALUES
 	(1,NULL,1,'client',NULL,'client@boxbilling.com','$2y$10$/waO8c5q41HngeC2TTvnnuYyz3drDIe6jEMXyh8X6RO/YPoiC.bL.',NULL,'active',NULL,0,NULL,'Demo','Client',NULL,'1985-02-25','214','15551212','BoxBilling',NULL,NULL,'Holywood','Stairway to heaven','Holywood','LA','95012','US',NULL,NULL,'BoxBilling demo client','USD',NULL,NULL,'client_api_token',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00'),
-	(2,NULL,1,'client',NULL,'john.smith@boxbilling.com','$2y$10$/waO8c5q41HngeC2TTvnnuYyz3drDIe6jEMXyh8X6RO/YPoiC.bL.',NULL,'active',NULL,0,NULL,'John','Smith',NULL,NULL,'261','4106851180','John\'s Company Inc.',NULL,NULL,'1734 Maryland Avenue',NULL,'Baltimore','MD','21201','US',NULL,NULL,NULL,'USD',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00');
+	(2,NULL,1,'client',NULL,'john.smith@boxbilling.com','$2y$10$/waO8c5q41HngeC2TTvnnuYyz3drDIe6jEMXyh8X6RO/YPoiC.bL.',NULL,'active',NULL,0,NULL,'John','Smith',NULL,NULL,'261','4106851180','John''s Company Inc.',NULL,NULL,'1734 Maryland Avenue',NULL,'Baltimore','MD','21201','US',NULL,NULL,NULL,'USD',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00');
 
 /*!40000 ALTER TABLE `client` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -167,8 +167,7 @@ VALUES
 	(2,'mod','kb','installed','1.0.0','{\"id\":\"kb\",\"type\":\"mod\",\"name\":\"Knowledge base\",\"description\":\"Knowledge base module for BoxBilling\",\"homepage_url\":\"http:\\/\\/github.com\\/boxbilling\\/\",\"author\":\"BoxBilling\",\"author_url\":\"http:\\/\\/extensions.boxbilling.com\\/\",\"license\":\"http:\\/\\/www.boxbilling.com\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.boxbilling.com\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
 	(3,'mod','news','installed','1.0.0','{\"id\":\"news\",\"type\":\"mod\",\"name\":\"News\",\"description\":\"News module for BoxBilling\",\"homepage_url\":\"http:\\/\\/github.com\\/boxbilling\\/\",\"author\":\"BoxBilling\",\"author_url\":\"http:\\/\\/extensions.boxbilling.com\\/\",\"license\":\"http:\\/\\/www.boxbilling.com\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.boxbilling.com\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
 	(4,'mod','branding','installed','1.0.0','{\"id\":\"branding\",\"type\":\"mod\",\"name\":\"Branding\",\"description\":\"BoxBilling branding module. Can be deactivated by PRO license owners only.\",\"homepage_url\":\"http:\\/\\/github.com\\/boxbilling\\/\",\"author\":\"BoxBilling\",\"author_url\":\"http:\\/\\/extensions.boxbilling.com\\/\",\"license\":\"http:\\/\\/www.boxbilling.com\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.boxbilling.com\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
-	(5,'mod','servicemembership','installed','1.0.0','{\"id\":\"servicemembership\",\"type\":\"mod\",\"name\":\"Membership product\",\"description\":\"Sell membership products.\",\"homepage_url\":\"http:\\/\\/github.com\\/boxbilling\\/\",\"author\":\"BoxBilling\",\"author_url\":\"http:\\/\\/extensions.boxbilling.com\\/\",\"license\":\"http:\\/\\/www.boxbilling.com\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.boxbilling.com\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
-	(6,'mod','redirect','installed','1.0.0','{\"id\":\"redirect\",\"type\":\"mod\",\"name\":\"Redirect\",\"description\":\"Manage redirects\",\"homepage_url\":\"https:\\/\\/github.com\\/boxbilling\\/\",\"author\":\"BoxBilling\",\"author_url\":\"http:\\/\\/www.boxbilling.com\",\"license\":\"GPL version 2 or later - http:\\/\\/www.gnu.org\\/licenses\\/old-licenses\\/gpl-2.0.html\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.boxbilling.com\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n');
+	(5,'mod','redirect','installed','1.0.0','{\"id\":\"redirect\",\"type\":\"mod\",\"name\":\"Redirect\",\"description\":\"Manage redirects\",\"homepage_url\":\"https:\\/\\/github.com\\/boxbilling\\/\",\"author\":\"BoxBilling\",\"author_url\":\"http:\\/\\/www.boxbilling.com\",\"license\":\"GPL version 2 or later - http:\\/\\/www.gnu.org\\/licenses\\/old-licenses\\/gpl-2.0.html\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/extensions.boxbilling.com\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
 	(6,'mod','wysiwyg','installed','4.22','{\"id\":\"wysiwyg\",\"type\":\"mod\",\"name\":\"Wysiwyg\",\"description\":\"Integrates a What You See Is What You Get (WYSIWYG) editor to your admin panel.\",\"homepage_url\":\"https:\/\/github.com\/boxbilling\/\",\"author\":\"BoxBilling\",\"author_url\":\"https:\/\/extensions.boxbilling.com\/\",\"license\":\"GPL version 2 or later - http:\/\/www.gnu.org\/licenses\/old-licenses\/gpl-2.0.html\",\"version\":\"4.22\",\"icon_url\":\"\/bb-modules\/Wysiwyg\/icon.png\",\"download_url\":null,\"project_url\":\"https:\/\/extensions.boxbilling.com\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}');
 
 /*!40000 ALTER TABLE `extension` ENABLE KEYS */;
@@ -346,7 +345,7 @@ LOCK TABLES `kb_article_category` WRITE;
 INSERT INTO `kb_article_category` (`id`, `title`, `description`, `slug`, `created_at`, `updated_at`)
 VALUES
 	(1,'Frequently asked questions','Section for common issues','faq','2020-01-01 12:00:00','2020-01-01 12:00:00'),
-	(2,'How to\'s','Section dedicated for tutorials','how-to','2020-01-01 12:00:00','2020-01-01 12:00:00');
+	(2,'How to''s','Section dedicated for tutorials','how-to','2020-01-01 12:00:00','2020-01-01 12:00:00');
 
 /*!40000 ALTER TABLE `kb_article_category` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -377,10 +376,10 @@ LOCK TABLES `post` WRITE;
 
 INSERT INTO `post` (`id`, `admin_id`, `title`, `content`, `slug`, `status`, `image`, `section`, `publish_at`, `published_at`, `expires_at`, `created_at`, `updated_at`)
 VALUES
-	(1,1,'BoxBilling is the most affordable Billing Application Ever!','Just in case you weren\'t already aware, BoxBilling is the most affordable client management application ever!\n\nTo learn more about it You can always visit [www.boxbilling.com](http://www.boxbilling.com/)\n','boxbilling-is-affordable-billing-system','active',NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00'),
+	(1,1,'BoxBilling is the most affordable Billing Application Ever!','Just in case you weren''t already aware, BoxBilling is the most affordable client management application ever!\n\nTo learn more about it You can always visit [www.boxbilling.com](http://www.boxbilling.com/)\n','boxbilling-is-affordable-billing-system','active',NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00'),
 	(2,1,'Check out great features of BoxBilling','* Supports automated billing, invoicing, product provisioning\n* Automatically create accounts as soon as the payment is received, suspend when account becomes overdue, terminate when a specified amount of time passes.\n* Boxbilling is perfectly created to sell shared and reseller hosting accounts, software licenses and downloadable products.\n* Integrated helpdesk, knowledgebase, news and announcements system.\n','great-features-of-boxbilling','active',NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00'),
 	(3,1,'BoxBilling is customizable','* You can create your own simple or advanced hooks on BoxBilling events. For example, send notification via sms when new client signs up.\n* Create custom theme for your client interface\n* Create plugin for any cms page\n','boxbilling-is-customizable','active',NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00'),
-	(4,1,'About us','Now is the time for all good men to come to\nthe aid of their country. This is just a\nregular paragraph.\n\nThe quick brown fox jumped over the lazy\ndog\'s back.\n\n\n> This is a blockquote.\n>\n> This is the second paragraph in the blockquote.\n','about-us','active',NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00'),
+	(4,1,'About us','Now is the time for all good men to come to\nthe aid of their country. This is just a\nregular paragraph.\n\nThe quick brown fox jumped over the lazy\ndog''s back.\n\n\n> This is a blockquote.\n>\n> This is the second paragraph in the blockquote.\n','about-us','active',NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00'),
 	(5,1,'Unfinished news item','the text is yet to be written\n','to-do','draft',NULL,NULL,NULL,NULL,NULL,'2020-01-01 12:00:00','2020-01-01 12:00:00');
 
 /*!40000 ALTER TABLE `post` ENABLE KEYS */;
@@ -627,7 +626,7 @@ VALUES
 	(1,1,'Hello #1','Hello,\n\n\n\nThank you for using our services.','2020-01-01 12:00:00','2020-01-01 12:00:00'),
 	(2,1,'Hello #2','Greetings,\n\n\n\nThank you.','2020-01-01 12:00:00','2020-01-01 12:00:00'),
 	(3,2,'It was fixed','\nIt was fixed for your account. If you have any more questions or requests, please let us to know.','2020-01-01 12:00:00','2020-01-01 12:00:00'),
-	(4,2,'It was done as requested','\nIt\'s done as you have requested. Please let us to know if you have any further requests or questions.','2020-01-01 12:00:00','2020-01-01 12:00:00'),
+	(4,2,'It was done as requested','\nIt''s done as you have requested. Please let us to know if you have any further requests or questions.','2020-01-01 12:00:00','2020-01-01 12:00:00'),
 	(5,2,'Your website works fine','\nI have just checked your website and it works fine. Please check it from your end and let us to know if you still experience any problems.','2020-01-01 12:00:00','2020-01-01 12:00:00'),
 	(6,3,'Do you get any errors?','\nDo you get any errors and maybe you can copy/paste full error messages?','2020-01-01 12:00:00','2020-01-01 12:00:00'),
 	(7,3,'Domain is not pointing to our server','\nYour domain is not pointing to our server. Please set our nameservers for your domain and give 24 hours until changes will apply worldwide.','2020-01-01 12:00:00','2020-01-01 12:00:00'),
@@ -675,7 +674,7 @@ LOCK TABLES `support_ticket_message` WRITE;
 
 INSERT INTO `support_ticket_message` (`id`, `support_ticket_id`, `client_id`, `admin_id`, `content`, `attachment`, `ip`, `created_at`, `updated_at`)
 VALUES
-	(1,1,NULL,1,'Hello,\n\nIt\'s done as you have requested. Please let us to know if you have any further requests or questions.\n\nSincerely Yours, Demo Administrator',NULL,'127.0.0.1','2020-01-01 12:00:00','2020-01-01 12:00:00');
+	(1,1,NULL,1,'Hello,\n\nIt''s done as you have requested. Please let us to know if you have any further requests or questions.\n\nSincerely Yours, Demo Administrator',NULL,'127.0.0.1','2020-01-01 12:00:00','2020-01-01 12:00:00');
 
 /*!40000 ALTER TABLE `support_ticket_message` ENABLE KEYS */;
 UNLOCK TABLES;
