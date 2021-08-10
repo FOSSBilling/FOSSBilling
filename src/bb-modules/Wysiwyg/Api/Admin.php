@@ -18,13 +18,12 @@ class Admin extends \Api_Abstract
     {
         $mod = $this->di['mod']('wysiwyg');
         $config = $mod->getConfig();
-        return $this->di['array_get']($config, 'editor', 'markitup');
+        return $this->di['array_get']($config, 'editor', 'CKEditor');
     }
 
     public function editors()
     {
         return array(
-            'markitup'  =>  'markItUp',
             'ckeditor'  =>  'CKEditor',
         );
     }
