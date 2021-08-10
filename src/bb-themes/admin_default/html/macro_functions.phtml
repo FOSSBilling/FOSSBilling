@@ -128,14 +128,6 @@
 {% if guest.extension_is_on({"mod":"wysiwyg"}) %}
 {% include "mod_wysiwyg_js.phtml" with {"class":selector|trim('.#')} %}
 {% else %}
-<link rel="stylesheet" type="text/css" href="js/markitup/skins/boxbilling/style.css" />
-<link rel="stylesheet" type="text/css" href="js/markitup/sets/markdown/style.css" />
-<script src="js/markitup/jquery.markitup.js" type="text/javascript"></script>
-<script src="js/markitup/sets/markdown/set.js" type="text/javascript"></script>
-<script type="text/javascript" >
-    $(document).ready(function() {
-        $("{{selector}}").markItUp(mySettings);
-    });
-</script>
+// No WYSIWYG, no fancy stuff. Enable the WYSIWYG extension for a better management experience.
 {% endif %}
 {% endmacro %}
