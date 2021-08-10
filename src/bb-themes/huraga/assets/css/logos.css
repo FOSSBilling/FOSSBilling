@@ -70,14 +70,6 @@
     border: 0;
     margin: 10px;
 }
-.logo-Payza{
-   background: transparent url("../img/gateway_logos/payza.png") no-repeat scroll 0% 0%;
-    background-size: contain;
-    width:100px;
-    height: 25px;
-    border: 0;
-    margin: 10px;
-}
 .logo-TwoCheckout{
    background: transparent url("../img/gateway_logos/twocheckout.png") no-repeat scroll 0% 0%;
     background-size: contain;
