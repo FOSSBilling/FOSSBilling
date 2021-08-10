@@ -627,9 +627,6 @@ msgstr ""
 msgid "Redirecting to PayPal.com"
 msgstr ""
 
-msgid "Redirecting to Payza.com"
-msgstr ""
-
 msgid "Redirecting to 2Checkout.com"
 msgstr ""
 
@@ -6174,21 +6171,6 @@ msgid ""
 "Payment gateway \"PayPal\" is not configured properly. Please update "
 "configuration parameter \"PayPal Email address\" at \"Configuration -> "
 "Payments\"."
-msgstr ""
-
-msgid "PHP Curl extension must be enabled in order to use Payza gateway"
-msgstr ""
-
-msgid ""
-"Payment gateway \"Payza\" is not configured properly. Please update "
-"configuration parameter \"Payza Email address\" at \"Configuration -> "
-"Payments\"."
-msgstr ""
-
-msgid ""
-"Payment gateway \"Payza\" is not configured properly. Please update "
-"configuration parameter \"IPN Security Code\" at \"Configuration -> Payments"
-"\"."
 msgstr ""
 
 msgid ""
