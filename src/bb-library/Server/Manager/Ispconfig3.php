@@ -65,7 +65,6 @@ class Server_Manager_Ispconfig3 extends Server_Manager
     public function synchronizeAccount(Server_Account $a)
     {
         throw new Server_Exception('Server manager does not support sync');
-        return $a;
     }
 
     public function createAccount(Server_Account $a)
@@ -607,11 +606,16 @@ class Server_Manager_Ispconfig3 extends Server_Manager
                     $params['client_id'] = null;
                     $soap_result 	= $soap_client->sites_web_domain_add($this->_session, $client_id  , $params);
                 break;
+                /*
+                 * I believe this is an old version of what we see on line 590
+                 * Commenting out just incase we need it for anything, but it's unreachable as-is
+                 * So this makes it a little more obvious 
                 case 'sites_web_domain_update':
                     $client_id = $params['client_id'];
                     $params['client_id'] = null;
                     $soap_result 	= $soap_client->sites_web_domain_update($this->_session, $client_id  , $params);
                 break;
+                */
                 case 'sites_web_subdomain_add':
                     $client_id = $params['client_id'];
                     $params['client_id'] = null;

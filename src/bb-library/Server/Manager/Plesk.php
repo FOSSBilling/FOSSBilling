@@ -70,8 +70,6 @@ class Server_Manager_Plesk extends Server_Manager
     	}
 
     	throw new Server_Exception('Connection to server failed');
-
-    	return false;
     }
     
     public function synchronizeAccount(Server_Account $a)

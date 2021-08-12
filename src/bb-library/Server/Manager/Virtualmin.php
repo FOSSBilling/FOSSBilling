@@ -323,8 +323,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     	} else {
     		throw new Server_Exception('Failed to create reseller\'s account');
     	}
-
-    	return false;
     }
 
     /**
@@ -412,8 +410,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     	} else {
     		throw new Server_Exception('Failed to create account');
     	}
-
-    	return false;
     }
 
 	/**
@@ -436,8 +432,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     	} else {
     		throw new Server_Exception('Failed to suspend user\'s account');
     	}
-
-    	return false;
     }
 
     /**
@@ -460,8 +454,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     	} else {
     		throw new Server_Exception('Failed to unsuspend user\'s account');
     	}
-
-    	return false;
     }
 
     /**
@@ -485,8 +477,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     	} else {
     		throw new Server_Exception('Failed to change user\'s password');
     	}
-
-    	return false;
     }
 
     /**
@@ -509,8 +499,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     	} else {
     		throw new Server_Exception('Failed to delete user\'s account');
     	}
-
-    	return false;
     }
 
     /**
@@ -540,8 +528,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     	} else {
     		throw new Server_Exception('Failed to modify domain details');
     	}
-
-    	return false;
     }
 
     /**
@@ -571,8 +557,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     	} else {
     		throw new Server_Exception('Failed to enable features');
     	}
-
-    	return false;
     }
 
     /**
@@ -602,8 +586,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     	} else {
     		throw new Server_Exception('Failed to disable features');
     	}
-
-    	return false;
     }
 
     private function _cancelReseller(Server_Account $a)
@@ -622,8 +604,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     	} else {
     		throw new Server_Exception('Failed to delete reseller');
     	}
-
-    	return false;
     }
 
     private function _changeResellerPassword(Server_Account $a)
@@ -644,8 +624,6 @@ class Server_Manager_Virtualmin extends Server_Manager
     	} else {
     		throw new Server_Exception('Failed to change reseller\'s password');
     	}
-
-    	return false;
     }
 
     private function _modifyReseller(Server_Account $a)
@@ -701,7 +679,5 @@ class Server_Manager_Virtualmin extends Server_Manager
     	} else {
     		throw new Server_Exception('Failed to create reseller\'s account');
     	}
-
-    	return false;
     }
 }

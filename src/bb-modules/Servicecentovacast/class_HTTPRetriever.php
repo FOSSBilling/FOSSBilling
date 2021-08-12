@@ -13,7 +13,7 @@ namespace Box\Mod\Servicecentovacast;
  * requests are supported.
  *
  * This can be used in place of something like CURL or WGET for HTTP requests.
- * Native SSL (HTTPS) requests are also supported if the OpenSSL extension is 
+ * Native SSL (HTTPS) requests are also supported if the OpenSSL extension is 0
  * installed under PHP v4.3.0 or greater.
  *
  * If native SSL support is not available, the class will also check for the
@@ -819,7 +819,6 @@ class HTTPRetriever {
 							$this->error = "Exceeded maximum transfer time of ".$this->max_time." seconds";
 							$this->progress(HRP_ERROR,$this->error);
 							return false;
-							break;
 						}
 					}
 
