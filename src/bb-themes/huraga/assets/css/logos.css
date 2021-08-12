@@ -1,11 +1,3 @@
-.logo-PayGol{
-     background: transparent url("../img/gateway_logos/PayGol.png") no-repeat scroll 0% 0%;
-     background-size: contain;
-     width:80px;
-     height: 28px;
-     border: 0;
-     margin: 10px;
-}
 .logo-AliPay{
    background: transparent url("../img/gateway_logos/alipay.png") no-repeat scroll 0% 0%;
     background-size: contain;
