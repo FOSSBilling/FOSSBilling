@@ -13,7 +13,7 @@
 
 class Box_Curl {
 
-    protected $_useragent = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1';
+    protected $_useragent = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0';
     protected $_url;
     protected $_followlocation;
     protected $_timeout;
@@ -21,7 +21,7 @@ class Box_Curl {
     protected $_cookieFileLocation = './cookie.txt';
     protected $_post;
     protected $_postFields;
-    protected $_referer = "http://www.google.com";
+    protected $_referer = "https://www.google.com";
     protected $_session;
     protected $_webpage;
     protected $_includeHeader;
