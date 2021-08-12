@@ -390,12 +390,6 @@ ZW=Zimbabwe
             </form>
         </div>
 
-        <div id="tab-cache" class="tab_content nopadding">
-
-            <a href="{{ 'api/admin/system/clear_cache'|link }}" class="api-link" data-api-msg="{% trans 'Cache folder cleared' %}">{% trans 'Invalidate cache' %}</a>
-
-        </div>
-
         <div id="tab-ftp" class="tab_content nopadding">
             <div class="help">
                 <h3>{% trans 'FTP layer for BoxBilling' %}</h3>
@@ -447,6 +441,22 @@ ZW=Zimbabwe
                 <input type="submit" value="{% trans 'Update settings' %}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
+        </div>
+        
+        <div id="tab-cache" class="tab_content nopadding">
+            <div class="help">
+                <h3>{% trans 'Cache control' %}</h3>
+            </div>
+            <form method="post" action="{{ 'api/admin/system/clear_cache'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Cache folder cleared' %}">
+            <fieldset>
+            <div class="rowElem noborder">
+                        <label>{% trans 'Clear' %}</label>
+                        <div class="formRight">
+                            <input type="submit" value="{% trans 'Invalidate cache' %}" class="greyishBtn submitForm" />
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+            </fieldset>
         </div>
 
     </div>
