@@ -146,6 +146,6 @@ BoxBilling is open source software, and is released under the Apache v2.0 licens
 
 ## Links
 
-* [Website](https:/boxbilling.org)
+* [Website](https://www.boxbilling.org/)
 * [Documentation](https://docs.boxbilling.com/)
 * [Slack](https://boxbilling.slack.com/)
