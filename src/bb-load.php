@@ -257,10 +257,6 @@ if(file_exists($configPath) && 0 !== filesize($configPath) && file_exists(BB_PAT
 
 $config = require_once $configPath;
 require BB_PATH_VENDOR . '/autoload.php';
-include_once BB_PATH_LIBRARY .'/Security/CSRF-Protector-PHP/libs/csrf/csrfprotector.php';
-
-// Initialize CSRFProtector library
-csrfProtector::init();
 
 date_default_timezone_set($config['timezone']);
 
@@ -276,6 +272,11 @@ if($config['sef_urls']) {
 } else {
     define('BB_URL_API',    $config['url'] . 'index.php?_url=/api/');
 }
+
+include_once BB_PATH_LIBRARY .'/Security/CSRF-Protector-PHP/libs/csrf/csrfprotector.php';
+
+// Initialize CSRFProtector library
+csrfProtector::init();
 
 if($config['debug']) {
     error_reporting(E_ALL);
