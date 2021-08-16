@@ -10,10 +10,10 @@ currently being supported with security updates.
 | 4.22.x   | :white_check_mark: |
 
 ## Reporting Vulnerabilities 
-To report a vulnerability, it's please make a submission on [huntr.dev](https://huntr.dev/bounties/disclose). Enter https://github.com/boxbilling/boxbilling as the repository and then go from there. Their website should provide you a good idea for the requirements of a good vulnerability report.
-It's important to make the submission there as it keeps the vulnerability private which helps ensure it can't be exploited while a patch is in the works. If you have a suggestion that is related to security, then [creating an issue](https://github.com/boxbilling/boxbilling/issues/new/choose) on github is a suitable place.
+To report a vulnerability, please make a submission on [huntr.dev](https://huntr.dev/bounties/disclose). Enter https://github.com/boxbilling/boxbilling as the repository and then go from there. Their website should give you a idea good on how to make a good vulnerability report.
+It's important to make the submission there as it keeps the vulnerability private which helps ensure it can't be exploited while a patch is in the works. If you have a suggestion that is related to security, then [creating an issue](https://github.com/boxbilling/boxbilling/issues/new/choose) on GitHub is a suitable place.
 
-Usually a good report should include where the file is, how the vulnerability could be explointed, the potential ramifications of the vulnerability, a proof of concept exploit, and if possible insight into a solution. A proper vulnerability report is awarded with a cash reward, if you provide a patch there is usually a reward with that as well.  
+Usually a good report should include which file(s) has the exploit, how the vulnerability could be exploited, the potential ramifications of the vulnerability, a proof of concept exploit, and if possible insight into a solution. A proper vulnerability report is awarded with a cash reward, if you provide a patch there is usually a reward with that as well.  
 
 ## Not a Vulnerability?
 **Reporting bugs**
