@@ -13,7 +13,7 @@ return array(
 		"POST" => 0),
 	"errorRedirectionPage" => "",
 	"customErrorMessage" => "",
-	"jsUrl" => BB_URL .'/bb-vendor/owasp/csrf-protector-php/js/csrfprotector.js',
+	"jsUrl" => BB_URL .'/bb-library/Security/CSRF-Protector-PHP/js/csrfprotector.js',
 	"tokenLength" => 10,
 	"cookieConfig" => array(
 		"path" => '',
