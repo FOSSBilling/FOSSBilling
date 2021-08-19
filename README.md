@@ -144,6 +144,8 @@ Don't hesitate to create an [issue](https://github.com/boxbilling/boxbilling/iss
 
 BoxBilling is open source software, and is released under the Apache v2.0 license. See [LICENSE](https://github.com/boxbilling/boxbilling/blob/master/LICENSE) for the full license terms.
 
+This product includes GeoLite2 data created by MaxMind, available from [https://www.maxmind.com](https://www.maxmind.com).
+
 ## Links
 
 * [Website](https://www.boxbilling.org/)
