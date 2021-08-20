@@ -285,7 +285,7 @@ class Admin extends \Api_Abstract
         
         foreach ($stmt1->fetchAll() as $data) {
             $stmt = $db->prepare($sql2);
-            $stmt->bindValue('handle', md5(uniqid($microtime, true)), \PDO::PARAM_STR);
+            $stmt->bindValue('handle', md5(random_bytes(23)), \PDO::PARAM_STR);
             $stmt->bindValue('id', $data['id'], \PDO::PARAM_INT);
             $stmt->bindValue('timeout', $microtime);
             if ($stmt->execute()) {

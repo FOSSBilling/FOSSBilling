@@ -631,7 +631,7 @@ class Service implements InjectionAwareInterface
 
                 $new = $this->di['db']->dispense('Invoice');
                 $new->client_id = $invoice->client_id;
-                $new->hash = md5(uniqid());
+                $new->hash = md5(random_bytes(13));
                 $new->status = \Model_Invoice::STATUS_REFUNDED;
                 $new->currency = $invoice->currency;
                 $new->approved = true;

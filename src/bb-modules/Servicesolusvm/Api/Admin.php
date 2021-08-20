@@ -511,7 +511,7 @@ class Admin extends \Api_Abstract
             if(!in_array($client['id'], $selected)) {
                 continue;
             }
-            $password = substr(md5(uniqid()), 0, 8);
+            $password = substr(md5(random_bytes(13)), 0, 8);
             $cdata = array(
                 'aid'           => $client['id'],
                 'email'         => $client['email'],
