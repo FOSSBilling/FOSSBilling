@@ -196,13 +196,7 @@ function twig_stylesheet_tag($path, $media = 'screen')
 
 function twig_gravatar_filter($email, $size = null)
 {
-	$protocol = BB_SSL ? 'https' : 'http';
-	$link     = $protocol . '://gravatar.com/avatar/' . md5($email);
-	if ($size) {
-		$link .= '/?s=' . $size;
-	}
-
-	return $link;
+	return Box_Tools::get_gravatar($email, $size);
 }
 
 function twig_autolink_filter($text)
