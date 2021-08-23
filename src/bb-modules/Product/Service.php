@@ -541,7 +541,7 @@ class Service implements InjectionAwareInterface
         return array($sql, $params);
     }
 
-    public function createPromo($code, $type, $value, $products = array(), $periods = array(), $clientGroups = array(), $data)
+    public function createPromo($code, $type, $value, $products, $periods, $clientGroups, $data)
     {
         if ($this->di['db']->findOne('Promo', 'code = :code', array(':code' => $code))) {
             throw new \Box_Exception('This promo code already exists.');

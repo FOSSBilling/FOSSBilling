@@ -21,7 +21,7 @@ class Box_UrlHelper {
     /**
      * @param string $requestUri
      */
-    public function __construct($httpMethod, $url, $conditions=array(), $requestUri) {
+    public function __construct($httpMethod, $url, $conditions, $requestUri) {
 
         $requestMethod = $_SERVER['REQUEST_METHOD'];
         $this->method = $httpMethod;
