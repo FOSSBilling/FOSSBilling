@@ -196,7 +196,7 @@ function twig_stylesheet_tag($path, $media = 'screen')
 
 function twig_gravatar_filter($email, $size = 20)
 {
-	return Box_Tools::get_gravatar($email, $size);
+	return (new Box_Tools)->get_gravatar($email, $size);
 }
 
 function twig_autolink_filter($text)
