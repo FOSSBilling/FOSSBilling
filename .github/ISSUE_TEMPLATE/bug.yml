@@ -34,10 +34,10 @@ body:
       description: We only support between version 7.2 and 7.4, any other version will cause issues and not work.
       multiple: false
       options:
-        - 7.2x
-        - 7.3x
-        - 7.4x
         - Something unsupported
+        - PHP 7.4
+        - PHP 8.0
+        - PHP 8.1
     validations:
       required: true
   - type: textarea

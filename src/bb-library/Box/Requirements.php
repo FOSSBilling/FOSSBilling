@@ -41,7 +41,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
                     'openssl',
                  ),
                 'version'       =>  PHP_VERSION,
-                'min_version'   =>  '7.2',
+                'min_version'   =>  '7.4',
                 'safe_mode'     =>  ini_get('safe_mode'),
             ),
             'writable_folders' => array(
