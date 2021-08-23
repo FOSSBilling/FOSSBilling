@@ -2776,7 +2776,7 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 
 		$this->__info['tainted'] = TRUE;
 		$this->__info['changed'] = TRUE;
-		array_push( $this->__info['changelist'], $property );
+		/**array_push( $this->__info['changelist'], $property );**/
 
 		if ( array_key_exists( $fieldLink, $this->properties ) && !( $value instanceof OODBBean ) ) {
 			if ( is_null( $value ) || $value === FALSE ) {
@@ -11079,10 +11079,10 @@ class SimpleModel
 	 *
 	 * @return void
 	 */
-	public function __set( $prop, $value )
+	/**public function __set( $prop, $value )
 	{
 		$this->bean->$prop = $value;
-	}
+	}**/
 
 	/**
 	 * Isset implementation.
