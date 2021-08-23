@@ -194,7 +194,7 @@ function twig_stylesheet_tag($path, $media = 'screen')
     return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, Box_Version::VERSION, $media);
 }
 
-function twig_gravatar_filter($email, $size = null)
+function twig_gravatar_filter($email, $size = 20)
 {
 	return Box_Tools::get_gravatar($email, $size);
 }
