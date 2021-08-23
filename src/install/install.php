@@ -37,6 +37,7 @@ define('BB_PATH_SQL_DATA', BB_PATH_ROOT . '/install/sql/content.sql');
 define('BB_PATH_INSTALL', BB_PATH_ROOT . '/install');
 define('BB_PATH_CONFIG', BB_PATH_ROOT . '/bb-config.php');
 define('BB_PATH_CRON', BB_PATH_ROOT . '/bb-cron.php');
+define('BB_PATH_LANGS', BB_PATH_ROOT . '/bb-locale');
 
 // Ensure library/ is on include_path
 set_include_path(implode(PATH_SEPARATOR, [
