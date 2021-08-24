@@ -55,9 +55,13 @@ class Box_Tools
         }
     }
 
-    public function file_get_contents($filename, $use_include_path = false, $context = null, $offset = -1)
+    public function file_get_contents($filename, $use_include_path = false, $context = null, $offset = -1, $useoffset = true)
     {
-        return file_get_contents($filename, $use_include_path, $context, $offset);
+        if($useoffset){
+            return file_get_contents($filename, $use_include_path, $context, $offset);
+        } else {
+            return file_get_contents($filename, $use_include_path, $context);
+        }
     }
 
     public function get_url($url, $timeout = 10)
