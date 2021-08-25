@@ -121,7 +121,7 @@ class Service implements InjectionAwareInterface
             $params[':search2'] = $search;
         }
 
-        if (count ($where) > 0){
+        if (!empty($where)){
             $whereStatment = implode(' and ', $where);
             $sql .= ' WHERE '.$whereStatment;
         }

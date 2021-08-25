@@ -160,9 +160,10 @@ class Box_Mail
         $mail->Host         = $host; 
         $mail->SMTPDebug     = 0; 
         
-        if($port)
+        if($port) {
             $mail->Port     = (int)$port;
-        
+        }
+
         if($user) {
             $mail->SMTPAuth     = true;
             $mail->SMTPSecure     = $security;

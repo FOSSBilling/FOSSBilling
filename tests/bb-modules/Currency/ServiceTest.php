@@ -229,7 +229,6 @@ class ServiceTest extends \BBTestCase
 
         $di['db'] = $db;
         $service->setDi($di);
-        $code   = $code;
         $result = $service->getRateByCode($code);
         $this->assertEquals($expected, $result);
 

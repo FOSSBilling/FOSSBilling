@@ -22,7 +22,7 @@ echo sprintf("Connecting to database %s@%s/%s", $user, $host, $dbname) . PHP_EOL
 
 $iter = 30;
 $connected = false;
-while ($connected == false && $iter > 0) {
+while (!$connected && $iter > 0) {
 
     try {
         $dbh = new PDO($type . ':host=' . $host, $user, $password,        array(

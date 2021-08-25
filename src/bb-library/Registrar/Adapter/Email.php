@@ -708,11 +708,8 @@ class Whois2 {
                 return false;
             }
         }else {
-            if(preg_match("/".$not_found_string."/i",$whois_string)) {
-                return true;
-            }else {
-                return false;
-            }
+            return preg_match("/".$not_found_string."/i",$whois_string);
+        }
         }
     }
 }

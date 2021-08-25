@@ -179,8 +179,7 @@ class Box_Tools
      */
     public function getReferer($default = '/')
     {
-        $r = empty($_SERVER['HTTP_REFERER']) ? $default : $_SERVER['HTTP_REFERER'];
-        return $r;
+        return empty($_SERVER['HTTP_REFERER']) ? $default : $_SERVER['HTTP_REFERER'];
     }
 
     /**
@@ -242,9 +241,7 @@ class Box_Tools
     	}
 
     	shuffle($passOrder);
-    	$password = implode('', $passOrder);
-
-        return $password;
+        return implode('', $passOrder);
     }
 
     public function autoLinkText($text)

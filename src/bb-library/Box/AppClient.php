@@ -55,7 +55,9 @@ class Box_AppClient extends Box_App
         try {
             return $this->render($tpl, array('post'=>$_POST), $ext);
         } catch(Exception $e) {
-            if(BB_DEBUG) error_log($e);
+            if(BB_DEBUG){
+                error_log($e);
+            }
         }
       // throw new \Box_Exception('Page :url not found', array(':url'=>$page), 404);
       $e = new \Box_Exception('Page :url not found', array(':url'=>$this->url), 404);

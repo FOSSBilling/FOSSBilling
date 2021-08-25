@@ -74,8 +74,9 @@ class Box_Curl {
 
     public function useAuth($use) {
         $this->authentication = 0;
-        if ($use == true)
+        if ($use){
             $this->authentication = 1;
+        }
     }
 
     public function setName($name) {

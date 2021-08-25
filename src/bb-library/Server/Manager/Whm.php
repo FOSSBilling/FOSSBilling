@@ -1072,7 +1072,6 @@ class xmlapi {
 
 		// Set the $auth string
 		
-		$authstr;
 		if ( $this->auth_type == 'hash' ) {
 			$authstr = 'Authorization: WHM ' . $this->user . ':' . $this->auth . "\r\n";
 		} elseif ($this->auth_type == 'pass' ) {
@@ -1087,7 +1086,6 @@ class xmlapi {
 
 		// Perform the query (or pass the info to the functions that actually do perform the query)
 		
-		$response;
 		if ( $this->http_client == 'curl' ) {
 			$response = $this->curl_query($url, $args, $authstr);
 		} elseif ( $this->http_client == 'fopen' ) {
@@ -1114,12 +1112,12 @@ class xmlapi {
 		// The only time a response should contain <html> is in the case of authentication error
 		// cPanel 11.25 fixes this issue, but if <html> is in the response, we'll error out.
 		
-		if (stristr($response, '<html>') == true) {
-			if (stristr($response, 'Login Attempt Failed') == true) {
+		if (stristr($response, '<html>')) {
+			if (stristr($response, 'Login Attempt Failed')) {
 				error_log("Login Attempt Failed");
 				return;
 			}
-			if (stristr($response, 'action="/login/"') == true) {
+			if (stristr($response, 'action="/login/"')) {
 				error_log("Authentication Error");
 				return;
 			}
@@ -1180,7 +1178,7 @@ class xmlapi {
         curl_setopt($curl, CURLOPT_POSTFIELDS, "");
 
 		$result = curl_exec($curl);
-		if ($result == false) {
+		if (!$result) {
 			throw new Exception("curl_exec threw error \"" . curl_error($curl) . "\" for " . $url . "?" . $postdata );
 		}
 		curl_close($curl);
