@@ -92,7 +92,7 @@ class Box_Mod
             'homepage_url'  => 'https://github.com/boxbilling/',
             'author'        => 'BoxBilling',
             'author_url'    => 'https://extensions.boxbilling.com/',
-            'license'       => 'GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html',
+            'license'       => 'N/A',
             'version'       => '1.0',
             'icon_url'      => NULL,
             'download_url'  => NULL,
