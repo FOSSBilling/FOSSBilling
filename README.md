@@ -73,7 +73,7 @@ Your web directory's structure should now look like this:
     - bb-module
     - **...**
 
-Next, you will also need to create a new empty MySQL database using the command line, or from your server control panel. Make a note of the database name, database user, and pasword, you will need them in the next step. 
+Next, you will also need to create a new empty MySQL database using the command line, or from your server control panel. Make a note of the database name, database user, and password, you will need them in the next step. 
 
 Now, you have everything ready to start the installation of BoxBilling, navigate to your domain using a web browser, and simply follow the on-screen instructions to complete the installation using the web installer. Ta-da, you've done it! 🎉
 
@@ -89,7 +89,7 @@ Your web directory's structure should now look like this:
     - bb-module
     - **...**
 
-Next, you will also need to create a new empty MySQL database using the command line, or from your server control panel. Make a note of the database name, database user, and pasword, you will need them later. 
+Next, you will also need to create a new empty MySQL database using the command line, or from your server control panel. Make a note of the database name, database user, and password, you will need them later. 
 
 We do not store the Composer packages in our GitHub repository, we use [Composer](https://getcomposer.org/) for that. Composer is a dependency manager for PHP, just like the NPM of Node.js, or PIP of Python.
 
