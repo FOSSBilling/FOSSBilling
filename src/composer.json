@@ -28,7 +28,8 @@
         "guzzlehttp/guzzle": "*",
         "laminas/laminas-httphandlerrunner": "^2.0.1",
         "docnet/tfpdf": "^2.2",
-        "infinityfree/mofh-client": "^0.7.0"     
+        "infinityfree/mofh-client": "^0.7.0",
+        "nelexa/zip": "^4.0"     
         
     },
     "suggest": {
