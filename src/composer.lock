@@ -1340,11 +1340,11 @@
         },
         {
             "name": "symfony/finder",
-            "version": "v5.3.4",
+            "version": "v6.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/finder.git",
-                "reference": "17f50e06018baec41551a71a15731287dbaab186"
+                "reference": "e7dd3128bc04115eeb4466905a836ee534c9896f"
             },
             "dist": {
                 "type": "zip",
