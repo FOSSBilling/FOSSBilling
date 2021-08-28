@@ -2776,10 +2776,8 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 
 		$this->__info['tainted'] = TRUE;
 		$this->__info['changed'] = TRUE;
-
         /* BoxBilling hack */
 		/*array_push( $this->__info['changelist'], $property );*/
-
 
 		if ( array_key_exists( $fieldLink, $this->properties ) && !( $value instanceof OODBBean ) ) {
 			if ( is_null( $value ) || $value === FALSE ) {
@@ -7987,13 +7985,11 @@ abstract class Repository
 	 */
 	public function usePartialBeans( $yesNoBeans )
 	{
-
         $yesNoBeans = false;
-			$oldValue = $this->partialBeans;
+		$oldValue = $this->partialBeans;
 		$this->partialBeans = $yesNoBeans;
 		return $oldValue;
 	}
-
 
 	/**
 	 * Fully processes a bean and updates the associated records in the database.
@@ -11085,10 +11081,10 @@ class SimpleModel
 	 *
 	 * @return void
 	 */
-	/**public function __set( $prop, $value )
+	public function __set( $prop, $value )
 	{
 		$this->bean->$prop = $value;
-	}**/
+	}
 
 	/**
 	 * Isset implementation.
@@ -11154,12 +11150,10 @@ use RedBeanPHP\Observable as Observable;
 
 /**
  * RedBean Model Helper.
-
  *
  * Connects beans to models.
  * This is the core of so-called FUSE.
  *
-
  * @file    RedBeanPHP/ModelHelper.php
  * @author  Gabor de Mooij and the RedBeanPHP Community
  * @license BSD/GPLv2
@@ -11192,7 +11186,6 @@ class SimpleModelHelper implements Observer
 	 * CRUD events. If a CRUD event occurs it will send a signal to the model
 	 * that belongs to the CRUD bean and this model will take over control from
 	 * there. This method will attach the following event listeners to the observable:
-
 	 *
 	 * - 'update'       (gets called by R::store, before the records gets inserted / updated)
 	 * - 'after_update' (gets called by R::store, after the records have been inserted / updated)
@@ -11201,7 +11194,6 @@ class SimpleModelHelper implements Observer
 	 * - 'after_delete' (gets called by R::trash, after deletion)
 	 * - 'dispense'     (gets called by R::dispense)
 	 *
-
 	 * For every event type, this method will register this helper as a listener.
 	 * The observable will notify the listener (this object) with the event ID and the
 	 * affected bean. This helper will then process the event (onEvent) by invoking
@@ -11403,14 +11395,12 @@ class TagManager
 	 * You may also pass an array instead of a string.
 	 *
 	 * Usage:
-
 	 *
 	 * <code>
 	 * R::tag( $meal, "TexMex,Mexican" );
 	 * $tags = R::tag( $meal );
 	 * </code>
 	 *
-
 	 * The first line in the example above will tag the $meal
 	 * as 'TexMex' and 'Mexican Cuisine'. The second line will
 	 * retrieve all tags attached to the meal object.
@@ -11873,14 +11863,12 @@ class Facade
 
 	/**
 	 * @var Tree
-
 	 */
 	private static $tree;
 
 	/**
 	 * @var Logger
 	 */
-
 	private static $logger;
 
 	/**
@@ -12407,7 +12395,6 @@ class Facade
 	 * $post = R::load( 'post', $id );
 	 * R::trash( $post );
 	 * </code>
-
 	 *
 	 * In the example above, we create a new bean of type 'post'.
 	 * We then set the title of the bean to 'my post' and we
@@ -12423,7 +12410,6 @@ class Facade
 	 * @param OODBBean|SimpleModel $bean             bean to store
 	 * @param boolean              $unfreezeIfNeeded retries in fluid mode in hybrid mode
 	 *
-
 	 * @return integer|string
 	 */
 	public static function store( $bean, $unfreezeIfNeeded = FALSE )
@@ -12607,7 +12593,6 @@ class Facade
 	 * and THEN trash it.
 	 *
 	 * Usage:
-
 	 *
 	 * <code>
 	 * $post = R::dispense('post');
@@ -12617,7 +12602,6 @@ class Facade
 	 * R::trash( $post );
 	 * </code>
 	 *
-
 	 * In the example above, we create a new bean of type 'post'.
 	 * We then set the title of the bean to 'my post' and we
 	 * store the bean. The store() method will return the primary
@@ -12868,7 +12852,6 @@ class Facade
 	 * Returns a hashmap with bean arrays keyed by type using an SQL
 	 * query as its resource. Given an SQL query like 'SELECT movie.*, review.* FROM movie... JOIN review'
 	 * this method will return movie and review beans.
-
 	 *
 	 * Example:
 	 *
@@ -12977,7 +12960,6 @@ class Facade
 	 * Convenience function to execute Queries directly.
 	 * Executes SQL.
 	 *
-
 	 * @param string $sql       SQL query to execute
 	 * @param array  $bindings  a list of values to be bound to query parameters
 	 *
@@ -13197,7 +13179,6 @@ class Facade
 	 * @param    boolean        $parents whether you want parent beans to be exported
 	 * @param    array          $filters whitelist of types
 	 * @param    boolean        $meta      export meta data as well
-
 	 *
 	 * @return array
 	 */
@@ -13211,7 +13192,6 @@ class Facade
 	 * This will determine the case style for the keys of exported beans (see exportAll).
 	 * The following options are accepted:
 	 *
-
 	 * * 'default' RedBeanPHP by default enforces Snake Case (i.e. book_id is_valid )
 	 * * 'camel'   Camel Case   (i.e. bookId isValid   )
 	 * * 'dolphin' Dolphin Case (i.e. bookID isValid   ) Like CamelCase but ID is written all uppercase
@@ -13470,7 +13450,6 @@ class Facade
 	 *
 	 * Tag list can be either an array with tag names or a comma separated list
 	 * of tag names.
-
 	 *
 	 * Usage:
 	 *
@@ -13487,7 +13466,6 @@ class Facade
 	 * tagged as 'horror' or 'gothic', order them by title and limit
 	 * the number of movies to be returned to 10.
 	 *
-
 	 * @param string       $beanType type of bean you are looking for
 	 * @param array|string $tagList  list of tags to match
 	 * @param string       $sql      additional SQL (use only for pagination)
@@ -13504,7 +13482,6 @@ class Facade
 	 * Returns all beans that have been tagged with ALL of the tags given.
 	 * This method works the same as R::tagged() except that this method only returns
 	 * beans that have been tagged with all the specified labels.
-
 	 *
 	 * Tag list can be either an array with tag names or a comma separated list
 	 * of tag names.
@@ -13520,7 +13497,6 @@ class Facade
 	 * );
 	 * </code>
 	 *
-
 	 * The example above returns at most 4 movies (due to the LIMIT clause in the SQL
 	 * Query Snippet) that have been tagged as BOTH 'short' AND 'gothic'.
 	 *
@@ -14669,9 +14645,7 @@ class Facade
 	 */
 	public static function usePartialBeans( $yesNoBeans )
 	{
-
         $yesNoBeans = false;
-
 		return self::$redbean->getCurrentRepository()->usePartialBeans( $yesNoBeans );
 	}
 
