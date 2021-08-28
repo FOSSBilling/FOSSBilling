@@ -7989,6 +7989,10 @@ abstract class Repository
 	{
 
         $yesNoBeans = false;
+			$oldValue = $this->partialBeans;
+		$this->partialBeans = $yesNoBeans;
+		return $oldValue;
+	}
 
 
 	/**
