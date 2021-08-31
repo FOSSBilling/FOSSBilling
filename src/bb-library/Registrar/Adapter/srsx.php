@@ -12,7 +12,7 @@
  * obtain it through the world-wide-web, please send an email
  * to license@boxbilling.com so we can send you a copy immediately.
  *
- * @copyright Copyright (c) 2010-2020 BoxBilling (http://www.boxbilling.com)
+ * @copyright Copyright (c) 2010-2020 BoxBilling (https://www.boxbilling.org)
  * @license   http://www.boxbilling.com/LICENSE.txt
  * @version   $Id$
  * Created by bayamsoftware.com & @timothygwebb
