@@ -130,7 +130,7 @@ class Service implements InjectionAwareInterface
             $params['search'] = $search;
         }
         
-        $sql .= ' ORDER BY p.id DESC';
+        $sql .= ' GROUP BY p.id ORDER BY p.id DESC';
         return array($sql, $params);
     }
 
