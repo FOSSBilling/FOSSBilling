@@ -504,6 +504,19 @@ class Service implements InjectionAwareInterface
         foreach ($this->getCartProducts($cart) as $p) {
             $item = $this->cartProductToApiArray($p);
 
+            /*
+             * Convert the domain name to lowercase letters.
+             * Using a capital letter in a domain name still points to the same name, so this isn't going to break anything
+             * It will, however, avoid instances like this when a domain name is entered with a capital letter:
+             * https://github.com/boxbilling/boxbilling/discussions/1022#discussioncomment-1311819
+             */
+            $item['register_sld'] = strtolower($item['register_sld']);
+            $item['transfer_sld'] = strtolower($item['transfer_sld']);
+            $item['sld'] = strtolower($item['sld']);
+            $item['domain']['owndomain_sld'] = strtolower($item['domain']['owndomain_sld']);
+            $item['domain']['register_sld'] = strtolower($item['domain']['register_sld']);
+            $item['domain']['transfer_sld'] = strtolower($item['domain']['transfer_sld']);
+
             $order             = $this->di['db']->dispense('ClientOrder');
             $order->client_id  = $client->id;
             $order->promo_id   = $cart->promo_id;
