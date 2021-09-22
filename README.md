@@ -151,4 +151,5 @@ This product includes GeoLite2 data created by MaxMind, available from [https://
 
 * [Website](https://www.boxbilling.org/)
 * [Documentation](https://docs.boxbilling.com/)
+* [Discord](https://discord.gg/xFfPmNTU7R)
 * [Slack](https://boxbilling.slack.com/)
