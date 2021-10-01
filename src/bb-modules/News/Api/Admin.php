@@ -75,6 +75,7 @@ class Admin extends \Api_Abstract
      * @param int $id - news item ID
      *
      * @optional string $title - news item title
+     * @optional string $description - news item description
      * @optional string $slug - news item slug
      * @optional string $content - news item content
      * @optional string $status - news item status
@@ -83,19 +84,24 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
+        $service = $this->getService();
         $required = array(
-            'id' => 'Post id not passed',
+            'id' => 'Post ID not passed',
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('Post', $data['id'], 'News item not found');
 
-        $model->content = $this->di['array_get']($data, 'content', $model->content);
-        $model->title   = $this->di['array_get']($data, 'title', $model->title);
-        $model->slug    = $this->di['array_get']($data, 'slug', $model->slug);
-        $model->image   = $this->di['array_get']($data, 'image', $model->image);
-        $model->section = $this->di['array_get']($data, 'section', $model->section);
-        $model->status  = $this->di['array_get']($data, 'status', $model->status);
+        $description = $this->di['array_get']($data, 'description', $model->description);
+        if (empty($description)) $description = $service->generateDescriptionFromContent($this->di['array_get']($data, 'content', $model->content));
+
+        $model->content     = $this->di['array_get']($data, 'content', $model->content);
+        $model->title       = $this->di['array_get']($data, 'title', $model->title);
+        $model->description = $description;
+        $model->slug        = $this->di['array_get']($data, 'slug', $model->slug);
+        $model->image       = $this->di['array_get']($data, 'image', $model->image);
+        $model->section     = $this->di['array_get']($data, 'section', $model->section);
+        $model->status      = $this->di['array_get']($data, 'status', $model->status);
 
         $publish_at = $this->di['array_get']($data, 'publish_at', 0);
         if ($publish_at) {
@@ -130,7 +136,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Creat new news item.
+     * Create new news item.
      *
      * @param string $title - news item title
      *
@@ -141,19 +147,21 @@ class Admin extends \Api_Abstract
      */
     public function create($data)
     {
+        $service = $this->getService();
         $required = array(
             'title' => 'Post title not passed',
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model             = $this->di['db']->dispense('Post');
-        $model->admin_id   = $this->getIdentity()->id;
-        $model->title      = $data['title'];
-        $model->slug       = $this->di['tools']->slug($data['title']);
-        $model->status     = $this->di['array_get']($data, 'status', NULL);
-        $model->content    = $this->di['array_get']($data, 'content', NULL);
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
+        $model              = $this->di['db']->dispense('Post');
+        $model->admin_id    = $this->getIdentity()->id;
+        $model->title       = $data['title'];
+        $model->description = null;
+        $model->slug        = $this->di['tools']->slug($data['title']);
+        $model->status      = $this->di['array_get']($data, 'status', NULL);
+        $model->content     = $this->di['array_get']($data, 'content', NULL);
+        $model->created_at  = date('Y-m-d H:i:s');
+        $model->updated_at  = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Created news item #%s', $model->id);

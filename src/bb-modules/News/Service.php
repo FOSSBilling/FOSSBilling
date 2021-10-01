@@ -35,6 +35,22 @@ class Service
         return $this->di['db']->findOne('Post', 'slug = :slug AND status = "active"', array('slug'=>$slug));
     }
 
+    /**
+     * Generate a placeholder meta description from given string.
+     *
+     * @param string $content - string to generate description from
+     *
+     * @return string
+     */
+    public function generateDescriptionFromContent($content)
+    {
+        $desc = utf8_encode($content);
+        $desc = strip_tags($desc);
+        $desc = str_replace(array("\n", "\r", "\t"), ' ', $desc);
+        $desc = substr($desc, 0, 125);
+        return $desc;
+    }
+
     public function getSearchQuery($data)
     {
         $sql='SELECT *
@@ -71,6 +87,7 @@ class Service
         $data = array(
             'id'           => $row->id,
             'title'        => $row->title,
+            'description'  => $row->description,
             'content'      => $row->content,
             'slug'         => $row->slug,
             'image'        => $row->image,

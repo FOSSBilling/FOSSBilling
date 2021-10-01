@@ -1,6 +1,8 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
 
-{% block meta_title %}{{post.title}}{% endblock %}
+{% block meta_title %}{{ post.title }}{% endblock %}
+{% block meta_description %}{{ post.description }}{% endblock %}
+
 {% block breadcrumb %}
 <li><a href="{{ 'news' | link}}">{% trans 'Blog' %}</a><span class="divider">/</span></li>
 <li class="active">{{post.title}}</li>
@@ -10,6 +12,7 @@
 
     <meta property="og:title" content="{{ post.title }}" />
     <meta property="og:type" content="article" />
+    <meta property="og:description" content="{{ post.description }}" />
     <meta property="og:url" content="{{ guest.system_current_url }}" />
     <meta property="og:image" content="{{post.image}}" />
     <meta property="article:author" content="{{ post.author.name }}" />

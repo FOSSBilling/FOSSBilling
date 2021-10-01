@@ -1,13 +1,13 @@
 {% extends "layout_default.phtml" %}
 {% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{{ post.title}}{% endblock %}
+{% block meta_title %}{{post.title}}{% endblock %}
 {% set active_menu = 'support' %}
 
 {% block breadcrumbs %}
 <ul>
     <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
     <li><a href="{{ 'news'|alink }}">{% trans 'News' %}</a></li>
-    <li class="lastB">{{ post.title}}</li>
+    <li class="lastB">{{post.title}}</li>
 </ul>
 {% endblock %}
 
@@ -15,7 +15,7 @@
 <div class="widget">
     
     <div class="head">
-        <h5>{{ post.title}}</h5>
+        <h5>{{post.title}}</h5>
     </div>
     
     <form method="post" action="{{ 'api/admin/news/update'|link }}" class="mainForm save api-form" data-api-msg="{% trans 'Post updated' %}">
@@ -32,7 +32,7 @@
 <div class="widget">
     
     <div class="head">
-        <h5>{{ post.title}}</h5>
+        <h5>{{post.title}}</h5>
     </div>
     
     <form method="post" action="{{ 'api/admin/news/update'|link }}" class="mainForm save api-form" data-api-msg="{% trans 'Post updated' %}">
@@ -45,6 +45,14 @@
                 <div class="fix"></div>
             </div>
             
+            <div class="rowElem noborder">
+                <label>{% trans 'Description' %}</label>
+                <div class="formRight">
+                    <textarea name="description" rows="5" cols="40" placeholder="{{ post.description }}">{{ post.description }}</textarea>
+                </div>
+                <div class="fix"></div>
+            </div>
+
             <div class="rowElem">
                 <label>{% trans 'Slug' %}</label>
                 <div class="formRight">
