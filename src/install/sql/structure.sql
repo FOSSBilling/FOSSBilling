@@ -775,6 +775,7 @@ CREATE TABLE `post` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `admin_id` bigint(20) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
   `content` text,
   `slug` varchar(255) DEFAULT NULL,
   `status` varchar(30) DEFAULT 'draft' COMMENT 'active, draft',
