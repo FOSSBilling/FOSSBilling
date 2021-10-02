@@ -1,11 +1,13 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
 
 {% block meta_title %}{{post.title}}{% endblock %}
+{% block meta_description %}{{ post.description }}{% endblock %}
 
 {% block opengraph %}
 
     <meta property="og:title" content="{{ post.title }}" />
     <meta property="og:type" content="article" />
+	<meta property="og:description" content="{{ post.description }}" />
     <meta property="og:url" content="{{ guest.system_current_url }}" />
     <meta property="og:image" content="{{post.image}}" />
     <meta property="article:author" content="{{ post.author.name }}" />
@@ -43,11 +45,9 @@
 		
 		<!-- Post Content -->
 		<p>
-			{{ post.content|bbmd }}
+			{{ post.content | bbmd }}
 			{# if post.tags %}Tags: {{ post.tags|join(', ') }}{% endif #}
 		</p>
-		<p class="lead">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ducimus, vero, obcaecati, aut, error quam sapiente nemo saepe quibusdam sit excepturi nam quia corporis eligendi eos magni recusandae laborum minus inventore?</p>
-		<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ut, tenetur natus doloremque laborum quos iste ipsum rerum obcaecati impedit odit illo dolorum ab tempora nihil dicta earum fugiat. Temporibus, voluptatibus.</p>
 		<hr>
 		
 

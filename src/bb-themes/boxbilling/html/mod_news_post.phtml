@@ -1,10 +1,12 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
 
 {% block meta_title %}{{post.title}}{% endblock %}
+{% block meta_description %}{{post.description}}{% endblock %}
 
 {% block opengraph %}
 
     <meta property="og:title" content="{{ post.title }}" />
+    <meta property="og:description" content="{{ post.description }}" />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="{{ guest.system_current_url }}" />
     <meta property="og:image" content="{{post.image}}" />
