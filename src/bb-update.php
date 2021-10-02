@@ -19,7 +19,7 @@ class BBPatch_24 extends BBPatchAbstract
     public function patch()
     {
         // Initializing meta description support for announcements
-        $q = "ALTER TABLE `post`  ADD `description` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NULL  AFTER `title`;"
+        $q = "ALTER TABLE `post` ADD `description` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NULL  AFTER `title`";
         $this->execSql($q);
 
         // Clearing leftovers from deleted payment adapters
