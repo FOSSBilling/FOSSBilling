@@ -58,7 +58,7 @@ Installing BoxBilling is pretty easy. Depending on how you plan to use it there 
 
 1. If you are using shared hosting, or are installing BoxBilling to use on a live production site, then you should probably download and install the **[latest stable version](#download-the-latest-stable-version)**.
 2. If you're planning to contribute to BoxBilling's development, and wanting to make pull requests in the future, please directly **[install from latest source code](#install-from-latest-source-code)** instead.
-3. If you are familiar with Docker, can also choose to install **[BoxBilling in a Docker container](#installing-with-docker)**.
+3. If you are familiar with Docker, you can also choose to install **[BoxBilling in a Docker container](#installing-with-docker)**.
 
 ### Download the latest stable version
 We make a new release of BoxBilling whenever we have some new cool stuff to introduce you to, or when we fix some bugs 🐞. If you're planning to use BoxBilling in a production environment then this will likely be the best option for you, as these releases should be more secure and stable.
