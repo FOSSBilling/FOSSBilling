@@ -299,7 +299,7 @@ function twig_bbmd_filter(Twig\Environment $env, $value)
  * Returns phpinfo() without it's stylings;
  * Solution from https://www.php.net/manual/en/function.phpinfo.php#87287
  */
-function twig_phpinfo($email, $size = 20)
+function twig_phpinfo()
 {
     ob_start();
     phpinfo();
