@@ -164,31 +164,15 @@ class Service implements InjectionAwareInterface
                 $options = [
                     'form_params' => $postData
                 ];
-                $response  = $di['guzzle_client']->request('POST', 'https://www.google.com/recaptcha/api/siteverify', $options);
+                $response  = $di['guzzle_client']->request('POST', 'https://google.com/recaptcha/api/siteverify', $options);
                 $body = $response->getBody()->getContents();
                 $content = json_decode($body, true);
 
                 if (!$content['success']) {
-                    throw new \Box_Exception('Captcha verification failed.');
+                    throw new \Box_Exception('reCAPTCHA verification failed.');
                 }
-
             } else {
-
-                $privatekey = $config['captcha_recaptcha_privatekey'];
-
-                if ($privatekey == null || $privatekey == '') {
-                    throw new \Box_Exception("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>https://www.google.com/recaptcha/admin/create</a>");
-                }
-
-                require_once BB_PATH_MODS . '/Spamchecker/recaptchalib.php';
-                $resp = recaptcha_check_answer($privatekey,
-                                               $data['ip'],
-                                               $data["recaptcha_challenge_field"],
-                                               $data["recaptcha_response_field"]);
-                if (!$resp->is_valid) {
-                    error_log($resp->error);
-                    throw new \Box_Exception('Captcha verification failed.');
-                }
+                throw new \Box_Exception('reCAPTCHA verification failed.');
             }
         }
         
@@ -211,7 +195,7 @@ class Service implements InjectionAwareInterface
     public function isInStopForumSpamDatabase(array $data)
     {
         $data['f'] = 'json';
-        $url = 'http://www.stopforumspam.com/api?'.http_build_query($data);
+        $url = 'https://www.stopforumspam.com/api?'.http_build_query($data);
         $file_contents = $this->di['tools']->file_get_contents($url);
 
         $json = json_decode($file_contents);
@@ -220,13 +204,13 @@ class Service implements InjectionAwareInterface
         }
 
         if(isset($json->username->appears) && $json->username->appears) {
-            throw new \Box_Exception('Your Username is blacklisted in global database');
+            throw new \Box_Exception('Your username is blacklisted in the Stop Forum Spam database');
         }
         if(isset($json->email->appears) && $json->email->appears) {
-            throw new \Box_Exception('Your Email is blacklisted in global database');
+            throw new \Box_Exception('Your e-mail is blacklisted in the Stop Forum Spam database');
         }
         if(isset($json->ip->appears) && $json->ip->appears) {
-            throw new \Box_Exception('Your IP is blacklisted in global database');
+            throw new \Box_Exception('Your IP address is blacklisted in the Stop Forum Spam database');
         }
 
         return false;
