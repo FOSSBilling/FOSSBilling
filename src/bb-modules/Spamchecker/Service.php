@@ -148,11 +148,11 @@ class Service implements InjectionAwareInterface
             if (isset($config['captcha_version']) && $config['captcha_version'] == 2) {
 
                 if (!isset($config['captcha_recaptcha_privatekey']) || $config['captcha_recaptcha_privatekey'] == '') {
-                    throw new \Box_Exception("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>https://www.google.com/recaptcha/admin/create</a>");
+                    throw new \Box_Exception("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
                 }
 
                 if (!isset($params['g-recaptcha-response']) || $params['g-recaptcha-response'] == '') {
-                    throw new \Box_Exception("No response received");
+                    throw new \Box_Exception("You have to complete the CAPTCHA to continue");
                 }
 
                 $postData = array(
