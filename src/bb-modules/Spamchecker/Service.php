@@ -160,10 +160,15 @@ class Service implements InjectionAwareInterface
                     'response' => $params['g-recaptcha-response'],
                     'remoteip' => $di['request']->getClientAddress()
                 );
-                $request  = $di['guzzle_client']->post('https://www.google.com/recaptcha/api/siteverify', null, $postData);
-                $response = $di['guzzle_client']->send($request)->json();
+                
+                $options = [
+                    'form_params' => $postData
+                ];
+                $response  = $di['guzzle_client']->request('POST', 'https://www.google.com/recaptcha/api/siteverify', $options);
+                $body = $response->getBody()->getContents();
+                $content = json_decode($body, true);
 
-                if (!$response['success']) {
+                if (!$content['success']) {
                     throw new \Box_Exception('Captcha verification failed.');
                 }
 
