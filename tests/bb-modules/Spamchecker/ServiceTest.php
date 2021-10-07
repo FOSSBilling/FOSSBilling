@@ -253,13 +253,13 @@ class ServiceTest extends \BBTestCase {
     {
         return array(
             array(
-                '{"success" : "true", "username" : {"appears" : "true" }}', 'Your Username is blacklisted in global database'
+                '{"success" : "true", "username" : {"appears" : "true" }}', 'Your username is blacklisted in the Stop Forum Spam database'
             ),
             array(
-                '{"success" : "true", "email" : {"appears" : "true" }}', 'Your Email is blacklisted in global database'
+                '{"success" : "true", "email" : {"appears" : "true" }}', 'Your e-mail is blacklisted in the Stop Forum Spam database'
             ),
             array(
-                '{"success" : "true", "ip" : {"appears" : "true" }}', 'Your IP is blacklisted in global database'
+                '{"success" : "true", "ip" : {"appears" : "true" }}', 'Your IP address is blacklisted in the Stop Forum Spam database'
             ),
         );
     }
