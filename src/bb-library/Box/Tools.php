@@ -55,7 +55,7 @@ class Box_Tools
         }
     }
 
-    public function file_get_contents($filename, $use_include_path = false, $context = null, $offset = -1, $useoffset = true)
+    public function file_get_contents($filename, $use_include_path = false, $context = null, $offset = 0, $useoffset = true)
     {
         if($useoffset){
             return file_get_contents($filename, $use_include_path, $context, $offset);
