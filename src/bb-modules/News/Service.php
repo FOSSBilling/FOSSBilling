@@ -83,12 +83,15 @@ class Service
 
         $pos     = strpos($row->content, '<!--more-->');
         $excerpt = ($pos) ? substr($row->content, 0, $pos) : null;
+        
+        // Remove <!--more--> from post content
+        $content = str_replace("<!--more-->", "", $row->content);
 
         $data = array(
             'id'           => $row->id,
             'title'        => $row->title,
             'description'  => $row->description,
-            'content'      => $row->content,
+            'content'      => $content,
             'slug'         => $row->slug,
             'image'        => $row->image,
             'section'      => $row->section,
