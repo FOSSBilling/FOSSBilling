@@ -42,14 +42,14 @@
     </fieldset>
 
     <div class="help">
-        <h3>{% trans 'Recaptcha settings' %}</h3>
-        <p>{% trans 'Enable captcha for client registration and contact us forms' %}</p>
-        <p>{% trans 'Sign up for Recaptcha key for your domain at' %} <a href="http://www.google.com/recaptcha" target="_blank">http://www.google.com/recaptcha</a></p>
+        <h3>{% trans 'reCAPTCHA settings' %}</h3>
+        <p>{% trans 'Enable captcha for client registration and contact forms' %}</p>
+        <p>{% trans 'Sign up for reCAPTCHA key for your domain at' %} <a href="https://google.com/recaptcha" target="_blank">https://google.com/recaptcha/</a></p>
     </div>
 
     <fieldset>
         <div class="rowElem noborder">
-            <label>{% trans 'Recaptcha Enabled' %}</label>
+            <label>{% trans 'Enable reCAPTCHA' %}</label>
             <div class="formRight">
                 <input type="radio" name="captcha_enabled" value="1" {% if params.captcha_enabled == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
                 <input type="radio" name="captcha_enabled" value="0" {% if params.captcha_enabled == "0" %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
@@ -57,25 +57,18 @@
             <div class="fix"></div>
         </div>
 
-        <div class="rowElem noborder">
-            <label>{% trans 'Recaptcha version' %}</label>
-            <div class="formRight">
-                <input type="radio" name="captcha_version" value="1" {% if params.captcha_version == "1" %}checked="checked"{% endif %}/><label>{% trans 'v1.0' %}</label>
-                <input type="radio" name="captcha_version" value="2" {% if params.captcha_version == "2" %}checked="checked"{% endif %}/><label>{% trans 'v2.0' %}</label>
-            </div>
-            <div class="fix"></div>
-        </div>
-
         <div class="rowElem">
-            <label>{% trans 'ReCaptcha Public key' %}</label>
+            <label>{% trans 'reCAPTCHA version' %}</label>
+            <div class="formRight">
+                <input type="radio" name="captcha_version" value="2" {% if params.captcha_version == "2" %}checked="checked"{% endif %}/><label>{% trans 'v2' %}</label>
+            </div>
+            
+            <label>{% trans 'reCAPTCHA Public key' %}</label>
             <div class="formRight">
                 <input type="text" name="captcha_recaptcha_publickey" value="{{params.captcha_recaptcha_publickey}}"/>
             </div>
-            <div class="fix"></div>
-        </div>
 
-        <div class="rowElem">
-            <label>{% trans 'ReCaptcha Private key' %}</label>
+            <label>{% trans 'reCAPTCHA Secret key' %}</label>
             <div class="formRight">
                 <input type="text" name="captcha_recaptcha_privatekey" value="{{params.captcha_recaptcha_privatekey}}"/>
             </div>
@@ -85,7 +78,7 @@
 
     <div class="help">
         <h3>{% trans 'Akismet settings' %}</h3>
-        <p>{% trans %} Enable forum messages checking on <a href="http://www.akismet.com/" target="_blank">http://www.akismet.com</a> database{% endtrans %}</p>
+        <p>{% trans %} Enable forum messages checking on the <a href="https://akismet.com/" target="_blank">Akismet</a> database{% endtrans %}</p>
     </div>
     <fieldset>
         <div class="rowElem noborder">
@@ -109,7 +102,7 @@
     
     <div class="help">
         <h3>{% trans 'StopForumSpam.com settings' %}</h3>
-        <p>{% trans %} If enabled, client ip will be checked on <a href="http://www.stopforumspam.com/" target="_blank">http://www.stopforumspam.com</a> database before registration{% endtrans %}</p>
+        <p>{% trans %} If enabled, client IP will be checked on the <a href="http://www.stopforumspam.com/" target="_blank">Stop Forum Spam</a> database before registration{% endtrans %}</p>
     </div>
     <fieldset>
         <div class="rowElem noborder">

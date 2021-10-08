@@ -52,35 +52,6 @@
         {% if rc.version == 2 %}
             <script src='https://www.google.com/recaptcha/api.js' async defer></script>
             <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
-        {% else %}
-
-        {% set server = "https://www.google.com/recaptcha/api" %}
-           <script type="text/javascript">
-                var RecaptchaOptions = {
-                theme : 'custom',
-                custom_theme_widget: 'recaptcha_widget'
-            };
-            </script>
-
-            <div id="recaptcha_widget" style="display:none">
-
-            <div id="recaptcha_image"></div>
-            <div class="recaptcha_only_if_incorrect_sol" style="color:red">{% trans 'Incorrect please try again' %}</div>
-
-            <p>
-                <label>{% trans 'Enter the words above' %}</label>
-                <br/>
-                <input type="text" id="recaptcha_response_field" name="recaptcha_response_field" style="width: 245px"/>
-                    <a class="bb-button" href="javascript:Recaptcha.reload()" style="float: right"><span class="dark-icon i-reload"></span></a>
-            </p>
-            </div>
-
-            <script type="text/javascript" src="{{ server }}/challenge?k={{ rc.publickey }}"></script>
-            <noscript>
-                <iframe src="{{ server }}/noscript?k={{ rc.publickey }}" height="300" width="500" frameborder="0"></iframe><br/>
-                <textarea name="recaptcha_challenge_field" rows="3" cols="40"></textarea>
-                <input type="hidden" name="recaptcha_response_field" value="manual_challenge"/>
-            </noscript>
         {% endif %}
     {% endif %}
 {% endif %}
