@@ -15,7 +15,7 @@
 
 <div class="widget">
     <div class="head">
-        <h5 class="iCog">{% trans 'Example extension settings' %}</h5>
+        <h5 class="iCog">{% trans 'Example module settings' %}</h5>
     </div>
 
 {% set params = admin.extension_config_get({"ext":"mod_example"}) %}
@@ -37,9 +37,9 @@
         </div>
 
         <div class="rowElem">
-            <label>{% trans 'Public Parameter title' %}</label>
+            <label>{% trans 'Public parameter title' %}</label>
             <div class="formRight">
-                <input type="text" name="public[param]" value="{{params.public.param}}" placeholder="{% trans 'This setting will be accessible by Guest API' %}"/>
+                <input type="text" name="public[param]" value="{{params.public.param}}" placeholder="{% trans 'This setting will be accessible by the Guest API' %}"/>
             </div>
             <div class="fix"></div>
         </div>

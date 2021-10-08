@@ -8,22 +8,22 @@
 
 <div class="widget">
     <div class="head">
-        <h5>{% trans 'Example module title' %}</h5>
+        <h5>{% trans 'Example module for developers' %}</h5>
     </div>
 
     <div class="help">
-        <h3>{% trans 'This is an example extension content' %}</h3>
+        <h3>{% trans 'This is an example extension' %}</h3>
     </div>
-    <div class="body">
-        <a href="{{ 'example'|alink }}">Example module index</a> <br/>
-        <a href="{{ 'extension/settings/example'|alink }}">Example settings page</a> <br/>
-        <a href="{{ 'example'|alink }}/test">Test link with static URL</a> <br/>
-        <a href="{{ 'example'|alink }}/user/1">Test link location with parameter 1</a> <br/>
-        <a href="{{ 'example'|alink }}/user/2">Test link location with parameter 2</a> <br/>
-        <a href="{{ 'example'|alink }}/user/3">Test link location with parameter 3</a> <br/>
-        <a href="{{ 'example'|alink }}/api">API example</a>
-        <a href="{{ 'example'|link }}" target="_blank">Client area link example</a>
-    </div>
+    <ul>
+        <li><a href="{{ 'example'|alink }}">Example module index</a></li>
+        <li><a href="{{ 'extension/settings/example'|alink }}">Example settings page</a></li>
+        <li><a href="{{ 'example'|alink }}/test">Test link with static URL</a></li>
+        <li><a href="{{ 'example'|alink }}/user/1">Test link location with parameter 1</a></li>
+        <li><a href="{{ 'example'|alink }}/user/2">Test link location with parameter 2</a></li>
+        <li><a href="{{ 'example'|alink }}/user/3">Test link location with parameter 3</a></li>
+        <li><a href="{{ 'example'|alink }}/api">API example</a></li>
+        <li><a href="{{ 'example'|link }}" target="_blank">Client area link example</a></li>
+    </ul>
 
     {# Check if example parameters passed to template file #}
     {% if youparamname %}
@@ -69,7 +69,7 @@
     </div>
     
     <div class="body list arrowBlue">
-        {{ guest.example_readme|markdown }}
+        {{ guest.example_readme|bbmd }}
     </div>
 </div>
 
