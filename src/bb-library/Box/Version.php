@@ -15,9 +15,6 @@ final class Box_Version
 {
     const VERSION = '0.0.1';
 
-    const TYPE_FREE = 'free';
-    const TYPE_PRO  = 'pro';
-
     /**
      * Compare the specified BoxBilling version string $version
      * with the current Box_Version::VERSION of BoxBilling.
