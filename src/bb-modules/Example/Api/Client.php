@@ -11,8 +11,8 @@
  */
 
 /**
- * All public methods in this class are exposed to client using API.
- * Always think what kind of information you are exposing. 
+ * All public methods in this class are exposed to the client using API.
+ * Always think about the information you are exposing. 
  */
 
 namespace Box\Mod\Example\Api;
@@ -25,7 +25,7 @@ class Client extends \Api_Abstract
      * This method will collect data from all APIs and merge
      * into one result.
      * 
-     * Be careful not to expose sensitive data from Admin API.
+     * Be careful not to expose sensitive data from the Admin API.
      */
     public function get_info($data)
     {
