@@ -19,9 +19,9 @@
 
 </div>
 
-**BoxBilling** is a free open source, billing and client management solution. Whatever the size of your online services business, whether startup or established, BoxBilling can help you to automate your invoicing, incoming payments, and client management and communication.
+**BoxBilling** is a free open source, billing and client management solution. Whatever the size of your online services business, whether a startup or established, BoxBilling can help you to automate your invoicing, incoming payments, and client management and communication.
 
-If you run a web hosting business and are looking for an open source alternative for billing and client management, then BoxBilling is the answer. Although it is mostly used as a solution for hosting businesses, there is no reason why you can't use BoxBilling for any other kind of online business, like digital downloads. 
+If you run a web hosting business and are looking for an open-source alternative for billing and client management, then BoxBilling is the answer. Although it is mostly used as a solution for hosting businesses, there is no reason why you can't use BoxBilling for any other kind of online business, like digital downloads. 
 
 BoxBilling is designed to be extensible and to integrate easily with your favourite server management software and payment gateways.
 
@@ -44,7 +44,7 @@ The following environment is highly recommended for running BoxBilling. It *may*
 
 - A suitable web server (Apache/nginx/LSWS)
 - PHP 7.4, or higher.
-  - *We recommended PHP 7.4 over PHP 8 as it's been more thoroughly tested, however both should work*
+  - *We recommended PHP 7.4 over PHP 8 as it's been more thoroughly tested, however, both should work*
 - MySQL 8, or higher. *MariaDB and other direct MySQL compatible DBs also work.*
 - The Following PHP extensions:
     - pdo_mysql
@@ -65,7 +65,7 @@ We make a new release of BoxBilling whenever we have some new cool stuff to intr
 
 First, you should [download the latest release](https://github.com/boxbilling/boxbilling/releases/latest) from our GitHub repository. Each release has a file called "BoxBilling.zip" attached to it, and that's exactly what you need to download. Unlike the source code itself, releases already include the Composer packages, so you won't need to run Composer to install PHP packages. This is perfect if you are using shared hosting as you might not have the ability to run Composer yourself.
 
-You can either download the .zip file to your local computer and then upload it to your server using FTP, or download directly to your web server using wget or git clone. In either case you will need to unzip it and make sure that the files contained in the archive are in the public folder of your site (usually, that's called **"htdocs"** or **"public_html"**).
+You can either download the .zip file to your local computer and then upload it to your server using FTP, or download it directly to your web server using wget or git clone. In either case, you will need to unzip it and make sure that the files contained in the archive are in the public folder of your site (usually, that's called **"htdocs"** or **"public_html"**).
 
 Your web directory's structure should now look like this:
 - htdocs
@@ -81,7 +81,7 @@ Now, you have everything ready to start the installation of BoxBilling, navigate
 ### Install from latest source code
 To install the latest development version of BoxBilling, you will need to get the [latest up-to-date ZIP archive](https://github.com/boxbilling/boxbilling/archive/master.zip) from the Github repository.
 
-You can either download the .zip file to your local computer and then upload it to your server using FTP, or download directly to your web server using wget or git clone. In either case you will need to unzip it and make sure that the files contained in the archive are in the public folder of your site (usually, that's called **"htdocs"** or **"public_html"**).
+You can either download the .zip file to your local computer and then upload it to your server using FTP, or download it directly to your web server using wget or git clone. In either case, you will need to unzip it and make sure that the files contained in the archive are in the public folder of your site (usually, that's called **"htdocs"** or **"public_html"**).
 
 Your web directory's structure should now look like this:
 - htdocs
@@ -96,7 +96,7 @@ We do not store the Composer packages in our GitHub repository, we use [Composer
 
 If you don't have Composer installed, or it's your first time with Composer, you probably may want to read Composer's [getting started guide](https://getcomposer.org/doc/00-intro.md).
 
-If you've already installed Composer, head over to the folder where you copied the content of the **"src"** folder to, and run the following command to download the required packages to your web server:
+If you've already installed Composer, head over to the folder where you copied the content of the **"src"** folder, and run the following command to download the required packages to your web server:
 
 ```bash
 $ composer install
@@ -109,7 +109,7 @@ Now, you have everything ready to start the installation of BoxBilling, navigate
 
 This guide assumes you already have [Docker](https://docs.docker.com/get-docker/), [Git](https://git-scm.com) and [GNU make](https://www.gnu.org/software/make/) installed.
 
-To clone the repository, first run these commands in your command line:
+To clone the repository, first, run these commands in your command line:
 
 ```bash
 # Clone this repository
@@ -127,7 +127,7 @@ Now, you can navigate to your web server in your browser. If you're using a PC, 
 ## Contributing
 🖥️ Welcome, fellow developer! 🙂
 
-First of all, thank you for your interest, and taking your time to contribute to BoxBilling.
+First of all, thank you for your interest, and for taking your time to contribute to BoxBilling.
 
 BoxBilling is undergoing a revival and major code update. We are making steps forward day by day but there is still a lot of work to do, and we are happy to welcome new contributors. 
 
@@ -139,11 +139,11 @@ Your [pull requests](https://github.com/boxbilling/boxbilling/pulls) will be hig
 
 Don't hesitate to create an [issue](https://github.com/boxbilling/boxbilling/issues), or join us on [Slack](https://boxbilling.org/slack) to say hi.
 
-⭐ Not a developer? Feel free to help by starring the repository. It helps us catching attention of new developers who'd like to contribute. 
+⭐ Not a developer? Feel free to help by starring the repository. It helps us catch the attention of new developers who'd like to contribute. 
 
 ## Licensing
 
-BoxBilling is open source software, and is released under the Apache v2.0 license. See [LICENSE](https://github.com/boxbilling/boxbilling/blob/master/LICENSE) for the full license terms.
+BoxBilling is open source software and is released under the Apache v2.0 license. See [LICENSE](https://github.com/boxbilling/boxbilling/blob/master/LICENSE) for the full license terms.
 
 This product includes GeoLite2 data created by MaxMind, available from [https://www.maxmind.com](https://www.maxmind.com).
 
