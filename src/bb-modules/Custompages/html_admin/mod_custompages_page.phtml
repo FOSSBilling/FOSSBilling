@@ -1,0 +1,73 @@
+{% extends "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% set active_menu = 'extensions' %}
+{% block meta_title %} {% trans 'Edit Custom Page' %} {% endblock %}
+{% set page = admin.custompages_get_page({page_id}|merge(request)) %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
+    <li><a href="{{ 'custompages'|alink }}">{% trans 'Custom Pages' %}</a></li>
+    <li class="lastB">{{ page.title}}</li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+{% if page.id > 0 %}
+
+
+<div class="widget">
+    
+    <div class="head">
+        <h5>{{ page.title}}</h5>
+    </div>
+    
+    <form method="post" action="{{ 'api/admin/custompages/update'|link }}" class="mainForm save api-form" data-api-msg="{% trans 'Custom page updated' %}">
+        <input type="hidden" name="id" value="{{ page.id }}">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{% trans 'Title' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="title" value="{{ page.title }}" required="required" placeholder="{% trans 'Enter page title here.' %}"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Meta Description' %}:</label>
+                <div class="formRight">
+                <input type="text" name="description" value="{{ page.description }}" placeholder="{% trans 'Enter page meta description here.' %}"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Meta Keywords' %}:</label>
+                <div class="formRight">
+                <input type="text" name="keywords" value="{{ page.keywords }}" placeholder="{% trans 'Enter page meta keywords here.' %}"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Slug' %}:</label>
+                <div class="formRight">
+                    <input type="text" name="slug" value="{{ page.slug }}" required="required" placeholder="{% trans 'Enter page slug here.' %}"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{% trans 'Content' %}:</label>
+                <div class="formRight">
+                    <textarea class="bb-textarea" name="content" cols="5" rows="5" required="required" placeholder="{% trans 'Enter page content here.' %}">{{ page.content }}</textarea>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+        </fieldset>
+    </form>
+</div>
+{% else %}
+<script>location.href = "{{ 'custompages'|alink }}"</script>
+{% endif %}
+{% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

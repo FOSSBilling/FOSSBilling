@@ -11,7 +11,7 @@ class ServiceTest extends \BBTestCase {
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service= new \Box\Mod\Spamchecker\Service();
     }
@@ -80,6 +80,9 @@ class ServiceTest extends \BBTestCase {
             ->willReturn($di);
 
         $this->service->onBeforeClientCreateForumTopic($boxEventMock);
+
+        //TODO maybe we can write better test here?
+        $this->assertTrue(true);
     }
 
     public function testonBeforeClientRepliedInForum()
@@ -171,7 +174,8 @@ class ServiceTest extends \BBTestCase {
             ->method('getDi')
             ->willReturn($di);
 
-        $this->setExpectedException('\Box_Exception', sprintf("IP %s is blocked", $clientIp), 403);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf("IP %s is blocked", $clientIp), 403);
         $this->service->isBlockedIp($boxEventMock);
     }
 
@@ -249,13 +253,13 @@ class ServiceTest extends \BBTestCase {
     {
         return array(
             array(
-                '{"success" : "true", "username" : {"appears" : "true" }}', 'Your Username is blacklisted in global database'
+                '{"success" : "true", "username" : {"appears" : "true" }}', 'Your username is blacklisted in the Stop Forum Spam database'
             ),
             array(
-                '{"success" : "true", "email" : {"appears" : "true" }}', 'Your Email is blacklisted in global database'
+                '{"success" : "true", "email" : {"appears" : "true" }}', 'Your e-mail is blacklisted in the Stop Forum Spam database'
             ),
             array(
-                '{"success" : "true", "ip" : {"appears" : "true" }}', 'Your IP is blacklisted in global database'
+                '{"success" : "true", "ip" : {"appears" : "true" }}', 'Your IP address is blacklisted in the Stop Forum Spam database'
             ),
         );
     }
@@ -275,7 +279,8 @@ class ServiceTest extends \BBTestCase {
 
         $data = array();
         $this->service->setDi($di);
-        $this->setExpectedException('Box_Exception', $exceptionMessage);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage($exceptionMessage);
         $this->service->isInStopForumSpamDatabase($data);
     }
 

@@ -101,7 +101,9 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Check your login details', 403);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(403);
+        $this->expectExceptionMessage('Check your login details');
         $service->login($email, $password, $ip);
     }
 
@@ -122,7 +124,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $result = $service->getAdminsCount();
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($countResult, $result);
     }
 
@@ -795,7 +797,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $result = $service->getList(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function searchFilters()
@@ -832,8 +834,8 @@ class ServiceTest extends \BBTestCase
         $service         = new \Box\Mod\Staff\Service();
         $service->setDi($di);
         $result = $service->getSearchQuery($data);
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
 
         $this->assertTrue(strpos($result[0], $expectedStr) !== false, $result[0]);
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == array());
@@ -930,7 +932,7 @@ class ServiceTest extends \BBTestCase
         $result = $service->toModel_AdminApiiArray($adminModel);
 
         $this->assertNotEmpty($result);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertTrue(count(array_diff(array_keys($expected), array_keys($result))) == 0, 'Missing array key values.');
     }
 
@@ -1007,7 +1009,8 @@ class ServiceTest extends \BBTestCase
 
         $service = new \Box\Mod\Staff\Service();
 
-        $this->setExpectedException('\Box_Exception', 'This administrator account is protected and can not be removed');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('This administrator account is protected and can not be removed');
         $service->delete($adminModel);
     }
 
@@ -1097,7 +1100,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $result = $service->create($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
     }
 
@@ -1152,7 +1155,9 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', sprintf('Staff member with email %s is already registered', $data['email']), 788954);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(788954);
+        $this->expectExceptionMessage(sprintf('Staff member with email %s is already registered', $data['email']));
         $service->create($data);
     }
 
@@ -1221,7 +1226,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $result = $service->createAdmin($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
     }
 
@@ -1257,7 +1262,7 @@ class ServiceTest extends \BBTestCase
         $result = $service->getAdminGroupPair();
 
         $this->assertEquals($expected, $result);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetAdminGroupSearchQuery()
@@ -1266,8 +1271,8 @@ class ServiceTest extends \BBTestCase
 
         $result = $service->getAdminGroupSearchQuery(array());
 
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
     }
 
     public function testcreateGroup()
@@ -1297,7 +1302,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $result = $service->createGroup('new_group_name');
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newGroupId, $result);
     }
 
@@ -1318,7 +1323,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $service->toAdminGroupApiArray($adminGroupModel);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertTrue(count(array_diff(array_keys($expected), array_keys($result))) == 0, 'Missing array key values.');
     }
 
@@ -1342,7 +1347,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $result = $service->deleteGroup($adminGroupModel);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -1354,7 +1359,8 @@ class ServiceTest extends \BBTestCase
 
         $service = new \Box\Mod\Staff\Service();
 
-        $this->setExpectedException('\Box_Exception', 'Administrators group can not be removed');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Administrators group can not be removed');
         $service->deleteGroup($adminGroupModel);
     }
 
@@ -1374,7 +1380,8 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Can not remove group which has staff members');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Can not remove group which has staff members');
         $service->deleteGroup($adminGroupModel);
     }
 
@@ -1396,7 +1403,7 @@ class ServiceTest extends \BBTestCase
 
         $data   = array('name' => 'OhExampleName');
         $result = $service->updateGroup($adminGroupModel, $data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -1431,8 +1438,8 @@ class ServiceTest extends \BBTestCase
         $service         = new \Box\Mod\Staff\Service();
         $service->setDi($di);
         $result = $service->getActivityAdminHistorySearchQuery($data);
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
 
         $this->assertTrue(strpos($result[0], $expectedStr) !== false, $result[0]);
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == array());
@@ -1473,7 +1480,7 @@ class ServiceTest extends \BBTestCase
         $result = $service->toActivityAdminHistoryApiArray($adminHistoryModel);
 
         $this->assertNotEmpty($result);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertTrue(count(array_diff(array_keys($expected), array_keys($result))) == 0, 'Missing array key values.');
     }
 
@@ -1542,7 +1549,7 @@ class ServiceTest extends \BBTestCase
 
         $member_id = 1;
         $result    = $service->getPermissions($member_id);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals(array(), $result);
     }
 
@@ -1571,7 +1578,7 @@ class ServiceTest extends \BBTestCase
         $member_id = 1;
         $expected  = json_decode($queryResult, 1);
         $result    = $service->getPermissions($member_id);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 

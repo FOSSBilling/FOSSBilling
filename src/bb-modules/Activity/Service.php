@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -121,7 +121,7 @@ class Service implements InjectionAwareInterface
             $params[':search2'] = $search;
         }
 
-        if (count ($where) > 0){
+        if (!empty($where)){
             $whereStatment = implode(' and ', $where);
             $sql .= ' WHERE '.$whereStatment;
         }

@@ -19,7 +19,8 @@
     <ul class="tabs">
         <li><a href="#tab-currencies">{% trans 'Currencies' %}</a></li>
         <li><a href="#tab-new-currency">{% trans 'Add new currency' %}</a></li>
-        {#<li><a href="#tab-converter">{% trans 'Converter' %}</a></li>#}
+        <li><a href="#tab-api-settings">{% trans 'Settings' %}</a></li>
+        <li><a href="#tab-converter">{% trans 'Converter' %}</a></li>
     </ul>
 
     <div class="tabs_container">
@@ -28,7 +29,7 @@
 
             <div class="help">
                 <h3>{% trans 'Manage currencies' %}</h3>
-                <p>{% trans 'Default currency is the one you manage all your prices in admin area. If your client in client area chooses other than default currency, prices will be recalculated according to conversion rate. You can have only one default currency. You can not add same currency once again. Changing default currency is not recommended when active orders are available. Nothing is recalculated on default currency change. Your income is calculated in default currency. Changing default currency after you have paid invoices will distort income statistics. Currency rates are taken from Yahoo.' %}</p>
+                <p>{% trans 'Default currency is the one you manage all your prices in admin area. If your client in client area chooses other than default currency, prices will be recalculated according to conversion rate. You can have only one default currency. You can not add same currency once again. Changing default currency is not recommended when active orders are available. Nothing is recalculated on default currency change. Your income is calculated in default currency. Changing default currency after you have paid invoices will distort income statistics. Currency rates are taken from European Central Bank and currencylayer.' %}</p>
             </div>
 
             <table class="tableStatic wide">
@@ -51,7 +52,7 @@
                       <td>{{ mf.currency_format(1) }} = {{ mf.currency(1, currency.code) }}</td>
                       <td class="actions">
                           <a class="bb-button btn14" href="{{ '/currency/manage'|alink }}/{{currency.code}}"><img src="images/icons/dark/pencil.png" alt=""></a>
-                          <a class="bb-button btn14 bb-rm-tr api-link" data-api-redirect="{{extension/settings/currency|alink}}" data-api-confirm="Are you sure?" href="{{'api/admin/currency/delete'|link({'code' : currency.code})}}"><img src="images/icons/dark/trash.png" alt=""></a>
+                          <a class="bb-button btn14 bb-rm-tr api-link" data-api-redirect="{{'extension/settings/currency'|alink}}" data-api-confirm="Are you sure?" href="{{'api/admin/currency/delete'|link({'code' : currency.code})}}"><img src="images/icons/dark/trash.png" alt=""></a>
                           {% if not currency.default %}
                           <a class="bb-button btn14 api-link" data-api-redirect="{{'extension/settings/currency'|alink}}" href="{{'api/admin/currency/set_default' | link({'code' : currency.code})}}" title="Set as default" class="rightDir"><img src="images/icons/dark/star.png" alt=""></a>
                           {% endif %}
@@ -106,7 +107,7 @@
                     <div class="rowElem">
                         <label>{% trans 'Format' %}:</label>
                         <div class="formRight">
-                            <input type="text" name="format" value="{%raw%}{{price}}{%endraw%} $" required="required">
+                            <input type="text" name="format" value="{{price|raw}} $" required="required">
                         </div>
                         <div class="fix"></div>
                     </div>
@@ -118,6 +119,35 @@
 
         </div>
         
+        <div class="tab_content nopadding" id="tab-api-settings">
+            <div class="help">
+                <h3>{% trans 'Adjust settings for currency rate updater' %}</h3>
+                <p>BoxBilling uses data grabbed from <a href="https://www.ecb.europa.eu/home/html/index.en.html">European Central Bank</a> for conversions from Euro to other currencies, and <a href="https://currencylayer.com/">currencylayer</a> for conversations from US Dollar to other currencies.<br />If you choose Euro as your default currency, data from European Central Bank will be used, if you choose US Dollar, data from currencylayer will be used.<br />While European Central Bank decided to keep it's API free to everyone, you won't need an autorization key to use ECB's data. However, you'll need an API key to use currencylayer.<br />You can <a href="https://currencylayer.com/product">grab your API key</a> from currencylayer's website. BoxBilling doesn't make any profits from your purchases on currencylayer.com</p>
+                <p><b>BoxBilling does not take any responsibilities for data grabbed from 3rd party sources, including European Central Bank and currencylayer.</b></p>
+            </div>
+            <form method="post" action="{{ 'api/admin/currency/update_rate_settings'|link }}" class="mainForm save api-form" data-api-msg="Successfully updated settings">
+            <fieldset>
+                <div class="rowElem noborder">
+                    <label>{% trans 'API key for currencylayer' %}:</label>
+                    <div class="formRight">
+                        <input type="text" name="currencylayer_key" value="{{admin.currency_get_key}}">
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <div class="rowElem">
+                <label>{% trans 'Enable CRON jobs' %}:</label>
+                <p>If you enable this, conversion rates will be automatically updated whenever the CRON job fires up.</p>
+                <div class="formRight">
+                    <input type="radio" name="crons_enabled" value="1" {% if admin.currency_is_cron_enabled == 1 %}checked="checked"{% endif %}><label>Enabled</label>
+                    <input type="radio" name="crons_enabled" value="0" {% if admin.currency_is_cron_enabled == 0 %}checked="checked"{% endif %}><label>Disabled</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+                <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+            </fieldset>
+            </form>
+        </div>
+
         <div class="tab_content nopadding" id="tab-converter">
 
             <form method="post" action="" class="mainForm">

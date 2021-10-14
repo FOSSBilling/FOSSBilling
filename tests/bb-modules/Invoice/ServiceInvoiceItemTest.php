@@ -11,7 +11,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Invoice\ServiceInvoiceItem();
     }
@@ -95,7 +95,8 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', sprintf('Could not activate proforma item. Order %d not found', $orderId));
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf('Could not activate proforma item. Order %d not found', $orderId));
         $serviceMock->executeTask($invoiceItemModel);
     }
 
@@ -214,7 +215,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
         $result = $this->service->addNew($invoiceModel, $data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
     }
 
@@ -230,7 +231,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $expected = $price * $quantity;
 
         $result = $this->service->getTotal($invoiceItemModel);
-        $this->assertInternalType('float', $result);
+        $this->assertIsFloat($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -255,7 +256,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
         $result   = $this->service->getTax($invoiceItemModel);
         $expected = round(($price * $rate / 100), 2);
-        $this->assertInternalType('float', $result);
+        $this->assertIsFloat($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -391,7 +392,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
             ->will($this->returnValue($tax));
 
         $result = $serviceMock->getTotalWithTax($invoiceItemModel);
-        $this->assertInternalType('float', $result);
+        $this->assertIsFloat($result);
         $expected = $total + $tax * $quantity;
         $this->assertEquals($expected, $result);
     }
@@ -405,7 +406,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceItemModel->type   = \Model_InvoiceItem::TYPE_ORDER;
 
         $result = $this->service->getOrderId($invoiceItemModel);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($orderId, $result);
     }
 
@@ -415,7 +416,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $result = $this->service->getOrderId($invoiceItemModel);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $expected = 0;
         $this->assertEquals($expected, $result);
     }
@@ -433,7 +434,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->getAllNotExecutePaidItems();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 }
  

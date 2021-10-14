@@ -1,0 +1,202 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{product.title}}{% endblock %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{{ product.title }}</h1>
+				{#{ product.description|bbmd }#}
+				{% include "partial_steps.phtml" with {'selected': 2, 'product': product} %}
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+
+{% set periods = guest.system_periods %}
+{% set pricing = product.pricing %}
+
+<form method="post" action="" class="api_form" data-api-url="guest/cart/add_item" data-api-redirect="{{ 'cart'|link }}">
+	{#<h2 class="dark-icon i-services">{% trans 'Domain configuration' %}</h2>#}
+
+<div class="row">
+	<div class="col-sm-12">
+	<ul class="nav nav-tabs nav-justified" id="tabs">
+        <li class="active"><a href="#owndomain" data-toggle="tab" rel="owndomain"><i class="fa fa-tree"></i> {% trans 'Use own' %}</a></li>
+		<li class=""><a href="#register" data-toggle="tab" rel="register"><i class="fa fa-tree"></i> {% trans 'Register new domain' %}</a></li>
+        <li class=""><a href="#transfer" data-toggle="tab" rel="transfer"><i class="fa fa-car"></i> {% trans 'Transfer my domain' %}</a></li>
+     </ul>
+	</div>
+	
+	<div class="tab-content text-center well col-sm-12">
+		<div class="tab-pane fade active in" id="owndomain">
+            <h4>{% trans 'I will use my existing domain and update nameservers' %}</h4>
+			<div class="form-group form-inline">
+				<div class="input-group">
+					<div class="input-group-addon">
+						<input type="text" class="form-control" name="domain[owndomain_sld]" value="{{ request.owndomain_sld }}" placeholder="{% trans 'Enter your domain name' %}">
+					</div>
+					<div class="input-group-addon">
+						<input type="text" class="form-control" name="domain[owndomain_tld]" value="{{ request.owndomain_tld|default('.com') }}" >
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="tab-pane fade in" id="register">
+            <h4>{% trans 'Register new domain' %}</h4>
+			<div class="form-group form-horizontal">
+				<div class="input-group">
+					<div class="input-group-addon">
+						<input type="text" class="form-control" name="domain[register_sld]" value="{{ request.register_sld }}" placeholder="{% trans 'Enter your domain name' %}">
+                    </div>
+					<div class="input-group-addon">
+						{% if product.config.free_domain == 1 %}
+							{% set tlds = guest.serviceHosting_free_tlds({'product_id' : product.id}) %}
+						{% else %}
+							{% set tlds = guest.serviceDomain_tlds({"allow_register":1})%}
+						{% endif %}
+						{{ mf.selectboxtld('domain[register_tld]', tlds)}}
+					</div>
+					<div class="input-group-addon">
+						<button class="btn btn-success btn-sm" type="button" id="domain-check">{% trans 'Check' %}</button>
+					</div>
+				</div>
+			</div>
+			<div class="form-group col-md-4 col-md-offset-8">
+                    <div id="domain-config" style="display:none;">
+						<hr>
+                        <h4>{% trans 'Period' %}:</h4>
+                        {{ mf.selectbox('domain[register_years]', {}) }}
+                    </div>
+			</div>
+			
+			
+		</div>
+		<div class="tab-pane fade in" id="transfer">
+            <h4>{% trans 'Transfer your domain from another registrar' %}</h4>
+			<div class="form-group form-horizontal">
+				<div class="input-group">
+					<div class="input-group-addon">
+						<input type="text" class="form-control" name="domain[transfer_sld]" value="{{ request.transfer_sld }}" placeholder="{% trans 'Enter your domain name' %}">
+                    </div>
+					<div class="input-group-addon">
+						{{ mf.selectboxtld('domain[transfer_tld]', guest.serviceDomain_tlds({"allow_transfer":1})) }}
+					</div>
+					<div class="input-group-addon">
+						<button class="btn btn-success btn-sm" type="button" id="transfer-check">{% trans 'Check' %}</button>
+					</div>
+				</div>
+			</div>
+			<div class="form-group col-md-4 col-md-offset-8">
+                <div id="domain-transfer-config" style="display:none;">
+					<hr>
+                    <h4>{% trans 'Transfer price'%}: <span id="transfer-price"></span></h4>
+                     <input type="text" class="form-control" name="domain[transfer_code]" value="{{ request.transfer_code }}" placeholder="{% trans 'Enter domain transfer code' %}">
+                </div>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-4 col-md-offset-8 text-center">
+		{% include 'partial_currency.phtml' %}
+		<hr>
+		{% include 'partial_pricing.phtml' with {'product': product} %}
+	</div>
+</div>
+    {% include 'partial_addons.phtml' with {'product': product} %}
+    
+    <input type="hidden" name="domain[action]" value="owndomain" id="domain-action"/>
+    <input type="hidden" name="id" value="{{ product.id }}" />
+</form>
+{% endblock %}
+
+{% block js %}
+{% set currency = guest.cart_get_currency %}
+<script type="text/javascript">
+$(function() {
+
+	$('#tabs li a').bind('click', function (){
+        $('#domain-action').val($(this).attr('rel'));
+    });
+    $('#tabs li a:first').click();
+
+    $('#transfer-check').bind('click',function(event){
+        var sld = $('input[name="domain[transfer_sld]"]').val();
+        var tld = $('select[name="domain[transfer_tld]"]').val();
+        var domain = sld + tld;
+        bb.post(
+            'guest/servicedomain/can_be_transferred',
+            { sld: sld, tld: tld },
+            function(result) {
+                setTransferPricing(tld);
+                $('#domain-transfer-config').fadeIn('slow');
+            }
+        );
+        return false;
+    });
+
+    $('#domain-check').bind('click',function(event){
+        var sld = $('input[name="domain[register_sld]"]').val();
+        var tld = $('select[name="domain[register_tld]"]').val();
+        var domain = sld + tld;
+        bb.post(
+            'guest/servicedomain/check',
+            { sld: sld, tld: tld },
+            function(result) {
+                setRegistrationPricing(tld);
+                $('#domain-config').fadeIn('slow');
+            }
+        );
+        return false;
+    });
+
+    if($(".addons").length && $(".addons").is(':hidden')) {
+        $('#order-button').one('click', function(){
+            $(this).slideUp('fast');
+            $('.addons').slideDown('fast');
+            return false;
+        });
+    }
+
+    $('#period-selector').change(function(){
+        $('.period').hide();
+        $('.period.' + $(this).val()).show();
+    }).trigger('change');
+
+    $('.addon-period-selector').change(function(){
+        var r = $(this).attr('rel');
+        $('#' + r + ' span').hide();
+        $('#' + r + ' span.' + $(this).val()).fadeIn();
+    }).trigger('change');
+
+    function setRegistrationPricing(tld)
+    {
+        bb.post(
+            'guest/servicedomain/pricing',
+            { tld: tld },
+            function(result) {
+                var s = $("select[name='domain[register_years]']");
+                s.find('option').remove();
+                for (i=1;i<6;i++) {
+                    var price = bb.currency(result.price_registration, {{ currency.conversion_rate }}, "{{ currency.code }}", i);
+                    s.append(new Option(i + "{% trans ' Year/s @ ' %}" + price, i));
+                }
+            }
+        );
+    }
+
+    function setTransferPricing(tld)
+    {
+        bb.post(
+            'guest/servicedomain/pricing',
+            { tld: tld },
+            function(result) {
+                var price = bb.currency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
+                $('#transfer-price').text(price);
+            }
+        );
+    }
+});
+</script>
+{% endblock %}

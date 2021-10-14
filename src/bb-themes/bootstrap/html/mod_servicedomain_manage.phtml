@@ -1,0 +1,259 @@
+{% if order.status == 'active' %}
+<h2 class="text-center">{% trans 'Domain management' %}</h2>
+<div class="row">
+    <div class="col-lg-12">
+		<ul id="myTab" class="nav nav-tabs nav-justified">
+			<li class="active"><a href="#tab-details" data-toggle="tab"><i class="fa fa-info-circle"></i> {% trans 'Details' %}</a></li>
+			<li><a href="#tab-protection" data-toggle="tab"><i class="fa fa-lock"></i> {% trans 'Protection' %}</a></li>
+			<li><a href="#tab-privacy" data-toggle="tab"><i class="fa fa-user-secret"></i> {% trans 'Privacy' %}</a></li>
+			<li><a href="#tab-nameservers" data-toggle="tab"><i class="fa fa-server"></i> {% trans 'Nameservers' %}</a></li>
+			<li><a href="#tab-whois" data-toggle="tab"><i class="fa fa-user"></i> {% trans 'Whois' %}</a></li>
+			<li><a href="#tab-epp" data-toggle="tab"><i class="fa fa-sign-out"></i> {% trans 'Transfer' %}</a></li>
+         </ul>
+
+		<div id="myTabContent" class="tab-content">
+            <div class="tab-pane fade active in" id="tab-details">
+				<h4>{% trans 'Domain details' %}</h4>
+				<div class="well">
+					<ul class="list-group">
+						<li class="list-group-item"><strong>{% trans 'Domain' %}:</strong> <a target="_blank" href="http://{{ service.domain }}">{{ service.domain }}</a></li>
+						<li class="list-group-item"><strong>{% trans 'Registration date' %}:</strong> {{ service.registered_at|date('Y-m-d h:i') }}</li>
+						<li class="list-group-item"><strong>{% trans 'Expires at' %}:</strong> {{ service.expires_at|date('Y-m-d h:i') }}</li>
+					</ul>
+				</div>
+			</div>
+			
+			<div class="tab-pane fade in" id="tab-protection">
+				<h4>{% trans 'Domain Protection' %}</h4>
+				<div class="well">
+					<p>{% trans 'Domain locking is a security enhancement to prevent unauthorized transfers of your domain to another registrar or web host by "locking" your domain name servers.' %}</p>
+					<p>
+						<button class="btn btn-danger" type="button" id="domain-unlock" {% if service.locked == 0 %}style="display:none;"{% endif %}>{% trans 'Unlock' %}</button>
+						<button class="btn btn-success" type="button" id="domain-lock" {% if service.locked == 1 %}style="display:none;"{% endif %}>{% trans 'Lock' %}</button>
+					</p>
+				</div>
+			</div>
+			
+			<div class="tab-pane fade in" id="tab-privacy">
+				<h4>{% trans 'Domain Privacy Settings' %}</h4>
+				<div class="well">
+					<p>{% trans 'If you would like to hide domain contact information which is shown on WHOIS you can enable privacy protection. Once domain privacy protection is enabled no one will know who registered this service. And once you decide to disable privacy protection, information that is listed above on "Update Domain Contact Details" section will be seen on domain WHOIS again.' %}</p>
+                    <p>
+                        <button class="btn btn-danger" type="button" id="domain-disable-pp" {% if service.privacy == 1 %}style="display:none;"{% endif %}>{% trans 'Disable Privacy protection' %}</button>
+                        <button class="btn btn-success" type="button" id="domain-enable-pp" {% if service.privacy == 0 %}style="display:none;"{% endif %}>{% trans 'Enable Privacy protection' %}</button>
+                    </p>
+				</div>
+			</div>
+			
+			<div class="tab-pane fade in" id="tab-nameservers">
+				<h4>{% trans 'Domain Nameservers' %}</h4>
+				<form method="post" action="" class="api_form" data-api-url="client/servicedomain/update_nameservers" data-api-msg="{% trans 'Nameservers updated' %}">
+					<div class="well row">
+						<div class="col-md-12">
+							<legend>{% trans 'Update nameservers' %}</legend>
+						</div>
+						<div class="col-md-6">
+							<div class="control-group form-group">
+								<div class="controls">
+						<label>{% trans 'Nameserver 1' %}:</label>
+						<input type="text" class="form-control" name="ns1" value="{{ request.ns1|default(service.ns1) }}" required="required">
+								</div>
+							</div>
+							<div class="control-group form-group">
+								<div class="controls">
+						<label>{% trans 'Nameserver 2' %}:</label>
+						<input type="text" class="form-control" name="ns2" value="{{ request.ns2|default(service.ns2) }}" required="required">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="control-group form-group">
+								<div class="controls">
+						<label>{% trans 'Nameserver 3' %}:</label>
+						<input type="text" class="form-control" name="ns3" value="{{ request.ns3|default(service.ns3) }}">
+								</div>
+							</div>
+							<div class="control-group form-group">
+								<div class="controls">
+						<label>{% trans 'Nameserver 4' %}:</label>
+						<input type="text" class="form-control" name="ns4" value="{{ request.ns4|default(service.ns4) }}">
+								</div>
+							</div>
+						</div>
+						<div class="col-md-12 text-center">
+							<input type="hidden" name="order_id" value="{{ order.id }}">
+							<input class="btn btn-primary" type="submit" value="{% trans 'Update' %}">
+						</div>
+					</div>
+				</form>
+			</div>
+			
+			<div class="tab-pane fade in" id="tab-whois">
+				<h4>{% trans 'Update domain contact details' %}</h4>
+				<form method="post" action="" class="api_form" data-api-url="client/servicedomain/update_contacts" data-api-msg="{% trans 'Contact details updated' %}">
+				<div class="well row">
+					<div class="col-md-12">
+						<legend>{% trans 'Update domain contact details' %}</legend>
+					</div>
+					<div class="col-md-6">
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'First Name' %}:</label>
+								<input type="text" class="form-control" name="contact[first_name]" value="{{ request.first_name|default(service.contact.first_name) }}" required="required">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Last Name' %}:</label>
+								<input type="text" class="form-control" name="contact[last_name]" value="{{ request.last_name|default(service.contact.last_name) }}" required="required">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Email Address' %}:</label>
+								<input type="email" class="form-control" name="contact[email]" value="{{ request.email|default(service.contact.email) }}" required="required">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Company Name' %}:</label>
+								<input type="text" class="form-control" name="contact[company]" value="{{ request.company|default(service.contact.company) }}" required="required">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Phone Country Code' %}:</label>
+								<input type="text" class="form-control" name="contact[phone_cc]" value="{{ request.phone_cc|default(service.contact.phone_cc) }}" required="required">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Phone Number' %}:</label>
+								<input type="text" class="form-control" name="contact[phone]" value="{{ request.phone|default(service.contact.phone) }}" required="required">
+							</div>
+						</div>
+						
+					</div>
+					<div class="col-md-6">
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Address 1' %}:</label>
+								<input type="text" class="form-control" name="contact[address1]" value="{{ request.address1|default(service.contact.address1) }}" required="required">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Address 2' %}:</label>
+								<input type="text" class="form-control" name="contact[address2]" value="{{ request.address2|default(service.contact.address2) }}">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'City' %}:</label>
+								<input type="text" class="form-control" name="contact[city]" value="{{ request.city|default(service.contact.city) }}" required="required">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Country' %}:</label>
+								<input type="text" class="form-control" name="contact[country]" value="{{ request.country|default(service.contact.country) }}" required="required">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'State' %}:</label>
+								<input type="text" class="form-control" name="contact[state]" value="{{ request.state|default(service.contact.state) }}">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Zip/Postal Code' %}:</label>
+								<input type="text" class="form-control" name="contact[postcode]" value="{{ request.postcode|default(service.contact.postcode) }}" required="required">
+							</div>
+						</div>
+					</div>
+					<div class="col-md-12 text-center">
+						<input type="hidden" name="order_id" value="{{ order.id }}">
+						<input class="btn btn-primary" type="submit" value="{% trans 'Update' %}">
+					</div>
+				</div>
+				</form>
+			</div>
+		
+			<div class="tab-pane fade in" id="tab-epp">
+				<h4>{% trans 'Domain Secret' %}</h4>
+				<div class="well">
+					<p>{% trans 'All domain names (except a .EU, .UK domain name) have a Domain (Transfer) Secret Key/Authorization Code (EPP Code) associated with them. This would be required if you want to transfer service.' %}</p>
+                    <p><button class="btn btn-primary" type="button" id="get-epp">{% trans 'Get EPP code' %}</button></p>
+				</div>
+			</div>
+			
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+$(function() {
+
+    $('#domain-lock').bind('click',function(event){
+        bb.post(
+            'client/servicedomain/lock',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Domain locked');
+                $('#domain-lock').toggle();
+                $('#domain-unlock').toggle();
+            }
+        );
+    });
+
+    $('#domain-unlock').bind('click',function(event){
+        bb.post(
+            'client/servicedomain/unlock',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Domain unlocked');
+                $('#domain-lock').toggle();
+                $('#domain-unlock').toggle();
+            }
+        );
+    });
+
+    $('#domain-enable-pp').bind('click',function(event){
+        bb.post(
+            'client/servicedomain/enable_privacy_protection',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Privacy Protection enabled');
+                $('#domain-enable-pp').toggle();
+                $('#domain-disable-pp').toggle();
+            }
+        );
+    });
+
+    $('#domain-disable-pp').bind('click',function(event){
+        bb.post(
+            'client/servicedomain/disable_privacy_protection',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Privacy Protection disabled');
+                $('#domain-enable-pp').toggle();
+                $('#domain-disable-pp').toggle();
+            }
+        );
+    });
+
+    $('#get-epp').bind('click',function(event){
+        bb.post(
+            'client/servicedomain/get_transfer_code',
+            { order_id: {{ order.id }} },
+            function(result) {
+                bb.msg('Domain transfer code is: ' + result);
+            }
+        );
+    });
+
+});
+</script>
+
+{% endif %}

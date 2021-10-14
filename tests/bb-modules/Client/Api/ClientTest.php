@@ -60,7 +60,7 @@ class ClientTest extends \BBTestCase {
 
         $result = $client->balance_get_list($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testchange_password_PasswordDoNotMatch()
@@ -78,7 +78,8 @@ class ClientTest extends \BBTestCase {
         $di['validator'] = $validatorMock;
         $client->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Passwords do not match.');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Passwords do not match.');
         $client->change_password($data);
     }
 
@@ -189,7 +190,7 @@ class ClientTest extends \BBTestCase {
 
         $result = $api->balance_get_total();
 
-        $this->assertInternalType('float', $result);
+        $this->assertIsFloat($result);
         $this->assertEquals($balanceAmount, $result);
 
     }
@@ -211,7 +212,7 @@ class ClientTest extends \BBTestCase {
         $api->setIdentity($client);
 
         $result = $api->is_taxable();
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertEquals($clientIsTaxable, $result);
 
     }

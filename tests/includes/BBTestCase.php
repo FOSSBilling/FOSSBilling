@@ -1,8 +1,8 @@
 <?php
 
-class BBTestCase extends \PHPUnit_Framework_TestCase
+class BBTestCase extends PHPUnit\Framework\TestCase
 {
-    protected function tearDown()
+    protected function tearDown() : void
     {
         parent::tearDown();
         $refl = new ReflectionObject($this);

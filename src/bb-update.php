@@ -2,20 +2,36 @@
 /**
  * BoxBilling
  *
- * LICENSE
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
+ * @license   Apache-2.0
  *
- * This source file is subject to the license that is bundled
- * with this package in the file LICENSE.txt
- * It is also available through the world-wide-web at this URL:
- * http://www.boxbilling.com/LICENSE.txt
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@boxbilling.com so we can send you a copy immediately.
- *
- * @copyright Copyright (c) 2010-2012 BoxBilling (http://www.boxbilling.com)
- * @license   http://www.boxbilling.com/LICENSE.txt
- * @version   $Id$
+ * Copyright BoxBilling, Inc
+ * This source file is subject to the Apache-2.0 License that is bundled
+ * with this source code in the file LICENSE
  */
+
+
+/**
+ * 4.22 betas
+ */
+class BBPatch_24 extends BBPatchAbstract
+{
+    public function patch()
+    {
+        // Initializing meta description support for announcements
+        $q = "ALTER TABLE `post` ADD `description` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NULL  AFTER `title`";
+        $this->execSql($q);
+
+        // Clearing leftovers from deleted payment adapters
+        $q = "DELETE FROM `pay_gateway` WHERE `gateway` = 'AlertPay' OR `gateway` = 'WebToPay' OR `gateway` = 'Payza' OR `gateway` = 'SinglePay'";
+        $this->execSql($q);
+        
+        // Setting up the new custom pages extension
+        $q = "CREATE TABLE IF NOT EXISTS `custom_pages` (`id` int(11) NOT NULL AUTO_INCREMENT, `title` varchar(255) NOT NULL, `description` varchar(555) NOT NULL, `keywords` varchar(555) NOT NULL, `content` text NOT NULL, `slug` varchar(255) NOT NULL, `created_at` timestamp NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (`id`)) ENGINE=MyISAM DEFAULT CHARSET=utf8";
+        $this->execSql($q);
+    }
+}
+
 class BBPatch_23 extends BBPatchAbstract
 {
     public function patch()
@@ -109,7 +125,6 @@ class BBPatch_20 extends BBPatchAbstract
             'promo'                     => array('start_at', 'end_at', 'created_at', 'updated_at'),
             'queue'                     => array('created_at', 'updated_at'),
             'queue_message'             => array('execute_at', 'created_at', 'updated_at'),
-            'service_boxbillinglicense' => array('created_at', 'updated_at'),
             'service_custom'            => array('created_at', 'updated_at'),
             'service_domain'            => array('synced_at', 'registered_at', 'expires_at', 'created_at', 'updated_at'),
             'service_downloadable'      => array('created_at', 'updated_at'),

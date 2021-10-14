@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -14,9 +14,6 @@
 final class Box_Version
 {
     const VERSION = '0.0.1';
-
-    const TYPE_FREE = 'free';
-    const TYPE_PRO  = 'pro';
 
     /**
      * Compare the specified BoxBilling version string $version
@@ -30,8 +27,6 @@ final class Box_Version
      */
     public static function compareVersion($version)
     {
-        $version = strtolower($version);
-        $version = preg_replace('/(\d)pr(\d?)/', '$1a$2', $version);
-        return version_compare($version, strtolower(self::VERSION));
+        return version_compare(strtolower($version), strtolower(self::VERSION));
     }
 }

@@ -11,7 +11,7 @@ class ServicePayGatewayTest extends \BBTestCase {
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Invoice\ServicePayGateway();
     }
@@ -33,9 +33,9 @@ class ServicePayGatewayTest extends \BBTestCase {
         $this->service->setDi($di);
         $data = array();
         $result = $this->service->getSearchQuery($data);
-        $this->assertInternalType('array', $result);
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsArray($result);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
         $this->assertEquals(array(), $result[1]);
     }
 
@@ -50,10 +50,10 @@ class ServicePayGatewayTest extends \BBTestCase {
         $expectedParams = array('search' => "%$data[search]%");
 
         $result = $this->service->getSearchQuery($data);
-        $this->assertInternalType('array', $result);
-        $this->assertInternalType('string', $result[0]);
+        $this->assertIsArray($result);
+        $this->assertIsString($result[0]);
         $this->assertTrue(strpos($result[0], 'AND m.name LIKE :search') > 0);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsArray($result[1]);
         $this->assertEquals($expectedParams, $result[1]);
     }
 
@@ -81,7 +81,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->getPairs();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -97,7 +97,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->getAvailable();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testinstallPayGateway()
@@ -127,7 +127,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $serviceMock->setDi($di);
 
         $result = $serviceMock->install($code);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -142,7 +142,8 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('getAvailable')
             ->will($this->returnValue(array()));
 
-        $this->setExpectedException('\Box_Exception', 'Payment gateway is not available for installation.');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Payment gateway is not available for installation.');
         $serviceMock->install($code);
     }
 
@@ -192,7 +193,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $serviceMock->setDi($di);
 
         $result = $serviceMock->toApiArray($payGatewayModel, false, new \Model_Admin());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -217,7 +218,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->copy($payGatewayModel);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -289,7 +290,7 @@ class ServicePayGatewayTest extends \BBTestCase {
 
         $data = array('format' => 'pairs');
         $result = $this->service->getActive($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testcanPerformRecurrentPayment()
@@ -301,7 +302,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel->allow_recurrent = $expected;
 
         $result = $this->service->canPerformRecurrentPayment($payGatewayModel);
-        $this->assertInternalType('bool',$result);
+        $this->assertIsBool($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -371,7 +372,8 @@ class ServicePayGatewayTest extends \BBTestCase {
         $di['url'] = $urlMock;
         $serviceMock->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Payment gateway  was not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Payment gateway  was not found');
         $serviceMock->getPaymentAdapter($payGatewayModel, $invoiceModel);
     }
 
@@ -390,7 +392,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->will($this->returnValue($expected));
 
         $result = $serviceMock->getAdapterConfig($payGatewayModel);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetAdapterConfigClassDoesNotExists()
@@ -407,7 +409,8 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('getAdapterClassName')
             ->will($this->returnValue($expected));
 
-        $this->setExpectedException('\Box_Exception', sprintf("Payment gateway class %s was not found", $expected));
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf("Payment gateway class %s was not found", $expected));
         $serviceMock->getAdapterConfig($payGatewayModel);
     }
 
@@ -423,7 +426,8 @@ class ServicePayGatewayTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getAdapterClassName');
 
-        $this->setExpectedException('\Box_Exception', sprintf("Payment gateway %s was not found", $payGatewayModel->gateway));
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf("Payment gateway %s was not found", $payGatewayModel->gateway));
         $serviceMock->getAdapterConfig($payGatewayModel);
     }
 
@@ -436,7 +440,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $expected = 'Payment_Adapter_Custom';
 
         $result = $this->service->getAdapterClassName($payGatewayModel);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -447,7 +451,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $payGatewayModel->accepted_currencies = '{}';
 
         $result = $this->service->getAcceptedCurrencies($payGatewayModel);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetFormElements()
@@ -464,7 +468,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->will($this->returnValue($config));
 
         $result = $serviceMock->getFormElements($payGatewayModel);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetFormElementsEmptyFormConfig()
@@ -481,7 +485,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->will($this->returnValue($config));
 
         $result = $serviceMock->getFormElements($payGatewayModel);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $emptyArray = array();
         $this->assertEquals($emptyArray, $result);
     }
@@ -500,7 +504,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->will($this->returnValue($config));
 
         $result = $serviceMock->getDescription($payGatewayModel);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
     }
 
     public function testgetDescriptionEmptyDescription()
@@ -517,7 +521,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->will($this->returnValue($config));
 
         $result = $serviceMock->getDescription($payGatewayModel);
-        $this->assertInternalType('null', $result);
+        $this->assertNull($result);
     }
 }
  

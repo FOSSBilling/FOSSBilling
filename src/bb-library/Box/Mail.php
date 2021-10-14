@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -10,23 +10,9 @@
  * with this source code in the file LICENSE
  */
 
-/**
- * BoxBilling
- *
- * LICENSE
- *
- * This source file is subject to the license that is bundled
- * with this package in the file LICENSE.txt
- * It is also available through the world-wide-web at this URL:
- * http://www.boxbilling.com/LICENSE.txt
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@boxbilling.com so we can send you a copy immediately.
- *
- * @copyright Copyright (c) 2010-2012 BoxBilling (http://www.boxbilling.com)
- * @license   http://www.boxbilling.com/LICENSE.txt
- * @version   $Id$
- */
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 class Box_Mail
 {
     private $_bodyHtml  = NULL;
@@ -110,7 +96,7 @@ class Box_Mail
             'subject'   => $this->_subject,
             'html'      => $this->_bodyHtml . 'Reply Address: ' . $this->_from,
             'text'      => $this->_bodyHtml . 'Reply Address: ' . $this->_from,
-            'from'      => $replyaddy,
+            'from'      => $this->_from,
         );
         
         // create the request URL
@@ -162,9 +148,10 @@ class Box_Mail
         $mail->Host         = $host; 
         $mail->SMTPDebug     = 0; 
         
-        if($port)
+        if($port) {
             $mail->Port     = (int)$port;
-        
+        }
+
         if($user) {
             $mail->SMTPAuth     = true;
             $mail->SMTPSecure     = $security;

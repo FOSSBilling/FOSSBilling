@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -94,6 +94,8 @@ class Client extends \Api_Abstract
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
+        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', $data['content']);
+
         $helpdesk = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
 
         $client = $this->getIdentity();
@@ -117,6 +119,8 @@ class Client extends \Api_Abstract
             'content' => 'Ticket content required',
         );
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        $data['content'] = preg_replace('/javascript:\/\/|\%0(d|a)/i', '', $data['content']);
 
         $client = $this->getIdentity();
 

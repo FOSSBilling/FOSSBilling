@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -54,7 +54,7 @@ class Service implements \Box\InjectionAwareInterface
      * @param string|null $ip
      * @return int
      */
-    public function getRequestCount($since, $ip = null)
+    public function getRequestCount($since, $ip = null, $isLoginMethod = false)
     {
         if (!is_numeric($since)){
             $since = strtotime($since);
@@ -63,11 +63,19 @@ class Service implements \Box\InjectionAwareInterface
         $values = array(
             'since' =>  $sinceIso,
         );
+        if($isLoginMethod){
+        $sql="
+        SELECT COUNT(id) as cclogin
+        FROM api_request
+        WHERE created_at > :since
+        ";
+        } else {
         $sql="
         SELECT COUNT(id) as cc
         FROM api_request
         WHERE created_at > :since
         ";
+        }
 
         if(null != $ip) {
             $sql .= " AND ip = :ip";

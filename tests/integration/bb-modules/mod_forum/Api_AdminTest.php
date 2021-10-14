@@ -13,7 +13,7 @@ class Api_Admin_ForumTest extends BBDbApiTestCase
             'client_id' => 1,
         );
         $array = $this->api_admin->forum_profile_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testForum()
@@ -24,10 +24,10 @@ class Api_Admin_ForumTest extends BBDbApiTestCase
         );
 
         $array = $this->api_admin->forum_get_categories($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->forum_get_pairs($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'title' => 'New forum as',
@@ -39,7 +39,7 @@ class Api_Admin_ForumTest extends BBDbApiTestCase
             'id' => $id,
         );
         $array = $this->api_admin->forum_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data['title']       = 'new forum title';
         $data['description'] = 'new forum desc';
@@ -64,19 +64,19 @@ class Api_Admin_ForumTest extends BBDbApiTestCase
             'message'  => 'message in this topic',
         );
         $id   = $this->api_admin->forum_topic_create($data);
-        $this->assertInternalType('int', $id);
+        $this->assertIsInt($id);
 
         $data  = array(
             'id' => $id,
         );
         $array = $this->api_admin->forum_topic_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data  = array(
             'id' => $id,
         );
         $array = $this->api_admin->forum_topic_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data['title'] = 'new title';
         $bool          = $this->api_admin->forum_topic_update($data);
@@ -92,17 +92,17 @@ class Api_Admin_ForumTest extends BBDbApiTestCase
             'forum_topic_id' => 1,
         );
         $array = $this->api_admin->forum_message_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'forum_topic_id' => 1,
             'message'        => 'this is my reply message',
         );
         $int  = $this->api_admin->forum_message_create($data);
-        $this->assertInternalType('int', $int);
+        $this->assertIsInt($int);
 
         $array = $this->api_admin->forum_message_get(array('id' => $int));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data['id']      = $int;
         $data['message'] = 'updated message';
@@ -114,7 +114,7 @@ class Api_Admin_ForumTest extends BBDbApiTestCase
             'message'        => 'this is my second message',
         );
         $int  = $this->api_admin->forum_message_create($data);
-        $this->assertInternalType('int', $int);
+        $this->assertIsInt($int);
 
         $data['id'] = $int;
         $bool       = $this->api_admin->forum_message_delete($data);
@@ -163,7 +163,7 @@ class Api_Admin_ForumTest extends BBDbApiTestCase
             'message'        => 'this is my reply message',
         );
         $int  = $this->api_client->forum_post_message($post);
-        $this->assertInternalType('int', $int);
+        $this->assertIsInt($int);
 
         $profile = $this->api_admin->forum_profile_get($data);
         $this->assertEquals(1, $profile['points']);
@@ -176,7 +176,7 @@ class Api_Admin_ForumTest extends BBDbApiTestCase
             'message'        => 'this is my reply message',
         );
         $int  = $this->api_client->forum_post_message($post);
-        $this->assertInternalType('int', $int);
+        $this->assertIsInt($int);
         $this->api_admin->forum_points_deduct(array('id' => $int));
     }
 
@@ -187,11 +187,11 @@ class Api_Admin_ForumTest extends BBDbApiTestCase
             'per_page' => 10,
         );
         $array = $this->api_admin->forum_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         if (count($list)) {
             $item = $list[0];
             $this->assertArrayHasKey('id', $item);
@@ -205,7 +205,7 @@ class Api_Admin_ForumTest extends BBDbApiTestCase
             $this->assertArrayHasKey('updated_at', $item);
             $this->assertArrayHasKey('stats', $item);
             $stats = $item['stats'];
-            $this->assertInternalType('array', $stats);
+            $this->assertIsArray($stats);
             $this->assertArrayHasKey('topics_count', $stats);
             $this->assertArrayHasKey('posts_count', $stats);
             $this->assertArrayHasKey('views_count', $stats);
@@ -218,11 +218,11 @@ class Api_Admin_ForumTest extends BBDbApiTestCase
             'forum_id' => 1,
         );
         $array = $this->api_admin->forum_topic_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         if (count($list)) {
             $item = $list[0];
             $this->assertArrayHasKey('id', $item);
@@ -234,14 +234,14 @@ class Api_Admin_ForumTest extends BBDbApiTestCase
             $this->assertArrayHasKey('updated_at', $item);
             $this->assertArrayHasKey('forum', $item);
             $forum = $item['forum'];
-            $this->assertInternalType('array', $forum);
+            $this->assertIsArray($forum);
             $this->assertArrayHasKey('id', $forum);
             $this->assertArrayHasKey('slug', $forum);
             $this->assertArrayHasKey('title', $forum);
             $this->assertArrayHasKey('category', $forum);
             $this->assertArrayHasKey('stats', $item);
             $stats = $item['stats'];
-            $this->assertInternalType('array', $stats);
+            $this->assertIsArray($stats);
             $this->assertArrayHasKey('posts_count', $stats);
             $this->assertArrayHasKey('views_count', $stats);
         }

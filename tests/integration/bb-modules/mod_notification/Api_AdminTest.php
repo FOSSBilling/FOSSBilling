@@ -13,19 +13,19 @@ class Box_Mod_Notification_Api_AdminTest extends BBModTestCase
         $this->api_admin->extension_activate(array('id' => 'notification', 'type' => 'mod'));
 
         $int = $this->api_admin->notification_add(array('message' => 'Test message'));
-        $this->assertInternalType('int', $int);
+        $this->assertIsInt($int);
 
         $array = $this->api_admin->notification_get(array('id' => $int));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->notification_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertEquals(1, $array['total']);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
         $item = $list[0];
-        $this->assertInternalType('array', $item);
+        $this->assertIsArray($item);
         $this->assertArrayHasKey('id', $item);
         $this->assertArrayHasKey('client_id', $item);
         $this->assertArrayHasKey('extension', $item);

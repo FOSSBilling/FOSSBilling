@@ -23,7 +23,7 @@ abstract class BBDbApiTestCase extends BBDatabaseTestCase
         $this->di['updater'] = $updatedMock;
     }
 
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -40,7 +40,7 @@ abstract class BBDbApiTestCase extends BBDatabaseTestCase
         //$this->api_admin->hook_batch_connect();
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         parent::tearDown();
         

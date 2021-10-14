@@ -1,0 +1,10 @@
+{
+    "name": "Bootstrap template",
+    "version": "0.1",
+    "description": "Blank bootstrap template",
+    "icon": "screenshot.jpg",
+	"author": "Scith",
+    "author_url": "https://github.com/scith",
+    "homepage_url": "https://github.com/scith/boxbilling-bootstrap",
+	"license": "GNU General Public License v3.0"
+}

@@ -18,7 +18,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $bool = $this->api_admin->order_update(array('id'=>'1', 'meta'=>$meta));
         $this->assertTrue($bool);
         $order = $this->api_admin->order_get(array('id'=>1));
-        $this->assertInternalType('array', $order);
+        $this->assertIsArray($order);
         $this->assertTrue(isset($order['meta']));
         $this->assertEquals('value 1', $order['meta']['param_1']);
         $this->assertEquals('value 2', $order['meta']['param_2']);
@@ -54,11 +54,11 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $data['id'] = $id;
 
         $order = $this->api_admin->order_get($data);
-        $this->assertInternalType('array', $order);
+        $this->assertIsArray($order);
         $this->assertEquals($id, $order['id']);
 
         $list = $this->api_admin->order_get_list(array());
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         $bool = $this->api_admin->order_update(array('id'=>1,'expires_at'=>date('Y-m-d H:i:s', strtotime('+ 2 days'))));
         $this->assertTrue($bool);
@@ -70,7 +70,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $array = $this->api_admin->order_service($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $bool = $this->api_admin->order_suspend($data);
         $this->assertTrue($bool);
@@ -101,10 +101,10 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $list = $this->api_admin->order_status_history_get_list($data);
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         
         $array = $this->api_admin->order_addons($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $bool = $this->api_admin->order_delete($data);
         $this->assertTrue($bool);
@@ -113,13 +113,13 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
     public function testLists()
     {
         $array = $this->api_admin->order_get_invoice_options();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->order_get_status_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->order_get_statuses(array());
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testSuspension()
@@ -250,7 +250,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $order = $this->api_admin->order_get($data);
-        $this->assertInternalType('array', $order);
+        $this->assertIsArray($order);
 
         $this->assertTrue(!is_null($order['expires_at']), 'Domain Order expiration date was not set after activation');
     }
@@ -287,7 +287,7 @@ class Api_Admin_OrderTest extends BBDbApiTestCase
         $data['config'] = $config;
         
         $id = $this->api_admin->order_create($data);
-        $this->assertInternalType('int', $id);
+        $this->assertIsInt($id);
     }
     
     /**

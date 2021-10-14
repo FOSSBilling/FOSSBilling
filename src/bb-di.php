@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -17,10 +17,8 @@ $di['config'] = function() {
     return new Box_Config($array);
 };
 $di['logger'] = function () use ($di) {
-    $logFile = $di['config']['path_logs'];
-    $writer  = new Box_LogStream($logFile);
     $log     = new Box_Log();
-    $log->addWriter($writer);
+    $log->setDi($di);
 
     $log_to_db = isset($di['config']['log_to_db']) && $di['config']['log_to_db'];
     if ($log_to_db) {
@@ -35,6 +33,10 @@ $di['logger'] = function () use ($di) {
             $log->setEventItem('client_id', $client->id);
         }
         $log->addWriter($writer2);
+    } else {
+        $logFile = $di['config']['path_logs'];
+        $writer  = new Box_LogStream($logFile);
+        $log->addWriter($writer);
     }
 
     return $log;
@@ -78,6 +80,7 @@ $di['db'] = function() use ($di) {
 
     require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'rb.php';
     R::setup($di['pdo']);
+    \RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy( false );
 
     $helper = new Box_BeanHelper();
     $helper->setDi($di);
@@ -135,22 +138,24 @@ $di['request'] = function () use ($di) {
 };
 $di['cache'] = function () use ($di) { return new FileCache();};
 $di['auth'] = function () use ($di) { return new Box_Authorization($di);};
-$di['twig'] = function () use ($di) {
+$di['twig'] = $di->factory(function () use ($di) {
     $config = $di['config'];
     $options = $config['twig'];
 
-    $loader = new Twig_Loader_String();
-    $twig = new Twig_Environment($loader, $options);
+    $loader = new Twig\Loader\ArrayLoader();
+    $twig = new Twig\Environment($loader, $options);
 
     $box_extensions = new Box_TwigExtensions();
     $box_extensions->setDi($di);
 
-    $twig->addExtension(new Twig_Extension_Optimizer());
-    $twig->addExtension(new Twig_Extensions_Extension_I18n());
-    $twig->addExtension(new Twig_Extensions_Extension_Debug());
+      //$twig->addExtension(new Twig\Extension\OptimizerExtension());
+      $twig->addExtension(new \Twig\Extension\StringLoaderExtension());
+      $twig->addExtension(new Twig\Extension\DebugExtension());
+      $twig->addExtension(new Twig\Extensions\I18nExtension());
     $twig->addExtension($box_extensions);
-    $twig->getExtension('core')->setDateFormat($config['locale_date_format']);
-    $twig->getExtension('core')->setTimezone($config['timezone']);
+      $twig->getExtension(Twig\Extension\CoreExtension::class)->setDateFormat($config['locale_date_format']);
+      $twig->getExtension(Twig\Extension\CoreExtension::class)->setTimezone($config['timezone']);
+  
 
     // add globals
     if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest') {
@@ -161,18 +166,40 @@ $di['twig'] = function () use ($di) {
     $twig->addGlobal('guest', $di['api_guest']);
 
     return $twig;
-};
+});
 
 $di['is_client_logged'] = function() use($di) {
     if(!$di['auth']->isClientLoggedIn()) {
-        throw new Exception('Client is not logged in');
+        $api_str = '/api/';
+        $url = $di['request']->getQuery('_url');
+        if (strncasecmp($url, $api_str , strlen($api_str)) === 0) {
+            //Throw Exception if api request
+            throw new Exception('Client is not logged in');
+        }
+        else {            
+            //Redirect to login page if browser request
+            $login_url = $di['url']->link('login');
+            header("Location: $login_url");
+        }
+
     }
     return true;
 };
 
 $di['is_admin_logged'] = function() use($di) {
+    
     if(!$di['auth']->isAdminLoggedIn()) {
+    $api_str = '/api/';
+    $url = $di['request']->getQuery('_url');
+    if (strncasecmp($url, $api_str , strlen($api_str)) === 0) {
+        //Throw Exception if api request
         throw new Exception('Admin is not logged in');
+    }
+    else {
+        //Redirect to login page if browser request
+        $login_url = $di['url']->adminLink('staff/login');
+        header("Location: $login_url");
+        }
     }
     return true;
 };
@@ -183,7 +210,7 @@ $di['loggedin_client'] = function() use ($di) {
     return $di['db']->getExistingModelById('Client', $client_id);
 };
 $di['loggedin_admin'] = function() use ($di) {
-    if(php_sapi_name() == 'cli') {
+    if(php_sapi_name() == 'cli' || substr(php_sapi_name(), 0, 3) == 'cgi') {
         return $di['mod_service']('staff')->getCronAdmin();
     }
 
@@ -221,11 +248,6 @@ $di['api_guest'] = function() use ($di) { return $di['api']('guest'); };
 $di['api_client'] = function() use ($di) { return $di['api']('client');};
 $di['api_admin'] = function() use ($di) { return $di['api']('admin'); };
 $di['api_system'] = function() use ($di) { return $di['api']('system'); };
-$di['license'] = function () use ($di) {
-    $service = new Box_License();
-    $service->setDi($di);
-    return $service;
-};
 
 $di['tools'] = function () use ($di){
     $service = new Box_Tools();
@@ -239,7 +261,7 @@ $di['validator'] = function () use ($di){
     return $validator;
 };
 $di['guzzle_client'] = function () {
-    return new \Guzzle\Http\Client();
+    return new GuzzleHttp\Client();
 };
 $di['mail'] = function () {
     return new Box_Mail();
@@ -338,6 +360,6 @@ $di['translate'] = $di->protect(function($textDomain = '') use ($di) {
     return $tr;
 });
 $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-    return isset ($array[$key]) ? $array[$key] : $default;
+    return array_key_exists($key, $array)  ? $array[$key] : $default;
 });
 return $di;

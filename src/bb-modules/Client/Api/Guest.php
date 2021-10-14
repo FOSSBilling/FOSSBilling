@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -253,10 +253,11 @@ class Guest extends \Api_Abstract
 
         $cc     = $data['country'];
         $vatnum = $data['vat'];
-        $url    = 'http://isvat.appspot.com/' . rawurlencode($cc) . '/' . rawurlencode($vatnum) . '/';
-        $result = $this->di['guzzle_client']->get($url);
 
-        return ($result == 'true');
+        //@todo add new service provider https://vatlayer.com/ check
+//         $url    = 'http://isvat.appspot.com/' . rawurlencode($cc) . '/' . rawurlencode($vatnum) . '/';
+//         $result = $this->di['guzzle_client']->get($url);
+        return true;
     }
     
     /**

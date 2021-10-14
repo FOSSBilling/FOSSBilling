@@ -34,7 +34,7 @@ class AdminTest extends \BBTestCase {
         $controllerAdmin->setDi($di);
 
         $result = $controllerAdmin->fetchNavigation();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testregister()

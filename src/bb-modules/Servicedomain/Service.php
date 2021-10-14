@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -69,7 +69,8 @@ class Service implements \Box\InjectionAwareInterface
             }
 
             if (!$validator->isSldValid($data['owndomain_sld'])) {
-                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['owndomain_sld']));
+                $safe_dom = htmlspecialchars($data['owndomain_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
             }
 
             $required = array(
@@ -85,7 +86,8 @@ class Service implements \Box\InjectionAwareInterface
             }
 
             if (!$validator->isSldValid($data['transfer_sld'])) {
-                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['transfer_sld']));
+                $safe_dom = htmlspecialchars($data['transfer_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
             }
 
             $required = array(
@@ -115,7 +117,8 @@ class Service implements \Box\InjectionAwareInterface
             }
 
             if (!$validator->isSldValid($data['register_sld'])) {
-                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $data['register_sld']));
+                $safe_dom = htmlspecialchars($data['register_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
             }
 
             $required = array(
@@ -559,7 +562,8 @@ class Service implements \Box\InjectionAwareInterface
 
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
-            throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $sld));
+            $safe_dom = htmlspecialchars($sld, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
         }
 
         if (!$model->allow_register) {
@@ -771,7 +775,8 @@ class Service implements \Box\InjectionAwareInterface
         $model->price_renew        = $data['price_renew'];
         $model->price_transfer     = $data['price_transfer'];
         $model->min_years          = isset($data['min_years']) ? (int)$data['min_years'] : 1;
-        $model->allow_register     = isset($data['allow_register']) ? (bool)$data['allow_transfer'] : true;
+        $model->allow_register     = isset($data['allow_register']) ? (bool)$data['allow_register'] : true;
+        $model->allow_transfer     = isset($data['allow_transfer']) ? (bool)$data['allow_transfer'] : true;
         $model->active             = isset($data['active']) ? (bool)$data['active'] : false;
         $model->updated_at         = date('Y-m-d H:i:s');
         $model->created_at         = date('Y-m-d H:i:s');
@@ -903,7 +908,7 @@ class Service implements \Box\InjectionAwareInterface
 
     public function registrarGetAvailable()
     {
-        $query = "SELECT tr.registrar, tr.name FROM tld_registrar tr GROUP BY registrar";
+        $query = "SELECT 'registrar', 'name' FROM tld_registrar GROUP BY registrar";
 
         $exists = $this->di['db']->getAssoc($query);
 
@@ -966,7 +971,8 @@ class Service implements \Box\InjectionAwareInterface
         if (!$registrar instanceof \Registrar_AdapterAbstract) {
             throw new \Box_Exception('Registrar adapter :adapter should extend Registrar_AdapterAbstract', array(':adapter' => $class));
         }
-
+        
+        $registrar->setLog($this->di['logger']);
 
         if (isset($r->test_mode) && $r->test_mode) {
             $registrar->enableTestMode();

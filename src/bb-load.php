@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -19,19 +19,28 @@ define('BB_PATH_MODS',      BB_PATH_ROOT . '/bb-modules');
 define('BB_PATH_LANGS',     BB_PATH_ROOT . '/bb-locale');
 define('BB_PATH_UPLOADS',   BB_PATH_ROOT . '/bb-uploads');
 define('BB_PATH_DATA',   BB_PATH_ROOT . '/bb-data');
+define('isCLI', php_sapi_name() == 'cli');
 
-function handler_error($number, $message, $file, $line)
+function handler_error(int $number, string $message, string $file, int $line)
 {
     if (E_RECOVERABLE_ERROR===$number) {
+      if (isCLI) {
+        echo "Error #[$number] occurred in [$file] at line [$line]: [$message]";
+      } else {
         handler_exception(new ErrorException($message, $number, 0, $file, $line));
+      }
     } else {
         error_log($number." ".$message." ".$file." ".$line);
     }
     return false;
 }
 
-function handler_exception(Exception $e)
+// Removed Exception type. Some errors are thrown as exceptions causing fatal errors.
+function handler_exception($e)
 {
+  if (isCLI) {
+    echo "Error #[". $e->getCode() ."] occurred in [". $e->getFile() ."] at line [". $e->getLine() ."]: [". trim(strip_tags($e->getMessage())) ."]";
+  } else {
     if(APPLICATION_ENV == 'testing') {
         print $e->getMessage() . PHP_EOL;
         return ;
@@ -46,36 +55,173 @@ function handler_exception(Exception $e)
     }
 
     $page = "<!DOCTYPE html>
-    <html lang=en>
-    <meta charset=utf-8>
-    <title>Error</title>
-    <style>
-    *{margin:0;padding:0}html,code{font:15px/22px arial,sans-serif}html{background:#fff;color:#222;padding:15px}body{margin:7% auto 0;min-height:180px;padding:30px 0 15px}* > body{padding-right:205px}p{margin:11px 0 22px;overflow:hidden}ins{color:#777;text-decoration:none}a img{border:0} em{font-weight:bold}@media screen and (max-width:772px){body{background:none;margin-top:0;max-width:none;padding-right:0}}pre{ width: 100%; overflow:auto; }
-    </style>
-    <a href=//www.boxbilling.com/ target='_blank'><img src='https://sites.google.com/site/boxbilling/_/rsrc/1308483006796/home/logo_boxbilling.png' alt='BoxBilling' style='height:60px'></a>
-    ";
+    <html lang=\"en\">
+    
+    <head>
+        <meta charset=\"utf-8\">
+        <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+        <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    
+        <title>An error ocurred</title>
+    
+        <!-- Google font -->
+        <link href=\"https://fonts.googleapis.com/css?family=Nunito:400,700\" rel=\"stylesheet\">
+    
+        <!-- Custom stlylesheet -->
+        <link type=\"text/css\" rel=\"stylesheet\" href=\"css/style.css\" />
+
+        <style>
+        * {
+            -webkit-box-sizing: border-box;
+                    box-sizing: border-box;
+          }
+          
+          body {
+            padding: 0;
+            margin: 0;
+          }
+          
+          #error {
+            position: relative;
+            height: 100vh;
+          }
+          
+          #error .error {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+                -ms-transform: translate(-50%, -50%);
+                    transform: translate(-50%, -50%);
+          }
+          
+          .error {
+            max-width: 560px;
+            width: 100%;
+            padding-left: 160px;
+            line-height: 1.1;
+          }
+          
+          .error .error-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            display: inline-block;
+            width: 140px;
+            height: 140px;
+            background-image: url('/bb-themes/boxbilling/assets/images/box.png');
+            background-size: cover;
+          }
+          
+          .error .error-container:before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-transform: scale(2.4);
+                -ms-transform: scale(2.4);
+                    transform: scale(2.4);
+            border-radius: 50%;
+            background-color: #f2f5f8;
+            z-index: -1;
+          }
+          
+          .error h1 {
+            font-family: 'Nunito', sans-serif;
+            font-size: 65px;
+            font-weight: 700;
+            margin-top: 0px;
+            margin-bottom: 10px;
+            color: #151723;
+            text-transform: uppercase;
+          }
+          
+          .error h2 {
+            font-family: 'Nunito', sans-serif;
+            font-size: 21px;
+            font-weight: 400;
+            margin: 0;
+            text-transform: uppercase;
+            color: #151723;
+          }
+          
+          .error p {
+            font-family: 'Nunito', sans-serif;
+            color: #999fa5;
+            font-weight: 400;
+          }
+          
+          .error a {
+            font-family: 'Nunito', sans-serif;
+            display: inline-block;
+            font-weight: 700;
+            border-radius: 40px;
+            text-decoration: none;
+            color: #388dbc;
+          }
+          
+          @media only screen and (max-width: 767px) {
+            .error .error-container {
+              width: 110px;
+              height: 110px;
+            }
+            .error {
+              padding-left: 15px;
+              padding-right: 15px;
+              padding-top: 110px;
+            }
+          }
+
+          code {
+            font-family: Consolas,'courier new';
+            color: crimson;
+            background-color: #f1f1f1;
+            padding: 2px;
+            font-size: 90%;
+          }
+          
+        </style>
+    </head>
+    <body>
+
+    <div id=\"error\">
+        <div class=\"error\">
+            <div class=\"error-container\"></div>
+            <h1>Error</h1>";
     $page = str_replace(PHP_EOL, "", $page);
     print $page;
     if($e->getCode()) {
-        print sprintf('<p>Code: <em>%s</em></p>', $e->getCode());
+        print sprintf('<h2>Error code: <em>%s</em></h1>', $e->getCode());
     }
     print sprintf('<p>%s</p>', $e->getMessage());
-    print sprintf('<p><a href="http://docs.boxbilling.com/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p>', urlencode($e->getMessage()));
-
+    
     if(defined('BB_DEBUG') && BB_DEBUG) {
-        print sprintf('<em>%s</em>', 'Set BB_DEBUG to FALSE, to hide the message below');
+        print sprintf('<hr><center><small><p><b>%s</b></p></small></center>', 'Set BB_DEBUG to FALSE, to hide the message below');
         print sprintf('<p>Class: "%s"</p>', get_class($e));
         print sprintf('<p>File: "%s"</p>', $e->getFile());
         print sprintf('<p>Line: "%s"</p>', $e->getLine());
-        print sprintf('Trace: <pre>%s</pre>', $e->getTraceAsString());
+        print sprintf('Trace: <code>%s</code>', $e->getTraceAsString());
     }
+    print sprintf('<center><p><a href="http://docs.boxbilling.com/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p></center>', urlencode($e->getMessage()));
+    print("<center><hr><p>Powered by <a href=//https://github.com/boxbilling/boxbilling/>BoxBilling</a></p></center>
+    </body>
+    
+    </html>");
+  }
 }
 
 set_exception_handler("handler_exception");
 set_error_handler('handler_error');
 
-// multisite support. Load new config depending on current host
-// if run from cli first param must be hostname
+// Check for Composer packages
+$vendorPath = BB_PATH_ROOT.'/bb-vendor';
+if(!file_exists($vendorPath)) {
+  throw new Exception("It seems like Composer packages are missing. You have to run \"<code>composer install</code>\" in order to install them. For detailed instruction, you can see <a href=\"https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies\">Composer's getting started guide</a>.<br /><br />If you have downloaded BoxBilling from <a href=\"https://github.com/boxbilling/boxbilling/releases\">GitHub releases</a>, this shouldn't happen.", 103);
+}
+
+// Multisite support. Load new configuration depending on the current hostname
+// If being run from CLI, first parameter must be the hostname
 $configPath = BB_PATH_ROOT.'/bb-config.php';
 if((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || (php_sapi_name() == 'cli' && isset($argv[1]) ) ) {
     if(php_sapi_name() == 'cli') {
@@ -90,18 +236,23 @@ if((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || (php_sapi_name() =
     }
 }
 
-// check if config is available
-if(!file_exists($configPath) || 0 == filesize( $configPath )) {
+// Try to check if configuration is available
+if(!file_exists($configPath) || 0 == filesize($configPath)) {
     
-    //try create empty config file
+    // Try to create an empty configuration file
     @file_put_contents($configPath, '');
     
-    $base_url = "http://".$_SERVER['HTTP_HOST'];
-    $base_url .= preg_replace('@/+$@','',dirname($_SERVER['SCRIPT_NAME'])).'/';
-    $url = $base_url . 'install/index.php';
+    $base_url = "http".(isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on' || $_SERVER['HTTPS'] == 1) || isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https' ? 's' : '')."://".$_SERVER['HTTP_HOST'];
+    $base_url .= preg_replace('@/+$@','',dirname($_SERVER['SCRIPT_NAME']));
+    $url = $base_url . '/install/index.php';
     $configFile = pathinfo($configPath, PATHINFO_BASENAME);
-    $msg = sprintf("There doesn't seem to be a <em>$configFile</em> file or bb-config.php file does not contain required configuration parameters. I need this before we can get started. Need more help? <a target='_blank' href='http://docs.boxbilling.com/en/latest/reference/installation.html'>We got it</a>. You can create a <em>$configFile</em> file through a web interface, but this doesn't work for all server setups. The safest way is to manually create the file.</p><p><a href='%s' class='button'>Continue with BoxBilling installation</a>", $url);
+    $msg = sprintf("The <em>$configFile</em> path seems to be invalid. You may have not generated the configuration file yet, or the configuration file may not contain the required configuration parameters. BoxBilling needs to have a valid configuration file present in order to function properly.</p> <p>Need some help with the installation? <a target='_blank' href='http://docs.boxbilling.com/en/latest/reference/installation.html'>We got it</a>. You can create the configuration file using the interactive installer, or manually create the configuration file.</p> <p>If it's your first time setting up BoxBilling, you can <a href='%s' class='button'>continue with the web-based interactive BoxBilling installation</a>.", $url);
     throw new Exception($msg, 101);
+}
+
+// Try to check if /install directory still exists, even after the installation was completed
+if(file_exists($configPath) && 0 !== filesize($configPath) && file_exists(BB_PATH_ROOT.'/install/index.php')) {
+    throw new Exception("For safety reasons, you have to delete the <b><em>/install</em></b> directory to start using BoxBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.", 102);
 }
 
 $config = require_once $configPath;
@@ -122,12 +273,17 @@ if($config['sef_urls']) {
     define('BB_URL_API',    $config['url'] . 'index.php?_url=/api/');
 }
 
+include_once BB_PATH_LIBRARY .'/Security/CSRF-Protector-PHP/libs/csrf/csrfprotector.php';
+
+// Initialize CSRFProtector library
+csrfProtector::init();
+
 if($config['debug']) {
-    error_reporting( E_ALL );
+    error_reporting(E_ALL);
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');
 } else {
-    error_reporting( E_RECOVERABLE_ERROR );
+    error_reporting(E_RECOVERABLE_ERROR);
     ini_set('display_errors', '0');
     ini_set('display_startup_errors', '0');
 }
@@ -135,23 +291,3 @@ if($config['debug']) {
 ini_set('log_errors', '1');
 ini_set('html_errors', FALSE);
 ini_set('error_log', BB_PATH_LOG . '/php_error.log');
-
-// Strip magic quotes from request data.
-if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
-    // Create lamba style unescaping function (for portability)
-    $quotes_sybase = strtolower(ini_get('magic_quotes_sybase'));
-    $unescape_function = (empty($quotes_sybase) || $quotes_sybase === 'off') ? 'stripslashes($value)' : 'str_replace("\'\'","\'",$value)';
-    $stripslashes_deep = create_function('&$value, $fn', '
-        if (is_string($value)) {
-            $value = ' . $unescape_function . ';
-        } else if (is_array($value)) {
-            foreach ($value as &$v) $fn($v, $fn);
-        }
-    ');
-
-    // Unescape data
-    $stripslashes_deep($_POST, $stripslashes_deep);
-    $stripslashes_deep($_GET, $stripslashes_deep);
-    $stripslashes_deep($_COOKIE, $stripslashes_deep);
-    $stripslashes_deep($_REQUEST, $stripslashes_deep);
-}

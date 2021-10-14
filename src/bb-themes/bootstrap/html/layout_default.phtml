@@ -1,0 +1,245 @@
+{% set company  = guest.system_company %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block meta_title %}{% endblock %} {{ settings.meta_title }}</title>
+
+    <meta property="bb:url" content="{{ constant('BB_URL') }}"/>
+    <meta property="bb:client_area" content="{{ '/'|link }}"/>
+    
+    <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}" />
+    <meta name="keywords" content="{% block meta_keywords %}{{ settings.meta_keywords }}{% endblock %}" />
+    <meta name="robots" content="{% if settings.meta_robots|default %}{{ settings.meta_robots }}{% else %}index, follow{% endif %}" />
+	<meta name="author" content="{{ settings.meta_author }}">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+    <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}" />
+	
+	<!-- Bootstrap Core CSS -->
+	{% if settings.theme != "default" %}<link href="{{ 'css/themes/theme-' | asset_url }}{{ settings.theme }}.min.css" rel="stylesheet">
+	{% else %}<link href="{{ 'css/bootstrap.min.css' | asset_url }}" rel="stylesheet">
+	{% endif %}
+	
+	<!-- Bootstrap Markdown Editor -->
+    <link href="{{ 'css/bootstrap-markdown.min.css' | asset_url }}" rel="stylesheet">
+
+    <!-- Theme CSS -->
+    <link href="{{ 'css/modern-business.css' | asset_url }}" rel="stylesheet">
+	
+	{% if settings.inject_css|default %}
+	<!-- Custom CSS -->
+	<style>
+		{{ settings.inject_css|raw }}
+	</style>
+	{% endif %}
+
+    <!-- Custom Fonts -->
+    <link href="{{ 'font-awesome/css/font-awesome.min.css' | asset_url }}" rel="stylesheet" type="text/css">
+	
+	<!-- jQuery -->
+    <script src="{{ 'js/jquery.js' | asset_url }}"></script>
+	
+	<!-- BoxBilling -->
+    <script src="{{ 'js/bb-jquery.js' | asset_url }}"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="{{ 'js/bootstrap.min.js' | asset_url }}"></script>
+	
+	<!-- Bootstrap Markdown Editor -->
+	<script src="{{ 'js/bootstrap-markdown.js' | asset_url }}"></script>
+	<script src="{{ 'js/to-markdown.js' | asset_url }}"></script>
+	<script src="{{ 'js/markdown.js' | asset_url }}"></script>
+	
+	<!-- Bootbox Alerts JavaScript -->
+    <script src="{{ 'js/bootbox.min.js' | asset_url }}"></script>
+	
+	{% if settings.inject_javascript|default %}
+	<!-- Custom Javascript -->
+	<script>
+		{{ settings.inject_javascript|raw }}
+	</script>
+	{% endif %}
+	
+	{% block js %}{% endblock %}
+
+    {% block opengraph %}{% endblock %}
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+{% if guest.extension_is_on({"mod":"cookieconsent"}) %}
+    {% include 'mod_cookieconsent_index.phtml' ignore missing%}
+{% endif %}
+
+	<!-- Navigation -->
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#mainmenu">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="{{''|link }}">{{company.name}}</a>
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="mainmenu">
+				<ul class="nav navbar-nav navbar-right">
+					<li><a href="{{ 'cart'|link }}" title="{% trans 'Shopping cart' %}"><i class="fa fa-shopping-cart"></i> {% trans 'Shopping cart' %}</a></li>
+					{% if settings.side_menu_home %}<li class="visible-xs"><a href="{{ ''|link }}" title="{% trans 'Home' %}" ><i class="fa fa-home"></i> {% trans 'Home' %}</a></li>{% endif %}
+					{% if settings.side_menu_order %}<li class="visible-xs"><a href="{{ '/order'|link }}" title="{% trans 'Order' %}" ><i class="fa fa-shopping-cart"></i> {% trans 'Order' %}</a></li>{% endif %}
+					{% if settings.side_menu_blog and guest.extension_is_on({"mod":"news"}) %}<li class="visible-xs"><a href="{{ '/news'|link }}" title="{% trans 'Blog' %}" ><i class="fa fa-bullhorn"></i> {% trans 'Blog' %}</a></li>{% endif %}
+					{% if settings.side_menu_forum and guest.extension_is_on({"mod":"forum"}) %}<li class="visible-xs"><a href="{{ '/forum'|link }}"><i class="fa fa-comments"></i> {% trans 'Forum' %}</a></li>{% endif %}
+					{% if settings.side_menu_kb and guest.extension_is_on({"mod":"kb"}) %}<li class="visible-xs"><a href="{{ 'kb'|link }}" title="{% trans 'Knowledge Base' %}"><i class="fa fa-graduation-cap"></i> {% trans 'Knowledge Base' %}</a></li>{% endif %}
+					{% if settings.side_menu_contact %}<li class="visible-xs"><a href="{{ '/support/contact-us'|link }}"><i class="fa fa-envelope"></i> {% trans 'Contact us' %}</a></li>{% endif %}
+					{% if client %}
+					{% set profile = client.client_get %}
+						{% if settings.side_menu_services %}<li class="visible-xs"><a href="{{ 'order/service'|link }}" title="{% trans 'Services' %}"><i class="fa fa-cog"></i> {% trans 'Services' %}</a></li>{% endif %}
+						{% if settings.side_menu_support %}<li class="visible-xs"><a href="{{ 'support'|link }}" title="{% trans 'Tickets' %}"><i class="fa fa-life-ring"></i> {% trans 'Support' %}</a></li>{% endif %}
+						{% if settings.side_menu_invoices %}<li class="visible-xs"><a href="{{ 'invoice'|link }}" title="{% trans 'Invoices' %}"><i class="fa fa-credit-card"></i> {% trans 'Invoices' %}</a></li>{% endif %}
+						<li><a href="{{ ''|link }}" title="{% trans 'Dashboard' %}"><i class="fa fa-home"></i> {% trans 'Dashboard' %}</a></li>
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-user"></i> {{ (profile.first_name ~ " " ~ profile.last_name) }} <span class="caret"></span></a>
+							<ul class="dropdown-menu">
+								<li><a href="{{ 'client/me'|link }}" title="{% trans 'Profile' %}"><i class="fa fa-user"></i> {% trans 'Manage profile' %}</a></li>
+								{% if settings.show_client_emails %}<li><a href="{{ 'email'|link }}" title="{% trans 'Emails'%}"><i class="fa fa-envelope"></i> {% trans 'Emails'%}</a></li>{% endif %}
+								{% if settings.show_client_balance %}<li><a href="{{ 'client/balance'|link }}"><i class="fa fa-bank"></i> {% trans 'Balance' %}: {{ profile.balance | money(profile.currency) }}</a></li>{% endif %}
+								<li><a href="{{ 'client/logout'|link }}" title="{% trans 'Sign out' %}"><i class="fa fa-sign-out"></i> {% trans 'Sign out' %}</a></li>
+							</ul>
+						</li>
+					{% else %}			
+						<li><a href="" data-toggle="modal" data-target="#login">{% trans 'Sign in' %}</a></li>
+						<li><a href="{{ 'login'|link({'register' : 1}) }}">{% trans 'Register' %}</a></li>
+					{% endif %}
+				</ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+{% block content_banner %}{% endblock %}
+<div class="container">
+	<div class="row">
+		<div class="col-sm-12">
+			
+		</div>
+		
+	{% if side_menu == 'hidden' %}
+		<div class="col-sm-12">
+	{% else %}
+		<div class="col-sm-3">
+			{% if company.logo_url %}<h1><a href="{{ ''|link }}"><img src="{{company.logo_url}}" alt="{{company.name}}" class="img-responsive center-block" /></a></h1>
+			{% else %}<h1><a href="{{ ''|link }}"><img src=" {{ 'images/logo.png' | asset_url }}" alt="{{company.name}}" class="img-responsive center-block" /></a></h1>
+			{% endif %}
+			<div class="hidden-xs">{% include "partial_menu.phtml" %}</div>
+
+			<!--{% set languages = guest.extension_languages %}
+				{% if languages|length > 1 %}
+					<h2>{% trans 'Select language' %}</h2>
+							<select name="lang">
+							{% for lang in languages %}
+								<option value="{{ lang }}" >{{ lang|trans }}</option>
+							{% endfor %}
+							</select>
+				{% endif %}-->
+			
+			{% block sidebar %}{% endblock %}
+			
+			{% if settings.sidebar_note_enabled %}
+            <div class="well well-sm">
+                <h4>{{ settings.sidebar_note_title }}</h4>
+                <p>{{ settings.sidebar_note_content }}</p>
+            </div>
+            {% endif %}	
+			
+			{% block sidebar2 %}{% endblock %}
+		</div>
+		<div class="col-sm-9">
+	{% endif %}	
+			{% block content_before %}{% endblock %}
+			{% include "partial_message.phtml" %}
+			{% block content %}{% endblock %}
+			{% block content_after %}{% endblock %}
+
+			{% if not client %}
+			<div class="modal fade" id="login" tabindex="-1" role="dialog" aria-labelledby="{% trans 'Login to client area' %}">
+				<div class="modal-dialog" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+							<h4 class="modal-title" id="myModalLabel">{% trans 'Login to client area' %}</h4>
+						</div>
+						<div class="modal-body">
+							<form action="" method="post" class="api_form" data-api-url="{{ 'api/guest/client/login'|link }}" data-api-reload="1">
+								<div class="control-group form-group">
+									<div class="controls">
+										<label>{% trans 'Email address' %}:</label>
+										<input type="email" class="form-control" name="email" value="{{ request.email }}" required="required" placeholder="{% trans 'Email address' %}">
+									</div>
+								</div>
+								<div class="control-group form-group">
+									<div class="controls">
+										<label>{% trans 'Password' %}:</label>
+										<input type="password" class="form-control" name="password" value="" required="required">
+									</div>
+								</div>
+								<input type="hidden" name="remember" value="1" />
+						</div>
+						<div class="modal-footer">
+								<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i></button>
+								<a class="btn btn-success" href="{{ '/login'|link({'register' : 1}) }}">{% trans 'Create new account' %}</a>
+								<a class="btn btn-warning" href="{{ 'reset-password'|link }}">{% trans 'Reset password' %}</a>
+								<input class="btn btn-primary" type="submit" value="{% trans 'Sign in' %}">
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+			{% endif %}
+		</div>      
+	</div>
+
+	{% if settings.show_page_footer %}
+        <!-- Footer -->
+		<hr>
+        <footer>
+			<div class="row text-center">
+				<div class="col-lg-12">
+					<p>
+						{% if settings.footer_signature|default %}{{ settings.footer_signature|raw }}
+						{% else %}{{ company.name }} - © {{ now|date('Y') }} {{ company.signature }}
+						{% endif %}
+					</p>
+					<ul class="list-inline">
+                        <li><a href="{{ '/about-us'|link }}">{% trans 'About us' %}</a></li>
+                        <li><a href="{{ '/tos'|link }}">{% trans 'Terms and Conditions' %}</a></li>
+                        <li><a href="{{ '/privacy-policy'|link }}">{% trans 'Privacy Policy' %}</a></li><br />
+						{% for i in 1..5 %}
+							{% if settings['footer_link_' ~ loop.index ~ '_enabled'] %}
+							<li>
+								{% if 'http://' in settings['footer_link_' ~ loop.index ~ '_page'] or  'https://' in settings['footer_link_' ~ loop.index ~ '_page'] %}
+								<a href="{{ settings['footer_link_' ~ loop.index ~ '_page'] }}">{{ settings['footer_link_' ~ loop.index ~ '_title'] }}</a>
+								{% else %}
+								<a href="{{ settings['footer_link_' ~ loop.index ~ '_page'] | link }}">{{ settings['footer_link_' ~ loop.index ~ '_title'] }}</a>
+								{% endif %}
+							</li>
+							{% endif %}
+						{% endfor %}
+						{% if guest.extension_is_on({"mod":'branding'}) or settings.footer_branding_enabled %}
+							<li><a href="https://github.com/boxbilling/boxbilling" title="Billing Software" target="_blank">{% trans 'Powered by the BoxBilling Community' %}</a></li>
+						{% endif %}
+                    </ul>
+					
+				</div>
+				{% if settings.footer_to_top_enabled %}<a href="#top" class="btn btn-default pull-right"><i class="fa fa-arrow-up"></i> {% trans 'Top' %}</a>{% endif %}
+			</div>
+        </footer>
+	{% endif %}
+    </div>
+    <!-- /.container -->
+<noscript>NOTE: Many features on BoxBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
+</body>
+</html>

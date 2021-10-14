@@ -19,7 +19,7 @@ class ServiceTest extends \BBTestCase {
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Extension\Service();
     }
@@ -46,7 +46,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->isCoreModule('extension');
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -63,7 +63,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->isExtensionActive('mod', 'extension');
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -86,7 +86,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->isExtensionActive('mod', 'ModDoesNotExists');
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertFalse($result);
     }
 
@@ -116,7 +116,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->removeNotExistingModules();
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertTrue($result > 0);
     }
 
@@ -142,8 +142,8 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         list($sql, $params) = $this->service->getSearchQuery($data);
 
-        $this->assertInternalType('string', $sql);
-        $this->assertInternalType('array', $params);
+        $this->assertIsString($sql);
+        $this->assertIsArray($params);
 
         $this->assertTrue(strpos($sql, $expectedStr) !== false, $sql);
         $this->assertTrue(array_diff_key($params, $expectedParams) == array());
@@ -197,7 +197,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->getExtensionsList($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
     }
 
@@ -244,7 +244,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->getExtensionsList($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
     }
 
@@ -291,7 +291,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $result = $this->service->getAdminNavigation(new \Model_Admin());
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
 
@@ -332,7 +332,9 @@ class ServiceTest extends \BBTestCase {
         $di['extension'] = $extensionMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Visit extension site for update information.', 252);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(252);
+        $this->expectExceptionMessage('Visit extension site for update information.');
         $this->service->update($model);
     }
 
@@ -358,7 +360,9 @@ class ServiceTest extends \BBTestCase {
         $di['extension'] = $extensionMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', sprintf('Could not retrieve %s information', $model->name), 744);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(744);
+        $this->expectExceptionMessage(sprintf('Could not retrieve %s information', $model->name));
         $this->service->update($model);
     }
 
@@ -380,7 +384,8 @@ class ServiceTest extends \BBTestCase {
         $di['extension'] = $extensionMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', sprintf('Latest %s version installed. No need to update', $model->name), 785);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf('Latest %s version installed. No need to update', $model->name), 785);
         $this->service->update($model);
     }
 
@@ -400,7 +405,9 @@ class ServiceTest extends \BBTestCase {
         $di['extension'] = $extensionMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Could not retrieve version information for extension '.$model->name, 745);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(745);
+        $this->expectExceptionMessage(sprintf('Could not retrieve version information for extension %s', $model->name));
         $this->service->update($model);
 
     }
@@ -452,7 +459,7 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
         $result = $this->service->activate($ext);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expectedResult, $result);
     }
 
@@ -503,7 +510,8 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'BoxBilling core modules can not be managed');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('BoxBilling core modules can not be managed');
         $this->service->deactivate($ext);
     }
 
@@ -530,7 +538,8 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', $exceptionMessage);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage($exceptionMessage);
         $this->service->deactivate($ext);
     }
 
@@ -585,17 +594,17 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtract()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(TRUE));
@@ -606,7 +615,7 @@ class ServiceTest extends \BBTestCase {
 
 
 
-        $toolsMock = $this->getMockBuilder('\Box_tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
             ->will($this->returnValue(false));
@@ -629,17 +638,17 @@ class ServiceTest extends \BBTestCase {
 
     public function testdownloadAndExtractTypeExceptionNotDefinedTypeException()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(TRUE));
@@ -654,23 +663,24 @@ class ServiceTest extends \BBTestCase {
         $di['zip_archive'] = $zipArchiveMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Extension does not support auto-install feature. Extension must be installed manually');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Extension does not support auto-install feature. Extension must be installed manually');
         $this->service->downloadAndExtract('notDefinedType', 'extensionId');
     }
 
     public function testdownloadAndExtractTranslationException()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(TRUE));
@@ -681,7 +691,7 @@ class ServiceTest extends \BBTestCase {
 
 
 
-        $toolsMock = $this->getMockBuilder('\Box_tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
             ->will($this->returnValue(false));
@@ -700,23 +710,25 @@ class ServiceTest extends \BBTestCase {
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Extension can not be moved. Make sure your server write permissions to bb-locale folder.', 440);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(440);
+        $this->expectExceptionMessage('Extension can not be moved. Make sure your server write permissions to bb-locale folder.');
         $this->service->downloadAndExtract('translation', 'extensionId');
     }
 
     public function testdownloadAndExtractThemeTypeException()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(TRUE));
@@ -727,7 +739,7 @@ class ServiceTest extends \BBTestCase {
 
 
 
-        $toolsMock = $this->getMockBuilder('\Box_tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
             ->will($this->returnValue(false));
@@ -742,23 +754,25 @@ class ServiceTest extends \BBTestCase {
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Extension can not be moved. Make sure your server write permissions to bb-themes folder.', 439);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(439);
+        $this->expectExceptionMessage('Extension can not be moved. Make sure your server write permissions to bb-themes folder.');
         $this->service->downloadAndExtract('theme', 'extensionId');
     }
 
     public function testdownloadAndExtractRenameException()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(TRUE));
@@ -769,7 +783,7 @@ class ServiceTest extends \BBTestCase {
 
 
 
-        $toolsMock = $this->getMockBuilder('\Box_tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
             ->will($this->returnValue(false));
@@ -784,23 +798,25 @@ class ServiceTest extends \BBTestCase {
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Extension can not be moved. Make sure your server write permissions to bb-modules folder.', 437);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(437);
+        $this->expectExceptionMessage('Extension can not be moved. Make sure your server write permissions to bb-modules folder.');
         $this->service->downloadAndExtract('mod', 'extensionId');
     }
 
     public function testdownloadAndExtractFileExistsException()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(TRUE));
@@ -811,7 +827,7 @@ class ServiceTest extends \BBTestCase {
 
 
 
-        $toolsMock = $this->getMockBuilder('\Box_tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
             ->will($this->returnValue(true));
@@ -823,23 +839,25 @@ class ServiceTest extends \BBTestCase {
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Module already installed.', 436);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(436);
+        $this->expectExceptionMessage('Module already installed.');
         $this->service->downloadAndExtract('mod', 'extensionId');
     }
 
     public function testdownloadAndExtractExceptionExtract()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder('\Box_Curl')->disableOriginalConstructor()->getMock();
+        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
         $curlMock->expects($this->atLeastOnce())
             ->method('downloadTo');
 
-        $zipArchiveMock = $this->getMockBuilder('ZipArchive')->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('open')
             ->will($this->returnValue(false));
@@ -850,13 +868,14 @@ class ServiceTest extends \BBTestCase {
         $di['zip_archive'] = $zipArchiveMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Could not extract extension zip file');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Could not extract extension zip file');
         $this->service->downloadAndExtract('mod', 'extensionId');
     }
 
     public function testdownloadAndExtractDownloadUrlMisssing()
     {
-        $extensionMock = $this->getMockBuilder('\Box_Extension')->getMock();
+        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
 
         $extensionMock->expects($this->atLeastOnce())
             ->method('getExtension')
@@ -866,13 +885,14 @@ class ServiceTest extends \BBTestCase {
         $di['extension'] = $extensionMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Exception', 'Extensions download url is not valid');
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Extensions download url is not valid');
         $this->service->downloadAndExtract('mod', 'extensionId');
     }
 
     public function testgetInstalledMods()
     {
-        $pdoStatment = $this->getMockBuilder('\Box\Mod\Extension\PdoStatmentsMock')->getMock();
+        $pdoStatment = $this->getMockBuilder(\Box\Mod\Extension\PdoStatmentsMock::class)->getMock();
         $pdoStatment->expects($this->atLeastOnce())
             ->method('execute');
         $pdoStatment->expects($this->atLeastOnce())
@@ -914,7 +934,7 @@ class ServiceTest extends \BBTestCase {
             ->method('activate')
             ->will($this->returnValue(array()));
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->will($this->returnValue($model));
@@ -922,7 +942,7 @@ class ServiceTest extends \BBTestCase {
             ->method('store')
             ->will($this->returnValue(1));
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->getMockBuilder(\Box_EventManager::class)->getMock();
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
@@ -934,7 +954,7 @@ class ServiceTest extends \BBTestCase {
         $serviceMock->setDi($di);
 
         $result = $serviceMock->activateExistingExtension($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testactivateException()
@@ -957,7 +977,7 @@ class ServiceTest extends \BBTestCase {
             ->method('activate')
             ->will($this->throwException(new \Exception()));
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->getMockBuilder(\Box_EventManager::class)->getMock();
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 
@@ -966,7 +986,7 @@ class ServiceTest extends \BBTestCase {
 
         $serviceMock->setDi($di);
 
-        $this->setExpectedException('\Exception');
+        $this->expectException(\Exception::class);
         $serviceMock->activateExistingExtension($data);
     }
 
@@ -979,16 +999,16 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_ExtensionMeta();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue($model));
 
-        $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
+        $cryptMock = $this->getMockBuilder(\Box_Crypt::class)->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('decrypt');
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_Tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('decodeJ')
             ->will($this->returnValue(array()));
@@ -1002,7 +1022,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->getConfig($data['ext']);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetConfigExtensionMetaNotFound()
@@ -1014,7 +1034,7 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_ExtensionMeta();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue(null));
@@ -1031,8 +1051,8 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $result = $this->service->getConfig($data['ext']);
 
-        $this->assertInternalType('array', $result);
-        $this->assertEquals(array(), $result, $result);
+        $this->assertIsArray($result);
+        $this->assertEquals(array(), $result);
     }
 
     public function testsetConfig()
@@ -1041,26 +1061,26 @@ class ServiceTest extends \BBTestCase {
             'ext' => 'extensionName',
         );
 
-        $serviceMock = $this->getMockBuilder('Box\Mod\Extension\Service')->setMethods(array('getConfig'))->getMock();
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->setMethods(['getConfig'])->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getConfig')
             ->will($this->returnValue(array()));
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock = $this->getMockBuilder(\Box_Tools::class)->getMock();
 
-        $cryptMock = $this->getMockBuilder('\Box_Crypt')->getMock();
+        $cryptMock = $this->getMockBuilder(\Box_Crypt::class)->getMock();
         $cryptMock->expects($this->atLeastOnce())
             ->method('encrypt')
             ->will($this->returnValue('encryptedConfig'));
 
         $model = new \Model_ExtensionMeta();
         $model->loadBean(new \RedBeanPHP\OODBBean());
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('exec')
             ->will($this->returnValue(array()));
 
-        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock = $this->getMockBuilder(\Box_EventManager::class)->getMock();
         $eventMock->expects($this->atLeastOnce())->
             method('fire');
 

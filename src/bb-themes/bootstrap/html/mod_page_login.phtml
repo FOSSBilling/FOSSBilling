@@ -1,0 +1,221 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% import "macro_functions.phtml" as mf %}
+
+{% block meta_title %}{% trans 'Login / Sign up' %}{% endblock %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% trans 'Sign In / Create new account' %}</h1>
+                <ol class="breadcrumb">
+                    <li><a href="{{ ''|link }}">{% trans 'Home' %}</a></li>
+                    <li class="active">{% trans 'Sign In / Create new account' %}</li>
+                </ol>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+
+{% block content %}
+	<p class="text-center">
+		<a class="btn btn-primary btn-lg" data-toggle="tab" href="#signin">{% trans 'Sign in' %}</a>
+		<a class="btn btn-success btn-lg" data-toggle="tab" href="#register">{% trans 'Register' %}</a>
+	</p>
+	<div id="myTabContent" class="tab-content">
+		<div class="tab-pane {% if not request.register %}active {% endif %}well" id="signin">
+			<form method="post" action="" class="api_form form-horizontal" data-api-url="guest/client/login" data-api-redirect="{{ ''|link }}">
+				<legend class="text-center">{% trans 'Sign in' %}</legend>
+				<div class="form-group">
+					<label for="email" class="col-sm-4 control-label">{% trans 'Email Address' %}: </label>
+					<div class="col-sm-8">
+						<input type="email" name="email" value="{{ request.email }}" required="required" class="form-control">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-4 control-label">{% trans 'Password' %}: </label>
+					<div class="col-sm-8">
+						<input type="password" class="form-control" name="password" value="{{ request.password }}" required="required" class="form-control">
+					</div>
+				</div>
+				<div class="text-right">
+                    <input type="hidden" name="remember" value="1" />
+					<a class="btn btn-warning" href="{{ 'reset-password'|link }}">{% trans 'Reset password' %}</a>
+                    <input class="btn btn-primary" type="submit" value="{% trans 'Login' %}">
+				</div>
+            </form>
+		</div>
+		<div class="tab-pane {% if request.register %}active {% endif %}well" id="register">
+			<form method="post" action="" class="api_form form-horizontal" data-api-url="guest/client/create" data-api-redirect="login">
+				<legend class="text-center">{% trans 'Become a member to participate in forum, contact support, order new services' %}</legend>
+                {% set r = guest.client_required %}
+				<div class="form-group">
+					<label for="email" class="col-sm-4 control-label">{% trans 'Email Address' %}: </label>
+                    <div class="col-sm-8">
+						<input type="email" name="email" value="{{ request.email }}" required="required" id="reg-email" class="form-control">
+                    </div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-4 control-label">{% trans 'First Name' %}: </label>
+					<div class="col-sm-8">
+						<input type="text" name="first_name" value="{{ request.first_name }}" required="required" class="form-control">
+					</div>
+				</div>
+                {% if 'last_name' in r %}
+				<div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans 'Last Name' %}: </label>
+					<div class="col-sm-8">
+						<input type="text" name="last_name" value="{{ request.last_name }}" required="required" class="form-control">
+					</div>
+				</div>
+                {% endif %}
+                
+                {% if 'company' in r %}
+				<div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans 'Company' %}: </label>
+					<div class="col-sm-8">
+						<input type="text" name="company" value="{{ request.company }}" required="required" class="form-control">
+					</div>
+				</div>
+                {% endif %}
+                
+                {% if 'birthday' in r %}
+				<div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans 'Birthday' %}: </label>
+					<div class="col-sm-8">
+						<input type="text" name="birthday" value="" class="form-control">
+					</div>
+				</div>
+                {% endif %}
+                
+                {% if 'gender' in r %}
+				<div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans 'You are' %}: </label>
+					<div class="col-sm-8">
+						<select name="gender" class="form-control">
+							<option value="male">Male</option>
+							<option value="female">Female</option>
+						</select>
+					</div>
+				</div>
+                {% endif %}
+
+                {% set custom_fields = guest.client_custom_fields %}
+                {% for field_name, field in custom_fields %}
+                {% if field.active %}
+                <div class="form-group">
+                    <label class="col-sm-4 control-label" for="{{ field_name }}">{% if field.title is not empty %}{{ field.title }}{% else %} {{ field_name | capitalize }} {% endif %}</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" name="{{ field_name }}" id="{{ field_name }}" value="{{ attribute(request, field_name) }}" {% if field.required %}required="required"{% endif %}>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+                
+				<div class="form-group">
+					<label class="col-sm-4 control-label">{% trans 'Password' %}: </label>
+					<div class="col-sm-8">
+						<input type="password" class="form-control" name="password" value="" required="required" id="reg-password" class="form-control">
+					</div>
+				</div>
+				
+				<div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans 'Password confirm' %}: </label>
+					<div class="col-sm-8">
+						<input type="password" class="form-control" name="password_confirm" value="" required="required" class="form-control">
+					</div>
+				</div>			
+                {{ mf.recaptcha }}
+
+                {% if 'address_1' in r %}
+                <div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans 'Address' %}: </label>
+					<div class="col-sm-8">
+                        <input type="text" class="form-control" name="address_1" value="{{ request.address_1 }}">
+					</div>
+                </div>
+                {% endif %}
+                    
+                {% if 'address_2' in r %}
+                <div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans 'Address 2' %}: </label>
+                    <div class="col-sm-8">
+							<input type="text" class="form-control" name="address_2" value="{{ request.address_2 }}">
+                    </div>
+				</div>
+                {% endif %}
+                    
+                {% if 'city' in r %}
+                <div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans 'City' %}: </label>
+                    <div class="col-sm-8">
+						<input type="text" class="form-control" name="city" value="{{ request.city }}">
+                    </div>
+				</div>
+                {% endif %}
+                    
+                {% if 'country' in r %}
+                <div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans 'Country' %}: </label>
+					<div class="col-sm-8">
+						{{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Select country') }}
+                    </div>
+				</div>
+                {% endif %}
+                    
+                {% if 'state' in r %}
+                <div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans 'State' %}: </label>
+                         {# mf.selectbox('state', guest.system_states, request.state, 0, 'Select state') #}
+                    <div class="col-sm-8">
+						<input type="text" class="form-control" name="state" value="{{ request.state }}" />
+                    </div>
+				</div>
+                {% endif %}
+                    
+                {% if 'postcode' in r %}
+                <div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans 'Zip/Postal Code' %}: </label>
+                    <div class="col-sm-8">
+						<input type="text" class="form-control" name="postcode" value="{{ request.postcode }}">
+                    </div>
+				</div>
+                {% endif %}
+                    
+                {% if 'phone' in r %}
+                <div class="form-group">
+                    <label class="col-sm-4 control-label">{% trans 'Phone Number' %}: </label>
+                    <div class="col-sm-8">
+						<input type="text" class="form-control" name="phone_cc" value="{{ request.phone_cc }}" style="width: 40px"> <input type="text" name="phone" value="{{ request.phone }}" style="width: 233px">
+                    </div>
+				</div>
+                {% endif %}
+				
+				<div class="text-right">
+					<input class="btn btn-success" type="submit" value="{% trans 'Register' %}">
+				</div>
+				
+			</form>
+		</div>
+	</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+
+    $('#password-reset').bind('submit',function(event){
+        bb.post(
+            'guest/client/reset_password',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Password reset confirmation email was sent');
+            }
+        );
+        return false;
+    });
+});
+</script>
+{% endblock %}

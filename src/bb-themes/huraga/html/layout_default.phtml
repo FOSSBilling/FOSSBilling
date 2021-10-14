@@ -1,7 +1,5 @@
 <!DOCTYPE html>
-<!--[if IE 8]>    <html class="no-js ie8 ie" lang="en"> <![endif]-->
-<!--[if IE 9]>    <html class="no-js ie9 ie" lang="en"> <![endif]-->
-<!--[if gt IE 9]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+<html class="no-js" lang="en">
 <head>
     <meta charset="utf-8">
     <title>{% block meta_title %}{{ settings.meta_title }}{% endblock %}</title>
@@ -247,10 +245,9 @@
         </li>
         {% endif %}
 
-        {# Removing this link is allowed only for BoxBilling PRO license owners. #}
         {% if guest.extension_is_on({"mod":'branding'}) %}
         <li>
-            <a href="http://www.boxbilling.com" title="Billing Software" target="_blank">{% trans 'Powered by BoxBilling' %}</a>
+            <a href="https://github.com/boxbilling/boxbilling" title="Billing Software" target="_blank">{% trans 'Powered by the BoxBilling Community' %}</a>
         </li>
         {% endif %}
     </ul>

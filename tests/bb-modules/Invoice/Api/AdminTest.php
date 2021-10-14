@@ -10,7 +10,7 @@ class AdminTest extends \BBTestCase {
     */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api = new \Box\Mod\Invoice\Api\Admin();
     }
@@ -45,7 +45,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testget()
@@ -76,7 +76,7 @@ class AdminTest extends \BBTestCase {
 
         $data['id'] = 1;
         $result = $this->api->get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testmark_as_paid()
@@ -148,7 +148,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->prepare($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newInvoiceId, $result);
     }
 
@@ -182,7 +182,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->approve($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -219,7 +219,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->refund($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newNegativeInvoiceId, $result);
     }
 
@@ -253,7 +253,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->update($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -288,7 +288,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->item_delete($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -323,7 +323,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->delete($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -359,7 +359,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->renewal_invoice($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newInvoiceId, $result);
     }
     public function testrenewal_invoiceOrderIsFree()
@@ -388,7 +388,8 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', sprintf('Order %d is free. No need to generate invoice.', $model->id));
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf('Order %d is free. No need to generate invoice.', $model->id));
         $this->api->renewal_invoice($data);
     }
 
@@ -402,7 +403,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->batch_pay_with_credits(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -437,7 +438,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->pay_with_credits($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -451,7 +452,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->batch_generate(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -465,7 +466,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->batch_activate_paid(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -479,7 +480,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->batch_send_reminders(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -493,7 +494,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->batch_invoke_due_event(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -529,7 +530,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->send_reminder($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -543,7 +544,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setService($serviceMock);
 
         $result = $this->api->get_statuses(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testtransaction_process_all()
@@ -558,7 +559,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
         $result = $this->api->transaction_process_all(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -599,7 +600,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->transaction_process($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -634,7 +635,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->transaction_update($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -651,7 +652,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->transaction_create(array());
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newTransactionId, $result);
     }
 
@@ -686,7 +687,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->transaction_delete($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -721,7 +722,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->transaction_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testtransaction_get_list()
@@ -745,7 +746,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
         $result = $this->api->transaction_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testtransaction_get_statuses()
@@ -761,7 +762,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->transaction_get_statuses(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testtransaction_get_statuses_pairs()
@@ -777,7 +778,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->transaction_get_statuses_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testtransaction_statuses()
@@ -793,7 +794,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->transaction_statuses(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testtransaction_gateway_statuses()
@@ -809,7 +810,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->transaction_gateway_statuses(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testtransaction_types()
@@ -825,7 +826,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->transaction_types(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgateway_get_list()
@@ -849,7 +850,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
         $result = $this->api->gateway_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgateway_get_pairs()
@@ -864,7 +865,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->gateway_get_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgateway_get_available()
@@ -879,7 +880,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->gateway_get_available(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgateway_install()
@@ -903,7 +904,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->gateway_install($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -938,7 +939,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->gateway_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgateway_copy()
@@ -972,7 +973,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->gateway_copy($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newGatewayId, $result);
     }
 
@@ -1007,7 +1008,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->gateway_update($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -1042,7 +1043,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->gateway_delete($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -1064,7 +1065,7 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
         $result = $this->api->subscription_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testsubscription_create()
@@ -1105,7 +1106,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->subscription_create($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newSubscriptionId, $result);
     }
 
@@ -1139,7 +1140,8 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Client currency must match subscription currency. Check if clients currency is defined.');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Client currency must match subscription currency. Check if clients currency is defined.');
         $this->api->subscription_create($data);
     }
 
@@ -1174,7 +1176,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->subscription_update($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -1204,7 +1206,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->subscription_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testsubscription_delete()
@@ -1238,7 +1240,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->subscription_delete($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -1273,7 +1275,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->tax_delete($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -1300,7 +1302,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->tax_create($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newTaxId, $result);
     }
 
@@ -1323,7 +1325,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->tax_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
 
@@ -1341,7 +1343,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->tax_setup_eu(array());
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -1448,7 +1450,7 @@ class AdminTest extends \BBTestCase {
 
         $data['id'] = 1;
         $result     = $this->api->tax_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
 
@@ -1481,7 +1483,7 @@ class AdminTest extends \BBTestCase {
 
         $data['id'] = 1;
         $result     = $this->api->tax_update($data);
-        $this->assertInternalType('boolean', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 

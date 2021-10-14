@@ -10,7 +10,7 @@ class GuestTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api= new \Box\Mod\Servicelicense\Api\Guest();
     }
@@ -45,7 +45,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setService($serviceMock);
         $result = $this->api->check($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 }
  

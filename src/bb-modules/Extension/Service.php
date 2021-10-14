@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -587,7 +587,7 @@ class Service implements InjectionAwareInterface
             WHERE extension = :ext
             AND meta_key = 'config'
             LIMIT 1;
-        ";;
+        ";
 
         $config = json_encode($data);
         $config = $this->di['crypt']->encrypt($config, $this->_getSalt());

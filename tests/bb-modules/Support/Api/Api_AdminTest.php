@@ -8,7 +8,7 @@ class Api_AdminTest extends \BBTestCase
      */
     protected $adminApi = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->adminApi = new \Box\Mod\Support\Api\Admin();
     }
@@ -53,7 +53,7 @@ class Api_AdminTest extends \BBTestCase
         $data   = array();
         $result = $this->adminApi->ticket_get_list($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testTicket_get()
@@ -85,7 +85,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->ticket_get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testTicket_update()
@@ -328,7 +328,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->ticket_create($data);
 
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($randID, $result);
     }
 
@@ -513,7 +513,7 @@ class Api_AdminTest extends \BBTestCase
         $data   = array();
         $result = $this->adminApi->public_ticket_get_list($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testPublic_ticket_create()
@@ -544,7 +544,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->public_ticket_create($data);
 
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($randID, $result);
     }
 
@@ -578,7 +578,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->public_ticket_get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testPublic_ticket_delete()
@@ -782,7 +782,7 @@ class Api_AdminTest extends \BBTestCase
         $data   = array();
         $result = $this->adminApi->helpdesk_get_list($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testHelpdeks_get_pairs()
@@ -797,7 +797,7 @@ class Api_AdminTest extends \BBTestCase
         $data   = array();
         $result = $this->adminApi->helpdesk_get_pairs($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testHelpdesk_get()
@@ -965,7 +965,7 @@ class Api_AdminTest extends \BBTestCase
         $data   = array();
         $result = $this->adminApi->canned_get_list($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCannedPairs()
@@ -982,7 +982,7 @@ class Api_AdminTest extends \BBTestCase
         $data   = array();
         $result = $this->adminApi->canned_pairs($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCanned_get()
@@ -1015,7 +1015,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->canned_get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCanned_delete()
@@ -1048,7 +1048,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->canned_delete($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCanned_create()
@@ -1080,7 +1080,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->canned_create($data);
 
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
     }
 
     public function testCanned_update()
@@ -1113,7 +1113,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->canned_update($data);
 
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
     }
 
 
@@ -1135,7 +1135,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->canned_category_pairs($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCanned_category_get()
@@ -1168,7 +1168,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->canned_category_get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCanned_category_update()
@@ -1207,7 +1207,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->canned_category_update($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCanned_category_delete()
@@ -1243,7 +1243,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->canned_category_delete($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCanned_category_create()
@@ -1269,7 +1269,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->canned_category_create($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCanned_note_create()
@@ -1303,7 +1303,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->note_create($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCanned_note_delete()
@@ -1336,7 +1336,7 @@ class Api_AdminTest extends \BBTestCase
         );
         $result = $this->adminApi->note_delete($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testTask_complete()

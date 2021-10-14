@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -38,10 +38,10 @@ class Box_Requirements implements \Box\InjectionAwareInterface
                     'curl',
                     'zlib',
                     'gettext',
-                    'mcrypt',
+                    'openssl',
                  ),
                 'version'       =>  PHP_VERSION,
-                'min_version'   =>  '5.3',
+                'min_version'   =>  '7.4',
                 'safe_mode'     =>  ini_get('safe_mode'),
             ),
             'writable_folders' => array(
@@ -77,7 +77,6 @@ class Box_Requirements implements \Box\InjectionAwareInterface
             'allow_url_fopen'   =>  ini_get('allow_url_fopen'),
             'safe_mode'         =>  ini_get('safe_mode'),
             'memory_limit'      =>  ini_get('memory_limit'),
-            'magic_quotes'      =>  (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()),
         );
 
         $data['permissions']    = array(
@@ -93,7 +92,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
             'pdo_mysql'     => extension_loaded('pdo_mysql'),
             'zlib'          => extension_loaded('zlib'),
             'mbstring'      => extension_loaded('mbstring'),
-            'mcrypt'        => extension_loaded('mcrypt'),
+            'openssl'        => extension_loaded('openssl'),
             'gettext'       => extension_loaded('gettext'),
         );
         
@@ -109,6 +108,15 @@ class Box_Requirements implements \Box\InjectionAwareInterface
         $current = $this->_options['php']['version'];
         $required = $this->_options['php']['min_version'];
         return version_compare($current, $required, '>=');
+    }
+
+    public function isBoxVersionOk()
+    {
+        $current = Box_Version::VERSION;
+        if ($current == "0.0.1") {
+            return false;
+        }
+        return true;
     }
 
     /**

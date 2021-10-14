@@ -1,0 +1,239 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{{ order.title }}{% endblock %}
+
+{% set service_partial = "mod_service" ~ order.service_type ~ "_manage.phtml" %}
+{% set upgradables = client.order_upgradables({'id':order.id}) %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% trans 'Service details' %}
+					<small>#{{ order.id }} {{ order.title }}</small>
+				</h1>
+				<ol class="breadcrumb">
+					<li><a href="{{ 'order/service'|link }}">{% trans 'Ordered Services' %}</a></li>
+					<li class="active">#{{ order.id }} {{ order.title }}</li>
+				</ol>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+
+{% block content %}
+	<div class="row">
+		<ul class="list-group col-md-6 col-md-offset-3 text-center">
+			<li class="list-group-item {% if order.status == "active" %}list-group-item-success{% elseif order.status == "pending_setup" %}list-group-item-warning{% elseif order.status == "failed_setup" %}list-group-item-danger{% else %}label-default{% endif %}">
+				<strong>{% trans 'Order' %}:</strong>
+				#{{ order.id }} {{ order.title }} <span class="label {% if order.status == "active" %}label-success{% elseif order.status == "pending_setup" %}label-warning{% elseif order.status == "failed_setup" %}label-danger{% else %}label-default{% endif %}">{{ mf.status_name(order.status) }}</span>
+			</li>
+			<li class="list-group-item"><strong>{% trans 'Payment amount' %}:</strong> {{ order.total | money(order.currency) }}{% if order.period %} {{ order.period | period_title }}{% endif %}</li>
+			<li class="list-group-item"><strong>{% trans 'Order created' %}:</strong> {{ order.created_at|date('Y-m-d h:i') }}</li>
+			<li class="list-group-item"><strong>{% trans 'Activated at' %}:</strong> {% if order.activated_at %}{{ order.activated_at|date('Y-m-d h:i') }}{% else %}-{% endif %}</li>
+			{% if order.period %}<li class="list-group-item"><strong>{% trans 'Renewal date' %}:</strong> {% if order.expires_at %}in {{ order.expires_at|daysleft }} day(s) ({{ order.expires_at|date('Y-m-d h:i') }}){% else %}-{% endif %}</li>{% endif %}
+			{% if order.notes %}<li class="list-group-item"><strong>{% trans 'Order notes' %}:</strong> {{ order.notes|bbmd }}</li>{% endif %}
+			{% if order.active_tickets > 0 %}<li class="list-group-item"><strong>{% trans 'Active support tickets' %}:</strong> <a href="{{ 'support'|link }}">{{ order.active_tickets }}</a></li>{% endif %}
+		
+			{% if order.group_master == 1 %}
+				{% set addons = client.order_addons({"id":order.id}) %}
+				{% if addons|length > 0 %}
+				{% for i, addon in addons %}
+				<li class="list-group-item {% if addon.status == "active" %}list-group-item-success{% elseif addon.status == "pending_setup" %}list-group-item-warning{% elseif addon.status == "failed_setup" %}list-group-item-danger{% else %}label-default{% endif %}">
+						<a href="{{ '/order/service/manage'|link }}/{{addon.id}}"><strong>{% trans 'Addon' %}:</strong> {{addon.title}}</a> <span class="label {% if addon.status == "active" %}label-success{% elseif addon.status == "pending_setup" %}label-warning{% elseif addon.status == "failed_setup" %}label-danger{% else %}label-default{% endif %}">{{ mf.status_name(addon.status) }}</span><br />
+						<strong>{% trans 'Price' %}:</strong> {{ addon.total | money(addon.currency) }} {{ addon.period | period_title }}<br />
+						{% if addon.expires_at %}<strong>{% trans 'Next due date' %}:</strong> {{addon.expires_at|date('Y-m-d h:i') }}<br />{% endif %}
+				</li>
+				{% endfor %}
+				{% endif %}
+			{% endif %}
+		</ul>
+	</div>
+	<p class="text-center">
+		{% if order.period %}<a class="btn btn-success" id="renewal-button">{% trans 'Renew now' %}</a>{% endif %}
+		<a class="btn btn-info" data-toggle="modal" data-target="#tickets">{% trans 'Open ticket' %}</a>			
+        {% if upgradables %}<a class="btn btn-warning" data-toggle="modal" data-target="#upgrades">{% trans 'Request Upgrade' %}</a>{% endif %}
+		{% if order.status == 'pending_setup' %}<a class="btn btn-danger api" href="{{'api/client/order/delete' | link({'id' : order.id})}}" data-api-redirect="{{ 'order/service'|link }}">{% trans 'Cancel' %}</a>{% endif %}
+		{% if order.status == 'active' %}<a class="btn btn-danger" data-toggle="modal" data-target="#cancelation">{% trans 'Request Cancellation' %}</a>{% endif %}
+	</p>
+
+    <div class="modal fade" id="cancelation" tabindex="-1" role="dialog" aria-labelledby="{% trans 'Request Cancellation' %}">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title" id="myModalLabel">{% trans 'Request Cancellation' %}</h4>
+				</div>
+				<div class="modal-body">
+					<form action="" method="post">
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Help desk' %}:</label>
+								{{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Subject' %}:</label>
+								<input type="text" class="form-control" name="subject" value="{% trans 'I would like to cancel' %} {{ order.title }}" required="required">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Reason' %}:</label>
+								<textarea rows="10" cols="100" class="form-control" name="content" maxlength="999" style="resize:none" required="required">{{ request.content|e }}</textarea>
+							</div>
+						</div>
+
+						<input type="hidden" name="rel_type" value="order">
+						<input type="hidden" name="rel_id" value="{{ order.id }}">
+						<input type="hidden" name="rel_task" value="cancel">
+				</div>
+				<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<input class="btn btn-primary" type="submit" value="{% trans 'Submit' %}">
+					</form>
+				</div>
+			</div>
+		</div>
+    </div>
+
+    <div class="widget open-ticket">
+    <div class="modal fade" id="tickets" tabindex="-1" role="dialog" aria-labelledby="{% trans 'Open new support ticket regarding this order' %}">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title" id="myModalLabel">{% trans 'Open new support ticket regarding this order' %}<br />
+					<small>{% trans 'Submit new support ticket. Ticket will be visible in support section after submission' %}</small></h4>
+				</div>
+				<div class="modal-body">
+					<form action="" method="post">
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Help desk' %}:</label>
+								{{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Subject' %}:</label>
+								<input type="text" class="form-control" name="subject" value="" required="required">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Reason' %}:</label>
+								<textarea rows="10" cols="100" class="form-control" name="content" maxlength="999" style="resize:none" required="required">{{ request.content|e }}</textarea>
+							</div>
+						</div>
+
+						<input type="hidden" name="rel_type" value="order">
+						<input type="hidden" name="rel_id" value="{{ order.id }}">
+				</div>
+				<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<input class="btn btn-primary" type="submit" value="{% trans 'Submit' %}">
+					</form>
+				</div>
+			</div>
+		</div>
+    </div>
+    </div>
+
+    <div class="modal fade" id="upgrades" tabindex="-1" role="dialog" aria-labelledby="{% trans 'Request upgrade' %}">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title" id="myModalLabel">{% trans 'Request upgrade' %}</h4>
+				</div>
+				<div class="modal-body">
+				    <form action="" method="post" class="api_form" data-api-url="client/support/ticket_create" data-api-msg="Upgrade request received">
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Help desk' %}:</label>
+								{{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Subject' %}:</label>
+								<input type="text" class="form-control" name="subject" value="{% trans 'I would like to upgrade' %} {{ order.title }}" required="required">
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Upgrade to' %}: </label>
+								{{ mf.selectbox('rel_new_value', upgradables, '', 1) }}
+							</div>
+						</div>
+						<div class="control-group form-group">
+							<div class="controls">
+								<label>{% trans 'Notes' %}:</label>
+								<textarea rows="10" cols="100" class="form-control" name="content" maxlength="999" style="resize:none" required="required">{% trans 'I would like to upgrade' %} {{ order.title }}</textarea>
+							</div>
+						</div>
+
+						<input type="hidden" name="rel_type" value="order">
+						<input type="hidden" name="rel_id" value="{{ order.id }}">
+						<input type="hidden" name="rel_task" value="upgrade">
+				</div>
+				<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<input class="btn btn-primary" type="submit" value="{% trans 'Request' %}">
+					</form>
+				</div>
+			</div>
+		</div>
+    </div>
+	<hr>
+	{% if guest.system_template_exists({"file":service_partial})%}
+		{% set service = client.order_service({"id":order.id}) %}
+		{% include service_partial with {'order': order, 'service': service} %}
+		<hr>
+	{% else %}
+		{# trans 'Service does not have configuration page' #}
+	{% endif %}
+
+	<div class="text-center">
+		<a class="btn btn-default" href="{{ '/order/service'|link }}"><i class="fa fa-arrow-left"></i> {% trans 'Back to services' %}</a>
+	</div>
+
+{% endblock %}
+
+
+{% block js %}
+{% autoescape 'js' %}
+<script type="text/javascript">
+$(function() {
+    $('#renewal-button').bind('click',function(event){
+		bootbox.confirm("{% trans 'Are you sure?' %}", function(result) {
+			if(result){
+			  bb.post(
+					'client/invoice/renewal_invoice',
+					{order_id: {{order.id}} },
+					function(result) {
+						bb.redirect('{{"invoice"|link}}' + '/' + result);
+					}
+				);
+			}
+		}); 
+    });
+
+    $('.open-ticket form').submit(function(){
+        bb.post(
+            'client/support/ticket_create',
+            $(this).serialize(),
+            function(result) {
+                bb.msg('Ticket was submitted. If you want to track conversation please go to support section');
+                $('div.open-ticket').fadeOut();
+                $('#open-ticket').fadeOut();
+            }
+        );
+        return false;
+    });
+});
+</script>
+{% endautoescape %}
+{% endblock %}

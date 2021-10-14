@@ -2,11 +2,11 @@
 /**
  * @group Core
  */
-class Mode_ThemeTest extends PHPUnit_Framework_TestCase
+class Mode_ThemeTest extends PHPUnit\Framework\TestCase
 {
     private $model;
 
-    public function setup()
+    public function setup(): void
     {
         $this->model = new \Box\Mod\Theme\Model\Theme('boxbilling');
     }

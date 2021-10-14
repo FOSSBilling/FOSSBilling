@@ -1,0 +1,338 @@
+{# Sets blank layout if another page if ajax request or if another page is request as home for non-clients #}
+{% extends request.ajax or (not client and settings.home_page != "menuicons") ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% block meta_title %}{% trans 'Client Area' %}{% endblock %}
+{% import "macro_functions.phtml" as mf %}
+
+{% if not settings.home_sidemenu %}
+	{% if not client %}{% set side_menu = 'hidden' %}{% endif %}
+{% endif %}
+
+{# Content-before #}
+{% block content_before %}
+	{% if client %}
+		<div class="row">
+			<div class="col-lg-12">
+				<h1 class="page-header">{% trans 'Dashboard' %}</h1>
+			</div>
+		</div>	
+	{% else %}
+		{% if settings.home_page == "menuicons" %}
+			<div class="row">
+				<div class="col-lg-12">
+					<h1 class="page-header">{% trans 'Home' %}</h1>
+				</div>
+			</div>
+		{% endif %}
+	{% endif %}
+{% endblock %}
+
+{# Content #}
+{% block content %}
+	{% if client %}
+			{% if settings.showcase_enabled %}
+			<div class="jumbotron text-center">
+				<h1>{{ settings.showcase_heading }}</h1>
+				<p>{{ settings.showcase_text }}</p>
+				<a href="{{ settings.showcase_button_url }}" class="btn btn-primary btn-lg">{{ settings.showcase_button_title }}</a>
+			</div>
+			{% endif %}	
+
+			<div class="row">
+			
+				{% if settings.dash_services %}
+				<div class="col-md-6">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4>
+								<i class="fa fa-cog"></i> {% trans 'Services' %}
+								{% if client.order_get_list({"expiring":1}).total > 0 %}
+									<span class="label label-primary">{{ client.order_get_list({"expiring":1}).total }} {% trans 'Soon expires' %}</span>
+								{% endif %}
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'order/service'|link }}">{% trans 'All services' %}</a>
+							</h4>
+						</div>
+						<div class="list-group text-center">
+							{% set services = client.order_get_list({"per_page":10, "page":request.page, "hide_addons":1, "status":"active"}) %}
+							{% for i, service in services.list %}
+							<a href="{{ '/order/service/manage'|link }}/{{service.id}}" class="list-group-item">{{service.title}} #{{ service.id }}</a>
+							{% endfor %}
+							<a class="list-group-item list-group-item-success" href="{{ 'order'|link }}">{% trans 'New order' %}</a>
+						</div>
+					</div>
+				</div>
+				{% endif %}	
+				
+				{% if settings.dash_support %}
+				<div class="col-md-6">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4>
+								<i class="fa fa-life-ring"></i> {% trans 'Support' %}
+								{% if client.support_ticket_get_list({"status":'on_hold'}).total > 0 %}
+									<span class="label label-warning">{{ client.support_ticket_get_list({"status":'on_hold'}).total }} {{ mf.status_name("on_hold") }}</span>
+								{% endif %}
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'support'|link }}">{% trans 'All tickets' %}</a>
+							</h4>
+						</div>
+						<div class="list-group text-center">
+							{% set tickets_on_hold = client.support_ticket_get_list({"status":'on_hold'}) %}
+							{% for i, ticket in tickets_on_hold.list %}
+								<a href="{{ 'support/ticket'|link }}/{{ticket.id}}" class="list-group-item">{{ticket.subject}} <span class="label label-default">{{ticket.helpdesk.name}}</span> <span class="label label-warning">{{ mf.status_name(ticket.status) }}</span></a>
+							{% endfor %}
+							{% set tickets_open = client.support_ticket_get_list({"status":'open'}) %}
+							{% for i, ticket in tickets_open.list %}
+								<a href="{{ 'support/ticket'|link }}/{{ticket.id}}" class="list-group-item">{{ticket.subject}} <span class="label label-default">{{ticket.helpdesk.name}}</span></a>
+							{% endfor %}
+							<a class="list-group-item list-group-item-info" href="{{ 'support'|link({'ticket' : 1}) }}">{% trans 'New ticket' %}</a>
+						</div>
+					</div>
+				</div>
+				{% endif %}	
+				
+				{% if settings.dash_invoices %}
+				<div class="col-md-6">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4>
+								<i class="fa fa-credit-card"></i> {% trans 'Invoices' %}
+								{% if client.invoice_get_list({"status":"unpaid"}).total > 0 %}
+									<span class="label label-danger">{{ client.invoice_get_list({"status":"unpaid"}).total }} {% trans 'Unpaid' %}</span>
+								{% endif %}
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'invoice'|link }}">{% trans 'All Invoices' %}</a>
+							</h4>
+						</div>
+						<div class="list-group text-center">
+							{% set unpaid_invoices = client.invoice_get_list({"status":"unpaid", "per_page":10}).list %}
+							{% for i, invoice in unpaid_invoices %}
+							<a href="{{ 'invoice'|link }}/{{ invoice.hash }}" class="list-group-item">
+								<strong class="list-group-item-heading">{{ "Invoice #%05s"|format(invoice.id) }}</strong>
+								<p class="list-group-item-text">{% trans 'Due Date' %}: {{ invoice.due_at|date("d/m/Y") }} - <strong>{{ invoice.total | money(invoice.currency) }}</strong></p>
+							</a>
+							{% endfor %}
+							{% if client.invoice_get_list({"status":"unpaid"}).total > 0 %}<a class="list-group-item list-group-item-danger" href="{{ 'invoice'|link }}">{{ client.invoice_get_list({"status":"unpaid"}).total }} {% trans 'Unpaid' %}</a>{% endif %}
+						</div>
+					</div>
+				</div>
+				{% endif %}	
+				
+				{% if settings.dash_orders %}
+				<div class="col-md-6">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4>
+								<i class="fa fa-fw fa-shopping-cart"></i> {% trans 'Recent orders' %}
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'order'|link }}">{% trans 'New order' %}</a>
+							</h4>
+						</div>
+						<div class="list-group">
+							{% for i, order in client.order_get_list({"per_page":5, "page":request.page, "hide_addons":1}).list %}
+								<a href="{{ 'order/service/manage'|link }}/{{order.id}}" class="list-group-item">
+									{{ order.title|truncate(30) }}
+									<span class="pull-right label {% if order.status == "active" %}label-success{% elseif order.status == "pending_setup" %}label-warning{% elseif order.status == "failed_setup" %}label-danger{% else %}label-default{% endif %}">{{ mf.status_name(order.status) }}</span>
+								</a>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endif %}	
+				
+				{% if settings.dash_messages %}
+				<div class="col-md-6">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4>
+								<i class="fa fa-fw fa-envelope"></i> {% trans 'Recent emails' %}
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'email'|link }}">{% trans 'Emails' %}</a>
+							</h4>
+						</div>
+						<div class="list-group">
+							{% for i, email in client.email_get_list({"per_page":5}).list %}
+							<a href="{{ 'email'|link }}/{{email.id}}" class="list-group-item">
+								{{email.subject|truncate(30)}} <small>- {{ email.created_at|timeago }} {% trans 'ago' %}</small>
+							</a>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endif %}	
+
+				{% if settings.dash_kb and guest.extension_is_on({"mod":'kb'}) %}
+				<div class="col-md-6">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4>
+								<i class="fa fa-fw fa-graduation-cap"></i> {% trans 'Knowledge Base' %}
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'kb'|link }}">{% trans 'Knowledge Base' %}</a>
+							</h4>
+						</div>
+						<div class="list-group panel" id="kb">
+							<span class="list-group-item">
+								<form method="get" action="{{ 'kb'|link }}">
+									<div class="input-group">
+										<input name="q" type="text" class="form-control" value="{{ request.q }}" placeholder="{% trans 'What are you looking for?' %}">
+										<span class="input-group-btn">
+											<button class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
+										</span>
+									</div>
+								</form>
+							</span>
+							{% for i, category in guest.kb_category_get_list.list %}
+								<a href="#category-{{category.id}}" class="list-group-item text-center" data-toggle="collapse" data-parent="#kb"><strong>{{category.title}}</strong></a>
+								<div class="collapse" id="category-{{category.id}}">
+								{% for i, article in category.articles %}
+									<a href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}" class="list-group-item">{{article.title}}</a>
+								{% endfor %}
+								</div>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endif %}
+
+				{% if settings.dash_new and guest.extension_is_on({"mod":'news'}) %}
+				<div class="col-md-6">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4>
+								<i class="fa fa-fw fa-bullhorn"></i> {% trans 'News & Announcements' %}
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'news'|link }}">{% trans 'Blog' %}</a>
+							</h4>
+						</div>
+						<div class="list-group">
+							{% set posts = guest.news_get_list({"per_page": 4, "page" : 1}) %}
+							{% for i, post in posts.list %}
+								<a href="{{ '/news'|link }}/{{post.slug}}" class="list-group-item">{{post.title}}</a>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endif %}
+					
+				{% if settings.dash_forum and guest.extension_is_on({"mod":'forum'}) %}
+					{% if client.forum_favorites %}
+					<div class="col-md-6">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4>
+								<i class="fa fa-fw fa-comments"></i> {% trans 'Favorite topics' %}
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'forum'|link }}">{% trans 'Forum' %}</a>
+							</h4>
+						</div>
+						<div class="list-group">
+							{% for i, topic in client.forum_favorites %}
+							<a href="{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}#m-{{ topic.last.id }}" class="list-group-item">
+								<h4 class="list-group-item-heading">{{topic.title}}</h4>
+								<p class="list-group-item-text">
+									<i>{% trans 'Last post' %}:</i> <img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"> {{ topic.last.author.name }} <strong>{{ topic.last.created_at|date('Y-m-d h:i') }}</strong>
+								</p>
+							</a>
+							{% endfor %}
+						</div>
+					</div>
+					</div>
+					{% endif %}
+				{% endif %}	
+			</div>
+	{% else %}
+		{% if settings.home_page == "menuicons" %}
+			{% if settings.showcase_enabled %}
+			<div class="jumbotron text-center">
+				<h1>{{ settings.showcase_heading }}</h1>
+				<p>{{ settings.showcase_text }}</p>
+				<a href="{{ settings.showcase_button_url }}" class="btn btn-primary btn-lg">{{ settings.showcase_button_title }}</a>
+			</div>
+			{% endif %}	
+		
+			<div class="row">
+				<div class="col-md-4 col-sm-6">
+					<div class="panel panel-default text-center">
+						<div class="panel-heading">
+							<span class="fa-stack fa-5x">
+								  <i class="fa fa-circle fa-stack-2x text-primary"></i>
+								  <i class="fa fa-shopping-cart fa-stack-1x fa-inverse"></i>
+							</span>
+						</div>
+						<div class="panel-body">
+							<h4><a href="{{ '/order'|link }}">{% trans 'Order' %}</a></h4>
+							<p>{% trans 'Choose products we offer for selling' %}</p>
+						</div>
+					</div>
+				</div>
+				
+				<div class="col-md-4 col-sm-6">
+					<div class="panel panel-default text-center">
+						<div class="panel-heading">
+							<span class="fa-stack fa-5x">
+								  <i class="fa fa-circle fa-stack-2x text-primary"></i>
+								  <i class="fa fa-users fa-stack-1x fa-inverse"></i>
+							</span>
+						</div>
+						<div class="panel-body">
+							<h4><a href="{{ '/login'|link({'register' : 1}) }}">{% trans 'Register' %}</a></h4>
+							<p>{% trans 'Become a member and manage services' %}</p>
+						</div>
+					</div>
+				</div>
+				
+				<div class="col-md-4 col-sm-6">
+					<div class="panel panel-default text-center">
+						<div class="panel-heading">
+							<span class="fa-stack fa-5x">
+								  <i class="fa fa-circle fa-stack-2x text-primary"></i>
+								  <i class="fa fa-envelope fa-stack-1x fa-inverse"></i>
+							</span>
+						</div>
+						<div class="panel-body">
+							<h4><a href="{{ '/support/contact-us'|link }}">{% trans 'Contact Us' %}</a></h4>
+							<p>{{ company.signature }}</p>
+						</div>
+					</div>
+				</div>
+
+				{% if guest.extension_is_on({"mod":"news"}) %}
+				<div class="col-md-4 col-sm-6">
+					<div class="panel panel-default text-center">
+						<div class="panel-heading">
+							<span class="fa-stack fa-5x">
+								  <i class="fa fa-circle fa-stack-2x text-primary"></i>
+								  <i class="fa fa-bullhorn fa-stack-1x fa-inverse"></i>
+							</span>
+						</div>
+						<div class="panel-body">
+							<h4><a href="{{ '/news'|link }}">{% trans 'Announcements' %}</a></h4>
+							<p>{% trans 'Track our latest posts' %}</p>
+						</div>
+					</div>
+				</div>
+				{% endif %}
+
+				{% if guest.extension_is_on({"mod":"kb"}) %}
+				<div class="col-md-4 col-sm-6">
+					<div class="panel panel-default text-center">
+						<div class="panel-heading">
+							<span class="fa-stack fa-5x">
+								  <i class="fa fa-circle fa-stack-2x text-primary"></i>
+								  <i class="fa fa-graduation-cap fa-stack-1x fa-inverse"></i>
+							</span>
+						</div>
+						<div class="panel-body">
+							<h4><a href="{{ '/kb'|link }}">{% trans 'Knowledge Base' %}</a></h4>
+							<p>{% trans 'Browse our KB for answers and FAQs' %}</p>
+						</div>
+					</div>
+				</div>
+				{% endif %}
+			</div>
+		{% elseif settings.home_page == "order" %}
+			{% include "mod_order_index.phtml" %}
+		{% elseif settings.home_page == "blog" %}
+			{% include "mod_news_index.phtml" %}
+		{% elseif settings.home_page == "login" %}
+			{% include "mod_page_login.phtml" %}
+		{% elseif settings.home_page == "contact" %}
+			{% include "mod_support_contact_us.phtml" %}
+		{% elseif settings.home_page == "kb" %}
+			{% include "mod_kb_index.phtml" %}
+		{% endif %}
+	{% endif %}
+{% endblock %}

@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -47,7 +47,7 @@ class Service implements InjectionAwareInterface
 
         return $product->title;
     }
-    
+
     public function validateOrderData(array &$data)
     {
         if(!isset($data['server_id'])) {
@@ -99,8 +99,8 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if(!$model instanceof \Model_ServiceHosting) {
-            throw new \Box_Exception('Could not activate order. Service was not created');
+        if(!$model instanceof \RedBean_SimpleModel) {
+            throw new \Box_Exception('Order :id has no active service', array(':id'=>$order->id));
         }
 
         $pass = $this->di['tools']->generatePassword(10, 4);
@@ -108,13 +108,13 @@ class Service implements InjectionAwareInterface
         if(isset($c['password']) && !empty($c['password'])) {
             $pass = $c['password'];
         }
-        
+
         if(isset($c['username']) && !empty($c['username'])) {
             $username = $c['username'];
         } else {
             $username = $this->_generateUsername($model->sld.$model->tld);
-        }        
-        
+        }
+
         $model->username = $username;
         $model->pass = $pass;
         $this->di['db']->store($model);
@@ -123,7 +123,7 @@ class Service implements InjectionAwareInterface
             list($adapter, $account) = $this->_getAM($model);
             $adapter->createAccount($account);
         }
-        
+
         return array(
             'username'  =>  $username,
             'password'  =>  $pass,
@@ -257,7 +257,7 @@ class Service implements InjectionAwareInterface
     public function changeAccountUsername(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data)
     {
         if(!isset($data['username']) || empty($data['username'])) {
-            throw new \Box_Exception('Account password is missing or is not valid');
+            throw new \Box_Exception('Account username is missing or is not valid');
         }
 
         $u = strtolower($data['username']);
@@ -266,7 +266,7 @@ class Service implements InjectionAwareInterface
             list($adapter, $account) = $this->_getAM($model);
             $adapter->changeAccountUsername($account, $u);
         }
-        
+
         $model->username = $u;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -287,7 +287,7 @@ class Service implements InjectionAwareInterface
             list($adapter, $account) = $this->_getAM($model);
             $adapter->changeAccountIp($account, $ip);
         }
-        
+
         $model->ip = $ip;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -309,7 +309,7 @@ class Service implements InjectionAwareInterface
             list($adapter, $account) = $this->_getAM($model);
             $adapter->changeAccountDomain($account, $sld.$tld);
         }
-        
+
         $model->sld = $sld;
         $model->tld = $tld;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -351,7 +351,7 @@ class Service implements InjectionAwareInterface
         if($account->getIp() != $updated->getIp()) {
             $model->ip = $updated->getIp();
         }
-        
+
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Synchronizing hosting account %s with server', $model->id);
@@ -378,7 +378,7 @@ class Service implements InjectionAwareInterface
     {
         return ($order->status != \Model_ClientOrder::STATUS_FAILED_SETUP);
     }
-    
+
     /**
      * Generate username by domain
      *

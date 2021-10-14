@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -35,9 +35,6 @@ class Service implements \Box\InjectionAwareInterface
 
     public function uninstall()
     {
-        if(!$this->di['license']->isPro()) {
-            throw new \Exception('Branding module can only be disabled for PRO license owners', 509);
-        }
         return true;
     }
 

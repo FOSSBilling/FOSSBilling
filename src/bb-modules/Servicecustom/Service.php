@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -41,7 +41,7 @@ class Service implements \Box\InjectionAwareInterface
             foreach ($form['fields'] as $field) {
                 if ($field['required'] == 1) {
                     $field_name = $field['name'];
-                    if ((!isset($data[$field_name]) || empty($data[$field_name]))) {
+                    if (!isset($data[$field_name]) || empty($data[$field_name])) {
                         throw new \Box_Exception("You must fill in all required fields. " . $field['label'] . " is missing", null, 9684);
                     }
                 }

@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -271,7 +271,7 @@ class Admin extends \Api_Abstract
 
 
     /**
-     * Dublicate form with its fields in database
+     * Duplicate form with its fields in database
      *
      * @param int $form_id - ID of the origin form
      * @param string $name - Name of copied form
@@ -290,7 +290,7 @@ class Admin extends \Api_Abstract
         }
 
         $service = $this->getService();
-        $new_form_id = $service->dublicateForm($data);
+        $new_form_id = $service->duplicateForm($data);
         return $new_form_id;
     }
 

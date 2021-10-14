@@ -20,40 +20,5 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
-    public function testuninstallException()
-    {
-        $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
-        $licenseMock->expects($this->atLeastOnce())
-            ->method('isPro')
-            ->will($this->returnValue(false));
-
-        $di = new \Box_Di();
-        $di['license'] = $licenseMock;
-
-        $brandingService = new \Box\Mod\Branding\Service();
-        $brandingService->setDi($di);
-
-        $this->setExpectedException('\Exception', 'Branding module can only be disabled for PRO license owners', 509);
-        $brandingService->uninstall();
-
-    }
-
-    public function testuninstal()
-    {
-        $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
-        $licenseMock->expects($this->atLeastOnce())
-            ->method('isPro')
-            ->will($this->returnValue(true));
-
-        $di = new \Box_Di();
-        $di['license'] = $licenseMock;
-
-        $brandingService = new \Box\Mod\Branding\Service();
-        $brandingService->setDi($di);
-
-        $result = $brandingService->uninstall();
-        $this->assertTrue($result);
-    }
-
 }
  

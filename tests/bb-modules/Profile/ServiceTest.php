@@ -22,7 +22,7 @@ class ServiceTest extends \BBTestCase
 
         $service = new Service();
         $result  = $service->getAdminIdentityArray($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testUpdateAdmin()
@@ -215,9 +215,6 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testUpdateClientEmailChangeNotAllowedException()
     {
         $emMock = $this->getMockBuilder('\Box_EventManager')
@@ -270,14 +267,11 @@ class ServiceTest extends \BBTestCase
 
         $service = new Service();
         $service->setDi($di);
+        $this->expectException(\Box_Exception::class);
         $result = $service->updateClient($model, $data);
         $this->assertTrue($result);
     }
 
-
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testUpdateClientEmailAlreadyRegisteredException()
     {
         $emMock = $this->getMockBuilder('\Box_EventManager')
@@ -330,6 +324,7 @@ class ServiceTest extends \BBTestCase
 
         $service = new Service();
         $service->setDi($di);
+        $this->expectException(\Box_Exception::class);
         $result = $service->updateClient($model, $data);
         $this->assertTrue($result);
     }
@@ -353,7 +348,7 @@ class ServiceTest extends \BBTestCase
         $service = new Service();
         $service->setDi($di);
         $result = $service->resetApiKey($model);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals(strlen($result), 32);
     }
 

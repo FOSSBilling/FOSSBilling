@@ -3,9 +3,9 @@
 /**
  * @group Core
  */
-class Box_LogIntegrationTest extends BBDbApiTestCase
+class LogTest extends BBDbApiTestCase
 {
-    public function testLogWithoutParamsProvider()
+    public function logWithoutParamsProvider()
     {
         return array(
             array('Test message'),
@@ -14,7 +14,7 @@ class Box_LogIntegrationTest extends BBDbApiTestCase
     }
 
     /**
-     * @dataProvider testLogWithoutParamsProvider
+     * @dataProvider logWithoutParamsProvider
      */
     public function testLogWithoutParams($msg)
     {
@@ -34,6 +34,8 @@ class Box_LogIntegrationTest extends BBDbApiTestCase
         $rand = rand(1, 100);
         $msg1 = 'No params in message, param passed';
         $msg2 = 'Test message with param %s';
+
+        $this->assertTrue(($rand <= 100 && $rand > 0));
 
         return array(
             array($msg1, $rand, $msg1),

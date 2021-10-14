@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -105,7 +105,7 @@ class Admin extends \Api_Abstract
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Forum', 3);
 
-        $priority = $this->di['db']->getCell("SELECT MAX(priority) FROM forum GROUP BY priority ORDER BY priority DESC LIMIT 1");
+        $priority = $this->di['db']->getCell("SELECT MAX(priority) FROM forum LIMIT 1");
 
         $model              = $this->di['db']->dispense('Forum');
         $model->category    = $this->di['array_get']($data, 'category', NULL);

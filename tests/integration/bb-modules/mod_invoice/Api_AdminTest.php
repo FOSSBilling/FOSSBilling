@@ -10,7 +10,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     public function testTax()
     {
         $array = $this->api_admin->invoice_tax_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'name'    => 'VAT in United Kingdom',
@@ -37,13 +37,13 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     public function testSubscriptions()
     {
         $array = $this->api_admin->invoice_subscription_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data  = array(
             'id' => 1,
         );
         $array = $this->api_admin->invoice_subscription_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data['status'] = 'canceled';
         $bool           = $this->api_admin->invoice_subscription_update($data);
@@ -62,7 +62,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         $this->assertTrue(is_numeric($id));
 
         $array = $this->api_admin->invoice_subscription_get(array('sid' => $sid));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testInvoice()
@@ -80,16 +80,16 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $array = $this->api_admin->invoice_get_statuses(array());
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->invoice_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data  = array(
             'id' => 1,
         );
         $array = $this->api_admin->invoice_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'client_id'  => 1,
@@ -142,7 +142,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     public function testGatewayInstall()
     {
         $array = $this->api_admin->invoice_gateway_get_available();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'code' => $array[0],
@@ -154,16 +154,16 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     public function testGateways()
     {
         $array = $this->api_admin->invoice_gateway_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->invoice_gateway_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data  = array(
             'id' => 1,
         );
         $array = $this->api_admin->invoice_gateway_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'id'              => 1,
@@ -222,7 +222,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $array = $this->api_admin->invoice_transaction_get($txu);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $bool = $this->api_admin->invoice_transaction_process($txu);
         $this->assertTrue($bool);
@@ -231,22 +231,22 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $array = $this->api_admin->invoice_transaction_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->invoice_transaction_statuses();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->invoice_transaction_gateway_statuses();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->invoice_transaction_types();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->invoice_transaction_get_statuses();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->invoice_transaction_get_statuses_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testUpdate()
@@ -332,7 +332,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
             $bool = $this->api_admin->invoice_transaction_process_all();
             $this->assertTrue($bool);
         } catch (Exception $e) {
-
+            assertEquals("testProcess failed: ", $e->getMessage());
         }
 
         $bool = $this->api_admin->invoice_batch_activate_paid();
@@ -390,11 +390,11 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
         $bool                = $this->api_admin->system_update_params(array('invoice_refund_logic' => 'negative_invoice'));
         $refunded_invoice_id = $this->api_admin->invoice_refund($data);
-        $this->assertInternalType('int', $refunded_invoice_id);
+        $this->assertIsInt($refunded_invoice_id);
 
         $bool                = $this->api_admin->system_update_params(array('invoice_refund_logic' => 'credit_note'));
         $refunded_invoice_id = $this->api_admin->invoice_refund($data);
-        $this->assertInternalType('int', $refunded_invoice_id);
+        $this->assertIsInt($refunded_invoice_id);
 
         try {
             $this->api_admin->invoice_refund(array('id' => $refunded_invoice_id));
@@ -604,12 +604,12 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     public function testInvoiceGetList()
     {
         $array = $this->api_admin->invoice_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         if (count($list)) {
             $item = $list[1];
@@ -635,9 +635,9 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
             $this->assertArrayHasKey('created_at', $item);
             $this->assertArrayHasKey('updated_at', $item);
             $this->assertArrayHasKey('lines', $item);
-            $this->assertInternalType('array', $item['lines']);
+            $this->assertIsArray($item['lines']);
             $line = $item['lines'][0];
-            $this->assertInternalType('array', $line);
+            $this->assertIsArray($line);
             $this->assertArrayHasKey('id', $line);
             $this->assertArrayHasKey('title', $line);
             $this->assertArrayHasKey('period', $line);
@@ -655,7 +655,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
             $this->assertArrayHasKey('status', $line);
             $this->assertArrayHasKey('lines', $item);
 
-            $this->assertInternalType('array', $item['buyer']);
+            $this->assertIsArray($item['buyer']);
             $buyer = $item['buyer'];
             $this->assertArrayHasKey('first_name', $buyer);
             $this->assertArrayHasKey('last_name', $buyer);
@@ -671,7 +671,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
             $this->assertArrayHasKey('email', $buyer);
             $this->assertArrayHasKey('zip', $buyer);
 
-            $this->assertInternalType('array', $item['seller']);
+            $this->assertIsArray($item['seller']);
             $seller = $item['seller'];
             $this->assertArrayHasKey('company', $seller);
             $this->assertArrayHasKey('company_vat', $seller);
@@ -682,7 +682,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
             $this->assertArrayHasKey('subscribable', $item);
             $this->assertArrayHasKey('subscription', $item);
-            $this->assertInternalType('array', $item['subscription']);
+            $this->assertIsArray($item['subscription']);
 
             $subscription = $item['subscription'];
             $this->assertArrayHasKey('unit', $subscription);
@@ -694,11 +694,11 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     public function testTransactionGetList()
     {
         $array = $this->api_admin->invoice_transaction_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         if (count($list)) {
             $item = $list[0];
@@ -725,11 +725,11 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
     public function testGatewayGetList()
     {
         $array = $this->api_admin->invoice_gateway_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         if (count($list)) {
             $item = $list[0];
@@ -739,18 +739,18 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
             $this->assertArrayHasKey('allow_single', $item);
             $this->assertArrayHasKey('allow_recurrent', $item);
             $this->assertArrayHasKey('accepted_currencies', $item);
-            $this->assertInternalType('array', $item['accepted_currencies']);
+            $this->assertIsArray($item['accepted_currencies']);
         }
     }
 
     public function testSubscriptionGetList()
     {
         $array = $this->api_admin->invoice_subscription_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         if (count($list)) {
             $item = $list[0];
@@ -765,7 +765,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
             $this->assertArrayHasKey('client', $item);
 
             $client = $item['client'];
-            $this->assertInternalType('array', $client);
+            $this->assertIsArray($client);
             $this->assertArrayHasKey('id', $client);
             $this->assertArrayHasKey('aid', $client);
             $this->assertArrayHasKey('email', $client);
@@ -792,14 +792,14 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
             $this->assertArrayHasKey('gateway', $item);
             $gateway = $item['gateway'];
-            $this->assertInternalType('array', $gateway);
+            $this->assertIsArray($gateway);
             $this->assertArrayHasKey('id', $gateway);
             $this->assertArrayHasKey('code', $gateway);
             $this->assertArrayHasKey('title', $gateway);
             $this->assertArrayHasKey('allow_single', $gateway);
             $this->assertArrayHasKey('allow_recurrent', $gateway);
             $this->assertArrayHasKey('accepted_currencies', $gateway);
-            $this->assertInternalType('array', $gateway['accepted_currencies']);
+            $this->assertIsArray($gateway['accepted_currencies']);
         }
     }
 
@@ -861,6 +861,8 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
     public function testPrepareInvoiceDueDateProvider()
     {
+        $this->assertTrue(true);
+
         return array(
             array(100, 100),
             array('', 1),
@@ -900,7 +902,7 @@ class Api_Admin_InvoiceTest extends BBDbApiTestCase
 
         $tax = $this->api_admin->invoice_tax_get(array('id' => $id));
 
-        $this->assertInternalType('array', $tax);
+        $this->assertIsArray($tax);
         $this->assertEquals($data['name'], $tax['name']);
         $this->assertEquals($data['taxrate'], $tax['taxrate']);
         $this->assertEquals($data['country'], $tax['country']);

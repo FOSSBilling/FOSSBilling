@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -71,8 +71,12 @@ class Box_Translate implements \Box\InjectionAwareInterface
             @putenv('LANG='.$locale.'.'.$codeset);
             @putenv('LANGUAGE='.$locale.'.'.$codeset);
             // set locale
-            if (!defined('LC_MESSAGES')) define('LC_MESSAGES', 5);
-            if (!defined('LC_TIME')) define('LC_TIME', 2);
+            if (!defined('LC_MESSAGES')) {
+                define('LC_MESSAGES', 5);
+            }
+            if (!defined('LC_TIME')) {
+                define('LC_TIME', 2);
+            }
             setlocale(LC_MESSAGES, $locale.'.'.$codeset);
             setlocale(LC_TIME, $locale.'.'.$codeset);
             bindtextdomain($this->domain, BB_PATH_LANGS);
@@ -82,7 +86,9 @@ class Box_Translate implements \Box\InjectionAwareInterface
             if (!function_exists('__')) {
                 function __($msgid, array $values = NULL)
                 {
-                    if (empty($msgid)) return null;
+                    if (empty($msgid)) {
+                        return null;
+                    }
                     $string = gettext($msgid);
                     return empty($values) ? $string : strtr($string, $values);
                 }

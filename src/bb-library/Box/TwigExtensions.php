@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -11,7 +11,7 @@
  */
 
 
-class Box_TwigExtensions extends Twig_Extension implements \Box\InjectionAwareInterface
+class Box_TwigExtensions extends Twig\Extension\AbstractExtension implements \Box\InjectionAwareInterface
 {
     protected $di;
 
@@ -39,34 +39,34 @@ class Box_TwigExtensions extends Twig_Extension implements \Box\InjectionAwareIn
     public function getFilters()
     {
         return array(
-            'alink'     => new Twig_Filter_Function(array($this, 'twig_bb_admin_link_filter'), array('is_safe' => array('html'))),
-            'link'      => new Twig_Filter_Function(array($this, 'twig_bb_client_link_filter'), array('is_safe' => array('html'))),
-            'gravatar'  => new Twig_Filter_Function('twig_gravatar_filter'),
-            'markdown'  => new Twig_Filter_Function('twig_markdown_filter', array('needs_environment' => true, 'is_safe' => array('html'))),
-            'truncate'  => new Twig_Filter_Function('twig_truncate_filter', array('needs_environment' => true)),
-            'timeago'   => new Twig_Filter_Function('twig_timeago_filter'),
-            'daysleft'  => new Twig_Filter_Function('twig_daysleft_filter'),
-            'size'      => new Twig_Filter_Function('twig_size_filter'),
-            'ipcountryname' => new Twig_Filter_Function(array($this, 'twig_ipcountryname_filter')),
-            'number' => new Twig_Filter_Function('twig_number_filter'),
-            'period_title' => new Twig_Filter_Function('twig_period_title', array('needs_environment' => true, 'is_safe' => array('html'))),
-            'autolink' => new Twig_Filter_Function('twig_autolink_filter'),
-            'bbmd' => new Twig_Filter_Function('twig_bbmd_filter', array('needs_environment' => true, 'is_safe' => array('html'))),
+            'alink'     => new Twig\TwigFilter('alink', array($this, 'twig_bb_admin_link_filter'), array('is_safe' => array('html'))),
+            'link'      => new Twig\TwigFilter('link', array($this, 'twig_bb_client_link_filter'), array('is_safe' => array('html'))),
+            'gravatar'  => new Twig\TwigFilter('gravatar','twig_gravatar_filter'),
+            'markdown'  => new Twig\TwigFilter('markdown','twig_markdown_filter', array('needs_environment' => true, 'is_safe' => array('html'))),
+            'truncate'  => new Twig\TwigFilter('truncate','twig_truncate_filter', array('needs_environment' => true)),
+            'timeago'   => new Twig\TwigFilter('timeago','twig_timeago_filter'),
+            'daysleft'  => new Twig\TwigFilter('daysleft','twig_daysleft_filter'),
+            'size'      => new Twig\TwigFilter('size', 'twig_size_filter'),
+            'ipcountryname' => new Twig\TwigFilter('ipcountryname', array($this, 'twig_ipcountryname_filter')),
+            'number' => new Twig\TwigFilter('number', 'twig_number_filter'),
+            'period_title' => new Twig\TwigFilter('period_title', 'twig_period_title', array('needs_environment' => true, 'is_safe' => array('html'))),
+            'autolink' => new Twig\TwigFilter('autolink', 'twig_autolink_filter'),
+            'bbmd' => new Twig\TwigFilter('bbmd', 'twig_bbmd_filter', array('needs_environment' => true, 'is_safe' => array('html'))),
 
-            'bb_date' => new Twig_Filter_Function(array($this, 'twig_bb_date')),
-            'bb_datetime' => new Twig_Filter_Function(array($this, 'twig_bb_datetime')),
+            'bb_date' => new Twig\TwigFilter('bb_date', array($this, 'twig_bb_date')),
+            'bb_datetime' => new Twig\TwigFilter('bb_datetime', array($this, 'twig_bb_datetime')),
 
-            'img_tag' => new Twig_Filter_Function('twig_img_tag', array('needs_environment' => false, 'is_safe' => array('html'))),
-            'script_tag' => new Twig_Filter_Function('twig_script_tag', array('needs_environment' => false, 'is_safe' => array('html'))),
-            'stylesheet_tag' => new Twig_Filter_Function('twig_stylesheet_tag', array('needs_environment' => false, 'is_safe' => array('html'))),
+            'img_tag' => new Twig\TwigFilter('img_tag', 'twig_img_tag', array('needs_environment' => false, 'is_safe' => array('html'))),
+            'script_tag' => new Twig\TwigFilter('script_tag', 'twig_script_tag', array('needs_environment' => false, 'is_safe' => array('html'))),
+            'stylesheet_tag' => new Twig\TwigFilter('stylesheet_tag', 'twig_stylesheet_tag', array('needs_environment' => false, 'is_safe' => array('html'))),
 
-            'mod_asset_url' => new Twig_Filter_Function('twig_mod_asset_url'),
-            'asset_url' => new Twig_Filter_Function('twig_asset_url', array('needs_environment' => true, 'is_safe' => array('html'))),
+            'mod_asset_url' => new Twig\TwigFilter('mod_asset_url', 'twig_mod_asset_url'),
+            'asset_url' => new Twig\TwigFilter('asset_url', 'twig_asset_url', array('needs_environment' => true, 'is_safe' => array('html'))),
 
-            'money' => new Twig_Filter_Function('twig_money', array('needs_environment' => true, 'is_safe' => array('html'))),
-            'money_without_currency' => new Twig_Filter_Function('twig_money_without_currency', array('needs_environment' => true, 'is_safe' => array('html'))),
-            'money_convert' => new Twig_Filter_Function('twig_money_convert', array('needs_environment' => true, 'is_safe' => array('html'))),
-            'money_convert_without_currency' => new Twig_Filter_Function('money_convert_without_currency', array('needs_environment' => true, 'is_safe' => array('html'))),
+            'money' => new Twig\TwigFilter('money', 'twig_money', array('needs_environment' => true, 'is_safe' => array('html'))),
+            'money_without_currency' => new Twig\TwigFilter('money_without_currency','twig_money_without_currency', array('needs_environment' => true, 'is_safe' => array('html'))),
+            'money_convert' => new Twig\TwigFilter('money_convert', 'twig_money_convert', array('needs_environment' => true, 'is_safe' => array('html'))),
+            'money_convert_without_currency' => new Twig\TwigFilter('money_convert_without_currency', array('needs_environment' => true, 'is_safe' => array('html'))),
         );
     }
 
@@ -97,6 +97,10 @@ class Box_TwigExtensions extends Twig_Extension implements \Box\InjectionAwareIn
 
     function twig_ipcountryname_filter($value)
     {
+        if (empty($value)) {
+            return '';
+        }
+
         try {
             $record = $this->di['geoip']->country($value);
             return $record->country->name;
@@ -107,6 +111,9 @@ class Box_TwigExtensions extends Twig_Extension implements \Box\InjectionAwareIn
 
     function twig_bb_client_link_filter($link, $params = null)
     {
+        if($this->di['url'] === null) {
+            return null;
+        }
         return $this->di['url']->link($link, $params);
     }
 
@@ -117,14 +124,14 @@ class Box_TwigExtensions extends Twig_Extension implements \Box\InjectionAwareIn
 
 }
 
-function twig_period_title(Twig_Environment $env, $period)
+function twig_period_title(Twig\Environment $env, $period)
 {
     $globals = $env->getGlobals();
     $api_guest = $globals['guest'];
     return $api_guest->system_period_title(array('code'=>$period));
 }
 
-function twig_money_convert(Twig_Environment $env, $price, $currency = null)
+function twig_money_convert(Twig\Environment $env, $price, $currency = null)
 {
     $globals = $env->getGlobals();
     $api_guest = $globals['guest'];
@@ -135,7 +142,7 @@ function twig_money_convert(Twig_Environment $env, $price, $currency = null)
     return $api_guest->currency_format(array("price" => $price, 'code'=>$currency, 'convert'=>true));
 }
 
-function money_convert_without_currency(Twig_Environment $env, $price, $currency = null, $without_currency = false)
+function money_convert_without_currency(Twig\Environment $env, $price, $currency = null, $without_currency = false)
 {
     $globals = $env->getGlobals();
     $api_guest = $globals['guest'];
@@ -146,14 +153,14 @@ function money_convert_without_currency(Twig_Environment $env, $price, $currency
     return $api_guest->currency_format(array("price" => $price, 'code'=>$currency, 'convert'=>true, 'without_currency'=>true));
 }
 
-function twig_money(Twig_Environment $env, $price, $currency = null)
+function twig_money(Twig\Environment $env, $price, $currency = null)
 {
     $globals = $env->getGlobals();
     $api_guest = $globals['guest'];
     return $api_guest->currency_format(array("price" => $price, 'code'=>$currency, 'convert'=>false));
 }
 
-function twig_money_without_currency(Twig_Environment $env, $price, $currency = null)
+function twig_money_without_currency(Twig\Environment $env, $price, $currency = null)
 {
     $globals = $env->getGlobals();
     $api_guest = $globals['guest'];
@@ -165,7 +172,7 @@ function twig_mod_asset_url($asset, $mod)
     return BB_URL . 'bb-modules/'.ucfirst($mod).'/assets/'.$asset;
 }
 
-function twig_asset_url(Twig_Environment $env, $asset)
+function twig_asset_url(Twig\Environment $env, $asset)
 {
     $globals = $env->getGlobals();
     return BB_URL . 'bb-themes/'.$globals['current_theme'].'/assets/'.$asset;
@@ -187,28 +194,26 @@ function twig_stylesheet_tag($path, $media = 'screen')
     return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, Box_Version::VERSION, $media);
 }
 
-function twig_gravatar_filter($email, $size = null)
+function twig_gravatar_filter($email, $size = 20)
 {
-	$protocol = BB_SSL ? 'https' : 'http';
-	$link     = $protocol . '://gravatar.com/avatar/' . md5($email);
-	if ($size) {
-		$link .= '/?s=' . $size;
-	}
-
-	return $link;
+	return (new Box_Tools)->get_gravatar($email, $size);
 }
 
 function twig_autolink_filter($text)
 {
    $pattern  = '#\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))#';
-   $callback = create_function('$matches', '
+
+   $callback = function($matches)
+   {
        $url       = array_shift($matches);
        $url_parts = parse_url($url);
        if(!isset($url_parts["scheme"])) {
-          $url = "http://".$url;
+           $url = 'http://' . $url;
        }
-       return sprintf(\'<a target="_blank" href="%s">%s</a>\', $url, $url);
-   ');
+
+       return sprintf('<a target="_blank" href="%s">%s</a>', $url, $url);
+   };
+
    return preg_replace_callback($pattern, $callback, $text);
 }
 
@@ -248,13 +253,22 @@ function twig_size_filter($value)
     return round($bytes, $precision) . ' ' . $units[$pow];
 }
 
-function twig_markdown_filter(Twig_Environment $env, $value)
+function twig_markdown_filter(Twig\Environment $env, $value)
 {
     $markdownParser = new \Michelf\MarkdownExtra;
-    return $markdownParser->transform(htmlspecialchars($value, ENT_NOQUOTES));
+    // Michelf Markdown version 1.7.0 and up
+    $markdownParser->hard_wrap = true;
+    $result = $markdownParser->transform(htmlspecialchars($value, ENT_NOQUOTES));
+    $result = preg_replace_callback('/(?<=href=")(.*)(?=")/', function($match) {
+        if(!filter_var($match[0], FILTER_VALIDATE_URL)) {
+            $match[0] = '#';
+        }
+        return $match[0];
+    }, $result);
+    return $result;
 }
 
-function twig_truncate_filter(Twig_Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
+function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
 {
     mb_internal_encoding("UTF-8");
     if (mb_strlen($value) > $length) {
@@ -273,7 +287,7 @@ function twig_truncate_filter(Twig_Environment $env, $value, $length = 30, $pres
 /**
  * BoxBilling markdown
  */
-function twig_bbmd_filter(Twig_Environment $env, $value)
+function twig_bbmd_filter(Twig\Environment $env, $value)
 {
     $value = twig_markdown_filter($env, $value);
     return $value;

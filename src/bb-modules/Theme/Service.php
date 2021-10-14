@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -276,8 +276,7 @@ class Service implements InjectionAwareInterface
         $path = $this->getThemesPath();
         if ($handle = opendir($path)) {
             while (false !== ($file = readdir($handle))) {
-                if (is_dir($path . DIRECTORY_SEPARATOR . $file) && $file{0} != '.') {
-
+                if (is_dir($path . DIRECTORY_SEPARATOR . $file) && $file[0] != '.') {
                     try {
                         if (!$client && strpos($file, 'admin') !== false) {
                             $list[] = $this->_loadTheme($file);

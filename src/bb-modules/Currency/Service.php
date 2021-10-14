@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -107,7 +107,7 @@ class Service implements InjectionAwareInterface
         $db = $this->di['db'];
         $default = $db->findOne('Currency', 'is_default = 1');
 
-        if (count($default) == 0) {
+        if (is_array($default) && count($default) == 0) {
             $default = $db->load('Currency', '1');
         }
 
@@ -331,6 +331,55 @@ class Service implements InjectionAwareInterface
         $db->exec($sql, $values);
     }
 
+    public function getKey()
+    {
+        $sql = "SELECT `param`, `value` FROM setting";
+        $db  = $this->di['db'];
+
+        $pairs = $db->getAssoc($sql);
+
+        return $pairs['currencylayer'];
+    }
+
+    public function updateKey($key)
+    {
+        $sql    = "INSERT INTO `setting` (`param`, `value`, `public`, `created_at`, `updated_at`) VALUES ('currencylayer', :key, '0', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()) ON DUPLICATE KEY UPDATE `value`=:key, `updated_at`=CURRENT_TIMESTAMP()";
+        $values = array(':key' => $key);
+
+        $db       = $this->di['db'];
+        $currency = $db->exec($sql, $values);
+    }
+
+    public function isCronEnabled()
+    {
+        $sql = "SELECT `param`, `value` FROM setting";
+        $db  = $this->di['db'];
+
+        $pairs = $db->getAssoc($sql);
+
+        if (isset($pairs['currency_cron_enabled']) && $pairs['currency_cron_enabled'] == "1") {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function setCron($data)
+    {
+        $sql    = "INSERT INTO `setting` (`param`, `value`, `public`, `created_at`, `updated_at`) VALUES ('currency_cron_enabled', :key, '0', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()) ON DUPLICATE KEY UPDATE `value`=:key, `updated_at`=CURRENT_TIMESTAMP()";
+        
+        if ($data == "1") {
+            $key = "1";
+        } else {
+            $key = "0";
+        }
+
+        $values = array(':key' => $key);
+
+        $db       = $this->di['db'];
+        $currency = $db->exec($sql, $values);
+    }
+
     public function toApiArray(\Model_Currency $model)
     {
         return array(
@@ -440,15 +489,25 @@ class Service implements InjectionAwareInterface
     {
         $from_Currency = urlencode($from);
         $to_Currency   = urlencode($to);
-        $url = "http://query.yahooapis.com/v1/public/yql?q=select%20rate%2Cname%20from%20csv%20where%20url%3D'http%3A%2F%2Fdownload.finance.yahoo.com%2Fd%2Fquotes%3Fs%3D".$from_Currency.$to_Currency."%253DX%26f%3Dl1n'%20and%20columns%3D'rate%2Cname'&format=json";
-        $ch = curl_init();
-        curl_setopt ($ch, CURLOPT_URL, $url);
-        curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch,  CURLOPT_USERAGENT , "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)");
-        curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        $json = curl_exec($ch);
-        $array = json_decode($json, true);
-        return (float)$array['query']['results']['row']['rate'];
+
+        if ($from_Currency == "EUR") {
+            $XML = simplexml_load_file("http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml");
+            foreach ($XML->Cube->Cube->Cube as $rate) {
+                if ($rate["currency"] == $to_Currency) {
+                    return (float) $rate["rate"];
+                };
+            }
+        } else if ($from_Currency == "USD") {
+            $guzzle = new \GuzzleHttp\Client();
+            $res = $guzzle->get("http://api.currencylayer.com/live?access_key=". $this->getKey() ."&currencies=". $to_Currency ."&format=1");
+            $array = json_decode($res->getBody(), true);
+            if ($array["success"] !== true) {
+                throw new \Box_Exception("<b>Currencylayer threw an error:</b><br />" . $array["error"]["info"]);
+            } else {
+                return (float) $array["quotes"]["USD".$to_Currency];
+            }
+        }
+        
     }
 
     public function deleteCurrencyByCode($code)
@@ -467,6 +526,22 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(array('event' => 'onAfterAdminDeleteCurrency', 'params' => array('code' => $code)));
 
         $this->di['logger']->info('Removed currency %s', $code);
+
+        return true;
+    }
+
+    public static function onBeforeAdminCronRun(\Box_Event $event)
+    {
+        $di               = $event->getDi();
+        $currencyService  = $di['mod_service']('currency');
+
+        try {
+            if ($currencyService->isCronEnabled()) {
+                $currencyService->updateCurrencyRates("");
+            }
+        } catch (\Exception $e) {
+            error_log($e);
+        }
 
         return true;
     }

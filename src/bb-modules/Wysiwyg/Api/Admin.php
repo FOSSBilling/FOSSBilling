@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -18,13 +18,16 @@ class Admin extends \Api_Abstract
     {
         $mod = $this->di['mod']('wysiwyg');
         $config = $mod->getConfig();
-        return $this->di['array_get']($config, 'editor', 'markitup');
+        if (empty($this->di['array_get']($config, 'editor', 'CKEditor')) || !(defined($this->di['array_get']($config, 'editor', 'CKEditor')))) {
+            return 'ckeditor';
+        } else {
+            return $this->di['array_get']($config, 'editor', 'CKEditor');
+        }
     }
 
     public function editors()
     {
         return array(
-            'markitup'  =>  'markItUp',
             'ckeditor'  =>  'CKEditor',
         );
     }

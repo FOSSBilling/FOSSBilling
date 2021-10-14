@@ -124,9 +124,8 @@ class akismet {
         if(!is_resource($this->connection_handle)) {
             //Try to create one
             if(!$this->connection_handle = curl_init()) {
-                throw new Exception(__('Could not start new CURL instance'));
                 $this->error = true;
-                return;
+                throw new Exception(__('Could not start new CURL instance'));
             }
         }
         
@@ -189,7 +188,6 @@ class akismet {
         if(!$response = curl_exec($this->connection_handle)) {
             $this->error = true;
             throw new Exception(__('Could not send cURL request'));
-            return;
         }
         
         return $response;

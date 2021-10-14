@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -111,7 +111,7 @@ class Admin implements \Box\InjectionAwareInterface
         return $app->render('mod_example_index', $params);
     }
     
-    public function get_api(\Box_App $app, $id)
+    public function get_api(\Box_App $app, $id = null)
     {
         // always call this method to validate if admin is logged in
         $api = $this->di['api_admin'];

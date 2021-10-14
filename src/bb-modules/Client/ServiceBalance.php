@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -14,6 +14,9 @@
 namespace Box\Mod\Client;
 
 use Box\InjectionAwareInterface;
+use Box_Exception;
+use Model_Client;
+use Model_ClientBalance;
 
 class ServiceBalance implements InjectionAwareInterface
 {
@@ -35,24 +38,23 @@ class ServiceBalance implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getClientBalance(\Model_Client $c)
+    public function getClientBalance(Model_Client $c)
     {
         return (float)$this->clientTotal($c);
     }
 
-    public function clientTotal(\Model_Client $c)
+    public function clientTotal(Model_Client $c)
     {
         $sql="
         SELECT SUM(amount) as client_total
         FROM client_balance
         WHERE client_id = ?
         GROUP BY client_id
-        ORDER BY id DESC
         ";
         return $this->di['db']->getCell($sql, array($c->id));
     }
 
-    public function rmByClient(\Model_Client $client)
+    public function rmByClient(Model_Client $client)
     {
         $clientBalances = $this->di['db']->find('ClientBalance', 'client_id = ?', array($client->id));
         foreach ($clientBalances as $balanceModel){
@@ -60,12 +62,12 @@ class ServiceBalance implements InjectionAwareInterface
         }
     }
 
-    public function rm(\Model_ClientBalance $model)
+    public function rm(Model_ClientBalance $model)
     {
         $this->di['db']->trash($model);
     }
 
-    public function toApiArray(\Model_ClientBalance $model)
+    public function toApiArray(Model_ClientBalance $model)
     {
         $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
         return array(
@@ -120,21 +122,21 @@ class ServiceBalance implements InjectionAwareInterface
     }
 
     /**
-     * @param \Model_Client $client
+     * @param Model_Client $client
      * @param double        $amount
      * @param string        $description
      * @param array         $data
-     * @return \Model_ClientBalance
-     * @throws \Box_Exception
+     * @return Model_ClientBalance
+     * @throws Box_Exception
      */
-    public function deductFunds(\Model_Client $client, $amount, $description, array $data = null)
+    public function deductFunds(Model_Client $client, $amount, $description, array $data = null)
     {
         if(!is_numeric($amount)) {
-            throw new \Box_Exception('Funds amount is not valid');
+            throw new Box_Exception('Funds amount is not valid');
         }
 
         if(strlen(trim($description)) == 0) {
-            throw new \Box_Exception('Funds description is not valid');
+            throw new Box_Exception('Funds description is not valid');
         }
 
         $credit = $this->di['db']->dispense('ClientBalance');

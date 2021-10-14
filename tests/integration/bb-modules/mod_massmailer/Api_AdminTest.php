@@ -10,10 +10,10 @@ class Box_Mod_Massmailer_Api_AdminTest extends BBModTestCase
     public function testActions()
     {
         $int = $this->api_admin->massmailer_create(array('subject'=>'Subject', 'content'=>'content'));
-        $this->assertInternalType('int', $int);
+        $this->assertIsInt($int);
         
         $array = $this->api_admin->massmailer_get(array('id'=>$int));
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $data = array(
             'id'=>$int, 
@@ -27,19 +27,19 @@ class Box_Mod_Massmailer_Api_AdminTest extends BBModTestCase
         $this->assertTrue($bool);
         
         $array = $this->api_admin->massmailer_preview($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertTrue(isset($array['subject']));
         $this->assertTrue(isset($array['content']));
         
         $array = $this->api_admin->massmailer_receivers($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         
         $array = $this->api_admin->massmailer_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertEquals(2, $array['total']);
         
         $new_id = $this->api_admin->massmailer_copy(array('id'=>$int));
-        $this->assertInternalType('int', $new_id);
+        $this->assertIsInt($new_id);
         
         $bool = $this->api_admin->massmailer_send_test(array('id'=>$new_id));
         $this->assertTrue($bool);
@@ -61,16 +61,18 @@ class Box_Mod_Massmailer_Api_AdminTest extends BBModTestCase
         );
         $this->api_admin->massmailer_update(array('id'=>1, 'filter'=>$filter));
         $this->api_admin->massmailer_send(array('id'=>1));
+
+        $this->assertTrue(is_array($filter));
     }
 
     public function testMassmailerGetList()
     {
         $array = $this->api_admin->massmailer_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         if (count($list)) {
             $item = $list[0];
@@ -80,7 +82,7 @@ class Box_Mod_Massmailer_Api_AdminTest extends BBModTestCase
             $this->assertArrayHasKey('subject', $item);
             $this->assertArrayHasKey('content', $item);
             $this->assertArrayHasKey('filter', $item);
-            $this->assertInternalType('array', $item['filter']);
+            $this->assertIsArray($item['filter']);
             $this->assertArrayHasKey('status', $item);
             $this->assertArrayHasKey('sent_at', $item);
             $this->assertArrayHasKey('created_at', $item);

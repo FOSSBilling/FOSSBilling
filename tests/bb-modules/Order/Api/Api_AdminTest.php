@@ -1,6 +1,6 @@
 <?php
 
-class AdminTest extends \BBTestCase
+class Api_AdminTest extends \BBTestCase
 {
 
     /**
@@ -8,7 +8,7 @@ class AdminTest extends \BBTestCase
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api = new \Box\Mod\Order\Api\Admin();
     }
@@ -43,7 +43,7 @@ class AdminTest extends \BBTestCase
         );
         $result = $apiMock->get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testGet_list()
@@ -75,7 +75,7 @@ class AdminTest extends \BBTestCase
 
         $result = $this->api->get_list(array());
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCreate()
@@ -91,12 +91,9 @@ class AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->at(0))
+        $dbMock->expects($this->exactly(2))
             ->method('getExistingModelById')
-            ->will($this->returnValue(new \Model_Client()));
-        $dbMock->expects($this->at(1))
-            ->method('getExistingModelById')
-            ->will($this->returnValue(new \Model_Product()));
+            ->will($this->onConsecutiveCalls(new \Model_Client(), new \Model_Product()));
 
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
@@ -110,7 +107,7 @@ class AdminTest extends \BBTestCase
         );
         $result = $this->api->create($data);
 
-        $this->assertInternalType('integer', $result);
+        $this->assertIsInt($result);
     }
 
     public function testUpdate()
@@ -261,9 +258,6 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testUnsuspendNotSuspendedException()
     {
         $order = new Model_ClientOrder();
@@ -283,6 +277,7 @@ class AdminTest extends \BBTestCase
         $apiMock->setService($serviceMock);
 
         $data   = array();
+        $this->expectException(\Box_Exception::class);
         $result = $apiMock->unsuspend($data);
 
         $this->assertTrue($result);
@@ -340,9 +335,6 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testUncancelNotCanceledException()
     {
         $order = new Model_ClientOrder();
@@ -362,6 +354,7 @@ class AdminTest extends \BBTestCase
         $apiMock->setService($serviceMock);
 
         $data   = array();
+        $this->expectException(\Box_Exception::class);
         $result = $apiMock->uncancel($data);
 
         $this->assertTrue($result);
@@ -473,9 +466,6 @@ class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testUpdate_configNotSetConfigException()
     {
         $order = new Model_ClientOrder();
@@ -495,6 +485,7 @@ class AdminTest extends \BBTestCase
         $apiMock->setService($serviceMock);
 
         $data   = array();
+        $this->expectException(\Box_Exception::class);
         $result = $apiMock->update_config($data);
 
         $this->assertTrue($result);
@@ -526,7 +517,7 @@ class AdminTest extends \BBTestCase
         );
         $result = $apiMock->service($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
 
@@ -563,7 +554,7 @@ class AdminTest extends \BBTestCase
 
         $result = $apiMock->status_history_get_list(array());
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testStatus_history_add()
@@ -641,19 +632,19 @@ class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->get_statuses();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testGet_invoice_options()
     {
         $result = $this->api->get_invoice_options(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testGet_status_pairs()
     {
         $result = $this->api->get_status_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testAddons()
@@ -680,8 +671,8 @@ class AdminTest extends \BBTestCase
         );
         $result = $apiMock->addons($data);
 
-        $this->assertInternalType('array', $result);
-        $this->assertInternalType('array', $result[0]);
+        $this->assertIsArray($result);
+        $this->assertIsArray($result[0]);
     }
 
     public function testGetOrder()

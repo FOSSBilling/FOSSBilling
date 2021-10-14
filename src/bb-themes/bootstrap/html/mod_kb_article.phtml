@@ -1,0 +1,50 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{{article.title}}{% endblock %}
+
+{% block content_before %}
+        <!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{{article.title}}
+                    <small>{{article.created_at|date('Y-m-d h:i') }} | {% trans 'Views' %}: {{ article.views }}</small>
+                </h1>
+				<ol class="breadcrumb">
+					<li><a href="{{ 'kb'|link }}">{% trans 'Knowledge base' %}</a></li>
+					<li><a href="{{ '/kb'|link }}/{{article.category.slug}}">{{ article.category.title }}</a></li>
+					<li class="active">{{ article.title }}</li>
+				</ol>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+	{{article.content|bbmd}}
+	<hr>
+	<div class="well">
+        <h4>{%trans 'Similar articles' %}</h4>
+		<div class="list-group">
+			{% for i, kbarticle in guest.kb_article_get_list({"kb_article_category_id":article.kb_article_category_id, "per_page":5}).list %}
+				<a href="{{ '/kb'|link }}/{{article.category.slug}}/{{kbarticle.slug}}" class="list-group-item">{{kbarticle.title}}</a>
+			{% endfor %}
+		</div>
+    </div>
+	<div class="well">
+        <h4>{% trans 'What are you looking for?' %}</h4>
+		<form method="get" action="{{ 'kb'|link }}">
+            <div class="input-group">
+				<input name="q" type="text" class="form-control" value="{{ request.q }}" placeholder="{% trans 'What are you looking for?' %}">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
+                </span>
+            </div>
+		</form>
+    </div>
+			
+	<div class="text-center">
+		<a class="btn btn-default" href="{{ 'kb'|link }}"><i class="fa fa-arrow-left"></i> {% trans 'Back to list' %}</a>
+	</div>
+				
+
+ 
+{% endblock %}

@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -65,12 +65,11 @@ class Service implements InjectionAwareInterface
 
         try {
             $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');;
-            $identity = $di['loggedin_admin'];
-            $s  = $service->getOrderServiceData($order, $identity);
-            $orderArr = $service->toApiArray($order, true, $identity);
+            $s  = $service->getOrderServiceData($order);
+            $orderArr = $service->toApiArray($order, true);
 
             $email              = $params;
-            $email['to_client'] = $orderArr['client']['id'];
+            $email['to_client'] = $order->client_id;
             $email['code']      = sprintf('mod_service%s_activated', $orderArr['service_type']);
             $email['service']   = $s;
             $email['order']     = $orderArr;
@@ -347,6 +346,8 @@ class Service implements InjectionAwareInterface
         $data['title']          = $model->title;
         $data['meta']           = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', array(':id' => $model->id));
         $data['active_tickets'] = $supportService->getActiveTicketsCountForOrder($model);
+        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
+        $data['client'] = $clientService->toApiArray($client, false);
 
         if ($identity instanceof \Model_Admin) {
             $data['config'] = $this->getConfig($model);
@@ -356,9 +357,10 @@ class Service implements InjectionAwareInterface
             }else{
                 $data['plugin'] = null;
             }
-            $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
-            $data['client'] = $clientService->toApiArray($client, false);
         }
+
+        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
+        $data['client'] = $clientService->toApiArray($client, false);
 
         return $data;
     }
@@ -478,17 +480,13 @@ class Service implements InjectionAwareInterface
         if (!empty($where)) {
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
-        $query .= " GROUP by co.id ORDER BY co.id DESC";
+        $query .= " ORDER BY co.id DESC";
 
         return array($query, $bindings);
     }
 
     public function createOrder(\Model_Client $client, \Model_Product $product, array $data)
     {
-        if (!$this->di['license']->isPro()) {
-            throw new \Box_Exception('This feature is available in BoxBilling PRO version.', null, 876);
-        }
-
         $currencyService = $this->di['mod_service']('currency');
         if (isset($data['currency']) && !empty($data['currency'])) {
             $currency = $currencyService->getByCode($data['currency']);
@@ -656,7 +654,7 @@ class Service implements InjectionAwareInterface
             try {
                 $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
                 $this->createFromOrder($addon);
-                $this->di['events_manager']->fire(array('event' => 'onBeforeAdminOrderActivate', 'params' => array('id' => $addon->id)));
+                $this->di['events_manager']->fire(array('event' => 'onAfterAdminOrderActivate', 'params' => array('id' => $addon->id)));
             } catch (\Exception $e) {
                 error_log($e->getMessage());
             }
@@ -1062,15 +1060,15 @@ class Service implements InjectionAwareInterface
     public function rmInvoiceItemByOrder(\Model_ClientOrder $order)
     {
         $bindings = array(
-            ':type'   => 'order',
             ':rel_id' => $order->id,
             ':status' => \Model_InvoiceItem::STATUS_PENDING_PAYMENT
         );
 
-        $item = $this->di['db']->findOne('InvoiceItem', 'type = :type AND rel_id = :rel_id AND status = :status', $bindings);
-
+        $items = $this->di['db']->find('InvoiceItem', 'rel_id = :rel_id AND status = :status', $bindings);
+        foreach($items as $item){
         if ($item instanceof \Model_InvoiceItem) {
             $this->di['db']->trash($item);
+            }
         }
     }
 
@@ -1263,7 +1261,7 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
     }
 
-    public function getOrderServiceData(\Model_ClientOrder $order, $identity)
+    public function getOrderServiceData(\Model_ClientOrder $order, $identity = null)
     {
         $orderId = $order->id;
         $service = $this->getOrderService($order);

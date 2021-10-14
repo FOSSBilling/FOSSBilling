@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -35,41 +35,48 @@ class Box_Ftp
 		}
 
 		// Set defaults:
-		if ( empty($opt['port']) )
+		if ( empty($opt['port']) ) {
 			$this->options['port'] = 21;
-		else
+		} else {
 			$this->options['port'] = $opt['port'];
+        }
 
-		if ( empty($opt['hostname']) )
+		if ( empty($opt['hostname']) ) {
             throw new \Box_Exception('FTP hostname is required');
-		else
+		} else {
 			$this->options['hostname'] = $opt['hostname'];
+        }
 
-		if ( isset($opt['root']) && ! empty($opt['root']) )
+		if ( isset($opt['root']) && ! empty($opt['root']) ) {
 			$this->bb_root = $opt['root'];
+        }
 
 		// Check if the options provided are OK.
-		if ( empty($opt['username']) )
+		if ( empty($opt['username']) ) {
             throw new \Box_Exception('FTP username is required');
-		else
+		} else {
 			$this->options['username'] = $opt['username'];
+        }
 
-		if ( empty($opt['password']) )
+		if ( empty($opt['password']) ) {
             throw new \Box_Exception('FTP password is required');
-		else
+		} else {
 			$this->options['password'] = $opt['password'];
+        }
 
 		$this->options['ssl'] = false;
-		if ( isset($opt['connection_type']) && 'ftps' == $opt['connection_type'] )
+		if ( isset($opt['connection_type']) && 'ftps' == $opt['connection_type'] ) {
 			$this->options['ssl'] = true;
+        }
 	}
 
 	public function connect()
     {
-		if ( isset($this->options['ssl']) && $this->options['ssl'] && function_exists('ftp_ssl_connect') )
+		if ( isset($this->options['ssl']) && $this->options['ssl'] && function_exists('ftp_ssl_connect') ) {
 			$this->link = @ftp_ssl_connect($this->options['hostname'], $this->options['port'], $this->timeout);
-		else
+		} else {
 			$this->link = @ftp_connect($this->options['hostname'], $this->options['port'], $this->timeout);
+        }
 
 		if ( ! $this->link ) {
 			throw new \Box_Exception('Failed to connect to FTP Server :host : :port',array(':host'=>$this->options['hostname'], ':port'=>$this->options['port']));
@@ -97,21 +104,25 @@ class Box_Ftp
 
 	public function get_contents($file, $type = '', $resumepos = 0 )
     {
-		if( empty($type) )
+		if( empty($type) ) {
 			$type = FTP_BINARY;
+        }
 
 		$temp = tmpfile();
-		if ( ! $temp )
+		if ( ! $temp ) {
 			return false;
+        }
 
-		if( ! @ftp_fget($this->link, $temp, $file, $type, $resumepos) )
+		if( ! @ftp_fget($this->link, $temp, $file, $type, $resumepos) ) {
 			return false;
+        }
 
 		fseek($temp, 0); //Skip back to the start of the file being written to
 		$contents = '';
 
-		while ( ! feof($temp) )
+		while ( ! feof($temp) ) {
 			$contents .= fread($temp, 8192);
+        }
 
 		fclose($temp);
 		return $contents;
@@ -127,12 +138,14 @@ class Box_Ftp
 	 */
 	public function put_contents($file, $contents, $type = '' )
     {
-		if( empty($type) )
+		if( empty($type) ) {
 			$type = $this->is_binary($contents) ? FTP_BINARY : FTP_ASCII;
+        }
 
 		$temp = tmpfile();
-		if ( ! $temp )
+		if ( ! $temp ) {
 			return false;
+        }
 
 		fwrite($temp, $contents);
 		fseek($temp, 0); //Skip back to the start of the file being written to
@@ -198,15 +211,19 @@ class Box_Ftp
 
 	public function chmod($file, $mode = false, $recursive = false)
     {
-		if( ! $mode )
+		if( ! $mode ) {
 			$mode = $this->permission;
-		if( ! $mode )
 			return false;
-		if ( ! $this->exists($file) && ! $this->is_dir($file) )
+        }
+
+		if ( ! $this->exists($file) && ! $this->is_dir($file) ) {
 			return false;
+        }
+
 		if ( ! $recursive || ! $this->is_dir($file) ) {
-			if ( ! function_exists('ftp_chmod') )
+			if ( ! function_exists('ftp_chmod') ) {
 				return @ftp_site($this->link, sprintf('CHMOD %o %s', $mode, $file));
+            }
 			return @ftp_chmod($this->link, $mode, $file);
 		}
 		//Is a directory, and we want recursive
@@ -254,8 +271,9 @@ class Box_Ftp
      */
     public function copyDir($source, $destination, $overwrite = false )
     {
-		if( ! $overwrite && !$this->is_dir($destination) )
+		if( ! $overwrite && !$this->is_dir($destination) ) {
 			return false;
+        }
 
 		if( $overwrite && !$this->is_dir($destination) ) {
             if(!$this->mkdir($destination)) {
@@ -270,7 +288,9 @@ class Box_Ftp
         $res = false;
         $this->chdir($source);
         $dir_contents = $this->dirlist($source, false, true);
-        if (empty($dir_contents)) { return true; }
+        if (empty($dir_contents)) { 
+            return true; 
+        }
         
         foreach($dir_contents as $name=>$params) {
             if ($params['isdir']) {
@@ -289,11 +309,13 @@ class Box_Ftp
 	 */
 	public function copy($source, $destination, $overwrite = false )
     {
-		if( ! $overwrite && $this->exists($destination) )
+		if( ! $overwrite && $this->exists($destination) ) {
 			return false;
+        }
 		$content = $this->get_contents($source);
-		if( false === $content)
+		if( false === $content) {
 			return false;
+        }
 		return $this->put_contents($destination, $content);
 	}
 
@@ -304,17 +326,22 @@ class Box_Ftp
 
 	public function delete($file, $recursive = false )
     {
-		if ( empty($file) )
+		if ( empty($file) ) {
 			return false;
-		if ( $this->is_file($file) )
+        }
+		if ( $this->is_file($file) ) {
 			return @ftp_delete($this->link, $file);
-		if ( !$recursive )
+        }
+		if ( !$recursive ) {
 			return @ftp_rmdir($this->link, $file);
+        }
 
 		$filelist = $this->dirlist( $this->trailingslashit($file) );
-		if ( !empty($filelist) )
-			foreach ( $filelist as $delete_file )
+		if ( !empty($filelist) ) {
+			foreach ( $filelist as $delete_file ) {
 				$this->delete( $this->trailingslashit($file) . $delete_file['name'], $recursive);
+            }
+        }
 		return @ftp_rmdir($this->link, $file);
 	}
 
@@ -376,14 +403,18 @@ class Box_Ftp
 	 */
 	public function mkdir($path, $chmod = false, $chown = false, $chgrp = false)
     {
-		if( !ftp_mkdir($this->link, $path) )
+		if( !ftp_mkdir($this->link, $path) ) {
 			return false;
-		if( $chmod )
+        }
+		if( $chmod ) {
 			$this->chmod($path, $chmod);
-		if( $chown )
+        }
+		if( $chown ) {
 			$this->chown($path, $chown);
-		if( $chgrp )
+        }
+		if( $chgrp ) {
 			$this->chgrp($path, $chgrp);
+        }
 		return true;
 	}
 	
@@ -397,8 +428,9 @@ class Box_Ftp
 		static $is_windows;
 		$b = array();
 		
-		if ( is_null($is_windows) )
+		if ( is_null($is_windows) ) {
 			$is_windows = strpos( strtolower(ftp_systype($this->link)), 'win') !== false;
+        }
 
 		if ($is_windows && preg_match("/([0-9]{2})-([0-9]{2})-([0-9]{2}) +([0-9]{2}):([0-9]{2})(AM|PM) +([0-9]+|<DIR>) +(.+)/", $line, $lucifer)) {
 			if ($lucifer[3]<70) { $lucifer[3] +=2000; } else { $lucifer[3]+=1900; } // 4digit year fix
@@ -470,25 +502,29 @@ class Box_Ftp
         
 		$list = ftp_rawlist($this->link, '-a ' . $path, false);
 
-		if ( $list === false )
+		if ( $list === false ) {
 			return false;
+        }
 
 		$dirlist = array();
 		foreach ( $list as $k => $v ) {
 			$entry = $this->parselisting($v);
-			if ( empty($entry) )
+			if ( empty($entry) ) {
 				continue;
-
-			if ( '.' == $entry["name"] || '..' == $entry["name"] )
+            }
+			if ( '.' == $entry["name"] || '..' == $entry["name"] ) {
 				continue;
+            }
 
 			$dirlist[ $entry['name'] ] = $entry;
 		}
 
-		if ( ! $dirlist )
+		if ( ! $dirlist ) {
 			return false;
-		if ( empty($dirlist) )
+        }
+		if ( empty($dirlist) ) {
 			return array();
+        }
 
 		$ret = array();
 		foreach ( $dirlist as $struc ) {
@@ -519,8 +555,7 @@ class Box_Ftp
      */
     public function dirContents()
     {
-        $contents = ftp_nlist($this->link, ".");
-        return $contents;
+        return ftp_nlist($this->link, ".");
     }
 
     protected function trailingslashit($string)

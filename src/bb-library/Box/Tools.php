@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -55,15 +55,19 @@ class Box_Tools
         }
     }
 
-    public function file_get_contents($filename, $use_include_path = false, $context = null, $offset = -1)
+    public function file_get_contents($filename, $use_include_path = false, $context = null, $offset = 0, $useoffset = true)
     {
-        return file_get_contents($filename, $use_include_path, $context, $offset);
+        if($useoffset){
+            return file_get_contents($filename, $use_include_path, $context, $offset);
+        } else {
+            return file_get_contents($filename, $use_include_path, $context);
+        }
     }
 
     public function get_url($url, $timeout = 10)
     {
         $ch = curl_init();
-        $userAgent = 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)';
+        $userAgent = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0';
         curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -175,8 +179,7 @@ class Box_Tools
      */
     public function getReferer($default = '/')
     {
-        $r = empty($_SERVER['HTTP_REFERER']) ? $default : $_SERVER['HTTP_REFERER'];
-        return $r;
+        return empty($_SERVER['HTTP_REFERER']) ? $default : $_SERVER['HTTP_REFERER'];
     }
 
     /**
@@ -238,22 +241,20 @@ class Box_Tools
     	}
 
     	shuffle($passOrder);
-    	$password = implode('', $passOrder);
-
-        return $password;
+        return implode('', $passOrder);
     }
 
     public function autoLinkText($text)
     {
        $pattern  = '#\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))#';
-       $callback = create_function('$matches', '
+       $callback = function($matches){
            $url       = array_shift($matches);
            $url_parts = parse_url($url);
            if(!isset($url_parts["scheme"])) {
               $url = "http://".$url;
            }
-           return sprintf(\'<a target="_blank" href="%s">%s</a>\', $url, $url);
-       ');
+           return sprintf('<a target="_blank" href="%s">%s</a>', $url, $url);
+        };
        return preg_replace_callback($pattern, $callback, $text);
     }
 
@@ -362,13 +363,13 @@ class Box_Tools
         if($capitalise_first_char) {
             $str[0] = strtoupper($str[0]);
         }
-        $func = create_function('$c', 'return strtoupper($c[1]);');
+        $func = function($c){ return strtoupper($c[1]); };
         return preg_replace_callback('/-([a-z])/', $func, $str);
     }
 
     public function from_camel_case($str) {
         $str[0] = strtolower($str[0]);
-        $func = create_function('$c', 'return "-" . strtolower($c[1]);');
+        $func = function($c){ return "-" . strtolower($c[1]); };
         return preg_replace_callback('/([A-Z])/', $func, $str);
     }
 
@@ -421,6 +422,31 @@ class Box_Tools
             }
 
             return $result;
+    }
+
+    /**
+     * Get either a Gravatar URL or complete image tag for a specified email address.
+     *
+     * @param string $email The email address
+     * @param string $s Size in pixels, defaults to 80px [ 1 - 2048 ]
+     * @param string $d Default imageset to use [ 404 | mp | identicon | monsterid | wavatar ]
+     * @param string $r Maximum rating (inclusive) [ g | pg | r | x ]
+     * @param boole $img True to return a complete IMG tag False for just the URL
+     * @param array $atts Optional, additional key/value attributes to include in the IMG tag
+     * @return String containing either just a URL or a complete image tag
+     * @source https://gravatar.com/site/implement/images/php/
+     */
+    public function get_gravatar( $email, $size = 80, $d = 'mp', $r = 'g', $img = false, $atts = array() ) {
+        $url = 'https://www.gravatar.com/avatar/';
+        $url .= md5( strtolower( trim( $email ) ) );
+        $url .= "?s=$size&d=$d&r=$r";
+        if ( $img ) {
+            $url = '<img src="' . $url . '"';
+            foreach ( $atts as $key => $val )
+                $url .= ' ' . $key . '="' . $val . '"';
+            $url .= ' />';
+        }
+        return $url;
     }
 
     public function fileExists($file)

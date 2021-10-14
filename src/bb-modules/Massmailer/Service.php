@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -109,7 +109,7 @@ class Service implements \Box\InjectionAwareInterface
             }
         }
         
-        $sql .= ' GROUP BY c.id ORDER BY c.id DESC';
+        $sql .= ' ORDER BY c.id DESC';
         
         if(isset($data['debug']) && $data['debug']) {
             throw new \Exception($sql. ' '. print_r($values, 1));
@@ -128,13 +128,11 @@ class Service implements \Box\InjectionAwareInterface
 
         $vars = array();
         $vars['c'] = $clientArr;
-        $vars['_client_id'] = $client->id;
         $vars['_tpl'] = $model->subject;
         $ps = $systemService->renderString($vars['_tpl'], false, $vars);
         
         $vars = array();
         $vars['c'] = $clientArr;
-        $vars['_client_id'] = $client->id;
         $vars['_tpl'] = $model->content;
         $pc = $systemService->renderString($vars['_tpl'], false, $vars);
         
@@ -171,6 +169,14 @@ class Service implements \Box\InjectionAwareInterface
             return true;
         }
 
+		$mod      = $this->di['mod']('email');
+        $settings = $mod->getConfig();
+
+        if (isset($settings['log_enabled']) && $settings['log_enabled']) {
+            $activityService =  $this->di['mod_service']('activity');
+            $activityService->logEmail($data['subject'], $client_id, $data['from'], $data['to'], $data['content']);
+        }
+		
         $emailSettings = $this->di['mod_config']('email');
         $transport     = $this->di['array_get']($emailSettings, 'mailer', 'sendmail');
 

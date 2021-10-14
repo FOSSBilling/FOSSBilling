@@ -11,7 +11,7 @@ class ServiceTransactionTest extends \BBTestCase
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Invoice\ServiceTransaction();
     }
@@ -140,7 +140,7 @@ class ServiceTransactionTest extends \BBTestCase
             'bb_invoice_id'   => 2,
         );
         $result = $this->service->create($data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
     }
 
@@ -160,7 +160,8 @@ class ServiceTransactionTest extends \BBTestCase
             'bb_gateway_id'   => 1,
         );
 
-        $this->setExpectedException('\Box_Exception', 'Transaction invoice id is missing');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Transaction invoice id is missing');
         $this->service->create($data);
     }
 
@@ -180,7 +181,8 @@ class ServiceTransactionTest extends \BBTestCase
             'bb_invoice_id'   => 2,
         );
 
-        $this->setExpectedException('\Box_Exception', 'Payment gateway id is missing');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Payment gateway id is missing');
         $this->service->create($data);
     }
 
@@ -241,7 +243,7 @@ class ServiceTransactionTest extends \BBTestCase
         $transactionModel->gateway_id = 1;
 
         $result = $this->service->toApiArray($transactionModel, true);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -298,8 +300,8 @@ class ServiceTransactionTest extends \BBTestCase
         });
         $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
 
         $this->assertTrue(strpos($result[0], $expectedStringPart) !== false);
         $this->assertEquals($expectedParams, $result[1]);
@@ -318,7 +320,7 @@ class ServiceTransactionTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->counter();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $expected = array(
             'total'     => 1,
             'received'  => 1,
@@ -332,7 +334,7 @@ class ServiceTransactionTest extends \BBTestCase
     public function testgetStatusPairs()
     {
         $result = $this->service->getStatusPairs();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $expected = array(
             'received'  => 'Received',
@@ -346,7 +348,7 @@ class ServiceTransactionTest extends \BBTestCase
     public function testgetStatus()
     {
         $result = $this->service->getStatuses();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $expected = array(
             'received'  => 'Received',
@@ -360,7 +362,7 @@ class ServiceTransactionTest extends \BBTestCase
     public function testgetGatewayStatuses()
     {
         $result = $this->service->getGatewayStatuses();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $expected = array(
             'pending'  => 'Pending validation',
@@ -373,7 +375,7 @@ class ServiceTransactionTest extends \BBTestCase
     public function testgetTypes()
     {
         $result = $this->service->getTypes();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $expected = array(
             'payment'             => 'Payment',
@@ -399,7 +401,7 @@ class ServiceTransactionTest extends \BBTestCase
             ->will($this->returnValue($transactionModel));
 
         $result = $serviceMock->oldProcessLogic($transactionModel);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
     }
 
     public function testpreProcessTransaction()
@@ -425,7 +427,7 @@ class ServiceTransactionTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $result = $serviceMock->preProcessTransaction($transactionModel);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
     }
 
     public function testpreProcessTransaction_supportOldLogic()
@@ -454,7 +456,7 @@ class ServiceTransactionTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $result = $serviceMock->preProcessTransaction($transactionModel);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
     }
 
     public function testpreProcessTransaction_registerException()
@@ -479,20 +481,18 @@ class ServiceTransactionTest extends \BBTestCase
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', $exceptionMessage);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage($exceptionMessage);
         $serviceMock->preProcessTransaction($transactionModel);
     }
 
     public function paymentsAdapterProvider_withoutProcessTransaction()
     {
         return array(
-            array('\Payment_Adapter_AlertPay'),
             array('\Payment_Adapter_AliPay'),
             array('\Payment_Adapter_AuthorizeNet'),
             array('\Payment_Adapter_Interkassa'),
             array('\Payment_Adapter_Onebip'),
-            array('\Payment_Adapter_Payza'),
-            array('\Payment_Adapter_WebToPay'),
             array('\Payment_Adapter_Custom'),
         );
     }
@@ -532,7 +532,8 @@ class ServiceTransactionTest extends \BBTestCase
         $di['api_admin']   = new \Api_Handler(new \Model_Admin());
         $this->service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', sprintf("Payment adapter %s does not support action %s", $payGatewayModel->name, 'processTransaction'));
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf("Payment adapter %s does not support action %s", $payGatewayModel->name, 'processTransaction'));
         $this->service->processTransaction($id);
     }
 
@@ -616,7 +617,7 @@ class ServiceTransactionTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $result = $serviceMock->getReceived();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testdebitTransaction()

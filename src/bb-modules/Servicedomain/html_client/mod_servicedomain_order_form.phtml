@@ -133,6 +133,7 @@ $(function() {
 
     $('#domain-check').bind('click',function(event){
         var sld = $('input[name="register_sld"]').val();
+		sld= sld.toLowerCase();
         var tld = $('select[name="register_tld"]').val();
         var domain = sld + tld;
         bb.post(

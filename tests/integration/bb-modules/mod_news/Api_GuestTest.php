@@ -14,25 +14,25 @@ class Api_Guest_NewsTest extends BBDbApiTestCase
             'per_page' => 1,
         );
         $array = $this->api_guest->news_get_list($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data  = array('id' => 1);
         $array = $this->api_guest->news_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data  = array('slug' => 'boxbilling-is-customizable');
         $array = $this->api_guest->news_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
     }
 
     public function testNewsgetList()
     {
         $array = $this->api_admin->news_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
 
         if (count($list)) {
             $item = $list[0];
@@ -51,7 +51,7 @@ class Api_Guest_NewsTest extends BBDbApiTestCase
             $this->assertArrayHasKey('author', $item);
 
             $author = $item['author'];
-            $this->assertInternalType('array', $author);
+            $this->assertIsArray($author);
 
             $this->assertArrayHasKey('name', $author);
             $this->assertArrayHasKey('email', $author);

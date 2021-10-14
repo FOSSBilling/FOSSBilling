@@ -1,7 +1,7 @@
 <?php
 namespace Box\Tests\Mod\Kb\Api;
 
-class GuestTest extends \BBTestCase
+class Api_GuestTest extends \BBTestCase
 {
     public function testArticle_get_list()
     {
@@ -34,7 +34,7 @@ class GuestTest extends \BBTestCase
         });
         $guestApi->setDi($di);
         $result = $guestApi->article_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($result, $willReturn);
 
     }
@@ -68,7 +68,7 @@ class GuestTest extends \BBTestCase
             'id' => rand(1, 100)
         );
         $result = $guestApi->article_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testArticle_getWithSlug()
@@ -100,12 +100,10 @@ class GuestTest extends \BBTestCase
             'slug' => 'article-slug'
         );
         $result = $guestApi->article_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
+ 
     public function testArticle_getIdAndSlugNotSetException()
     {
         $guestApi = new \Box\Mod\Kb\Api\Guest();
@@ -125,14 +123,11 @@ class GuestTest extends \BBTestCase
             ->will($this->returnValue(array()));
         $guestApi->setService($kbService);
 
-
+        $this->expectException(\Box_Exception::class);
         $result = $guestApi->article_get(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
-
-    /**
-     * @expectedException \Box_Exception
-     */
+   
     public function testArticle_getNotFoundById()
     {
         $guestApi = new \Box\Mod\Kb\Api\Guest();
@@ -161,13 +156,11 @@ class GuestTest extends \BBTestCase
             return isset ($array[$key]) ? $array[$key] : $default;
         });
         $guestApi->setDi($di);
+        $this->expectException(\Box_Exception::class);
         $result = $guestApi->article_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testArticle_getNotFoundBySlug()
     {
         $guestApi = new \Box\Mod\Kb\Api\Guest();
@@ -197,8 +190,9 @@ class GuestTest extends \BBTestCase
             'slug' => 'article-slug'
         );
 
+        $this->expectException(\Box_Exception::class);
         $result = $guestApi->article_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCategory_get_list()
@@ -232,7 +226,7 @@ class GuestTest extends \BBTestCase
         $guestApi->setService($kbService);
 
         $result = $guestApi->category_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($result, $willReturn);
     }
 
@@ -252,7 +246,7 @@ class GuestTest extends \BBTestCase
         $guestApi->setService($kbService);
 
         $result = $guestApi->category_get_pairs(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($result, $expected);
     }
 
@@ -282,7 +276,7 @@ class GuestTest extends \BBTestCase
         });
         $guestApi->setDi($di);
         $result = $guestApi->category_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCategory_getWithSlug()
@@ -311,12 +305,9 @@ class GuestTest extends \BBTestCase
             'slug' => 'category-slug'
         );
         $result = $guestApi->category_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCategory_getIdAndSlugNotSetException()
     {
         $guestApi = new \Box\Mod\Kb\Api\Guest();
@@ -333,14 +324,11 @@ class GuestTest extends \BBTestCase
             ->will($this->returnValue(array()));
         $guestApi->setService($kbService);
 
-
+        $this->expectException(\Box_Exception::class);
         $result = $guestApi->category_get(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCategory_getNotFoundById()
     {
         $guestApi = new \Box\Mod\Kb\Api\Guest();
@@ -367,13 +355,11 @@ class GuestTest extends \BBTestCase
         });
         $guestApi->setDi($di);
 
+        $this->expectException(\Box_Exception::class);
         $result = $guestApi->category_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCategory_getNotFoundBySlug()
     {
         $guestApi = new \Box\Mod\Kb\Api\Guest();
@@ -400,8 +386,9 @@ class GuestTest extends \BBTestCase
         });
         $guestApi->setDi($di);
 
+        $this->expectException(\Box_Exception::class);
         $result = $guestApi->category_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
 

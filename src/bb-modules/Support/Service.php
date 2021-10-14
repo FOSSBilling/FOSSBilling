@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -355,7 +355,7 @@ class Service implements \Box\InjectionAwareInterface
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
 
-        $query .= " GROUP BY st.id ORDER BY stm.created_at DESC, st.priority ASC, st.id DESC";
+        $query .= " GROUP BY st.id ORDER BY st.priority ASC, st.id DESC";
 
         return array($query, $bindings);
     }
@@ -400,7 +400,7 @@ class Service implements \Box\InjectionAwareInterface
     public function countByStatus($status)
     {
         $query = "SELECT COUNT(m.id) as counter FROM support_ticket
-                WHERE status = :status GROUP BY status LIMIT 1";
+                WHERE 'status' = :'status' GROUP BY 'status' LIMIT 1";
 
         return $this->di['db']->getCell($query, array(':status' => $status));
     }
@@ -548,6 +548,7 @@ class Service implements \Box\InjectionAwareInterface
         $data['replies']  = $this->messageGetRepliesCount($model);
         $data['first']    = $this->messageToApiArray($firstSupportTicketMessage);
         $data['helpdesk'] = $this->helpdeskToApiArray($supportHelpdesk);
+        $data['client']     = $this->getClientApiArrayForTicket($model);
 
         if ($deep) {
             $messages = $this->messageGetTicketMessages($model);
@@ -559,7 +560,6 @@ class Service implements \Box\InjectionAwareInterface
         if ($identity instanceof \Model_Admin) {
             $data['rel']        = $this->_getRelDetails($model);
             $data['priority']   = $model->priority;
-            $data['client']     = $this->getClientApiArrayForTicket($model);
             $supportTicketNotes = $this->di['db']->find('SupportTicketNote', 'support_ticket_id = :support_ticket_id', array(':support_ticket_id' => $model->id));
 
             foreach ($supportTicketNotes as $note) {
@@ -816,7 +816,7 @@ class Service implements \Box\InjectionAwareInterface
         }
 
         $ticket               = $this->di['db']->dispense('SupportPTicket');
-        $ticket->hash         = sha1(uniqid());
+        $ticket->hash         = sha1(random_bytes(13));
         $ticket->author_name  = $data['name'];
         $ticket->author_email = $data['email'];
         $ticket->subject      = $subject;
@@ -1055,7 +1055,7 @@ class Service implements \Box\InjectionAwareInterface
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
 
-        $query .= " GROUP BY spt.id ORDER BY spt.id DESC, sptm.id ASC";
+        $query .= " GROUP BY spt.id, sptm.id ORDER BY spt.id DESC, sptm.id ASC";
 
         return array($query, $bindings);
     }
@@ -1206,7 +1206,7 @@ class Service implements \Box\InjectionAwareInterface
         $this->di['events_manager']->fire(array('event' => 'onBeforeAdminPublicTicketOpen', 'params' => $data));
 
         $ticket               = $this->di['db']->dispense('SupportPTicket');
-        $ticket->hash         = sha1(uniqid());
+        $ticket->hash         = sha1(random_bytes(13));
         $ticket->author_name  = $data['name'];
         $ticket->author_email = $data['email'];
         $ticket->subject      = $data['subject'];

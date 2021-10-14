@@ -1,3 +1,55 @@
+Release 4.22-beta.2 (SOON)
+------------------------------------------------------------------------------
+Note: while this is not a "stable" release, it was put out as an official release and therefore is part of this changelog.
+**General:**
+* Re-structured the installer (#800)
+* Removed BoxBilling branding from outgoing e-mails (#824)
+* Composer updates
+* General code cleanup
+* Miscellaneous bug fixes
+* Updated Stripe payment adapter
+* Added invoice printing support for bootstrap theme (#906)
+* Fixed support tickets being duplicated (#838)
+* Fixed PDF generation for invoices (#927)
+* Removed the obsolete and non-functional file manager (#932)
+* Dropped support for AlertPay, SinglePay, WebToPay and Payza as they no longer exist. (#938, #941)
+* Fixed knowledge base categories being duplicated (#925)
+* Added a checkbox for ToS to the checkout page (#928)
+* Removed some old IE stuff (#928)
+* Removed duplicate cart button in the bootstrap theme (#928)
+* Drop markitUp support, update CKEditor 4 to the latest release and make WYSIWYG enabled by default (#939, #962)
+* Removed Paygol's adapter from the core (#961)
+**Security:**
+* Use random_bytes instead of uniqid (#944, #989)
+* Include CSRF-Protector-PHP to BoxBilling (#926)
+* Improved API rate-limiting (also added new entries to the config file about this, you'll need to create them if upgrading an existing install) (#911)
+
+Release 4.22-beta.1 (2020-11-29)
+------------------------------------------------------------------------------
+Note: while this is not a "stable" release, it was put out as an official release and therefore is part of this changelog.
+* We've completely removed the licensing system. BoxBilling is now completely free and open-source, and 'PRO' features are now unlocked for everyone. 🎉
+* Added MyOwnFreeHost support
+* Added a module for custom pages
+* Dropped out support for the defunct YouHosting
+* Dropped out Kloxo support
+* Fixed compatibility issues for newer versions of MySQL
+* Brand new layout for error messages
+* New "bootstrap" theme
+* Critical security fixes
+* Nearly full support for PHP 7.4
+* Dropping out support for PHP versions lower than 7.2
+* Switched completely from MySQLi to PDO
+* Completely rewritten currency rate system. We integrated the European Central Bank and Currencylayer's API to BoxBilling and hooked the automatic conversion rate updating to the Cron jobs. So, whenever you fire up Cron jobs, the conversion rate will be updated automatically.
+
+Release 4.21
+------------------------------------------------------------------------------
+* Removed License Check
+
+Release 4.20
+------------------------------------------------------------------------------
+* PHP 7.0 support
+* Changed password hashing method
+
 Release 4.19
 ------------------------------------------------------------------------------
 * Cron job memory optimizations

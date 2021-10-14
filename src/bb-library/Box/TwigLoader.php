@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -11,7 +11,7 @@
  */
 
 
-class Box_TwigLoader extends Twig_Loader_Filesystem
+class Box_TwigLoader extends Twig\Loader\FilesystemLoader
 {
     protected $options = array();
 
@@ -40,7 +40,7 @@ class Box_TwigLoader extends Twig_Loader_Filesystem
     }
 
 
-    protected function findTemplate($name)
+    protected function findTemplate($name, $throw = true)
     {
         // normalize name
         $name = preg_replace('#/{2,}#', '/', strtr($name, '\\', '/'));
@@ -63,6 +63,6 @@ class Box_TwigLoader extends Twig_Loader_Filesystem
             }
         }
 
-        throw new Twig_Error_Loader(sprintf('Unable to find template "%s" (looked into: %s).', $name,  implode(', ', $paths)));
+        throw new \Twig\Error\LoaderError(sprintf('Unable to find template "%s" (looked into: %s).', $name,  implode(', ', $paths)));
     }
 }

@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -21,7 +21,7 @@ class Box_UrlHelper {
     /**
      * @param string $requestUri
      */
-    public function __construct($httpMethod, $url, $conditions=array(), $requestUri) {
+    public function __construct($httpMethod, $url, $conditions, $requestUri) {
 
         $requestMethod = $_SERVER['REQUEST_METHOD'];
         $this->method = $httpMethod;

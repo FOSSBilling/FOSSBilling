@@ -45,8 +45,8 @@
 
         <exclude name="bb-library/Server/Manager/Directadmin.php"/>
         <exclude name="bb-library/Server/Manager/Ispconfig3.php"/>
-        <exclude name="bb-library/Server/Manager/Kloxo.php"/>
         <exclude name="bb-library/Server/Manager/Plesk.php"/>
+        <exclude name="bb-library/Server/Manager/MOFH.php"/>
         <exclude name="bb-library/Server/Manager/Virtualmin.php"/>
 
         <exclude name="bb-library/Registrar/includes/**"/>
@@ -74,13 +74,13 @@
 
     <target name="composer" description="Update composer dependencies" depends="clean-vendors">
         <exec executable="composer" failonerror="true">
-            <arg line="--working-dir=src install --no-dev --optimize-autoloader --prefer-dist" />
+            <arg line="install --working-dir=src --no-dev --optimize-autoloader --prefer-dist" />
         </exec>
     </target>
 
     <target name="composer-dev" description="Update composer dependencies">
         <exec executable="composer" failonerror="true">
-            <arg line="--working-dir=src install --optimize-autoloader --prefer-dist" />
+            <arg line="install --working-dir=src --optimize-autoloader --prefer-dist" />
         </exec>
     </target>
 
@@ -112,18 +112,7 @@
         </exec>
     </target>
 
-    <target name="remove-fonts" description="Remove tFPDF fonts which are not necessary">
-        <delete>
-            <fileset dir="${basedir}/src/bb-vendor/rev42/tfpdf/src/font/unifont">
-                <include name="*"/>
-                <exclude name="DejaVuSansCondensed-Bold.ttf"/>
-                <exclude name="DejaVuSansCondensed.ttf"/>
-                <exclude name="ttfonts.php"/>
-            </fileset>
-        </delete>
-    </target>
-
-    <target name="build-api" depends="clean, remove-fonts">
+    <target name="build-api" depends="clean">
         <copy todir="${source}">
             <fileset refid="shared-artifacts"/>
         </copy>
@@ -142,7 +131,7 @@
         </exec>
     </target>
 
-    <target name="package" depends="remove-fonts">
+    <target name="package">
         <zip destfile="${dist.dir}/${ant.project.name}.zip" basedir="${source}" />
     </target>
 

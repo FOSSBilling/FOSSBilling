@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -15,10 +15,12 @@ class Box_Crypt implements \Box\InjectionAwareInterface
 {
     protected $di = NULL;
 
+    const METHOD = 'aes-256-cbc';
+
     public function __construct()
     {
-        if (!extension_loaded('mcrypt')) {
-            throw new Box_Exception('php mcrypt extension must be enabled on your server');
+        if (!extension_loaded('openssl')) {
+            throw new Box_Exception('php openssl extension must be enabled on your server');
         }
     }
 
@@ -35,11 +37,19 @@ class Box_Crypt implements \Box\InjectionAwareInterface
     public function encrypt($text, $pass = null)
     {
         $key = $this->_getSalt($pass);
-        $mode = MCRYPT_MODE_CBC;
-        $iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, $mode);
-        $iv = mcrypt_create_iv($iv_size, MCRYPT_DEV_URANDOM);
-        $enc =  mcrypt_encrypt(MCRYPT_RIJNDAEL_256, $key, $text, $mode, $iv);
-        return base64_encode($iv . $enc);
+
+        $ivsize = openssl_cipher_iv_length(self::METHOD);
+        $iv = openssl_random_pseudo_bytes($ivsize);
+
+        $ciphertext = openssl_encrypt(
+            $text,
+            self::METHOD,
+            $key,
+            OPENSSL_RAW_DATA,
+            $iv
+        );
+
+        return base64_encode($iv . $ciphertext);
     }
 
     public function decrypt($text, $pass = null)
@@ -48,17 +58,24 @@ class Box_Crypt implements \Box\InjectionAwareInterface
             return false;
         }
         $key = $this->_getSalt($pass);
-        $mode = MCRYPT_MODE_CBC;
-        $ciphertext_dec = base64_decode($text);
 
-        $iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, $mode);
-        # retrieves the IV, iv_size should be created using mcrypt_get_iv_size()
-        $iv = substr($ciphertext_dec, 0, $iv_size);
-        # retrieves the cipher text (everything except the $iv_size in the front)
-        $ciphertext_dec = substr($ciphertext_dec, $iv_size);
+        $text = base64_decode($text);
 
-        # may remove 00h valued characters from end of plain text
-        return trim(mcrypt_decrypt(MCRYPT_RIJNDAEL_256, $key, $ciphertext_dec, $mode, $iv));
+        $ivsize = openssl_cipher_iv_length(self::METHOD);
+        $iv = mb_substr($text, 0, $ivsize, '8bit');
+        $ciphertext = mb_substr($text, $ivsize, null, '8bit');
+
+        $result = openssl_decrypt(
+            $ciphertext,
+            self::METHOD,
+            $key,
+            OPENSSL_RAW_DATA,
+            $iv
+        );
+
+        $result = trim($result);
+
+        return $result;
     }
 
     private function _getSalt($pass = null)

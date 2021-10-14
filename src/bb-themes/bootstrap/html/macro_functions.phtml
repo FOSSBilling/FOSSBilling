@@ -1,0 +1,58 @@
+{% macro selectbox(name, options, selected, required, nullOption) %}
+    <select name="{{ name }}" {% if required %}required="required"{% endif%} class="form-control">
+        {% if nullOption %}<option value="">-- {{ nullOption }} --</option>{% endif %}
+        {% for val,label in options %}
+        <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
+        {% endfor %}
+    </select>
+{% endmacro %}
+
+{% macro selectboxtld(name, options, selected, required) %}
+    <select name="{{ name }}" {% if required %}required="required"{% endif%} class="form-control">
+        {% for data in options %}
+        <option value="{{ data.tld }}" label="{{ data.tld }}" {% if selected == data.tld %}selected="selected"{% endif %}>{{ data.tld }}</option>
+        {% endfor %}
+    </select>
+{% endmacro %}
+
+{# deprecated - use money filter #}
+{% macro currency_format(price, currency) %}
+    {{ price | money(currency) }}
+{% endmacro %}
+
+{# deprecated - use money_convert filter #}
+{% macro currency(price, currency) %}
+    {{ price | money_convert(currency) }}
+{% endmacro %}
+
+{% macro status_name(status) %}
+    {{ status|replace({'_': " "})|title|trans }}
+{% endmacro %}
+
+{# deprecated - use period_title filter #}
+{% macro period_name(period) %}
+    {{ period | period_title }}
+{% endmacro %}
+
+{% macro markdown_quote(text) %}
+
+
+
+{% for line in text|split('\n') %}
+> {{ line }}
+{% endfor %}
+{% endmacro %}
+
+
+{% macro recaptcha() %}
+
+{% if guest.extension_is_on({"mod":"spamchecker"}) %}
+{% set rc = guest.spamchecker_recaptcha %}
+    {% if rc.enabled %}
+        {% if rc.version == 2 %}
+            <script src='https://www.google.com/recaptcha/api.js' async defer></script>
+            <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
+        {% endif %}
+    {% endif %}
+{% endif %}
+{% endmacro %}

@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -120,6 +120,7 @@ class Box_Log
         }
 
         //do not log debug level messages if debug is OFF
+
         if($this->di['config']['debug'] === FALSE && $event['priority'] > self::INFO) {
             return ;
         }

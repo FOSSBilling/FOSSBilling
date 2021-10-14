@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -323,7 +323,7 @@ class Service implements InjectionAwareInterface
         $items_discount = 0;
         foreach ($products as $product) {
             $p = $this->cartProductToApiArray($product);
-            $total += $p['total'];
+            $total += $p['total'] + $p['setup_price'];
             $items_discount += $p['discount'];
             $items[] = $p;
         }
@@ -339,7 +339,8 @@ class Service implements InjectionAwareInterface
         $result          = array(
             'promocode' => $promocode,
             'discount'  => $items_discount,
-            'total'     => $total,
+            'subtotal'  => $total,
+            'total'     => $total - $items_discount,
             'items'     => $items,
             'currency'  => $currencyService->toApiArray($currency),
         );
@@ -503,6 +504,19 @@ class Service implements InjectionAwareInterface
         foreach ($this->getCartProducts($cart) as $p) {
             $item = $this->cartProductToApiArray($p);
 
+            /*
+             * Convert the domain name to lowercase letters.
+             * Using a capital letter in a domain name still points to the same name, so this isn't going to break anything
+             * It will, however, avoid instances like this when a domain name is entered with a capital letter:
+             * https://github.com/boxbilling/boxbilling/discussions/1022#discussioncomment-1311819
+             */
+            $item['register_sld'] = strtolower($item['register_sld']);
+            $item['transfer_sld'] = strtolower($item['transfer_sld']);
+            $item['sld'] = strtolower($item['sld']);
+            $item['domain']['owndomain_sld'] = strtolower($item['domain']['owndomain_sld']);
+            $item['domain']['register_sld'] = strtolower($item['domain']['register_sld']);
+            $item['domain']['transfer_sld'] = strtolower($item['domain']['transfer_sld']);
+
             $order             = $this->di['db']->dispense('ClientOrder');
             $order->client_id  = $client->id;
             $order->promo_id   = $cart->promo_id;
@@ -545,7 +559,7 @@ class Service implements InjectionAwareInterface
 
             $invoice_items[] = array(
                 'title'    => $order->title,
-                'price'    => $order->price - ($order->discount),
+                'price'    => $order->price,
                 'quantity' => $order->quantity,
                 'unit'     => $order->unit,
                 'period'   => $order->period,
@@ -554,6 +568,17 @@ class Service implements InjectionAwareInterface
                 'rel_id'   => $order->id,
                 'task'     => \Model_InvoiceItem::TASK_ACTIVATE,
             );
+
+            if($order->discount > 0){ 
+                $invoice_items[] = array(
+                    'title'    => __('Discount: :product', array(':product' => $order->title)),
+                    'price'    => $order->discount * -1,
+                    'quantity' => 1,
+                    'unit'     => 'discount',
+                    'rel_id'    => $order->id,
+                    'taxed'    => $taxed,
+                );
+            }
 
             if ($item['setup_price'] > 0) {
                 $setup_price     = ($item['setup_price'] * $currency->conversion_rate) - ($item['discount_setup'] * $currency->conversion_rate);
@@ -662,7 +687,7 @@ class Service implements InjectionAwareInterface
      *
      * @param \Model_Cart $cart
      * @param \Model_CartProduct $model
-     * @return type
+     * @return number
      */
     protected function getRelatedItemsDiscount(\Model_Cart $cart, \Model_CartProduct $model)
     {
@@ -722,8 +747,8 @@ class Service implements InjectionAwareInterface
 
         $discount_total = $discount_price + $discount_setup;
 
-        $subtotal = ($price * $qty) + $setup;
-        if(abs($discount_total) > $subtotal ) {
+        $subtotal = ($price * $qty); 
+        if(abs($discount_total) > ($subtotal + $setup) ) {
             $discount_total = $subtotal;
             $discount_price = $subtotal;
         }
@@ -741,7 +766,7 @@ class Service implements InjectionAwareInterface
             'discount'      => $discount_total,
             'discount_price'=> $discount_price,
             'discount_setup'=> $discount_setup,
-            'total'         => $subtotal - $discount_total,
+            'total'         => $subtotal,
         ));
         return $data;
     }
@@ -753,7 +778,8 @@ class Service implements InjectionAwareInterface
         $discount_setup = 0; // discount for setup price
         if($cart->promo_id) {
             $promo = $this->di['db']->getExistingModelById('Promo', $cart->promo_id, 'Promo not found');
-            $discount_price += $this->getItemPromoDiscount($cartProduct, $promo);
+            //Promo discount should override related item discount
+            $discount_price = $this->getItemPromoDiscount($cartProduct, $promo);
 
             if($promo->freesetup) {
                 $discount_setup = $setup;

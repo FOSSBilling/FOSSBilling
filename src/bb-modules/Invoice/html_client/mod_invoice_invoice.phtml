@@ -7,7 +7,7 @@
 
 {% block breadcrumb %}
     <li><a href="{{ '/invoice'|link }}">{% trans 'Invoices' %}</a> <span class="divider">/</span></li>
-    <li class="active">{% trans 'Invoice' %} {{nr}}</li>
+    <li class="active"> {% if invoice.status == 'paid' %} {% trans 'Receipt' %} {% else %}  {% trans 'Invoice' %} {% endif %}{{nr}}</li>
 {% endblock %}
 
 {% block content %}
@@ -47,7 +47,7 @@
         <div class="data-container">
 
         <header>
-            <h1>{% trans 'Invoice' %} {{nr}}</h1><br/>
+            <h1> {% if invoice.status == 'paid' %} {% trans 'Receipt' %} {% else %}  {% trans 'Invoice' %} {% endif %} - {{nr}}</h1><br/>
             {% trans 'You can print this invoice or export it to PDF file by clicking on corresponding button.' %}
             <ul class="data-header-actions">
                 <li><a href="{{ 'invoice/pdf' | link }}/{{invoice.hash}}" class="btn btn-alt btn-inverse">{% trans 'PDF' %}</a></li>
@@ -193,14 +193,15 @@
                                 {% if item.order_id%}
                                 <a href="{{ '/order/service'|link }}/manage/{{item.order_id}}">{{ item.title }}</a>
                                 {% else %}
-                                {{ item.title }}
+                                {{ item.title }} 
+                                {% endif %}
+                                {% if item.quantity > 1 %}
+                                x {{ item.quantity }} {{ item.unit }}
                                 {% endif %}
                             </td>
                             <td>
                                 {{ item.price | money(invoice.currency) }}
-                                {% if item.quantity > 1 %}
-                                x {{ item.quantity }} {# item.unit #}
-                                {% endif %}
+                               
                             </td>
                             <td >{{ item.total | money(invoice.currency) }}</td>
                         </tr>

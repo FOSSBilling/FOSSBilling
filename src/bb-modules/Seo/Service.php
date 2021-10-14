@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -48,7 +48,7 @@ class Service implements InjectionAwareInterface
         $url = urldecode(BB_URL . 'sitemap.xml');
         if (isset($config['sitemap_google']) && $config['sitemap_google']) {
            try{
-               $link = "http://www.google.com/webmasters/sitemaps/ping?sitemap=" . $url;
+               $link = "http://www.google.com/ping?sitemap=" . $url;
                $this->di['guzzle_client']->get($link);
                error_log('Submitted sitemap to Google');
            }catch (\Exception $e){

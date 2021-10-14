@@ -45,7 +45,9 @@ class Box_Mod_Cart_Api_ClientTest extends BBDbApiTestCase
             'quantity'  =>  2,
         );
 
-        $this->setExpectedException('\Box_Exception', 'Can not checkout empty cart.');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Can not checkout empty cart.');
+
         $this->api_client->cart_checkout();
     }
     

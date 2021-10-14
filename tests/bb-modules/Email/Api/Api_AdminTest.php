@@ -1,7 +1,7 @@
 <?php
 namespace Box\Tests\Mod\Email\Api;
 
-class AdminTest extends \BBTestCase
+class Api_AdminTest extends \BBTestCase
 {
 
     public function testEmail_get_list()
@@ -34,10 +34,10 @@ class AdminTest extends \BBTestCase
         $adminApi->setService($service);
 
         $result = $adminApi->email_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $this->assertArrayHasKey('list', $result);
-        $this->assertInternalType('array', $result['list']);
+        $this->assertIsArray($result['list']);
     }
 
 
@@ -102,7 +102,7 @@ class AdminTest extends \BBTestCase
 
         $result = $adminApi->email_get($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($result, $expected);
     }
 
@@ -205,7 +205,8 @@ class AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Email not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Email not found');
         $adminApi->email_resend($data);
     }
 
@@ -233,7 +234,8 @@ class AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Email not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Email not found');
         $adminApi->email_delete($data);
     }
 
@@ -311,10 +313,10 @@ class AdminTest extends \BBTestCase
         $adminApi->setService($service);
 
         $result = $adminApi->template_get_list(array());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
         $this->assertArrayHasKey('list', $result);
-        $this->assertInternalType('array', $result['list']);
+        $this->assertIsArray($result['list']);
     }
 
     public function testTemplate_get()
@@ -349,7 +351,7 @@ class AdminTest extends \BBTestCase
         $adminApi->setService($emailService);
 
         $result = $adminApi->template_get($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testTemplate_delete()
@@ -407,7 +409,8 @@ class AdminTest extends \BBTestCase
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', 'Email template not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Email template not found');
         $adminApi->template_delete($data);
     }
 
@@ -450,9 +453,6 @@ class AdminTest extends \BBTestCase
         $this->assertEquals($result, $modelId);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testTemplate_sendToNotSetException()
     {
         $adminApi = new \Box\Mod\Email\Api\Admin();
@@ -462,6 +462,7 @@ class AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
         $adminApi->setDi($di);
+        $this->expectException(\Box_Exception::class);
         $adminApi->template_send(array('code' => 'code'));
     }
 
@@ -645,16 +646,24 @@ class AdminTest extends \BBTestCase
             ->method('template_get')
             ->will($this->returnValue(array('vars' => array(), 'content' => 'content')));
 
-        $twig = $this->getMockBuilder('Twig_Environment')->getMock();
-        $twig->expects($this->atLeastOnce())
-            ->method('render')
-            ->will($this->returnValue('rendered'));
+        $loader = new \Twig\Loader\ArrayLoader();
+        $twig = $this->getMockBuilder('Twig\Environment')->setConstructorArgs([$loader,['debug' => false]])->getMock();
 
         $di         = new \Box_Di();
         $di['twig'] = $twig;
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
+
+        $systemService = $this->getMockBuilder('Box\Mod\System\Service')->setMethods(['renderString'])->getMock();
+        $systemService->expects($this->atLeastOnce())
+            ->method('renderString')
+            ->will($this->returnValue('rendered'));
+            
+        $di['mod_service'] = $di->protect(function () use ($systemService) {
+            return $systemService;
+        });
+
         $adminApi->setDi($di);
 
         $result = $adminApi->template_render(array('id' => 5));

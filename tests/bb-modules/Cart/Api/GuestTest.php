@@ -9,7 +9,7 @@ class GuestTest extends \BBTestCase
      */
     protected $guestApi = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->guestApi = new \Box\Mod\Cart\Api\Guest();
     }
@@ -27,7 +27,7 @@ class GuestTest extends \BBTestCase
 
         $result = $this->guestApi->get();
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testReset()
@@ -83,9 +83,6 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testSet_currencyNotFoundException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
@@ -118,8 +115,10 @@ class GuestTest extends \BBTestCase
         $data   = array(
             'currency' => 'EUR'
         );
+        
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Currency not found');
         $result = $this->guestApi->set_currency($data);
-
         $this->assertTrue($result);
     }
 
@@ -136,7 +135,7 @@ class GuestTest extends \BBTestCase
 
 
         $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')
-            ->setMethods(array('toApiArray'))->getMock();
+            ->setMethods(array('toApiArray', 'getDefault'))->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())->method('toApiArray')
             ->will($this->returnValue(array()));
         $currencyServiceMock->expects($this->never())->method('getDefault')
@@ -161,7 +160,7 @@ class GuestTest extends \BBTestCase
         );
         $result = $this->guestApi->get_currency($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testGet_currencyNotFound()
@@ -202,7 +201,7 @@ class GuestTest extends \BBTestCase
         );
         $result = $this->guestApi->get_currency($data);
 
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testApply_promo()
@@ -243,9 +242,6 @@ class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testApply_promoNotFoundException()
     {
         $cart = new \Model_Cart();
@@ -253,7 +249,7 @@ class GuestTest extends \BBTestCase
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
-            ->setMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied'))->getMock();
+            ->setMethods(array('getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'))->getMock();
         $serviceMock->expects($this->never())->method('getSessionCart')
             ->will($this->returnValue($cart));
         $serviceMock->expects($this->never())->method('applyPromo')
@@ -279,14 +275,12 @@ class GuestTest extends \BBTestCase
         $data   = array(
             'promocode' => 'CODE'
         );
+        
+        $this->expectException(\Box_Exception::class);
         $result = $this->guestApi->apply_promo($data);
-
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testApply_promoCanNotBeApplied()
     {
         $cart = new \Model_Cart();
@@ -320,14 +314,13 @@ class GuestTest extends \BBTestCase
         $data   = array(
             'promocode' => 'CODE'
         );
+        
+        $this->expectException(\Box_Exception::class);
         $result = $this->guestApi->apply_promo($data);
 
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testApply_promoCanNotBeAppliedForUser()
     {
         $cart = new \Model_Cart();
@@ -359,6 +352,8 @@ class GuestTest extends \BBTestCase
         $data   = array(
             'promocode' => 'CODE'
         );
+        
+        $this->expectException(\Box_Exception::class);
         $result = $this->guestApi->apply_promo($data);
 
         $this->assertTrue($result);

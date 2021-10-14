@@ -1,6 +1,7 @@
 {
     "name": "boxbilling/boxbilling",
     "description": "Open Source Billing Software",
+    "minimum-stability": "dev",
     "type": "project",
     "license": "Apache-2.0",
     "keywords": ["billing", "invoice", "client management"],
@@ -12,23 +13,25 @@
         }
     ],
     "require": {
-        "php": ">=5.3.3",
-        "ext-mcrypt": "*",
+        "php": ">=7.4.0",
         "ext-curl": "*",
         "ext-zlib": "*",
         "ext-PDO": "*",
         "ext-mbstring" : "*",
-
-        "pimple/pimple": "v2.0.0",
-        "twig/twig": "v1.15.1",
-        "twig/extensions": "1.0.0",
-        "rev42/tfpdf": "v1.24",
-        "geoip2/geoip2": "v2.1.0",
-        "ircmaxell/password-compat": "v1.0.4",
-        "phpmailer/phpmailer": "5.2.27",
-        "mustangostang/spyc": "0.5.1",
-        "michelf/php-markdown": "1.5.0",
-        "stripe/stripe-php": "2.1.1"
+        "pimple/pimple": "^3.3",
+        "twig/twig": "^2.13.0",
+        "twig/extensions": "^1.5.4",
+        "geoip2/geoip2": "^2.10.0",
+        "phpmailer/phpmailer": "6.5.1",
+        "mustangostang/spyc": "^0.6.3",
+        "michelf/php-markdown": "1.9.0",
+        "stripe/stripe-php": "^7.92.0",
+        "guzzlehttp/guzzle": "*",
+        "laminas/laminas-httphandlerrunner": "^2.0.1",
+        "docnet/tfpdf": "^2.2",
+        "infinityfree/mofh-client": "^0.7.0",
+        "nelexa/zip": "^4.0"     
+        
     },
     "suggest": {
         "ext-gettext": "*"
@@ -42,10 +45,9 @@
     },
 
     "require-dev": {
-        "phpunit/phpunit": "4.6.9",
-        "phpunit/dbunit": ">=1.2",
-        "squizlabs/php_codesniffer": "1.*"
-
+        "phpunit/phpunit": "^9.0",
+        "squizlabs/php_codesniffer": "^3.6",
+	"symfony/finder": "^5.4"
     },
     "autoload-dev": {
         "psr-0": { "": "../tests/bb-library" }

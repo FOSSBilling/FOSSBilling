@@ -1,0 +1,66 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% import "macro_functions.phtml" as mf %}
+{% block meta_title %}{% trans 'Payments history' %}{% endblock %}
+{% set profile = client.client_get %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% trans 'Payments history'%}</h1>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+        <table class="table table-hover table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans 'Amount' %}</th>
+                    <th>{% trans 'Description' %}</th>
+                    <th>{% trans 'Date' %}</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% set transactions = client.client_balance_get_list({"per_page":10, "page":request.page}) %}
+                {% for i, tx in transactions.list %}
+                <tr class="{{ cycle(['odd', 'even'], i) }}">
+                    <td>{{ tx.amount | money(tx.currency) }}</td>
+                    <td>{{tx.description}}</td>
+                    <td>{{tx.created_at|date('Y-m-d h:i')}}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3">{% trans 'The list is empty' %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+            <tfoot>
+                <tr>
+                    <th class="currency" colspan="3">{% trans 'Balance' %}: {{ profile.balance | money(profile.currency) }}</th>
+                </tr>
+            </tfoot>
+        </table>
+{% include "partial_pagination.phtml" with {'list': transactions} %}
+
+<p class="text-center">
+	<a class="btn btn-success" data-toggle="collapse" data-target="#add_funds" aria-expanded="false" aria-controls="add_funds"><i class="fa fa-cart-plus"></i> {% trans 'Add Funds' %}</a>
+</p>
+
+<div class="collapse well text-center" id="add_funds">
+	<form action="" method="post" class="api_form form-inline" data-api-url="client/invoice/funds_invoice" data-api-tocreated="{{ 'invoice'|link }}">
+        <legend>{% trans 'Add funds in advance'%}<br /><small>{% trans 'You can add funds to your account if you have active order.' %}</small></legend>
+        <div class="control-group form-group">
+			<label>{% trans 'Amount' %}: </label>
+			<div class="input-group">
+                <input type="text" name="amount" value="" class="form-control" required="required"/>
+				<div class="input-group-addon">{{ profile.currency }}</div>
+			</div>
+		</div>
+		<input class="btn btn-success" type="submit" value="{% trans 'Add funds' %}">
+    </form>
+</div>
+
+{% endblock %}

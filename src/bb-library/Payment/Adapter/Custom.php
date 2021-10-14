@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -66,9 +66,9 @@ class Payment_Adapter_Custom
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
 
         $vars = array(
-            'client'    =>  $invoice['buyer'],
+            '_client_id'    => $invoice['client']['id'],
             'invoice'   =>  $invoice,
-            '_tpl'      =>  ($subscription) ? $this->config['recurrent'] : $this->config['single'],
+            '_tpl'      =>  $subscription ? (isset($this->config['recurrent']) ? $this->config['recurrent'] : null) : (isset($this->config['single']) ? $this->config['single'] : null),
         );
         $systemService = $this->di['mod_service']('System');
         return $systemService->renderString($vars['_tpl'], true, $vars);

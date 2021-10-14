@@ -19,7 +19,7 @@ class ServiceTest extends \BBTestCase
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service = new \Box\Mod\Order\Service();
     }
@@ -50,7 +50,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->counter();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertArrayHasKey('total', $result);
         $this->assertEquals(array_sum($counter), $result['total']);
         $this->assertArrayHasKey(\Model_ClientOrder::STATUS_PENDING_SETUP, $result);
@@ -903,10 +903,10 @@ class ServiceTest extends \BBTestCase
         $order->loadBean(new \RedBeanPHP\OODBBean());
 
         $result = $this->service->getConfig($order);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    public function testProductHasOrdersProvider()
+    public function productHasOrdersProvider()
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \RedBeanPHP\OODBBean());
@@ -918,7 +918,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testProductHasOrdersProvider
+     * @dataProvider productHasOrdersProvider
      */
     public function testProductHasOrders($order, $expectedResult)
     {
@@ -1030,8 +1030,8 @@ class ServiceTest extends \BBTestCase
             ':days_until_expiration' => $randId,
         );
 
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
 
         $this->assertEquals($expectedQuery, $result[0]);
         $this->assertEquals($expectedBindings, $result[1]);
@@ -1056,7 +1056,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->getRelatedOrderIdByType($model, 'domain');
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($id, $result);
     }
 
@@ -1111,6 +1111,7 @@ class ServiceTest extends \BBTestCase
         $model->config   = '{}';
         $model->price    = 10;
         $model->quantity = 1;
+        $model->client_id = 1;
 
         $clientService = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $clientService->expects($this->atLeastOnce())
@@ -1122,7 +1123,7 @@ class ServiceTest extends \BBTestCase
             ->method('getActiveTicketsCountForOrder')
             ->willReturn(1);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
             ->willReturn(array());
@@ -1138,10 +1139,11 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->withConsecutive(array('Product'))
             ->willReturnOnConsecutiveCalls($modelProduct);
+        $exceptionError = 'Client not found';
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
-            ->withConsecutive(array('Client'))
-            ->willReturnOnConsecutiveCalls($modelClient);
+            ->with('Client', $model->client_id, $exceptionError)
+            ->willReturn($modelClient);
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -1279,32 +1281,11 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->getSearchQuery($data);
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
 
         $this->assertTrue(strpos($result[0], $expectedStr) !== false, $result[0]);
         $this->assertTrue(array_diff_key($result[1], $expectedParams) == array());
-    }
-
-    public function testcreateOrder_FeatureAvailableToPro()
-    {
-        $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
-
-        $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
-
-        $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
-        $licenseMock->expects($this->atLeastOnce())
-            ->method('isPro')
-            ->willReturn(false);
-
-        $di            = new \Box_Di();
-        $di['license'] = $licenseMock;
-
-        $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'This feature is available in BoxBilling PRO version.', 876);
-        $this->service->createOrder($modelClient, $modelProduct, array());
     }
 
     public function testcreateOrder_MissingOrderCurrency()
@@ -1315,18 +1296,12 @@ class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
 
-        $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
-        $licenseMock->expects($this->atLeastOnce())
-            ->method('isPro')
-            ->willReturn(true);
-
         $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())
             ->method('getDefault')
             ->willReturn(null);
 
         $di                = new \Box_Di();
-        $di['license']     = $licenseMock;
         $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock) {
             if ($serviceName == 'currency') {
                 return $currencyServiceMock;
@@ -1334,7 +1309,8 @@ class ServiceTest extends \BBTestCase
         });
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Currency could not be determined for order');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Currency could not be determined for order');
         $this->service->createOrder($modelClient, $modelProduct, array());
     }
 
@@ -1347,11 +1323,6 @@ class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
         $modelProduct->id = 1;
-
-        $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
-        $licenseMock->expects($this->atLeastOnce())
-            ->method('isPro')
-            ->willReturn(true);
 
         $currencyModel = new \Model_Currency();
         $currencyModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -1372,7 +1343,6 @@ class ServiceTest extends \BBTestCase
             ->method('fire');
 
         $di                   = new \Box_Di();
-        $di['license']        = $licenseMock;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock) {
             if ($serviceName == 'currency') {
                 return $currencyServiceMock;
@@ -1387,7 +1357,9 @@ class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Product 1 is out of stock.', 831);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(831);
+        $this->expectExceptionMessage('Product 1 is out of stock.');
         $this->service->createOrder($modelClient, $modelProduct, array());
     }
 
@@ -1402,11 +1374,6 @@ class ServiceTest extends \BBTestCase
         $modelProduct->id       = 1;
         $modelProduct->is_addon = 1;
 
-        $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
-        $licenseMock->expects($this->atLeastOnce())
-            ->method('isPro')
-            ->willReturn(true);
-
         $currencyModel = new \Model_Currency();
         $currencyModel->loadBean(new \RedBeanPHP\OODBBean());
 
@@ -1426,7 +1393,6 @@ class ServiceTest extends \BBTestCase
             ->method('fire');
 
         $di                   = new \Box_Di();
-        $di['license']        = $licenseMock;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock) {
             if ($serviceName == 'currency') {
                 return $currencyServiceMock;
@@ -1441,7 +1407,9 @@ class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Group ID parameter is missing for addon product order', 832);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(832);
+        $this->expectExceptionMessage('Group ID parameter is missing for addon product order');
         $this->service->createOrder($modelClient, $modelProduct, array());
     }
 
@@ -1454,11 +1422,6 @@ class ServiceTest extends \BBTestCase
         $modelProduct = new \Model_Product();
         $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
         $modelProduct->id = 1;
-
-        $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
-        $licenseMock->expects($this->atLeastOnce())
-            ->method('isPro')
-            ->willReturn(true);
 
         $currencyModel = new \Model_Currency();
         $currencyModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -1479,7 +1442,6 @@ class ServiceTest extends \BBTestCase
             ->method('fire');
 
         $di                   = new \Box_Di();
-        $di['license']        = $licenseMock;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock) {
             if ($serviceName == 'currency') {
                 return $currencyServiceMock;
@@ -1501,7 +1463,8 @@ class ServiceTest extends \BBTestCase
             ->willReturn(null);
 
         $serviceMock->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Parent order 1 was not found');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Parent order 1 was not found');
         $serviceMock->createOrder($modelClient, $modelProduct, array('group_id' => 1));
     }
 
@@ -1515,11 +1478,6 @@ class ServiceTest extends \BBTestCase
         $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
         $modelProduct->id   = 1;
         $modelProduct->type = 'custom';
-
-        $licenseMock = $this->getMockBuilder('\Box_License')->getMock();
-        $licenseMock->expects($this->atLeastOnce())
-            ->method('isPro')
-            ->willReturn(true);
 
         $currencyModel = new \Model_Currency();
         $currencyModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -1559,7 +1517,6 @@ class ServiceTest extends \BBTestCase
             ->willReturn('1Y');
 
         $di                   = new \Box_Di();
-        $di['license']        = $licenseMock;
         $di['mod_service']    = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock, $productServiceMock) {
             if ($serviceName == 'currency') {
                 return $currencyServiceMock;
@@ -1610,7 +1567,8 @@ class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
         $clientOrderModel->status = \Model_ClientOrder::STATUS_CANCELED;
-        $this->setExpectedException('\Box_Exception', 'Only pending setup or failed orders can be activated');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Only pending setup or failed orders can be activated');
         $this->service->activateOrder($clientOrderModel);
     }
 
@@ -1693,7 +1651,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $result = $this->service->getOrderAddonsList($modelClientOrder);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertInstanceOf('\Model_ClientOrder', $result[0]);
     }
 
@@ -1846,7 +1804,8 @@ class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', 'Only active orders can be suspended');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Only active orders can be suspended');
         $this->service->suspendFromOrder($clientOrderModel);
     }
 

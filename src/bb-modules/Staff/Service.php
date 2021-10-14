@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -133,7 +133,7 @@ class Service implements InjectionAwareInterface
         try {
             $orderModel = $di['db']->load('ClientOrder', $params['id']);
             $orderTicketService = $di['mod_service']('order');
-            $order = $orderTicketService->toApiArray($orderModel, true, $di['loggedin_admin']);
+            $order = $orderTicketService->toApiArray($orderModel, true);
 
             $email = array();
             $email['to_staff']  = true;
@@ -157,7 +157,7 @@ class Service implements InjectionAwareInterface
         try {
             $supportTicketService = $di['mod_service']('support');
             $ticketModel = $supportTicketService->getTicketById($params['id']);
-            $ticket = $supportTicketService->toApiArray($ticketModel, true, $di['loggedin_admin']);
+            $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
             $helpdeskModel = $di['db']->load('SupportHelpdesk', $ticketModel->support_helpdesk_id);
             $emailService = $di['mod_service']('email');

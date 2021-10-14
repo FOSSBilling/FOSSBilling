@@ -77,8 +77,10 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
         $this->assertEquals($valid, $result['valid'], print_r($result, 1));
     }
 
-    public static function testLicenseServerProcessProvicer()
+    public function testLicenseServerProcessProvicer()
     {
+        $this->assertTrue(true);
+
         return array(
             array(array(
                 'license' => 'validation_fail',
@@ -191,6 +193,8 @@ class Box_Mod_Servicelicense_ServerTest extends BBDbApiTestCase
 
     public function testLicenseServerProcessValidationFailProvider()
     {
+        $this->assertTrue(true);
+
         return array(
             array(false, false, false, false, false, array(
                 $this->atLeastOnce(), $this->never(), $this->never(), $this->never(), $this->never()

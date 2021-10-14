@@ -4,26 +4,24 @@
  *
  * If you are not using the web-installer, you can rename this file
  * to "bb-config.php" and fill in the values.
- * Import /install/structure.sql to your database
- * Import /install/content.sql to your database
- * Open browser http://www.youdomain.com/index.php?_url=/bb-admin to create new admin account.
+ * Import /install/sql/structure.sql to your database
+ * Import /install/sql/content.sql to your database
+ * Open browser http://www.yourdomain.com/index.php?_url=/bb-admin to create new admin account.
  * Remove /install directory
  */
 
 return array(
-
-    /**
-     * Set BoxBilling license key. Get license key at http://www.boxbilling.com
-     */
-    'license'     => 'PRO-wfe1RJ6aqG1wurwlocc9lwouNeTcUtklsp9ujy33clb8c57fdV',
 
     'salt'        => '',
 
     /**
      * Full URL where BoxBilling is installed with trailing slash
      */
-    'url'     => 'http://www.boxbilling.test/',
+    'url'     => 'http://localhost/',
 
+    /**
+     * The URL prefix to access the BB admin area. Ex: '/bb-admin' = https://example.com/bb-admin
+     */
     'admin_area_prefix' =>  '/bb-admin',
 
     /**
@@ -36,7 +34,7 @@ return array(
      * Configure .htaccess file before enabling this feature
      * Set to TRUE if using nginx
      */
-    'sef_urls'  => false,
+    'sef_urls'  => true,
 
     /**
      * Application timezone
@@ -78,22 +76,22 @@ return array(
         /**
          * Database hostname. Don't change this if in doubt.
          */
-        'host'   =>'127.0.0.1',
+        'host'   => getenv('DB_HOST') ?: '127.0.0.1',
 
         /**
          * The name of the database for BoxBilling
          */
-        'name'   =>'boxbilling',
+        'name'   => getenv('DB_NAME') ?: 'boxbilling',
 
         /**
          * Database username
          */
-        'user'   =>'foo',
+        'user'   => getenv('DB_USER') ?: 'foo',
 
         /**
          * Database password
          */
-        'password'   =>'foo',
+        'password'   => getenv('DB_PASS') ?: 'foo',
 
         /**
          * Database Port
@@ -119,5 +117,22 @@ return array(
 
         // How many requests allowed per time span
         'rate_limit'        =>  1000,
+
+        /**
+         * Note about rate limiting login attempts:
+         * When the limit is reach, a default delay of 2 seconds is added to the request. 
+         * This makes brute forcing a password basically useless while not outright blocking legitimate traffic.
+         * When calculating, ensure the rate limited traffic can still make enough requests to stay rate limited
+         * Ex: One request every 2 seconds is more than 20 times in 1 minute, so the IP will remain throttled
+         */
+
+        // Throttling delay
+        'throttle_delay'         =>  2,
+
+        // Time span login for limit in seconds
+        'rate_span_login'         =>  60,
+
+        // How many login requests allowed per time span
+        'rate_limit_login'        =>  20,
     ),
 );

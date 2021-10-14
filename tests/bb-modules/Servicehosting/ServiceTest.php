@@ -10,7 +10,7 @@ class ServiceTest extends \BBTestCase {
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service= new \Box\Mod\Servicehosting\Service();
     }
@@ -48,7 +48,8 @@ class ServiceTest extends \BBTestCase {
 
         unset ($data [ $field ]);
 
-        $this->setExpectedException('\Box_Exception', $exceptionMessage, $excCode);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage($exceptionMessage, $excCode);
         $this->service->validateOrderData($data);
     }
 
@@ -97,7 +98,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $this->service->action_create($orderModel);
     }
-
+   
     public function testaction_activate()
     {
         $orderModel = new \Model_ClientOrder();
@@ -107,8 +108,11 @@ class ServiceTest extends \BBTestCase {
             'server_id' => 1,
             'hosting_plan_id' => 2,
             'sld' => 'great',
-            'tld' => 'com'
+            'tld' => 'com',
+            'username' => 'username',
+            'password' => 'password'
         );
+        
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getConfig')
@@ -124,7 +128,7 @@ class ServiceTest extends \BBTestCase {
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('generatePassword')
-            ->will($this->returnValue('generatedPass'));
+            ->will($this->returnValue('generatePassword'));
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -149,9 +153,9 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $serviceMock->setDi($di);
-
+        $orderModel->config = $confArr;
         $result = $serviceMock->action_activate($orderModel);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertNotEmpty($result['username']);
         $this->assertNotEmpty($result['password']);
     }
@@ -161,7 +165,7 @@ class ServiceTest extends \BBTestCase {
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $model = new \Model_ServiceHosting();
+        $model = new \Model_ServiceHostingHp();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
@@ -197,7 +201,8 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', sprintf('Order %d has no active service', $orderModel->id));
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
         $this->service->action_renew($orderModel);
 
     }
@@ -254,7 +259,8 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', sprintf('Order %d has no active service', $orderModel->id));
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
         $this->service->action_suspend($orderModel);
 
     }
@@ -311,7 +317,8 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', sprintf('Order %d has no active service', $orderModel->id));
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
         $this->service->action_unsuspend($orderModel);
 
     }
@@ -367,7 +374,8 @@ class ServiceTest extends \BBTestCase {
         $di['mod_service'] = $di->protect(function() use ($orderServiceMock) {return $orderServiceMock;});
 
         $this->service->setDi($di);
-        $this->setExpectedException('\Box_Exception', sprintf('Order %d has no active service', $orderModel->id));
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
         $this->service->action_cancel($orderModel);
     }
 
@@ -555,7 +563,8 @@ class ServiceTest extends \BBTestCase {
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $data = array();
 
-        $this->setExpectedException('\Box_Exception', 'Account password is missing or is not valid');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Account username is missing or is not valid');
         $this->service->changeAccountUsername($orderModel, $model, $data);
     }
 
@@ -607,7 +616,8 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
-        $this->setExpectedException('\Box_Exception', 'Account ip is missing or is not valid');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Account ip is missing or is not valid');
         $this->service->changeAccountIp($orderModel, $model, $data);
     }
 
@@ -660,7 +670,8 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
-        $this->setExpectedException('\Box_Exception', 'Domain sld or tld is missing');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Domain sld or tld is missing');
         $this->service->changeAccountDomain($orderModel, $model, $data);
     }
 
@@ -713,7 +724,8 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_ServiceHosting();
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
-        $this->setExpectedException('\Box_Exception', 'Account password is missing or is not valid');
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage('Account password is missing or is not valid');
         $this->service->changeAccountPassword($orderModel, $model, $data);
     }
 
@@ -774,7 +786,7 @@ class ServiceTest extends \BBTestCase {
         $hostingServer = new \Model_ServiceHostingServer();
         $hostingServer->loadBean(new \RedBeanPHP\OODBBean());
         $hostingServer->manager = 'Custom';
-        $hostingHp = new\Model_ServiceHostingHp();
+        $hostingHp = new \Model_ServiceHostingHp();
         $hostingHp->loadBean(new \RedBeanPHP\OODBBean());
 
 
@@ -799,7 +811,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->toApiArray($model, false, new \Model_Admin());
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testupdate()
@@ -827,7 +839,7 @@ class ServiceTest extends \BBTestCase {
     public function testgetServerManagers()
     {
         $result = $this->service->getServerManagers();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testgetServerManagerConfig()
@@ -839,7 +851,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $result = $this->service->getServerManagerConfig($manager);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -870,15 +882,15 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->getServerPairs();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
     public function testgetServerSearchQuery()
     {
         $result = $this->service->getServersSearchQuery(array());
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
         $this->assertEquals(array(), $result[1]);
     }
 
@@ -911,7 +923,7 @@ class ServiceTest extends \BBTestCase {
         $manager = 'Custom';
         $data = array();
         $result = $this->service->createServer($name, $ip, $manager, $data);
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
     }
 
@@ -996,7 +1008,9 @@ class ServiceTest extends \BBTestCase {
         $hostingServerModel = new \Model_ServiceHostingServer();
         $hostingServerModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $this->setExpectedException('\Box_Exception', 'Invalid server manager. Server was not configured properly', 654);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionCode(654);
+        $this->expectExceptionMessage('Invalid server manager. Server was not configured properly');
         $this->service->getServerManager($hostingServerModel);
     }
 
@@ -1012,7 +1026,8 @@ class ServiceTest extends \BBTestCase {
         });
         $this->service->setDi($di);
 
-        $this->setExpectedException('\Box_Exception', sprintf('Server manager %s is not valid', $hostingServerModel->manager));
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage(sprintf('Server manager %s is not valid', $hostingServerModel->manager));
         $this->service->getServerManager($hostingServerModel);
     }
 
@@ -1033,7 +1048,7 @@ class ServiceTest extends \BBTestCase {
 
         $hostingServerModel = new \Model_ServiceHostingServer();
         $result = $serviceMock->testConnection($hostingServerModel );
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -1064,15 +1079,15 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->getHpPairs();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
 
     public function testgetHpSearchQuery()
     {
         $result = $this->service->getServersSearchQuery(array());
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
         $this->assertEquals(array(), $result[1]);
     }
 
@@ -1100,7 +1115,7 @@ class ServiceTest extends \BBTestCase {
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $result = $this->service->toHostingHpApiArray($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testUpdateHp()
@@ -1158,7 +1173,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $result = $this->service->createHp('Free Plan', array());
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
     }
 
@@ -1230,9 +1245,9 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue($serverManagerMock));
 
         $result = $serviceMock->getMangerUrls($hostingServerModel);
-        $this->assertInternalType('array', $result);
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('string', $result[1]);
+        $this->assertIsArray($result);
+        $this->assertIsString($result[0]);
+        $this->assertIsString($result[1]);
     }
 
     public function testgetMangerUrlsException()
@@ -1249,7 +1264,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->throwException(new \Exception('Controlled unit test exception')));
 
         $result = $serviceMock->getMangerUrls($hostingServerModel);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertFalse($result[0]);
         $this->assertFalse($result[1]);
     }
@@ -1288,7 +1303,7 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_Product();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $result = $this->service->getFreeTlds($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
 
     }
 
@@ -1312,7 +1327,7 @@ class ServiceTest extends \BBTestCase {
         $model = new \Model_Product();
         $model->loadBean(new \RedBeanPHP\OODBBean());
         $result = $this->service->getFreeTlds($model);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertNotEmpty($result);
     }
 

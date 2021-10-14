@@ -1,5 +1,5 @@
 # en_US translation of BoxBilling Application
-# Copyright 2011 -2015 BoxBilling <info@boxbilling.com>
+# Copyright 2011-2021 BoxBilling <info@boxbilling.com>
 #
 #, fuzzy
 msgid ""
@@ -625,9 +625,6 @@ msgid "Pay now"
 msgstr ""
 
 msgid "Redirecting to PayPal.com"
-msgstr ""
-
-msgid "Redirecting to Payza.com"
 msgstr ""
 
 msgid "Redirecting to 2Checkout.com"
@@ -3257,16 +3254,6 @@ msgid "License"
 msgstr ""
 
 msgid "Module settings"
-msgstr ""
-
-msgid ""
-"After purchase you have received an e-mail with license key. Update license "
-"key to unlock all features of BoxBilling"
-msgstr ""
-
-msgid ""
-"To change license key, change <em>BB_LICENSE</em> value in <em>bb-config."
-"php</em> file"
 msgstr ""
 
 msgid "Edit bb-config.php file"
@@ -6117,18 +6104,6 @@ msgstr ""
 msgid "Solved tickets"
 msgstr ""
 
-msgid ""
-"Payment gateway \"AlertPay\" is not configured properly. Please update "
-"configuration parameter \"AlertPay Email address\" at \"Configuration -> "
-"Payments\"."
-msgstr ""
-
-msgid ""
-"Payment gateway \"AlertPay\" is not configured properly. Please update "
-"configuration parameter \"IPN Security Code\" at \"Configuration -> Payments"
-"\"."
-msgstr ""
-
 msgid "Not implemented yet"
 msgstr ""
 
@@ -6198,21 +6173,6 @@ msgid ""
 "Payments\"."
 msgstr ""
 
-msgid "PHP Curl extension must be enabled in order to use Payza gateway"
-msgstr ""
-
-msgid ""
-"Payment gateway \"Payza\" is not configured properly. Please update "
-"configuration parameter \"Payza Email address\" at \"Configuration -> "
-"Payments\"."
-msgstr ""
-
-msgid ""
-"Payment gateway \"Payza\" is not configured properly. Please update "
-"configuration parameter \"IPN Security Code\" at \"Configuration -> Payments"
-"\"."
-msgstr ""
-
 msgid ""
 "Payment gateway \"2Checkout\" is not configured properly. Please update "
 "configuration parameter \"Vendor account number\" at \"Configuration -> "
@@ -6237,19 +6197,6 @@ msgid ""
 msgstr ""
 
 msgid "WebMoney IPN is not valid"
-msgstr ""
-
-msgid ""
-"Payment gateway \"WebToPay\" is not configured properly. Please update "
-"configuration parameter \"Project ID\" at \"Configuration -> Payments\"."
-msgstr ""
-
-msgid ""
-"Payment gateway \"WebToPay\" is not configured properly. Please update "
-"configuration parameter \"Sign Password\" at \"Configuration -> Payments\"."
-msgstr ""
-
-msgid "WebToPay payment gateway do not support recurrent payments"
 msgstr ""
 
 msgid "Return URL for payment gateway was not set"

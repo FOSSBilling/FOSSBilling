@@ -1,0 +1,341 @@
+<fieldset>
+    <legend>General</legend>
+
+    <table>
+        <tr>
+            <td><label for="theme">Theme</label></td>
+            <td>
+				<table>
+					<tr>
+						<td colspan="3"><input type="radio" name="theme" value="default" checked /> <span>Default Bootstrap</span></td>
+					</tr>
+					<tr>
+						<label>
+							<td><input type="radio" name="theme" value="cerulean" /> <span>Cerulean</span></td>
+							<td><img src="https://bootswatch.com/cerulean/thumbnail.png" height="108" width="180"></td>
+						</label>
+						<label>
+							<td><input type="radio" name="theme" value="cosmo" /> <span>Cosmo</span></td>
+							<td><img src="https://bootswatch.com/cosmo/thumbnail.png" height="108" width="180"></td>
+						</label>
+						<label>
+							<td><input type="radio" name="theme" value="cyborg" /> <span>Cyborg</span></td>
+							<td><img src="https://bootswatch.com/cyborg/thumbnail.png" height="108" width="180"></td>
+						</label>
+					</tr>
+					<tr>
+						<label>
+							<td><input type="radio" name="theme" value="darkly" /> <span>Darkly</span></td>
+							<td><img src="https://bootswatch.com/darkly/thumbnail.png" height="108" width="180"></td>
+						</label>
+						<label>
+							<td><input type="radio" name="theme" value="flatly" /> <span>Flatly</span></td>
+							<td><img src="https://bootswatch.com/flatly/thumbnail.png" height="108" width="180"></td>
+						</label>
+						<label>
+							<td><input type="radio" name="theme" value="journal" /> <span>Journal</span></td>
+							<td><img src="https://bootswatch.com/journal/thumbnail.png" height="108" width="180"></td>
+						</label>
+					</tr>
+					<tr>
+						<label>
+							<td><input type="radio" name="lumen" value="journal" /> <span>Lumen</span></td>
+							<td><img src="https://bootswatch.com/lumen/thumbnail.png" height="108" width="180"></td>
+						</label>
+						<label>
+							<td><input type="radio" name="theme" value="paper" /> <span>Paper</span></td>
+							<td><img src="https://bootswatch.com/paper/thumbnail.png" height="108" width="180"></td>
+						</label>
+						<label>
+							<td><input type="radio" name="theme" value="readable" /> <span>Readable</span></td>
+							<td><img src="https://bootswatch.com/readable/thumbnail.png" height="108" width="180"></td>
+						</label>
+					</tr>
+					<tr>
+						<label>
+							<td><input type="radio" name="theme" value="sandstone" /> <span>Sandstone</span></td>
+							<td><img src="https://bootswatch.com/sandstone/thumbnail.png" height="108" width="180"></td>
+						</label>
+						<label>
+							<td><input type="radio" name="theme" value="simplex" /> <span>Simplex</span></td>
+							<td><img src="https://bootswatch.com/simplex/thumbnail.png" height="108" width="180"></td>
+						</label>
+						<label>
+							<td><input type="radio" name="theme" value="slate" /> <span>Slate</span></td>
+							<td><img src="https://bootswatch.com/slate/thumbnail.png" height="108" width="180"></td>
+						</label>
+					<tr>
+					<tr>
+						<label>
+							<td><input type="radio" name="theme" value="spacelab" /> <span>Spacelab</span></td>
+							<td><img src="https://bootswatch.com/spacelab/thumbnail.png" height="108" width="180"></td>
+						</label>
+						<label>
+							<td><input type="radio" name="theme" value="superhero" /> <span>Superhero</span></td>
+							<td><img src="https://bootswatch.com/superhero/thumbnail.png" height="108" width="180"></td>
+						</label>
+						<label>
+							<td><input type="radio" name="theme" value="united" /> <span>United</span></td>
+							<td><img src="https://bootswatch.com/united/thumbnail.png" height="108" width="180"></td>
+						</label>
+					</tr>
+					<tr>
+						<label>
+							<td><input type="radio" name="theme" value="yeti" /> <span>Yeti</span></td>
+							<td><img src="https://bootswatch.com/yeti/thumbnail.png" height="108" width="180"></td>
+						</label>
+					</tr>
+				</table>
+            </td>
+        </tr>
+    </table>
+
+</fieldset>
+
+<fieldset>
+    <legend>Home page</legend>
+	<h3>Logged in</h3>
+    <table>
+        <tr>
+            <td><label>Select which menu items:</label></td>
+            <td>
+                <label for="dash_services"><input type="checkbox" name="dash_services" value="1" id="dash_services" checked/> Show Services pane</label><br/>
+				<label for="dash_support"><input type="checkbox" name="dash_support" value="1" id="dash_support" checked/> Show Support pane</label><br/>
+				<label for="dash_invoices"><input type="checkbox" name="dash_invoices" value="1" id="dash_invoices" checked/> Show Invoices pane</label><br/>
+				<label for="dash_orders"><input type="checkbox" name="dash_orders" value="1" id="dash_orders" checked/> Show Latest Orders pane</label><br/>
+				<label for="dash_messages"><input type="checkbox" name="dash_messages" value="1" id="dash_messages" checked/> Show Latest Messages pane</label><br/>
+				<label for="dash_kb"><input type="checkbox" name="dash_kb" value="1" id="dash_kb" checked/> Show Knowledge Base pane</label><br/>
+				<label for="dash_news"><input type="checkbox" name="dash_news" value="1" id="dash_news" checked/> Show Announcements pane</label><br/>
+				<label for="dash_forum"><input type="checkbox" name="dash_forum" value="1" id="dash_forum" checked/> Show Favorite topics pane</label><br/>
+            </td>
+        </tr>
+    </table>
+		
+	<h3>Not logged in</h3>
+	<table>
+		<tr>
+            <td><label>Home page (not logged in)</label></td>
+            <td>
+				<select name="home_page" id="home_page">
+					<option value="menuicons">Menu icons</option>
+					<option value="order">Order new services</option>
+					<option value="blog">Blog</option>
+					<option value="login">Login</option>
+					<option value="contact">Contact</option>
+					<option value="kb">Knowledge base</option>
+				</select>
+			</td>
+        </tr>
+		
+		<tr>
+            <td><label>Show side menu on home page when not logged in</label></td>
+            <td>
+                <input type="radio" name="home_sidemenu" value="1" id="home_sidemenu_1" /> <label for="home_sidemenu_1">Yes</label>
+                <input type="radio" name="home_sidemenu" value="0" id="home_sidemenu_0" checked="checked"/> <label for="home_sidemenu_0">No</label>
+            </td>
+        </tr>
+	</table>
+    
+	<h3>Showcase</h3>
+    <table>
+        <tr>
+            <td><label>Enable Showcase</label></td>
+            <td>
+                <input type="radio" name="showcase_enabled" value="1" id="showcase_enabled_1"/> <label for="showcase_enabled_1">Yes</label>
+                <input type="radio" name="showcase_enabled" value="0" id="showcase_enabled_0" checked="checked"/> <label for="showcase_enabled_0">No</label>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="showcase_heading">Showcase heading</label></td>
+            <td><input type="text" name="showcase_heading" id="showcase_heading" value="" class="long"/></td>
+        </tr>
+        <tr>
+            <td><label for="showcase_text">Showcase text</label></td>
+            <td><textarea id="showcase_text" name="showcase_text" class="long"></textarea></td>
+        </tr>
+        <tr>
+            <td><label for="showcase_button_title">Showcase button title</label></td>
+            <td><input type="text" name="showcase_button_title" id="showcase_button_title" value=""/></td>
+        </tr>
+        <tr>
+            <td><label for="showcase_button_url">Showcase link URL</label></td>
+            <td><input type="text" name="showcase_button_url" id="showcase_button_url" value=""/></td>
+        </tr>
+    </table>
+</fieldset>
+
+<fieldset>
+    <legend>Sidebar</legend>
+
+    <h3>Menu items which are visible in left menu</h3>
+    <table>
+        <tr>
+            <td><label>Select menu items:</label></td>
+            <td>
+                <label for="side_menu_home"><input type="checkbox" name="side_menu_home" value="1" id="side_menu_home" checked/> Show Home link</label><br/>
+                <label for="side_menu_order"><input type="checkbox" name="side_menu_order" value="1" id="side_menu_order" checked/> Show Order link</label><br/>
+                <label for="side_menu_blog"><input type="checkbox" name="side_menu_blog" value="1" id="side_menu_blog" checked/> Show Blog link</label><br/>
+                <label for="side_menu_forum"><input type="checkbox" name="side_menu_forum" value="1" id="side_menu_forum" checked/> Show Forum link</label><br/>
+				<label for="side_menu_kb"><input type="checkbox" name="side_menu_kb" value="1" id="side_menu_kb" checked/> Show Knowledge Base link</label><br/>
+				<label for="side_menu_contact"><input type="checkbox" name="side_menu_contact" value="1" id="side_menu_contact" checked/> Show Contact link</label><br/>
+				<label for="side_menu_services"><input type="checkbox" name="side_menu_services" value="1" id="side_menu_services" checked/> Show Services link (clients only)</label><br/>
+				<label for="side_menu_support"><input type="checkbox" name="side_menu_support" value="1" id="side_menu_support" checked/> Show Support link (clients only)</label><br/>
+				<label for="side_menu_invoices"><input type="checkbox" name="side_menu_invoices" value="1" id="side_menu_invoices" checked/> Show Invoices link (clients only)</label><br/>
+				<label for="side_menu_register"><input type="checkbox" name="side_menu_register" value="1" id="side_menu_register" checked/> Show Sign-in/Register link (non-clients only)</label><br/>
+            </td>
+        </tr>
+    </table>
+
+    <h3>Simple Sidebar Note</h3>
+    <table>
+        <tr>
+            <td><label>Show sidebar note</label></td>
+            <td>
+                <input type="radio" name="sidebar_note_enabled" value="1" id="sidebar_note_enabled_1" checked="checked"/> <label for="sidebar_note_enabled_1">Yes</label>
+                <input type="radio" name="sidebar_note_enabled" value="0" id="sidebar_note_enabled_0"/> <label for="sidebar_note_enabled_0">No</label>
+            </td>
+        </tr>
+
+        <tr>
+            <td><label for="sidebar_note_title">Note title</label></td>
+            <td><input type="text" name="sidebar_note_title" id="sidebar_note_title" value=""/></td>
+        </tr>
+
+        <tr>
+            <td><label for="sidebar_note_content">Note text</label></td>
+            <td><textarea id="sidebar_note_content" name="sidebar_note_content"></textarea></td>
+        </tr>
+    </table>
+</fieldset>
+
+<fieldset>
+    <legend>Meta fields</legend>
+
+    <table>
+        <tr>
+            <td><label for="meta_title">Meta title sufix</label></td>
+            <td><input type="text" name="meta_title" id="meta_title" value="" class="long"/></td>
+        </tr>
+
+        <tr>
+            <td><label for="meta_description">Meta description</label></td>
+            <td><input type="text" name="meta_description" id="meta_description" value="" class="long"/></td>
+        </tr>
+
+        <tr>
+            <td><label for="meta_keywords">Meta keywords</label></td>
+            <td><input type="text" name="meta_keywords" id="meta_keywords" value="" class="long"/></td>
+        </tr>
+
+        <tr>
+            <td><label for="meta_robots">Meta robots</label></td>
+            <td><input type="text" name="meta_robots" id="meta_robots" value="" class="long"/></td>
+        </tr>
+
+        <tr>
+            <td><label for="meta_author">Meta author</label></td>
+            <td><input type="text" name="meta_author" id="meta_author" value="" class="long"/></td>
+        </tr>
+    </table>
+</fieldset>
+
+<fieldset>
+    <legend>Header</legend>
+	
+    <h3>Menu items which are visible in top menu</h3>
+    <table>
+        <tr>
+            <td><label>Select which menu items:</label></td>
+            <td>
+                <label for="show_client_balance"><input type="checkbox" name="show_client_balance" value="1" id="show_client_balance"/> Show Client balance</label><br/>
+				<label for="show_client_emails"><input type="checkbox" name="show_client_emails" value="1" id="show_client_emails"/> Show Emails sent to client</label><br/>
+            </td>
+        </tr>
+    </table>
+</fieldset>
+
+<fieldset>
+    <legend>Footer</legend>
+
+    <table>
+	<tr>
+        <td><label>Show page footer</label></td>
+        <td>
+            <input type="radio" name="show_page_footer" value="1" id="show_page_footer_1" checked="checked"/> <label for="show_page_footer_1">Yes</label>
+            <input type="radio" name="show_page_footer" value="0" id="show_page_footer_0" /> <label for="show_page_footer_0">No</label>
+        </td>
+    </tr>
+	
+	<tr>
+        <td><label>Keep BoxBilling branding</label></td>
+        <td>
+            <input type="radio" name="footer_branding_enabled" value="1" id="footer_branding_enabled_1" checked="checked"/> <label for="footer_branding_enabled_1">Yes</label>
+            <input type="radio" name="footer_branding_enabled" value="0" id="footer_branding_enabled_0"/> <label for="footer_branding_enabled_0">No</label>
+        </td>
+    </tr>
+	
+    <tr>
+        <td><label>Show "Top" link</label></td>
+        <td>
+            <input type="radio" name="footer_to_top_enabled" value="1" id="footer_to_top_enabled_1" checked="checked"/> <label for="footer_to_top_enabled_1">Yes</label>
+            <input type="radio" name="footer_to_top_enabled" value="0" id="footer_to_top_enabled_0"/> <label for="footer_to_top_enabled_0">No</label>
+        </td>
+    </tr>
+
+    <tr>
+        <td><label for="footer_signature">Footer text (instead of company signature)</label></td>
+        <td><input type="text" name="footer_signature" id="footer_signature" value="" class="long"/></td>
+    </tr>
+    </table>
+
+    <h3>Links</h3>
+    <table>
+        <tr>
+            <td><label>Footer link #1</label></td>
+            <td><input type="checkbox" name="footer_link_1_enabled"/> <input type="text" name="footer_link_1_title" value=""/> -> <input type="text" name="footer_link_1_page"/></td>
+        </tr>
+
+        <tr>
+            <td><label>Footer link #2</label></td>
+            <td><input type="checkbox" name="footer_link_2_enabled"/> <input type="text" name="footer_link_2_title" value=""/> -> <input type="text" name="footer_link_2_page"/></td>
+        </tr>
+
+        <tr>
+            <td><label>Footer link #3</label></td>
+            <td><input type="checkbox" name="footer_link_3_enabled"/> <input type="text" name="footer_link_3_title" value=""/> -> <input type="text" name="footer_link_3_page"/></td>
+        </tr>
+
+        <tr>
+            <td><label>Footer link #4</label></td>
+            <td><input type="checkbox" name="footer_link_4_enabled"/> <input type="text" name="footer_link_4_title" value=""/> -> <input type="text" name="footer_link_4_page"/></td>
+        </tr>
+
+        <tr>
+            <td><label>Footer link #5</label></td>
+            <td><input type="checkbox" name="footer_link_5_enabled"/> <input type="text" name="footer_link_5_title" value=""/> -> <input type="text" name="footer_link_5_page"/></td>
+        </tr>
+
+    </table>
+
+</fieldset>
+
+<fieldset>
+    <legend>Custom code</legend>
+
+    <h3>Javascript</h3>
+    <table>
+        <tr>
+            <td><label for="inject_javascript">Add custom Javascript code</label></td>
+            <td><textarea name="inject_javascript" id="inject_javascript" class="long" rows="30" cols="50"></textarea></td>
+        </tr>
+    </table>
+	
+	<h3>CSS</h3>
+    <table>
+        <tr>
+            <td><label for="inject_css">Add custom CSS code</label></td>
+            <td><textarea name="inject_css" id="inject_css" class="long" rows="30" cols="50"></textarea></td>
+        </tr>
+    </table>
+
+</fieldset>

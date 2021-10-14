@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -315,8 +315,8 @@ class Admin extends \Api_Abstract
         $t            = $this->template_get($data);
         $vars         = $t['vars'];
         $vars['_tpl'] = $this->di['array_get']($data, '_tpl', $t['content']);
-
-        return $this->di['twig']->render($vars['_tpl'], $vars);
+        $systemService = $this->di['mod_service']('System');
+        return $systemService->renderString($vars['_tpl'], true, $vars);
     }
 
     /**

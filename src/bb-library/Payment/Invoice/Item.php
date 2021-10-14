@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -124,6 +124,6 @@ class Payment_Invoice_Item
 
     public function getTotalWithTax()
     {
-        return $this->getTotal() + $this->getQuantity() * $this->getTax();
+        return $this->getTotal() + $this->getTax();
     }
 }

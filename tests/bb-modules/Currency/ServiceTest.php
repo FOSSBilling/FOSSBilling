@@ -22,8 +22,8 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Currency\Service();
         $result  = $service->getSearchQuery(array());
-        $this->assertInternalType('string', $result[0]);
-        $this->assertInternalType('array', $result[1]);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
         $this->assertEquals("SELECT * FROM currency WHERE 1", $result[0]);
     }
 
@@ -45,11 +45,6 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    /**
-     *
-     * @expectedException \Box_Exception
-     *
-     */
     public function testGetBaseCurrencyRateException()
     {
         $service = new \Box\Mod\Currency\Service();
@@ -63,11 +58,12 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $db;
         $service->setDi($di);
         $code = 'EUR';
+        $this->expectException(\Box_Exception::class);
         $service->getBaseCurrencyRate($code); //Expecting exception
     }
 
 
-    public function testToBaseCurrencyProvider()
+    public function toBaseCurrencyProvider()
     {
         return array(
             array('EUR', 'USD', 100, 0.73, 73), // 100 USD ~ 72.99 EUR
@@ -77,7 +73,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testToBaseCurrencyProvider
+     * @dataProvider toBaseCurrencyProvider
      */
     public function testToBaseCurrency($defaultCode, $foreignCode, $amount, $rate, $expected)
     {
@@ -103,7 +99,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, round($result, 2));
     }
 
-    public function testGetCurrencyByClientIdProvider()
+    public function getCurrencyByClientIdProvider()
     {
         $model = new \Model_Currency();
         $bean  = new \RedBeanPHP\OODBBean();
@@ -126,7 +122,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testGetCurrencyByClientIdProvider
+     * @dataProvider getCurrencyByClientIdProvider
      */
     public function testGetCurrencyByClientId($row, $currency, $expectsGetByCode, $getDefaultCalled)
     {
@@ -209,7 +205,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($model->code, $currency);
     }
 
-    public function testGetRateByCodeProvider()
+    public function getRateByCodeProvider()
     {
         return array(
             array('EUR', 0.6, 0.6),
@@ -219,7 +215,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testGetRateByCodeProvider
+     * @dataProvider getRateByCodeProvider
      */
     public function testGetRateByCode($code, $returns, $expected)
     {
@@ -233,7 +229,6 @@ class ServiceTest extends \BBTestCase
 
         $di['db'] = $db;
         $service->setDi($di);
-        $code   = $code;
         $result = $service->getRateByCode($code);
         $this->assertEquals($expected, $result);
 
@@ -251,7 +246,7 @@ class ServiceTest extends \BBTestCase
         $db = $this->getMockBuilder('Box_Database')->getMock();
        $db->expects($this->atLeastOnce())
            ->method('findOne')
-           ->willReturn(null);
+           ->willReturn(array());
         $db->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($model);
@@ -263,7 +258,7 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals($model, $result);
     }
 
-    public function testSetAsDefaultProvider()
+    public function setAsDefaultProvider()
     {
         $firstModel              = new \Model_Currency();
         $firstModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -282,7 +277,7 @@ class ServiceTest extends \BBTestCase
     }
 
     /**
-     * @dataProvider testSetAsDefaultProvider
+     * @dataProvider setAsDefaultProvider
      */
     public function testSetAsDefault($model, $expects)
     {
@@ -302,11 +297,6 @@ class ServiceTest extends \BBTestCase
         $this->assertEquals(true, $result);
     }
 
-    /**
-     *
-     * @expectedException \Box_Exception
-     *
-     */
     public function testSetAsDefaultException()
     {
         $service = new \Box\Mod\Currency\Service();
@@ -324,6 +314,7 @@ class ServiceTest extends \BBTestCase
 
         $di['db'] = $db;
         $service->setDi($di);
+        $this->expectException(\Box_Exception::class);
         $service->setAsDefault($model); //Currency code is null, should throw an \Box_Exception
     }
 
@@ -513,12 +504,7 @@ class ServiceTest extends \BBTestCase
 
         $this->assertEquals($result, $availableCurrencies);
     }
-
-    /**
-     *
-     * @expectedException \Box_Exception
-     *
-     */
+    
     public function testRmDefaultCurrencyException()
     {
         $service = new \Box\Mod\Currency\Service();
@@ -536,6 +522,7 @@ class ServiceTest extends \BBTestCase
 
         $di['db'] = $db;
         $service->setDi($di);
+        $this->expectException(\Box_Exception::class);
         $service->rm($model); //will throw \Box_Exception because default currency can not be removed
     }
 
@@ -561,12 +548,7 @@ class ServiceTest extends \BBTestCase
 
         $this->assertEquals($result, null);
     }
-
-    /**
-     *
-     * @expectedException \Box_Exception
-     *
-     */
+    
     public function testRmMissingCodeException()
     {
         $service = new \Box\Mod\Currency\Service();
@@ -584,6 +566,7 @@ class ServiceTest extends \BBTestCase
 
         $di['db'] = $db;
         $service->setDi($di);
+        $this->expectException(\Box_Exception::class);
         $service->rm($model); //will throw \Box_Exception because currency code is not set
     }
 
@@ -649,7 +632,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $service->createCurrency($code, $format, 'Euros', 0.6);
 
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals(strlen($result), 3);
         $this->assertEquals($result, $code);
 
@@ -680,14 +663,11 @@ class ServiceTest extends \BBTestCase
 
         $result = $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate);
 
-        $this->assertInternalType('boolean', $result);
+        $this->assertIsBool($result);
         $this->assertEquals($result, true);
 
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testUpdateCurrencyNotFoundException()
     {
         $code            = 'EUR';
@@ -700,12 +680,10 @@ class ServiceTest extends \BBTestCase
         $service->expects($this->atLeastOnce())
             ->method('getByCode')
             ->will($this->returnValue(false));
+            $this->expectException(\Box_Exception::class);
         $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate); //Expecting \Box_Exception every time
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testUpdateConversionRateException()
     {
         $code            = 'EUR';
@@ -721,6 +699,7 @@ class ServiceTest extends \BBTestCase
             ->method('getByCode')
             ->will($this->returnValue($model));
 
+        $this->expectException(\Box_Exception::class);
         $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate); //Expecting \Box_Exception every time
     }
 
@@ -763,7 +742,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $service->updateCurrencyRates(array());
 
-        $this->assertInternalType('boolean', $result);
+        $this->assertIsBool($result);
         $this->assertEquals($result, true);
     }
 
@@ -803,7 +782,7 @@ class ServiceTest extends \BBTestCase
 
         $result = $service->updateCurrencyRates(array());
 
-        $this->assertInternalType('boolean', $result);
+        $this->assertIsBool($result);
         $this->assertEquals($result, true);
     }
 
@@ -840,13 +819,10 @@ class ServiceTest extends \BBTestCase
 
         $result = $service->deleteCurrencyByCode($code);
 
-        $this->assertInternalType('boolean', $result);
+        $this->assertIsBool($result);
         $this->assertEquals($result, true);
     }
-
-    /**
-     * @expectedException \Box_exception
-     */
+   
     public function testDeleteModelNotFoundException()
     {
         $code = 'EUR';
@@ -856,9 +832,10 @@ class ServiceTest extends \BBTestCase
             ->method('getByCode')
             ->will($this->returnValue(null));
 
+        $this->expectException(\Box_Exception::class);
         $result = $service->deleteCurrencyByCode($code);
 
-        $this->assertInternalType('boolean', $result);
+        $this->assertIsBool($result);
         $this->assertEquals($result, true);
     }
 
@@ -869,13 +846,11 @@ class ServiceTest extends \BBTestCase
         $service->validateCurrencyFormat('${{price}}');
     }
 
-    /**
-     * @expectedException \Exception
-     */
     public function testValidateCurrencyFormatPriceTagMissing()
     {
         $service = new \Box\Mod\Currency\Service();
 
+        $this->expectException(\Exception::class);
         $service->validateCurrencyFormat('$$$');
     }
 

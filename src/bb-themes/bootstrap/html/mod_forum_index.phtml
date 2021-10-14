@@ -1,0 +1,91 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
+{% block meta_title %}{% trans 'Forum' %}{% endblock %}
+
+{% block content_before %}
+		<!-- Page Heading/Breadcrumbs -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% trans 'Forum' %}
+				<small>{% trans 'Welcome to our forums. If you wish to become a member and post, you have to be registered member.' %}</small>
+				</h1>
+            </div>
+        </div>
+        <!-- /.row -->
+{% endblock %}
+{% block content %}
+
+		{% for cat_name, forums in guest.forum_get_categories %}
+		<h3>{{cat_name}}</h3>
+		<div class="list-group">
+			{%  for forum in forums %}
+			<a href="{% if forum.status != "locked" %}{{ '/forum'|link }}/{{forum.slug}}{% endif %}" class="list-group-item{% if forum.status == "locked" %} disabled{% endif %}">
+				<h4 class="list-group-item-heading">{{forum.title}}
+					<small class="pull-right"><strong>{{forum.stats.topics_count|default(0)}} {% trans 'Threads' %}</strong> - {{forum.stats.posts_count|default(0)}} {% trans 'Posts' %}</small>
+				</h4>
+				<p class="list-group-item-text">{{forum.description}}</p>
+			</a>
+			{% endfor %}
+        </div>
+        {% endfor %}
+            
+            {% if client and client.forum_favorites %}
+			<p class="text-center">
+				<a class="btn btn-primary" role="button" data-toggle="collapse" href="#favorites" aria-expanded="false" aria-controls="favorites">{% trans 'Favorite topics' %}</a>
+			</p>
+			<div class="collapse well" id="favorites">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width:5%">&nbsp;</th>
+                        <th style="width:5%">&nbsp;</th>
+                        <th style="width:40%">{% trans 'Thread / Thread Starter' %}</th>
+                        <th>{% trans 'Last post' %}</th>
+                        <th>{% trans 'Replies' %}</th>
+                        <th>{% trans 'Views' %}</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for i, topic in client.forum_favorites %}
+                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <td>
+                            <span class="forum-status {{topic.status}}"></span>
+                        </td>
+                        <td>
+                            <img src="{{ topic.first.author.email|gravatar }}?size=30" alt="{{ topic.first.author.name }}" />
+                        </td>
+                        <td>
+                            <a href="{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}">{{topic.title}}</a>
+                            <p style="font-size: .9em">{{ topic.first.author.name }}</p>
+                        </td>
+                        <td>
+                            {{ topic.last.created_at|bb_date }}
+                            <p style="font-size: .9em">{% trans 'by' %} <a href="{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}#m-{{ topic.last.id }}">{{ topic.last.author.name }} {#<img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"></a>#}</p>
+                        </td>
+                        <td>{{ topic.stats.posts_count }}</td>
+                        <td>{{ topic.stats.views_count }}</td>
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+                        <td colspan="6">{% trans 'The list is empty' %}</td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+			</div>
+            {% endif %}
+
+
+    {% if not client %}
+	<p class="text-center">
+		<a class="btn btn-primary" href="" data-toggle="modal" data-target="#login">{% trans 'Login' %}</a>
+	</p>
+    {% endif %}
+    
+{% endblock %}

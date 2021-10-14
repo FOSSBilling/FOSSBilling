@@ -12,7 +12,7 @@ The following is a set of guidelines for contributing to BoxBilling, which are h
 
 [What should I know before I get started?](#what-should-i-know-before-i-get-started)
 
-[How Can I Contribute?](#how-can-i-contribute)
+[How can I contribute?](#how-can-i-contribute)
   * [Reporting Bugs](#reporting-bugs)
   * [Suggesting Enhancements](#suggesting-enhancements)
   * [Your First Code Contribution](#your-first-code-contribution)
@@ -28,11 +28,11 @@ The following is a set of guidelines for contributing to BoxBilling, which are h
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the [BoxBilling Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [info@boxbilling.com](mailto:info@boxbilling.com).
+This project and everyone participating in it is governed by the [BoxBilling Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the moderators on our [Discord](https://boxbilling.org/discord) and [Slack](https://boxbilling.org/slack) communities.
 
 ## I don't want to read this whole thing I just have a question!!!
 
-Drop a message to info@boxbilling.com for a question. Sometimes it takes time to respond; please be patient!
+Drop a message to [Discord](https://boxbilling.org/discord) and [Slack](https://boxbilling.org/slack) communities for a question. Sometimes it takes time to respond; please be patient!
 
 ## What should I know before I get started?
 
@@ -48,7 +48,7 @@ There are 2 types of modules:
 Think of Service modules as products that you want to sell. These modules have actions related to product configuration. Lets say `Servicedownloadable` module allows you to sell Downloadable products such as e-books, images, photos, documents. Module keeps track of number of downloads, how many downloads were made.
 If you need to sell new type of product you will implement Service type module.
 
-Other modules extend whole BoxBilling api with any functionality needed. Check existing modules to get the idea of what is already shipped with default structure of BoxBilling.
+Other modules extend whole BoxBilling API with any functionality needed. Check existing modules to get the idea of what is already shipped with default structure of BoxBilling.
 
 ## How Can I Contribute?
 

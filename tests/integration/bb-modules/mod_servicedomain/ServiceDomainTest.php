@@ -70,7 +70,7 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
     public function testTld()
     {
         $array = $this->api_admin->servicedomain_tld_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'tld'               =>  '.ru',
@@ -84,7 +84,7 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
 
         $data['id'] = $id;
         $array = $this->api_admin->servicedomain_tld_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data['price_renew'] = '15';
         $bool = $this->api_admin->servicedomain_tld_update($data);
@@ -98,10 +98,10 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
     {
 
         $array = $this->api_admin->servicedomain_registrar_get_pairs();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $array = $this->api_admin->servicedomain_registrar_get_available();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'id'    =>  1,
@@ -113,7 +113,7 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
             'id'    => $id,
         );
         $array = $this->api_admin->servicedomain_registrar_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data['title'] = 'New title';
         $bool = $this->api_admin->servicedomain_registrar_update($data);
@@ -123,7 +123,7 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
     public function testInstall()
     {
         $array = $this->api_admin->servicedomain_registrar_get_available();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'code'=>$array[0],
@@ -138,18 +138,18 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
     public function testRegistrarGetList()
     {
         $array = $this->api_admin->servicedomain_registrar_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         if (count($list)) {
             $item = $list[0];
-            $this->assertInternalType('array', $item);
+            $this->assertIsArray($item);
             $this->assertArrayHasKey('id', $item);
             $this->assertArrayHasKey('title', $item);
             $this->assertArrayHasKey('label', $item);
             $this->assertArrayHasKey('config', $item);
-            $this->assertInternalType('array', $item['config']);
+            $this->assertIsArray($item['config']);
             $this->assertArrayHasKey('form', $item);
             $this->assertArrayHasKey('test_mode', $item);
         }
@@ -158,13 +158,13 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
     public function testTldGetList()
     {
         $array = $this->api_admin->servicedomain_tld_get_list();
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
         $this->assertArrayHasKey('list', $array);
         $list = $array['list'];
-        $this->assertInternalType('array', $list);
+        $this->assertIsArray($list);
         if (count($list)) {
             $item = $list[0];
-            $this->assertInternalType('array', $item);
+            $this->assertIsArray($item);
             $this->assertArrayHasKey('tld', $item);
             $this->assertArrayHasKey('price_registration', $item);
             $this->assertArrayHasKey('price_renew', $item);
@@ -175,7 +175,7 @@ class Api_Admin_ServiceDomainTest extends BBDbApiTestCase
             $this->assertArrayHasKey('min_years', $item);
             $this->assertArrayHasKey('registrar', $item);
             $registrar = $item['registrar'];
-            $this->assertInternalType('array', $registrar);
+            $this->assertIsArray($registrar);
             $this->assertArrayHasKey('id', $registrar);
             $this->assertArrayHasKey('title', $registrar);
         }

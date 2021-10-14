@@ -10,7 +10,7 @@ class GuestTest extends \BBTestCase {
      */
     protected $api = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->api= new \Box\Mod\System\Api\Guest();
     }
@@ -32,7 +32,7 @@ class GuestTest extends \BBTestCase {
 
         $this->api->setService($servuceMock);
         $result = $this->api->version();
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertNotEmpty($result);
     }
 
@@ -49,7 +49,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setService($servuceMock);
 
         $result = $this->api->company($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testphone_codes()
@@ -65,7 +65,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setService($servuceMock);
 
         $result = $this->api->phone_codes($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function teststates()
@@ -78,7 +78,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setService($servuceMock);
 
         $result = $this->api->states();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testcountries_eunion()
@@ -91,7 +91,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setService($servuceMock);
 
         $result = $this->api->countries_eunion();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testcountries()
@@ -104,7 +104,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setService($servuceMock);
 
         $result = $this->api->countries();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testparam()
@@ -128,13 +128,13 @@ class GuestTest extends \BBTestCase {
         $this->api->setService($servuceMock);
 
         $result = $this->api->param($data);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
     }
 
     public function testPeriods()
     {
         $result = $this->api->periods();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testperiod_title()
@@ -153,7 +153,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setService($servuceMock);
 
         $result = $this->api->period_title($data);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
     }
 
     public function testperiod_titleMissingCode()
@@ -166,7 +166,7 @@ class GuestTest extends \BBTestCase {
         });
         $this->api->setDi($di);
         $result = $this->api->period_title($data);
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -182,7 +182,7 @@ class GuestTest extends \BBTestCase {
 
         $this->api->setDi($di);
         $result = $this->api->current_url();
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
     }
 
     public function testtemplate_exists()
@@ -199,7 +199,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setService($servuceMock);
 
         $result = $this->api->template_exists($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertTrue($result);
     }
 
@@ -209,7 +209,7 @@ class GuestTest extends \BBTestCase {
         );
 
         $result = $this->api->template_exists($data);
-        $this->assertInternalType('bool', $result);
+        $this->assertIsBool($result);
         $this->assertFalse($result);
     }
 
@@ -234,7 +234,7 @@ class GuestTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $result = $this->api->locale();
-        $this->assertInternalType('string', $result);
+        $this->assertIsString($result);
         $this->assertNotEmpty($result);
         $this->assertEquals($setLang, $result);
     }
@@ -252,7 +252,7 @@ class GuestTest extends \BBTestCase {
 
         $this->api->setService($serviceMock);
         $result = $this->api->get_pending_messages();
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
         $this->assertEquals($messageArr, $result);
     }
 

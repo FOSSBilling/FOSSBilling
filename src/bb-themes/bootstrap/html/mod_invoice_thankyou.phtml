@@ -1,0 +1,28 @@
+{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% block meta_title %}{% trans 'Thank you' %}{% endblock %}
+
+{% block content_before %}
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">{% trans 'Payment for invoice received' %}</h1>
+				<ol class="breadcrumb">
+					<li><a href="{{'invoice'|link }}">{% trans 'Invoices' %}</a></li>
+					<li><a href="{{ 'invoice'|link }}/{{ invoice.hash }}">{{ "Invoice #%05s"|format(invoice.id) }}</a></li>
+					<li class="active">{% trans 'Payment for invoice received' %}</li>
+				</ol>
+            </div>
+{% endblock %}
+		
+{% block content %}
+	<div class="alert alert-success text-center">
+		<h2>{% trans 'Payment for invoice received' %}</h2>
+		<p>{% trans 'Your payment is being processed right now. This takes about 5 minutes to complete' %}</p>
+		<p>{% trans 'You will be automatically redirected to invoice page after 5 minutes.' %}</p>
+	</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    setTimeout(function(){ bb.redirect("{{ ('/invoice/'~invoice.hash)|link }} ");}, 5*60*1000);
+</script>
+{% endblock %}

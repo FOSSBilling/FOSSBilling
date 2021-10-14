@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -366,7 +366,7 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->getAll($sql);
     }
 
-    public function dublicateForm($data)
+    public function duplicateForm($data)
     {
 
         $fields = $this->getFormFields($data['form_id']);

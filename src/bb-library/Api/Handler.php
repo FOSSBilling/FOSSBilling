@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -79,7 +79,9 @@ final class Api_Handler implements InjectionAwareInterface
                 if($this->_acl_exception) {
                     throw new \Box_Exception('You do not have access to :mod module', array(':mod'=>$mod), 725);
                 } else {
-                    if(BB_DEBUG) error_log('You do not have access to '.$mod. ' module');
+                    if(BB_DEBUG) {
+                        error_log('You do not have access to '.$mod. ' module');
+                    }
                     return null;
                 }
             }
@@ -110,7 +112,9 @@ final class Api_Handler implements InjectionAwareInterface
             }
         }
         $res = $api->{$method_name}($arguments);
-        if($this->_enable_cache) $this->_cache[$cache_key] = $res;
+        if($this->_enable_cache){
+            $this->_cache[$cache_key] = $res;
+        }
         return $res;
     }
 }

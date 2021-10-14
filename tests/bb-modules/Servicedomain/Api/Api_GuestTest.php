@@ -8,7 +8,7 @@ class Api_GuestTest extends \BBTestCase
      */
     protected $guestApi = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->guestApi = new \Box\Mod\Servicedomain\Api\Guest();
     }
@@ -36,8 +36,8 @@ class Api_GuestTest extends \BBTestCase
         $this->guestApi->setDi($di);
 
         $result = $this->guestApi->tlds(array());
-        $this->assertInternalType('array', $result);
-        $this->assertInternalType('array', $result[0]);
+        $this->assertIsArray($result);
+        $this->assertIsArray($result[0]);
     }
 
     public function testPricing()
@@ -62,12 +62,9 @@ class Api_GuestTest extends \BBTestCase
         );
 
         $result = $this->guestApi->pricing($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testPricingTldNotFoundException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
@@ -89,8 +86,9 @@ class Api_GuestTest extends \BBTestCase
             'tld' => '.com'
         );
 
+        $this->expectException(\Box_Exception::class);
         $result = $this->guestApi->pricing($data);
-        $this->assertInternalType('array', $result);
+        $this->assertIsArray($result);
     }
 
     public function testCheck()
@@ -121,9 +119,6 @@ class Api_GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCheckSldNotValidException()
     {
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
@@ -142,12 +137,10 @@ class Api_GuestTest extends \BBTestCase
             'sld' => 'example'
         );
 
+        $this->expectException(\Box_Exception::class);
         $this->guestApi->check($data);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCheckTldNotFoundException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
@@ -175,12 +168,10 @@ class Api_GuestTest extends \BBTestCase
             'sld' => 'example'
         );
 
+        $this->expectException(\Box_Exception::class);
         $this->guestApi->check($data);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCheckDomainNotAvailableException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
@@ -208,6 +199,7 @@ class Api_GuestTest extends \BBTestCase
             'sld' => 'example'
         );
 
+        $this->expectException(\Box_Exception::class);
         $this->guestApi->check($data);
     }
 
@@ -238,9 +230,6 @@ class Api_GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCan_be_transferredTldNotFoundException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
@@ -262,12 +251,11 @@ class Api_GuestTest extends \BBTestCase
             'tld' => '.com',
             'sld' => 'example'
         );
+        
+        $this->expectException(\Box_Exception::class);
         $this->guestApi->can_be_transferred($data);
     }
 
-    /**
-     * @expectedException \Box_Exception
-     */
     public function testCan_be_transferredCanNotBeTransferredException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
@@ -289,6 +277,8 @@ class Api_GuestTest extends \BBTestCase
             'tld' => '.com',
             'sld' => 'example'
         );
+        
+        $this->expectException(\Box_Exception::class);
         $this->guestApi->can_be_transferred($data);
     }
 

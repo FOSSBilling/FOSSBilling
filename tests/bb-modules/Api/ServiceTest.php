@@ -10,7 +10,7 @@ class ServiceTest extends \BBTestCase {
      */
     protected $service = null;
 
-    public function setup()
+    public function setup(): void
     {
         $this->service= new \Box\Mod\Api\Service();
     }
@@ -45,7 +45,7 @@ class ServiceTest extends \BBTestCase {
 
         $this->service->setDi($di);
         $result = $this->service->logRequest();
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($affectedRows, $result);
     }
 
@@ -67,7 +67,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $result = $this->service->getRequestCount($since, $ip);
 
-        $this->assertInternalType('int', $result);
+        $this->assertIsInt($result);
         $this->assertEquals($requestNumber, $result);
 
     }

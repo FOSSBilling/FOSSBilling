@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -22,6 +22,17 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         $themes = $this->getService()->getThemes();
+        return array('list'=>$themes);
+    }
+    
+    /**
+     * Get list of available admin area themes
+     * 
+     * @return array 
+     */
+    public function get_admin_list($data)
+    {
+        $themes = $this->getService()->getThemes(false);
         return array('list'=>$themes);
     }
 

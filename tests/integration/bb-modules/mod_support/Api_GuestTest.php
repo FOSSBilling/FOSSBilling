@@ -13,20 +13,20 @@ class Api_Guest_SupportTest extends ApiTestCase
             'message'  =>  'Message',
         );
         $hash = $this->api_guest->support_ticket_create($data);
-        $this->assertInternalType('string', $hash);
+        $this->assertIsString($hash);
 
         $data = array(
             'hash'    => $hash,
         );
         $array = $this->api_guest->support_ticket_get($data);
-        $this->assertInternalType('array', $array);
+        $this->assertIsArray($array);
 
         $data = array(
             'hash'    => $hash,
             'message' => 'Hello',
         );
         $hash = $this->api_guest->support_ticket_reply($data);
-        $this->assertInternalType('string', $hash);
+        $this->assertIsString($hash);
 
         $bool = $this->api_guest->support_ticket_close($data);
         $this->assertTrue($bool);

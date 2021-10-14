@@ -1,0 +1,8 @@
+<ol class="breadcrumb">
+    {% if selected == 1 %}<li class="active">1 {% trans 'Select product' %}</a></li>
+	{% else %}<li><a href="{{ 'order'|link }}">1 {% trans 'Select product' %}</a></li>{% endif %}
+	{% if selected == 2 %}<li class="active">2 {% trans 'Configure' %} {% if product %} {{ product.title }}{% endif %}</li>
+	{% else %}<li>2 {% trans 'Configure' %}</li>{% endif %}
+	<li class="{% if selected == 3 %}active{% endif %}">3 {% trans 'Confirm' %}</li>
+	<li class="{% if selected == 4 %}active{% endif %}">4 {% trans 'Checkout' %}</li>
+</ol>

@@ -14,14 +14,12 @@
 
     <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}" />
     <link href="https://fonts.googleapis.com/css?family=Cuprum" rel="stylesheet" type="text/css" />
-    {{ 'print.css' | asset_url | stylesheet_tag('print') }}
-    {{ 'style.css' | asset_url | stylesheet_tag }}
-    <!--[if IE 6]>{{ 'ie6.css' | asset_url | stylesheet_tag }}<![endif]-->
-    <!--[if IE 7]>{{ 'ie.css' | asset_url | stylesheet_tag }}<![endif]-->
+    {{ 'css/print.css' | asset_url | stylesheet_tag('print') }}
+    {{ 'css/style.css' | asset_url | stylesheet_tag }}
 
-    {{ 'jquery.min.js' | asset_url | script_tag }}
-    {{ 'jquery.tipsy.js' | asset_url | script_tag }}
-    {{ 'bb-jquery.js' | asset_url | script_tag }}
+    {{ 'js/jquery.min.js' | asset_url | script_tag }}
+    {{ 'js/jquery.tipsy.js' | asset_url | script_tag }}
+    {{ 'js/bb-jquery.js' | asset_url | script_tag }}
 
     {% block opengraph %}{% endblock %}
     {% block head %}{% endblock %}
@@ -47,7 +45,7 @@
             {% if client %}
             <ul class="middleNav">
                 <li>
-                    <a href="{{ ''|link }}" class="show-tip" title="{% trans 'Dashboard' %}"><span class="big-dark-icon i-home"></span></a>
+                    <a href="{{ 'dashboard'|link }}" class="show-tip" title="{% trans 'Dashboard' %}"><span class="big-dark-icon i-home"></span></a>
                 </li>
                 <li>
                     <a href="{{ 'cart'|link }}" class="show-tip" title="{% trans 'Shopping cart' %}"><span class="big-dark-icon i-cart"></span></a>
@@ -181,10 +179,10 @@
                             <a href="{{ '/about-us'|link }}">{% trans 'About us' %}</a>
                         </li>
                         <li>
-                            <a href="{{ '/tos'|link }}">{% trans 'Terms and conditions' %}</a>
+                            <a href="{{ '/tos'|link }}">{% trans 'Terms and Conditions' %}</a>
                         </li>
                         <li>
-                            <a href="{{ '/privacy-policy'|link }}">{% trans 'Privacy policy' %}</a>
+                            <a href="{{ '/privacy-policy'|link }}">{% trans 'Privacy Policy' %}</a>
                         </li>
                         {% if guest.extension_is_on({"mod":'branding'}) %}
                         <li>
@@ -214,8 +212,6 @@
             <div class="box">
                 <div class="block">
                     <p>
-                    {# Removing this link is allowed only for BoxBilling PRO license owners. #}
-                    {#<a href="http://www.boxbilling.com" title="Billing Software" target="_blank" style="float:right">Powered by BoxBilling</a>#}
                     © {{ now|date('Y') }} {{ company.signature }}
                     </p>
                 </div>

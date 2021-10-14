@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -48,7 +48,7 @@ class Service
         }
         return $results;
     }
-    
+
     public function setParamValue($param, $value, $createIfNotExists = true)
     {
         $pdo = $this->di['pdo'];
@@ -69,10 +69,10 @@ class Service
                 }
             }
         }
-        
+
         return true;
     }
-    
+
     public function paramExists($param)
     {
         $pdo = $this->di['pdo'];
@@ -182,32 +182,7 @@ class Service
 
         return $details;
     }
-
-    public function getLicenseInfo($data)
-    {
-        $details = $this->di['license']->getDetails();
-        $owner = null;
-        $expires_at = null;
-        if(isset($details['expires_at']) && $details['expires_at']) {
-            if(is_numeric($details['expires_at'])) {
-                $expires_at = date('Y-m-d H:i:s', $details['expires_at']);
-            } else {
-                $expires_at = $details['expires_at'];
-            }
-        }
-
-        if(isset($details['licensed_to']) && $details['licensed_to']) {
-            $owner = $details['licensed_to'];
-        }
-
-        $result = array(
-            'licensed_to'   =>  $owner,
-            'key'           =>  $this->di['config']['license'],
-            'expires_at'    =>  $expires_at,
-        );
-        return $result;
-    }
-
+    
     public function getParams($data)
     {
         $query = "SELECT param, value
@@ -257,8 +232,12 @@ class Service
             $msgs['info'][] = sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install);
         }
 
-        if(!extension_loaded('mcrypt')) {
-            $msgs['info'][] = sprintf('BoxBilling requires %s extension to be enabled on this server for security reasons.', 'php mcrypt');
+        if($this->getVersion() == "0.0.1") {
+            $msgs['info'][] = 'BoxBilling couldn\'t find valid version information. This is okay if you downloaded BoxBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.';
+        }
+
+        if(!extension_loaded('openssl')) {
+            $msgs['info'][] = sprintf('BoxBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl');
         }
 
         return $this->di['array_get']($msgs, $type, array());
@@ -285,6 +264,7 @@ class Service
     public function renderString($tpl, $try_render, $vars)
     {
         $twig = $this->di['twig'];
+        //add client api if _client_id is set
         if(isset($vars['_client_id'])) {
             $identity = $this->di['db']->load('Client', $vars['_client_id']);
             if($identity instanceof \Model_Client) {
@@ -296,17 +276,34 @@ class Service
                 }
             }
         }
-
+        else{
+            // attempt adding admin api to twig
         try {
             $twig->addGlobal('admin', $this->di['api_admin']);
         } catch(\Exception $e) {
             //skip if admin is not logged in
         }
+        }
 
         try {
-            $template = $twig->loadTemplate($tpl);
+            $template = $twig->load($tpl);
             $parsed   = $template->render($vars);
         } catch (\Exception $e) {
+            //$twig->load throws error when $tpl is string
+            $parsed = $this->createTemplateFromString($tpl, $try_render, $vars);
+
+        }
+
+        return $parsed;
+    }
+
+    public function createTemplateFromString($tpl, $try_render, $vars){
+        try{
+                $twig = $this->di['twig'];
+                $template = $twig->createTemplate($tpl);
+                $parsed   = $template->render($vars);
+        }
+        catch(\Exception $e){
             $parsed = $tpl;
             if (!$try_render) {
                 throw $e;
@@ -326,7 +323,7 @@ class Service
     {
         if(isset($ip)) {
             try {
-                return $this->di['tools']->get_url('http://www.biranchi.com/ip.php', 2);
+                return $this->di['tools']->get_url('https://api.ipify.org', 2);
             } catch(\Exception $e) {
                 return '';
             }
@@ -662,6 +659,7 @@ class Service
         //default countries
         $countries = array(
             "AF" => "Afghanistan",
+            "AX" => "Aland Islands",
             "AL" => "Albania",
             "DZ" => "Algeria",
             "AS" => "American Samoa",
@@ -687,17 +685,20 @@ class Service
             "BM" => "Bermuda",
             "BT" => "Bhutan",
             "BO" => "Bolivia",
+            "BQ" => "Bonaire, Sint Eustatius and Saba",
             "BA" => "Bosnia and Herzegovina",
             "BW" => "Botswana",
             "BR" => "Brazil",
+            "IO" => "British Indian Ocean Territory",
+            "VG" => "British Virgin Islands",
             "BN" => "Brunei",
             "BG" => "Bulgaria",
             "BF" => "Burkina Faso",
             "BI" => "Burundi",
+            "CV" => "Cabo Verde",
             "KH" => "Cambodia",
             "CM" => "Cameroon",
             "CA" => "Canada",
-            "CV" => "Cape Verde",
             "KY" => "Cayman Islands",
             "CF" => "Central African Republic",
             "TD" => "Chad",
@@ -707,35 +708,37 @@ class Service
             "CC" => "Cocos (Keeling) Islands",
             "CO" => "Colombia",
             "KM" => "Comoros",
-            "CG" => "Congo - Brazzaville",
-            "CD" => "Congo - Kinshasa",
+            "CD" => "Congo (Democratic Republic of the)",
+            "CG" => "Congo (Republic of the)",
             "CK" => "Cook Islands",
             "CR" => "Costa Rica",
             "CI" => "Cote D'Ivoire",
             "HR" => "Croatia",
             "CU" => "Cuba",
+            "CW" => "Curacao",
             "CY" => "Cyprus",
-            "CZ" => "Czech Republic",
+            "CZ" => "Czechia",
             "DK" => "Denmark",
             "DJ" => "Djibouti",
             "DM" => "Dominica",
             "DO" => "Dominican Republic",
-            "TP" => "East Timor",
             "EC" => "Ecuador",
             "EG" => "Egypt",
             "SV" => "El Salvador",
             "GQ" => "Equatorial Guinea",
             "ER" => "Eritrea",
             "EE" => "Estonia",
+            "SZ" => "Eswatini",
             "ET" => "Ethiopia",
+            "FK" => "Falkland Islands (Islas Malvinas)",
             "FO" => "Faroe Islands",
             "FJ" => "Fiji",
             "FI" => "Finland",
             "FR" => "France",
             "GF" => "French Guiana",
             "PF" => "French Polynesia",
+            "TF" => "French Southern Territories",
             "GA" => "Gabon",
-            "GB" => "United Kingdom",
             "GM" => "Gambia",
             "GE" => "Georgia",
             "DE" => "Germany",
@@ -747,11 +750,11 @@ class Service
             "GP" => "Guadeloupe",
             "GU" => "Guam",
             "GT" => "Guatemala",
+            "GG" => "Guernsey",
             "GN" => "Guinea",
             "GW" => "Guinea-Bissau",
             "GY" => "Guyana",
             "HT" => "Haiti",
-            "EL" => "Hellenic Republic (Greece)",
             "HN" => "Honduras",
             "HK" => "Hong Kong",
             "HU" => "Hungary",
@@ -761,10 +764,12 @@ class Service
             "IR" => "Iran",
             "IQ" => "Iraq",
             "IE" => "Ireland",
+            "IM" => "Isle of Man",
             "IL" => "Israel",
             "IT" => "Italy",
             "JM" => "Jamaica",
             "JP" => "Japan",
+            "JE" => "Jersey",
             "JO" => "Jordan",
             "KZ" => "Kazakhstan",
             "KE" => "Kenya",
@@ -781,7 +786,6 @@ class Service
             "LT" => "Lithuania",
             "LU" => "Luxembourg",
             "MO" => "Macau",
-            "MK" => "Macedonia",
             "MG" => "Madagascar",
             "MW" => "Malawi",
             "MY" => "Malaysia",
@@ -794,6 +798,7 @@ class Service
             "MU" => "Mauritius",
             "YT" => "Mayotte",
             "MX" => "Mexico",
+            "FM" => "Micronesia",
             "MD" => "Moldova",
             "MC" => "Monaco",
             "MN" => "Mongolia",
@@ -806,7 +811,6 @@ class Service
             "NR" => "Nauru",
             "NP" => "Nepal",
             "NL" => "Netherlands",
-            "AN" => "Netherlands Antilles",
             "NC" => "New Caledonia",
             "NZ" => "New Zealand",
             "NI" => "Nicaragua",
@@ -814,11 +818,14 @@ class Service
             "NG" => "Nigeria",
             "NU" => "Niue",
             "NF" => "Norfolk Island",
+            "KP" => "North Korea",
+            "MK" => "North Macedonia",
             "MP" => "Northern Mariana Islands",
             "NO" => "Norway",
             "OM" => "Oman",
             "PK" => "Pakistan",
             "PW" => "Palau",
+            "PS" => "Palestine",
             "PA" => "Panama",
             "PG" => "Papua New Guinea",
             "PY" => "Paraguay",
@@ -833,8 +840,13 @@ class Service
             "RO" => "Romania",
             "RU" => "Russia",
             "RW" => "Rwanda",
+            "BL" => "Saint Barthelemy",
+            "SH" => "Saint Helena, Ascension and Tristan da Cunha",
             "KN" => "Saint Kitts And Nevis",
             "LC" => "Saint Lucia",
+            "MF" => "Saint Martin",
+            "VC" => "Saint Vincent and the Grenadines",
+            "PM" => "Saint Pierre And Miquelon",
             "WS" => "Samoa",
             "SM" => "San Marino",
             "ST" => "Sao Tome And Principe",
@@ -844,19 +856,20 @@ class Service
             "SC" => "Seychelles",
             "SL" => "Sierra Leone",
             "SG" => "Singapore",
+            "SX" => "Sint Maarten",
             "SK" => "Slovakia",
             "SI" => "Slovenia",
             "SB" => "Solomon Islands",
             "SO" => "Somalia",
             "ZA" => "South Africa",
+            "GS" => "South Georgia and the South Sandwich Islands",
+            "SS" => "South Sudan",
             "KR" => "South Korea",
             "ES" => "Spain",
             "LK" => "Sri Lanka",
-            "SH" => "St. Helena",
-            "PM" => "St. Pierre And Miquelon",
             "SD" => "Sudan",
             "SR" => "Suriname",
-            "SZ" => "Swaziland",
+            "SJ" => "Svalbard and Jan Mayen",
             "SE" => "Sweden",
             "CH" => "Switzerland",
             "SY" => "Syria",
@@ -864,6 +877,7 @@ class Service
             "TJ" => "Tajikistan",
             "TZ" => "Tanzania",
             "TH" => "Thailand",
+            "TP" => "Timor-Leste",
             "TG" => "Togo",
             "TK" => "Tokelau",
             "TO" => "Tonga",
@@ -876,7 +890,9 @@ class Service
             "UG" => "Uganda",
             "UA" => "Ukraine",
             "AE" => "United Arab Emirates",
+            "GB" => "United Kingdom",
             "US" => "United States",
+            "UM" => "United States Minor Outlying Islands",
             "UY" => "Uruguay",
             "UZ" => "Uzbekistan",
             "VU" => "Vanuatu",
@@ -884,6 +900,7 @@ class Service
             "VE" => "Venezuela",
             "VN" => "Vietnam",
             "VI" => "Virgin Islands (U.S.)",
+            "WF" => "Wallis and Futuna",
             "EH" => "Western Sahara",
             "YE" => "Yemen",
             "ZM" => "Zambia",
@@ -908,7 +925,7 @@ class Service
     {
         $list = array(
             'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI',
-            'FR', 'GB', 'GR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL',
+            'FR', 'GR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL',
             'PL', 'PT', 'RO', 'SE', 'SI', 'SK');
         $c = $this->getCountries();
         $res = array();
@@ -933,23 +950,22 @@ class Service
             'FI' => 24, //Finland
             'FR' => 20, //France
             'DE' => 19, //Germany
-            'GR' => 23, //Greece
+            'GR' => 24, //Greece
             'HU' => 27, //Hungary
             'IE' => 23, //Ireland
             'IT' => 22, //Italy
             'LV' => 21, //Latvia
             'LT' => 21, //Lithuania
-            'LU' => 15, //Luxembourg
+            'LU' => 17, //Luxembourg
             'MT' => 18, //Malta
             'NL' => 21, //Netherlands
             'PL' => 23, //Poland
             'PT' => 23, //Portugal
-            'RO' => 24, //Romania
+            'RO' => 19, //Romania
             'SK' => 20, //Slovakia
             'SI' => 22, //Slovenia
             'ES' => 21, //Spain
             'SE' => 25, //Sweden
-            'GB' => 20, //United Kingdom
         );
     }
 
@@ -1521,14 +1537,7 @@ class Service
      */
     public function checkLimits($model, $limit = 2)
     {
-        if (!$this->di['license']->isPro()) {
-            $model = str_replace('Model_', '', $model);
-            $count = count($this->di['db']->find($model));
 
-            if ($count >= $limit) {
-                throw new \Box_Exception('You have reached free version limit. Upgrade to PRO version of BoxBilling if you want this limit removed.', null, 875);
-            }
-        }
     }
 
     public function getNameservers()

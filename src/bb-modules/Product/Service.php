@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -175,7 +175,7 @@ class Service implements InjectionAwareInterface
     {
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Product', 5);
-        $sql      = "SELECT MAX(priority) FROM product GROUP BY priority ORDER BY priority DESC LIMIT 1";
+        $sql      = "SELECT MAX(priority) FROM product LIMIT 1";
         $priority = $this->di['db']->getCell($sql);
 
         $modelPayment       = $this->di['db']->dispense('ProductPayment');
@@ -345,12 +345,13 @@ class Service implements InjectionAwareInterface
     public function updateConfig(\Model_Product $model, $data)
     {
         /* add new config value */
-        $config = json_decode($model->config, 1);
+        $config = json_decode($model->config, true);
 
         if (isset($data['config']) && is_array($data['config'])) {
+            $config = array_intersect_key((array)$config, $data['config']);
             foreach ($data['config'] as $key => $val) {
                 $config[$key] = $val;
-                if (isset($config[$key]) && empty ($val)) {
+                if (isset($config[$key]) && empty($val) && !is_numeric($val)) {
                     unset ($config[$key]);
                 }
             }
@@ -515,8 +516,8 @@ class Service implements InjectionAwareInterface
         }
 
         if ($search) {
-            $sql .= ' AND code like %:search%';
-            $params['search'] = $search;
+            $sql .= ' AND code like :search';
+            $params['search'] = '%'.$search.'%';
         }
 
         switch ($status) {
@@ -540,7 +541,7 @@ class Service implements InjectionAwareInterface
         return array($sql, $params);
     }
 
-    public function createPromo($code, $type, $value, $products = array(), $periods = array(), $clientGroups = array(), $data)
+    public function createPromo($code, $type, $value, $products, $periods, $clientGroups, $data)
     {
         if ($this->di['db']->findOne('Promo', 'code = :code', array(':code' => $code))) {
             throw new \Box_Exception('This promo code already exists.');
@@ -688,8 +689,8 @@ class Service implements InjectionAwareInterface
         }
 
         if ($search) {
-            $sql .= ' AND m.title LIKE %:search%';
-            $params[':search'] = $search;
+            $sql .= ' AND m.title LIKE :search';
+            $params[':search'] = '%'.$search.'%';
         }
 
         $sql .= ' ORDER BY m.priority ASC';
@@ -961,6 +962,7 @@ class Service implements InjectionAwareInterface
         }
 
         $discount = 0;
+        $quantity = 1;
 
         switch ($promo->type) {
             case \Model_Promo::ABSOLUTE:
@@ -968,7 +970,12 @@ class Service implements InjectionAwareInterface
                 break;
 
             case \Model_Promo::PERCENTAGE:
-                $discount += round(($price * $promo->value / 100), 2);
+
+                if(isset($config['quantity']) && is_numeric($config['quantity'])){
+                    $quantity = $config['quantity'];
+                }
+                
+                $discount += round(($price * $quantity * $promo->value / 100), 2);
                 break;
 
             default:

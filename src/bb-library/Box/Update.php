@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -32,15 +32,8 @@ class Box_Update
     {
         return $this->di;
     }
+    private $_url = 'https://api.github.com/repos/boxbilling/boxbilling/releases/latest';
 
-    private $_url = 'http://api.boxbilling.com/compare-version.php';
-
-    public function __construct()
-    {
-        if(defined('BB_VERSION_URL') && BB_VERSION_URL) {
-            $this->_url = BB_VERSION_URL;
-        }
-    }
 
     /**
      * Returns latest information
@@ -57,10 +50,10 @@ class Box_Update
     public function getLatestVersion()
     {
         $response = $this->_getLatestVersionInfo();
-        if(!is_object($response)) {
+        if(!isset($response['tag_name'])){
             return Box_Version::VERSION;
         }
-        return $response->version;
+        return $response['tag_name'];
     }
 
     /**
@@ -70,10 +63,7 @@ class Box_Update
     public function getLatestVersionDownloadLink()
     {
         $response = $this->_getLatestVersionInfo();
-        if(isset($response->update)) {
-            return $response->update;
-        }
-        return $response->link;
+        return $response['assets'][0]['browser_download_url'];
     }
 
     /**
@@ -105,11 +95,11 @@ class Box_Update
 
     public function getJson()
     {
-        $url = $this->_url . '?current=' . Box_Version::VERSION;
+        $url = $this->_url;
         $curl = new Box_Curl($url);
         $curl->request();
         $response = $curl->getBody();
-        return json_decode($response);
+        return json_decode($response, true);
     }
 
     /**
@@ -128,7 +118,7 @@ class Box_Update
         $latest_version_archive = BB_PATH_CACHE.DIRECTORY_SEPARATOR.$latest_version.'.zip';
 
         // download latest archive from link
-        $content = $this->di['tools']->file_get_contents($this->getLatestVersionDownloadLink());
+        $content = $this->di['tools']->file_get_contents($this->getLatestVersionDownloadLink(), false, null, null, false);
         $f = fopen($latest_version_archive,'wb');
         fwrite($f,$content,strlen($content));
         fclose($f);

@@ -1,6 +1,6 @@
 {% block subject %}[{{ guest.system_company.name }}] {{ticket.subject}}{% endblock %}
 {% block content %}
-{% filter markdown %}
+{% apply markdown %}
 
 {{ticket.messages[0].content}}
 
@@ -17,6 +17,6 @@ Please do not reply to this email directly. Use the link provided above.
       
 {{ guest.system_company.signature }}
 
-{% endfilter %}
+{% endapply %}
 
 {% endblock %}

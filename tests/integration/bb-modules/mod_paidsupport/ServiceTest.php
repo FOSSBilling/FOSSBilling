@@ -3,7 +3,7 @@
 class Box_Mod_Paidsupport_ServiceTest extends ApiTestCase
 {
 
-    public function setup()
+    public function setup(): void
     {
         parent::setUp();
         $data = array(
@@ -168,7 +168,8 @@ class Box_Mod_Paidsupport_ServiceTest extends ApiTestCase
 
         $supportTickets = $this->di['db']->find('SupportTicket');
 
-        $this->setExpectedException('\Box_Exception', $errorMessage);
+        $this->expectException(\Box_Exception::class);
+        $this->expectExceptionMessage($errorMessage);
         $this->api_client->support_ticket_create($data);
 
         $supportTicketsAfterCreate = $this->di['db']->find('SupportTicket');

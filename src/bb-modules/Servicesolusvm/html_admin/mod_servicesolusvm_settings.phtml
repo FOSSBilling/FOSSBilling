@@ -28,13 +28,13 @@
         
         <div class="tab_content nopadding" id="tab-start">
             <div class="help">
-                <img src="{{ 'bb-modules/servicesolusvm/icon.png'|link }}" alt="solusvm" class="" style="width: 150px; float: right; margin: 0 5px 0 10px;"/>
+                <img src="/bb-modules/Servicesolusvm/icon.png" alt="SolusVM logo" class="" style="width: 150px; float: right; margin: 0 5px 0 10px;"/>
                 <h5>{% trans 'Getting started with SolusVM' %}</h5>
                 <p>{% trans 'This guide will help you to get started selling SolusVM virtual servers with BoxBilling.' %}</p>
             </div>
             
             <div class="body">    
-                <h2>{% trans '1. Configure your SolusVm server' %}</h2>
+                <h2>{% trans '1. Configure your SolusVM server' %}</h2>
                 <p>Make sure that your SolusVM master server is properly configured - has defined nodes, plans, free ip addresses, operating system templates.</p>
                 {% if master_url %}
                 <p><a href="{{master_url}}" class="btnIconLeft mr10 mt10" target="_blank"><span>Open SolusVm admin panel</span></a></p>
@@ -150,7 +150,7 @@
 {% endblock %}
 
 {% block js %}
-{% autoescape true js %}
+{% autoescape "js" %}
 <script type="text/javascript">
 $(function() {
     $('#testconnection').click(function(){

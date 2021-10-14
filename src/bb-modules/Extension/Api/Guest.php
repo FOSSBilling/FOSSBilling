@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -41,10 +41,10 @@ class Guest extends \Api_Abstract
      * Return active theme info
      * @return array
      */
-    public function theme()
+    public function theme($client = true)
     {
         $systemService = $this->di['mod_service']('theme');
-        return $systemService->getThemeConfig(true, null);
+        return $systemService->getThemeConfig($client, null);
     }
 
     /**
