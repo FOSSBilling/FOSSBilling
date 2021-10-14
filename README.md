@@ -53,7 +53,7 @@ The following environment is highly recommended for running BoxBilling. It *may*
     - gettext
     - openssl
 
-## Configuration example
+## Example Configurations
 - [nginx](https://github.com/boxbilling/boxbilling/blob/master/data/nginx.conf)
 - [Lighttpd](https://github.com/boxbilling/boxbilling/blob/master/data/lighttpd.conf)
 
