@@ -27,7 +27,7 @@ $connected = false;
 while (!$connected && $iter > 0) {
 
     try {
-        $dbh = new PDO($type . ':host=' . $host, ';port=' . $port, $user, $password,        array(
+        $dbh = new PDO($type . ':host=' . $host . ';port=' . $port, $user, $password,        array(
             PDO::MYSQL_ATTR_USE_BUFFERED_QUERY         => true,
             PDO::ATTR_ERRMODE                          => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE               => PDO::FETCH_ASSOC,
