@@ -92,6 +92,11 @@ return array(
          * Database password
          */
         'password'   => getenv('DB_PASS') ?: 'foo',
+
+        /**
+         * Database Port
+         */
+        'port'   =>'3306',
     ),
 
     'twig'   =>  array(

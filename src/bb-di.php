@@ -49,7 +49,7 @@ $di['crypt'] = function() use ($di) {
 $di['pdo'] = function() use ($di) {
     $c = $di['config']['db'];
 
-    $pdo = new PDO($c['type'].':host='.$c['host'].';dbname='.$c['name'],
+    $pdo = new PDO($c['type'].':host='.$c['host'].';port='.$c['port'].';dbname='.$c['name'],
         $c['user'],
         $c['password'],
         array(

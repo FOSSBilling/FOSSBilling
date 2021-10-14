@@ -17,6 +17,8 @@ $host = $config['db']['host'];
 $dbname = $config['db']['name'];
 $user = $config['db']['user'];
 $password = $config['db']['password'];
+$port = $config['db']['port'];
+
 
 echo sprintf("Connecting to database %s@%s/%s", $user, $host, $dbname) . PHP_EOL;
 
@@ -25,7 +27,7 @@ $connected = false;
 while (!$connected && $iter > 0) {
 
     try {
-        $dbh = new PDO($type . ':host=' . $host, $user, $password,        array(
+        $dbh = new PDO($type . ':host=' . $host . ';port=' . $port, $user, $password,        array(
             PDO::MYSQL_ATTR_USE_BUFFERED_QUERY         => true,
             PDO::ATTR_ERRMODE                          => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE               => PDO::FETCH_ASSOC,
