@@ -245,8 +245,13 @@ if(!file_exists($configPath) || 0 == filesize($configPath)) {
     $base_url = "http".(isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on' || $_SERVER['HTTPS'] == 1) || isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https' ? 's' : '')."://".$_SERVER['HTTP_HOST'];
     $base_url .= preg_replace('@/+$@','',dirname($_SERVER['SCRIPT_NAME']));
     $url = $base_url . '/install/index.php';
+
+    if(file_exists(BB_PATH_ROOT.'/install/index.php')){
+        header("Location: $url");
+    }
+
     $configFile = pathinfo($configPath, PATHINFO_BASENAME);
-    $msg = sprintf("The <em>$configFile</em> path seems to be invalid. You may have not generated the configuration file yet, or the configuration file may not contain the required configuration parameters. BoxBilling needs to have a valid configuration file present in order to function properly.</p> <p>Need some help with the installation? <a target='_blank' href='http://docs.boxbilling.com/en/latest/reference/installation.html'>We got it</a>. You can create the configuration file using the interactive installer, or manually create the configuration file.</p> <p>If it's your first time setting up BoxBilling, you can <a href='%s' class='button'>continue with the web-based interactive BoxBilling installation</a>.", $url);
+    $msg = sprintf("Your <b><em>$configFile</em></b> file seems to be invalid. It's possible that your preexisting configuration file may not contain the required configuration parameters or have become corrupted. BoxBilling needs to have a valid configuration file present in order to function properly.</p> <p>Please use the example config as reference <a target='_blank' href='https://raw.githubusercontent.com/boxbilling/boxbilling/master/src/bb-config-sample.php'>here</a>. You may need to manually restore a old config file or fix your existing one.</p>");
     throw new Exception($msg, 101);
 }
 
