@@ -251,7 +251,7 @@ if(!file_exists($configPath) || 0 == filesize($configPath)) {
     }
 
     $configFile = pathinfo($configPath, PATHINFO_BASENAME);
-    $msg = sprintf("Your <b><em>$configFile</em></b> file seems to be invalid. It's possible that your preexisting configuration file may not contain the required configuration parameters or have become corrupted. BoxBilling needs to have a valid configuration file present in order to function properly.</p> <p>Please us the example config as reference <a target='_blank' href='https://raw.githubusercontent.com/boxbilling/boxbilling/master/src/bb-config-sample.php'>here</a>. You may need to manually restore a old config file or fix your existing one.</p>");
+    $msg = sprintf("Your <b><em>$configFile</em></b> file seems to be invalid. It's possible that your preexisting configuration file may not contain the required configuration parameters or have become corrupted. BoxBilling needs to have a valid configuration file present in order to function properly.</p> <p>Please use the example config as reference <a target='_blank' href='https://raw.githubusercontent.com/boxbilling/boxbilling/master/src/bb-config-sample.php'>here</a>. You may need to manually restore a old config file or fix your existing one.</p>");
     throw new Exception($msg, 101);
 }
 
