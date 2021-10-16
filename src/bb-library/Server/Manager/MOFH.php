@@ -45,11 +45,11 @@ class Server_Manager_MOFH extends Server_Manager
 		// generate a unique ID.
 		//
 		// Let's understand it better with an example.
-		// So, here's the SHA-256 hash of 'boxbilling.com':
-		// 0d3019bc07e517c2158a2c7eaccdf286fdececa78de7f736f2d1d602522e80c7
+		// So, here's the SHA-256 hash of 'boxbilling.org':
+		// 702aeedf525df0301d44758453030f1722e870dcad48448bca8f6ec5b86259e4
 		//
 		// We get the first 8 characters out of that, and it produces:
-		// 0d3019bc
+		// 702aeedf
 		//
 		// Since it's a hash, it doesn't matter whether portions are discarded,
 		// but rather that the same input will produce the same hash.
@@ -86,7 +86,7 @@ class Server_Manager_MOFH extends Server_Manager
 	public function testConnection()
     {
 		$request = $this->MOFHclient->availability([
-			'domain' => 'boxbilling.com',
+			'domain' => 'boxbilling.org',
 		]);
 
 		$response = $request->send();

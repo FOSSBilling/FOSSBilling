@@ -203,7 +203,7 @@ function handler_exception($e)
         print sprintf('<p>Line: "%s"</p>', $e->getLine());
         print sprintf('Trace: <code>%s</code>', $e->getTraceAsString());
     }
-    print sprintf('<center><p><a href="http://docs.boxbilling.com/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p></center>', urlencode($e->getMessage()));
+    print sprintf('<center><p><a href="http://docs.boxbilling.org/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p></center>', urlencode($e->getMessage()));
     print("<center><hr><p>Powered by <a href=//https://github.com/boxbilling/boxbilling/>BoxBilling</a></p></center>
     </body>
     

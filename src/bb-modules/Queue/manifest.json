@@ -5,7 +5,7 @@
     "description":  "Execute long running tasks in queue",
     "homepage_url": "http://github.com/boxbilling/",
     "author":       "BoxBilling",
-    "author_url":   "http://extensions.boxbilling.com/",
-    "license":      "http://www.boxbilling.com/license.txt",
+    "author_url":   "http://extensions.boxbilling.org/",
+    "license":      "http://www.boxbilling.org/license.txt",
     "version":      "1.0.0"
 }

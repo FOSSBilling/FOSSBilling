@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <dataset>
-    <client id="1" aid="1" role="client" email="client@boxbilling.com" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" tax_exempt="0" status="active" first_name="Demo" last_name="Client" phone_cc="1" phone="646-123-4567" company="BoxBilling" address_1="Wall Street 45" city="New York" state="NY" country="US" currency="USD" postcode="123456" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
+    <client id="1" aid="1" role="client" email="client@boxbilling.org" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" tax_exempt="0" status="active" first_name="Demo" last_name="Client" phone_cc="1" phone="646-123-4567" company="BoxBilling" address_1="Wall Street 45" city="New York" state="NY" country="US" currency="USD" postcode="123456" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     <client_balance />
 
     <pay_gateway id="1" name="TwoCheckout" gateway="TwoCheckout" enabled="1" config='{"vendor_nr":"1", "secret":123}'/>
