@@ -30,7 +30,7 @@ class Admin extends \Api_Abstract
      * 		[id] => 1
      *		[role] => staff
      *		[admin_group_id] => 1
-     *		[email] => demo@boxbilling.com
+     *		[email] => demo@boxbilling.org
      *		[pass] => 89e495e7941cf9e40e6980d14a16bf023ccd4c91
      *		[name] => Demo Administrator
      *		[signature] => Sincerely Yours, Demo Administrator

@@ -45,7 +45,7 @@
         const TYPE_HOOK     = 'hook';
         const TYPE_TRANSLATION    = 'translation';
 
-        private $_url = 'https://extensions.boxbilling.com/api/';
+        private $_url = 'https://extensions.boxbilling.org/api/';
 
         public function getExtension($id, $type = Box_Extension::TYPE_MOD)
         {

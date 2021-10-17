@@ -341,7 +341,7 @@ class Service implements InjectionAwareInterface
                 'version'     => '1.0',
                 'description' => 'Theme',
                 'author'      => 'BoxBilling',
-                'author_url'  => 'http://www.boxbilling.com'
+                'author_url'  => 'http://www.boxbilling.org'
             );
         }
 

@@ -66,7 +66,7 @@ class ServiceTest extends \BBTestCase {
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('url')
-            ->will($this->returnValue('boxbilling.com/index.php/client/confirm-email/'));
+            ->will($this->returnValue('boxbilling.org/index.php/client/confirm-email/'));
 
         $di = new \Box_Di();
         $di['db'] = $database;
@@ -1144,7 +1144,7 @@ class ServiceTest extends \BBTestCase {
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
-        $email = 'client@boxbilling.com';
+        $email = 'client@boxbilling.org';
 
         $config = array(
             'allow_change_email' => true,
@@ -1165,7 +1165,7 @@ class ServiceTest extends \BBTestCase {
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
-        $email = 'client@boxbilling.com';
+        $email = 'client@boxbilling.org';
 
         $clientModel->email = $email;
 
@@ -1188,7 +1188,7 @@ class ServiceTest extends \BBTestCase {
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
-        $email = 'client@boxbilling.com';
+        $email = 'client@boxbilling.org';
 
         $config = array();
 
@@ -1207,7 +1207,7 @@ class ServiceTest extends \BBTestCase {
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
-        $email = 'client@boxbilling.com';
+        $email = 'client@boxbilling.org';
 
         $config = array(
             'allow_change_email' => false,

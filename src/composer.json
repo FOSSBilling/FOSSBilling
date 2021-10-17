@@ -5,7 +5,7 @@
     "type": "project",
     "license": "Apache-2.0",
     "keywords": ["billing", "invoice", "client management"],
-    "homepage": "http://www.boxbilling.com",
+    "homepage": "http://www.boxbilling.org",
     "authors": [
         {
             "name": "Andrius Putna",

@@ -85,7 +85,7 @@ Provide more context by answering these questions:
 
 Include details about your configuration and environment:
 
-* **Which version of BoxBilling are you using?** You can get the exact version by running `https://www.boxbilling.com/api/guest/system/version` in your browser.
+* **Which version of BoxBilling are you using?** You can get the exact version by running `https://<your domain>/api/guest/system/version` in your browser.
 * **What's the name and version of the server OS you're BoxBilling installation is running**?
 * **What's the PHP version your server is using**?
 * **What's the MySQL version your server is using**?

@@ -124,7 +124,7 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit\Framework\TestCase {
             ->getMock();
 
         $invoiceId = 1;
-        $url = 'http://www.boxbilling.com/bb-ipn.php?bb-gateway_id=0&bb_invoice_id='.$invoiceId;
+        $url = 'http://www.boxbilling.org/bb-ipn.php?bb-gateway_id=0&bb_invoice_id='.$invoiceId;
         $adapterMock->expects($this->atLeastOnce())
             ->method('getServiceUrl')
             ->with($invoiceId)

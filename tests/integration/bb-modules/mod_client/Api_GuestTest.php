@@ -63,7 +63,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
     public function testPasswordReset()
     {
         $data = array(
-            'email' =>  'client@boxbilling.com',
+            'email' =>  'client@boxbilling.org',
         );
         $bool = $this->api_guest->client_reset_password($data);
         $this->assertTrue($bool);
@@ -88,7 +88,7 @@ class Api_Guest_ClientTest extends BBDbApiTestCase
     public function testClientLogin()
     {
         $data = array(
-            'email'     =>  'client@boxbilling.com',
+            'email'     =>  'client@boxbilling.org',
             'password'  =>  'demo',
             'remember'  => true
         );

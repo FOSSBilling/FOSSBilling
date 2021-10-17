@@ -15,7 +15,7 @@ class Api_Admin_ProfileTest extends BBDbApiTestCase
         $this->assertTrue($bool);
 
         $data = array(
-            'email'     =>  'demo@boxbilling.com',
+            'email'     =>  'demo@boxbilling.org',
             'name'      =>  'Demo Admin',
             'signature' =>  'New Signature',
         );

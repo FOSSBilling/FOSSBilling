@@ -5,7 +5,7 @@
     "description":  "Branding module of BoxBilling. This extension includes the footer reference to BoxBilling's official website.",
     "homepage_url": "http://github.com/boxbilling/",
     "author":       "BoxBilling",
-    "author_url":   "http://extensions.boxbilling.com/",
-    "license":      "http://www.boxbilling.com/license.txt",
+    "author_url":   "http://extensions.boxbilling.org/",
+    "license":      "http://www.boxbilling.org/license.txt",
     "version":      "1.0.0"
 }
