@@ -498,8 +498,7 @@ class Service implements InjectionAwareInterface
                 };
             }
         } else if ($from_Currency == "USD") {
-            $guzzle = new \GuzzleHttp\Client();
-            $res = $guzzle->get("http://api.currencylayer.com/live?access_key=". $this->getKey() ."&currencies=". $to_Currency ."&format=1");
+            $res = $this->di['guzzle_client']->get("http://api.currencylayer.com/live?access_key=". $this->getKey() ."&currencies=". $to_Currency ."&format=1");
             $array = json_decode($res->getBody(), true);
             if ($array["success"] !== true) {
                 throw new \Box_Exception("<b>Currencylayer threw an error:</b><br />" . $array["error"]["info"]);
