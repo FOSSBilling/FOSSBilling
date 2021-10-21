@@ -1,11 +1,13 @@
 {
     "name": "boxbilling/boxbilling",
     "description": "Open Source Billing Software",
+    "version": "4.22.0-beta.2",
+    "readme": "https://github.com/boxbilling/boxbilling/blob/master/README.md",
     "minimum-stability": "dev",
     "type": "project",
     "license": "Apache-2.0",
     "keywords": ["billing", "invoice", "client management"],
-    "homepage": "http://www.boxbilling.org",
+    "homepage": "https://www.boxbilling.org",
     "authors": [
         {
             "name": "Andrius Putna",
@@ -29,7 +31,6 @@
         "guzzlehttp/guzzle": "*",
         "laminas/laminas-httphandlerrunner": "^2.0.1",
         "docnet/tfpdf": "^2.2",
-        "infinityfree/mofh-client": "^0.7.0",
         "nelexa/zip": "^4.0"     
         
     },
