@@ -138,11 +138,15 @@ return array(
     ),
 
     'guzzle'   =>  array(
-        // The user agent to be used when making requests to external services
+        /**
+         * The user agent to be used when making requests to external services
+         * 
+         * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
+         */
         'user_agent'    =>  'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; BoxBilling; +http://boxbilling.org) Gecko/20100101 Firefox/93.0',
 
         // Default request timeout
-        'timeout'       => 5.0,
+        'timeout'       => 0,
 
         /**
          * The HTTP Upgrade-Insecure-Requests header sends a signal to the server
