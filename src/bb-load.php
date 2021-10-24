@@ -68,7 +68,9 @@ function handler_exception($e)
       ]);
       $whoops->pushHandler($prettyPage);
       $whoops->allowQuit(false);
-      $whoops->writeToOutput(true);
+      $whoops->writeToOutput(false);
+
+      print($whoops->handleException($e));
     } else {
       $page = "<!DOCTYPE html>
       <html lang=\"en\">
