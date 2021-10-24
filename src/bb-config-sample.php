@@ -139,6 +139,9 @@ return array(
 
     'guzzle'   =>  array(
         // The user agent to be used when making requests to external services
-        'user_agent'   =>  'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; BoxBilling; +http://boxbilling.org) Gecko/20100101 Firefox/93.0',
+        'user_agent'    =>  'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; BoxBilling; +http://boxbilling.org) Gecko/20100101 Firefox/93.0',
+
+        // Default request timeout
+        'timeout'       => 5.0
     ),
 );
