@@ -261,7 +261,12 @@ $di['validator'] = function () use ($di){
     return $validator;
 };
 $di['guzzle_client'] = function () use($di) {
-    return new GuzzleHttp\Client(['headers' => ['User-Agent' => $di['config']['guzzle']['user_agent']]]);
+    return new GuzzleHttp\Client([
+        'headers' => [
+            'User-Agent' => $di['config']['guzzle']['user_agent']
+        ],
+        'timeout' => $di['config']['guzzle']['timeout']
+    ]);
 };
 $di['mail'] = function () {
     return new Box_Mail();
