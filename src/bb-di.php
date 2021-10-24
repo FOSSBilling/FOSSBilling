@@ -263,7 +263,8 @@ $di['validator'] = function () use ($di){
 $di['guzzle_client'] = function () use($di) {
     return new GuzzleHttp\Client([
         'headers' => [
-            'User-Agent' => $di['config']['guzzle']['user_agent']
+            'User-Agent' => $di['config']['guzzle']['user_agent'],
+            'Upgrade-Insecure-Requests' => $di['config']['guzzle']['upgrade_insecure_requests']
         ],
         'timeout' => $di['config']['guzzle']['timeout']
     ]);
