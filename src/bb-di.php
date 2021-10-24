@@ -260,8 +260,8 @@ $di['validator'] = function () use ($di){
     $validator->setDi($di);
     return $validator;
 };
-$di['guzzle_client'] = function () {
-    return new GuzzleHttp\Client();
+$di['guzzle_client'] = function () use($di) {
+    return new GuzzleHttp\Client(['headers' => ['User-Agent' => $di['config']['guzzle']['user_agent']]]);
 };
 $di['mail'] = function () {
     return new Box_Mail();
