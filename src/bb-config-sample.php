@@ -125,6 +125,8 @@ return array(
          * This makes brute-forcing a password useless while not outright blocking legitimate traffic.
          * When calculating, ensure the rate-limited traffic can still make enough requests to stay rate limited
          * Ex: One request every 2 seconds is more than 20 times in 1 minute, so the IP will remain throttled
+         *
+         * @since 4.22.0
          */
 
         // Throttling delay
