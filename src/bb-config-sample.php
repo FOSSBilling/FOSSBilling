@@ -150,6 +150,7 @@ return array(
 
         /**
          * Default request timeout
+         * Setting 0 will disable this limitation
          *
          * @since 4.22.0
          * @see https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/timeout
