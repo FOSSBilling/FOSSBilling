@@ -140,12 +140,18 @@ return array(
     'guzzle'   =>  array(
         /**
          * The user agent to be used when making requests to external services
-         * 
+         *
+         * @since 4.22.0
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
          */
         'user_agent'    =>  'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; BoxBilling; +http://boxbilling.org) Gecko/20100101 Firefox/93.0',
 
-        // Default request timeout
+        /**
+         * Default request timeout
+         *
+         * @since 4.22.0
+         * @see https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/timeout
+         */
         'timeout'       => 0,
 
         /**
@@ -155,6 +161,7 @@ return array(
          * 0: don't ask for an encrypted response
          * 1:       ask for an encrypted response
          * 
+         * @since 4.22.0
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Upgrade-Insecure-Requests
          */
         'upgrade_insecure_requests' => 0
