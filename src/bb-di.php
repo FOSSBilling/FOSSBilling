@@ -260,8 +260,14 @@ $di['validator'] = function () use ($di){
     $validator->setDi($di);
     return $validator;
 };
-$di['guzzle_client'] = function () {
-    return new GuzzleHttp\Client();
+$di['guzzle_client'] = function () use($di) {
+    return new GuzzleHttp\Client([
+        'headers' => [
+            'User-Agent' => $di['config']['guzzle']['user_agent'],
+            'Upgrade-Insecure-Requests' => $di['config']['guzzle']['upgrade_insecure_requests']
+        ],
+        'timeout' => $di['config']['guzzle']['timeout']
+    ]);
 };
 $di['mail'] = function () {
     return new Box_Mail();
