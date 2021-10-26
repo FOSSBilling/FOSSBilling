@@ -241,8 +241,6 @@ class Box_App {
 
     protected function processRequest()
     {
-<<<<<<< Updated upstream
-=======
         /**
          * Block requests if the system is undergoing maintenance.
          * It will respect any URL/IP whitelisting under the configuration file.
@@ -279,7 +277,6 @@ class Box_App {
             }
         }
 
->>>>>>> Stashed changes
         $sharedCount = count($this->shared);
         for($i = 0; $i < $sharedCount; $i++) {
             $mapping = $this->shared[$i];

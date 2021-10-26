@@ -350,6 +350,7 @@ final class Box_Installer
 
     private function _getConfigOutput($ns)
     {
+        // TODO: Why not just take the defaults from the bb.config.example.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
         $data = [
             'debug' => false,
 
@@ -394,6 +395,11 @@ final class Box_Installer
                 'throttle_delay' => 2,
                 'rate_span_login' =>  60,
                 'rate_limit_login' => 20,
+            ],
+            'guzzle' => [
+                'user_agent' => 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; BoxBilling; +http://boxbilling.org) Gecko/20100101 Firefox/93.0',
+                'timeout' => 0,
+                'upgrade_insecure_requests' => 0,
             ],
         ];
         $output = '<?php ' . PHP_EOL;

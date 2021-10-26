@@ -31,8 +31,7 @@
         "guzzlehttp/guzzle": "*",
         "laminas/laminas-httphandlerrunner": "^2.0.1",
         "docnet/tfpdf": "^2.2",
-        "nelexa/zip": "^4.0"     
-        
+        "nelexa/zip": "^4.0"
     },
     "suggest": {
         "ext-gettext": "*"
