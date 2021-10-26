@@ -19,7 +19,7 @@
 {% endblock %}
 {% block content %}
 
-				{% for i, article in category.articles %}
+				{% if category.articles|length > 0 %}
                 <div class="list-group">
 					{% for i, article in category.articles %}
 						<a href="{{ '/kb'|link }}/{{article.category.slug}}/{{article.slug}}" class="list-group-item">{{article.title}}</a>
@@ -32,7 +32,7 @@
 						{% trans 'Try using other keyword. No matches not for keyword:' %}
 						<b>{{ request.q }}</b>
 					</p>
-				{% endfor %}
+				{% endif %}
 	
 	<div class="well">
         <h4>{% trans 'What are you looking for?' %}</h4>
@@ -50,4 +50,3 @@
 		<a class="btn btn-default" href="{{ 'kb'|link }}"><i class="fa fa-arrow-left"></i> {% trans 'Back to list' %}</a>
 	</div>
 {% endblock %}
-
