@@ -241,6 +241,45 @@ class Box_App {
 
     protected function processRequest()
     {
+<<<<<<< Updated upstream
+=======
+        /**
+         * Block requests if the system is undergoing maintenance.
+         * It will respect any URL/IP whitelisting under the configuration file.
+         * 
+         * @todo wildcard support for IP addresses and URLs
+         * @todo doesn't work properly if BoxBilling is installed under a directory, not to the domain root.
+         * @since 4.22.0
+         */
+        $REQUEST_URI = $this->di['request']->getServer('REQUEST_URI');
+        $adminPrefix = $this->di['config']['admin_area_prefix'];
+        $allowedURLs = $this->di['config']['maintenance_mode']['allowed_urls'];
+        $allowedIPs  = $this->di['config']['maintenance_mode']['allowed_ips'];
+        $visitorIP = $_SERVER['REMOTE_ADDR'];
+
+        // Additional checks for the IP address
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $visitorIP = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $visitorIP = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        }
+        
+        if($this->di['config']['maintenance_mode']['enabled'] === true &&
+            substr($REQUEST_URI, 0, strlen($adminPrefix)) !== $adminPrefix &&
+            !in_array($REQUEST_URI, $allowedURLs) && !in_array($visitorIP, $allowedIPs) && substr($REQUEST_URI, 0, 10) !== "/api/admin")
+        {
+            // Set response code to 503.
+            header("HTTP/1.0 503 Service Unavailable");
+
+            if($this->mod == "api") {
+                $exc = new \Box_Exception('The system is undergoing maintenance. Please try again later.', [], 503);
+                return (new \Box\Mod\Api\Controller\Client())->renderJson(null, $exc);
+            } else {
+                return $this->render('mod_system_maintenance');
+            }
+        }
+
+>>>>>>> Stashed changes
         $sharedCount = count($this->shared);
         for($i = 0; $i < $sharedCount; $i++) {
             $mapping = $this->shared[$i];

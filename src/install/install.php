@@ -352,6 +352,13 @@ final class Box_Installer
     {
         $data = [
             'debug' => false,
+
+            'maintenance_mode' => [
+                'enabled' => false,
+                'allowed_urls' => ['/api/guest/staff/login'],
+                'allowed_ips' => [],
+            ],
+            
             'salt' => md5(random_bytes(13)),
             'url' => BB_URL,
             'admin_area_prefix' => '/bb-admin',

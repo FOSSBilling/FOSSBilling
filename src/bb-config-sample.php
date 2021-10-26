@@ -29,8 +29,40 @@ return array(
      */
     'debug'     => false,
 
+<<<<<<< Updated upstream
     /**
      * Enable or Disable search engine friendly urls.
+=======
+    'maintenance_mode' => array(
+        /**
+         * Enable or disable the system maintenance mode.
+         * Enabling this will block public access to your website, and API endpoints except the allowed ones won't work
+         * However, this will not block access to the administrator area.
+         * 
+         * @since 4.22.0
+         */
+        'enabled'  =>  false,
+
+        /**
+         * Don't block these URLs when the maintenance is going on.
+         *
+         * @since 4.22.0
+         */
+        'allowed_urls'  =>  array(
+            '/api/guest/staff/login'
+        ),
+
+        /**
+         * Don't block these IP addresses when the maintenance is going on.
+         *
+         * @since 4.22.0
+         */
+        'allowed_ips'  =>  array(),
+    ),
+    
+    /**
+     * Enable or disable search engine friendly URLs.
+>>>>>>> Stashed changes
      * Configure .htaccess file before enabling this feature
      * Set to TRUE if using nginx
      */

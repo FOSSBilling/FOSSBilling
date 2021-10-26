@@ -1,0 +1,46 @@
+{% set company = guest.system_company %}
+<html>
+
+<head>
+    <title>{% trans 'System undergoing maintenance' %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #eee;
+        }
+
+        h1, h2, h3, h4, p, li {
+            font-family: 'Roboto', sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="margin:50px 40px; font-size: 16px;">
+        <h1>{% trans 'System undergoing maintenance' %}</h1>
+        <p>{% trans 'Our systems are undergoing a maintenance. We\'ll be back soon.' %}</p>
+        <hr>
+        <h4>{% trans 'While we\'re away, you can still reach us over other channels.' %}</h1>
+        <li>
+            {{ company.name }}
+        </li>
+        <li>
+            {{ company.address_1 }}
+        </li>
+        <li>
+            {{ company.address_2 }}
+        </li>
+        <li>
+            {{ company.address_3 }}
+        </li>
+        <li>
+            {{ company.tel }}
+        </li>
+        <li>
+            {{ company.email }}
+        </li>
+    </div>
+</body>
+
+</html>
