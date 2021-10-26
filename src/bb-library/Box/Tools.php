@@ -66,8 +66,9 @@ class Box_Tools
 
     public function get_url($url, $timeout = 10)
     {
+        // TODO: Replace with Guzzle
         $ch = curl_init();
-        $userAgent = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0';
+        $userAgent = $this->di['config']['guzzle']['user_agent'];
         curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
