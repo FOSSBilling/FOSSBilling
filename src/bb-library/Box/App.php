@@ -241,6 +241,27 @@ class Box_App {
 
     protected function processRequest()
     {
+        // check for system maintenance
+        $REQUEST_URI = $this->di['request']->getServer('REQUEST_URI');
+        if($this->di['config']['maintenance_mode'] === true &&
+            substr(
+                $REQUEST_URI,
+                0,
+                strlen($this->di['config']['admin_area_prefix'])
+            )
+            !== $this->di['config']['admin_area_prefix'] &&
+            !in_array($REQUEST_URI, [
+                '/api/guest/staff/login'
+            ]) &&
+            substr($REQUEST_URI, 0, 11) !== "/api/admin/"
+        ){
+            if($this->mod == "api"){
+                $exc = new \Box_Exception('System under maintenance', [], 878);
+                return (new \Box\Mod\Api\Controller\Client())->renderJson(null, $exc);
+            }
+            return $this->render('maintenance');
+        }
+
         $sharedCount = count($this->shared);
         for($i = 0; $i < $sharedCount; $i++) {
             $mapping = $this->shared[$i];

@@ -30,6 +30,11 @@ return array(
     'debug'     => false,
 
     /**
+     * Enable or Disable the system maintenance mode.
+     */
+    'maintenance_mode'  =>  false,
+
+    /**
      * Enable or Disable search engine friendly urls.
      * Configure .htaccess file before enabling this feature
      * Set to TRUE if using nginx
