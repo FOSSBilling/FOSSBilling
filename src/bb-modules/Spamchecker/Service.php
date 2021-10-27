@@ -95,8 +95,8 @@ class Service implements InjectionAwareInterface
         if(isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
             $blocked_ips = array_map('trim', $blocked_ips);
-            if(in_array($di['tools']->getIpv4(), $blocked_ips)) {
-                throw new \Box_Exception('IP :ip is blocked', array(':ip'=>$di['tools']->getIpv4()), 403);
+            if(in_array($di['request']->getClientAddress(), $blocked_ips)) {
+                throw new \Box_Exception('Your IP addresss (:ip) is blocked. Please contact our support to lift your block.', array(':ip'=>$di['request']->getClientAddress()), 403);
             }
         }
     }
