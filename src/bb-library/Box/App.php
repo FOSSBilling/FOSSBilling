@@ -244,8 +244,15 @@ class Box_App {
         $REQUEST_URI = $this->di['request']->getServer('REQUEST_URI');
         $allowedURLs = $this->di['config']['maintenance_mode']['allowed_urls'];
         // Allow admin api request
-        $allowedURLs[] = '/api/admin';
-
+        $rootUrl = $this->di['config']['url'];
+        $adminApiPrefixes = [
+            "/api/guest/staff/login",
+            "/api/admin",
+        ];
+        foreach ($adminApiPrefixes as $adminApiPrefix){
+            $realAdminApiUrl = $rootUrl[-1]==='/'?substr($rootUrl, 0 ,-1).$adminApiPrefix:$rootUrl.$adminApiPrefix;
+            $allowedURLs[] = parse_url($realAdminApiUrl)['path'];
+        }
         foreach ($allowedURLs as $url){
             if(preg_match('/^'.str_replace('/','\/', $url).'(.*)/', $REQUEST_URI)!==0){
                 return false;
@@ -301,12 +308,8 @@ class Box_App {
          * Block requests if the system is undergoing maintenance.
          * It will respect any URL/IP whitelisting under the configuration file.
          * 
-         * @todo wildcard support for IP addresses and URLs
-         * @todo doesn't work properly if BoxBilling is installed under a directory, not to the domain root.
          * @since 4.22.0
          */
-
-
         if($this->di['config']['maintenance_mode']['enabled'] === true &&
             $this->checkAdminPrefix() &&
             $this->checkAllowedUrls() &&
