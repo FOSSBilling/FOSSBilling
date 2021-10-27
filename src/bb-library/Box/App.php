@@ -239,6 +239,62 @@ class Box_App {
         }
     }
 
+    protected function checkAllowedUrls()
+    {
+        $REQUEST_URI = $this->di['request']->getServer('REQUEST_URI');
+        $allowedURLs = $this->di['config']['maintenance_mode']['allowed_urls'];
+        // Allow admin api request
+        $allowedURLs[] = '/api/admin';
+
+        foreach ($allowedURLs as $url){
+            if(preg_match('/^'.str_replace('/','\/', $url).'(.*)/', $REQUEST_URI)!==0){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected function checkAllowedIPs()
+    {
+        $allowedIPs  = $this->di['config']['maintenance_mode']['allowed_ips'];
+        $visitorIP = $_SERVER['REMOTE_ADDR'];
+
+        // Additional checks for the IP address
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $visitorIP = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $visitorIP = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        }
+
+        // Check if visitorIP is in one of the given network allowed_ips
+        foreach ($allowedIPs as $network)
+        {
+            if(strpos($network, '/') == false){$network .= '/32';}
+            list($network, $netmask) = explode('/', $network, 2);
+            $network_decimal = ip2long($network);
+            $ip_decimal = ip2long($visitorIP);
+            $wildcard_decimal = pow(2, (32 - $netmask)) - 1;
+            $netmask_decimal = ~ $wildcard_decimal;
+            if(($ip_decimal & $netmask_decimal) == ($network_decimal & $netmask_decimal)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected function checkAdminPrefix()
+    {
+        $REQUEST_URI = $this->di['request']->getServer('REQUEST_URI');
+        $adminPrefix = $this->di['config']['admin_area_prefix'];
+        $rootUrl = $this->di['config']['url'];
+        $realAdminUrl = $rootUrl[-1]==='/'?substr($rootUrl, 0 ,-1).$adminPrefix:$rootUrl.$adminPrefix;
+        $realAdminPath = parse_url($realAdminUrl)['path'];
+        if(preg_match('/^'.str_replace('/','\/', $realAdminPath).'(.*)/', $REQUEST_URI)!==0){
+            return false;
+        }
+        return true;
+    }
+
     protected function processRequest()
     {
         /**
@@ -249,22 +305,12 @@ class Box_App {
          * @todo doesn't work properly if BoxBilling is installed under a directory, not to the domain root.
          * @since 4.22.0
          */
-        $REQUEST_URI = $this->di['request']->getServer('REQUEST_URI');
-        $adminPrefix = $this->di['config']['admin_area_prefix'];
-        $allowedURLs = $this->di['config']['maintenance_mode']['allowed_urls'];
-        $allowedIPs  = $this->di['config']['maintenance_mode']['allowed_ips'];
-        $visitorIP = $_SERVER['REMOTE_ADDR'];
 
-        // Additional checks for the IP address
-        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-            $visitorIP = $_SERVER['HTTP_CLIENT_IP'];
-        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $visitorIP = $_SERVER['HTTP_X_FORWARDED_FOR'];
-        }
-        
+
         if($this->di['config']['maintenance_mode']['enabled'] === true &&
-            substr($REQUEST_URI, 0, strlen($adminPrefix)) !== $adminPrefix &&
-            !in_array($REQUEST_URI, $allowedURLs) && !in_array($visitorIP, $allowedIPs) && substr($REQUEST_URI, 0, 10) !== "/api/admin")
+            $this->checkAdminPrefix() &&
+            $this->checkAllowedUrls() &&
+            $this->checkAllowedIPs())
         {
             // Set response code to 503.
             header("HTTP/1.0 503 Service Unavailable");
