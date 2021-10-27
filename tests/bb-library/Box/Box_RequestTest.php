@@ -286,15 +286,14 @@ class Box_RequestTest extends PHPUnit\Framework\TestCase
 
         $request->expects($this->exactly(2)) 
                 ->method('getServer')
-                ->withConsecutive(['HTTP_X_FORWARDED_FOR'], ['HTTP_X_FORWARDED_FOR'])
+                ->withConsecutive(['HTTP_CF_CONNECTING_IP'], ['HTTP_CF_CONNECTING_IP'])
                 ->will($this->onConsecutiveCalls(
                     '123.123.123.120',
-                    '123.123.123.121, 123.123.123.122'
+                    '123.123.123.120, 123.123.123.121'
             )
         );
 
         $this->assertEquals('123.123.123.120', $request->getClientAddress(true));
-        $this->assertEquals('123.123.123.121', $request->getClientAddress(true));
     }
 
     public function testGetClientAddress()
@@ -313,7 +312,6 @@ class Box_RequestTest extends PHPUnit\Framework\TestCase
         );
 
         $this->assertEquals('123.123.123.1', $request->getClientAddress());
-        $this->assertEquals('123.123.123.2', $request->getClientAddress(false));
     }
 
     public function testGetUserAgent()
