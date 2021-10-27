@@ -50,7 +50,8 @@ return array(
         ),
 
         /**
-         * Don't block these IP addresses when the maintenance is going on.
+         * Don't block these IP/Subnet addresses when the maintenance is going on.
+         * Supported formats: 127.0.0.1、127.0.0.1/32
          *
          * @since 4.22.0
          */
