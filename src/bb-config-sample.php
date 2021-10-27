@@ -42,6 +42,7 @@ return array(
 
         /**
          * Don't block these URLs when the maintenance is going on.
+         * Supports wildcard (e.g. '/api/guest/staff/*')
          *
          * @since 4.22.0
          */

@@ -239,16 +239,48 @@ class Box_App {
         }
     }
 
-    protected function checkAllowedUrls()
+    /**
+     * Get the visitor's IP address from the HTTP headers.
+     * 
+     * @since 4.22.0
+     */
+    protected function getVisitorIP()
+    {
+        $visitorIP = $_SERVER['REMOTE_ADDR'];
+
+        // Check to see if the CF-Connecting-IP (Cloudflare) header exists.
+        if(isset($_SERVER["HTTP_CF_CONNECTING_IP"])){
+            // If it does, assume that BoxBilling is behind Cloudflare.
+            $visitorIP = $_SERVER["HTTP_CF_CONNECTING_IP"];
+        } else {
+            // Most likely not behind the Cloudflare proxy
+            if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+                $visitorIP = $_SERVER['HTTP_CLIENT_IP'];
+            } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+                $visitorIP = $_SERVER['HTTP_X_FORWARDED_FOR'];
+            }
+        }
+
+        return $visitorIP;
+    }
+
+    /**
+     * Check if the requested URL is in the allowlist.
+     * 
+     * @since 4.22.0
+     */
+    protected function checkAllowedURLs()
     {
         $REQUEST_URI = $this->di['request']->getServer('REQUEST_URI');
         $allowedURLs = $this->di['config']['maintenance_mode']['allowed_urls'];
-        // Allow admin api request
         $rootUrl = $this->di['config']['url'];
+        
+        // Allow access to the staff panel all the time
         $adminApiPrefixes = [
             "/api/guest/staff/login",
             "/api/admin",
         ];
+
         foreach ($adminApiPrefixes as $adminApiPrefix){
             $realAdminApiUrl = $rootUrl[-1]==='/'?substr($rootUrl, 0 ,-1).$adminApiPrefix:$rootUrl.$adminApiPrefix;
             $allowedURLs[] = parse_url($realAdminApiUrl)['path'];
@@ -261,19 +293,17 @@ class Box_App {
         return true;
     }
 
+    /**
+     * Check if the visitor IP is in the allowlist.
+     * 
+     * @since 4.22.0
+     */
     protected function checkAllowedIPs()
     {
         $allowedIPs  = $this->di['config']['maintenance_mode']['allowed_ips'];
-        $visitorIP = $_SERVER['REMOTE_ADDR'];
+        $visitorIP = $this->getVisitorIP();
 
-        // Additional checks for the IP address
-        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-            $visitorIP = $_SERVER['HTTP_CLIENT_IP'];
-        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $visitorIP = $_SERVER['HTTP_X_FORWARDED_FOR'];
-        }
-
-        // Check if visitorIP is in one of the given network allowed_ips
+        // Check if the visitor is in using of the allowed IPs/networks
         foreach ($allowedIPs as $network)
         {
             if(strpos($network, '/') == false){$network .= '/32';}
@@ -289,14 +319,21 @@ class Box_App {
         return true;
     }
 
+    /**
+     * Check if the requested URL is a part of the admin area.
+     * 
+     * @since 4.22.0
+     */
     protected function checkAdminPrefix()
     {
         $REQUEST_URI = $this->di['request']->getServer('REQUEST_URI');
         $adminPrefix = $this->di['config']['admin_area_prefix'];
         $rootUrl = $this->di['config']['url'];
-        $realAdminUrl = $rootUrl[-1]==='/'?substr($rootUrl, 0 ,-1).$adminPrefix:$rootUrl.$adminPrefix;
+
+        $realAdminUrl = $rootUrl[-1] === '/' ? substr($rootUrl, 0 ,-1).$adminPrefix : $rootUrl.$adminPrefix;
         $realAdminPath = parse_url($realAdminUrl)['path'];
-        if(preg_match('/^'.str_replace('/','\/', $realAdminPath).'(.*)/', $REQUEST_URI)!==0){
+        
+        if(preg_match('/^'.str_replace('/','\/', $realAdminPath).'(.*)/', $REQUEST_URI) !== 0) {
             return false;
         }
         return true;
@@ -310,19 +347,19 @@ class Box_App {
          * 
          * @since 4.22.0
          */
-        if($this->di['config']['maintenance_mode']['enabled'] === true &&
-            $this->checkAdminPrefix() &&
-            $this->checkAllowedUrls() &&
-            $this->checkAllowedIPs())
+        if($this->di['config']['maintenance_mode']['enabled'] === true)
         {
-            // Set response code to 503.
-            header("HTTP/1.0 503 Service Unavailable");
+            // Check the allowlists
+            if($this->checkAdminPrefix() && $this->checkAllowedURLs() && $this->checkAllowedIPs()) {
+                // Set response code to 503.
+                header("HTTP/1.0 503 Service Unavailable");
 
-            if($this->mod == "api") {
-                $exc = new \Box_Exception('The system is undergoing maintenance. Please try again later.', [], 503);
-                return (new \Box\Mod\Api\Controller\Client())->renderJson(null, $exc);
-            } else {
-                return $this->render('mod_system_maintenance');
+                if($this->mod == "api") {
+                    $exc = new \Box_Exception('The system is undergoing maintenance. Please try again later.', [], 503);
+                    return (new \Box\Mod\Api\Controller\Client())->renderJson(null, $exc);
+                } else {
+                    return $this->render('mod_system_maintenance');
+                }
             }
         }
 
