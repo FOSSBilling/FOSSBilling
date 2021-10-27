@@ -282,11 +282,11 @@ class Box_App {
         ];
 
         foreach ($adminApiPrefixes as $adminApiPrefix){
-            $realAdminApiUrl = $rootUrl[-1]==='/'?substr($rootUrl, 0 ,-1).$adminApiPrefix:$rootUrl.$adminApiPrefix;
+            $realAdminApiUrl = $rootUrl [-1] === '/' ? substr($rootUrl, 0 ,-1).$adminApiPrefix : $rootUrl.$adminApiPrefix;
             $allowedURLs[] = parse_url($realAdminApiUrl)['path'];
         }
         foreach ($allowedURLs as $url){
-            if(preg_match('/^'.str_replace('/','\/', $url).'(.*)/', $REQUEST_URI)!==0){
+            if (preg_match('/^'.str_replace('/','\/', $url).'(.*)/', $REQUEST_URI) !== 0){
                 return false;
             }
         }
@@ -333,7 +333,7 @@ class Box_App {
         $realAdminUrl = $rootUrl[-1] === '/' ? substr($rootUrl, 0 ,-1).$adminPrefix : $rootUrl.$adminPrefix;
         $realAdminPath = parse_url($realAdminUrl)['path'];
         
-        if(preg_match('/^'.str_replace('/','\/', $realAdminPath).'(.*)/', $REQUEST_URI) !== 0) {
+        if (preg_match('/^'.str_replace('/','\/', $realAdminPath).'(.*)/', $REQUEST_URI) !== 0) {
             return false;
         }
         return true;
