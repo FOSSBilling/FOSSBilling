@@ -240,31 +240,6 @@ class Box_App {
     }
 
     /**
-     * Get the visitor's IP address from the HTTP headers.
-     * 
-     * @since 4.22.0
-     */
-    protected function getVisitorIP()
-    {
-        $visitorIP = $_SERVER['REMOTE_ADDR'];
-
-        // Check to see if the CF-Connecting-IP (Cloudflare) header exists.
-        if(isset($_SERVER["HTTP_CF_CONNECTING_IP"])){
-            // If it does, assume that BoxBilling is behind Cloudflare.
-            $visitorIP = $_SERVER["HTTP_CF_CONNECTING_IP"];
-        } else {
-            // Most likely not behind the Cloudflare proxy
-            if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-                $visitorIP = $_SERVER['HTTP_CLIENT_IP'];
-            } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-                $visitorIP = $_SERVER['HTTP_X_FORWARDED_FOR'];
-            }
-        }
-
-        return $visitorIP;
-    }
-
-    /**
      * Check if the requested URL is in the allowlist.
      * 
      * @since 4.22.0
@@ -301,7 +276,7 @@ class Box_App {
     protected function checkAllowedIPs()
     {
         $allowedIPs  = $this->di['config']['maintenance_mode']['allowed_ips'];
-        $visitorIP = $this->getVisitorIP();
+        $visitorIP = $this->di['request']->getClientAddress();
 
         // Check if the visitor is in using of the allowed IPs/networks
         foreach ($allowedIPs as $network)
