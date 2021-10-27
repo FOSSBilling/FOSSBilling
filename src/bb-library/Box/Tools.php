@@ -117,29 +117,6 @@ class Box_Tools
         require_once $file;
     	return new $class();
     }
-    
-    /**
-     * Get client IP
-     * @return string
-     */
-    public function getIpv4()
-    {
-        $ip = NULL;
-        if (isset($_SERVER) ) {
-            if (isset($_SERVER['REMOTE_ADDR']) ) {
-                $ip = $_SERVER['REMOTE_ADDR'];
-            } elseif (isset($_SERVER['HTTP_CLIENT_IP'])) {
-                $ip = $_SERVER['HTTP_CLIENT_IP'];
-            } elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-                $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-                $iplist = explode(',', $ip);
-                if(is_array($iplist)) {
-                    $ip = trim(array_pop($iplist));
-                }
-            }
-        }
-        return $ip;
-    }
 
     public function checkPerms($path, $perm = '0777')
     {
