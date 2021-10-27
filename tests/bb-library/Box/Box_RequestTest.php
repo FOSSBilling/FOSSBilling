@@ -294,6 +294,7 @@ class Box_RequestTest extends PHPUnit\Framework\TestCase
         );
 
         $this->assertEquals('123.123.123.120', $request->getClientAddress(true));
+        $this->assertEquals('123.123.123.121', $request->getClientAddress(true));
     }
 
     public function testGetClientAddress()
@@ -312,6 +313,7 @@ class Box_RequestTest extends PHPUnit\Framework\TestCase
         );
 
         $this->assertEquals('123.123.123.1', $request->getClientAddress());
+        $this->assertEquals('123.123.123.2', $request->getClientAddress(false));
     }
 
     public function testGetUserAgent()
