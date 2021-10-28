@@ -54,160 +54,170 @@ function handler_exception($e)
         return false;
     }
 
-    $page = "<!DOCTYPE html>
-    <html lang=\"en\">
-    
-    <head>
-        <meta charset=\"utf-8\">
-        <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
-        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
-        <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    
-        <title>An error ocurred</title>
-    
-        <!-- Google font -->
-        <link href=\"https://fonts.googleapis.com/css?family=Nunito:400,700\" rel=\"stylesheet\">
-    
-        <!-- Custom stlylesheet -->
-        <link type=\"text/css\" rel=\"stylesheet\" href=\"css/style.css\" />
+    if(defined('BB_DEBUG') && BB_DEBUG && file_exists(BB_PATH_VENDOR)) {
+      /**
+       * If advanced debugging is enabled, print Whoops instead of our error page.
+       * flip/whoops documentation: https://github.com/filp/whoops/blob/master/docs/API%20Documentation.md
+       */
+      $whoops = new \Whoops\Run;
+      $prettyPage = new \Whoops\Handler\PrettyPageHandler;
+      $prettyPage->setPageTitle("An error ocurred");
+      $prettyPage->addDataTable('BoxBilling environment', [
+        'PHP Version' => phpversion(),
+        'Error code' => $e->getCode()
+      ]);
+      $whoops->pushHandler($prettyPage);
+      $whoops->allowQuit(false);
+      $whoops->writeToOutput(false);
 
-        <style>
-        * {
-            -webkit-box-sizing: border-box;
-                    box-sizing: border-box;
-          }
-          
-          body {
-            padding: 0;
-            margin: 0;
-          }
-          
-          #error {
-            position: relative;
-            height: 100vh;
-          }
-          
-          #error .error {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            -webkit-transform: translate(-50%, -50%);
-                -ms-transform: translate(-50%, -50%);
-                    transform: translate(-50%, -50%);
-          }
-          
-          .error {
-            max-width: 560px;
-            width: 100%;
-            padding-left: 160px;
-            line-height: 1.1;
-          }
-          
-          .error .error-container {
-            position: absolute;
-            left: 0;
-            top: 0;
-            display: inline-block;
-            width: 140px;
-            height: 140px;
-            background-image: url('/bb-themes/boxbilling/assets/images/box.png');
-            background-size: cover;
-          }
-          
-          .error .error-container:before {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            -webkit-transform: scale(2.4);
-                -ms-transform: scale(2.4);
-                    transform: scale(2.4);
-            border-radius: 50%;
-            background-color: #f2f5f8;
-            z-index: -1;
-          }
-          
-          .error h1 {
-            font-family: 'Nunito', sans-serif;
-            font-size: 65px;
-            font-weight: 700;
-            margin-top: 0px;
-            margin-bottom: 10px;
-            color: #151723;
-            text-transform: uppercase;
-          }
-          
-          .error h2 {
-            font-family: 'Nunito', sans-serif;
-            font-size: 21px;
-            font-weight: 400;
-            margin: 0;
-            text-transform: uppercase;
-            color: #151723;
-          }
-          
-          .error p {
-            font-family: 'Nunito', sans-serif;
-            color: #999fa5;
-            font-weight: 400;
-          }
-          
-          .error a {
-            font-family: 'Nunito', sans-serif;
-            display: inline-block;
-            font-weight: 700;
-            border-radius: 40px;
-            text-decoration: none;
-            color: #388dbc;
-          }
-          
-          @media only screen and (max-width: 767px) {
-            .error .error-container {
-              width: 110px;
-              height: 110px;
+      print($whoops->handleException($e));
+    } else {
+      $page = "<!DOCTYPE html>
+      <html lang=\"en\">
+      
+      <head>
+          <meta charset=\"utf-8\">
+          <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
+          <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+          <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+      
+          <title>An error ocurred</title>
+      
+          <!-- Google font -->
+          <link href=\"https://fonts.googleapis.com/css?family=Nunito:400,700\" rel=\"stylesheet\">
+
+          <style>
+          * {
+              -webkit-box-sizing: border-box;
+                      box-sizing: border-box;
             }
+            
+            body {
+              padding: 0;
+              margin: 0;
+            }
+            
+            #error {
+              position: relative;
+              height: 100vh;
+            }
+            
+            #error .error {
+              position: absolute;
+              left: 50%;
+              top: 50%;
+              -webkit-transform: translate(-50%, -50%);
+                  -ms-transform: translate(-50%, -50%);
+                      transform: translate(-50%, -50%);
+            }
+            
             .error {
-              padding-left: 15px;
-              padding-right: 15px;
-              padding-top: 110px;
+              max-width: 560px;
+              width: 100%;
+              padding-left: 160px;
+              line-height: 1.1;
             }
-          }
+            
+            .error .error-container {
+              position: absolute;
+              left: 0;
+              top: 0;
+              display: inline-block;
+              width: 140px;
+              height: 140px;
+              background-image: url('/bb-themes/boxbilling/assets/images/box.png');
+              background-size: cover;
+            }
+            
+            .error .error-container:before {
+              content: '';
+              position: absolute;
+              width: 100%;
+              height: 100%;
+              -webkit-transform: scale(2.4);
+                  -ms-transform: scale(2.4);
+                      transform: scale(2.4);
+              border-radius: 50%;
+              background-color: #f2f5f8;
+              z-index: -1;
+            }
+            
+            .error h1 {
+              font-family: 'Nunito', sans-serif;
+              font-size: 65px;
+              font-weight: 700;
+              margin-top: 0px;
+              margin-bottom: 10px;
+              color: #151723;
+              text-transform: uppercase;
+            }
+            
+            .error h2 {
+              font-family: 'Nunito', sans-serif;
+              font-size: 21px;
+              font-weight: 400;
+              margin: 0;
+              text-transform: uppercase;
+              color: #151723;
+            }
+            
+            .error p {
+              font-family: 'Nunito', sans-serif;
+              color: #999fa5;
+              font-weight: 400;
+            }
+            
+            .error a {
+              font-family: 'Nunito', sans-serif;
+              display: inline-block;
+              font-weight: 700;
+              border-radius: 40px;
+              text-decoration: none;
+              color: #388dbc;
+            }
+            
+            @media only screen and (max-width: 767px) {
+              .error .error-container {
+                width: 110px;
+                height: 110px;
+              }
+              .error {
+                padding-left: 15px;
+                padding-right: 15px;
+                padding-top: 110px;
+              }
+            }
 
-          code {
-            font-family: Consolas,'courier new';
-            color: crimson;
-            background-color: #f1f1f1;
-            padding: 2px;
-            font-size: 90%;
-          }
-          
-        </style>
-    </head>
-    <body>
+            code {
+              font-family: Consolas,'courier new';
+              color: crimson;
+              background-color: #f1f1f1;
+              padding: 2px;
+              font-size: 90%;
+            }
+            
+          </style>
+      </head>
+      <body>
 
-    <div id=\"error\">
-        <div class=\"error\">
-            <div class=\"error-container\"></div>
-            <h1>Error</h1>";
-    $page = str_replace(PHP_EOL, "", $page);
-    print $page;
-    if($e->getCode()) {
-        print sprintf('<h2>Error code: <em>%s</em></h1>', $e->getCode());
+      <div id=\"error\">
+          <div class=\"error\">
+              <div class=\"error-container\"></div>
+              <h1>Error</h1>";
+
+      $page = str_replace(PHP_EOL, "", $page);
+      print $page;
+      if($e->getCode()) {
+          print sprintf('<h2>Error code: <em>%s</em></h1>', $e->getCode());
+      }
+      print sprintf('<p>%s</p>', $e->getMessage());
+      
+      print sprintf('<center><p><a href="http://docs.boxbilling.com/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p></center>', urlencode($e->getMessage()));
+      print("<center><hr><p>Powered by <a href=//https://github.com/boxbilling/boxbilling/>BoxBilling</a></p></center>
+      </body>
+      
+      </html>");
     }
-    print sprintf('<p>%s</p>', $e->getMessage());
-    
-    if(defined('BB_DEBUG') && BB_DEBUG) {
-        print sprintf('<hr><center><small><p><b>%s</b></p></small></center>', 'Set BB_DEBUG to FALSE, to hide the message below');
-        print sprintf('<p>Class: "%s"</p>', get_class($e));
-        print sprintf('<p>File: "%s"</p>', $e->getFile());
-        print sprintf('<p>Line: "%s"</p>', $e->getLine());
-        print sprintf('Trace: <code>%s</code>', $e->getTraceAsString());
-    }
-    print sprintf('<center><p><a href="http://docs.boxbilling.org/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p></center>', urlencode($e->getMessage()));
-    print("<center><hr><p>Powered by <a href=//https://github.com/boxbilling/boxbilling/>BoxBilling</a></p></center>
-    </body>
-    
-    </html>");
   }
 }
 
@@ -215,9 +225,8 @@ set_exception_handler("handler_exception");
 set_error_handler('handler_error');
 
 // Check for Composer packages
-$vendorPath = BB_PATH_ROOT.'/bb-vendor';
-if(!file_exists($vendorPath)) {
-  throw new Exception("It seems like Composer packages are missing. You have to run \"<code>composer install</code>\" in order to install them. For detailed instruction, you can see <a href=\"https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies\">Composer's getting started guide</a>.<br /><br />If you have downloaded BoxBilling from <a href=\"https://github.com/boxbilling/boxbilling/releases\">GitHub releases</a>, this shouldn't happen.", 103);
+if(!file_exists(BB_PATH_VENDOR)) {
+  throw new Exception("It seems like Composer packages are missing. You have to run \"<code>composer install</code>\" in order to install them. For detailed instruction, you can see <a href=\"https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies\">Composer's getting started guide</a>.<br /><br />If you have downloaded BoxBilling from <a href=\"https://github.com/boxbilling/boxbilling/releases\">GitHub releases</a>, this shouldn't happen.", 110);
 }
 
 // Multisite support. Load new configuration depending on the current hostname
