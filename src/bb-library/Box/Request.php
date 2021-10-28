@@ -258,9 +258,9 @@ class Box_Request implements \Box\InjectionAwareInterface
         $address = null;
         if ($trustForwardedHeader) {
             // Check to see if the CF-Connecting-IP (Cloudflare) header exists.
-            if (!empty($this->getServer("HTTP_CF_CONNECTING_IP"))) {
+            if (!empty($this->getServer('HTTP_CF_CONNECTING_IP'))) {
                 // If it does, assume that BoxBilling is behind Cloudflare.
-                $address = $this->getServer("HTTP_CF_CONNECTING_IP");
+                $address = $this->getServer('HTTP_CF_CONNECTING_IP');
             } else {
                 $address = $this->getServer('HTTP_X_FORWARDED_FOR');
             }
