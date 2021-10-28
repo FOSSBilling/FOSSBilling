@@ -284,17 +284,18 @@ class Box_RequestTest extends PHPUnit\Framework\TestCase
             ->setMethods(['getServer'])
             ->getMock();      
 
-        $request->expects($this->exactly(2)) 
+        $request->expects($this->exactly(3)) 
                 ->method('getServer')
-                ->withConsecutive(['HTTP_CF_CONNECTING_IP'], ['HTTP_CF_CONNECTING_IP'])
+                ->withConsecutive(['HTTP_CF_CONNECTING_IP'], ['HTTP_CF_CONNECTING_IP'], ['HTTP_X_FORWARDED_FOR'])
                 ->will($this->onConsecutiveCalls(
                     '123.123.123.120',
-                    '123.123.123.120, 123.123.123.121'
+                    '123.123.123.121, 123.123.123.122'
             )
         );
 
         $this->assertEquals('123.123.123.120', $request->getClientAddress(true));
         $this->assertEquals('123.123.123.121', $request->getClientAddress(true));
+        $this->assertEquals('123.123.123.122', $request->getClientAddress(true));
     }
 
     public function testGetClientAddress()
