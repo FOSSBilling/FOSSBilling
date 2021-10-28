@@ -46,9 +46,7 @@ return array(
          *
          * @since 4.22.0
          */
-        'allowed_urls'  =>  array(
-            '/api/guest/staff/login'
-        ),
+        'allowed_urls'  =>  array(),
 
         /**
          * Don't block these IP/Subnet addresses when the maintenance is going on.

@@ -356,7 +356,7 @@ final class Box_Installer
 
             'maintenance_mode' => [
                 'enabled' => false,
-                'allowed_urls' => ['/api/guest/staff/login'],
+                'allowed_urls' => [],
                 'allowed_ips' => [],
             ],
             
