@@ -141,7 +141,9 @@ class Server_Manager_Directadmin extends Server_Manager
         $fields['ssl']        = $package->getCustomValue('ssl') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have the ability to access their websites through secure https://.
         $fields['ssh']        = $package->getCustomValue('ssh') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have an ssh account.
         $fields['sysinfo']    = $package->getCustomValue('sysinfo') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have access to a page that shows the system information.
+        $fields['login_keys'] = $package->getCustomValue('login_keys') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will have access to the Login Key system for extra account passwords.
         $fields['dnscontrol'] = $package->getCustomValue('dnscontrol') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will be able to modify his/her dns records.
+        $fields['suspend_at_limit'] = $package->getCustomValue('suspend_at_limit') ? 'ON' : 'OFF'; //ON or OFF If ON, the User will be suspended if their User bandwidth limit is exceeded.
         $command              = 'CMD_API_ACCOUNT_USER';
         
         if($a->getReseller()) {
