@@ -212,16 +212,16 @@
         },
         {
             "name": "geoip2/geoip2",
-            "version": "v2.12.0",
+            "version": "v2.12.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/maxmind/GeoIP2-php.git",
-                "reference": "a320c2c3b7498c83bf9b2a670af6888c73e29f50"
+                "reference": "d25660633755f3f064ca647cd916c5c65074e408"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/maxmind/GeoIP2-php/zipball/a320c2c3b7498c83bf9b2a670af6888c73e29f50",
-                "reference": "a320c2c3b7498c83bf9b2a670af6888c73e29f50",
+                "url": "https://api.github.com/repos/maxmind/GeoIP2-php/zipball/d25660633755f3f064ca647cd916c5c65074e408",
+                "reference": "d25660633755f3f064ca647cd916c5c65074e408",
                 "shasum": ""
             },
             "require": {
@@ -264,9 +264,9 @@
             ],
             "support": {
                 "issues": "https://github.com/maxmind/GeoIP2-php/issues",
-                "source": "https://github.com/maxmind/GeoIP2-php/tree/v2.12.0"
+                "source": "https://github.com/maxmind/GeoIP2-php/tree/v2.12.1"
             },
-            "time": "2021-11-17T20:54:16+00:00"
+            "time": "2021-11-23T17:01:41+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
