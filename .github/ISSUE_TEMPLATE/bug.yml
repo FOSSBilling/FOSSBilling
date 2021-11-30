@@ -24,6 +24,7 @@ body:
       options:
         - v4.21
         - v4.22-beta.1
+        - v4.22-beta.1-maint
         - Current Master Branch
     validations:
       required: true
@@ -31,7 +32,7 @@ body:
     id: browsers
     attributes:
       label: What version of PHP are you running?
-      description: We only support between version 7.2 and 7.4, any other version will cause issues and not work.
+      description: We only support between version 7.4 and 8.1, any other version will cause issues and may not work.
       multiple: false
       options:
         - Something unsupported
