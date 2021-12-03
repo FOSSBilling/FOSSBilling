@@ -41,7 +41,7 @@
         <include name="rb.php"/>
         <include name="index.php"/>
         <include name="robots.txt"/>
-        <include name="htaccess.txt"/>
+        <include name=".htaccess"/>
 
         <exclude name="bb-library/Server/Manager/Directadmin.php"/>
         <exclude name="bb-library/Server/Manager/Ispconfig3.php"/>
