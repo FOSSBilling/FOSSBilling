@@ -248,29 +248,21 @@ class Box_Request implements \Box\InjectionAwareInterface
     }
 
     /**
-     * Gets most possible client IPv4 Address. This method search in $_SERVER[‘REMOTE_ADDR’] and optionally in $_SERVER[‘HTTP_X_FORWARDED_FOR’] or $_SERVER['HTTP_CF_CONNECTING_IP']
+     * Gets most possible client IPv4 Address. This method search in $_SERVER[‘REMOTE_ADDR’] and optionally in $_SERVER[‘HTTP_X_FORWARDED_FOR’]
      * @param bool $trustForwardedHeader - No by default because this can be changed to anything extremely easy, making it unreliable for tracking and adding a potential source for external data to be executed.
-     * @see https://stackoverflow.com/questions/3003145/how-to-get-the-client-ip-address-in-php
-     * @return string
+     * Please see: https://stackoverflow.com/questions/3003145/how-to-get-the-client-ip-address-in-php
+     * return string
      */
     public function getClientAddress($trustForwardedHeader = false)
     {
         $address = null;
-        if ($trustForwardedHeader) {
-            // Check to see if the CF-Connecting-IP (Cloudflare) header exists.
-            if (!empty($this->getServer('HTTP_CF_CONNECTING_IP'))) {
-                // If it does, assume that BoxBilling is behind Cloudflare.
-                $address = $this->getServer('HTTP_CF_CONNECTING_IP');
-            } else {
-                $address = $this->getServer('HTTP_X_FORWARDED_FOR');
-            }
+        if($trustForwardedHeader) {
+            $address = $this->getServer('HTTP_X_FORWARDED_FOR');
         }
-
-        if (is_null($address)) {
+        if(is_null($address)) {
             $address = $this->getServer('REMOTE_ADDR');
         }
-        
-        if (is_string($address)) {
+        if(is_string($address)) {
             if(strpos($address, ',') !== false) {
                 list($address) = explode(',', $address);
             }
