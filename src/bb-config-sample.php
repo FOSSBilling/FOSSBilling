@@ -30,6 +30,33 @@ return array(
      */
     'debug'     => false,
 
+    'maintenance_mode' => array(
+        /**
+         * Enable or disable the system maintenance mode.
+         * Enabling this will block public access to your website, and API endpoints except the allowed ones won't work
+         * However, this will not block access to the administrator area.
+         * 
+         * @since 4.22.0
+         */
+        'enabled'  =>  false,
+
+        /**
+         * Don't block these URLs when the maintenance is going on.
+         * Supports wildcard (e.g. '/api/guest/staff/*')
+         *
+         * @since 4.22.0
+         */
+        'allowed_urls'  =>  array(),
+
+        /**
+         * Don't block these IP/Subnet addresses when the maintenance is going on.
+         * Supported formats: 127.0.0.1、127.0.0.1/32
+         *
+         * @since 4.22.0
+         */
+        'allowed_ips'  =>  array(),
+    ),
+    
     /**
      * Enable or disable search engine friendly URLs.
      * Configure .htaccess file before enabling this feature

@@ -33,7 +33,6 @@
         "docnet/tfpdf": "^2.2",
         "nelexa/zip": "^4.0",
         "filp/whoops": "^2.14"     
-        
     },
     "suggest": {
         "ext-gettext": "*"

@@ -353,6 +353,13 @@ final class Box_Installer
         // TODO: Why not just take the defaults from the bb.config.example.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
         $data = [
             'debug' => false,
+
+            'maintenance_mode' => [
+                'enabled' => false,
+                'allowed_urls' => [],
+                'allowed_ips' => [],
+            ],
+            
             'salt' => md5(random_bytes(13)),
             'url' => BB_URL,
             'admin_area_prefix' => '/bb-admin',
