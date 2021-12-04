@@ -42,6 +42,7 @@ class Admin implements \Box\InjectionAwareInterface
                 'label' => 'Knowledge Base',
                 'uri' => $this->di['url']->adminLink('kb'),
                 'class' => 'support',
+                'sprite_class' => 'dark-sprite-icon sprite-docs',
             ),
             'subpages'  =>  array(
                 array(
