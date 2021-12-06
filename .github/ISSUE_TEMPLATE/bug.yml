@@ -25,6 +25,7 @@ body:
         - v4.21
         - v4.22-beta.1
         - v4.22-beta.1.1
+        - v4.22-beta.1.2
         - Current Master Branch
     validations:
       required: true
