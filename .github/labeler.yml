@@ -1,0 +1,21 @@
+tests/CI:
+- tests/*
+
+front-end:
+- src/bb-themes/*
+
+composer:
+- src/composer.json
+- src/composer.lock
+
+installer:
+- src/install/*
+
+payments:
+- src/bb-library/Payment*
+
+server-manager:
+- src/bb-library/Server*
+
+github-config:
+- .github/*
