@@ -18,7 +18,7 @@
         <include name="bb-data/cache"/>
         <include name="bb-data/uploads"/>
         <include name="bb-data/index.html"/>
-        <include name="bb-data/.htaccess"/>
+        <include name="bb-data/.htaccess.txt"/>
 
         <exclude name="bb-data/log/*"/>
         <exclude name="bb-data/cache/*"/>

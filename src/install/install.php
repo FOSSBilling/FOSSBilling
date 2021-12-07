@@ -39,6 +39,9 @@ define('BB_PATH_CONFIG', BB_PATH_ROOT . '/bb-config.php');
 define('BB_PATH_CRON', BB_PATH_ROOT . '/bb-cron.php');
 define('BB_PATH_LANGS', BB_PATH_ROOT . '/bb-locale');
 
+define('BB_PATH_HTACCESS', BB_PATH_ROOT . '/.htaccess');
+define('BB_PATH_HTACCESS_TEMPLATE', BB_PATH_ROOT . '/.htaccess.txt');
+
 // Ensure library/ is on include_path
 set_include_path(implode(PATH_SEPARATOR, [
     BB_PATH_LIBRARY,
@@ -314,6 +317,10 @@ final class Box_Installer
         } catch (Exception $e) {
             // E-mail was not sent, but that is not a problem
             error_log($e->getMessage());
+        }
+        
+        if(!file_exists(BB_PATH_HTACCESS) && file_exists(BB_PATH_HTACCESS_TEMPLATE)) {
+            rename(BB_PATH_HTACCESS_TEMPLATE, BB_PATH_HTACCESS);
         }
 
         return true;
