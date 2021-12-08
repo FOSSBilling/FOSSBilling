@@ -50,7 +50,7 @@ jobs:
 
       - name: Copy mandatory files to the temporary build folder
         run: |
-          cp ./src/* ./build/source/
+          cp -r ./src/* ./build/source/
           cp README.md ./build/source/
           cp LICENSE ./build/source/
           cp CHANGELOG.md ./build/source/
