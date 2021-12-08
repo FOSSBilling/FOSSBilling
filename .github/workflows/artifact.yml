@@ -76,6 +76,6 @@ jobs:
       - name: Upload the final artifact
         uses: actions/upload-artifact@v2
         with:
-          name: BoxBilling-${GITHUB_SHA::7}
+          name: BoxBilling Preview Archive
           path: ./build/distribution/
           if-no-files-found: error
