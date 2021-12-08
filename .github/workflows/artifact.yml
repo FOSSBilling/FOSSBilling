@@ -78,3 +78,4 @@ jobs:
         with:
           name: BoxBilling-${GITHUB_SHA::7}
           path: ./build/distribution/
+          if-no-files-found: error
