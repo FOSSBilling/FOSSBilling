@@ -25,6 +25,3 @@ github-config:
 
 hosting:
 - src/bb-library/Server/Manager/*
-
-payments:
-- src/bb-library/Payment/*
