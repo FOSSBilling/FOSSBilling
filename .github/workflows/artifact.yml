@@ -70,7 +70,7 @@ jobs:
         working-directory: ./build/source/bb-library/Box
 
       - name: Create the final archive
-        run: tar cvf ./build/distribution/BoxBilling-${GITHUB_SHA::7}.tar ./build/source
+        run: tar cvf ./build/distribution/BoxBilling-${GITHUB_SHA::7}.tar -C ./build/source .
 
       - name: Upload the final artifact
         uses: actions/upload-artifact@v2
