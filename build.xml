@@ -15,8 +15,8 @@
 
     <fileset id="api-sources" dir="src" followsymlinks="false">
         <include name="bb-data/log"/>
-        <include name="bb-data/cache"/>
-        <include name="bb-data/uploads"/>
+        <include name="bb-data/cache/index.html"/>
+        <include name="bb-data/uploads/index.html"/>
         <include name="bb-data/index.html"/>
         <include name="bb-data/.htaccess.txt"/>
 
