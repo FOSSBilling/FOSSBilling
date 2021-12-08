@@ -4,6 +4,9 @@ tests/CI:
 front-end:
 - src/bb-themes/*
 
+admin-panel:
+- src/bb-themes/admin_*
+
 composer:
 - src/composer.json
 - src/composer.lock
@@ -19,3 +22,9 @@ server-manager:
 
 github-config:
 - .github/*
+
+hosting:
+- src/bb-library/Server/Manager/*
+
+payments:
+- src/bb-library/Payment/*
