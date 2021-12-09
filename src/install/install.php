@@ -30,7 +30,8 @@ define('BB_URL_ADMIN', BB_URL . 'index.php?_url=/bb-admin');
 define('BB_PATH_ROOT', realpath(dirname(__FILE__) . '/..'));
 define('BB_PATH_LIBRARY', BB_PATH_ROOT . '/bb-library');
 define('BB_PATH_VENDOR', BB_PATH_ROOT . '/bb-vendor');
-define('BB_PATH_THEMES', BB_PATH_ROOT . '/install');
+define('BB_PATH_INSTALL_THEMES', BB_PATH_ROOT . '/install');
+define('BB_PATH_THEMES', BB_PATH_ROOT . '/bb-themes');
 define('BB_PATH_LICENSE', BB_PATH_ROOT . '/LICENSE');
 define('BB_PATH_SQL', BB_PATH_ROOT . '/install/sql/structure.sql');
 define('BB_PATH_SQL_DATA', BB_PATH_ROOT . '/install/sql/content.sql');
@@ -204,7 +205,7 @@ final class Box_Installer
     private function render($name, $vars = [])
     {
         $options = [
-            'paths' => [BB_PATH_THEMES],
+            'paths' => [BB_PATH_INSTALL_THEMES],
             'debug' => true,
             'charset' => 'utf-8',
             'optimizations' => 1,
