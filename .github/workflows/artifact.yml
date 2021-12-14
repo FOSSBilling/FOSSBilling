@@ -1,0 +1,80 @@
+name: Create a downloadable preview build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest]
+        php-versions: ["7.4"]
+
+    name: Create a downloadable preview build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+
+      - name: Check PHP Version
+        run: php -v
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate
+        working-directory: ./src
+
+      - name: Install Grunt-CLI
+        run: npm install -g grunt-cli
+
+      - name: Installing NPM dependencies
+        run: npm install
+
+      - name: Create temporary directories and files
+        run: |
+          mkdir -p ./src/bb-data/{cache,log,uploads}
+          touch ./src/bb-data/{cache,log,uploads}/index.html
+          mkdir -p ./build/{code-browser,code-coverage,logs,pdepend,update,distribution,source}
+
+      - name: Copy mandatory files to the temporary build folder
+        run: |
+          cp -r ./src/* ./build/source/
+          cp README.md ./build/source/
+          cp LICENSE ./build/source/
+          cp CHANGELOG.md ./build/source/
+
+      - name: Running Grunt
+        run: grunt
+        working-directory: ./build/source
+
+      - name: Installing Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest --no-dev --optimize-autoloader
+        working-directory: ./build/source
+
+      - name: Add short commit hash as the release number
+        run: |
+          sed s/0.0.1/${GITHUB_SHA::7}/ Version.php > Version2.php
+          mv Version2.php Version.php
+        working-directory: ./build/source/bb-library/Box
+
+      - name: Create the final archive
+        run: tar cvf ./build/distribution/BoxBilling-${GITHUB_SHA::7}.tar -C ./build/source .
+
+      - name: Upload the final artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: BoxBilling Preview Archive
+          path: ./build/distribution/
+          if-no-files-found: error
