@@ -21,7 +21,7 @@
         "twig/twig": "^2.13.0",
         "twig/extensions": "^1.5.4",
         "geoip2/geoip2": "^2.10.0",
-        "phpmailer/phpmailer": "6.5.1",
+        "phpmailer/phpmailer": "6.5.3",
         "mustangostang/spyc": "^0.6.3",
         "michelf/php-markdown": "1.9.0",
         "stripe/stripe-php": "^7.92.0",
