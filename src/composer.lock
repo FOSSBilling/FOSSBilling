@@ -1364,16 +1364,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v7.100.0",
+            "version": "v7.107.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "3dfc3dcd5d967a14d2852f34e544188af5f9b799"
+                "reference": "a90f74037261ed376c0d37066f396c48809c8e99"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/3dfc3dcd5d967a14d2852f34e544188af5f9b799",
-                "reference": "3dfc3dcd5d967a14d2852f34e544188af5f9b799",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/a90f74037261ed376c0d37066f396c48809c8e99",
+                "reference": "a90f74037261ed376c0d37066f396c48809c8e99",
                 "shasum": ""
             },
             "require": {
@@ -1383,11 +1383,10 @@
                 "php": ">=5.6.0"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "2.17.1",
-                "php-coveralls/php-coveralls": "^2.1",
-                "phpunit/phpunit": "^5.7",
-                "squizlabs/php_codesniffer": "^3.3",
-                "symfony/process": "~3.4"
+                "friendsofphp/php-cs-fixer": "3.2.1",
+                "phpstan/phpstan": "^1.2",
+                "phpunit/phpunit": "^5.7 || ^9.0",
+                "squizlabs/php_codesniffer": "^3.3"
             },
             "type": "library",
             "extra": {
@@ -1419,9 +1418,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v7.100.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v7.107.0"
             },
-            "time": "2021-10-11T20:05:45+00:00"
+            "time": "2021-12-09T20:40:29+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
