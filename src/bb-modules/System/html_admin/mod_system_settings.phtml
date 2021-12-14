@@ -11,6 +11,79 @@
 </ul>
 {% endblock %}
 
+{% block head %}
+<!-- Style inherited from https://gist.github.com/350d/9703098 -->
+<style type="text/css">
+#box-phpinfo {
+	background: #fff;
+	margin:0;
+	padding:0;
+	color: #233452;
+	height: 100%;
+	margin: 20px 0;
+    display: flex; align-items: center; justify-content: center;
+}
+
+#box-phpinfo table {
+	width: 1300px;
+	border: 1px solid #ccc;
+	background: #fff;
+	padding: 1px;
+}
+
+#box-phpinfo td, th {
+	border: 1px solid #FFF;
+	font-size: 12px;
+	padding: 4px 8px;
+}
+
+#box-phpinfo h1 {
+	font-family: "Cuprum", sans-serif;
+	font-size: 24px;
+	margin: 10px;
+}
+
+#box-phpinfo h2 {
+	font-family: "Cuprum", sans-serif;
+	font-size: 22px;
+	color: #0B5FB4;
+	text-align: left;
+	margin: 25px auto 5px auto;
+	width: 1300px;
+}
+
+#box-phpinfo hr {
+	background-color: #A9A9A9;
+	color: #A9A9A9;
+}
+
+#box-phpinfo .e, .v, .vr {
+	color: #333;
+	font-size: 11px;
+}
+#box-phpinfo .e {
+	background-color: #eee;
+}
+#box-phpinfo .h {
+	background-color: #0B5FB4;
+	color: #fff;
+}
+#box-phpinfo .v {
+	background-color: #F1F1F1;
+	-ms-word-break: break-all;
+	word-break: break-all;
+	word-break: break-word;
+	-webkit-hyphens: auto;
+	-moz-hyphens: auto;
+	hyphens: auto;
+}
+#box-phpinfo .iclogos {
+	display:none;
+}
+</style>
+{{ mf.bb_editor('.bb-textarea') }}
+{% endblock %}
+
 {% block content %}
 
 {% set new_params = admin.extension_config_get({"ext":"mod_system"}) %}
@@ -23,6 +96,7 @@
         <li><a href="#tab-ftp">{% trans 'FTP layer' %}</a></li>
         <li><a href="#tab-countries">{% trans 'Countries' %}</a></li>
         <li><a href="#tab-cache">{% trans 'Cache' %}</a></li>
+        <li><a href="#tab-phpinfo">{% trans 'PHP Info' %}</a></li>
     </ul>
     
     <div class="tabs_container">
@@ -466,20 +540,25 @@ ZW=Zimbabwe
                 <h3>{% trans 'Cache control' %}</h3>
             </div>
             <form method="post" action="{{ 'api/admin/system/clear_cache'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Cache folder cleared' %}">
-            <fieldset>
-            <div class="rowElem noborder">
+                <fieldset>
+                    <div class="rowElem noborder">
                         <label>{% trans 'Clear' %}</label>
                         <div class="formRight">
                             <input type="submit" value="{% trans 'Invalidate cache' %}" class="greyishBtn submitForm" />
                         </div>
                         <div class="fix"></div>
                     </div>
-            </fieldset>
+                </fieldset>
+            </form>
+        </div>
+
+        <div id="tab-phpinfo" class="tab_content nopadding">
+            <div id="box-phpinfo">
+                {{ x|phpinfo|raw }}
+            </div>
         </div>
 
     </div>
 </div>
 
 {% endblock %}
-
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

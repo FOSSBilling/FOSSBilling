@@ -67,6 +67,8 @@ class Box_TwigExtensions extends Twig\Extension\AbstractExtension implements \Bo
             'money_without_currency' => new Twig\TwigFilter('money_without_currency','twig_money_without_currency', array('needs_environment' => true, 'is_safe' => array('html'))),
             'money_convert' => new Twig\TwigFilter('money_convert', 'twig_money_convert', array('needs_environment' => true, 'is_safe' => array('html'))),
             'money_convert_without_currency' => new Twig\TwigFilter('money_convert_without_currency', array('needs_environment' => true, 'is_safe' => array('html'))),
+
+            'phpinfo' => new Twig\TwigFilter('phpinfo','twig_phpinfo'),
         );
     }
 
@@ -291,4 +293,21 @@ function twig_bbmd_filter(Twig\Environment $env, $value)
 {
     $value = twig_markdown_filter($env, $value);
     return $value;
+}
+
+/**
+ * Returns phpinfo() without it's stylings;
+ * Solution from https://www.php.net/manual/en/function.phpinfo.php#87287
+ */
+function twig_phpinfo()
+{
+    ob_start();
+    phpinfo();
+    $pinfo = ob_get_contents();
+    ob_end_clean();
+
+    // the name attribute "module_Zend Optimizer" of an anker-tag is not xhtml valide, so replace it with "module_Zend_Optimizer"
+    $pinfo = (str_replace("module_Zend Optimizer", "module_Zend_Optimizer", preg_replace('%^.*<body>(.*)</body>.*$%ms', '$1', $pinfo)));
+
+	return $pinfo;
 }
