@@ -1454,16 +1454,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v7.107.0",
+            "version": "v7.108.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "a90f74037261ed376c0d37066f396c48809c8e99"
+                "reference": "81524a3087612f1b41846b9cd6deb80150af985b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/a90f74037261ed376c0d37066f396c48809c8e99",
-                "reference": "a90f74037261ed376c0d37066f396c48809c8e99",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/81524a3087612f1b41846b9cd6deb80150af985b",
+                "reference": "81524a3087612f1b41846b9cd6deb80150af985b",
                 "shasum": ""
             },
             "require": {
@@ -1473,7 +1473,7 @@
                 "php": ">=5.6.0"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "3.2.1",
+                "friendsofphp/php-cs-fixer": "3.4.0",
                 "phpstan/phpstan": "^1.2",
                 "phpunit/phpunit": "^5.7 || ^9.0",
                 "squizlabs/php_codesniffer": "^3.3"
@@ -1508,9 +1508,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v7.107.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v7.108.0"
             },
-            "time": "2021-12-09T20:40:29+00:00"
+            "time": "2021-12-22T16:40:02+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
