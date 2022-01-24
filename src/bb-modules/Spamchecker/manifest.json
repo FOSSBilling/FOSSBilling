@@ -1,13 +1,13 @@
 {
     "id":           "spamchecker",
 	"type":         "mod",
-    "name":         "Spam Checker",
-    "description":  "Uses stopforumspam.com database and captcha verification to stop spam",
+    "name":         "SpamChecker",
+    "description":  "Uses stopforumspam.com and reCAPTCHA to stop spam",
     "icon_url":     "icon.png",
-    "project_url":  "http://www.boxbilling.com/",
-    "homepage_url": "http://www.boxbilling.com/",
+    "project_url":  "https://boxbilling.org/",
+    "homepage_url": "https://boxbilling.org/",
     "author":       "BoxBilling",
-    "author_url":   "http://www.boxbilling.cz/",
+    "author_url":   "https://boxbilling.org/",
     "license":      "Free for commercial and non-commercial use (Apache License or GPL 2)",
-    "version":      "1.0.0"
+    "version":      "4.22.0"
 }

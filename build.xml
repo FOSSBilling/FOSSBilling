@@ -15,10 +15,10 @@
 
     <fileset id="api-sources" dir="src" followsymlinks="false">
         <include name="bb-data/log"/>
-        <include name="bb-data/cache"/>
-        <include name="bb-data/uploads"/>
+        <include name="bb-data/cache/index.html"/>
+        <include name="bb-data/uploads/index.html"/>
         <include name="bb-data/index.html"/>
-        <include name="bb-data/.htaccess"/>
+        <include name="bb-data/.htaccess.txt"/>
 
         <exclude name="bb-data/log/*"/>
         <exclude name="bb-data/cache/*"/>
@@ -41,12 +41,11 @@
         <include name="rb.php"/>
         <include name="index.php"/>
         <include name="robots.txt"/>
-        <include name="htaccess.txt"/>
+        <include name=".htaccess"/>
 
         <exclude name="bb-library/Server/Manager/Directadmin.php"/>
         <exclude name="bb-library/Server/Manager/Ispconfig3.php"/>
         <exclude name="bb-library/Server/Manager/Plesk.php"/>
-        <exclude name="bb-library/Server/Manager/MOFH.php"/>
         <exclude name="bb-library/Server/Manager/Virtualmin.php"/>
 
         <exclude name="bb-library/Registrar/includes/**"/>

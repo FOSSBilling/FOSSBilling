@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -16,7 +16,7 @@ class Server_Client
     private $email      = NULL;
     private $full_name  = 'BoxBilling Client';
     private $company    = 'BoxBilling';
-    private $www        = 'www.boxbilling.com';
+    private $www        = 'www.boxbilling.org';
     private $address_1  = NULL;
     private $address_2  = NULL;
     private $street     = NULL;

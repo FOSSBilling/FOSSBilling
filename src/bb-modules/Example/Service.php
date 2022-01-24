@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -66,7 +66,7 @@ class Service
 
     /**
      * Method to update module. When you release new version to
-     * extensions.boxbilling.com then this method will be called
+     * extensions.boxbilling.org then this method will be called
      * after new files are placed.
      *
      * @param array $manifest - information about new module version

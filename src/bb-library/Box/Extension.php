@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -45,7 +45,7 @@
         const TYPE_HOOK     = 'hook';
         const TYPE_TRANSLATION    = 'translation';
 
-        private $_url = 'https://extensions.boxbilling.com/api/';
+        private $_url = 'https://extensions.boxbilling.org/api/';
 
         public function getExtension($id, $type = Box_Extension::TYPE_MOD)
         {

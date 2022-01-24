@@ -1,13 +1,13 @@
 {% extends "layout_default.phtml" %}
 {% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{{ post.title}}{% endblock %}
+{% block meta_title %}{{post.title}}{% endblock %}
 {% set active_menu = 'support' %}
 
 {% block breadcrumbs %}
 <ul>
     <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
     <li><a href="{{ 'news'|alink }}">{% trans 'News' %}</a></li>
-    <li class="lastB">{{ post.title}}</li>
+    <li class="lastB">{{post.title}}</li>
 </ul>
 {% endblock %}
 
@@ -15,13 +15,15 @@
 <div class="widget">
     
     <div class="head">
-        <h5>{{ post.title}}</h5>
+        <h5>{{post.title}}</h5>
     </div>
-    
+    <div class="help">
+        <h5>Edit post</h5>
+        <p>If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.</p>
+    </div>
+
     <form method="post" action="{{ 'api/admin/news/update'|link }}" class="mainForm save api-form" data-api-msg="{% trans 'Post updated' %}">
         <fieldset>
-            <p>If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.</p>
-            <br/>
             <textarea name="content" cols="5" rows="20" class="bb-textarea">{{ post.content }}</textarea>
             <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
             <input type="hidden" name="id" value="{{ post.id }}"/>
@@ -32,7 +34,7 @@
 <div class="widget">
     
     <div class="head">
-        <h5>{{ post.title}}</h5>
+        <h5>{{post.title}}</h5>
     </div>
     
     <form method="post" action="{{ 'api/admin/news/update'|link }}" class="mainForm save api-form" data-api-msg="{% trans 'Post updated' %}">
@@ -45,6 +47,14 @@
                 <div class="fix"></div>
             </div>
             
+            <div class="rowElem noborder">
+                <label>{% trans 'Meta description' %}</label>
+                <div class="formRight">
+                    <textarea name="description" rows="5" cols="40" placeholder="{{ post.description }}">{{ post.description }}</textarea>
+                </div>
+                <div class="fix"></div>
+            </div>
+
             <div class="rowElem">
                 <label>{% trans 'Slug' %}</label>
                 <div class="formRight">

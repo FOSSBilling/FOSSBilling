@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -181,7 +181,7 @@ function twig_asset_url(Twig\Environment $env, $asset)
 function twig_img_tag($path, $alt = null)
 {
     $alt = is_null($alt) ? pathinfo($path, PATHINFO_BASENAME) : $alt;
-    return sprintf('<img src="%s" alt="%s" title="%s"/>', $path, $alt, $alt);
+    return sprintf('<img src="%s" alt="%s" title="%s"/>', htmlspecialchars($path), htmlspecialchars($alt), htmlspecialchars($alt));
 }
 
 function twig_script_tag($path)

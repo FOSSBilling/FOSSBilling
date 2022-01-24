@@ -43,7 +43,7 @@ Can you reliably reproduce the issue? If not, provide details about how often th
 If the problem is related to working with files (e.g. opening and editing files), does the problem happen for all files and projects or only some? Does the problem happen only when working with local or remote files (e.g. on network drives), with files of a specific type (e.g. only JavaScript or Python files), with large files or files with very long lines, or with files in a specific encoding? Is there anything else special about the files you are using?
 Include details about your configuration and environment:
 
-Which version of BoxBilling are you using? You can get the exact version by running https://www.boxbilling.com/api/guest/system/version in your browser.
+Which version of BoxBilling are you using? You can get the exact version by running https://www.boxbilling.org/api/guest/system/version in your browser.
 What's the name and version of the server OS you're BoxBilling installation is running?
 What's the PHP version your server is using?
 What's the MySQL version your server is using?

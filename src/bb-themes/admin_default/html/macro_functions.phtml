@@ -128,6 +128,6 @@
 {% if guest.extension_is_on({"mod":"wysiwyg"}) %}
 {% include "mod_wysiwyg_js.phtml" with {"class":selector|trim('.#')} %}
 {% else %}
-// No WYSIWYG, no fancy stuff. Enable the WYSIWYG extension for a better management experience.
+<!-- No WYSIWYG, no fancy stuff. Enable the WYSIWYG extension for a better management experience. -->
 {% endif %}
 {% endmacro %}

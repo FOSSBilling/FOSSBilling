@@ -369,7 +369,7 @@ class ServiceTest extends \BBTestCase {
     public function testgetCurrentAdminAreaTheme()
     {
         $configMock = array(
-            'url' => 'boxbilling.com/'
+            'url' => 'boxbilling.org/'
         );
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

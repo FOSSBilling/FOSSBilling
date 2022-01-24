@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -33,6 +33,22 @@ class Service
     public function findOneActiveBySlug($slug)
     {
         return $this->di['db']->findOne('Post', 'slug = :slug AND status = "active"', array('slug'=>$slug));
+    }
+
+    /**
+     * Generate a placeholder meta description from given string.
+     *
+     * @param string $content - string to generate description from
+     *
+     * @return string
+     */
+    public function generateDescriptionFromContent($content)
+    {
+        $desc = utf8_encode($content);
+        $desc = strip_tags($desc);
+        $desc = str_replace(array("\n", "\r", "\t"), ' ', $desc);
+        $desc = substr($desc, 0, 125);
+        return $desc;
     }
 
     public function getSearchQuery($data)
@@ -67,11 +83,15 @@ class Service
 
         $pos     = strpos($row->content, '<!--more-->');
         $excerpt = ($pos) ? substr($row->content, 0, $pos) : null;
+        
+        // Remove <!--more--> from post content
+        $content = str_replace("<!--more-->", "", $row->content);
 
         $data = array(
             'id'           => $row->id,
             'title'        => $row->title,
-            'content'      => $row->content,
+            'description'  => $row->description,
+            'content'      => $content,
             'slug'         => $row->slug,
             'image'        => $row->image,
             'section'      => $row->section,

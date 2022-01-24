@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -659,7 +659,7 @@ class Service implements InjectionAwareInterface
         $content .= "Email: ".$admin_email.PHP_EOL;
         $content .= "Password: ".$admin_pass.PHP_EOL.PHP_EOL;
 
-        $content .= "Read BoxBilling documentation to get started http://docs.boxbilling.com/".PHP_EOL;
+        $content .= "Read BoxBilling documentation to get started http://docs.boxbilling.org/".PHP_EOL;
         $content .= "Thank You for using BoxBilling.".PHP_EOL;
 
         $subject = sprintf('BoxBilling is ready at "%s"', BB_URL);

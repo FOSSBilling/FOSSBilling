@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -55,7 +55,7 @@ class Box_Tools
         }
     }
 
-    public function file_get_contents($filename, $use_include_path = false, $context = null, $offset = -1, $useoffset = true)
+    public function file_get_contents($filename, $use_include_path = false, $context = null, $offset = 0, $useoffset = true)
     {
         if($useoffset){
             return file_get_contents($filename, $use_include_path, $context, $offset);
@@ -66,8 +66,9 @@ class Box_Tools
 
     public function get_url($url, $timeout = 10)
     {
+        // TODO: Replace with Guzzle
         $ch = curl_init();
-        $userAgent = 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0';
+        $userAgent = $this->di['config']['guzzle']['user_agent'];
         curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -115,29 +116,6 @@ class Box_Tools
         }
         require_once $file;
     	return new $class();
-    }
-    
-    /**
-     * Get client IP
-     * @return string
-     */
-    public function getIpv4()
-    {
-        $ip = NULL;
-        if (isset($_SERVER) ) {
-            if (isset($_SERVER['REMOTE_ADDR']) ) {
-                $ip = $_SERVER['REMOTE_ADDR'];
-            } elseif (isset($_SERVER['HTTP_CLIENT_IP'])) {
-                $ip = $_SERVER['HTTP_CLIENT_IP'];
-            } elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-                $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-                $iplist = explode(',', $ip);
-                if(is_array($iplist)) {
-                    $ip = trim(array_pop($iplist));
-                }
-            }
-        }
-        return $ip;
     }
 
     public function checkPerms($path, $perm = '0777')
