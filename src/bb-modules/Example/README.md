@@ -1,38 +1,30 @@
-# Example extension readme file
+# Example module README file
 
-Module purpose is to provide a starting point for developer to get started
-creating his own BoxBilling module.
+This module provides a starting point for the developers on creating their BoxBilling module.
 
-Explore the files and comments in the code to better understand the structure
-of module. Contact Development helpdesk at www.boxbilling.com if you need more
-information.
+Explore the files and comments in the code to understand the structure of the module better. See the social links on [our website](https://boxbilling.org) if you need further information.
 
-In general modules are used to extend BoxBilling basic functionality.
+In general, we use modules to extend the functionality of BoxBilling.
 
-All modules can access other modules via API or database
+All modules can communicate with the other modules using their API endpoints.
 
-More about extensions at https://extensions.boxbilling.com/article/getting-started
-
-# BoxBilling module requirements
+# Technical requirements about modules
 
 ## Required
-
-* Folder must contain **manifest.json** file to describe itself
+* API folder has to contain a **manifest.json** file to describe itself. The module engine will look for this file to find information about your extension.
 
 ## Optional
-
 * **README.md** - file for installation and getting started instructions
-* Folder **html_admin**     - for admin area templates, to store custom *.phtml files
-* Folder **html_client**    - for client area templates, to store custom *.phtml files
+* **html_admin** folder    - for admin area templates, to store custom *.phtml files
+* **html_client** folder    - for client area templates, to store custom *.phtml files
 ###### Controller folder
-* **Admin.php** - if module has install/uninstall instructions or
-  admin area interface
-* **Client.php** - if module has client area interface
+* **Admin.php** - if the module has install/uninstall instructions or
+  an admin area interface
+* **Client.php** - if the module has a client area interface
 ###### Api folder
-* **Admin.php**         - file for Admin API
-* **Client.php**        - file for Client API
-* **Guest.php**         - file for Guest API
+* **Admin.php**         - Administrator API, only authorized administrators will be able to call these endpoints.
+* **Client.php**        - Client API, only logged in clients will be able to call these endpoints.
+* **Guest.php**         - Guest API, no authorization is needed for these endpoints. Don't provide confidential data over these endpoints. Anybody over the internet will be able to access these information, including bots.
 
 # Tips
-
-We recommend to host your extensions on public [github.com](http://github.com) repository
+We recommend hosting your extensions on a public [GitHub](https://github.com) repository.

@@ -515,7 +515,7 @@ class ServiceTest extends \BBTestCase
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
-        $serviceLicenseModel->hosts = '["boxbilling.com"]';
+        $serviceLicenseModel->hosts = '["boxbilling.org"]';
         $value                      = 'site.com';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -535,7 +535,7 @@ class ServiceTest extends \BBTestCase
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
         $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
-        $serviceLicenseModel->hosts         = '["boxbilling.com"]';
+        $serviceLicenseModel->hosts         = '["boxbilling.org"]';
         $serviceLicenseModel->validate_host = 'example.com';
         $value                              = 'site.com';
 
@@ -634,7 +634,7 @@ class ServiceTest extends \BBTestCase
         $data                = array(
             'license_key'      => '123456Licence',
             'validate_ip'      => '1.1.1.1',
-            'validate_host'    => 'boxbilling.com',
+            'validate_host'    => 'boxbilling.org',
             'validate_version' => '1.0',
             'validate_path'    => '/usr',
             'ips'              => '2.2.2.2\n',

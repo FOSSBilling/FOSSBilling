@@ -27,12 +27,12 @@ class GuestTest extends \BBTestCase {
     {
         $data = array(
             'license' => 'license1234',
-            'host' => 'boxbilling.com',
+            'host' => 'boxbilling.org',
             'version' => 1,
         );
 
         $licenseResult =  array(
-            'licensed_to' => 'boxbilling.com',
+            'licensed_to' => 'boxbilling.org',
             'created_at' => '2011-12-31',
             'expires_at' => '2020-01+01',
             'valid' => true,

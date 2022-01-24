@@ -1,16 +1,5 @@
 <?php
 /**
- * BoxBilling
- *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
- * @license   Apache-2.0
- *
- * Copyright BoxBilling, Inc
- * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
- */
-
-/**
  * Class to paginate a list of items in a old digg style
  * 
  * @see https://github.com/gigo6000/Symfony2-Pagination-Class
@@ -18,7 +7,9 @@
  * @author Carlos Mafla <gigo6000@hotmail.com>
  * @www.inchoo.net
  */
-class Box_Paginator {
+class Box_Paginator extends Paginator {}
+
+class Paginator {
 
     /**
      * @var int current displayed page

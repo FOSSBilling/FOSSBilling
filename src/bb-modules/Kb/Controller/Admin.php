@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -42,6 +42,7 @@ class Admin implements \Box\InjectionAwareInterface
                 'label' => 'Knowledge Base',
                 'uri' => $this->di['url']->adminLink('kb'),
                 'class' => 'support',
+                'sprite_class' => 'dark-sprite-icon sprite-docs',
             ),
             'subpages'  =>  array(
                 array(

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-URLBASE="http://www.boxbilling.com/version/latest.zip"
+URLBASE="http://www.boxbilling.org/version/latest.zip"
 
 wget -O latest.zip $URLBASE
 unzip -o latest.zip

@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -130,7 +130,7 @@ class Service implements InjectionAwareInterface
             $params['search'] = $search;
         }
         
-        $sql .= ' ORDER BY p.id DESC';
+        $sql .= ' GROUP BY p.id ORDER BY p.id DESC';
         return array($sql, $params);
     }
 

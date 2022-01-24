@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -149,6 +149,11 @@ class Service implements InjectionAwareInterface
         return $pairs;
     }
 
+    /** 
+     * Returns a list of available currencies.
+     * 
+     * @return string List of currencies in the "[short code] - [name]" format
+    */
     public function getAvailableCurrencies()
     {
         $options = array(
@@ -331,6 +336,13 @@ class Service implements InjectionAwareInterface
         $db->exec($sql, $values);
     }
 
+    /** 
+     * Returns the API credentials for currencylayer.
+     * 
+     * @todo maybe make this extensible so people can choose their data provider?
+     * @since 4.22.0
+     * @return string
+    */
     public function getKey()
     {
         $sql = "SELECT `param`, `value` FROM setting";
@@ -341,6 +353,13 @@ class Service implements InjectionAwareInterface
         return $pairs['currencylayer'];
     }
 
+    /** 
+     * Updates the API credentials for currencylayer.
+     * 
+     * @todo maybe make this extensible so people can choose their data provider?
+     * @since 4.22.0
+     * @return string
+    */
     public function updateKey($key)
     {
         $sql    = "INSERT INTO `setting` (`param`, `value`, `public`, `created_at`, `updated_at`) VALUES ('currencylayer', :key, '0', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()) ON DUPLICATE KEY UPDATE `value`=:key, `updated_at`=CURRENT_TIMESTAMP()";
@@ -350,6 +369,12 @@ class Service implements InjectionAwareInterface
         $currency = $db->exec($sql, $values);
     }
 
+    /** 
+     * See if we should update exchange rates whenever the CRON jobs are run.
+     * 
+     * @since 4.22.0
+     * @return string
+    */
     public function isCronEnabled()
     {
         $sql = "SELECT `param`, `value` FROM setting";
@@ -364,6 +389,13 @@ class Service implements InjectionAwareInterface
         }
     }
 
+    /** 
+     * Enable or disable updating exchange rates whenever the CRON jobs are run.
+     * 
+     * @since 4.22.0
+     * @var int $data
+     * @return string
+    */
     public function setCron($data)
     {
         $sql    = "INSERT INTO `setting` (`param`, `value`, `public`, `created_at`, `updated_at`) VALUES ('currency_cron_enabled', :key, '0', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()) ON DUPLICATE KEY UPDATE `value`=:key, `updated_at`=CURRENT_TIMESTAMP()";
@@ -485,6 +517,15 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /** 
+     * Fetch exchange rates from external sources.
+     * Uses data from the European Central Bank and currencylayer when the base currencies are Euro and US Dollar respectively
+     * 
+     * @todo use Guzzle instead of simplexml_load_file()
+     * @var string $from    Short code for the base currency
+     * @var string $to      Short code for the target currency
+     * @return float        Exchange rate
+     */
     protected function _getRate($from, $to)
     {
         $from_Currency = urlencode($from);
@@ -498,8 +539,7 @@ class Service implements InjectionAwareInterface
                 };
             }
         } else if ($from_Currency == "USD") {
-            $guzzle = new \GuzzleHttp\Client();
-            $res = $guzzle->get("http://api.currencylayer.com/live?access_key=". $this->getKey() ."&currencies=". $to_Currency ."&format=1");
+            $res = $this->di['guzzle_client']->get("http://api.currencylayer.com/live?access_key=". $this->getKey() ."&currencies=". $to_Currency ."&format=1");
             $array = json_decode($res->getBody(), true);
             if ($array["success"] !== true) {
                 throw new \Box_Exception("<b>Currencylayer threw an error:</b><br />" . $array["error"]["info"]);
@@ -530,6 +570,10 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /** 
+     * If enabled, automatically call _getRate to fetch exchange rates whenever CRON jobs are run
+     * @since 4.22.0
+     */
     public static function onBeforeAdminCronRun(\Box_Event $event)
     {
         $di               = $event->getDi();

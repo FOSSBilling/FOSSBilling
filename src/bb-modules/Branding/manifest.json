@@ -1,11 +1,11 @@
 {
     "id":           "branding",
-	"type":         "mod",
+    "type":         "mod",
     "name":         "Branding",
-    "description":  "Branding module of BoxBilling. This extension includes the footer reference to BoxBilling's official website.",
-    "homepage_url": "http://github.com/boxbilling/",
+    "description":  "Show your support by voluntarily displaying references to BoxBilling.",
+    "homepage_url": "https://boxbilling.org",
     "author":       "BoxBilling",
-    "author_url":   "http://extensions.boxbilling.com/",
-    "license":      "http://www.boxbilling.com/license.txt",
-    "version":      "1.0.0"
+    "author_url":   "https://boxbilling.org",
+    "license":      "https://www.boxbilling.org/license.txt",
+    "version":      "4.22.0"
 }

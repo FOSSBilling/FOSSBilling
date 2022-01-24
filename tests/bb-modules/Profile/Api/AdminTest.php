@@ -13,7 +13,7 @@ class AdminTest extends \BBTestCase
         $model->id = 1;
         $model->role = 'admin';
         $model->admin_group_id = 1;
-        $model->email = 'admin@boxbilling.com';
+        $model->email = 'admin@boxbilling.org';
         $model->name = 'Admin';
         $model->signature = 'Sincerely';
         $model->status = 'active';

@@ -1,12 +1,12 @@
 # en_US translation of BoxBilling Application
-# Copyright 2011-2021 BoxBilling <info@boxbilling.com>
+# Copyright 2011-2021 BoxBilling <info@boxbilling.org>
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: 4\n"
 "POT-Creation-Date: 2015-02-27 08:07+0000\n"
 "PO-Revision-Date: 2021-08-10 09:00+0300\n"
-"Language-Team: BoxBilling TM <info@boxbilling.com>\n"
+"Language-Team: BoxBilling TM <info@boxbilling.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"

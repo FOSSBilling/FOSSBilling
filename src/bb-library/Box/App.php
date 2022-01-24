@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -239,8 +239,105 @@ class Box_App {
         }
     }
 
+    /**
+     * Check if the requested URL is in the allowlist.
+     * 
+     * @since 4.22.0
+     */
+    protected function checkAllowedURLs()
+    {
+        $REQUEST_URI = $this->di['request']->getServer('REQUEST_URI');
+        $allowedURLs = $this->di['config']['maintenance_mode']['allowed_urls'];
+        $rootUrl = $this->di['config']['url'];
+        
+        // Allow access to the staff panel all the time
+        $adminApiPrefixes = [
+            "/api/guest/staff/login",
+            "/api/admin",
+        ];
+
+        foreach ($adminApiPrefixes as $adminApiPrefix){
+            $realAdminApiUrl = $rootUrl [-1] === '/' ? substr($rootUrl, 0 ,-1).$adminApiPrefix : $rootUrl.$adminApiPrefix;
+            $allowedURLs[] = parse_url($realAdminApiUrl)['path'];
+        }
+        foreach ($allowedURLs as $url){
+            if (preg_match('/^'.str_replace('/','\/', $url).'(.*)/', $REQUEST_URI) !== 0){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Check if the visitor IP is in the allowlist.
+     * 
+     * @since 4.22.0
+     */
+    protected function checkAllowedIPs()
+    {
+        $allowedIPs  = $this->di['config']['maintenance_mode']['allowed_ips'];
+        $visitorIP = $this->di['request']->getClientAddress();
+
+        // Check if the visitor is in using of the allowed IPs/networks
+        foreach ($allowedIPs as $network)
+        {
+            if(strpos($network, '/') == false){$network .= '/32';}
+            list($network, $netmask) = explode('/', $network, 2);
+            $network_decimal = ip2long($network);
+            $ip_decimal = ip2long($visitorIP);
+            $wildcard_decimal = pow(2, (32 - $netmask)) - 1;
+            $netmask_decimal = ~ $wildcard_decimal;
+            if(($ip_decimal & $netmask_decimal) == ($network_decimal & $netmask_decimal)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Check if the requested URL is a part of the admin area.
+     * 
+     * @since 4.22.0
+     */
+    protected function checkAdminPrefix()
+    {
+        $REQUEST_URI = $this->di['request']->getServer('REQUEST_URI');
+        $adminPrefix = $this->di['config']['admin_area_prefix'];
+        $rootUrl = $this->di['config']['url'];
+
+        $realAdminUrl = $rootUrl[-1] === '/' ? substr($rootUrl, 0 ,-1).$adminPrefix : $rootUrl.$adminPrefix;
+        $realAdminPath = parse_url($realAdminUrl)['path'];
+        
+        if (preg_match('/^'.str_replace('/','\/', $realAdminPath).'(.*)/', $REQUEST_URI) !== 0) {
+            return false;
+        }
+        return true;
+    }
+
     protected function processRequest()
     {
+        /**
+         * Block requests if the system is undergoing maintenance.
+         * It will respect any URL/IP whitelisting under the configuration file.
+         * 
+         * @since 4.22.0
+         */
+        if($this->di['config']['maintenance_mode']['enabled'] === true)
+        {
+            // Check the allowlists
+            if($this->checkAdminPrefix() && $this->checkAllowedURLs() && $this->checkAllowedIPs()) {
+                // Set response code to 503.
+                header("HTTP/1.0 503 Service Unavailable");
+
+                if($this->mod == "api") {
+                    $exc = new \Box_Exception('The system is undergoing maintenance. Please try again later.', [], 503);
+                    return (new \Box\Mod\Api\Controller\Client())->renderJson(null, $exc);
+                } else {
+                    return $this->render('mod_system_maintenance');
+                }
+            }
+        }
+
         $sharedCount = count($this->shared);
         for($i = 0; $i < $sharedCount; $i++) {
             $mapping = $this->shared[$i];

@@ -155,9 +155,9 @@ class ServiceTest extends \BBTestCase {
         );
 
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('getIpv4')
+        $reqMock = $this->getMockBuilder('\Box_Request')->getMock();
+        $reqMock->expects($this->atLeastOnce())
+            ->method('getClientAddress')
             ->willReturn($clientIp);
 
         $di = new \Box_Di();
@@ -166,7 +166,7 @@ class ServiceTest extends \BBTestCase {
                 return $modConfig;
             }
         });
-        $di['tools'] = $toolsMock;
+        $di['request'] = $reqMock;
 
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
@@ -175,7 +175,7 @@ class ServiceTest extends \BBTestCase {
             ->willReturn($di);
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage(sprintf("IP %s is blocked", $clientIp), 403);
+        $this->expectExceptionMessage(sprintf("Your IP addresss (%s) is blocked. Please contact our support to lift your block.", $clientIp), 403);
         $this->service->isBlockedIp($boxEventMock);
     }
 
@@ -188,9 +188,9 @@ class ServiceTest extends \BBTestCase {
         );
 
 
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('getIpv4')
+        $reqMock = $this->getMockBuilder('\Box_Request')->getMock();
+        $reqMock->expects($this->atLeastOnce())
+            ->method('getClientAddress')
             ->willReturn($clientIp);
 
         $di = new \Box_Di();
@@ -199,7 +199,7 @@ class ServiceTest extends \BBTestCase {
                 return $modConfig;
             }
         });
-        $di['tools'] = $toolsMock;
+        $di['request'] = $reqMock;
 
         $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
             ->getMock();
@@ -253,13 +253,13 @@ class ServiceTest extends \BBTestCase {
     {
         return array(
             array(
-                '{"success" : "true", "username" : {"appears" : "true" }}', 'Your Username is blacklisted in global database'
+                '{"success" : "true", "username" : {"appears" : "true" }}', 'Your username is blacklisted in the Stop Forum Spam database'
             ),
             array(
-                '{"success" : "true", "email" : {"appears" : "true" }}', 'Your Email is blacklisted in global database'
+                '{"success" : "true", "email" : {"appears" : "true" }}', 'Your e-mail is blacklisted in the Stop Forum Spam database'
             ),
             array(
-                '{"success" : "true", "ip" : {"appears" : "true" }}', 'Your IP is blacklisted in global database'
+                '{"success" : "true", "ip" : {"appears" : "true" }}', 'Your IP address is blacklisted in the Stop Forum Spam database'
             ),
         );
     }

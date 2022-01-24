@@ -33,9 +33,10 @@
 	</style>
 	{% endif %}
 
-    <!-- Custom Fonts -->
-    <link href="{{ 'font-awesome/css/font-awesome.min.css' | asset_url }}" rel="stylesheet" type="text/css">
-	
+    <!-- Font Awesome -->
+    <link href="{{ 'font-awesome/css/fontawesome.min.css' | asset_url }}" rel="stylesheet" type="text/css">
+	<link href="{{ 'font-awesome/css/solid.min.css' | asset_url }}" rel="stylesheet" type="text/css">
+
 	<!-- jQuery -->
     <script src="{{ 'js/jquery.js' | asset_url }}"></script>
 	
@@ -106,7 +107,7 @@
 								<li><a href="{{ 'client/me'|link }}" title="{% trans 'Profile' %}"><i class="fa fa-user"></i> {% trans 'Manage profile' %}</a></li>
 								{% if settings.show_client_emails %}<li><a href="{{ 'email'|link }}" title="{% trans 'Emails'%}"><i class="fa fa-envelope"></i> {% trans 'Emails'%}</a></li>{% endif %}
 								{% if settings.show_client_balance %}<li><a href="{{ 'client/balance'|link }}"><i class="fa fa-bank"></i> {% trans 'Balance' %}: {{ profile.balance | money(profile.currency) }}</a></li>{% endif %}
-								<li><a href="{{ 'client/logout'|link }}" title="{% trans 'Sign out' %}"><i class="fa fa-sign-out"></i> {% trans 'Sign out' %}</a></li>
+								<li><a href="{{ 'client/logout'|link }}" title="{% trans 'Sign out' %}"><i class="fa fa-sign-out-alt"></i> {% trans 'Sign out' %}</a></li>
 							</ul>
 						</li>
 					{% else %}			

@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -341,7 +341,7 @@ class Service implements InjectionAwareInterface
                 'version'     => '1.0',
                 'description' => 'Theme',
                 'author'      => 'BoxBilling',
-                'author_url'  => 'http://www.boxbilling.com'
+                'author_url'  => 'http://www.boxbilling.org'
             );
         }
 

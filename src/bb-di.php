@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -49,7 +49,7 @@ $di['crypt'] = function() use ($di) {
 $di['pdo'] = function() use ($di) {
     $c = $di['config']['db'];
 
-    $pdo = new PDO($c['type'].':host='.$c['host'].';dbname='.$c['name'],
+    $pdo = new PDO($c['type'].':host='.$c['host'].';port='.$c['port'].';dbname='.$c['name'],
         $c['user'],
         $c['password'],
         array(
@@ -260,8 +260,14 @@ $di['validator'] = function () use ($di){
     $validator->setDi($di);
     return $validator;
 };
-$di['guzzle_client'] = function () {
-    return new GuzzleHttp\Client();
+$di['guzzle_client'] = function () use($di) {
+    return new GuzzleHttp\Client([
+        'headers' => [
+            'User-Agent' => $di['config']['guzzle']['user_agent'],
+            'Upgrade-Insecure-Requests' => $di['config']['guzzle']['upgrade_insecure_requests']
+        ],
+        'timeout' => $di['config']['guzzle']['timeout']
+    ]);
 };
 $di['mail'] = function () {
     return new Box_Mail();

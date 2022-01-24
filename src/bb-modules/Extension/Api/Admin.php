@@ -2,7 +2,7 @@
 /**
  * BoxBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.com)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
  * Copyright BoxBilling, Inc
@@ -33,7 +33,7 @@ class Admin extends \Api_Abstract
     }
     
     /**
-     * Get list of extensions from extensions.boxbilling.com
+     * Get list of extensions from extensions.boxbilling.org
      * which can be installed on current version of BoxBilling
      * 
      * @param string $type - mod, gateway ...
