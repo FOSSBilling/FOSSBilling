@@ -521,16 +521,16 @@
         },
         {
             "name": "infinityfree/mofh-client",
-            "version": "0.7.0",
+            "version": "0.7.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/InfinityFreeHosting/mofh-client.git",
-                "reference": "94a8081dbc1461ad7fa32c8301ae467fbd2c64b3"
+                "reference": "241363da56cd937bc6664d0216488ee6f77857ee"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/InfinityFreeHosting/mofh-client/zipball/94a8081dbc1461ad7fa32c8301ae467fbd2c64b3",
-                "reference": "94a8081dbc1461ad7fa32c8301ae467fbd2c64b3",
+                "url": "https://api.github.com/repos/InfinityFreeHosting/mofh-client/zipball/241363da56cd937bc6664d0216488ee6f77857ee",
+                "reference": "241363da56cd937bc6664d0216488ee6f77857ee",
                 "shasum": ""
             },
             "require": {
@@ -561,9 +561,9 @@
             "description": "A WHM API client for MyOwnFreeHost in PHP",
             "support": {
                 "issues": "https://github.com/InfinityFreeHosting/mofh-client/issues",
-                "source": "https://github.com/InfinityFreeHosting/mofh-client/tree/0.7.0"
+                "source": "https://github.com/InfinityFreeHosting/mofh-client/tree/0.7.1"
             },
-            "time": "2020-09-12T15:50:56+00:00"
+            "time": "2022-01-16T10:44:02+00:00"
         },
         {
             "name": "laminas/laminas-httphandlerrunner",
@@ -1643,20 +1643,23 @@
         },
         {
             "name": "symfony/polyfill-mbstring",
-            "version": "v1.23.1",
+            "version": "v1.24.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-mbstring.git",
-                "reference": "9174a3d80210dca8daa7f31fec659150bbeabfc6"
+                "reference": "0abb51d2f102e00a4eefcf46ba7fec406d245825"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/9174a3d80210dca8daa7f31fec659150bbeabfc6",
-                "reference": "9174a3d80210dca8daa7f31fec659150bbeabfc6",
+                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/0abb51d2f102e00a4eefcf46ba7fec406d245825",
+                "reference": "0abb51d2f102e00a4eefcf46ba7fec406d245825",
                 "shasum": ""
             },
             "require": {
                 "php": ">=7.1"
+            },
+            "provide": {
+                "ext-mbstring": "*"
             },
             "suggest": {
                 "ext-mbstring": "For best performance"
@@ -1703,7 +1706,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.23.1"
+                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.24.0"
             },
             "funding": [
                 {
@@ -1719,7 +1722,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2021-05-27T12:26:48+00:00"
+            "time": "2021-11-30T18:21:41+00:00"
         },
         {
             "name": "symfony/polyfill-php80",
