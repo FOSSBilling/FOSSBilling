@@ -1361,16 +1361,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v7.111.0",
+            "version": "v7.112.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "374647b1079203ed7278ad4b58afc0fae3faaab9"
+                "reference": "f5213ccb88795663f73841bc65f467a0e1e61180"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/374647b1079203ed7278ad4b58afc0fae3faaab9",
-                "reference": "374647b1079203ed7278ad4b58afc0fae3faaab9",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/f5213ccb88795663f73841bc65f467a0e1e61180",
+                "reference": "f5213ccb88795663f73841bc65f467a0e1e61180",
                 "shasum": ""
             },
             "require": {
@@ -1413,7 +1413,7 @@
                 "payment processing",
                 "stripe"
             ],
-            "time": "2022-01-20T17:30:55+00:00"
+            "time": "2022-01-25T19:42:36+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
