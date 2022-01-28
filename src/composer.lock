@@ -2956,7 +2956,7 @@
         },
         {
             "name": "squizlabs/php_codesniffer",
-            "version": "< 3.0.1",
+            "version": "^3.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/squizlabs/PHP_CodeSniffer.git",
