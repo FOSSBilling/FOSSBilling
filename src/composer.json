@@ -28,7 +28,6 @@
         "mustangostang/spyc": "^0.6.3",
         "michelf/php-markdown": "1.9.1",
         "stripe/stripe-php": "^7.92.0",
-        "laminas/laminas-httphandlerrunner": "^2.0.1",
         "docnet/tfpdf": "^2.2"     
     },
     "suggest": {
