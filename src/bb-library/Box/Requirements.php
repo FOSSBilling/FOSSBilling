@@ -39,6 +39,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
                     'zlib',
                     'gettext',
                     'openssl',
+                    'dom',
                  ),
                 'version'       =>  PHP_VERSION,
                 'min_version'   =>  '7.4',
@@ -120,7 +121,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
     }
 
     /**
-     * What extensions must be loaded for BoxBilling o function correctly
+     * What extensions must be loaded for BoxBilling to function correctly
      */
     public function extensions()
     {

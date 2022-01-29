@@ -30,7 +30,8 @@ define('BB_URL_ADMIN', BB_URL . 'index.php?_url=/bb-admin');
 define('BB_PATH_ROOT', realpath(dirname(__FILE__) . '/..'));
 define('BB_PATH_LIBRARY', BB_PATH_ROOT . '/bb-library');
 define('BB_PATH_VENDOR', BB_PATH_ROOT . '/bb-vendor');
-define('BB_PATH_THEMES', BB_PATH_ROOT . '/install');
+define('BB_PATH_INSTALL_THEMES', BB_PATH_ROOT . '/install');
+define('BB_PATH_THEMES', BB_PATH_ROOT . '/bb-themes');
 define('BB_PATH_LICENSE', BB_PATH_ROOT . '/LICENSE');
 define('BB_PATH_SQL', BB_PATH_ROOT . '/install/sql/structure.sql');
 define('BB_PATH_SQL_DATA', BB_PATH_ROOT . '/install/sql/content.sql');
@@ -38,6 +39,21 @@ define('BB_PATH_INSTALL', BB_PATH_ROOT . '/install');
 define('BB_PATH_CONFIG', BB_PATH_ROOT . '/bb-config.php');
 define('BB_PATH_CRON', BB_PATH_ROOT . '/bb-cron.php');
 define('BB_PATH_LANGS', BB_PATH_ROOT . '/bb-locale');
+
+/* 
+  Config paths & templates
+*/
+define('BB_PATH_HTACCESS', BB_PATH_ROOT . '/.htaccess');
+define('BB_PATH_HTACCESS_TEMPLATE', BB_PATH_ROOT . '/.htaccess.txt');
+
+define('BB_BS_CONFIG', BB_PATH_THEMES . '/bootstrap/config/settings_data.json');
+define('BB_BS_CONFIG_TEMPLATE', BB_PATH_THEMES . '/bootstrap/config/settings_data.json.txt');
+
+define('BB_HURAGA_CONFIG', BB_PATH_THEMES . '/huraga/config/settings_data.json');
+define('BB_HURAGA_CONFIG_TEMPLATE', BB_PATH_THEMES . '/huraga/config/settings_data.json.txt');
+
+define('BB_BBTHEME_CONFIG', BB_PATH_THEMES . '/boxbilling/config/settings_data.json');
+define('BB_BBTHEM_CONFIG_TEMPLATE', BB_PATH_THEMES . '/boxbilling/config/settings_data.json.txt');
 
 // Ensure library/ is on include_path
 set_include_path(implode(PATH_SEPARATOR, [
@@ -189,7 +205,7 @@ final class Box_Installer
     private function render($name, $vars = [])
     {
         $options = [
-            'paths' => [BB_PATH_THEMES],
+            'paths' => [BB_PATH_INSTALL_THEMES],
             'debug' => true,
             'charset' => 'utf-8',
             'optimizations' => 1,
@@ -315,7 +331,26 @@ final class Box_Installer
             // E-mail was not sent, but that is not a problem
             error_log($e->getMessage());
         }
+        
+        
+        /*
+          Copy config templates when applicable
+        */
+        if(!file_exists(BB_PATH_HTACCESS) && file_exists(BB_PATH_HTACCESS_TEMPLATE)) {
+            rename(BB_PATH_HTACCESS_TEMPLATE, BB_PATH_HTACCESS);
+        }
 
+        if(!file_exists(BB_BS_CONFIG) && file_exists(BB_BS_CONFIG_TEMPLATE)) {
+            rename(BB_BS_CONFIG_TEMPLATE, BB_BS_CONFIG);
+        }
+
+        if(!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
+            rename(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG);
+        }
+
+        if(!file_exists(BB_BBTHEME_CONFIG) && file_exists(BB_BBTHEM_CONFIG_TEMPLATE)) {
+            rename(BB_BBTHEM_CONFIG_TEMPLATE, BB_BBTHEME_CONFIG);
+        }
         return true;
     }
 
