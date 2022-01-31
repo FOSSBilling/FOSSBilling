@@ -31,7 +31,9 @@
         "docnet/tfpdf": "^2.2",
         "guzzle/guzzle": "3.9.x-dev",
         "guzzlehttp/guzzle": "7.4.x-dev",
-        "filp/whoops": "^2.14"
+        "filp/whoops": "^2.14",
+        "psr/log": "3.x-dev",
+        "symfony/deprecation-contracts": "3.1.x-dev"
      
     },
     "suggest": {

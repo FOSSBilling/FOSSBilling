@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "31e75d3c4a16b87f6bd314660b85cb92",
+    "content-hash": "d5931e8c497151c805956aec3c3c8b9f",
     "packages": [
         {
             "name": "composer/ca-bundle",
@@ -4010,7 +4010,9 @@
     "minimum-stability": "dev",
     "stability-flags": {
         "guzzle/guzzle": 20,
-        "guzzlehttp/guzzle": 20
+        "guzzlehttp/guzzle": 20,
+        "psr/log": 20,
+        "symfony/deprecation-contracts": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,
