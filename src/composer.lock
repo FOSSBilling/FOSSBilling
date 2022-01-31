@@ -1275,7 +1275,7 @@
                 "shasum": ""
             },
             "require": {
-                "php": ">=7.4.27"
+                "php": ">=8.0.0"
             },
             "default-branch": true,
             "type": "library",
@@ -1430,7 +1430,7 @@
                 "shasum": ""
             },
             "require": {
-                "php": ">=7.4.27"
+                "php": ">=8.0.2"
             },
             "default-branch": true,
             "type": "library",
