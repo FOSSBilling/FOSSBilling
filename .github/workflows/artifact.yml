@@ -12,7 +12,9 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['7.4']
+
+        php-versions: ["7.4"]
+
 
     name: Create a downloadable preview build
     steps:
