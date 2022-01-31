@@ -28,7 +28,10 @@
         "mustangostang/spyc": "^0.6.3",
         "michelf/php-markdown": "1.9.1",
         "stripe/stripe-php": "^7.92.0",
-        "docnet/tfpdf": "^2.2"     
+        "docnet/tfpdf": "^2.2",
+        "filp/whoops": "^2.14",
+        "guzzle/guzzle": "3.9.x-dev",
+        "guzzlehttp/guzzle": "7.4.x-dev"     
     },
     "suggest": {
         "ext-gettext": "*"
