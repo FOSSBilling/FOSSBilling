@@ -245,7 +245,6 @@ final class Box_Installer
         $pdo->exec( 'SET NAMES "utf8"' );
         $pdo->exec( 'SET CHARACTER SET utf8' );
         $pdo->exec( 'SET CHARACTER_SET_CONNECTION = utf8' );
-        $pdo->exec( 'SET CHARACTER_SET_DATABASE = utf8' );
         $pdo->exec( 'SET character_set_results = utf8' );
         $pdo->exec( 'SET character_set_server = utf8' );
         $pdo->exec( 'SET SESSION interactive_timeout = 28800' );
