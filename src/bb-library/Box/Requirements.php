@@ -42,7 +42,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
                     'dom',
                  ),
                 'version'       =>  PHP_VERSION,
-                'min_version'   =>  '7.4',
+                'min_version'   =>  '8.0',
                 'safe_mode'     =>  ini_get('safe_mode'),
             ),
             'writable_folders' => array(
