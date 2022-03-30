@@ -44,8 +44,8 @@ BoxBilling is designed to be extensible and to integrate easily with your favour
 The following environment is highly recommended for running BoxBilling. It *may* be possible to install and run the software in other environments, but it will be untested and unsupported. 
 
 - A suitable web server (Apache/nginx/LSWS/Lighttpd)
-- PHP 7.4, or higher.
-  - *We recommended PHP 7.4 over PHP 8 as it's been more thoroughly tested, however, both should work*
+- PHP 8.0
+  - *PHP 8.1 hasn't been tested yet, and we strongly recommend you to go with PHP 8.0.x for the time being.*
 - MySQL 8, or higher. *MariaDB and other direct MySQL compatible DBs also work.*
 - The Following PHP extensions:
     - pdo_mysql

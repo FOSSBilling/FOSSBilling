@@ -33,11 +33,10 @@ body:
     id: browsers
     attributes:
       label: What version of PHP are you running?
-      description: We only support between version 7.4 and 8.1, any other version will cause issues and may not work.
+      description: We only support 8.0 and 8.1, any other version will cause issues and may not work.
       multiple: false
       options:
         - Something unsupported
-        - PHP 7.4
         - PHP 8.0
         - PHP 8.1
     validations:
