@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,7 +11,7 @@
  */
 
 /**
- * Cron checker
+ * Cron checker.
  */
 
 namespace Box\Mod\Cron\Api;
@@ -19,7 +19,7 @@ namespace Box\Mod\Cron\Api;
 class Guest extends \Api_Abstract
 {
     /**
-     * Run cron if is late and web based cron is enabled
+     * Run cron if is late and web based cron is enabled.
      *
      * @return bool
      */
@@ -29,7 +29,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Get cron settings
+     * Get cron settings.
      *
      * @return array
      */
@@ -39,7 +39,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Tells if cron is late
+     * Tells if cron is late.
      *
      * @return bool
      */

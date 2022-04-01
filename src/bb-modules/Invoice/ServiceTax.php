@@ -1,6 +1,6 @@
 <?php
 /**
-* BoxBilling
+* BoxBilling.
 *
 * @copyright BoxBilling, Inc (https://www.boxbilling.org)
 * @license   Apache-2.0
@@ -9,7 +9,9 @@
 * This source file is subject to the Apache-2.0 License that is bundled
 * with this source code in the file LICENSE
 */
+
 namespace Box\Mod\Invoice;
+
 use Box\InjectionAwareInterface;
 
 class ServiceTax implements InjectionAwareInterface
@@ -38,29 +40,32 @@ class ServiceTax implements InjectionAwareInterface
     public function getTaxRateForClient(\Model_Client $model, &$title = null)
     {
         $clientService = $this->di['mod_service']('client');
-        if(!$clientService->isClientTaxable($model)) {
+        if (!$clientService->isClientTaxable($model)) {
             return 0;
         }
 
-        $tax = $this->di['db']->findOne('Tax', 'state = ? and country = ?', array($model->state, $model->country));
+        $tax = $this->di['db']->findOne('Tax', 'state = ? and country = ?', [$model->state, $model->country]);
         // find rate which matches clients country and state
 
-        if($tax instanceof \Model_Tax)  {
+        if ($tax instanceof \Model_Tax) {
             $title = $tax->name;
+
             return $tax->taxrate;
         }
 
         // find rate which matches clients country
-        $tax = $this->di['db']->findOne('Tax', 'country = ?', array($model->country));
-        if($tax instanceof \Model_Tax)  {
+        $tax = $this->di['db']->findOne('Tax', 'country = ?', [$model->country]);
+        if ($tax instanceof \Model_Tax) {
             $title = $tax->name;
+
             return $tax->taxrate;
         }
 
         // find global rate
         $tax = $this->di['db']->findOne('Tax', '(state is NULL or state = "") and (country is null or country = "")');
-        if($tax instanceof \Model_Tax)  {
+        if ($tax instanceof \Model_Tax) {
             $title = $tax->name;
+
             return $tax->taxrate;
         }
 
@@ -69,16 +74,17 @@ class ServiceTax implements InjectionAwareInterface
 
     public function getTax(\Model_Invoice $invoice)
     {
-        if($invoice->taxrate <= 0) {
+        if ($invoice->taxrate <= 0) {
             return 0;
         }
 
         $tax = 0;
-        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', array($invoice->id));
+        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        foreach($invoiceItems as $item) {
+        foreach ($invoiceItems as $item) {
             $tax += $invoiceItemService->getTax($item) * $item->quantity;
         }
+
         return $tax;
     }
 
@@ -87,6 +93,7 @@ class ServiceTax implements InjectionAwareInterface
         $name = $model->name;
         $this->di['db']->trash($model);
         $this->di['logger']->info('Deleted tax rule %s', $name);
+
         return true;
     }
 
@@ -97,29 +104,31 @@ class ServiceTax implements InjectionAwareInterface
 
         $model = $this->di['db']->dispense('Tax');
         $model->name = $data['name'];
-        $model->country = (!isset($data['country']) || empty($data['country'])) ? NULL : $data['country'];
-        $model->state = (!isset($data['state']) || empty($data['state'])) ? NULL : $data['state'];
+        $model->country = (!isset($data['country']) || empty($data['country'])) ? null : $data['country'];
+        $model->state = (!isset($data['state']) || empty($data['state'])) ? null : $data['state'];
         $model->taxrate = $data['taxrate'];
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $newId = $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new tax rule %s', $model->name);
-        return $newId ;
+
+        return $newId;
     }
 
     public function update(\Model_Tax $model, array $data)
     {
         $model->name = $data['name'];
-        $model->country = (!isset($data['country']) || empty($data['country'])) ? NULL : $data['country'];
-        $model->state = (!isset($data['state']) || empty($data['state'])) ? NULL : $data['state'];
+        $model->country = (!isset($data['country']) || empty($data['country'])) ? null : $data['country'];
+        $model->state = (!isset($data['state']) || empty($data['state'])) ? null : $data['state'];
         $model->taxrate = $data['taxrate'];
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new tax rule %s', $model->name);
-        return true ;
+
+        return true;
     }
 
     public function getSearchQuery($data)
@@ -128,19 +137,19 @@ class ServiceTax implements InjectionAwareInterface
             FROM tax
             ORDER BY id desc';
 
-        return array($sql, array());
+        return [$sql, []];
     }
 
     public function setupEUTaxes(array $data)
     {
-        $sql = "TRUNCATE tax;";
+        $sql = 'TRUNCATE tax;';
         $this->di['db']->exec($sql);
 
         $systemService = $this->di['mod_service']('System');
-        $eu_countries  = $systemService->getEuCountries();
-        $eu_vat        = $systemService->getEuVat();
+        $eu_countries = $systemService->getEuCountries();
+        $eu_vat = $systemService->getEuVat();
         foreach ($eu_vat as $code => $taxRate) {
-            $this->create(array('name' => $eu_countries[$code], 'taxrate' => $taxRate, 'country' => $code));
+            $this->create(['name' => $eu_countries[$code], 'taxrate' => $taxRate, 'country' => $code]);
         }
 
         return true;
@@ -150,5 +159,4 @@ class ServiceTax implements InjectionAwareInterface
     {
         return $this->di['db']->toArray($model);
     }
-
 }

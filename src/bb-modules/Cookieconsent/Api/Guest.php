@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -14,7 +14,6 @@
  * Cookies consent notification bar.
  *
  * Show cookie consent message to comply with European Cookie Law
- *
  */
 
 namespace Box\Mod\Cookieconsent\Api;
@@ -22,9 +21,10 @@ namespace Box\Mod\Cookieconsent\Api;
 class Guest extends \Api_Abstract
 {
     /**
-     * Get message which should be shown in notification bar
+     * Get message which should be shown in notification bar.
      *
-     * @return boolean
+     * @return bool
+     *
      * @throws \Box_Exception
      */
     public function message()

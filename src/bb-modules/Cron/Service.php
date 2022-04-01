@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -33,17 +33,20 @@ class Service
     {
         $service = $this->di['mod_service']('system');
 
-        $result = array(
-            'cron_url'          =>  BB_URL . 'bb-cron.php',
-            'cron_path'         =>  BB_PATH_ROOT . DIRECTORY_SEPARATOR . 'bb-cron.php',
-            'last_cron_exec'    =>  $service->getParamValue('last_cron_exec'),
-        );
+        $result = [
+            'cron_url' => BB_URL.'bb-cron.php',
+            'cron_path' => BB_PATH_ROOT.DIRECTORY_SEPARATOR.'bb-cron.php',
+            'last_cron_exec' => $service->getParamValue('last_cron_exec'),
+        ];
+
         return $result;
     }
 
     /**
      * @param null $interval - parameter from CLI, pass to filter crons to run
+     *
      * @return bool
+     *
      * @todo finish fixing, time to sleep
      */
     public function runCrons($interval = null)
@@ -51,9 +54,9 @@ class Service
         $api = $this->di['api_system'];
         $this->di['logger']->info('- Started executing cron');
 
-        //@core tasks
+        // @core tasks
         $this->_exec($api, 'hook_batch_connect');
-        $this->di['events_manager']->fire(array('event'=>'onBeforeAdminCronRun'));
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminCronRun']);
 
         $this->_exec($api, 'invoice_batch_pay_with_credits');
         $this->_exec($api, 'invoice_batch_activate_paid');
@@ -72,9 +75,10 @@ class Service
         $ss = $this->di['mod_service']('system');
         $ss->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), $create);
 
-        $this->di['events_manager']->fire(array('event'=>'onAfterAdminCronRun'));
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
 
         $this->di['logger']->info('- Finished executing cron');
+
         return true;
     }
 
@@ -85,11 +89,11 @@ class Service
     {
         try {
             $api->{$method}($params);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             throw new Exception($e);
         } finally {
-            if (php_sapi_name() == 'cli') {
-                print ("\e[32mSuccessfully ran " . $method . "(" . $params . ")" . ".\e[0m\n");
+            if ('cli' == php_sapi_name()) {
+                echo "\e[32mSuccessfully ran ".$method.'('.$params.')'.".\e[0m\n";
             }
         }
     }
@@ -101,6 +105,7 @@ class Service
     {
         $service = $this->di['mod_service']('system');
         $last_exec = $service->getParamValue('last_cron_exec');
+
         return $last_exec;
     }
 
@@ -108,6 +113,7 @@ class Service
     {
         $t1 = new \DateTime($this->getLastExecutionTime());
         $t2 = new \DateTime('-6min');
-        return ($t1 < $t2);
+
+        return $t1 < $t2;
     }
 }

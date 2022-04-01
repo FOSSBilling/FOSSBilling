@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -10,16 +10,15 @@
  * with this source code in the file LICENSE
  */
 
-
 namespace Box\Mod\Cart\Api;
 
 /**
- * Shopping cart management
+ * Shopping cart management.
  */
 class Client extends \Api_Abstract
 {
     /**
-     * Checkout cart which has products
+     * Checkout cart which has products.
      *
      * @optional int $gateway_id - payment gateway id. Which payment gateway will be used to make payment
      *
@@ -27,9 +26,10 @@ class Client extends \Api_Abstract
      */
     public function checkout($data)
     {
-        $gateway_id =  $this->di['array_get']($data, 'gateway_id');
+        $gateway_id = $this->di['array_get']($data, 'gateway_id');
         $cart = $this->getService()->getSessionCart();
         $client = $this->getIdentity();
+
         return $this->getService()->checkoutCart($cart, $client, $gateway_id);
     }
 }

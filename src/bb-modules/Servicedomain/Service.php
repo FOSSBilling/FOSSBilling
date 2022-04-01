@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -34,16 +34,16 @@ class Service implements \Box\InjectionAwareInterface
 
     public function getCartProductTitle($product, array $data)
     {
-        if (isset($data['action']) && $data['action'] == 'register' &&
+        if (isset($data['action']) && 'register' == $data['action'] &&
             isset($data['register_tld']) && isset($data['register_sld'])
         ) {
-            return __('Domain :domain registration', array(':domain' => $data['register_sld'] . $data['register_tld']));
+            return __('Domain :domain registration', [':domain' => $data['register_sld'].$data['register_tld']]);
         }
 
-        if (isset($data['action']) && $data['action'] == 'transfer' &&
+        if (isset($data['action']) && 'transfer' == $data['action'] &&
             isset($data['transfer_tld']) && isset($data['transfer_sld'])
         ) {
-            return __('Domain :domain transfer', array(':domain' => $data['transfer_sld'] . $data['transfer_tld']));
+            return __('Domain :domain transfer', [':domain' => $data['transfer_sld'].$data['transfer_tld']]);
         }
 
         return $product->title;
@@ -53,47 +53,47 @@ class Service implements \Box\InjectionAwareInterface
     {
         $validator = $this->di['validator'];
 
-        $required = array(
+        $required = [
             'action' => 'Are you registering new domain or transferring existing? Action parameter missing',
-        );
+        ];
         $validator->checkRequiredParamsForArray($required, $data);
 
         $action = $data['action'];
-        if (!in_array($action, array('register', 'transfer', 'owndomain'))) {
+        if (!in_array($action, ['register', 'transfer', 'owndomain'])) {
             throw new \Box_Exception('Invalid domain action.');
         }
 
-        if ($action == 'owndomain') {
+        if ('owndomain' == $action) {
             if (!isset($data['owndomain_sld'])) {
-                throw new \Box_Exception('Order data must contain :field configuration field', array(':field' => 'owndomain_sld'));
+                throw new \Box_Exception('Order data must contain :field configuration field', [':field' => 'owndomain_sld']);
             }
 
             if (!$validator->isSldValid($data['owndomain_sld'])) {
                 $safe_dom = htmlspecialchars($data['owndomain_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
+                throw new \Box_Exception('Domain name :domain is not valid', [':domain' => $safe_dom]);
             }
 
-            $required = array(
+            $required = [
                 'owndomain_tld' => 'Domain TLD is not valid.',
                 'owndomain_sld' => 'Domain name is required.',
-            );
+            ];
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
         }
 
-        if ($action == 'transfer') {
+        if ('transfer' == $action) {
             if (!isset($data['transfer_sld'])) {
-                throw new \Box_Exception('Order data must contain :field configuration field', array(':field' => 'transfer_sld'));
+                throw new \Box_Exception('Order data must contain :field configuration field', [':field' => 'transfer_sld']);
             }
 
             if (!$validator->isSldValid($data['transfer_sld'])) {
                 $safe_dom = htmlspecialchars($data['transfer_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
+                throw new \Box_Exception('Domain name :domain is not valid', [':domain' => $safe_dom]);
             }
 
-            $required = array(
+            $required = [
                 'transfer_tld' => 'Transfer domain type (TLD) is required.',
                 'transfer_sld' => 'Transfer domain name (SLD) is required.',
-            );
+            ];
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             $tld = $this->tldFindOneByTld($data['transfer_tld']);
@@ -101,31 +101,31 @@ class Service implements \Box\InjectionAwareInterface
                 throw new \Box_Exception('TLD not found');
             }
 
-            $domain = $data['transfer_sld'] . $tld->tld;
+            $domain = $data['transfer_sld'].$tld->tld;
             if (!$this->canBeTransfered($tld, $data['transfer_sld'])) {
-                throw new \Box_Exception(':domain can not be transferred!', array(':domain' => $domain));
+                throw new \Box_Exception(':domain can not be transferred!', [':domain' => $domain]);
             }
 
             // return by reference
-            $data['period']   = '1Y';
+            $data['period'] = '1Y';
             $data['quantity'] = 1;
         }
 
-        if ($action == 'register') {
+        if ('register' == $action) {
             if (!isset($data['register_sld'])) {
-                throw new \Box_Exception('Order data must contain :field configuration field', array(':field' => 'register_sld'));
+                throw new \Box_Exception('Order data must contain :field configuration field', [':field' => 'register_sld']);
             }
 
             if (!$validator->isSldValid($data['register_sld'])) {
                 $safe_dom = htmlspecialchars($data['register_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
+                throw new \Box_Exception('Domain name :domain is not valid', [':domain' => $safe_dom]);
             }
 
-            $required = array(
-                'register_tld'   => 'Domain registration tld parameter missing.',
-                'register_sld'   => 'Domain registration sld parameter missing.',
+            $required = [
+                'register_tld' => 'Domain registration tld parameter missing.',
+                'register_sld' => 'Domain registration sld parameter missing.',
                 'register_years' => 'Years parameter is missing for domain configuration.',
-            );
+            ];
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             $tld = $this->tldFindOneByTld($data['register_tld']);
@@ -133,75 +133,74 @@ class Service implements \Box\InjectionAwareInterface
                 throw new \Box_Exception('TLD not found');
             }
 
-            $years = (int)$data['register_years'];
+            $years = (int) $data['register_years'];
             if ($years < $tld->min_years) {
-                throw new \Box_Exception(':tld can be registered for at least :years years', array(':tld' => $tld->tld, ':years' => $tld->min_years));
+                throw new \Box_Exception(':tld can be registered for at least :years years', [':tld' => $tld->tld, ':years' => $tld->min_years]);
             }
 
-            $domain = $data['register_sld'] . $tld->tld;
+            $domain = $data['register_sld'].$tld->tld;
             if (!$this->isDomainAvailable($tld, $data['register_sld'])) {
-                throw new \Box_Exception(':domain is already registered!', array(':domain' => $domain));
+                throw new \Box_Exception(':domain is already registered!', [':domain' => $domain]);
             }
 
             // return by reference
-            $data['period']   = $years . 'Y';
+            $data['period'] = $years.'Y';
             $data['quantity'] = $years;
         }
     }
 
     /**
-     * Creates domain service object from order
+     * Creates domain service object from order.
      *
-     * @param \Model_ClientOrder $order
      * @return \Model_ServiceDomain
      */
     public function action_create(\Model_ClientOrder $order)
     {
         $orderService = $this->di['mod_service']('order');
-        $c            = $orderService->getConfig($order);
+        $c = $orderService->getConfig($order);
 
         $this->validateOrderData($c);
 
-        list($sld, $tld) = $this->_getTuple($c);
-        $years = isset($c['register_years']) ? $c['register_years'] : 1;
+        [$sld, $tld] = $this->_getTuple($c);
+        $years = $c['register_years'] ?? 1;
 
-        //@todo ?
+        // @todo ?
         $systemService = $this->di['mod_service']('system');
-        $ns              = $systemService->getNameservers();
+        $ns = $systemService->getNameservers();
         if (empty($ns)) {
             throw new \Box_Exception('Default domain nameservers are not configured');
         }
 
         $tldModel = $this->tldFindOneByTld($tld);
 
-        $model                   = $this->di['db']->dispense('ServiceDomain');
-        $model->client_id        = $order->client_id;
+        $model = $this->di['db']->dispense('ServiceDomain');
+        $model->client_id = $order->client_id;
         $model->tld_registrar_id = $tldModel->tld_registrar_id;
-        $model->sld              = $sld;
-        $model->tld              = $tld;
-        $model->period           = $years;
-        $model->transfer_code    = $this->di['array_get']($c, 'transfer_code', NULL);
-        $model->privacy          = FALSE;
-        $model->action           = $c['action'];
-        $model->ns1              = (isset($c['ns1']) && !empty($c['ns1'])) ? $c['ns1'] : $ns['nameserver_1'];
-        $model->ns2              = (isset($c['ns2']) && !empty($c['ns1'])) ? $c['ns2'] : $ns['nameserver_2'];
-        $model->ns3              = (isset($c['ns3']) && !empty($c['ns1'])) ? $c['ns3'] : $ns['nameserver_3'];
-        $model->ns4              = (isset($c['ns4']) && !empty($c['ns1'])) ? $c['ns4'] : $ns['nameserver_4'];
+        $model->sld = $sld;
+        $model->tld = $tld;
+        $model->period = $years;
+        $model->transfer_code = $this->di['array_get']($c, 'transfer_code', null);
+        $model->privacy = false;
+        $model->action = $c['action'];
+        $model->ns1 = (isset($c['ns1']) && !empty($c['ns1'])) ? $c['ns1'] : $ns['nameserver_1'];
+        $model->ns2 = (isset($c['ns2']) && !empty($c['ns1'])) ? $c['ns2'] : $ns['nameserver_2'];
+        $model->ns3 = (isset($c['ns3']) && !empty($c['ns1'])) ? $c['ns3'] : $ns['nameserver_3'];
+        $model->ns4 = (isset($c['ns4']) && !empty($c['ns1'])) ? $c['ns4'] : $ns['nameserver_4'];
 
         $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
 
         $model->contact_first_name = $client->first_name;
-        $model->contact_last_name  = $client->last_name;
-        $model->contact_email      = $client->email;
-        $model->contact_company    = $client->company;
-        $model->contact_address1   = $client->address_1;
-        $model->contact_address2   = $client->address_2;
-        $model->contact_country    = $client->country;
-        $model->contact_city       = $client->city;
-        $model->contact_state      = $client->state;
-        $model->contact_postcode   = $client->postcode;
-        $model->contact_phone_cc   = $client->phone_cc;
-        $model->contact_phone      = $client->phone;
+        $model->contact_last_name = $client->last_name;
+        $model->contact_email = $client->email;
+        $model->contact_company = $client->company;
+        $model->contact_address1 = $client->address_1;
+        $model->contact_address2 = $client->address_2;
+        $model->contact_country = $client->country;
+        $model->contact_city = $client->city;
+        $model->contact_state = $client->state;
+        $model->contact_postcode = $client->postcode;
+        $model->contact_phone_cc = $client->phone_cc;
+        $model->contact_phone = $client->phone;
 
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
@@ -212,31 +211,30 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * Register or transfer domain on activation
+     * Register or transfer domain on activation.
      *
-     * @param \Model_ClientOrder $order
      * @return \Model_ServiceDomain
      */
     public function action_activate(\Model_ClientOrder $order)
     {
         $orderService = $this->di['mod_service']('order');
-        $model        = $orderService->getOrderService($order);
+        $model = $orderService->getOrderService($order);
         if (!$model instanceof \Model_ServiceDomain) {
             throw new \Box_Exception('Could not activate order. Service was not created');
         }
 
-        //@adapterAction
-        list($domain, $adapter) = $this->_getD($model);
-        if ($model->action == 'register') {
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
+        if ('register' == $model->action) {
             $adapter->registerDomain($domain);
         }
 
-        if ($model->action == 'transfer') {
+        if ('transfer' == $model->action) {
             $adapter->transferDomain($domain);
         }
 
-        //reset action
-        $model->action = NULL;
+        // reset action
+        $model->action = null;
         $this->di['db']->store($model);
 
         try {
@@ -249,18 +247,17 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     * @return bool
      */
     public function action_renew(\Model_ClientOrder $order)
     {
         $orderService = $this->di['mod_service']('order');
-        $model        = $orderService->getOrderService($order);
+        $model = $orderService->getOrderService($order);
         if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new \Box_Exception('Order :id has no active service', array(':id' => $order->id));
+            throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
         }
-        //@adapterAction
-        list($domain, $adapter) = $this->_getD($model);
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
         $adapter->renewDomain($domain);
 
         $this->syncWhois($model, $order);
@@ -269,10 +266,9 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     *
      * @todo
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     *
+     * @return bool
      */
     public function action_suspend(\Model_ClientOrder $order)
     {
@@ -280,10 +276,9 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     *
      * @todo
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     *
+     * @return bool
      */
     public function action_unsuspend(\Model_ClientOrder $order)
     {
@@ -291,26 +286,24 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     * @return bool
      */
     public function action_cancel(\Model_ClientOrder $order)
     {
         $orderService = $this->di['mod_service']('order');
-        $model        = $orderService->getOrderService($order);
+        $model = $orderService->getOrderService($order);
         if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new \Box_Exception('Order :id has no active service', array(':id' => $order->id));
+            throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
         }
-        //@adapterAction
-        list($domain, $adapter) = $this->_getD($model);
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
         $adapter->deleteDomain($domain);
 
         return true;
     }
 
     /**
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     * @return bool
      */
     public function action_uncancel(\Model_ClientOrder $order)
     {
@@ -320,17 +313,16 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param \Model_ClientOrder $order
      * @return void
      */
     public function action_delete(\Model_ClientOrder $order)
     {
         $orderService = $this->di['mod_service']('order');
-        $service      = $orderService->getOrderService($order);
+        $service = $orderService->getOrderService($order);
 
         if ($service instanceof \Model_ServiceDomain) {
-            //cancel if not canceled
-            if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
+            // cancel if not canceled
+            if (\Model_ClientOrder::STATUS_CANCELED != $order->status) {
                 $this->action_cancel($order);
             }
             $this->di['db']->trash($service);
@@ -339,8 +331,8 @@ class Service implements \Box\InjectionAwareInterface
 
     protected function syncWhois(\Model_ServiceDomain $model, \Model_ClientOrder $order)
     {
-        //@adapterAction
-        list($domain, $adapter) = $this->_getD($model);
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
 
         // update whois
         $whois = $adapter->getDomainDetails($domain);
@@ -350,26 +342,26 @@ class Service implements \Box\InjectionAwareInterface
             $model->locked = $locked;
         }
 
-        //sync whois
+        // sync whois
         $contact = $whois->getContactRegistrar();
 
         $model->contact_first_name = $contact->getFirstName();
-        $model->contact_last_name  = $contact->getLastName();
-        $model->contact_email      = $contact->getEmail();
-        $model->contact_company    = $contact->getCompany();
-        $model->contact_address1   = $contact->getAddress1();
-        $model->contact_address2   = $contact->getAddress2();
-        $model->contact_country    = $contact->getCountry();
-        $model->contact_city       = $contact->getCity();
-        $model->contact_state      = $contact->getState();
-        $model->contact_postcode   = $contact->getZip();
-        $model->contact_phone_cc   = $contact->getTelCc();
-        $model->contact_phone      = $contact->getTel();
+        $model->contact_last_name = $contact->getLastName();
+        $model->contact_email = $contact->getEmail();
+        $model->contact_company = $contact->getCompany();
+        $model->contact_address1 = $contact->getAddress1();
+        $model->contact_address2 = $contact->getAddress2();
+        $model->contact_country = $contact->getCountry();
+        $model->contact_city = $contact->getCity();
+        $model->contact_state = $contact->getState();
+        $model->contact_postcode = $contact->getZip();
+        $model->contact_phone_cc = $contact->getTelCc();
+        $model->contact_phone = $contact->getTel();
 
-        $model->details       = serialize($whois);
-        $model->expires_at    = date('Y-m-d H:i:s', $whois->getExpirationTime());
+        $model->details = serialize($whois);
+        $model->expires_at = date('Y-m-d H:i:s', $whois->getExpirationTime());
         $model->registered_at = date('Y-m-d H:i:s', $whois->getRegistrationTime());
-        $model->updated_at    = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
     }
@@ -385,21 +377,21 @@ class Service implements \Box\InjectionAwareInterface
 
         $ns1 = $data['ns1'];
         $ns2 = $data['ns2'];
-        $ns3 = isset($data['ns3']) ? $data['ns3'] : NULL;
-        $ns4 = isset($data['ns4']) ? $data['ns4'] : NULL;
+        $ns3 = $data['ns3'] ?? null;
+        $ns4 = $data['ns4'] ?? null;
 
-        //@adapterAction
-        list($domain, $adapter) = $this->_getD($model);
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
         $domain->setNs1($ns1);
         $domain->setNs2($ns2);
         $domain->setNs3($ns3);
         $domain->setNs4($ns4);
         $adapter->modifyNs($domain);
 
-        $model->ns1        = $ns1;
-        $model->ns2        = $ns2;
-        $model->ns3        = $ns3;
-        $model->ns4        = $ns4;
+        $model->ns1 = $ns1;
+        $model->ns2 = $ns2;
+        $model->ns3 = $ns3;
+        $model->ns4 = $ns4;
         $model->updated_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
@@ -411,44 +403,44 @@ class Service implements \Box\InjectionAwareInterface
 
     public function updateContacts(\Model_ServiceDomain $model, $data)
     {
-        $required = array(
+        $required = [
             'contact' => 'Required field contact is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $contact = $data['contact'];
-        
-        $required = array(
+
+        $required = [
             'first_name' => 'Required field first_name is missing',
-            'last_name'  => 'Required field last_name is missing',
-            'email'      => 'Required field email is missing',
-            'company'    => 'Required field company is missing',
-            'address1'   => 'Required field address1 is missing',
-            'address2'   => 'Required field address2 is missing',
-            'country'    => 'Required field country is missing',
-            'city'       => 'Required field city is missing',
-            'state'      => 'Required field state is missing',
-            'postcode'   => 'Required field postcode is missing',
-            'phone_cc'   => 'Required field phone_cc is missing',
-            'phone'      => 'Required field phone is missing',
-            );
+            'last_name' => 'Required field last_name is missing',
+            'email' => 'Required field email is missing',
+            'company' => 'Required field company is missing',
+            'address1' => 'Required field address1 is missing',
+            'address2' => 'Required field address2 is missing',
+            'country' => 'Required field country is missing',
+            'city' => 'Required field city is missing',
+            'state' => 'Required field state is missing',
+            'postcode' => 'Required field postcode is missing',
+            'phone_cc' => 'Required field phone_cc is missing',
+            'phone' => 'Required field phone is missing',
+            ];
         $this->di['validator']->checkRequiredParamsForArray($required, $contact);
 
         $model->contact_first_name = $contact['first_name'];
-        $model->contact_last_name  = $contact['last_name'];
-        $model->contact_email      = $contact['email'];
-        $model->contact_company    = $contact['company'];
-        $model->contact_address1   = $contact['address1'];
-        $model->contact_address2   = $contact['address2'];
-        $model->contact_country    = $contact['country'];
-        $model->contact_city       = $contact['city'];
-        $model->contact_state      = $contact['state'];
-        $model->contact_postcode   = $contact['postcode'];
-        $model->contact_phone_cc   = $contact['phone_cc'];
-        $model->contact_phone      = $contact['phone'];
+        $model->contact_last_name = $contact['last_name'];
+        $model->contact_email = $contact['email'];
+        $model->contact_company = $contact['company'];
+        $model->contact_address1 = $contact['address1'];
+        $model->contact_address2 = $contact['address2'];
+        $model->contact_country = $contact['country'];
+        $model->contact_city = $contact['city'];
+        $model->contact_state = $contact['state'];
+        $model->contact_postcode = $contact['postcode'];
+        $model->contact_phone_cc = $contact['phone_cc'];
+        $model->contact_phone = $contact['phone'];
 
-        //@adapterAction
-        list($domain, $adapter) = $this->_getD($model);
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
         $adapter->modifyContact($domain);
 
         $model->updated_at = date('Y-m-d H:i:s');
@@ -462,8 +454,8 @@ class Service implements \Box\InjectionAwareInterface
 
     public function getTransferCode(\Model_ServiceDomain $model)
     {
-        //@adapterAction
-        list($domain, $adapter) = $this->_getD($model);
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
         $epp = $adapter->getEpp($domain);
 
         return $epp;
@@ -471,66 +463,66 @@ class Service implements \Box\InjectionAwareInterface
 
     public function lock(\Model_ServiceDomain $model)
     {
-        //@adapterAction
-        list($domain, $adapter) = $this->_getD($model);
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
         $epp = $adapter->lock($domain);
 
-        $model->locked     = true;
+        $model->locked = true;
         $model->updated_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
         $this->di['logger']->info('Locking domain #%s', $id);
 
-        return TRUE;
+        return true;
     }
 
     public function unlock(\Model_ServiceDomain $model)
     {
-        //@adapterAction
-        list($domain, $adapter) = $this->_getD($model);
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
         $epp = $adapter->unlock($domain);
 
-        $model->locked     = false;
+        $model->locked = false;
         $model->updated_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
         $this->di['logger']->info('Unlocking domain #%s', $id);
 
-        return TRUE;
+        return true;
     }
 
     public function enablePrivacyProtection(\Model_ServiceDomain $model)
     {
-        //@adapterAction
-        list($domain, $adapter) = $this->_getD($model);
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
         $adapter->enablePrivacyProtection($domain);
 
-        $model->privacy    = TRUE;
+        $model->privacy = true;
         $model->updated_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
         $this->di['logger']->info('Enabled privacy protection of #%s domain', $id);
 
-        return TRUE;
+        return true;
     }
 
     public function disablePrivacyProtection(\Model_ServiceDomain $model)
     {
-        //@adapterAction
-        list($domain, $adapter) = $this->_getD($model);
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
         $adapter->disablePrivacyProtection($domain);
 
-        $model->privacy    = FALSE;
+        $model->privacy = false;
         $model->updated_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
         $this->di['logger']->info('Disabled privacy protection of #%s domain', $id);
 
-        return TRUE;
+        return true;
     }
 
     public function canBeTransfered(\Model_Tld $model, $sld)
@@ -543,13 +535,13 @@ class Service implements \Box\InjectionAwareInterface
             throw new \Box_Exception('Domain can not be transferred', null, 403);
         }
 
-        //@adapterAction
+        // @adapterAction
         $domain = new \Registrar_Domain();
         $domain->setTld($model->tld);
         $domain->setSld($sld);
 
         $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
-        $adapter      = $this->registrarGetRegistrarAdapter($tldRegistrar);
+        $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
         return $adapter->isDomainCanBeTransfered($domain);
     }
@@ -563,64 +555,64 @@ class Service implements \Box\InjectionAwareInterface
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
             $safe_dom = htmlspecialchars($sld, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            throw new \Box_Exception('Domain name :domain is not valid', array(':domain' => $safe_dom));
+            throw new \Box_Exception('Domain name :domain is not valid', [':domain' => $safe_dom]);
         }
 
         if (!$model->allow_register) {
             throw new \Box_Exception('Domain can not be registered', null, 403);
         }
 
-        //@adapterAction
+        // @adapterAction
         $domain = new \Registrar_Domain();
         $domain->setTld($model->tld);
         $domain->setSld($sld);
 
         $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
-        $adapter      = $this->registrarGetRegistrarAdapter($tldRegistrar);
+        $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
         return $adapter->isDomainAvailable($domain);
     }
 
     public function syncExpirationDate($model)
     {
-        //@todo
+        // @todo
     }
 
     public function toApiArray(\Model_ServiceDomain $model, $deep = false, $identity = null)
     {
-        $data = array(
-            'domain'        => $model->sld . $model->tld,
-            'sld'           => $model->sld,
-            'tld'           => $model->tld,
-            'ns1'           => $model->ns1,
-            'ns2'           => $model->ns2,
-            'ns3'           => $model->ns3,
-            'ns4'           => $model->ns4,
-            'period'        => $model->period,
-            'privacy'       => $model->privacy,
-            'locked'        => $model->locked,
+        $data = [
+            'domain' => $model->sld.$model->tld,
+            'sld' => $model->sld,
+            'tld' => $model->tld,
+            'ns1' => $model->ns1,
+            'ns2' => $model->ns2,
+            'ns3' => $model->ns3,
+            'ns4' => $model->ns4,
+            'period' => $model->period,
+            'privacy' => $model->privacy,
+            'locked' => $model->locked,
             'registered_at' => $model->registered_at,
-            'expires_at'    => $model->expires_at,
-            'contact'       => array(
+            'expires_at' => $model->expires_at,
+            'contact' => [
                 'first_name' => $model->contact_first_name,
-                'last_name'  => $model->contact_last_name,
-                'email'      => $model->contact_email,
-                'company'    => $model->contact_company,
-                'address1'   => $model->contact_address1,
-                'address2'   => $model->contact_address2,
-                'country'    => $model->contact_country,
-                'city'       => $model->contact_city,
-                'state'      => $model->contact_state,
-                'postcode'   => $model->contact_postcode,
-                'phone_cc'   => $model->contact_phone_cc,
-                'phone'      => $model->contact_phone,
-            ),
-        );
+                'last_name' => $model->contact_last_name,
+                'email' => $model->contact_email,
+                'company' => $model->contact_company,
+                'address1' => $model->contact_address1,
+                'address2' => $model->contact_address2,
+                'country' => $model->contact_country,
+                'city' => $model->contact_city,
+                'state' => $model->contact_state,
+                'postcode' => $model->contact_postcode,
+                'phone_cc' => $model->contact_phone_cc,
+                'phone' => $model->contact_phone,
+            ],
+        ];
 
         if ($identity instanceof \Model_Admin) {
             $data['transfer_code'] = $model->transfer_code;
 
-            $tldRegistrar      = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
+            $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
             $data['registrar'] = $tldRegistrar->name;
         }
 
@@ -631,28 +623,28 @@ class Service implements \Box\InjectionAwareInterface
     {
         $action = $data['action'];
 
-        if ($action == 'owndomain') {
+        if ('owndomain' == $action) {
             $sld = $data['owndomain_sld'];
             $tld = $data['owndomain_tld'];
         }
 
-        if ($action == 'transfer') {
+        if ('transfer' == $action) {
             $sld = $data['transfer_sld'];
             $tld = $data['transfer_tld'];
         }
 
-        if ($action == 'register') {
+        if ('register' == $action) {
             $sld = $data['register_sld'];
             $tld = $data['register_tld'];
         }
 
-        return array($sld, $tld);
+        return [$sld, $tld];
     }
 
     protected function _getD(\Model_ServiceDomain $model)
     {
         $orderService = $this->di['mod_service']('order');
-        $order        = $orderService->getServiceOrder($model);
+        $order = $orderService->getServiceOrder($model);
 
         $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
 
@@ -670,22 +662,22 @@ class Service implements \Box\InjectionAwareInterface
         $d->setNs3($model->ns3);
         $d->setNs4($model->ns4);
 
-        //merge info with current profile
+        // merge info with current profile
         $client = $this->di['db']->load('Client', $model->client_id);
 
-        $email      = empty($model->contact_email) ? $client->email : $model->contact_email;
+        $email = empty($model->contact_email) ? $client->email : $model->contact_email;
         $first_name = empty($model->contact_first_name) ? $client->first_name : $model->contact_first_name;
-        $last_name  = empty($model->contact_last_name) ? $client->last_name : $model->contact_last_name;
-        $city       = empty($model->contact_city) ? $client->city : $model->contact_city;
-        $zip        = empty($model->contact_postcode) ? $client->postcode : $model->contact_postcode;
-        $country    = empty($model->contact_country) ? $client->country : $model->contact_country;
-        $state      = empty($model->contact_state) ? $client->state : $model->contact_state;
-        $phone      = empty($model->contact_phone) ? $client->phone : $model->contact_phone;
-        $phone_cc   = empty($model->contact_phone_cc) ? $client->phone_cc : $model->contact_phone_cc;
-        $company    = empty($model->contact_company) ? $client->company : $model->contact_company;
-        $address1   = empty($model->contact_address1) ? $client->address_1 : $model->contact_address1;
-        $address2   = empty($model->contact_address2) ? $client->address_2 : $model->contact_address2;
-        $birthday   = !empty($client->birthday) ? $client->birthday: '';
+        $last_name = empty($model->contact_last_name) ? $client->last_name : $model->contact_last_name;
+        $city = empty($model->contact_city) ? $client->city : $model->contact_city;
+        $zip = empty($model->contact_postcode) ? $client->postcode : $model->contact_postcode;
+        $country = empty($model->contact_country) ? $client->country : $model->contact_country;
+        $state = empty($model->contact_state) ? $client->state : $model->contact_state;
+        $phone = empty($model->contact_phone) ? $client->phone : $model->contact_phone;
+        $phone_cc = empty($model->contact_phone_cc) ? $client->phone_cc : $model->contact_phone_cc;
+        $company = empty($model->contact_company) ? $client->company : $model->contact_company;
+        $address1 = empty($model->contact_address1) ? $client->address_1 : $model->contact_address1;
+        $address2 = empty($model->contact_address2) ? $client->address_2 : $model->contact_address2;
+        $birthday = !empty($client->birthday) ? $client->birthday : '';
         $company_number = !empty($client->company_number) ? $client->company_number : '';
 
         $contact = new \Registrar_Domain_Contact();
@@ -723,7 +715,7 @@ class Service implements \Box\InjectionAwareInterface
             $d->setExpirationTime(strtotime($model->expires_at));
         }
 
-        return array($d, $adapter);
+        return [$d, $adapter];
     }
 
     public static function onBeforeAdminCronRun(\Box_Event $event)
@@ -741,10 +733,9 @@ class Service implements \Box\InjectionAwareInterface
 
     public function batchSyncExpirationDates()
     {
-
         $key = 'servicedomain_last_sync';
 
-        $ss        = $this->di['mod_service']('system');
+        $ss = $this->di['mod_service']('system');
         $last_time = $ss->getParamValue($key);
         if ($last_time && (time() - strtotime($last_time)) < 86400 * 30) {
             return false;
@@ -768,18 +759,18 @@ class Service implements \Box\InjectionAwareInterface
 
     public function tldCreate($data)
     {
-        $model                     = $this->di['db']->dispense('Tld');
-        $model->tld                = $data['tld'];
-        $model->tld_registrar_id   = $data['tld_registrar_id'];
+        $model = $this->di['db']->dispense('Tld');
+        $model->tld = $data['tld'];
+        $model->tld_registrar_id = $data['tld_registrar_id'];
         $model->price_registration = $data['price_registration'];
-        $model->price_renew        = $data['price_renew'];
-        $model->price_transfer     = $data['price_transfer'];
-        $model->min_years          = isset($data['min_years']) ? (int)$data['min_years'] : 1;
-        $model->allow_register     = isset($data['allow_register']) ? (bool)$data['allow_register'] : true;
-        $model->allow_transfer     = isset($data['allow_transfer']) ? (bool)$data['allow_transfer'] : true;
-        $model->active             = isset($data['active']) ? (bool)$data['active'] : false;
-        $model->updated_at         = date('Y-m-d H:i:s');
-        $model->created_at         = date('Y-m-d H:i:s');
+        $model->price_renew = $data['price_renew'];
+        $model->price_transfer = $data['price_transfer'];
+        $model->min_years = isset($data['min_years']) ? (int) $data['min_years'] : 1;
+        $model->allow_register = isset($data['allow_register']) ? (bool) $data['allow_register'] : true;
+        $model->allow_transfer = isset($data['allow_transfer']) ? (bool) $data['allow_transfer'] : true;
+        $model->active = isset($data['active']) ? (bool) $data['active'] : false;
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->created_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
@@ -809,34 +800,34 @@ class Service implements \Box\InjectionAwareInterface
 
     public function tldGetSearchQuery($data)
     {
-        $query = "SELECT * FROM tld";
+        $query = 'SELECT * FROM tld';
 
-        $hide_inactive  = isset($data['hide_inactive']) ? (bool)$data['hide_inactive'] : FALSE;
-        $allow_register = $this->di['array_get']($data, 'allow_register', NULL);
-        $allow_transfer = $this->di['array_get']($data, 'allow_transfer', NULL);
+        $hide_inactive = isset($data['hide_inactive']) ? (bool) $data['hide_inactive'] : false;
+        $allow_register = $this->di['array_get']($data, 'allow_register', null);
+        $allow_transfer = $this->di['array_get']($data, 'allow_transfer', null);
 
-        $where    = array();
-        $bindings = array();
+        $where = [];
+        $bindings = [];
 
         if ($hide_inactive) {
-            $where[] = "active = 1";
+            $where[] = 'active = 1';
         }
 
-        if (NULL !== $allow_register) {
-            $where[] = "allow_register = 1";
+        if (null !== $allow_register) {
+            $where[] = 'allow_register = 1';
         }
 
-        if (NULL !== $allow_transfer) {
-            $where[] = "allow_transfer = 1";
+        if (null !== $allow_transfer) {
+            $where[] = 'allow_transfer = 1';
         }
 
         if (!empty($where)) {
-            $query = $query . ' WHERE ' . implode(' AND ', $where);
+            $query = $query.' WHERE '.implode(' AND ', $where);
         }
 
-        $query = $query . " ORDER BY id ASC";
+        $query = $query.' ORDER BY id ASC';
 
-        return array($query, $bindings);
+        return [$query, $bindings];
     }
 
     public function tldFindAllActive()
@@ -846,19 +837,19 @@ class Service implements \Box\InjectionAwareInterface
 
     public function tldFindOneActiveById($id)
     {
-        return $this->di['db']->findOne('Tld', 'id = :id AND active = 1 ORDER by id ASC', array(':id' => $id));;
+        return $this->di['db']->findOne('Tld', 'id = :id AND active = 1 ORDER by id ASC', [':id' => $id]);
     }
 
     public function tldGetPairs()
     {
-        return $this->di['db']->getAssoc("SELECT id, tld from tld WHERE active = 1 ORDER by id ASC");
+        return $this->di['db']->getAssoc('SELECT id, tld from tld WHERE active = 1 ORDER by id ASC');
     }
 
     public function tldAlreadyRegistered($tld)
     {
-        $tld = $this->di['db']->findOne('Tld', 'tld = :tld ORDER by id ASC', array(':tld' => $tld));
+        $tld = $this->di['db']->findOne('Tld', 'tld = :tld ORDER by id ASC', [':tld' => $tld]);
 
-        return ($tld instanceof \Model_Tld);
+        return $tld instanceof \Model_Tld;
     }
 
     public function tldRm(\Model_Tld $model)
@@ -874,20 +865,20 @@ class Service implements \Box\InjectionAwareInterface
     {
         $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
 
-        return array(
-            'tld'                => $model->tld,
+        return [
+            'tld' => $model->tld,
             'price_registration' => $model->price_registration,
-            'price_renew'        => $model->price_renew,
-            'price_transfer'     => $model->price_transfer,
-            'active'             => $model->active,
-            'allow_register'     => $model->allow_register,
-            'allow_transfer'     => $model->allow_transfer,
-            'min_years'          => $model->min_years,
-            'registrar'          => array(
-                'id'    => $model->tld_registrar_id,
+            'price_renew' => $model->price_renew,
+            'price_transfer' => $model->price_transfer,
+            'active' => $model->active,
+            'allow_register' => $model->allow_register,
+            'allow_transfer' => $model->allow_transfer,
+            'min_years' => $model->min_years,
+            'registrar' => [
+                'id' => $model->tld_registrar_id,
                 'title' => $tldRegistrar->name,
-            )
-        );
+            ],
+        ];
     }
 
     /**
@@ -895,15 +886,15 @@ class Service implements \Box\InjectionAwareInterface
      */
     public function tldFindOneByTld($tld)
     {
-        return $this->di['db']->findOne('Tld', 'tld = :tld ORDER by id ASC', array(':tld' => $tld));
+        return $this->di['db']->findOne('Tld', 'tld = :tld ORDER by id ASC', [':tld' => $tld]);
     }
 
     public function registrarGetSearchQuery($data)
     {
-        $query    = "SELECT * FROM tld_registrar ORDER BY name ASC";
-        $bindings = array();
+        $query = 'SELECT * FROM tld_registrar ORDER BY name ASC';
+        $bindings = [];
 
-        return array($query, $bindings);
+        return [$query, $bindings];
     }
 
     public function registrarGetAvailable()
@@ -912,8 +903,8 @@ class Service implements \Box\InjectionAwareInterface
 
         $exists = $this->di['db']->getAssoc($query);
 
-        $pattern  = BB_PATH_LIBRARY . '/Registrar/Adapter/*.php';
-        $adapters = array();
+        $pattern = BB_PATH_LIBRARY.'/Registrar/Adapter/*.php';
+        $adapters = [];
         foreach (glob($pattern) as $path) {
             $adapter = pathinfo($path, PATHINFO_FILENAME);
             if (!array_key_exists($adapter, $exists)) {
@@ -926,7 +917,7 @@ class Service implements \Box\InjectionAwareInterface
 
     public function registrarGetPairs()
     {
-        $query = "SELECT tr.id, tr.name FROM tld_registrar tr ORDER BY tr.id DESC";
+        $query = 'SELECT tr.id, tr.name FROM tld_registrar tr ORDER BY tr.id DESC';
 
         return $this->di['db']->getAssoc($query);
     }
@@ -945,33 +936,32 @@ class Service implements \Box\InjectionAwareInterface
     {
         $class = $this->registrarGetRegistrarAdapterClassName($model);
 
-        return call_user_func(array($class, 'getConfig'));
+        return call_user_func([$class, 'getConfig']);
     }
 
     private function registrarGetRegistrarAdapterClassName(\Model_TldRegistrar $model)
     {
-        if (!file_exists(BB_PATH_LIBRARY . '/Registrar/Adapter/' . $model->registrar . '.php')) {
-            throw new \Box_Exception("Domain registrar :adapter was not found", array(':adapter' => $model->registrar));
+        if (!file_exists(BB_PATH_LIBRARY.'/Registrar/Adapter/'.$model->registrar.'.php')) {
+            throw new \Box_Exception('Domain registrar :adapter was not found', [':adapter' => $model->registrar]);
         }
 
         $class = sprintf('Registrar_Adapter_%s', $model->registrar);
         if (!class_exists($class)) {
-            throw new \Box_Exception("Registrar :adapter was not found", array(':adapter' => $class));
+            throw new \Box_Exception('Registrar :adapter was not found', [':adapter' => $class]);
         }
 
         return $class;
     }
 
-
     public function registrarGetRegistrarAdapter(\Model_TldRegistrar $r)
     {
-        $config    = $this->registrarGetConfiguration($r);
-        $class     = $this->registrarGetRegistrarAdapterClassName($r);
+        $config = $this->registrarGetConfiguration($r);
+        $class = $this->registrarGetRegistrarAdapterClassName($r);
         $registrar = new $class($config);
         if (!$registrar instanceof \Registrar_AdapterAbstract) {
-            throw new \Box_Exception('Registrar adapter :adapter should extend Registrar_AdapterAbstract', array(':adapter' => $class));
+            throw new \Box_Exception('Registrar adapter :adapter should extend Registrar_AdapterAbstract', [':adapter' => $class]);
         }
-        
+
         $registrar->setLog($this->di['logger']);
 
         if (isset($r->test_mode) && $r->test_mode) {
@@ -984,7 +974,7 @@ class Service implements \Box\InjectionAwareInterface
     public function registrarCreate($code)
     {
         $model = $this->di['db']->dispense('TldRegistrar');
-        $model->name      = $code;
+        $model->name = $code;
         $model->registrar = $code;
         $model->test_mode = 0;
 
@@ -998,7 +988,7 @@ class Service implements \Box\InjectionAwareInterface
     public function registrarCopy(\Model_TldRegistrar $model)
     {
         $new = $this->di['db']->dispense('TldRegistrar');
-        $new->name      = $model->name . " (Copy)";
+        $new->name = $model->name.' (Copy)';
         $new->registrar = $model->registrar;
         $new->test_mode = $model->test_mode;
 
@@ -1026,7 +1016,7 @@ class Service implements \Box\InjectionAwareInterface
 
     public function registrarRm(\Model_TldRegistrar $model)
     {
-        $domains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = :registrar_id', array(':registrar_id' => $model->id));
+        $domains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = :registrar_id', [':registrar_id' => $model->id]);
         if (count($domains) > 0) {
             throw new \Box_Exception('Can not remove registrar which has domains');
         }
@@ -1044,14 +1034,14 @@ class Service implements \Box\InjectionAwareInterface
     {
         $c = $this->registrarGetRegistrarAdapterConfig($model);
 
-        return array(
-            'id'        => $model->id,
-            'title'     => $model->name,
-            'label'     => $c['label'],
-            'config'    => $this->registrarGetConfiguration($model),
-            'form'      => $c['form'],
+        return [
+            'id' => $model->id,
+            'title' => $model->name,
+            'label' => $c['label'],
+            'config' => $this->registrarGetConfiguration($model),
+            'form' => $c['form'],
             'test_mode' => $model->test_mode,
-        );
+        ];
     }
 
     public function updateDomain(\Model_ServiceDomain $s, $data)
@@ -1061,14 +1051,13 @@ class Service implements \Box\InjectionAwareInterface
         $s->ns3 = $this->di['array_get']($data, 'ns3', $s->ns3);
         $s->ns4 = $this->di['array_get']($data, 'ns4', $s->ns4);
 
-        $s->period  = (int)$this->di['array_get']($data, 'period', $s->period);
-        $s->privacy = (bool)$this->di['array_get']($data, 'privacy', $s->privacy);
-        $s->locked  = (bool)$this->di['array_get']($data, 'locked', $s->locked);
+        $s->period = (int) $this->di['array_get']($data, 'period', $s->period);
+        $s->privacy = (bool) $this->di['array_get']($data, 'privacy', $s->privacy);
+        $s->locked = (bool) $this->di['array_get']($data, 'locked', $s->locked);
 
-
-        $s->period = (int)$this->di['array_get']($data, 'period', $s->period);
-        $s->privacy = (bool)$this->di['array_get']($data, 'privacy', $s->privacy);
-        $s->locked = (bool)$this->di['array_get']($data, 'locked', $s->locked);
+        $s->period = (int) $this->di['array_get']($data, 'period', $s->period);
+        $s->privacy = (bool) $this->di['array_get']($data, 'privacy', $s->privacy);
+        $s->locked = (bool) $this->di['array_get']($data, 'locked', $s->locked);
         $s->transfer_code = $this->di['array_get']($data, 'transfer_code', $s->transfer_code);
         $s->updated_at = date('Y-m-d H:i:s');
 
@@ -1078,6 +1067,4 @@ class Service implements \Box\InjectionAwareInterface
 
         return true;
     }
-
-
 }

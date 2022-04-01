@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -15,7 +15,7 @@ namespace Box\Mod\Custompages\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Get paginated list of custom pages
+     * Get paginated list of custom pages.
      *
      * @return array
      */
@@ -32,7 +32,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Delete custom page
+     * Delete custom page.
      *
      * @param int $id - custom page ID
      *
@@ -40,17 +40,18 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Custom Page ID not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $this->getService()->deletePage($data['id']);
+
         return true;
     }
 
     /**
-     * Delete custom pages
+     * Delete custom pages.
      *
      * @param array $ids - custom page IDs
      *
@@ -58,19 +59,20 @@ class Admin extends \Api_Abstract
      */
     public function batch_delete($data)
     {
-        $required = array(
+        $required = [
             'ids' => 'Custom Page IDs not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $this->getService()->deletePage($data['ids']);
+
         return true;
     }
 
     /**
-     * Create new custom page
+     * Create new custom page.
      *
-     * @param string $title - custom page title
+     * @param string $title   - custom page title
      * @param string $content - custom page content
      *
      * @optional string $description - custom page meta description
@@ -80,26 +82,26 @@ class Admin extends \Api_Abstract
      */
     public function create($data)
     {
-        $required = array(
+        $required = [
             'title' => 'Custom page title not passed',
             'content' => 'Custom page content not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $title       = $data['title'];
+        $title = $data['title'];
 
-        $content       = $data['content'];
-        $description = $this->di['array_get']($data, 'description', NULL);
-        $keywords = $this->di['array_get']($data, 'keywords', NULL);
+        $content = $data['content'];
+        $description = $this->di['array_get']($data, 'description', null);
+        $keywords = $this->di['array_get']($data, 'keywords', null);
 
         return $this->getService()->createPage($title, $description, $keywords, $content);
     }
 
     /**
-     * Update custom page
+     * Update custom page.
      *
-     * @param string $id - custom page id
-     * @param string $slug - custom page slug
+     * @param string $id      - custom page id
+     * @param string $slug    - custom page slug
      * @param string $content - custom page content
      *
      * @optional string $description - custom page meta description
@@ -109,26 +111,26 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Custom page id not passed',
             'title' => 'Custom page title not passed',
             'slug' => 'Custom page slug not passed',
             'content' => 'Custom page content not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $id = $data['id'];
         $title = $data['title'];
         $content = $data['content'];
         $slug = $data['slug'];
-        $description = $this->di['array_get']($data, 'description', NULL);
-        $keywords = $this->di['array_get']($data, 'keywords', NULL);
+        $description = $this->di['array_get']($data, 'description', null);
+        $keywords = $this->di['array_get']($data, 'keywords', null);
 
         return $this->getService()->updatePage($id, $title, $description, $keywords, $content, $slug);
     }
 
     /**
-     * Get custom page by id
+     * Get custom page by id.
      *
      * @param string $id - custom page id
      *

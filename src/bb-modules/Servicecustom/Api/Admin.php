@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -13,12 +13,12 @@
 namespace Box\Mod\Servicecustom\Api;
 
 /**
- * Custom service management
+ * Custom service management.
  */
 class Admin extends \Api_Abstract
 {
     /**
-     * Update custom service configuration
+     * Update custom service configuration.
      *
      * @return bool
      */
@@ -32,12 +32,12 @@ class Admin extends \Api_Abstract
             $this->getService()->updateConfig($data['order_id'], $data['config']);
         }
 
-        return TRUE;
+        return true;
     }
 
     /**
      * Universal method to call method from plugin
-     * Pass any other params and they will be passed to plugin
+     * Pass any other params and they will be passed to plugin.
      *
      * @param int $order_id - ID of the order
      *
@@ -58,6 +58,4 @@ class Admin extends \Api_Abstract
 
         return $this->getService()->customCall($model, $name, $data);
     }
-
-
 }

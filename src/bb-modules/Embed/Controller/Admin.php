@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -34,27 +34,28 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function fetchNavigation()
     {
-        return array(
-            'subpages'=> array(
-                array(
-                    'location'  => 'extensions',
-                    'label'     => 'Embed and integrate',
-                    'index'     => 1500,
-                    'uri'       => $this->di['url']->adminLink('embed'),
-                    'class'     => '',
-                ),
-            ),
-        );
+        return [
+            'subpages' => [
+                [
+                    'location' => 'extensions',
+                    'label' => 'Embed and integrate',
+                    'index' => 1500,
+                    'uri' => $this->di['url']->adminLink('embed'),
+                    'class' => '',
+                ],
+            ],
+        ];
     }
 
     public function register(\Box_App &$app)
     {
-        $app->get('/embed',             'get_index', array(), get_class($this));
+        $app->get('/embed', 'get_index', [], get_class($this));
     }
 
     public function get_index(\Box_App $app)
     {
         $this->di['is_admin_logged'];
+
         return $app->render('mod_embed_index');
     }
 }

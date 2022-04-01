@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -36,11 +36,11 @@ class Service implements InjectionAwareInterface
 
     public function getSummary()
     {
-        $stats = array();
+        $stats = [];
 
         $pdo = $this->di['pdo'];
 
-        $total_query = "SELECT COUNT(1) FROM :table";
+        $total_query = 'SELECT COUNT(1) FROM :table';
         $yeste_query = "SELECT COUNT(1) FROM :table WHERE DATE_FORMAT(`created_at`, '%Y-%m-%d') = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
         $today_query = "SELECT COUNT(1) FROM :table WHERE DATE_FORMAT(`created_at`, '%Y-%m-%d') = CURDATE()";
         $month_query = "SELECT COUNT(1) FROM :table WHERE DATE_FORMAT(`created_at`, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')";
@@ -139,7 +139,7 @@ class Service implements InjectionAwareInterface
 
     public function getSummaryIncome()
     {
-        $stats = array();
+        $stats = [];
 
         $pdo = $this->di['pdo'];
 
@@ -177,6 +177,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->counter();
         unset($c['total']);
+
         return $c;
     }
 
@@ -189,29 +190,30 @@ class Service implements InjectionAwareInterface
                 GROUP BY o.product_id
                 ORDER BY orders DESC
                 ";
+
         return $this->di['db']->getAll($query);
     }
 
     public function getProductSales($data)
     {
-        list($time_from, $time_to) = $this->_getDateInterval($data);
+        [$time_from, $time_to] = $this->_getDateInterval($data);
 
         $pdo = $this->di['pdo'];
 
-        $query = "SELECT title, COUNT(product_id) as sales
+        $query = 'SELECT title, COUNT(product_id) as sales
                 FROM `client_order`
                 WHERE status = :status
                 AND `created_at` BETWEEN :date_from AND :date_to
                 GROUP BY product_id
-                ";
+                ';
 
         $stmt = $pdo->prepare($query);
         $stmt->execute(
-            array(
-                'status'    => 'active',
+            [
+                'status' => 'active',
                 'date_from' => date('Y-m-d', $time_from),
-                'date_to'   => date('Y-m-d', $time_to),
-            )
+                'date_to' => date('Y-m-d', $time_to),
+            ]
         );
 
         return $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
@@ -221,19 +223,20 @@ class Service implements InjectionAwareInterface
     {
         $pdo = $this->di['pdo'];
 
-        $query = "SELECT COALESCE(SUM(base_refund), 0) AS `refund`, COALESCE(SUM(base_income), 0) AS `income`
+        $query = 'SELECT COALESCE(SUM(base_refund), 0) AS `refund`, COALESCE(SUM(base_income), 0) AS `income`
                 FROM `invoice`
                 WHERE approved = 1
                 AND (status = :status1 OR status = :status2)
-                ";
+                ';
 
         $stmt = $pdo->prepare($query);
-        $stmt->execute(array(
-            'status1'    =>  \Model_Invoice::STATUS_PAID,
-            'status2'    =>  \Model_Invoice::STATUS_REFUNDED,
-        ));
+        $stmt->execute([
+            'status1' => \Model_Invoice::STATUS_PAID,
+            'status2' => \Model_Invoice::STATUS_REFUNDED,
+        ]);
 
         $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
         return $results[0];
     }
 
@@ -242,11 +245,11 @@ class Service implements InjectionAwareInterface
         $time_from = strtotime('-1 month');
         $time_to = strtotime('+1 day');
 
-        if(isset($data['date_from']) && !empty($data['date_from'])) {
+        if (isset($data['date_from']) && !empty($data['date_from'])) {
             $time_from = strtotime($data['date_from']);
         }
 
-        if(isset($data['date_to']) && !empty($data['date_to'])) {
+        if (isset($data['date_to']) && !empty($data['date_to'])) {
             $time_to = strtotime($data['date_to']);
         }
 
@@ -261,14 +264,15 @@ class Service implements InjectionAwareInterface
 
         $stmt = $pdo->prepare($query);
         $stmt->execute(
-            array(
-                'status'    => \Model_Invoice::STATUS_REFUNDED,
+            [
+                'status' => \Model_Invoice::STATUS_REFUNDED,
                 'date_from' => date('Y-m-d', $time_from),
-                'date_to'   => date('Y-m-d', $time_to),
-            )
+                'date_to' => date('Y-m-d', $time_to),
+            ]
         );
 
         $results = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+
         return $this->_genFlotArray($results, $time_from, $time_to);
     }
 
@@ -277,11 +281,11 @@ class Service implements InjectionAwareInterface
         $time_from = strtotime('-1 month');
         $time_to = strtotime('+1 day');
 
-        if(isset($data['date_from']) && !empty($data['date_from'])) {
+        if (isset($data['date_from']) && !empty($data['date_from'])) {
             $time_from = strtotime($data['date_from']);
         }
 
-        if(isset($data['date_to']) && !empty($data['date_to'])) {
+        if (isset($data['date_to']) && !empty($data['date_to'])) {
             $time_to = strtotime($data['date_to']);
         }
 
@@ -296,21 +300,22 @@ class Service implements InjectionAwareInterface
 
         $stmt = $pdo->prepare($query);
         $stmt->execute(
-            array(
-                'status'    => \Model_Invoice::STATUS_PAID,
+            [
+                'status' => \Model_Invoice::STATUS_PAID,
                 'date_from' => date('Y-m-d', $time_from),
-                'date_to'   => date('Y-m-d', $time_to),
-            )
+                'date_to' => date('Y-m-d', $time_to),
+            ]
         );
 
         $results = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+
         return $this->_genFlotArray($results, $time_from, $time_to);
     }
 
     public function getClientCountries($data)
     {
         $limit = (int) $this->di['array_get']($data, 'limit', 10);
-        $q="
+        $q = "
             SELECT country, COUNT(id) as clients
             FROM `client`
             GROUP BY `country`
@@ -320,13 +325,14 @@ class Service implements InjectionAwareInterface
         $pdo = $this->di['pdo'];
         $stmt = $pdo->prepare($q);
         $stmt->execute();
+
         return $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
     }
 
     public function getSalesByCountry($data)
     {
         $limit = (int) $this->di['array_get']($data, 'limit', 10);
-        $q="
+        $q = "
             SELECT buyer_country, COUNT(id) as sales
             FROM `invoice`
             WHERE status = 'paid'
@@ -337,6 +343,7 @@ class Service implements InjectionAwareInterface
         $pdo = $this->di['pdo'];
         $stmt = $pdo->prepare($q);
         $stmt->execute();
+
         return $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
     }
 
@@ -345,27 +352,27 @@ class Service implements InjectionAwareInterface
         $time_from = strtotime('-1 month');
         $time_to = strtotime('+1 day');
 
-        if(isset($data['date_from']) && !empty($data['date_from'])) {
+        if (isset($data['date_from']) && !empty($data['date_from'])) {
             $time_from = strtotime($data['date_from']);
         }
 
-        if(isset($data['date_to']) && !empty($data['date_to'])) {
+        if (isset($data['date_to']) && !empty($data['date_to'])) {
             $time_to = strtotime($data['date_to']);
         }
 
-        return array($time_from, $time_to);
+        return [$time_from, $time_to];
     }
 
-    public function getTableStats($table, $data = array())
+    public function getTableStats($table, $data = [])
     {
         $time_from = strtotime('-1 month');
         $time_to = strtotime('+1 day');
 
-        if(isset($data['date_from']) && !empty($data['date_from'])) {
+        if (isset($data['date_from']) && !empty($data['date_from'])) {
             $time_from = strtotime($data['date_from']);
         }
 
-        if(isset($data['date_to']) && !empty($data['date_to'])) {
+        if (isset($data['date_to']) && !empty($data['date_to'])) {
             $time_to = strtotime($data['date_to']);
         }
 
@@ -378,32 +385,33 @@ class Service implements InjectionAwareInterface
 
         $stmt = $pdo->prepare($query);
         $stmt->execute(
-            array(
+            [
                 'date_from' => date('Y-m-d', $time_from),
-                'date_to'   => date('Y-m-d', $time_to),
-            )
+                'date_to' => date('Y-m-d', $time_to),
+            ]
         );
 
         $results = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+
         return $this->_genFlotArray($results, $time_from, $time_to);
     }
 
     /**
-     * @param integer $time_from
-     * @param integer $time_to
+     * @param int $time_from
+     * @param int $time_to
      */
     private function _genFlotArray($results, $time_from, $time_to)
     {
-        $data = array();
+        $data = [];
         // Loop between timestamps, 1 day at a time
         do {
-            $time_from = strtotime('+1 day',$time_from);
+            $time_from = strtotime('+1 day', $time_from);
             $dom = date('Y-m-d', $time_from);
             $c = $this->di['array_get']($results, $dom, 0);
-            $data[] = array($time_from * 1000, (int)$c);
+            $data[] = [$time_from * 1000, (int) $c];
         } while ($time_to > $time_from);
         array_pop($data);
+
         return $data;
     }
 }
- 

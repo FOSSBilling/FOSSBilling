@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -9,70 +9,72 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
-
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', (getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'production'));
-define('BB_PATH_ROOT',      dirname(__FILE__));
-define('BB_PATH_VENDOR',    BB_PATH_ROOT . '/bb-vendor');
-define('BB_PATH_LIBRARY',   BB_PATH_ROOT . '/bb-library');
-define('BB_PATH_THEMES',    BB_PATH_ROOT . '/bb-themes');
-define('BB_PATH_MODS',      BB_PATH_ROOT . '/bb-modules');
-define('BB_PATH_LANGS',     BB_PATH_ROOT . '/bb-locale');
-define('BB_PATH_UPLOADS',   BB_PATH_ROOT . '/bb-uploads');
-define('BB_PATH_DATA',   BB_PATH_ROOT . '/bb-data');
-define('isCLI', php_sapi_name() == 'cli');
+define('BB_PATH_ROOT', dirname(__FILE__));
+define('BB_PATH_VENDOR', BB_PATH_ROOT.'/bb-vendor');
+define('BB_PATH_LIBRARY', BB_PATH_ROOT.'/bb-library');
+define('BB_PATH_THEMES', BB_PATH_ROOT.'/bb-themes');
+define('BB_PATH_MODS', BB_PATH_ROOT.'/bb-modules');
+define('BB_PATH_LANGS', BB_PATH_ROOT.'/bb-locale');
+define('BB_PATH_UPLOADS', BB_PATH_ROOT.'/bb-uploads');
+define('BB_PATH_DATA', BB_PATH_ROOT.'/bb-data');
+define('isCLI', 'cli' == php_sapi_name());
 
 function handler_error(int $number, string $message, string $file, int $line)
 {
-    if (E_RECOVERABLE_ERROR===$number) {
-      if (isCLI) {
-        echo "Error #[$number] occurred in [$file] at line [$line]: [$message]";
-      } else {
-        handler_exception(new ErrorException($message, $number, 0, $file, $line));
-      }
+    if (E_RECOVERABLE_ERROR === $number) {
+        if (isCLI) {
+            echo "Error #[$number] occurred in [$file] at line [$line]: [$message]";
+        } else {
+            handler_exception(new ErrorException($message, $number, 0, $file, $line));
+        }
     } else {
-        error_log($number." ".$message." ".$file." ".$line);
+        error_log($number.' '.$message.' '.$file.' '.$line);
     }
+
     return false;
 }
 
 // Removed Exception type. Some errors are thrown as exceptions causing fatal errors.
 function handler_exception($e)
 {
-  if (isCLI) {
-    echo "Error #[". $e->getCode() ."] occurred in [". $e->getFile() ."] at line [". $e->getLine() ."]: [". trim(strip_tags($e->getMessage())) ."]";
-  } else {
-    if(APPLICATION_ENV == 'testing') {
-        print $e->getMessage() . PHP_EOL;
-        return ;
-    }
-    error_log($e->getMessage());
-    
-    if(defined('BB_MODE_API')) {
-        $code = $e->getCode() ? $e->getCode() : 9998;
-        $result = array('result'=>NULL, 'error'=>array('message'=>$e->getMessage(), 'code'=>$code));
-        print json_encode($result);
-        return false;
-    }
-
-    if(defined('BB_DEBUG') && BB_DEBUG && file_exists(BB_PATH_VENDOR)) {
-      /**
-       * If advanced debugging is enabled, print Whoops instead of our error page.
-       * flip/whoops documentation: https://github.com/filp/whoops/blob/master/docs/API%20Documentation.md
-       */
-      $whoops = new \Whoops\Run;
-      $prettyPage = new \Whoops\Handler\PrettyPageHandler;
-      $prettyPage->setPageTitle("An error ocurred");
-      $prettyPage->addDataTable('BoxBilling environment', [
-        'PHP Version' => phpversion(),
-        'Error code' => $e->getCode()
-      ]);
-      $whoops->pushHandler($prettyPage);
-      $whoops->allowQuit(false);
-      $whoops->writeToOutput(false);
-
-      print($whoops->handleException($e));
+    if (isCLI) {
+        echo 'Error #['.$e->getCode().'] occurred in ['.$e->getFile().'] at line ['.$e->getLine().']: ['.trim(strip_tags($e->getMessage())).']';
     } else {
-      $page = "<!DOCTYPE html>
+        if (APPLICATION_ENV == 'testing') {
+            echo $e->getMessage().PHP_EOL;
+
+            return;
+        }
+        error_log($e->getMessage());
+
+        if (defined('BB_MODE_API')) {
+            $code = $e->getCode() ? $e->getCode() : 9998;
+            $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
+            echo json_encode($result);
+
+            return false;
+        }
+
+        if (defined('BB_DEBUG') && BB_DEBUG && file_exists(BB_PATH_VENDOR)) {
+            /**
+             * If advanced debugging is enabled, print Whoops instead of our error page.
+             * flip/whoops documentation: https://github.com/filp/whoops/blob/master/docs/API%20Documentation.md.
+             */
+            $whoops = new \Whoops\Run();
+            $prettyPage = new \Whoops\Handler\PrettyPageHandler();
+            $prettyPage->setPageTitle('An error ocurred');
+            $prettyPage->addDataTable('BoxBilling environment', [
+        'PHP Version' => phpversion(),
+        'Error code' => $e->getCode(),
+      ]);
+            $whoops->pushHandler($prettyPage);
+            $whoops->allowQuit(false);
+            $whoops->writeToOutput(false);
+
+            echo $whoops->handleException($e);
+        } else {
+            $page = "<!DOCTYPE html>
       <html lang=\"en\">
       
       <head>
@@ -205,57 +207,56 @@ function handler_exception($e)
               <div class=\"error-container\"></div>
               <h1>Error</h1>";
 
-      $page = str_replace(PHP_EOL, "", $page);
-      print $page;
-      if($e->getCode()) {
-          print sprintf('<h2>Error code: <em>%s</em></h1>', $e->getCode());
-      }
-      print sprintf('<p>%s</p>', $e->getMessage());
-      
-      print sprintf('<center><p><a href="http://docs.boxbilling.com/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p></center>', urlencode($e->getMessage()));
-      print('<center><hr><p>Powered by <a href="https://github.com/boxbilling/boxbilling/">BoxBilling</a></p></center>
+            $page = str_replace(PHP_EOL, '', $page);
+            echo $page;
+            if ($e->getCode()) {
+                echo sprintf('<h2>Error code: <em>%s</em></h1>', $e->getCode());
+            }
+            echo sprintf('<p>%s</p>', $e->getMessage());
+
+            echo sprintf('<center><p><a href="http://docs.boxbilling.com/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p></center>', urlencode($e->getMessage()));
+            echo '<center><hr><p>Powered by <a href="https://github.com/boxbilling/boxbilling/">BoxBilling</a></p></center>
       </body>
       
-      </html>');
+      </html>';
+        }
     }
-  }
 }
 
-set_exception_handler("handler_exception");
+set_exception_handler('handler_exception');
 set_error_handler('handler_error');
 
 // Check for Composer packages
-if(!file_exists(BB_PATH_VENDOR)) {
-  throw new Exception("It seems like Composer packages are missing. You have to run \"<code>composer install</code>\" in order to install them. For detailed instruction, you can see <a href=\"https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies\">Composer's getting started guide</a>.<br /><br />If you have downloaded BoxBilling from <a href=\"https://github.com/boxbilling/boxbilling/releases\">GitHub releases</a>, this shouldn't happen.", 110);
+if (!file_exists(BB_PATH_VENDOR)) {
+    throw new Exception("It seems like Composer packages are missing. You have to run \"<code>composer install</code>\" in order to install them. For detailed instruction, you can see <a href=\"https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies\">Composer's getting started guide</a>.<br /><br />If you have downloaded BoxBilling from <a href=\"https://github.com/boxbilling/boxbilling/releases\">GitHub releases</a>, this shouldn't happen.", 110);
 }
 
 // Multisite support. Load new configuration depending on the current hostname
 // If being run from CLI, first parameter must be the hostname
 $configPath = BB_PATH_ROOT.'/bb-config.php';
-if((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || (php_sapi_name() == 'cli' && isset($argv[1]) ) ) {
-    if(php_sapi_name() == 'cli') {
+if ((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || ('cli' == php_sapi_name() && isset($argv[1]))) {
+    if ('cli' == php_sapi_name()) {
         $host = $argv[1];
     } else {
         $host = $_SERVER['HTTP_HOST'];
     }
-    
+
     $predictConfigPath = BB_PATH_ROOT.'/bb-config-'.$host.'.php';
-    if(file_exists($predictConfigPath)) {
+    if (file_exists($predictConfigPath)) {
         $configPath = $predictConfigPath;
     }
 }
 
 // Try to check if configuration is available
-if(!file_exists($configPath) || 0 == filesize($configPath)) {
-    
+if (!file_exists($configPath) || 0 == filesize($configPath)) {
     // Try to create an empty configuration file
     @file_put_contents($configPath, '');
-    
-    $base_url = "http".(isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on' || $_SERVER['HTTPS'] == 1) || isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https' ? 's' : '')."://".$_SERVER['HTTP_HOST'];
-    $base_url .= preg_replace('@/+$@','',dirname($_SERVER['SCRIPT_NAME']));
-    $url = $base_url . '/install/index.php';
 
-    if(file_exists(BB_PATH_ROOT.'/install/index.php')){
+    $base_url = 'http'.(isset($_SERVER['HTTPS']) && ('on' == $_SERVER['HTTPS'] || 1 == $_SERVER['HTTPS']) || isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && 'https' == $_SERVER['HTTP_X_FORWARDED_PROTO'] ? 's' : '').'://'.$_SERVER['HTTP_HOST'];
+    $base_url .= preg_replace('@/+$@', '', dirname($_SERVER['SCRIPT_NAME']));
+    $url = $base_url.'/install/index.php';
+
+    if (file_exists(BB_PATH_ROOT.'/install/index.php')) {
         header("Location: $url");
     }
 
@@ -265,34 +266,34 @@ if(!file_exists($configPath) || 0 == filesize($configPath)) {
 }
 
 // Try to check if /install directory still exists, even after the installation was completed
-if(file_exists($configPath) && 0 !== filesize($configPath) && file_exists(BB_PATH_ROOT.'/install/index.php')) {
-    throw new Exception("For safety reasons, you have to delete the <b><em>/install</em></b> directory to start using BoxBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.", 102);
+if (file_exists($configPath) && 0 !== filesize($configPath) && file_exists(BB_PATH_ROOT.'/install/index.php')) {
+    throw new Exception('For safety reasons, you have to delete the <b><em>/install</em></b> directory to start using BoxBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.', 102);
 }
 
 $config = require_once $configPath;
-require BB_PATH_VENDOR . '/autoload.php';
+require BB_PATH_VENDOR.'/autoload.php';
 
 date_default_timezone_set($config['timezone']);
 
-define('BB_DEBUG',          $config['debug']);
-define('BB_URL',            $config['url']);
-define('BB_SEF_URLS',       $config['sef_urls']);
-define('BB_PATH_CACHE',     $config['path_data'] . '/cache');
-define('BB_PATH_LOG',       $config['path_data'] . '/log');
-define('BB_SSL',            (substr($config['url'], 0, 5) === 'https'));
+define('BB_DEBUG', $config['debug']);
+define('BB_URL', $config['url']);
+define('BB_SEF_URLS', $config['sef_urls']);
+define('BB_PATH_CACHE', $config['path_data'].'/cache');
+define('BB_PATH_LOG', $config['path_data'].'/log');
+define('BB_SSL', ('https' === substr($config['url'], 0, 5)));
 
-if($config['sef_urls']) {
-    define('BB_URL_API',    $config['url'] . 'api/');
+if ($config['sef_urls']) {
+    define('BB_URL_API', $config['url'].'api/');
 } else {
-    define('BB_URL_API',    $config['url'] . 'index.php?_url=/api/');
+    define('BB_URL_API', $config['url'].'index.php?_url=/api/');
 }
 
-include_once BB_PATH_LIBRARY .'/Security/CSRF-Protector-PHP/libs/csrf/csrfprotector.php';
+include_once BB_PATH_LIBRARY.'/Security/CSRF-Protector-PHP/libs/csrf/csrfprotector.php';
 
 // Initialize CSRFProtector library
 csrfProtector::init();
 
-if($config['debug']) {
+if ($config['debug']) {
     error_reporting(E_ALL);
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');
@@ -303,5 +304,5 @@ if($config['debug']) {
 }
 
 ini_set('log_errors', '1');
-ini_set('html_errors', FALSE);
-ini_set('error_log', BB_PATH_LOG . '/php_error.log');
+ini_set('html_errors', false);
+ini_set('error_log', BB_PATH_LOG.'/php_error.log');

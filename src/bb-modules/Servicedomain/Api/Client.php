@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -10,20 +10,19 @@
  * with this source code in the file LICENSE
  */
 
-
 namespace Box\Mod\Servicedomain\Api;
 
 /**
- * Domain service management
+ * Domain service management.
  */
 class Client extends \Api_Abstract
 {
     /**
      * Change domain nameservers. Method sends action to registrar.
      *
-     * @param int $order_id - domain order id
-     * @param string $ns1 - 1 Nameserver hostname, ie: ns1.mydomain.com
-     * @param string $ns2 - 2 Nameserver hostname, ie: ns2.mydomain.com
+     * @param int    $order_id - domain order id
+     * @param string $ns1      - 1 Nameserver hostname, ie: ns1.mydomain.com
+     * @param string $ns2      - 2 Nameserver hostname, ie: ns2.mydomain.com
      *
      * @optional string $ns3 - 3 Nameserver hostname, ie: ns3.mydomain.com
      * @optional string $ns4 - 4 Nameserver hostname, ie: ns4.mydomain.com
@@ -34,11 +33,11 @@ class Client extends \Api_Abstract
     {
         $s = $this->_getService($data);
 
-        $this->di['events_manager']->fire(array('event' => 'onBeforeClientChangeNameservers', 'params' => $data));
+        $this->di['events_manager']->fire(['event' => 'onBeforeClientChangeNameservers', 'params' => $data]);
 
         $this->getService()->updateNameservers($s, $data);
 
-        $this->di['events_manager']->fire(array('event' => 'onAfterClientChangeNameservers', 'params' => $data));
+        $this->di['events_manager']->fire(['event' => 'onAfterClientChangeNameservers', 'params' => $data]);
 
         return true;
     }
@@ -46,8 +45,8 @@ class Client extends \Api_Abstract
     /**
      * Change domain WHOIS contact details. Method sends action to registrar.
      *
-     * @param int $order_id - domain order id
-     * @param array $contact - Contact array must contain these fields: first_name, last_name, email, company, address1, address2, country, city, state, postcode, phone_cc, phone
+     * @param int   $order_id - domain order id
+     * @param array $contact  - Contact array must contain these fields: first_name, last_name, email, company, address1, address2, country, city, state, postcode, phone_cc, phone
      *
      * @return true
      */
@@ -89,7 +88,7 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Retireve domain transfer code
+     * Retireve domain transfer code.
      *
      * @param int $order_id - domain order id
      *
@@ -103,7 +102,7 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Lock domain
+     * Lock domain.
      *
      * @param int $order_id - domain order id
      *
@@ -117,7 +116,7 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Unlock domain
+     * Unlock domain.
      *
      * @param int $order_id - domain order id
      *

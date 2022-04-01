@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -13,13 +13,13 @@
 namespace Box\Mod\Servicecustom\Api;
 
 /**
- * Custom product management
+ * Custom product management.
  */
 class Client extends \Api_Abstract
 {
     /**
      * Universal method to call method from plugin
-     * Pass any other params and they will be passed to plugin
+     * Pass any other params and they will be passed to plugin.
      *
      * @param int $order_id - ID of the order
      *

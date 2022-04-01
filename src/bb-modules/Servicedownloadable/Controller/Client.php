@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -34,15 +34,15 @@ class Client implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/servicedownloadable/get-file/:id', 'get_download', array('id'=>'[0-9]+'), get_class($this));
+        $app->get('/servicedownloadable/get-file/:id', 'get_download', ['id' => '[0-9]+'], get_class($this));
     }
 
     public function get_download(\Box_App $app, $id)
     {
         $api = $this->di['api_client'];
-        $data = array(
-            'order_id'  =>  $id,
-        );
+        $data = [
+            'order_id' => $id,
+        ];
         $api->servicedownloadable_send_file($data);
     }
 }

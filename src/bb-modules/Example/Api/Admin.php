@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,8 +11,8 @@
  */
 
 /**
- * Example module Admin API
- * 
+ * Example module Admin API.
+ *
  * API can be access only by admins
  */
 
@@ -21,22 +21,22 @@ namespace Box\Mod\Example\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Return list of example objects
-     * 
+     * Return list of example objects.
+     *
      * @return string[]
      */
     public function get_something($data)
     {
-        $result = array(
+        $result = [
             'apple',
             'google',
             'facebook',
-        );
+        ];
 
-        if(isset($data['microsoft'])) {
+        if (isset($data['microsoft'])) {
             $result[] = 'microsoft';
         }
-        
+
         return $result;
     }
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -9,7 +9,6 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
-
 
 namespace Box\Mod\Kb;
 
@@ -27,63 +26,62 @@ class Service
 
     public function searchArticles($status = null, $search = null, $cat = null, $per_page = 100, $page = null)
     {
-        $filter = array();
+        $filter = [];
 
-        $sql = "
+        $sql = '
             SELECT *
             FROM kb_article
             WHERE 1
-        ";
+        ';
 
         if ($cat) {
-            $sql .= " AND kb_article_category_id = :cid";
+            $sql .= ' AND kb_article_category_id = :cid';
             $filter[':cid'] = $cat;
         }
 
         if ($status) {
-            $sql .= " AND status = :status";
+            $sql .= ' AND status = :status';
             $filter[':status'] = $status;
         }
 
         if ($search) {
-            $sql .= " AND title LIKE :q OR content LIKE :q";
+            $sql .= ' AND title LIKE :q OR content LIKE :q';
             $filter[':q'] = "%$search%";
         }
 
-        $sql .= " ORDER BY kb_article_category_id DESC, views DESC";
+        $sql .= ' ORDER BY kb_article_category_id DESC, views DESC';
 
         return $this->di['pager']->getSimpleResultSet($sql, $filter, $per_page, $page);
     }
 
-
     public function findActiveArticleById($id)
     {
-        $bindings = array(
-            ':id'     => $id,
-            ':status' => \Model_KbArticle::ACTIVE
-        );
+        $bindings = [
+            ':id' => $id,
+            ':status' => \Model_KbArticle::ACTIVE,
+        ];
 
         return $this->di['db']->findOne('KbArticle', 'id = :id AND status=:status', $bindings);
     }
 
     public function findActiveArticleBySlug($slug)
     {
-        $bindings = array(
-            ':slug'   => $slug,
-            ':status' => \Model_KbArticle::ACTIVE
-        );
+        $bindings = [
+            ':slug' => $slug,
+            ':status' => \Model_KbArticle::ACTIVE,
+        ];
 
         return $this->di['db']->findOne('KbArticle', 'slug = :slug AND status=:status', $bindings);
     }
 
     public function findActive()
     {
-        return $this->di['db']->find('KbArticle', 'status=:status', array(':status' => \Model_KbArticle::ACTIVE));
+        return $this->di['db']->find('KbArticle', 'status=:status', [':status' => \Model_KbArticle::ACTIVE]);
     }
 
     public function hitView(\Model_KbArticle $model)
     {
-        $model->views++;
+        ++$model->views;
         $this->di['db']->store($model);
     }
 
@@ -96,29 +94,29 @@ class Service
 
     public function toApiArray(\Model_KbArticle $model, $deep = false, $identity = null)
     {
-        $data = array(
-            'id'         => $model->id,
-            'slug'       => $model->slug,
-            'title'      => $model->title,
-            'views'      => $model->views,
+        $data = [
+            'id' => $model->id,
+            'slug' => $model->slug,
+            'title' => $model->title,
+            'views' => $model->views,
             'created_at' => $model->created_at,
-            'status'     => $model->status,
+            'status' => $model->status,
             'updated_at' => $model->updated_at,
-        );
+        ];
 
         $cat = $this->di['db']->getExistingModelById('KbArticleCategory', $model->kb_article_category_id, 'Knowledge Base category not found');
-        $data['category'] = array(
-            'id'    => $cat->id,
-            'slug'  => $cat->slug,
+        $data['category'] = [
+            'id' => $cat->id,
+            'slug' => $cat->slug,
             'title' => $cat->title,
-        );
+        ];
 
         if ($deep) {
             $data['content'] = $model->content;
         }
 
         if ($identity instanceof \Model_Admin) {
-            $data['status']                 = $model->status;
+            $data['status'] = $model->status;
             $data['kb_article_category_id'] = $model->kb_article_category_id;
         }
 
@@ -127,19 +125,19 @@ class Service
 
     public function createArticle($articleCategoryId, $title, $status = null, $content = null)
     {
-        if(!isset($status)){
+        if (!isset($status)) {
             $status = \Model_KbArticle::DRAFT;
         }
 
-        $model                         = $this->di['db']->dispense('KbArticle');
+        $model = $this->di['db']->dispense('KbArticle');
         $model->kb_article_category_id = $articleCategoryId;
-        $model->title                  = $title;
-        $model->slug                   = $this->di['tools']->slug($title);
-        $model->status                 = $status;
-        $model->content                = $content;
-        $model->updated_at             = date('Y-m-d H:i:s');
-        $model->created_at             = date('Y-m-d H:i:s');
-        $id                            = $this->di['db']->store($model);
+        $model->title = $title;
+        $model->slug = $this->di['tools']->slug($title);
+        $model->status = $status;
+        $model->content = $content;
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->created_at = date('Y-m-d H:i:s');
+        $id = $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new knowledge base article #%s', $id);
 
@@ -148,7 +146,7 @@ class Service
 
     public function updateArticle($id, $articleCategoryId = null, $title = null, $slug = null, $status = null, $content = null, $views = null)
     {
-        $model = $this->di['db']->findOne('KbArticle', 'id = ?', array($id));
+        $model = $this->di['db']->findOne('KbArticle', 'id = ?', [$id]);
 
         if (!$model instanceof \Model_KbArticle) {
             throw new \Box_Exception('Article not found');
@@ -188,52 +186,52 @@ class Service
 
     public function categoryGetSearchQuery($data)
     {
-        $sql = "
+        $sql = '
         SELECT kac.*
         FROM kb_article_category kac
-        LEFT JOIN kb_article ka ON kac.id  = ka.kb_article_category_id";
+        LEFT JOIN kb_article ka ON kac.id  = ka.kb_article_category_id';
 
-        $article_status = $this->di['array_get']($data, 'article_status', NULL);
-        $query          = $this->di['array_get']($data, 'q', NULL);
+        $article_status = $this->di['array_get']($data, 'article_status', null);
+        $query = $this->di['array_get']($data, 'q', null);
 
-        $where    = array();
-        $bindings = array();
+        $where = [];
+        $bindings = [];
         if ($article_status) {
-            $where[] = "ka.status = :status";
+            $where[] = 'ka.status = :status';
 
             $bindings[':status'] = $article_status;
         }
 
         if ($query) {
-            $where[] = "(ka.title LIKE :title OR ka.content LIKE :content)";
+            $where[] = '(ka.title LIKE :title OR ka.content LIKE :content)';
 
-            $bindings[':title']   = "%$query%";
+            $bindings[':title'] = "%$query%";
             $bindings[':content'] = "%$query%";
         }
 
         if (!empty($where)) {
-            $sql = $sql . ' WHERE ' . implode(' AND ', $where);
+            $sql = $sql.' WHERE '.implode(' AND ', $where);
         }
 
-        $sql = $sql . " GROUP BY kac.id ORDER BY kac.id DESC";
+        $sql = $sql.' GROUP BY kac.id ORDER BY kac.id DESC';
 
-        return array($sql, $bindings);
+        return [$sql, $bindings];
     }
 
     public function categoryFindAll()
     {
-        $sql = "SELECT kac.*, a.*
+        $sql = 'SELECT kac.*, a.*
                 FROM kb_article_category kac
                 LEFT JOIN kb_article ka
                 ON kac.id  = ka.kb_article_category_id
-                ";
+                ';
 
         return $this->di['db']->getAll($sql);
     }
 
     public function categoryGetPairs()
     {
-        $sql   = "SELECT id, title FROM kb_article_category";
+        $sql = 'SELECT id, title FROM kb_article_category';
         $pairs = $this->di['db']->getAssoc($sql);
 
         return $pairs;
@@ -241,11 +239,11 @@ class Service
 
     public function categoryRm(\Model_KbArticleCategory $model)
     {
-        $bindings = array(
-            ':kb_article_category_id' => $model->id
-        );
+        $bindings = [
+            ':kb_article_category_id' => $model->id,
+        ];
 
-        $articlesCount = $this->di['db']->getCell("SELECT count(*) as cnt FROM kb_article WHERE kb_article_category_id = :kb_article_category_id", $bindings);
+        $articlesCount = $this->di['db']->getCell('SELECT count(*) as cnt FROM kb_article WHERE kb_article_category_id = :kb_article_category_id', $bindings);
 
         if ($articlesCount > 0) {
             throw new \Box_Exception('Can not remove category which has articles');
@@ -264,17 +262,17 @@ class Service
     {
         $data = $this->di['db']->toArray($model);
 
-        $sql = "kb_article_category_id = :category_id";
-        $bindings = array(
-            ':category_id' => $model->id
-        );
+        $sql = 'kb_article_category_id = :category_id';
+        $bindings = [
+            ':category_id' => $model->id,
+        ];
 
-        if (!$identity instanceof \Model_Admin){
+        if (!$identity instanceof \Model_Admin) {
             $sql .= " AND status = 'active'";
         }
 
-        if ($query){
-            $sql .= "AND (title LIKE :title OR content LIKE :content)";
+        if ($query) {
+            $sql .= 'AND (title LIKE :title OR content LIKE :content)';
             $query = "%$query%";
             $bindings[':content'] = $query;
             $bindings[':title'] = $query;
@@ -294,12 +292,12 @@ class Service
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_KbArticleCategory', 2);
 
-        $model              = $this->di['db']->dispense('KbArticleCategory');
-        $model->title       = $title;
+        $model = $this->di['db']->dispense('KbArticleCategory');
+        $model->title = $title;
         $model->description = $description;
-        $model->slug        = $this->di['tools']->slug($title);
-        $model->updated_at  = date('Y-m-d H:i:s');
-        $model->created_at  = date('Y-m-d H:i:s');
+        $model->slug = $this->di['tools']->slug($title);
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->created_at = date('Y-m-d H:i:s');
 
         $id = $this->di['db']->store($model);
 
@@ -338,9 +336,9 @@ class Service
 
     public function findCategoryBySlug($slug)
     {
-        $bindings = array(
-            ':slug'   => $slug,
-        );
+        $bindings = [
+            ':slug' => $slug,
+        ];
 
         return $this->di['db']->findOne('KbArticleCategory', 'slug = :slug', $bindings);
     }

@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,7 +11,7 @@
  */
 
 /**
- * System activity messages management
+ * System activity messages management.
  */
 
 namespace Box\Mod\Activity\Api;
@@ -19,24 +19,24 @@ namespace Box\Mod\Activity\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Get list of activity messages
+     * Get list of activity messages.
      */
     public function log_get_list($data)
     {
         $data['no_debug'] = true;
-        $per_page         = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
-        list($sql, $params) = $this->getService()->getSearchQuery($data);
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        [$sql, $params] = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
         foreach ($pager['list'] as $key => $item) {
             if (isset($item['staff_id'])) {
-                $pager['list'][$key]['staff']['id']    = $item['staff_id'];
-                $pager['list'][$key]['staff']['name']  = $item['staff_name'];
+                $pager['list'][$key]['staff']['id'] = $item['staff_id'];
+                $pager['list'][$key]['staff']['name'] = $item['staff_name'];
                 $pager['list'][$key]['staff']['email'] = $item['staff_email'];
             }
             if (isset($item['client_id'])) {
-                $pager['list'][$key]['client']['id']    = $item['client_id'];
-                $pager['list'][$key]['client']['name']  = $item['client_name'];
+                $pager['list'][$key]['client']['id'] = $item['client_id'];
+                $pager['list'][$key]['client']['name'] = $item['client_name'];
                 $pager['list'][$key]['client']['email'] = $item['client_email'];
             }
         }
@@ -45,38 +45,38 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Add message to log
+     * Add message to log.
      *
      * @param string $m - Message text
      * @optional int $admin_id - admin id
      * @optional int $client_id - client id
      * @optional string $priority - log priority
-     * 
+     *
      * @return bool
      */
     public function log($data)
     {
-        if(!isset($data['m'])) {
+        if (!isset($data['m'])) {
             return false;
         }
-        
+
         $priority = $this->di['array_get']($data, 'priority', 6);
 
         $entry = $this->di['db']->dispense('ActivitySystem');
-        $entry->client_id       = $this->di['array_get']($data, 'client_id', NULL);
-        $entry->admin_id        = $this->di['array_get']($data, 'admin_id', NULL);
-        $entry->priority        = $priority;
-        $entry->message         = $data['m'];
-        $entry->created_at      = date('Y-m-d H:i:s');
-        $entry->updated_at      = date('Y-m-d H:i:s');
-        $entry->ip              = $this->di['request']->getClientAddress();
+        $entry->client_id = $this->di['array_get']($data, 'client_id', null);
+        $entry->admin_id = $this->di['array_get']($data, 'admin_id', null);
+        $entry->priority = $priority;
+        $entry->message = $data['m'];
+        $entry->created_at = date('Y-m-d H:i:s');
+        $entry->updated_at = date('Y-m-d H:i:s');
+        $entry->ip = $this->di['request']->getClientAddress();
         $this->di['db']->store($entry);
-        
+
         return true;
     }
-    
+
     /**
-     * Add email to log
+     * Add email to log.
      *
      * @return bool
      */
@@ -84,39 +84,41 @@ class Admin extends \Api_Abstract
     {
         if (!isset($data['subject'])) {
             error_log('Email was not logged. Subject not passed');
+
             return false;
         }
 
-        $client_id    = $this->di['array_get']($data, 'client_id', NULL);
-        $sender       = $this->di['array_get']($data, 'sender', NULL);
-        $recipients   = $this->di['array_get']($data, 'recipients', NULL);
-        $subject      = $data['subject'];
-        $content_html = $this->di['array_get']($data, 'content_html', NULL);
-        $content_text = $this->di['array_get']($data, 'content_text', NULL);
+        $client_id = $this->di['array_get']($data, 'client_id', null);
+        $sender = $this->di['array_get']($data, 'sender', null);
+        $recipients = $this->di['array_get']($data, 'recipients', null);
+        $subject = $data['subject'];
+        $content_html = $this->di['array_get']($data, 'content_html', null);
+        $content_text = $this->di['array_get']($data, 'content_text', null);
 
         return $this->getService()->logEmail($subject, $client_id, $sender, $recipients, $content_html, $content_text);
     }
 
     /**
-     * Remove activity message
+     * Remove activity message.
      *
      * @param int $id - Message ID
      */
     public function log_delete($data)
     {
-        $required = array(
+        $required = [
             'id' => 'ID is required',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('ActivitySystem', $data['id'], 'Event not found');
 
         $this->di['db']->trash($model);
+
         return true;
     }
 
     /**
-     * Deletes logs with given IDs
+     * Deletes logs with given IDs.
      *
      * @param array $ids - IDs for deletion
      *
@@ -124,13 +126,13 @@ class Admin extends \Api_Abstract
      */
     public function batch_delete($data)
     {
-        $required = array(
+        $required = [
             'ids' => 'IDs not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         foreach ($data['ids'] as $id) {
-            $this->log_delete(array('id' => $id));
+            $this->log_delete(['id' => $id]);
         }
 
         return true;

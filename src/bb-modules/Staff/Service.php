@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -36,27 +36,27 @@ class Service implements InjectionAwareInterface
 
     public function login($email, $password, $ip)
     {
-        $event_params = array();
+        $event_params = [];
         $event_params['email'] = $email;
         $event_params['password'] = $password;
         $event_params['ip'] = $ip;
 
-        $this->di['events_manager']->fire(array('event'=>'onBeforeAdminLogin', 'params'=>$event_params));
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminLogin', 'params' => $event_params]);
 
         $model = $this->authorizeAdmin($email, $password);
-        if(!$model instanceof \Model_Admin ) {
-            $this->di['events_manager']->fire(array('event'=>'onEventAdminLoginFailed', 'params'=>$event_params));
+        if (!$model instanceof \Model_Admin) {
+            $this->di['events_manager']->fire(['event' => 'onEventAdminLoginFailed', 'params' => $event_params]);
             throw new \Box_Exception('Check your login details', null, 403);
         }
 
-        $this->di['events_manager']->fire(array('event'=>'onAfterAdminLogin', 'params'=>array('id'=>$model->id, 'ip'=>$ip)));
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminLogin', 'params' => ['id' => $model->id, 'ip' => $ip]]);
 
-        $result = array(
-            'id'        =>  $model->id,
-            'email'     =>  $model->email,
-            'name'      =>  $model->name,
-            'role'      =>  $model->role,
-        );
+        $result = [
+            'id' => $model->id,
+            'email' => $model->email,
+            'name' => $model->name,
+            'role' => $model->role,
+        ];
 
         $this->di['session']->set('admin', $result);
 
@@ -67,64 +67,64 @@ class Service implements InjectionAwareInterface
 
     public function getAdminsCount()
     {
-        $sql = "SELECT COUNT(*) FROM admin WHERE 1";
+        $sql = 'SELECT COUNT(*) FROM admin WHERE 1';
+
         return $this->di['db']->getCell($sql);
     }
 
     public function setPermissions($member_id, $array)
     {
-        $sql="UPDATE admin SET permissions = :p WHERE id = :id";
+        $sql = 'UPDATE admin SET permissions = :p WHERE id = :id';
         $pdo = $this->di['pdo'];
         $stmt = $pdo->prepare($sql);
         $stmt->bindValue('p', json_encode($array));
         $stmt->bindValue('id', $member_id);
         $stmt->execute();
-        return true;
-    }
-    
-    public function getPermissions($member_id)
-    {
-        $sql="SELECT permissions FROM admin WHERE id = :id";
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute(array('id'=>$member_id));
-        $json = $stmt->fetchColumn();
-        $permissions = json_decode($json, 1);
-        if(!$permissions) {
-            return array();
-        }
-        return $permissions;
-    }
-    
-    public function hasPermission($member, $mod, $method = null)
-    {
-        if($member->role == \Model_Admin::ROLE_CRON || $member->role == \Model_Admin::ROLE_ADMIN) {
-            return true;
-        }
-        
-        $permissions = null;
-        if(is_null($permissions)) {
-            $permissions = $this->getPermissions($member->id);
-        }
-        
-        if(empty($permissions)) {
-            return false;
-        }
-        
-        if(!array_key_exists($mod, $permissions)) {
-            return false;
-        }
-        
-        if(!is_null($method) && is_array($permissions[$mod]) && !in_array($method, $permissions[$mod])) {
-            return false;
-        }
-        
+
         return true;
     }
 
-    /**
-     * @param \Box_Event $event
-     */
+    public function getPermissions($member_id)
+    {
+        $sql = 'SELECT permissions FROM admin WHERE id = :id';
+        $pdo = $this->di['pdo'];
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(['id' => $member_id]);
+        $json = $stmt->fetchColumn();
+        $permissions = json_decode($json, 1);
+        if (!$permissions) {
+            return [];
+        }
+
+        return $permissions;
+    }
+
+    public function hasPermission($member, $mod, $method = null)
+    {
+        if (\Model_Admin::ROLE_CRON == $member->role || \Model_Admin::ROLE_ADMIN == $member->role) {
+            return true;
+        }
+
+        $permissions = null;
+        if (is_null($permissions)) {
+            $permissions = $this->getPermissions($member->id);
+        }
+
+        if (empty($permissions)) {
+            return false;
+        }
+
+        if (!array_key_exists($mod, $permissions)) {
+            return false;
+        }
+
+        if (!is_null($method) && is_array($permissions[$mod]) && !in_array($method, $permissions[$mod])) {
+            return false;
+        }
+
+        return true;
+    }
+
     public static function onAfterClientOrderCreate(\Box_Event $event)
     {
         $di = $event->getDi();
@@ -135,25 +135,22 @@ class Service implements InjectionAwareInterface
             $orderTicketService = $di['mod_service']('order');
             $order = $orderTicketService->toApiArray($orderModel, true);
 
-            $email = array();
-            $email['to_staff']  = true;
-            $email['code']      = 'mod_staff_client_order';
-            $email['order']    = $order;
+            $email = [];
+            $email['to_staff'] = true;
+            $email['code'] = 'mod_staff_client_order';
+            $email['order'] = $order;
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
-        } catch(\Exception $exc) {
+        } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
 
-    /**
-     * @param \Box_Event $event
-     */
     public static function onAfterClientOpenTicket(\Box_Event $event)
     {
         $di = $event->getDi();
         $params = $event->getParameters();
-        
+
         try {
             $supportTicketService = $di['mod_service']('support');
             $ticketModel = $supportTicketService->getTicketById($params['id']);
@@ -162,20 +159,21 @@ class Service implements InjectionAwareInterface
             $helpdeskModel = $di['db']->load('SupportHelpdesk', $ticketModel->support_helpdesk_id);
             $emailService = $di['mod_service']('email');
             if (!empty($helpdeskModel->email)) {
-                $email           = array();
-                $email['to']     = $helpdeskModel->email;
-                $email['code']   = 'mod_support_helpdesk_ticket_open';
+                $email = [];
+                $email['to'] = $helpdeskModel->email;
+                $email['code'] = 'mod_support_helpdesk_ticket_open';
                 $email['ticket'] = $ticket;
                 $emailService->sendTemplate($email);
+
                 return true;
             }
 
-            $email = array();
-            $email['to_staff']  = true;
-            $email['code']      = 'mod_staff_ticket_open';
-            $email['ticket']    = $ticket;
+            $email = [];
+            $email['to_staff'] = true;
+            $email['code'] = 'mod_staff_ticket_open';
+            $email['ticket'] = $ticket;
             $emailService->sendTemplate($email);
-        } catch(\Exception $exc) {
+        } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
@@ -184,20 +182,20 @@ class Service implements InjectionAwareInterface
     {
         $params = $event->getParameters();
         $di = $event->getDi();
-        
+
         try {
             $supportTicketService = $di['mod_service']('support');
             $ticketModel = $supportTicketService->getTicketById($params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
-            $email = array();
-            $email['to_staff']  = true;
-            $email['code']      = 'mod_staff_ticket_reply';
-            $email['ticket']    = $ticket;
+            $email = [];
+            $email['to_staff'] = true;
+            $email['code'] = 'mod_staff_ticket_reply';
+            $email['ticket'] = $ticket;
 
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
-        } catch(\Exception $exc) {
+        } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
@@ -206,39 +204,39 @@ class Service implements InjectionAwareInterface
     {
         $params = $event->getParameters();
         $di = $event->getDi();
-        
+
         try {
             $supportTicketService = $di['mod_service']('support');
             $ticketModel = $supportTicketService->getTicketById($params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
-            $email = array();
-            $email['to_staff']  = true;
-            $email['code']      = 'mod_staff_ticket_close';
-            $email['ticket']    = $ticket;
+            $email = [];
+            $email['to_staff'] = true;
+            $email['code'] = 'mod_staff_ticket_close';
+            $email['ticket'] = $ticket;
 
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
-        } catch(\Exception $exc) {
+        } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
-    
+
     public static function onAfterGuestPublicTicketOpen(\Box_Event $event)
     {
         $params = $event->getParameters();
         $di = $event->getDi();
-        
+
         try {
             $supportTicketService = $di['mod_service']('support');
             $ticketModel = $supportTicketService->getPublicTicketById($params['id']);
             $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
-            $email = array();
-            $email['to_staff']  = true;
-            $email['code']      = 'mod_staff_pticket_open';
-            $email['ticket']    = $ticket;
+            $email = [];
+            $email['to_staff'] = true;
+            $email['code'] = 'mod_staff_pticket_open';
+            $email['ticket'] = $ticket;
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
-        } catch(\Exception $exc) {
+        } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
@@ -247,17 +245,17 @@ class Service implements InjectionAwareInterface
     {
         $params = $event->getParameters();
         $di = $event->getDi();
-        
+
         try {
             $clientService = $di['mod_service']('client');
 
-            $email = array();
-            $email['to_staff']  = true;
-            $email['code']      = 'mod_staff_client_signup';
-            $email['c']         = $clientService ->get(array('id' => $params['id']));
+            $email = [];
+            $email['to_staff'] = true;
+            $email['code'] = 'mod_staff_client_signup';
+            $email['c'] = $clientService->get(['id' => $params['id']]);
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
-        } catch(\Exception $exc) {
+        } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
 
@@ -268,99 +266,98 @@ class Service implements InjectionAwareInterface
     {
         $params = $event->getParameters();
         $di = $event->getDi();
-        
+
         try {
             $supportTicketService = $di['mod_service']('support');
             $ticketModel = $supportTicketService->getPublicTicketById($params['id']);
             $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
-            $email = array();
-            $email['to_staff']  = true;
-            $email['code']      = 'mod_staff_pticket_reply';
-            $email['ticket']    = $ticket;
+            $email = [];
+            $email['to_staff'] = true;
+            $email['code'] = 'mod_staff_pticket_reply';
+            $email['ticket'] = $ticket;
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
-        } catch(\Exception $exc) {
+        } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
-    /**
-     * @param \Box_Event $event
-     */
+
     public static function onAfterGuestPublicTicketClose(\Box_Event $event)
     {
         $params = $event->getParameters();
         $di = $event->getDi();
-        
+
         try {
             $supportService = $di['mod_service']('Support');
             $publicTicket = $di['db']->load('SupportPTicket', $params['id']);
             $ticket = $supportService->publicToApiArray($publicTicket);
-            $email = array();
-            $email['to_staff']  = true;
-            $email['code']      = 'mod_staff_pticket_close';
-            $email['ticket']    = $ticket;
+            $email = [];
+            $email['to_staff'] = true;
+            $email['code'] = 'mod_staff_pticket_close';
+            $email['ticket'] = $ticket;
             $emailService = $di['mod_service']('Email');
             $emailService->sendTemplate($email);
-        } catch(\Exception $exc) {
+        } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
     }
 
-    public function getList($data){
+    public function getList($data)
+    {
         $data['no_cron'] = true;
 
-        list ($query, $params) = $this->getSearchQuery($data);
+        [$query, $params] = $this->getSearchQuery($data);
 
         $di = $this->getDi();
         $pager = $di['pager'];
         $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+
         return $pager->getSimpleResultSet($query, $params, $per_page);
     }
 
     public function getSearchQuery($data)
     {
-        $query = "SELECT * FROM admin";
+        $query = 'SELECT * FROM admin';
 
-        $search = $this->di['array_get']($data, 'search', NULL);
-        $status = $this->di['array_get']($data, 'status', NULL);
+        $search = $this->di['array_get']($data, 'search', null);
+        $status = $this->di['array_get']($data, 'status', null);
         $no_cron = (bool) $this->di['array_get']($data, 'no_cron', false);
 
-        $where = array();
-        $bindings = array();
+        $where = [];
+        $bindings = [];
 
-        if($search) {
+        if ($search) {
             $search = "%$search%";
-            $where[] = "(name LIKE :name OR email LIKE :email )";
+            $where[] = '(name LIKE :name OR email LIKE :email )';
             $bindings[':name'] = $search;
             $bindings[':email'] = $search;
         }
 
-        if($status) {
-            $where[] = "status = :status";
+        if ($status) {
+            $where[] = 'status = :status';
             $bindings[':status'] = $status;
         }
 
-        if($no_cron) {
-            $where[] = "role != :role";
-            $bindings[':role'] =  \Model_Admin::ROLE_CRON;
+        if ($no_cron) {
+            $where[] = 'role != :role';
+            $bindings[':role'] = \Model_Admin::ROLE_CRON;
         }
 
         if (!empty($where)) {
-            $query = $query . ' WHERE ' . implode(' AND ', $where);
+            $query = $query.' WHERE '.implode(' AND ', $where);
         }
-        $query .= " ORDER BY `admin_group_id` ASC, id ASC";
+        $query .= ' ORDER BY `admin_group_id` ASC, id ASC';
 
-        return array($query, $bindings);
+        return [$query, $bindings];
     }
-
 
     /**
      * @return \Model_Admin
      */
     public function getCronAdmin()
     {
-        $cron = $this->di['db']->findOne('Admin', 'role = :role', array(':role'=>\Model_Admin::ROLE_CRON));
-        if($cron instanceof \Model_Admin) {
+        $cron = $this->di['db']->findOne('Admin', 'role = :role', [':role' => \Model_Admin::ROLE_CRON]);
+        if ($cron instanceof \Model_Admin) {
             return $cron;
         }
 
@@ -368,43 +365,44 @@ class Service implements InjectionAwareInterface
         $cron->role = \Model_Admin::ROLE_CRON;
         $cron->admin_group_id = 1;
         $cron->email = $this->di['tools']->generatePassword().'@'.$this->di['tools']->generatePassword().'.com';
-        $cron->pass = $this->di['password']->hashIt(uniqid() . microtime());
-        $cron->name = "System Cron Job";
-        $cron->signature = "";
+        $cron->pass = $this->di['password']->hashIt(uniqid().microtime());
+        $cron->name = 'System Cron Job';
+        $cron->signature = '';
         $cron->protected = 1;
         $cron->status = 'active';
         $cron->created_at = date('Y-m-d H:i:s');
         $cron->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($cron);
+
         return $cron;
     }
 
     public function toModel_AdminApiiArray(\Model_Admin $model, $deep = false)
     {
-        $data = array(
-            'id'                =>  $model->id,
-            'role'              =>  $model->role,
-            'admin_group_id'    =>  $model->admin_group_id,
-            'email'             =>  $model->email,
-            'name'              =>  $model->name,
-            'status'            =>  $model->status,
-            'signature'         =>  $model->signature,
-            'created_at'        =>  $model->created_at,
-            'updated_at'        =>  $model->updated_at,
-        );
+        $data = [
+            'id' => $model->id,
+            'role' => $model->role,
+            'admin_group_id' => $model->admin_group_id,
+            'email' => $model->email,
+            'name' => $model->name,
+            'status' => $model->status,
+            'signature' => $model->signature,
+            'created_at' => $model->created_at,
+            'updated_at' => $model->updated_at,
+        ];
 
         $data['protected'] = $model->protected;
 
         $adminGroupModel = $this->di['db']->load('AdminGroup', $model->admin_group_id);
-        $data['group']['id']    = $adminGroupModel->id;
-        $data['group']['name']  = $adminGroupModel->name;
+        $data['group']['id'] = $adminGroupModel->id;
+        $data['group']['name'] = $adminGroupModel->name;
 
         return $data;
     }
 
     public function update(\Model_Admin $model, $data)
     {
-        $this->di['events_manager']->fire(array('event'=>'onBeforeAdminStaffUpdate', 'params'=>array('id'=>$model->id)));
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffUpdate', 'params' => ['id' => $model->id]]);
 
         $model->email = $this->di['array_get']($data, 'email', $model->email);
         $model->admin_group_id = $this->di['array_get']($data, 'admin_group_id', $model->admin_group_id);
@@ -414,39 +412,42 @@ class Service implements InjectionAwareInterface
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
-        $this->di['events_manager']->fire(array('event'=>'onAfterAdminStaffUpdate', 'params'=>array('id'=>$model->id)));
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffUpdate', 'params' => ['id' => $model->id]]);
 
         $this->di['logger']->info('Updated staff member %s details', $model->id);
+
         return true;
     }
 
     public function delete(\Model_Admin $model)
     {
-        if($model->protected) {
+        if ($model->protected) {
             throw new \Box_Exception('This administrator account is protected and can not be removed');
         }
-        $this->di['events_manager']->fire(array('event'=>'onBeforeAdminStaffDelete', 'params'=>array('id'=>$model->id)));
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffDelete', 'params' => ['id' => $model->id]]);
 
         $id = $model->id;
         $this->di['db']->trash($model);
 
-        $this->di['events_manager']->fire(array('event'=>'onAfterAdminStaffDelete', 'params'=>array('id'=>$id)));
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffDelete', 'params' => ['id' => $id]]);
 
         $this->di['logger']->info('Deleted staff member %s', $id);
+
         return true;
     }
 
     public function changePassword(\Model_Admin $model, $password)
     {
-        $this->di['events_manager']->fire(array('event'=>'onBeforeAdminStaffPasswordChange', 'params'=>array('id'=>$model->id)));
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 
         $model->pass = $this->di['password']->hashIt($password);
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
-        $this->di['events_manager']->fire(array('event'=>'onAfterAdminStaffPasswordChange', 'params'=>array('id'=>$model->id)));
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 
         $this->di['logger']->info('Changed staff member %s password', $model->id);
+
         return true;
     }
 
@@ -455,32 +456,32 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Admin', 3);
 
-        $signature = $this->di['array_get']($data, 'signature', NULL);
+        $signature = $this->di['array_get']($data, 'signature', null);
 
-        $this->di['events_manager']->fire(array('event'=>'onBeforeAdminStaffCreate', 'params'=>$data));
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $data]);
 
         $model = $this->di['db']->dispense('Admin');
-        $model->role                = \Model_Admin::ROLE_STAFF;
-        $model->admin_group_id      = $data['admin_group_id'];
-        $model->email               = $data['email'];
-        $model->pass                = $this->di['password']->hashIt($data['password']);
-        $model->name                = $data['name'];
-        $model->status              = $model->getStatus($data['status']);
-        $model->signature           = $signature;
-        $model->created_at          = date('Y-m-d H:i:s');
-        $model->updated_at          = date('Y-m-d H:i:s');
+        $model->role = \Model_Admin::ROLE_STAFF;
+        $model->admin_group_id = $data['admin_group_id'];
+        $model->email = $data['email'];
+        $model->pass = $this->di['password']->hashIt($data['password']);
+        $model->name = $data['name'];
+        $model->status = $model->getStatus($data['status']);
+        $model->signature = $signature;
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
 
         try {
             $newId = $this->di['db']->store($model);
-        } catch(\RedBeanPHP\RedException $e) {
-            throw new \Box_Exception('Staff member with email :email is already registered', array(':email'=>$data['email']), 788954);
+        } catch (\RedBeanPHP\RedException $e) {
+            throw new \Box_Exception('Staff member with email :email is already registered', [':email' => $data['email']], 788954);
         }
 
-        $this->di['events_manager']->fire(array('event'=>'onAfterAdminStaffCreate', 'params'=>array('id'=>$newId)));
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffCreate', 'params' => ['id' => $newId]]);
 
         $this->di['logger']->info('Created new  staff member %s', $newId);
 
-        return (int)$newId;
+        return (int) $newId;
     }
 
     public function createAdmin(array $data)
@@ -502,6 +503,7 @@ class Service implements InjectionAwareInterface
         $this->_sendMail($admin, $data['password']);
 
         $data['remember'] = true;
+
         return $newId;
     }
 
@@ -510,10 +512,10 @@ class Service implements InjectionAwareInterface
         $sql = 'SELECT id, name
                 FROM  admin_group';
         $rows = $this->di['db']->getAll($sql);
-        $result = array();
+        $result = [];
 
-        foreach($rows as $row){
-            $result[ $row['id'] ] = $row['name'];
+        foreach ($rows as $row) {
+            $result[$row['id']] = $row['name'];
         }
 
         return $result;
@@ -524,13 +526,14 @@ class Service implements InjectionAwareInterface
         $sql = 'SELECT *
                 FROM admin_group
                 order by id asc';
-        return array($sql, array());
+
+        return [$sql, []];
     }
 
     public function createGroup($name)
     {
         $systemService = $this->di['mod_service']('system');
-        $systemService ->checkLimits('Model_AdminGroup', 2);
+        $systemService->checkLimits('Model_AdminGroup', 2);
 
         $model = $this->di['db']->dispense('AdminGroup');
         $model->name = $name;
@@ -540,50 +543,53 @@ class Service implements InjectionAwareInterface
         $groupId = $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new staff group %s', $groupId);
-        return (int) $groupId;
 
+        return (int) $groupId;
     }
 
     public function toAdminGroupApiArray(\Model_AdminGroup $model, $deep = false, $identity = null)
     {
-        $data = array();
+        $data = [];
         $data['id'] = $model->id;
         $data['name'] = $model->name;
         $data['created_at'] = $model->created_at;
         $data['updated_at'] = $model->updated_at;
+
         return $data;
     }
 
     public function deleteGroup(\Model_AdminGroup $model)
     {
         $id = $model->id;
-        if($model->id == 1) {
+        if (1 == $model->id) {
             throw new \Box_Exception('Administrators group can not be removed');
         }
 
         $sql = 'SELECT count(1)
                 FROM admin
                 WHERE admin_group_id = :id';
-        $staffMembersInGroup = $this->di['db']->getCell($sql, array('id' => $model->id));
-        if($staffMembersInGroup > 0) {
+        $staffMembersInGroup = $this->di['db']->getCell($sql, ['id' => $model->id]);
+        if ($staffMembersInGroup > 0) {
             throw new \Box_Exception('Can not remove group which has staff members');
         }
 
         $this->di['db']->trash($model);
 
         $this->di['logger']->info('Deleted staff group %s', $id);
+
         return true;
     }
 
     public function updateGroup(\Model_AdminGroup $model, $data)
     {
-        if (isset($data['name'])){
+        if (isset($data['name'])) {
             $model->name = $data['name'];
         }
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated staff group %s', $model->id);
+
         return true;
     }
 
@@ -594,43 +600,43 @@ class Service implements InjectionAwareInterface
                 LEFT JOIN admin as a on m.admin_id = a.id
                 ';
 
-        $search = $this->di['array_get']($data, 'search', NULL);
-        $admin_id = $this->di['array_get']($data, 'admin_id', NULL);
+        $search = $this->di['array_get']($data, 'search', null);
+        $admin_id = $this->di['array_get']($data, 'admin_id', null);
 
-        $where = array();
-        $params = array();
-        if($search) {
+        $where = [];
+        $params = [];
+        if ($search) {
             $where[] = ' a.name LIKE :name OR a.id LIKE :id OR a.email LIKE :email ';
-            $params['name']     = "%$search%";
-            $params['id']       = "%$search%";
-            $params['email']    = "%$search%";
+            $params['name'] = "%$search%";
+            $params['id'] = "%$search%";
+            $params['email'] = "%$search%";
         }
 
-        if($admin_id) {
+        if ($admin_id) {
             $where[] = 'm.admin_id = :admin_id';
             $params['admin_id'] = $admin_id;
         }
 
-        if (!empty($where)){
+        if (!empty($where)) {
             $sql .= ' WHERE '.implode(' AND ', $where);
         }
         $sql .= ' ORDER BY m.id DESC';
 
-        return array($sql, $params);
+        return [$sql, $params];
     }
 
     public function toActivityAdminHistoryApiArray(\Model_ActivityAdminHistory $model, $deep = false)
     {
-        $result = array(
-            'id'         => $model->id,
-            'ip'         => $model->ip,
+        $result = [
+            'id' => $model->id,
+            'ip' => $model->ip,
             'created_at' => $model->created_at,
-        );
+        ];
         if ($model->admin_id) {
             $adminModel = $this->di['db']->load('Admin', $model->admin_id);
             if ($adminModel instanceof \Model_Admin && $adminModel->id) {
-                $result['staff']['id']    = $adminModel->id;
-                $result['staff']['name']  = $adminModel->name;
+                $result['staff']['id'] = $adminModel->id;
+                $result['staff']['name'] = $adminModel->name;
                 $result['staff']['email'] = $adminModel->email;
             }
         }
@@ -641,6 +647,7 @@ class Service implements InjectionAwareInterface
     public function deleteLoginHistory(\Model_ActivityAdminHistory $model)
     {
         $this->di['db']->trash($model);
+
         return true;
     }
 
@@ -653,18 +660,18 @@ class Service implements InjectionAwareInterface
         $admin_url = $this->di['url']->adminLink('/');
 
         $content = "Hi $admin_name, ".PHP_EOL;
-        $content .= "You have successfully setup BoxBilling at ".BB_URL.PHP_EOL;
-        $content .= "Access client area at: ".$client_url.PHP_EOL;
-        $content .= "Access admin area at: ".$admin_url." with login details:".PHP_EOL;
-        $content .= "Email: ".$admin_email.PHP_EOL;
-        $content .= "Password: ".$admin_pass.PHP_EOL.PHP_EOL;
+        $content .= 'You have successfully setup BoxBilling at '.BB_URL.PHP_EOL;
+        $content .= 'Access client area at: '.$client_url.PHP_EOL;
+        $content .= 'Access admin area at: '.$admin_url.' with login details:'.PHP_EOL;
+        $content .= 'Email: '.$admin_email.PHP_EOL;
+        $content .= 'Password: '.$admin_pass.PHP_EOL.PHP_EOL;
 
-        $content .= "Read BoxBilling documentation to get started http://docs.boxbilling.org/".PHP_EOL;
-        $content .= "Thank You for using BoxBilling.".PHP_EOL;
+        $content .= 'Read BoxBilling documentation to get started http://docs.boxbilling.org/'.PHP_EOL;
+        $content .= 'Thank You for using BoxBilling.'.PHP_EOL;
 
         $subject = sprintf('BoxBilling is ready at "%s"', BB_URL);
 
-        $systemService =  $this->di['mod_service']('system');
+        $systemService = $this->di['mod_service']('system');
         $from = $systemService->getParamValue('company_email');
         $emailService = $this->di['mod_service']('Email');
         $emailService->sendMail($admin_email, $from, $subject, $content);
@@ -672,12 +679,11 @@ class Service implements InjectionAwareInterface
 
     public function authorizeAdmin($email, $plainTextPassword)
     {
-        $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', array($email, \Model_Admin::STATUS_ACTIVE));
-        if ($model == null){
+        $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', [$email, \Model_Admin::STATUS_ACTIVE]);
+        if (null == $model) {
             return null;
         }
 
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }
-
 }

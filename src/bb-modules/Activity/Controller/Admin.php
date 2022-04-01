@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -9,7 +9,6 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
-
 
 namespace Box\Mod\Activity\Controller;
 
@@ -35,34 +34,35 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function fetchNavigation()
     {
-        return array(
-            'group'=> array(
-                'index'     => 700,
-                'location'  =>  'activity',
+        return [
+            'group' => [
+                'index' => 700,
+                'location' => 'activity',
                 'label' => 'Activity',
-                'class'     => 'graphs',
+                'class' => 'graphs',
                 'sprite_class' => 'dark-sprite-icon sprite-graph',
-                ),
-            'subpages'=> array(
-                array(
-                    'location'  =>  'activity',
+                ],
+            'subpages' => [
+                [
+                    'location' => 'activity',
                     'label' => 'Events history',
-                    'index'     => 100,
+                    'index' => 100,
                     'uri' => $this->di['url']->adminLink('activity'),
-                    'class'     => '',
-                ),
-            ),
-        );
+                    'class' => '',
+                ],
+            ],
+        ];
     }
-    
+
     public function register(\Box_App &$app)
     {
-        $app->get('/activity',           'get_index', array(), get_class($this));
+        $app->get('/activity', 'get_index', [], get_class($this));
     }
 
     public function get_index(\Box_App $app)
     {
         $this->di['is_admin_logged'];
+
         return $app->render('mod_activity_index');
     }
 }

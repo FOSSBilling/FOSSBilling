@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,11 +11,10 @@
  */
 
 /**
- * This file is a delegate for module. Class does not extend any other class
+ * This file is a delegate for module. Class does not extend any other class.
  *
  * All methods provided in this example are optional, but function names are
  * still reserved.
- *
  */
 
 namespace Box\Mod\Paidsupport;
@@ -57,11 +56,11 @@ class Service implements InjectionAwareInterface
         if ($paidSupportService->hasHelpdeskPaidSupport($params['support_helpdesk_id'])) {
             $paidSupportService->enoughInBalanceToOpenTicket($client);
         }
+
         return true;
     }
 
     /**
-     * @param \Box_Event $event
      * @return bool
      */
     public static function onAfterClientOpenTicket(\Box_Event $event)
@@ -84,10 +83,10 @@ class Service implements InjectionAwareInterface
         $clientBalanceService->setDi($di);
 
         $message = sprintf('Paid support ticket#%d "%s" opened', $supportTicket->id, $supportTicket->subject);
-        $extra = array(
+        $extra = [
             'rel_id' => $supportTicket->id,
             'type' => 'supportticket',
-        );
+        ];
         $clientBalanceService->deductFunds($client, $paidSupportService->getTicketPrice(), $message, $extra);
 
         return true;
@@ -99,10 +98,12 @@ class Service implements InjectionAwareInterface
     public function getTicketPrice()
     {
         $config = $this->di['mod_config']('Paidsupport');
-        if (!isset($config['ticket_price'])){
+        if (!isset($config['ticket_price'])) {
             error_log('Paid Support ticket price is not set');
+
             return (float) 0;
         }
+
         return (float) $config['ticket_price'];
     }
 
@@ -113,13 +114,15 @@ class Service implements InjectionAwareInterface
     {
         $config = $this->di['mod_config']('Paidsupport');
         $errorMessage = $this->di['array_get']($config, 'error_msg', '');
+
         return strlen(trim($errorMessage)) > 0 ? $errorMessage : 'Configure paid support module!';
     }
 
     public function getPaidHelpdeskConfig()
     {
         $config = $this->di['mod_config']('Paidsupport');
-        return isset($config['helpdesk']) ? $config['helpdesk'] : array();
+
+        return $config['helpdesk'] ?? [];
     }
 
     public function enoughInBalanceToOpenTicket(\Model_Client $client)
@@ -127,7 +130,7 @@ class Service implements InjectionAwareInterface
         $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
         $clientBalance = $clientBalanceService->getClientBalance($client);
 
-        if ($this->getTicketPrice() > $clientBalance){
+        if ($this->getTicketPrice() > $clientBalance) {
             throw new \Box_Exception($this->getErrorMessage());
         }
 
@@ -136,37 +139,40 @@ class Service implements InjectionAwareInterface
 
     /**
      * @param $id
+     *
      * @return bool
      */
     public function hasHelpdeskPaidSupport($id)
     {
         $helpdeskConfig = $this->getPaidHelpdeskConfig();
 
-        if (isset($helpdeskConfig[$id]) && $helpdeskConfig[$id] == 1){
+        if (isset($helpdeskConfig[$id]) && 1 == $helpdeskConfig[$id]) {
             return true;
         }
+
         return false;
     }
 
     public function uninstall()
     {
         $model = $this->di['db']->findOne('ExtensionMeta', 'extension = :ext AND meta_key = :key',
-            array(':ext'=>'mod_paidsupport', ':key'=>'config'));
+            [':ext' => 'mod_paidsupport', ':key' => 'config']);
         if ($model instanceof \Model_ExtensionMeta) {
             $this->di['db']->trash($model);
         }
+
         return true;
     }
 
     public function install()
     {
         $extensionService = $this->di['mod_service']('Extension');
-        $defaultConfig = array(
+        $defaultConfig = [
             'ext' => 'mod_paidsupport',
-            'error_msg' => 'Insufficient funds'
-        );
+            'error_msg' => 'Insufficient funds',
+        ];
         $extensionService->setConfig($defaultConfig);
+
         return true;
     }
-
 }

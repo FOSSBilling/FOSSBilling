@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -9,7 +9,6 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
-
 
 namespace Box\Mod\News;
 
@@ -27,12 +26,12 @@ class Service
 
     public function findOneActiveById($id)
     {
-        return $this->di['db']->findOne('Post', 'id = :id AND status = "active"', array('id'=>$id));
+        return $this->di['db']->findOne('Post', 'id = :id AND status = "active"', ['id' => $id]);
     }
-    
+
     public function findOneActiveBySlug($slug)
     {
-        return $this->di['db']->findOne('Post', 'slug = :slug AND status = "active"', array('slug'=>$slug));
+        return $this->di['db']->findOne('Post', 'slug = :slug AND status = "active"', ['slug' => $slug]);
     }
 
     /**
@@ -46,68 +45,69 @@ class Service
     {
         $desc = utf8_encode($content);
         $desc = strip_tags($desc);
-        $desc = str_replace(array("\n", "\r", "\t"), ' ', $desc);
+        $desc = str_replace(["\n", "\r", "\t"], ' ', $desc);
         $desc = substr($desc, 0, 125);
+
         return $desc;
     }
 
     public function getSearchQuery($data)
     {
-        $sql='SELECT *
+        $sql = 'SELECT *
             FROM post
             WHERE 1 ';
 
-        $params = array();
+        $params = [];
 
-        $search = $this->di['array_get']($data, 'search', NULL);
-        $status = $this->di['array_get']($data, 'status', NULL);
+        $search = $this->di['array_get']($data, 'search', null);
+        $status = $this->di['array_get']($data, 'status', null);
 
-        if(NULL !== $status) {
+        if (null !== $status) {
             $sql .= ' AND status = :status';
             $params['status'] = $status;
         }
 
-        if(NULL !== $search) {
+        if (null !== $search) {
             $sql .= ' AND (m.title LIKE :search OR m.content LIKE :search)';
             $params['search'] = '%'.$search.'%';
         }
 
         $sql .= ' ORDER BY created_at DESC';
 
-        return array($sql, $params);
+        return [$sql, $params];
     }
 
     public function toApiArray($row, $role = 'guest', $deep = true)
     {
-        $admin = $this->di['db']->getRow('SELECT name, email FROM admin WHERE id=:id', array('id' => $row->admin_id));
+        $admin = $this->di['db']->getRow('SELECT name, email FROM admin WHERE id=:id', ['id' => $row->admin_id]);
 
-        $pos     = strpos($row->content, '<!--more-->');
+        $pos = strpos($row->content, '<!--more-->');
         $excerpt = ($pos) ? substr($row->content, 0, $pos) : null;
-        
+
         // Remove <!--more--> from post content
-        $content = str_replace("<!--more-->", "", $row->content);
+        $content = str_replace('<!--more-->', '', $row->content);
 
-        $data = array(
-            'id'           => $row->id,
-            'title'        => $row->title,
-            'description'  => $row->description,
-            'content'      => $content,
-            'slug'         => $row->slug,
-            'image'        => $row->image,
-            'section'      => $row->section,
-            'publish_at'   => $row->publish_at,
+        $data = [
+            'id' => $row->id,
+            'title' => $row->title,
+            'description' => $row->description,
+            'content' => $content,
+            'slug' => $row->slug,
+            'image' => $row->image,
+            'section' => $row->section,
+            'publish_at' => $row->publish_at,
             'published_at' => $row->published_at,
-            'expires_at'   => $row->expires_at,
-            'created_at'   => $row->created_at,
-            'updated_at'   => $row->updated_at,
-            'author'       => array(
-                'name'  => $admin['name'],
+            'expires_at' => $row->expires_at,
+            'created_at' => $row->created_at,
+            'updated_at' => $row->updated_at,
+            'author' => [
+                'name' => $admin['name'],
                 'email' => $admin['email'],
-            ),
-            'excerpt'      => $excerpt,
-        );
+            ],
+            'excerpt' => $excerpt,
+        ];
 
-        if ($role == 'admin') {
+        if ('admin' == $role) {
             $data['status'] = $row->status;
         }
 

@@ -2,13 +2,13 @@
 
 namespace Box\Mod\Servicesolusvm;
 
-class SolusVM implements \Box\InjectionAwareInterface{
-
+class SolusVM implements \Box\InjectionAwareInterface
+{
     protected $api_host = null; // SolusVM Controlpanel URL
     protected $api_ID = ''; // API ID
     protected $api_key = ''; // API KEY
 
-    protected $_parameters = array();
+    protected $_parameters = [];
 
     /**
      * @var \Box_Di
@@ -31,9 +31,9 @@ class SolusVM implements \Box\InjectionAwareInterface{
         return $this->di;
     }
 
-
     /**
-     * SolusVM Controlpanel URL
+     * SolusVM Controlpanel URL.
+     *
      * @return string
      */
     public function getApiHost()
@@ -83,13 +83,14 @@ class SolusVM implements \Box\InjectionAwareInterface{
 
     public function buildUrl(array $config)
     {
-        return $config['protocol'] ."://". $config['ipaddress'] . ":" . $config['port'] . "/api/" . $config['usertype'] . "/command.php";
+        return $config['protocol'].'://'.$config['ipaddress'].':'.$config['port'].'/api/'.$config['usertype'].'/command.php';
     }
 
     public function getSecureUrl(array $config)
     {
         $config['port'] = $this->di['array_get']($config, 'port', 5656);
         $config['protocol'] = 'https';
+
         return $this->buildUrl($config);
     }
 
@@ -97,21 +98,22 @@ class SolusVM implements \Box\InjectionAwareInterface{
     {
         $config['port'] = $this->di['array_get']($config, 'port', 5353);
         $config['protocol'] = 'http';
+
         return $this->buildUrl($config);
     }
 
     public function setConfig(array $c)
     {
-        $required = array(
-            'id'        => 'API ID is missing',
-            'key'       => 'API key is missing',
+        $required = [
+            'id' => 'API ID is missing',
+            'key' => 'API key is missing',
             'ipaddress' => 'API ip address is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $c);
 
         $c['usertype'] = $this->di['array_get']($c, 'usertype', 'admin');
-        $c['secure']   = $this->di['array_get']($c, 'secure', false);
-        $c['port']     = $this->di['array_get']($c, 'port', null);
+        $c['secure'] = $this->di['array_get']($c, 'secure', false);
+        $c['port'] = $this->di['array_get']($c, 'port', null);
 
         $url = $this->getUrl($c);
 
@@ -127,12 +129,12 @@ class SolusVM implements \Box\InjectionAwareInterface{
     /**
      * @param string $action
      */
-    private function callAPI($action, $raw_response = false){
-
+    private function callAPI($action, $raw_response = false)
+    {
         $postfields = array_merge(
-            array('id' => $this->api_ID),
-            array('key' => $this->api_key),
-            array('action'=>$action),
+            ['id' => $this->api_ID],
+            ['key' => $this->api_key],
+            ['action' => $action],
             $this->_parameters);
 
         $ch = curl_init();
@@ -142,35 +144,35 @@ class SolusVM implements \Box\InjectionAwareInterface{
         curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array("Expect:"));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Expect:']);
         curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postfields);
         $return = curl_exec($ch);
 
         $curl_error = curl_error($ch);
-        if($curl_error) {
+        if ($curl_error) {
             throw new \Exception($curl_error, 8755);
         }
 
         curl_close($ch);
 
-        if(empty($return)){
+        if (empty($return)) {
             throw new \Exception('Empty response from SolusVM server.', 8766);
         }
 
-        //used by client-list action
-        if($raw_response) {
+        // used by client-list action
+        if ($raw_response) {
             return $return;
         }
 
-        $result = $match = array();
+        $result = $match = [];
         preg_match_all('/<(.*?)>([^<]+)<\/\\1>/i', $return, $match);
         foreach ($match[1] as $x => $y) {
             $result[$y] = $match[2][$x];
         }
 
-        if($result['status'] != "success" && isset($result['statusmsg'])){
+        if ('success' != $result['status'] && isset($result['statusmsg'])) {
             throw new \Exception($result['statusmsg'], 8777);
         }
 
@@ -217,9 +219,9 @@ class SolusVM implements \Box\InjectionAwareInterface{
     Failure Returns ....... : <status>error</status>
                             <statusmsg>error message</statusmsg>
     */
-    public function vserver_create($type, $node, $nodegroup, $hostname, $password, $username, $plan, $template, $ips, $hvmt = '', $custommemory = '', $customdiskspace = '', $custombandwidth = '', $customcpu = '', $customextraip = '', $issuelicense = ''){
-
-        $this->_parameters = array(
+    public function vserver_create($type, $node, $nodegroup, $hostname, $password, $username, $plan, $template, $ips, $hvmt = '', $custommemory = '', $customdiskspace = '', $custombandwidth = '', $customcpu = '', $customextraip = '', $issuelicense = '')
+    {
+        $this->_parameters = [
             'type' => $type,
             'node' => $node,
             'nodegroup' => $nodegroup,
@@ -235,68 +237,65 @@ class SolusVM implements \Box\InjectionAwareInterface{
             'custombandwidth' => $custombandwidth,
             'customcpu' => $customcpu,
             'customextraip' => $customextraip,
-            'issuelicense' => $issuelicense
-        );
-        return $this->callAPI("vserver-create");
+            'issuelicense' => $issuelicense,
+        ];
+
+        return $this->callAPI('vserver-create');
     }
 
-    public function vserver_checkexists($vserverid){
+    public function vserver_checkexists($vserverid)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+        ];
 
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-
-        return $this->callAPI("vserver-checkexists");
+        return $this->callAPI('vserver-checkexists');
     }
 
-    public function client_checkexists($username){
+    public function client_checkexists($username)
+    {
+        $this->_parameters = [
+            'username' => $username,
+        ];
 
-        $this->_parameters = array(
-            'username' => $username
-        );
-
-        return $this->callAPI("client-checkexists");
-
+        return $this->callAPI('client-checkexists');
     }
 
-    public function client_delete($username){
+    public function client_delete($username)
+    {
+        $this->_parameters = [
+            'username' => $username,
+        ];
 
-        $this->_parameters = array(
-            'username' => $username
-        );
-
-        return $this->callAPI("client-delete");
-
+        return $this->callAPI('client-delete');
     }
 
-    public function vserver_status($vserverid){
+    public function vserver_status($vserverid)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+        ];
 
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-
-        return $this->callAPI("vserver-status");
-
+        return $this->callAPI('vserver-status');
     }
 
-    public function client_create($username, $password, $email, $firstname, $lastname, $company = ''){
-
-        $this->_parameters = array(
+    public function client_create($username, $password, $email, $firstname, $lastname, $company = '')
+    {
+        $this->_parameters = [
             'username' => $username,
             'password' => $password,
             'email' => $email,
             'firstname' => $firstname,
             'lastname' => $lastname,
-            'company' => $company
-        );
+            'company' => $company,
+        ];
 
-        return $this->callAPI("client-create");
-
+        return $this->callAPI('client-create');
     }
 
-    public function reseller_create($username, $password, $email, $firstname, $lastname, $company = '', $usernameprefix = '', $maxvps = '', $maxusers = '', $maxmem = '', $maxburst = '', $maxdisk = '', $maxbw = '', $maxipv4 = '', $maxipv6 = '', $nodegroup = '', $mediagroups = '', $openvz = '', $xenpv = '', $xenhvm = '', $kvm = ''){
-
-        $this->_parameters = array(
+    public function reseller_create($username, $password, $email, $firstname, $lastname, $company = '', $usernameprefix = '', $maxvps = '', $maxusers = '', $maxmem = '', $maxburst = '', $maxdisk = '', $maxbw = '', $maxipv4 = '', $maxipv6 = '', $nodegroup = '', $mediagroups = '', $openvz = '', $xenpv = '', $xenhvm = '', $kvm = '')
+    {
+        $this->_parameters = [
             'username' => $username,
             'password' => $password,
             'email' => $email,
@@ -317,16 +316,15 @@ class SolusVM implements \Box\InjectionAwareInterface{
             'openvz' => $openvz,
             'xenpv' => $xenpv,
             'xenhvm' => $xenhvm,
-            'kvm' => $kvm
-        );
+            'kvm' => $kvm,
+        ];
 
-        return $this->callAPI("reseller-create");
-
+        return $this->callAPI('reseller-create');
     }
 
-    public function reseller_modifyresources($username, $maxvps = '', $maxusers = '', $maxmem = '', $maxburst = '', $maxdisk = '', $maxbw = '', $maxipv4 = '', $maxipv6 = '', $nodegroup = '', $mediagroups = '', $openvz = '', $xenpv = '', $xenhvm = '', $kvm = ''){
-
-        $this->_parameters = array(
+    public function reseller_modifyresources($username, $maxvps = '', $maxusers = '', $maxmem = '', $maxburst = '', $maxdisk = '', $maxbw = '', $maxipv4 = '', $maxipv6 = '', $nodegroup = '', $mediagroups = '', $openvz = '', $xenpv = '', $xenhvm = '', $kvm = '')
+    {
+        $this->_parameters = [
             'username' => $username,
             'maxvps' => $maxvps,
             'maxusers' => $maxusers,
@@ -341,333 +339,394 @@ class SolusVM implements \Box\InjectionAwareInterface{
             'openvz' => $openvz,
             'xenpv' => $xenpv,
             'xenhvm' => $xenhvm,
-            'kvm' => $kvm
-        );
+            'kvm' => $kvm,
+        ];
 
-        return $this->callAPI("reseller-modifyresources");
-
+        return $this->callAPI('reseller-modifyresources');
     }
 
-    public function reseller_info($username){
-
-        $this->_parameters = array(
-            'username' => $username
-        );
-
-        return $this->callAPI("reseller-info-delete");
-
-    }
-
-    public function reseller_list(){
-        return $this->callAPI("reseller-list");
-    }
-
-    public function reseller_delete($username){
-
-        $this->_parameters = array(
-            'username' => $username
-        );
-
-        return $this->callAPI("reseller-delete");
-
-    }
-
-    public function client_updatepassword($username, $password){
-        $this->_parameters = array(
+    public function reseller_info($username)
+    {
+        $this->_parameters = [
             'username' => $username,
-            'password' => $password
-        );
-        return $this->callAPI("client-updatepassword");
+        ];
+
+        return $this->callAPI('reseller-info-delete');
     }
 
-    public function vserver_addip($vserverid){
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-        return $this->callAPI("vserver-addip");
+    public function reseller_list()
+    {
+        return $this->callAPI('reseller-list');
     }
 
-    public function vserver_changeowner($vserverid, $clientid){
-        $this->_parameters = array(
+    public function reseller_delete($username)
+    {
+        $this->_parameters = [
+            'username' => $username,
+        ];
+
+        return $this->callAPI('reseller-delete');
+    }
+
+    public function client_updatepassword($username, $password)
+    {
+        $this->_parameters = [
+            'username' => $username,
+            'password' => $password,
+        ];
+
+        return $this->callAPI('client-updatepassword');
+    }
+
+    public function vserver_addip($vserverid)
+    {
+        $this->_parameters = [
             'vserverid' => $vserverid,
-            'clientid' => $clientid
-        );
-        return $this->callAPI("vserver-changeowner");
+        ];
+
+        return $this->callAPI('vserver-addip');
     }
 
-    public function vserver_reboot($vserverid){
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-        return $this->callAPI("vserver-reboot");
-    }
-
-    public function vserver_shutdown($vserverid){
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-        return $this->callAPI("vserver-shutdown");
-    }
-
-    public function vserver_boot($vserverid){
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-        return $this->callAPI("vserver-boot");
-    }
-
-    public function vserver_suspend($vserverid){
-
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-        return $this->callAPI("vserver-suspend");
-    }
-
-    public function vserver_unsuspend($vserverid){
-
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-        return $this->callAPI("vserver-unsuspend");
-    }
-
-    public function vserver_tun_enable($vserverid){
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-        return $this->callAPI("vserver-tun-enable");
-    }
-
-    public function vserver_network_enable($vserverid){
-
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-        return $this->callAPI("vserver-network-enable");
-    }
-
-    public function vserver_network_disable($vserverid){
-
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-        return $this->callAPI("vserver-network-disable");
-    }
-
-    public function vserver_consolepass($vserverid, $consolepassword){
-        $this->_parameters = array(
+    public function vserver_changeowner($vserverid, $clientid)
+    {
+        $this->_parameters = [
             'vserverid' => $vserverid,
-            'consolepassword' => $consolepassword
-        );
-        return $this->callAPI("vserver-consolepass");
+            'clientid' => $clientid,
+        ];
+
+        return $this->callAPI('vserver-changeowner');
     }
 
-    public function vserver_vncpass($vserverid, $vncpassword){
-
-        $this->_parameters = array(
+    public function vserver_reboot($vserverid)
+    {
+        $this->_parameters = [
             'vserverid' => $vserverid,
-            'vncpassword' => $vncpassword
-        );
-        return $this->callAPI("vserver-vncpass");
+        ];
+
+        return $this->callAPI('vserver-reboot');
     }
 
-    public function vserver_vnc($vserverid){
-
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-
-        return $this->callAPI("vserver-vnc");
-
-    }
-
-    public function vserver_console($vserverid){
-
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-
-        return $this->callAPI("vserver-console");
-
-    }
-
-    public function vserver_tun_disable($vserverid){
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-        return $this->callAPI("vserver-tun-disable");
-    }
-
-    public function vserver_mountiso($vserverid, $iso){
-        $this->_parameters = array(
+    public function vserver_shutdown($vserverid)
+    {
+        $this->_parameters = [
             'vserverid' => $vserverid,
-            'iso' => $iso
-        );
-        return $this->callAPI("vserver-mountiso");
+        ];
+
+        return $this->callAPI('vserver-shutdown');
     }
 
-    public function vserver_unmountiso($vserverid){
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-        return $this->callAPI("vserver-unmountiso");
+    public function vserver_boot($vserverid)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+        ];
+
+        return $this->callAPI('vserver-boot');
+    }
+
+    public function vserver_suspend($vserverid)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+        ];
+
+        return $this->callAPI('vserver-suspend');
+    }
+
+    public function vserver_unsuspend($vserverid)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+        ];
+
+        return $this->callAPI('vserver-unsuspend');
+    }
+
+    public function vserver_tun_enable($vserverid)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+        ];
+
+        return $this->callAPI('vserver-tun-enable');
+    }
+
+    public function vserver_network_enable($vserverid)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+        ];
+
+        return $this->callAPI('vserver-network-enable');
+    }
+
+    public function vserver_network_disable($vserverid)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+        ];
+
+        return $this->callAPI('vserver-network-disable');
+    }
+
+    public function vserver_consolepass($vserverid, $consolepassword)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+            'consolepassword' => $consolepassword,
+        ];
+
+        return $this->callAPI('vserver-consolepass');
+    }
+
+    public function vserver_vncpass($vserverid, $vncpassword)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+            'vncpassword' => $vncpassword,
+        ];
+
+        return $this->callAPI('vserver-vncpass');
+    }
+
+    public function vserver_vnc($vserverid)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+        ];
+
+        return $this->callAPI('vserver-vnc');
+    }
+
+    public function vserver_console($vserverid)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+        ];
+
+        return $this->callAPI('vserver-console');
+    }
+
+    public function vserver_tun_disable($vserverid)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+        ];
+
+        return $this->callAPI('vserver-tun-disable');
+    }
+
+    public function vserver_mountiso($vserverid, $iso)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+            'iso' => $iso,
+        ];
+
+        return $this->callAPI('vserver-mountiso');
+    }
+
+    public function vserver_unmountiso($vserverid)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+        ];
+
+        return $this->callAPI('vserver-unmountiso');
     }
 
     /**
      * @param string $pae
      */
-    public function vserver_pae($vserverid, $pae){
-        $this->_parameters = array(
+    public function vserver_pae($vserverid, $pae)
+    {
+        $this->_parameters = [
             'vserverid' => $vserverid,
-            'pae' => $pae
-        );
-        return $this->callAPI("vserver-pae");
+            'pae' => $pae,
+        ];
+
+        return $this->callAPI('vserver-pae');
     }
 
-    public function vserver_bootorder($vserverid, $bootorder){
-        $this->_parameters = array(
+    public function vserver_bootorder($vserverid, $bootorder)
+    {
+        $this->_parameters = [
             'vserverid' => $vserverid,
-            'bootorder' => $bootorder
-        );
-        return $this->callAPI("vserver-bootorder");
+            'bootorder' => $bootorder,
+        ];
+
+        return $this->callAPI('vserver-bootorder');
     }
 
-    public function vserver_terminate($vserverid, $deleteclient = false){
-        $this->_parameters = array(
+    public function vserver_terminate($vserverid, $deleteclient = false)
+    {
+        $this->_parameters = [
             'vserverid' => $vserverid,
-            'deleteclient' => $deleteclient
-        );
-        return $this->callAPI("vserver-terminate");
+            'deleteclient' => $deleteclient,
+        ];
+
+        return $this->callAPI('vserver-terminate');
     }
 
-    public function vserver_rebuild($vserverid, $template){
-        $this->_parameters = array(
+    public function vserver_rebuild($vserverid, $template)
+    {
+        $this->_parameters = [
             'vserverid' => $vserverid,
-            'template' => $template
-        );
-        return $this->callAPI("vserver-rebuild");
+            'template' => $template,
+        ];
+
+        return $this->callAPI('vserver-rebuild');
     }
 
-    public function vserver_change($vserverid, $plan){
-        $this->_parameters = array(
+    public function vserver_change($vserverid, $plan)
+    {
+        $this->_parameters = [
             'vserverid' => $vserverid,
-            'plan' => $plan
-        );
-        return $this->callAPI("vserver-change");
+            'plan' => $plan,
+        ];
+
+        return $this->callAPI('vserver-change');
     }
 
-    public function vserver_rootpassword($vserverid, $rootpassword){
-        $this->_parameters = array(
+    public function vserver_rootpassword($vserverid, $rootpassword)
+    {
+        $this->_parameters = [
             'vserverid' => $vserverid,
-            'rootpassword' => $rootpassword
-        );
-        return $this->callAPI("vserver-rootpassword");
+            'rootpassword' => $rootpassword,
+        ];
+
+        return $this->callAPI('vserver-rootpassword');
     }
 
-    public function vserver_hostname($vserverid, $hostname){
-        $this->_parameters = array(
+    public function vserver_hostname($vserverid, $hostname)
+    {
+        $this->_parameters = [
             'vserverid' => $vserverid,
-            'hostname' => $hostname
-        );
-        return $this->callAPI("vserver-hostname");
+            'hostname' => $hostname,
+        ];
+
+        return $this->callAPI('vserver-hostname');
     }
 
-    public function listnodes($type){
-        $this->_parameters = array(
-            'type' => $type
-        );
-        return $this->callAPI("listnodes");
+    public function listnodes($type)
+    {
+        $this->_parameters = [
+            'type' => $type,
+        ];
+
+        return $this->callAPI('listnodes');
     }
 
-    public function node_idlist($type){
-        $this->_parameters = array(
-            'type' => $type
-        );
-        return $this->callAPI("node-idlist");
+    public function node_idlist($type)
+    {
+        $this->_parameters = [
+            'type' => $type,
+        ];
+
+        return $this->callAPI('node-idlist');
     }
 
-    public function listnodegroups(){
-        return $this->callAPI("listnodegroups");
+    public function listnodegroups()
+    {
+        return $this->callAPI('listnodegroups');
     }
 
-    public function client_list(){
-        $xml = $this->callAPI("client-list", true);
-        $a = json_decode(json_encode((array) simplexml_load_string($xml)),1);
+    public function client_list()
+    {
+        $xml = $this->callAPI('client-list', true);
+        $a = json_decode(json_encode((array) simplexml_load_string($xml)), 1);
+
         return $a['client'];
     }
 
     /**
      * @param string $type
      */
-    public function listplans($type){
-        $this->_parameters = array(
-            'type' => $type
-        );
-        return $this->callAPI("listplans");
+    public function listplans($type)
+    {
+        $this->_parameters = [
+            'type' => $type,
+        ];
+
+        return $this->callAPI('listplans');
     }
 
-    public function listtemplates($type){
-        $this->_parameters = array(
-            'type' => $type
-        );
-        return $this->callAPI("listtemplates");
+    public function listtemplates($type)
+    {
+        $this->_parameters = [
+            'type' => $type,
+        ];
+
+        return $this->callAPI('listtemplates');
     }
 
-    public function listiso($type){
-        $this->_parameters = array(
-            'type' => $type
-        );
-        return $this->callAPI("listiso");
+    public function listiso($type)
+    {
+        $this->_parameters = [
+            'type' => $type,
+        ];
+
+        return $this->callAPI('listiso');
     }
 
-    public function node_iplist($nodeid){
-        $this->_parameters = array(
-            'nodeid' => $nodeid
-        );
-        return $this->callAPI("node-iplist");
+    public function node_iplist($nodeid)
+    {
+        $this->_parameters = [
+            'nodeid' => $nodeid,
+        ];
+
+        return $this->callAPI('node-iplist');
     }
 
-    public function node_virtualservers($nodeid){
-        $this->_parameters = array(
-            'nodeid' => $nodeid
-        );
-        $xml = $this->callAPI("node-virtualservers", true);
-        $a = json_decode(json_encode((array) simplexml_load_string($xml)),1);
+    public function node_virtualservers($nodeid)
+    {
+        $this->_parameters = [
+            'nodeid' => $nodeid,
+        ];
+        $xml = $this->callAPI('node-virtualservers', true);
+        $a = json_decode(json_encode((array) simplexml_load_string($xml)), 1);
 
-        //one server
-        if(isset($a['virtualserver']['vserverid'])) {
-            return array($a['virtualserver']);
+        // one server
+        if (isset($a['virtualserver']['vserverid'])) {
+            return [$a['virtualserver']];
         } else {
             return $a['virtualserver'];
         }
     }
 
-    public function vserver_info($vserverid){
-        $this->_parameters = array(
-            'vserver-info' => $vserverid
-        );
-        return $this->callAPI("vserver-info");
+    public function vserver_info($vserverid)
+    {
+        $this->_parameters = [
+            'vserver-info' => $vserverid,
+        ];
+
+        return $this->callAPI('vserver-info');
     }
 
-    public function vserver_infoall($vserverid){
-        $this->_parameters = array(
-            'vserverid' => $vserverid
-        );
-        return $this->callAPI("vserver-infoall");
+    public function vserver_infoall($vserverid)
+    {
+        $this->_parameters = [
+            'vserverid' => $vserverid,
+        ];
+
+        return $this->callAPI('vserver-infoall');
     }
 
-    public function node_xenresources($nodeid){
-        $this->_parameters = array(
-            'nodeid' => $nodeid
-        );
-        return $this->callAPI("node-xenresources");
+    public function node_xenresources($nodeid)
+    {
+        $this->_parameters = [
+            'nodeid' => $nodeid,
+        ];
+
+        return $this->callAPI('node-xenresources');
     }
 
-    public function node_statistics($nodeid){
-        $this->_parameters = array(
-            'nodeid' => $nodeid
-        );
-        return $this->callAPI("node-statistics");
+    public function node_statistics($nodeid)
+    {
+        $this->_parameters = [
+            'nodeid' => $nodeid,
+        ];
+
+        return $this->callAPI('node-statistics');
     }
 }

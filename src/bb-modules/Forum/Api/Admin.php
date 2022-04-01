@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,7 +11,7 @@
  */
 
 /**
- * Forum management 
+ * Forum management.
  */
 
 namespace Box\Mod\Forum\Api;
@@ -19,64 +19,68 @@ namespace Box\Mod\Forum\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Get pairs of forums
-     * 
+     * Get pairs of forums.
+     *
      * @return array
      */
     public function get_pairs($data)
     {
         $table = $this->di['table']('Forum');
+
         return $table->getPairs();
     }
-    
+
     /**
-     * Get paginated list of forums
-     * 
+     * Get paginated list of forums.
+     *
      * @return array
      */
     public function get_list($data)
     {
         $table = $this->di['table']('Forum');
         $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
-        list ($sql, $params)= $table->getSearchQuery($data);
+        [$sql, $params] = $table->getSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
-        foreach($pager['list'] as $key => $item){
+        foreach ($pager['list'] as $key => $item) {
             $forum = $this->di['db']->getExistingModelById('Forum', $item['id'], 'Forum not found');
             $pager['list'][$key] = $table->toApiArray($forum);
         }
 
         return $pager;
     }
-    
+
     /**
-     * Get forums list grouped by category name
-     * 
+     * Get forums list grouped by category name.
+     *
      * @return array
      */
     public function get_categories($data)
     {
         $table = $this->di['table']('Forum');
         $list = $this->di['db']->find('Forum');
-        
-        $result = array();
-        foreach($list as $f) {
+
+        $result = [];
+        foreach ($list as $f) {
             $result[$f->category][] = $table->toApiArray($f);
         }
+
         return $result;
     }
-    
+
     /**
-     * Get forum details
-     * 
+     * Get forum details.
+     *
      * @param int $id - forum id
+     *
      * @return array
-     * @throws \Box_Exception 
+     *
+     * @throws \Box_Exception
      */
     public function get($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Forum id was not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $table = $this->di['table']('Forum');
@@ -84,74 +88,76 @@ class Admin extends \Api_Abstract
 
         return $table->toApiArray($model, true, $this->getIdentity());
     }
-    
+
     /**
-     * Create new forum
-     * 
+     * Create new forum.
+     *
      * @param string $title - new forum title
-     * 
+     *
      * @optional string $category - new forum category
-     * 
+     *
      * @return int - new forum id
-     * @throws \Box_Exception 
+     *
+     * @throws \Box_Exception
      */
     public function create($data)
     {
-        $required = array(
+        $required = [
             'title' => 'Forum title was not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Model_Forum', 3);
 
-        $priority = $this->di['db']->getCell("SELECT MAX(priority) FROM forum LIMIT 1");
+        $priority = $this->di['db']->getCell('SELECT MAX(priority) FROM forum LIMIT 1');
 
-        $model              = $this->di['db']->dispense('Forum');
-        $model->category    = $this->di['array_get']($data, 'category', NULL);
-        $model->title       = $data['title'];
-        $model->slug        = $this->di['tools']->slug($data['title']);
-        $model->status      = isset($data['status']) ? $data['status'] : \Model_Forum::STATUS_ACTIVE;
-        $model->description = $this->di['array_get']($data, 'description', NULL);
-        $model->priority    = $priority + 1;
-        $model->created_at  = date('Y-m-d H:i:s');
-        $model->updated_at  = date('Y-m-d H:i:s');
+        $model = $this->di['db']->dispense('Forum');
+        $model->category = $this->di['array_get']($data, 'category', null);
+        $model->title = $data['title'];
+        $model->slug = $this->di['tools']->slug($data['title']);
+        $model->status = $data['status'] ?? \Model_Forum::STATUS_ACTIVE;
+        $model->description = $this->di['array_get']($data, 'description', null);
+        $model->priority = $priority + 1;
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Created new forum "%s"', $model->title);
 
         return $model->id;
     }
-    
+
     /**
-     * Update existing forum
-     * 
+     * Update existing forum.
+     *
      * @param int $id - forum id
-     * 
+     *
      * @optional string $category - new forum category
      * @optional string $title - new forum title
      * @optional string $status - new forum status
      * @optional string $slug - new forum slug
      * @optional string $description - new forum description
      * @optional string $priority - new forum priority
-     * 
-     * @return boolean
-     * @throws \Box_Exception 
+     *
+     * @return bool
+     *
+     * @throws \Box_Exception
      */
     public function update($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Forum id missing',
-        );
-        $this->di['validator']->checkRequiredParamsForArray($required,  $data);
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('Forum', $data['id'], 'Forum not found');
 
         $category = $this->di['array_get']($data, 'category');
-        if($category) {
-            if($this->di['array_get']($data, 'update_categories')) {
-                $this->di['db']->exec('UPDATE forum SET category = :cat WHERE category = :old_cat', 
-                        array('cat'=>$category, 'old_cat'=>$model->category));
+        if ($category) {
+            if ($this->di['array_get']($data, 'update_categories')) {
+                $this->di['db']->exec('UPDATE forum SET category = :cat WHERE category = :old_cat',
+                        ['cat' => $category, 'old_cat' => $model->category]);
             }
             $model->category = $category;
         }
@@ -166,74 +172,79 @@ class Admin extends \Api_Abstract
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated forum "%s"', $model->title);
+
         return true;
     }
 
     /**
-     * Change forums sorting order
-     * 
+     * Change forums sorting order.
+     *
      * @param array $priority - forum id => priority pairs
-     * 
-     * @return boolean
-     * @throws \Box_Exception 
+     *
+     * @return bool
+     *
+     * @throws \Box_Exception
      */
     public function update_priority($data)
     {
-        if(!isset($data['priority']) || !is_array($data['priority'])) {
+        if (!isset($data['priority']) || !is_array($data['priority'])) {
             throw new \Box_Exception('priority params is missing');
         }
 
-        foreach($data['priority'] as $id => $p) {
+        foreach ($data['priority'] as $id => $p) {
             $model = $this->di['db']->getExistingModelById('Forum', $id);
-            if($model instanceof \Model_Forum) {
+            if ($model instanceof \Model_Forum) {
                 $model->priority = $p;
                 $model->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($model);
             }
         }
-        
+
         $this->di['logger']->info('Changed forums priorities');
+
         return true;
     }
 
     /**
-     * Remove forum with all topics
-     * 
+     * Remove forum with all topics.
+     *
      * @param int $id - forum id
-     * 
-     * @return boolean
-     * @throws \Box_Exception 
+     *
+     * @return bool
+     *
+     * @throws \Box_Exception
      */
     public function delete($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Forum id was not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $table = $this->di['table']('Forum');
         $model = $this->di['db']->getExistingModelById('Forum', $data['id'], 'Forum not found');
-        
+
         $id = $model->id;
         $table->rm($model);
-        
+
         $this->di['logger']->info('Deleted forum #%s', $id);
+
         return true;
     }
 
     /**
-     * Get paginated list of topics
-     * 
+     * Get paginated list of topics.
+     *
      * @return array
      */
     public function topic_get_list($data)
     {
         $table = $this->di['table']('ForumTopic');
         $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
-        list($sql, $params) = $table->getSearchQuery($data);
+        [$sql, $params] = $table->getSearchQuery($data);
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
-            $topic               = $this->di['db']->getExistingModelById('ForumTopic', $item['id'], 'Forum topic not found');
+            $topic = $this->di['db']->getExistingModelById('ForumTopic', $item['id'], 'Forum topic not found');
             $pager['list'][$key] = $table->toApiArray($topic);
         }
 
@@ -241,37 +252,41 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get topic details
-     * 
+     * Get topic details.
+     *
      * @param int $id - topic id
+     *
      * @return array
-     * @throws \Box_Exception 
+     *
+     * @throws \Box_Exception
      */
     public function topic_get($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Topic id was not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $table = $this->di['table']('ForumTopic');
         $model = $this->di['db']->getExistingModelById('ForumTopic', $data['id'], 'Forum Topic not found');
-        
+
         return $table->toApiArray($model, true, $this->getIdentity());
     }
 
     /**
-     * Remove topic
-     * 
+     * Remove topic.
+     *
      * @param int $id - topic id
-     * @return boolean
-     * @throws \Box_Exception 
+     *
+     * @return bool
+     *
+     * @throws \Box_Exception
      */
     public function topic_delete($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Topic id was not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $table = $this->di['table']('ForumTopic');
@@ -280,31 +295,33 @@ class Admin extends \Api_Abstract
         $id = $model->id;
         $table->rm($model);
         $this->di['logger']->info('Deleted forum topic #%s', $id);
+
         return true;
     }
 
     /**
-     * Create new topic
-     * 
-     * @param int $forum_id - forum id
-     * @param string $title - topic title
-     * @param string $message - topic message
-     * 
+     * Create new topic.
+     *
+     * @param int    $forum_id - forum id
+     * @param string $title    - topic title
+     * @param string $message  - topic message
+     *
      * @optional string $status - initial topic status
-     * 
+     *
      * @return int - new topic id
-     * @throws \Box_Exception 
+     *
+     * @throws \Box_Exception
      */
     public function topic_create($data)
     {
-        $required = array(
+        $required = [
             'forum_id' => 'Forum ID was not passed',
-            'title'    => 'Forum topic title not passed',
-            'message'  => 'Forum topic message not passed',
-        );
+            'title' => 'Forum topic title not passed',
+            'message' => 'Forum topic message not passed',
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        if(strlen($data['message']) < 2) {
+        if (strlen($data['message']) < 2) {
             throw new \Box_Exception('Your message is too short');
         }
 
@@ -315,7 +332,7 @@ class Admin extends \Api_Abstract
         $topic->forum_id = $forum->id;
         $topic->title = $data['title'];
         $topic->slug = $this->di['tools']->slug($data['title']);
-        $topic->status = isset($data['status']) ? $data['status'] : \Model_ForumTopic::STATUS_ACTIVE;
+        $topic->status = $data['status'] ?? \Model_ForumTopic::STATUS_ACTIVE;
         $topic->created_at = date('Y-m-d H:i:s');
         $topic->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($topic);
@@ -331,33 +348,34 @@ class Admin extends \Api_Abstract
 
         $this->di['logger']->info('Started new forum topic "%s"', $topic->title);
 
-        return (int)$topic->id;
+        return (int) $topic->id;
     }
 
     /**
-     * Update forum topic
-     * 
+     * Update forum topic.
+     *
      * @param int $id - topic id
-     * 
+     *
      * @optional string $title - topic title
      * @optional string $message - topic message
      * @optional string $status - topic status
      * @optional string $slug - topic slug
      * @optional int $views - topic views count
      * @optional bool $sticky - topic sticky flag
-     * 
-     * @return boolean
-     * @throws \Box_Exception 
+     *
+     * @return bool
+     *
+     * @throws \Box_Exception
      */
     public function topic_update($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Forum topic id was not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('ForumTopic', $data['id'], 'Forum Topic not found');
-        
+
         $model->forum_id = $this->di['array_get']($data, 'forum_id', $model->forum_id);
         $model->title = $this->di['array_get']($data, 'title', $model->title);
         $model->status = $this->di['array_get']($data, 'status', $model->status);
@@ -368,49 +386,54 @@ class Admin extends \Api_Abstract
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated forum topic "%s"', $model->title);
+
         return true;
     }
-    
+
     /**
-     * Get topic messages list
-     * 
+     * Get topic messages list.
+     *
      * @optional int $forum_topic_id - topic id
      * @optional int $client_id - filter by client id
      * @optional bool $with_points - get messages with points only
-     * 
+     *
      * @return array
-     * @throws \Box_Exception 
+     *
+     * @throws \Box_Exception
      */
     public function message_get_list($data)
     {
-        $data['orderby']    = 'created_at';
-        $data['sortorder']  = 'desc';
+        $data['orderby'] = 'created_at';
+        $data['sortorder'] = 'desc';
         $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
-        list($sql, $params) = $this->getService()->getMessagesQuery($data);
+        [$sql, $params] = $this->getService()->getMessagesQuery($data);
 
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
-        foreach($pager['list'] as &$entry) {
+        foreach ($pager['list'] as &$entry) {
             $entry['author'] = $this->getService()->getProfile($entry['client_id']);
-            if (!$entry['client_id'] && $entry['admin_id']){
+            if (!$entry['client_id'] && $entry['admin_id']) {
                 $admin = $this->di['db']->getExistingModelById('Admin', $entry['admin_id'], 'Admin not found');
-                $entry['author']['gravatar'] = 'https://gravatar.com/avatar/' . md5($admin->email);
+                $entry['author']['gravatar'] = 'https://gravatar.com/avatar/'.md5($admin->email);
             }
         }
+
         return $pager;
     }
-    
+
     /**
-     * Get forum topic message
-     * 
+     * Get forum topic message.
+     *
      * @param int $id - message id
+     *
      * @return type
-     * @throws \Box_Exception 
+     *
+     * @throws \Box_Exception
      */
     public function message_get($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Forum Topic message ID not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $table = $this->di['table']('ForumTopicMessage');
@@ -421,20 +444,21 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Update forum topic message
-     * 
+     * Update forum topic message.
+     *
      * @param int $id - message id
-     * 
+     *
      * @optional string $message - topic message
-     * 
-     * @return boolean
-     * @throws \Box_Exception 
+     *
+     * @return bool
+     *
+     * @throws \Box_Exception
      */
     public function message_update($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Forum Topic message ID not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('ForumTopicMessage', $data['id'], 'Forum Topic Message not found');
@@ -444,52 +468,56 @@ class Admin extends \Api_Abstract
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated forum topic message #%s', $model->id);
+
         return true;
     }
 
     /**
-     * Delete topic message
-     * 
+     * Delete topic message.
+     *
      * @param int $id - message id
-     * 
-     * @return boolean
-     * @throws \Box_Exception 
+     *
+     * @return bool
+     *
+     * @throws \Box_Exception
      */
     public function message_delete($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Forum Topic message ID not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $table = $table = $this->di['table']('ForumTopicMessage');
-        $model =  $this->di['db']->getExistingModelById('ForumTopicMessage', $data['id'], 'Forum Topic Message not found');
+        $model = $this->di['db']->getExistingModelById('ForumTopicMessage', $data['id'], 'Forum Topic Message not found');
 
         $id = $model->id;
         $table->rm($model);
 
         $this->di['logger']->info('Admin removed forum topic message  #%s', $id);
+
         return true;
     }
 
     /**
-     * Post new message to topic
-     * 
-     * @param int $forum_topic_id - forum topic id
-     * @param string $message - topic message
-     * 
+     * Post new message to topic.
+     *
+     * @param int    $forum_topic_id - forum topic id
+     * @param string $message        - topic message
+     *
      * @return id
-     * @throws \Box_Exception 
+     *
+     * @throws \Box_Exception
      */
     public function message_create($data)
     {
-        $required = array(
+        $required = [
             'forum_topic_id' => 'Forum Topic ID not passed',
-            'message'        => 'Topic message not passed',
-        );
+            'message' => 'Topic message not passed',
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        if(strlen($data['message']) < 2) {
+        if (strlen($data['message']) < 2) {
             throw new \Box_Exception('Your message is too short');
         }
 
@@ -509,73 +537,81 @@ class Admin extends \Api_Abstract
         $topic->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($topic);
 
-        $this->di['events_manager']->fire(array('event'=>'onAfterAdminRepliedInForum', 'params'=>array('id'=>$topic->id, 'message_id'=>$msg->id, 'admin_id'=>$admin->id)));
-        
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminRepliedInForum', 'params' => ['id' => $topic->id, 'message_id' => $msg->id, 'admin_id' => $admin->id]]);
+
         $this->di['logger']->info('Posted new forum message %s', $msg->id);
-        return (int)$msg->id;
+
+        return (int) $msg->id;
     }
 
     /**
      * Decline post. Post will be considered as not worth the points.
-     * 
+     *
      * @param int $id - message id
-     * 
+     *
      * @return bool
+     *
      * @throws \Box_Exception
      */
     public function points_deduct($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Message ID not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-       
+
         $service = $service = $this->di['mod_service']('forum');
-        $service->declinePointsForPost($data['id']); 
-        
+        $service->declinePointsForPost($data['id']);
+
         $this->di['logger']->info('Deducted points from forum message #%s', $data['id']);
+
         return true;
     }
-    
+
     /**
-     * Update total points for client
-     * 
-     * @param int $client_id - client id
-     * @param float $amount - new points total
-     * 
-     * @return boolean
+     * Update total points for client.
+     *
+     * @param int   $client_id - client id
+     * @param float $amount    - new points total
+     *
+     * @return bool
+     *
      * @throws \Box_Exception
      */
     public function points_update($data)
     {
-        $required = array(
+        $required = [
             'client_id' => 'Client ID not passed',
             'amount' => 'Amount not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        
+
         $service = $service = $this->di['mod_service']('forum');
-        $service->updateTotalPoints($data['client_id'], $data['amount']); 
-        
+        $service->updateTotalPoints($data['client_id'], $data['amount']);
+
         $this->di['logger']->info('Updated client %s forum points balance to %s', $data['client_id'], $data['amount']);
+
         return true;
     }
-    
+
     /**
-     * Client forum profile
-     * 
+     * Client forum profile.
+     *
      * @param int $client_id - client id
+     *
      * @return array
+     *
      * @throws \Box_Exception
      */
     public function profile_get($data)
     {
-        $required = array(
+        $required = [
             'client_id' => 'Client ID not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        
+
         $forumService = $this->di['mod_service']('forum');
+
         return $forumService->getProfile($data['client_id']);
     }
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -24,33 +24,36 @@ namespace Box\Mod\Notification\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Get paginated list of notifications
+     * Get paginated list of notifications.
      *
      * @return array
      */
     public function get_list($data)
     {
-        list($sql, $params) = $this->getService()->getSearchQuery($data);
+        [$sql, $params] = $this->getService()->getSearchQuery($data);
         $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+
         return $resultSet = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
     }
 
     /**
-     * Get notification message
+     * Get notification message.
      *
      * @param int $id - message id
+     *
      * @return array
+     *
      * @throws Box_Exception
      */
     public function get($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Notification ID is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $meta = $this->di['db']->load('extension_meta', $data['id']);
-        if ($meta->extension != 'mod_notification' || $meta->meta_key != 'message') {
+        if ('mod_notification' != $meta->extension || 'message' != $meta->meta_key) {
             throw new \Box_Exception('Notification message was not found');
         }
 
@@ -58,9 +61,10 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Add new notification message
+     * Add new notification message.
      *
      * @param string $message - message text
+     *
      * @return int|false - new message id
      */
     public function add($data)
@@ -75,21 +79,23 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Remove notification message
+     * Remove notification message.
      *
      * @param int $id - message id
-     * @return boolean
+     *
+     * @return bool
+     *
      * @throws Box_Exception
      */
     public function delete($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Notification ID is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $meta = $this->di['db']->load('extension_meta', $data['id']);
-        if ($meta->extension != 'mod_notification' || $meta->meta_key != 'message') {
+        if ('mod_notification' != $meta->extension || 'message' != $meta->meta_key) {
             throw new \Box_Exception('Notification message was not found');
         }
         $this->di['db']->trash($meta);
@@ -98,9 +104,10 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Remove all notification messages
+     * Remove all notification messages.
      *
-     * @return boolean
+     * @return bool
+     *
      * @throws Box_Exception
      */
     public function delete_all()

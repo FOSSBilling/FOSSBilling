@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,11 +11,10 @@
  */
 
 /**
- * This file is a delegate for module. Class does not extend any other class
+ * This file is a delegate for module. Class does not extend any other class.
  *
  * All methods provided in this example are optional, but function names are
  * still reserved.
- *
  */
 
 namespace Box\Mod\Example;
@@ -40,15 +39,16 @@ class Service
      * database table might be enough.
      *
      * @return bool
+     *
      * @throws \Box_Exception
      */
     public function install()
     {
         // execute sql script if needed
         $db = $this->di['db'];
-        $db->exec("SELECT NOW()");
+        $db->exec('SELECT NOW()');
 
-        //throw new \Box_Exception("Throw exception to terminate module installation process with a message", array(), 123);
+        // throw new \Box_Exception("Throw exception to terminate module installation process with a message", array(), 123);
         return true;
     }
 
@@ -56,11 +56,12 @@ class Service
      * Method to uninstall module.
      *
      * @return bool
+     *
      * @throws \Box_Exception
      */
     public function uninstall()
     {
-        //throw new \Box_Exception("Throw exception to terminate module uninstallation process with a message", array(), 124);
+        // throw new \Box_Exception("Throw exception to terminate module uninstallation process with a message", array(), 124);
         return true;
     }
 
@@ -70,46 +71,50 @@ class Service
      * after new files are placed.
      *
      * @param array $manifest - information about new module version
+     *
      * @return bool
+     *
      * @throws \Box_Exception
      */
     public function update($manifest)
     {
-        //throw new \Box_Exception("Throw exception to terminate module update process with a message", array(), 125);
+        // throw new \Box_Exception("Throw exception to terminate module update process with a message", array(), 125);
         return true;
     }
 
     /**
      * Method is used to create search query for paginated list.
-     * Usually there is one paginated list per module
+     * Usually there is one paginated list per module.
      *
      * @param array $data
+     *
      * @return array() = list of 2 parameters: array($sql, $params)
      */
     public function getSearchQuery($data)
     {
-        $params = array();
-        $sql="SELECT meta_key, meta_value
+        $params = [];
+        $sql = "SELECT meta_key, meta_value
             FROM extension_meta
             WHERE extension = 'example' ";
 
-        $client_id = $this->di['array_get']($data, 'client_id', NULL);
+        $client_id = $this->di['array_get']($data, 'client_id', null);
 
-        if(NULL !== $client_id) {
+        if (null !== $client_id) {
             $sql .= ' AND client_id = :client_id';
             $params[':client_id'] = $client_id;
         }
 
         $sql .= ' ORDER BY created_at DESC';
-        return array($sql, $params);
+
+        return [$sql, $params];
     }
 
     /**
      * Methods is a delegate for one database row.
      *
-     * @param array $row - array representing one database row
+     * @param array  $row  - array representing one database row
      * @param string $role - guest|client|admin who is calling this method
-     * @param bool $deep - true|false deep or light version of result to return to API
+     * @param bool   $deep - true|false deep or light version of result to return to API
      *
      * @return array
      */
@@ -119,7 +124,7 @@ class Service
     }
 
     /**
-     * Example event hook. Any module can hook to any BoxBilling event and perform actions
+     * Example event hook. Any module can hook to any BoxBilling event and perform actions.
      *
      * Make sure extension is enabled before testing this event.
      *
@@ -130,44 +135,43 @@ class Service
      * In this example we are going to count how many times client failed
      * to enter correct login details
      *
-     * @param \Box_Event $event
      * @return void
      *
-     * @throws  \Box_Exception
+     * @throws \Box_Exception
      */
     public static function onEventClientLoginFailed(\Box_Event $event)
     {
-        //getting Dependency Injector
+        // getting Dependency Injector
         $di = $event->getDi();
 
-        //@note almost in all cases you will need Admin API
+        // @note almost in all cases you will need Admin API
         $api = $di['api_admin'];
 
-        //sometimes you may need guest API
-        //$api_guest = $di['api_guest'];
+        // sometimes you may need guest API
+        // $api_guest = $di['api_guest'];
 
         $params = $event->getParameters();
 
-        //@note To debug parameters by throwing an exception
-        //throw new Exception(print_r($params, 1));
+        // @note To debug parameters by throwing an exception
+        // throw new Exception(print_r($params, 1));
 
         // Use RedBean ORM in any place of BoxBilling where API call is not enough
         // First we need to find if we already have a counter for this IP
         // We will use extension_meta table to store this data.
-        $values = array(
-            'ext'        =>  'example',
-            'rel_type'   =>  'ip',
-            'rel_id'     =>  $params['ip'],
-            'meta_key'   =>  'counter',
-        );
+        $values = [
+            'ext' => 'example',
+            'rel_type' => 'ip',
+            'rel_id' => $params['ip'],
+            'meta_key' => 'counter',
+        ];
         $meta = $di['db']->findOne('extension_meta', 'extension = :ext AND rel_type = :rel_type AND rel_id = :rel_id AND meta_key = :meta_key', $values);
-        if(!$meta) {
+        if (!$meta) {
             $meta = $di['db']->dispense('extension_meta');
-            //$count->client_id = null; // client id is not known in this situation
-            $meta->extension  = 'mod_example';
-            $meta->rel_type   = 'ip';
-            $meta->rel_id     = $params['ip'];
-            $meta->meta_key   = 'counter';
+            // $count->client_id = null; // client id is not known in this situation
+            $meta->extension = 'mod_example';
+            $meta->rel_type = 'ip';
+            $meta->rel_id = $params['ip'];
+            $meta->meta_key = 'counter';
             $meta->created_at = date('Y-m-d H:i:s');
         }
         $meta->meta_value = $meta->meta_value + 1;
@@ -177,30 +181,29 @@ class Service
         // Now we can perform task depending on how many times wrong details were entered
 
         // We can log event if it repeats for 2 time
-        if($meta->meta_value > 2) {
-            $api->activity_log(array('m' => 'Client failed to enter correct login details ' . $meta->meta_value . ' time(s)'));
+        if ($meta->meta_value > 2) {
+            $api->activity_log(['m' => 'Client failed to enter correct login details '.$meta->meta_value.' time(s)']);
         }
 
         // if client gets funky, we block him
-        if($meta->meta_value > 30) {
+        if ($meta->meta_value > 30) {
             throw new \Box_Exception('You have failed to login too many times. Contact support.');
         }
     }
 
     /**
-     * This event hook is registered in example module client API call
-     * @param \Box_Event $event
+     * This event hook is registered in example module client API call.
      */
     public static function onAfterClientCalledExampleModule(\Box_Event $event)
     {
-        //error_log('Called event from example module');
+        // error_log('Called event from example module');
 
         $di = $event->getDi();
         $params = $event->getParameters();
 
-        $meta             = $di['db']->dispense('extension_meta');
-        $meta->extension  = 'mod_example';
-        $meta->meta_key   = 'event_params';
+        $meta = $di['db']->dispense('extension_meta');
+        $meta->extension = 'mod_example';
+        $meta->meta_key = 'event_params';
         $meta->meta_value = json_encode($params);
         $meta->created_at = date('Y-m-d H:i:s');
         $meta->updated_at = date('Y-m-d H:i:s');
@@ -208,12 +211,11 @@ class Service
     }
 
     /**
-     * Example event hook for public ticket and set event return value
-     * @param \Box_Event $event
+     * Example event hook for public ticket and set event return value.
      */
     public static function onBeforeGuestPublicTicketOpen(\Box_Event $event)
     {
-       /* Uncomment lines below in order to see this function in action */
+        /* Uncomment lines below in order to see this function in action */
 
         /*
         $data            = $event->getParameters();
@@ -225,8 +227,7 @@ class Service
     }
 
     /**
-     * Example email sending
-     * @param \Box_Event $event
+     * Example email sending.
      */
     public static function onAfterClientOrderCreate(\Box_Event $event)
     {

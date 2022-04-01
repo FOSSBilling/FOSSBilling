@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,16 +11,18 @@
  */
 
 /**
- * Public tickets management
+ * Public tickets management.
  */
+
 namespace Box\Mod\Support\Api;
+
 class Guest extends \Api_Abstract
 {
     /**
-     * Submit new public ticket
+     * Submit new public ticket.
      *
-     * @param string $name - Ticket author name
-     * @param string $email - Ticket author email
+     * @param string $name    - Ticket author name
+     * @param string $email   - Ticket author email
      * @param string $subject - Ticket subject
      * @param string $message - Ticket message
      *
@@ -28,23 +30,23 @@ class Guest extends \Api_Abstract
      */
     public function ticket_create($data)
     {
-        $required = array(
-            'name'    => 'Please enter your name',
-            'email'   => 'Please enter your email',
+        $required = [
+            'name' => 'Please enter your name',
+            'email' => 'Please enter your email',
             'subject' => 'Please enter your subject',
             'message' => 'Please enter your message',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if (strlen($data['message']) < 4) {
             throw new \Box_Exception('Please enter your message');
         }
-        
+
         return $this->getService()->ticketCreateForGuest($data);
     }
 
     /**
-     * Get public ticket
+     * Get public ticket.
      *
      * @param string $hash - public ticket hash
      *
@@ -52,9 +54,9 @@ class Guest extends \Api_Abstract
      */
     public function ticket_get($data)
     {
-        $required = array(
+        $required = [
             'hash' => 'Public ticket hash required',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
@@ -63,7 +65,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Close public ticket
+     * Close public ticket.
      *
      * @param string $hash - public ticket hash
      *
@@ -71,9 +73,9 @@ class Guest extends \Api_Abstract
      */
     public function ticket_close($data)
     {
-        $required = array(
+        $required = [
             'hash' => 'Public ticket hash required',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
@@ -82,20 +84,19 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Reply to public ticket
+     * Reply to public ticket.
      *
-     * @param string $hash - public ticket hash
+     * @param string $hash    - public ticket hash
      * @param string $message - public ticket reply message
      *
      * @return string - ticket hash
-     *
      */
     public function ticket_reply($data)
     {
-        $required = array(
-            'hash'    => 'Public ticket hash required',
+        $required = [
+            'hash' => 'Public ticket hash required',
             'message' => 'Message is required and can not be blank',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);

@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,7 +11,7 @@
  */
 
 /**
- * News management
+ * News management.
  */
 
 namespace Box\Mod\News\Api;
@@ -19,18 +19,18 @@ namespace Box\Mod\News\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Get paginated list of active news items
+     * Get paginated list of active news items.
      *
      * @return array
      */
     public function get_list($data)
     {
         $service = $this->getService();
-        list ($sql, $params) = $service->getSearchQuery($data);
+        [$sql, $params] = $service->getSearchQuery($data);
         $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
-        $pager    = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
-            $post                = $this->di['db']->getExistingModelById('Post', $item['id'], 'Post not found');
+            $post = $this->di['db']->getExistingModelById('Post', $item['id'], 'Post not found');
             $pager['list'][$key] = $this->getService()->toApiArray($post, 'admin');
         }
 
@@ -38,7 +38,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get news item by ID
+     * Get news item by ID.
      *
      * @param int $id - news item ID
      *
@@ -50,7 +50,7 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('ID or slug is missing');
         }
 
-        $id   = $this->di['array_get']($data, 'id');
+        $id = $this->di['array_get']($data, 'id');
         $slug = $this->di['array_get']($data, 'slug');
 
         $model = null;
@@ -58,7 +58,7 @@ class Admin extends \Api_Abstract
             $model = $this->di['db']->load('Post', $id);
         } else {
             if (!empty($slug)) {
-                $model = $this->di['db']->findOne('Post', 'slug = :slug', array('slug' => $slug));
+                $model = $this->di['db']->findOne('Post', 'slug = :slug', ['slug' => $slug]);
             }
         }
 
@@ -85,23 +85,25 @@ class Admin extends \Api_Abstract
     public function update($data)
     {
         $service = $this->getService();
-        $required = array(
+        $required = [
             'id' => 'Post ID not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('Post', $data['id'], 'News item not found');
 
         $description = $this->di['array_get']($data, 'description', $model->description);
-        if (empty($description)) $description = $service->generateDescriptionFromContent($this->di['array_get']($data, 'content', $model->content));
+        if (empty($description)) {
+            $description = $service->generateDescriptionFromContent($this->di['array_get']($data, 'content', $model->content));
+        }
 
-        $model->content     = $this->di['array_get']($data, 'content', $model->content);
-        $model->title       = $this->di['array_get']($data, 'title', $model->title);
+        $model->content = $this->di['array_get']($data, 'content', $model->content);
+        $model->title = $this->di['array_get']($data, 'title', $model->title);
         $model->description = $description;
-        $model->slug        = $this->di['array_get']($data, 'slug', $model->slug);
-        $model->image       = $this->di['array_get']($data, 'image', $model->image);
-        $model->section     = $this->di['array_get']($data, 'section', $model->section);
-        $model->status      = $this->di['array_get']($data, 'status', $model->status);
+        $model->slug = $this->di['array_get']($data, 'slug', $model->slug);
+        $model->image = $this->di['array_get']($data, 'image', $model->image);
+        $model->section = $this->di['array_get']($data, 'section', $model->section);
+        $model->status = $this->di['array_get']($data, 'status', $model->status);
 
         $publish_at = $this->di['array_get']($data, 'publish_at', 0);
         if ($publish_at) {
@@ -132,7 +134,7 @@ class Admin extends \Api_Abstract
 
         $this->di['logger']->info('Updated news item #%s', $model->id);
 
-        return TRUE;
+        return true;
     }
 
     /**
@@ -148,20 +150,20 @@ class Admin extends \Api_Abstract
     public function create($data)
     {
         $service = $this->getService();
-        $required = array(
+        $required = [
             'title' => 'Post title not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $model              = $this->di['db']->dispense('Post');
-        $model->admin_id    = $this->getIdentity()->id;
-        $model->title       = $data['title'];
+        $model = $this->di['db']->dispense('Post');
+        $model->admin_id = $this->getIdentity()->id;
+        $model->title = $data['title'];
         $model->description = null;
-        $model->slug        = $this->di['tools']->slug($data['title']);
-        $model->status      = $this->di['array_get']($data, 'status', NULL);
-        $model->content     = $this->di['array_get']($data, 'content', NULL);
-        $model->created_at  = date('Y-m-d H:i:s');
-        $model->updated_at  = date('Y-m-d H:i:s');
+        $model->slug = $this->di['tools']->slug($data['title']);
+        $model->status = $this->di['array_get']($data, 'status', null);
+        $model->content = $this->di['array_get']($data, 'content', null);
+        $model->created_at = date('Y-m-d H:i:s');
+        $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
         $this->di['logger']->info('Created news item #%s', $model->id);
@@ -170,7 +172,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Delete news item by ID
+     * Delete news item by ID.
      *
      * @param int $id - news item ID
      *
@@ -178,13 +180,13 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Post ID not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('Post', $data['id'], 'News item not found');
-        $id    = $model->id;
+        $id = $model->id;
         $this->di['db']->trash($model);
         $this->di['logger']->info('Removed news item #%s', $id);
 
@@ -192,7 +194,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Deletes news items with given IDs
+     * Deletes news items with given IDs.
      *
      * @param array $ids - IDs for deletion
      *
@@ -200,13 +202,13 @@ class Admin extends \Api_Abstract
      */
     public function batch_delete($data)
     {
-        $required = array(
+        $required = [
             'ids' => 'IDs not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         foreach ($data['ids'] as $id) {
-            $this->delete(array('id' => $id));
+            $this->delete(['id' => $id]);
         }
 
         return true;

@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -10,44 +10,43 @@
  * with this source code in the file LICENSE
  */
 
-
 namespace Box\Mod\Servicedomain\Api;
 
 /**
- * Domain service management
+ * Domain service management.
  */
 class Guest extends \Api_Abstract
 {
     /**
-     * Get configured TLDs which can be ordered. Shows only enabled TLDs
+     * Get configured TLDs which can be ordered. Shows only enabled TLDs.
      *
      * @optional bool $allow_register - shows only these TLDs which can be registered
      * @optional bool $allow_transfer - shows only these TLDs which can be transferred
      *
      * @return array - list of TLDs
      */
-    public function tlds($data = array())
+    public function tlds($data = [])
     {
         $allow_register = $this->di['array_get']($data, 'allow_register');
         $allow_transfer = $this->di['array_get']($data, 'allow_transfer');
 
-        $where = array();
-        $where[] = "active = 1";
+        $where = [];
+        $where[] = 'active = 1';
 
-        if (NULL !== $allow_register) {
-            $where[] = "allow_register = 1";
+        if (null !== $allow_register) {
+            $where[] = 'allow_register = 1';
         }
 
-        if (NULL !== $allow_transfer) {
-            $where[] = "allow_transfer = 1";
+        if (null !== $allow_transfer) {
+            $where[] = 'allow_transfer = 1';
         }
 
         if (!empty($where)) {
             $query = implode(' AND ', $where);
         }
 
-        $tlds   = $this->di['db']->find('Tld', $query, array());
-        $result = array();
+        $tlds = $this->di['db']->find('Tld', $query, []);
+        $result = [];
         foreach ($tlds as $model) {
             $result[] = $this->getService()->tldToApiArray($model);
         }
@@ -56,7 +55,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Get TLD pricing information
+     * Get TLD pricing information.
      *
      * @param string $tld - Top level domain, ie: .com
      *
@@ -64,9 +63,9 @@ class Guest extends \Api_Abstract
      */
     public function pricing($data)
     {
-        $required = array(
+        $required = [
             'tld' => 'TLD is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
@@ -88,16 +87,16 @@ class Guest extends \Api_Abstract
      */
     public function check($data)
     {
-        $required = array(
+        $required = [
             'tld' => 'TLD is missing',
             'sld' => 'SLD is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $sld       = htmlspecialchars($data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $sld = htmlspecialchars($data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
-            throw new \Box_Exception('Domain :domain is not valid', array(':domain' => $sld));
+            throw new \Box_Exception('Domain :domain is not valid', [':domain' => $sld]);
         }
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
@@ -109,7 +108,7 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('Domain is not available.');
         }
 
-        return TRUE;
+        return true;
     }
 
     /**
@@ -123,10 +122,10 @@ class Guest extends \Api_Abstract
      */
     public function can_be_transferred($data)
     {
-        $required = array(
+        $required = [
             'tld' => 'TLD is missing',
             'sld' => 'SLD is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
@@ -137,6 +136,6 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('Domain can not be transferred.');
         }
 
-        return TRUE;
+        return true;
     }
 }

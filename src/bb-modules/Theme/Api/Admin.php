@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,88 +11,92 @@
  */
 
 namespace Box\Mod\Theme\Api;
+
 class Admin extends \Api_Abstract
 {
-
     /**
-     * Get list of available client area themes
-     * 
-     * @return array 
+     * Get list of available client area themes.
+     *
+     * @return array
      */
     public function get_list($data)
     {
         $themes = $this->getService()->getThemes();
-        return array('list'=>$themes);
+
+        return ['list' => $themes];
     }
-    
+
     /**
-     * Get list of available admin area themes
-     * 
-     * @return array 
+     * Get list of available admin area themes.
+     *
+     * @return array
      */
     public function get_admin_list($data)
     {
         $themes = $this->getService()->getThemes(false);
-        return array('list'=>$themes);
+
+        return ['list' => $themes];
     }
 
     /**
-     * Get theme by code
-     * 
+     * Get theme by code.
+     *
      * @param string $code - theme code
-     * 
-     * @return array 
+     *
+     * @return array
      */
     public function get($data)
     {
-        $required = array(
-            'code'    => 'Theme code is missing',
-        );
+        $required = [
+            'code' => 'Theme code is missing',
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         return $this->getService()->loadTheme($data['code']);
     }
 
     /**
-     * Set new theme as default
-     * 
+     * Set new theme as default.
+     *
      * @param string $code - theme code
+     *
      * @return bool
      */
     public function select($data)
     {
-        $required = array(
-            'code'    => 'Theme code is missing',
-        );
+        $required = [
+            'code' => 'Theme code is missing',
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $theme = $this->getService()->getTheme($data['code']);
 
         $systemService = $this->di['mod_service']('system');
-        if($theme->isAdminAreaTheme()) {
+        if ($theme->isAdminAreaTheme()) {
             $systemService->setParamValue('admin_theme', $data['code']);
         } else {
             $systemService->setParamValue('theme', $data['code']);
         }
 
         $this->di['logger']->info('Changed default theme');
+
         return true;
     }
 
     /**
-     * Delete theme preset
+     * Delete theme preset.
      *
-     * @param string $code - theme code
+     * @param string $code   - theme code
      * @param string $preset - theme preset code
      *
      * @return bool
      */
     public function preset_delete($data)
     {
-        $required = array(
-            'code'    => 'Theme code is missing',
-            'preset'    => 'Theme preset name is missing',
-        );
+        $required = [
+            'code' => 'Theme code is missing',
+            'preset' => 'Theme preset name is missing',
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $service = $this->getService();
@@ -104,19 +108,19 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Select new theme preset
+     * Select new theme preset.
      *
-     * @param string $code - theme code
+     * @param string $code   - theme code
      * @param string $preset - theme preset code
      *
      * @return bool
      */
     public function preset_select($data)
     {
-        $required = array(
-            'code'    => 'Theme code is missing',
-            'preset'    => 'Theme preset name is missing',
-        );
+        $required = [
+            'code' => 'Theme code is missing',
+            'preset' => 'Theme preset name is missing',
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $service = $this->getService();

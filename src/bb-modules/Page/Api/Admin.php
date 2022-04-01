@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,7 +11,7 @@
  */
 
 /**
- * Static Pages management
+ * Static Pages management.
  */
 
 namespace Box\Mod\Page\Api;
@@ -20,13 +20,14 @@ class Admin extends \Api_Abstract
 {
     /**
      * Return page pairs. Includes module and currently selected client area
-     * pages
+     * pages.
      *
      * @return array
      */
     public function get_pairs()
     {
         $service = $this->getService();
+
         return $service->getPairs();
     }
 }
