@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -12,7 +12,7 @@
 
 /**
  * This file connects BoxBilling client area interface and API
- * Class does not extend any other class
+ * Class does not extend any other class.
  */
 
 namespace Box\Mod\Example\Controller;
@@ -40,14 +40,14 @@ class Client implements \Box\InjectionAwareInterface
     /**
      * Methods maps client areas urls to corresponding methods
      * Always use your module prefix to avoid conflicts with other modules
-     * in future
+     * in future.
      *
      * @param \Box_App $app - returned by reference
      */
     public function register(\Box_App &$app)
     {
-        $app->get('/example',             'get_index', array(), get_class($this));
-        $app->get('/example/protected',   'get_protected', array(), get_class($this));
+        $app->get('/example', 'get_index', [], get_class($this));
+        $app->get('/example/protected', 'get_protected', [], get_class($this));
     }
 
     public function get_index(\Box_App $app)
@@ -59,6 +59,7 @@ class Client implements \Box\InjectionAwareInterface
     {
         // call $this->di['is_client_logged'] method to validate if client is logged in
         $this->di['is_client_logged'];
-        return $app->render('mod_example_index', array('show_protected'=>true));
+
+        return $app->render('mod_example_index', ['show_protected' => true]);
     }
 }

@@ -18,9 +18,14 @@ composer.phar
 public
 report/*
 data/db
+
+### phpunit/phpunit ###
 .phpunit.result.cache
 
-### node_moduels ###
+### node_modules ###
 node_modules
 npm-debug.log
 .history/
+
+### friendsofphp/php-cs-fixer ###
+src/.php-cs-fixer.cache

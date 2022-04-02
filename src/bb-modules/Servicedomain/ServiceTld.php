@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -34,6 +34,6 @@ class ServiceTld implements \Box\InjectionAwareInterface
 
     public function findOneByTld($tld)
     {
-        return $this->di['db']->findOne('Tld', 'tld = ?', array($tld));
+        return $this->di['db']->findOne('Tld', 'tld = ?', [$tld]);
     }
 }

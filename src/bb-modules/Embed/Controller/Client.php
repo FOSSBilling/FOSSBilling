@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -35,18 +35,19 @@ class Client implements \Box\InjectionAwareInterface
     /**
      * Methods maps client areas urls to corresponding methods
      * Always use your module prefix to avoid conflicts with other modules
-     * in future
+     * in future.
      *
      * @param \Box_App $app - returned by reference
      */
     public function register(\Box_App &$app)
     {
-        $app->get('/embed/:what',             'get_object', array('what' => '[a-z0-9-]+'), get_class($this));
+        $app->get('/embed/:what', 'get_object', ['what' => '[a-z0-9-]+'], get_class($this));
     }
 
     public function get_object(\Box_App $app, $what)
     {
         $tpl = 'mod_embed_'.$what;
+
         return $app->render($tpl);
     }
 }

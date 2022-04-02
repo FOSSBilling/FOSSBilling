@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,7 +11,7 @@
  */
 
 /**
- *Client profile management
+ *Client profile management.
  */
 
 namespace Box\Mod\Profile\Api;
@@ -19,17 +19,18 @@ namespace Box\Mod\Profile\Api;
 class Client extends \Api_Abstract
 {
     /**
-     * Get currently logged in client details
+     * Get currently logged in client details.
      */
     public function get()
     {
         $clientService = $this->di['mod_service']('client');
+
         return $clientService->toApiArray($this->getIdentity(), true, $this->getIdentity());
     }
 
     /**
-     * Update currencty logged in client details
-     * 
+     * Update currencty logged in client details.
+     *
      * @optional string $email - new client email. Must not exist on system
      * @optional string $last_name - last name
      * @optional string $aid - Alternative id. Usually used by import tools.
@@ -61,26 +62,28 @@ class Client extends \Api_Abstract
      * @optional string $custom_8 - Custom field 8
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
-     * 
-     * @return boolean
-     * @throws Exception 
+     *
+     * @return bool
+     *
+     * @throws Exception
      */
     public function update($data)
     {
         return $this->getService()->updateClient($this->getIdentity(), $data);
     }
-    
+
     /**
-     * Retrieve current API key
+     * Retrieve current API key.
      */
     public function api_key_get($data)
     {
         $client = $this->getIdentity();
+
         return $client->api_token;
     }
-    
+
     /**
-     * Generate new API key
+     * Generate new API key.
      */
     public function api_key_reset($data)
     {
@@ -88,14 +91,14 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Change client area password
+     * Change client area password.
      */
     public function change_password($data)
     {
-        $required = array(
-            'password'         => 'Password required',
+        $required = [
+            'password' => 'Password required',
             'password_confirm' => 'Password confirmation required',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if ($data['password'] != $data['password_confirm']) {
@@ -106,8 +109,9 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Clear session and logout
-     * @return boolean 
+     * Clear session and logout.
+     *
+     * @return bool
      */
     public function logout()
     {

@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -37,10 +37,11 @@ class Service implements InjectionAwareInterface
     public function getTheme($name)
     {
         $theme = new \Box\Mod\Theme\Model\Theme($name);
+
         return $theme;
     }
 
-    public function getCurrentThemePreset(\Box\Mod\Theme\Model\Theme $theme)
+    public function getCurrentThemePreset(Model\Theme $theme)
     {
         $current = $this->di['db']->getCell("SELECT meta_value
         FROM extension_meta
@@ -49,17 +50,18 @@ class Service implements InjectionAwareInterface
         AND rel_id = 'current'
         AND rel_type = 'preset'
         AND meta_key = :theme",
-            array(':theme'=>$theme->getName()));
-        if(empty($current)) {
+            [':theme' => $theme->getName()]);
+        if (empty($current)) {
             $current = $theme->getCurrentPreset();
             $this->setCurrentThemePreset($theme, $current);
         }
+
         return $current;
     }
 
-    public function setCurrentThemePreset(\Box\Mod\Theme\Model\Theme $theme, $preset)
+    public function setCurrentThemePreset(Model\Theme $theme, $preset)
     {
-        $params = array('theme'=>$theme->getName(), 'preset'=>$preset);
+        $params = ['theme' => $theme->getName(), 'preset' => $preset];
         $updated = $this->di['db']->exec("
             UPDATE extension_meta
             SET meta_value = :preset
@@ -71,7 +73,7 @@ class Service implements InjectionAwareInterface
             LIMIT 1
             ", $params);
 
-        if(!$updated) {
+        if (!$updated) {
             $updated = $this->di['db']->exec("
             INSERT INTO extension_meta (
                 extension,
@@ -97,92 +99,91 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function deletePreset(\Box\Mod\Theme\Model\Theme $theme, $preset)
+    public function deletePreset(Model\Theme $theme, $preset)
     {
-        //delete settings
+        // delete settings
         $this->di['db']->exec("DELETE FROM extension_meta
             WHERE extension = 'mod_theme'
             AND rel_type = 'settings'
             AND rel_id = :theme
             AND meta_key = :preset",
-            array('theme'=>$theme->getName(), 'preset'=>$preset));
+            ['theme' => $theme->getName(), 'preset' => $preset]);
 
-        //delete default preset
+        // delete default preset
         $this->di['db']->exec("DELETE FROM extension_meta
             WHERE extension = 'mod_theme'
             AND rel_type = 'preset'
             AND rel_id = 'current'
             AND meta_key = :theme",
-            array('theme'=>$theme->getName()));
+            ['theme' => $theme->getName()]);
+
         return true;
     }
 
-    public function getThemePresets(\Box\Mod\Theme\Model\Theme $theme)
+    public function getThemePresets(Model\Theme $theme)
     {
         $presets = $this->di['db']->getAssoc("SELECT meta_key FROM extension_meta WHERE extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :key",
-            array('key'=>$theme->getName()));
+            ['key' => $theme->getName()]);
 
-        //insert default presets to database
-        if(empty($presets)) {
+        // insert default presets to database
+        if (empty($presets)) {
             $core_presets = $theme->getPresetsFromSettingsDataFile();
-            $presets = array();
-            foreach($core_presets as $preset=>$params) {
+            $presets = [];
+            foreach ($core_presets as $preset => $params) {
                 $presets[$preset] = $preset;
                 $this->updateSettings($theme, $preset, $params);
             }
         }
 
-        //if theme does not have settings data file
-        if(empty($presets)) {
-            $presets = array('Default'=>'Default');
+        // if theme does not have settings data file
+        if (empty($presets)) {
+            $presets = ['Default' => 'Default'];
         }
 
         return $presets;
     }
 
-    public function getThemeSettings(\Box\Mod\Theme\Model\Theme $theme, $preset = null)
+    public function getThemeSettings(Model\Theme $theme, $preset = null)
     {
-        if(is_null($preset)) {
+        if (is_null($preset)) {
             $preset = $this->getCurrentThemePreset($theme);
         }
 
         $meta = $this->di['db']->findOne('ExtensionMeta',
             "extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :theme AND meta_key = :preset",
-            array('theme'=>$theme->getName(), 'preset'=>$preset));
-        if($meta) {
+            ['theme' => $theme->getName(), 'preset' => $preset]);
+        if ($meta) {
             return json_decode($meta->meta_value, 1);
         } else {
             return $theme->getPresetFromSettingsDataFile($preset);
         }
     }
 
-    public function uploadAssets(\Box\Mod\Theme\Model\Theme $theme, array $files)
+    public function uploadAssets(Model\Theme $theme, array $files)
     {
-        $dest = $theme->getPathAssets() . DIRECTORY_SEPARATOR;
+        $dest = $theme->getPathAssets().DIRECTORY_SEPARATOR;
 
-        foreach($files as $filename=>$f) {
-
-            if($f['error'] == UPLOAD_ERR_NO_FILE) {
+        foreach ($files as $filename => $f) {
+            if (UPLOAD_ERR_NO_FILE == $f['error']) {
                 continue;
             }
 
             $filename = str_replace('_', '.', $filename);
-            if ($f["error"] != UPLOAD_ERR_OK) {
-                throw new \Box_Exception("Error uploading file :file Error code: :error", array(":file"=>$filename, ':error'=>$f['error']));
+            if (UPLOAD_ERR_OK != $f['error']) {
+                throw new \Box_Exception('Error uploading file :file Error code: :error', [':file' => $filename, ':error' => $f['error']]);
             }
 
-            move_uploaded_file($f["tmp_name"], $dest.$filename);
+            move_uploaded_file($f['tmp_name'], $dest.$filename);
         }
-
     }
 
-    public function updateSettings(\Box\Mod\Theme\Model\Theme $theme, $preset, array $params)
+    public function updateSettings(Model\Theme $theme, $preset, array $params)
     {
         $meta = $this->di['db']->findOne('ExtensionMeta',
             "extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :theme AND meta_key = :preset",
-            array('theme'=>$theme->getName(), 'preset'=>$preset));
+            ['theme' => $theme->getName(), 'preset' => $preset]);
 
-        if(!$meta) {
+        if (!$meta) {
             $meta = $this->di['db']->dispense('ExtensionMeta');
             $meta->extension = 'mod_theme';
             $meta->rel_type = 'settings';
@@ -198,11 +199,11 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function regenerateThemeSettingsDataFile(\Box\Mod\Theme\Model\Theme $theme)
+    public function regenerateThemeSettingsDataFile(Model\Theme $theme)
     {
-        $settings = array();
+        $settings = [];
         $presets = $this->getThemePresets($theme);
-        foreach($presets as $preset) {
+        foreach ($presets as $preset) {
             $settings['presets'][$preset] = $this->getThemeSettings($theme, $preset);
         }
         $settings['current'] = $this->getCurrentThemePreset($theme);
@@ -213,19 +214,19 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function regenerateThemeCssAndJsFiles(\Box\Mod\Theme\Model\Theme $theme, $preset, $api_admin)
+    public function regenerateThemeCssAndJsFiles(Model\Theme $theme, $preset, $api_admin)
     {
-        $assets = $theme->getPathAssets() . DIRECTORY_SEPARATOR;
+        $assets = $theme->getPathAssets().DIRECTORY_SEPARATOR;
 
-        $css_files = $this->di['tools']->glob($assets . '*.css.phtml');
-        $js_files = $this->di['tools']->glob($assets . '*.js.phtml');
+        $css_files = $this->di['tools']->glob($assets.'*.css.phtml');
+        $js_files = $this->di['tools']->glob($assets.'*.js.phtml');
         $files = array_merge($css_files, $js_files);
 
-        foreach($files as $file) {
+        foreach ($files as $file) {
             $settings = $this->getThemeSettings($theme, $preset);
-            $real_file = pathinfo($file, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR .pathinfo($file, PATHINFO_FILENAME);
+            $real_file = pathinfo($file, PATHINFO_DIRNAME).DIRECTORY_SEPARATOR.pathinfo($file, PATHINFO_FILENAME);
 
-            $vars = array();
+            $vars = [];
 
             $vars['settings'] = $settings;
             $vars['_tpl'] = $this->di['tools']->file_get_contents($file);
@@ -234,34 +235,37 @@ class Service implements InjectionAwareInterface
 
             $this->di['tools']->file_put_contents($data, $real_file);
         }
+
         return true;
     }
 
     public function getCurrentAdminAreaTheme()
     {
-        $query = "SELECT value
+        $query = 'SELECT value
                 FROM setting
                 WHERE param = :param
-               ";
+               ';
         $default = 'admin_default';
-        $theme = $this->di['db']->getCell($query, array('param'=>'admin_theme'));
-        $path = BB_PATH_THEMES . DIRECTORY_SEPARATOR . $theme;
-        if(null == $theme || !file_exists($path.$theme)){
+        $theme = $this->di['db']->getCell($query, ['param' => 'admin_theme']);
+        $path = BB_PATH_THEMES.DIRECTORY_SEPARATOR.$theme;
+        if (null == $theme || !file_exists($path.$theme)) {
             $theme = $default;
         }
         $url = $this->di['config']['url'].'bb-themes/'.$theme.'/';
-        return array('code'=>$theme, 'url'=>$url);
+
+        return ['code' => $theme, 'url' => $url];
     }
 
     public function getCurrentClientAreaTheme()
     {
         $code = $this->getCurrentClientAreaThemeCode();
+
         return $this->getTheme($code);
     }
 
     public function getCurrentClientAreaThemeCode()
     {
-        if(defined('BB_THEME_CLIENT')) {
+        if (defined('BB_THEME_CLIENT')) {
             $theme = BB_THEME_CLIENT;
         } else {
             $theme = $this->di['db']->getCell("SELECT value FROM setting WHERE param = 'theme' ");
@@ -272,17 +276,17 @@ class Service implements InjectionAwareInterface
 
     public function getThemes($client = true)
     {
-        $list = array();
+        $list = [];
         $path = $this->getThemesPath();
         if ($handle = opendir($path)) {
             while (false !== ($file = readdir($handle))) {
-                if (is_dir($path . DIRECTORY_SEPARATOR . $file) && $file[0] != '.') {
+                if (is_dir($path.DIRECTORY_SEPARATOR.$file) && '.' != $file[0]) {
                     try {
-                        if (!$client && strpos($file, 'admin') !== false) {
+                        if (!$client && false !== strpos($file, 'admin')) {
                             $list[] = $this->_loadTheme($file);
                         }
 
-                        if ($client && strpos($file, 'admin') === false) {
+                        if ($client && false === strpos($file, 'admin')) {
                             $list[] = $this->_loadTheme($file);
                         }
                     } catch (\Exception $e) {
@@ -295,19 +299,18 @@ class Service implements InjectionAwareInterface
         return $list;
     }
 
-
     public function getThemeConfig($client = true, $mod = null)
     {
         if ($client) {
-            $theme   = $this->getCurrentClientAreaThemeCode();
+            $theme = $this->getCurrentClientAreaThemeCode();
         } else {
             $default = 'admin_default';
             $systemService = $this->di['mod_service']('system');
-            $theme   = $systemService->getParamValue('admin_theme', $default);
+            $theme = $systemService->getParamValue('admin_theme', $default);
         }
 
         $path = $this->getThemesPath();
-        if (!file_exists($path . $theme)) {
+        if (!file_exists($path.$theme)) {
             $theme = $default;
         }
 
@@ -321,63 +324,63 @@ class Service implements InjectionAwareInterface
 
     public function getThemesPath()
     {
-        return BB_PATH_THEMES . DIRECTORY_SEPARATOR;
+        return BB_PATH_THEMES.DIRECTORY_SEPARATOR;
     }
 
     private function _loadTheme($theme, $client = true, $mod = null)
     {
-        $theme_path = $this->getThemesPath() . $theme;
+        $theme_path = $this->getThemesPath().$theme;
 
         if (!file_exists($theme_path)) {
-            throw new \Box_Exception('Theme was not found in path :path', array(':path' => $theme_path));
+            throw new \Box_Exception('Theme was not found in path :path', [':path' => $theme_path]);
         }
-        $manifest = $theme_path . '/manifest.json';
+        $manifest = $theme_path.'/manifest.json';
 
         if (file_exists($manifest)) {
             $config = json_decode(file_get_contents($manifest), true);
         } else {
-            $config = array(
-                'name'        => $theme,
-                'version'     => '1.0',
+            $config = [
+                'name' => $theme,
+                'version' => '1.0',
                 'description' => 'Theme',
-                'author'      => 'BoxBilling',
-                'author_url'  => 'http://www.boxbilling.org'
-            );
+                'author' => 'BoxBilling',
+                'author_url' => 'http://www.boxbilling.org',
+            ];
         }
 
         if (!is_array($config)) {
-            throw new \Box_Exception('Unable to decode theme manifest file :file', array(':file' => $manifest));
+            throw new \Box_Exception('Unable to decode theme manifest file :file', [':file' => $manifest]);
         }
 
-        $paths = array($theme_path . '/html');
+        $paths = [$theme_path.'/html'];
 
         if (isset($config['extends'])) {
             $ext = trim($config['extends'], '/');
             $ext = str_replace('.', '', $ext);
 
-            $config['url'] = BB_URL . 'bb-themes/' . $ext . '/';
-            array_push($paths, $this->getThemesPath() . $ext . '/html');
+            $config['url'] = BB_URL.'bb-themes/'.$ext.'/';
+            array_push($paths, $this->getThemesPath().$ext.'/html');
         } else {
-            $config['url'] = BB_URL . 'bb-themes/' . $theme . '/';
+            $config['url'] = BB_URL.'bb-themes/'.$theme.'/';
         }
 
-        //add installed modules paths
+        // add installed modules paths
         $table = $this->di['mod_service']('extension');
-        $list  = $table->getCoreAndActiveModules();
-        //add module folder to look for template
+        $list = $table->getCoreAndActiveModules();
+        // add module folder to look for template
         if (!is_null($mod)) {
             $list[] = $mod;
         }
         $list = array_unique($list);
         foreach ($list as $mod) {
-            $p = BB_PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($mod) . DIRECTORY_SEPARATOR;
+            $p = BB_PATH_MODS.DIRECTORY_SEPARATOR.ucfirst($mod).DIRECTORY_SEPARATOR;
             $p .= $client ? 'html_client' : 'html_admin';
             if (file_exists($p)) {
                 array_push($paths, $p);
             }
         }
 
-        $config['code']  = $theme;
+        $config['code'] = $theme;
         $config['paths'] = $paths;
 
         return $config;

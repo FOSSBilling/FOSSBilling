@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -9,7 +9,6 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
-
 
 namespace Box\Mod\Notification;
 
@@ -38,7 +37,7 @@ class Service implements InjectionAwareInterface
             ORDER BY id DESC
         ";
 
-        return array($q, array());
+        return [$q, []];
     }
 
     public function toApiArray($row)
@@ -48,17 +47,17 @@ class Service implements InjectionAwareInterface
 
     public function create($message)
     {
-        $meta             = $this->di['db']->dispense('extension_meta');
-        $meta->extension  = 'mod_notification';
-        $meta->rel_type   = 'staff';
-        $meta->rel_id     = 1;
-        $meta->meta_key   = 'message';
+        $meta = $this->di['db']->dispense('extension_meta');
+        $meta->extension = 'mod_notification';
+        $meta->rel_type = 'staff';
+        $meta->rel_id = 1;
+        $meta->meta_key = 'message';
         $meta->meta_value = $message;
         $meta->created_at = date('Y-m-d H:i:s');
         $meta->updated_at = date('Y-m-d H:i:s');
-        $id               = $this->di['db']->store($meta);
+        $id = $this->di['db']->store($meta);
 
-        $this->di['events_manager']->fire(array('event' => 'onAfterAdminNotificationAdd', 'params' => array('id' => $id)));
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminNotificationAdd', 'params' => ['id' => $id]]);
 
         return $id;
     }

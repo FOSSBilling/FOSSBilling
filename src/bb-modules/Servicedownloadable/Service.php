@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,6 +11,7 @@
  */
 
 namespace Box\Mod\Servicedownloadable;
+
 use Box\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -39,31 +40,31 @@ class Service implements InjectionAwareInterface
     public function attachOrderConfig(\Model_Product $product, array &$data)
     {
         $c = json_decode($product->config, 1);
-        $required = array(
+        $required = [
             'filename' => 'Product is not configured completely.',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $c);
 
         $data['filename'] = $c['filename'];
+
         return array_merge($c, $data);
     }
-    
+
     public function validateOrderData(array &$data)
     {
-        $required = array(
+        $required = [
             'filename' => 'Filename is missing in product config',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
     }
 
     /**
-     * @param \Model_ClientOrder $order
      * @return \Model_ServiceDownloadable
      */
     public function action_create(\Model_ClientOrder $order)
     {
         $c = json_decode($order->config, 1);
-        if (!is_array($c)){
+        if (!is_array($c)) {
             throw new \Box_Exception(sprintf('Order #%s config is missing', $order->id));
         }
         $this->validateOrderData($c);
@@ -85,10 +86,9 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     *
      * @todo
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     *
+     * @return bool
      */
     public function action_renew(\Model_ClientOrder $order)
     {
@@ -96,10 +96,9 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     *
      * @todo
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     *
+     * @return bool
      */
     public function action_suspend(\Model_ClientOrder $order)
     {
@@ -107,10 +106,9 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     *
      * @todo
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     *
+     * @return bool
      */
     public function action_unsuspend(\Model_ClientOrder $order)
     {
@@ -118,10 +116,9 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     *
      * @todo
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     *
+     * @return bool
      */
     public function action_cancel(\Model_ClientOrder $order)
     {
@@ -129,10 +126,9 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     *
      * @todo
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     *
+     * @return bool
      */
     public function action_uncancel(\Model_ClientOrder $order)
     {
@@ -140,23 +136,22 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     *
      * @todo
-     * @param \Model_ClientOrder $order
+     *
      * @return void
      */
     public function action_delete(\Model_ClientOrder $order)
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
-        if($service instanceof \Model_ServiceDownloadable) {
+        if ($service instanceof \Model_ServiceDownloadable) {
             $this->di['db']->trash($service);
         }
     }
 
     public function hitDownload(\Model_ServiceDownloadable $model)
     {
-        $model->downloads += 1;
+        ++$model->downloads;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
     }
@@ -164,22 +159,22 @@ class Service implements InjectionAwareInterface
     public function toApiArray(\Model_ServiceDownloadable $model, $deep = false, $identity = null)
     {
         $productService = $this->di['mod_service']('product');
-        $result = array(
-            'path'          => $productService->getSavePath($model->filename),
-            'filename'      => $model->filename,
-        );
-        
-        if($identity instanceof \Model_Admin) {
+        $result = [
+            'path' => $productService->getSavePath($model->filename),
+            'filename' => $model->filename,
+        ];
+
+        if ($identity instanceof \Model_Admin) {
             $result['downloads'] = $model->downloads;
         }
-        
+
         return $result;
     }
 
     public function uploadProductFile(\Model_Product $productModel)
     {
         $request = $this->di['request'];
-        if ($request->hasFiles() == 0) {
+        if (0 == $request->hasFiles()) {
             throw new \Box_Exception('Error uploading file');
         }
         $files = $request->getUploadedFiles();
@@ -198,19 +193,19 @@ class Service implements InjectionAwareInterface
         $this->di['db']->store($productModel);
 
         $this->di['logger']->info('Uploaded new file for product %s', $productModel->id);
+
         return true;
     }
 
     /**
-     * @param \Model_ServiceDownloadable $serviceDownloadable
-     * @param \Model_ClientOrder $order
      * @return bool
+     *
      * @throws \Box_Exception
      */
     public function updateProductFile(\Model_ServiceDownloadable $serviceDownloadable, \Model_ClientOrder $order)
     {
         $request = $this->di['request'];
-        if ($request->hasFiles() == 0) {
+        if (0 == $request->hasFiles()) {
             throw new \Box_Exception('Error uploading file');
         }
         $productService = $this->di['mod_service']('product');
@@ -224,6 +219,7 @@ class Service implements InjectionAwareInterface
         $this->di['db']->store($serviceDownloadable);
 
         $this->di['logger']->info('Uploaded new file for order %s', $order->id);
+
         return true;
     }
 
@@ -249,17 +245,18 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function sendDownload($filename, $path) {
-        if(APPLICATION_ENV == 'testing') {
-            return ;
+    public function sendDownload($filename, $path)
+    {
+        if (APPLICATION_ENV == 'testing') {
+            return;
         }
 
-        header("Content-Type: application/force-download");
-        header("Content-Type: application/octet-stream");
-        header("Content-Type: application/download");
-        header("Content-Description: File Transfer");
-        header("Content-Disposition: attachment; filename=$filename".";");
-        header("Content-Transfer-Encoding: binary");
+        header('Content-Type: application/force-download');
+        header('Content-Type: application/octet-stream');
+        header('Content-Type: application/download');
+        header('Content-Description: File Transfer');
+        header("Content-Disposition: attachment; filename=$filename".';');
+        header('Content-Transfer-Encoding: binary');
         readfile($path);
         flush();
     }
@@ -269,13 +266,14 @@ class Service implements InjectionAwareInterface
         $info = $this->toApiArray($serviceDownloadable);
         $filename = $info['filename'];
         $path = $info['path'];
-        if(!$this->di['tools']->fileExists($path)) {
+        if (!$this->di['tools']->fileExists($path)) {
             throw new \Box_Exception('File can not be downloaded at the moment. Please contact support', null, 404);
         }
         $this->hitDownload($serviceDownloadable);
         $this->sendDownload($filename, $path);
 
         $this->di['logger']->info('Downloaded service %s file', $serviceDownloadable->id);
+
         return true;
     }
 }

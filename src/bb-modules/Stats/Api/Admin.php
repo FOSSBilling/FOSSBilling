@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,14 +11,16 @@
  */
 
 /**
- * Statistics retrieval
+ * Statistics retrieval.
  */
+
 namespace Box\Mod\Stats\Api;
+
 class Admin extends \Api_Abstract
 {
     /**
-     * Return summary of your system
-     * 
+     * Return summary of your system.
+     *
      * @return array
      */
     public function get_summary()
@@ -27,8 +29,8 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Return income statistics
-     * 
+     * Return income statistics.
+     *
      * @return array
      */
     public function get_summary_income()
@@ -37,7 +39,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get order statuses
+     * Get order statuses.
      *
      * @return array
      */
@@ -45,29 +47,29 @@ class Admin extends \Api_Abstract
     {
         return $this->getService()->getOrdersStatuses($data);
     }
-    
+
     /**
-     * Get active orders stats grouped by products
+     * Get active orders stats grouped by products.
      *
      * @return array
      */
     public function get_product_summary($data)
     {
-       return $this->getService()->getProductSummary($data);
+        return $this->getService()->getProductSummary($data);
     }
-    
+
     /**
-     * Get product sales
+     * Get product sales.
      *
      * @return array
      */
     public function get_product_sales($data)
     {
-       return $this->getService()->getProductSales($data);
+        return $this->getService()->getProductSales($data);
     }
 
     /**
-     * Get income and refunds statistics
+     * Get income and refunds statistics.
      *
      * @return array
      */
@@ -87,7 +89,7 @@ class Admin extends \Api_Abstract
      */
     public function get_refunds($data)
     {
-      return $this->getService()->getRefunds($data);
+        return $this->getService()->getRefunds($data);
     }
 
     /**
@@ -101,11 +103,11 @@ class Admin extends \Api_Abstract
      */
     public function get_income($data)
     {
-       return $this->getService()->getIncome($data);
+        return $this->getService()->getIncome($data);
     }
 
     /**
-     * Return statistics for orders
+     * Return statistics for orders.
      *
      * @optional string $date_from - day since income are counted
      * @optional string $date_to - day until income are counted
@@ -130,20 +132,20 @@ class Admin extends \Api_Abstract
     {
         return $this->getService()->getTableStats('client', $data);
     }
-    
+
     /**
-     * Get number of clients in country
-     * 
+     * Get number of clients in country.
+     *
      * @return array
      */
     public function client_countries($data)
     {
         return $this->getService()->getClientCountries($data);
     }
-    
+
     /**
-     * Get number of sales by country
-     * 
+     * Get number of sales by country.
+     *
      * @return array
      */
     public function sales_countries($data)

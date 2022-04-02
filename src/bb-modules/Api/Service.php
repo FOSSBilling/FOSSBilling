@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -38,51 +38,53 @@ class Service implements \Box\InjectionAwareInterface
     public function logRequest()
     {
         $request = $this->di['request'];
-        $sql="
+        $sql = '
             INSERT INTO api_request (ip, request, created_at)
             VALUES(:ip, :request, NOW())
-        ";
-        $values = array(
-            'ip'        =>  $request->getClientAddress(),
-            'request'   =>  $request->getURI(),
-        );
+        ';
+        $values = [
+            'ip' => $request->getClientAddress(),
+            'request' => $request->getURI(),
+        ];
+
         return $this->di['db']->exec($sql, $values);
     }
 
     /**
-     * @param int $since - timestamp
+     * @param int         $since - timestamp
      * @param string|null $ip
+     *
      * @return int
      */
     public function getRequestCount($since, $ip = null, $isLoginMethod = false)
     {
-        if (!is_numeric($since)){
+        if (!is_numeric($since)) {
             $since = strtotime($since);
         }
         $sinceIso = date('Y-m-d H:i:s', $since);
-        $values = array(
-            'since' =>  $sinceIso,
-        );
-        if($isLoginMethod){
-        $sql="
+        $values = [
+            'since' => $sinceIso,
+        ];
+        if ($isLoginMethod) {
+            $sql = '
         SELECT COUNT(id) as cclogin
         FROM api_request
         WHERE created_at > :since
-        ";
+        ';
         } else {
-        $sql="
+            $sql = '
         SELECT COUNT(id) as cc
         FROM api_request
         WHERE created_at > :since
-        ";
+        ';
         }
 
-        if(null != $ip) {
-            $sql .= " AND ip = :ip";
+        if (null != $ip) {
+            $sql .= ' AND ip = :ip';
             $values['ip'] = $ip;
         }
 
-        return (int)$this->di['db']->getCell($sql, $values);
+        return (int) $this->di['db']->getCell($sql, $values);
     }
 
     /**
@@ -92,7 +94,6 @@ class Service implements \Box\InjectionAwareInterface
     {
         return $this->di['api_guest'];
     }
-
 
     /**
      * @deprecated use DI

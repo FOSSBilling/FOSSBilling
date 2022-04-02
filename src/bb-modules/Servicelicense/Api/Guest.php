@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,8 +11,9 @@
  */
 
 namespace Box\Mod\Servicelicense\Api;
+
 /**
- * Licensing server
+ * Licensing server.
  */
 class Guest extends \Api_Abstract
 {
@@ -21,12 +22,12 @@ class Guest extends \Api_Abstract
      * You can pass any other parameters to be validated by license plugin.
      *
      * @param string $license - license key
-     * @param string $host - hostname where license is installed
+     * @param string $host    - hostname where license is installed
      * @param string $version - software version
-     * @param string $path - software install path
-     * 
+     * @param string $path    - software install path
+     *
      * @optional string $legacy - deprecated parameter. Returns result in non consistent API result
-     * 
+     *
      * @return array - bool
      */
     public function check($data)

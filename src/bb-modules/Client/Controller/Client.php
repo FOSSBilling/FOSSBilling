@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -9,7 +9,6 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
-
 
 namespace Box\Mod\Client\Controller;
 
@@ -35,18 +34,19 @@ class Client implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        //@deprecated
-        $app->get('/client/me', 'get_profile', array(), get_class($this));
+        // @deprecated
+        $app->get('/client/me', 'get_profile', [], get_class($this));
 
-        $app->get('/client/reset-password-confirm/:hash', 'get_reset_password_confirm', array('hash'=>'[a-z0-9]+'), get_class($this));
-        $app->get('/client', 'get_client_index', array(), get_class($this));
-        $app->get('/client/logout', 'get_client_logout', array(), get_class($this));
-        $app->get('/client/:page', 'get_client_page', array('page'=>'[a-z0-9-]+'), get_class($this));
-        $app->get('/client/confirm-email/:hash', 'get_client_confirmation', array('page'=>'[a-z0-9-]+'), get_class($this));
+        $app->get('/client/reset-password-confirm/:hash', 'get_reset_password_confirm', ['hash' => '[a-z0-9]+'], get_class($this));
+        $app->get('/client', 'get_client_index', [], get_class($this));
+        $app->get('/client/logout', 'get_client_logout', [], get_class($this));
+        $app->get('/client/:page', 'get_client_page', ['page' => '[a-z0-9-]+'], get_class($this));
+        $app->get('/client/confirm-email/:hash', 'get_client_confirmation', ['page' => '[a-z0-9-]+'], get_class($this));
     }
 
     /**
      * @param Box_App $app
+     *
      * @deprecated
      */
     public function get_profile(\Box_App $app)
@@ -56,6 +56,7 @@ class Client implements \Box\InjectionAwareInterface
 
     /**
      * @param Box_App $app
+     *
      * @deprecated
      */
     public function get_balance(\Box_App $app)
@@ -66,6 +67,7 @@ class Client implements \Box\InjectionAwareInterface
     public function get_client_index(\Box_App $app)
     {
         $this->di['is_client_logged'];
+
         return $app->render('mod_client_index');
     }
 
@@ -89,17 +91,17 @@ class Client implements \Box\InjectionAwareInterface
     {
         $this->di['is_client_logged'];
         $template = 'mod_client_'.$page;
+
         return $app->render($template);
     }
 
     public function get_reset_password_confirm(\Box_App $app, $hash)
     {
         $api = $this->di['api_guest'];
-        $data = array(
-            'hash' =>  $hash,
-        );
+        $data = [
+            'hash' => $hash,
+        ];
         $api->client_confirm_reset($data);
         $app->redirect('/login');
     }
-
 }

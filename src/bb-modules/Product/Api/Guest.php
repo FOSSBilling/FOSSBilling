@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,7 +11,7 @@
  */
 
 /**
- * Products management api 
+ * Products management api.
  */
 
 namespace Box\Mod\Product\Api;
@@ -19,10 +19,11 @@ namespace Box\Mod\Product\Api;
 class Guest extends \Api_Abstract
 {
     /**
-     * Get paginated list of products
-     * 
+     * Get paginated list of products.
+     *
      * @optional bool $show_hidden - also get hidden products. Default false
-     * @return type 
+     *
+     * @return type
      */
     public function get_list($data)
     {
@@ -31,20 +32,20 @@ class Guest extends \Api_Abstract
             $data['show_hidden'] = false;
         }
 
-        list($sql, $params) = $this->getService()->getProductSearchQuery($data);
+        [$sql, $params] = $this->getService()->getProductSearchQuery($data);
         $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
-            $model               = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
+            $model = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
             $pager['list'][$key] = $this->getService()->toApiArray($model, false, $this->getIdentity());
         }
 
         return $pager;
     }
-    
+
     /**
-     * Get products pairs. Product id -> title values
-     * 
+     * Get products pairs. Product id -> title values.
+     *
      * @return array
      */
     public function get_pairs($data)
@@ -52,61 +53,65 @@ class Guest extends \Api_Abstract
         $data['products_only'] = true;
         $data['active_only'] = true;
         $service = $this->getService();
+
         return $service->getPairs($data);
     }
 
     /**
-     * Get product by ID
-     * 
+     * Get product by ID.
+     *
      * @param int $id - product id
-     * 
+     *
      * @return array
-     * 
-     * @throws Box_Exception 
+     *
+     * @throws Box_Exception
      */
     public function get($data)
     {
-        if(!isset($data['id']) && !isset($data['slug'])) {
+        if (!isset($data['id']) && !isset($data['slug'])) {
             throw new \Box_Exception('Product ID or slug is missing');
         }
 
-        $id = $this->di['array_get']($data, 'id', NULL);
-        $slug = $this->di['array_get']($data, 'slug', NULL);
+        $id = $this->di['array_get']($data, 'id', null);
+        $slug = $this->di['array_get']($data, 'slug', null);
 
         $service = $this->getService();
-        if($id) {
+        if ($id) {
             $model = $service->findOneActiveById($id);
         } else {
             $model = $service->findOneActiveBySlug($slug);
         }
 
-        if(!$model instanceof \Model_Product) {
+        if (!$model instanceof \Model_Product) {
             throw new \Box_Exception('Product not found');
         }
+
         return $service->toApiArray($model);
     }
-    
+
     /**
-     * Get paginated list of product categories
-     * 
+     * Get paginated list of product categories.
+     *
      * @return array
      */
     public function category_get_list($data)
     {
         $data['status'] = 'enabled';
         $service = $this->getService();
-        list($sql, $params) = $service->getProductCategorySearchQuery($data);
+        [$sql, $params] = $service->getProductCategorySearchQuery($data);
         $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $pager = $this->di['pager']->getAdvancedResultSet($sql, $params, $per_page);
-        foreach($pager['list'] as $key => $item){
+        foreach ($pager['list'] as $key => $item) {
             $category = $this->di['db']->getExistingModelById('ProductCategory', $item['id'], 'Product category not found');
             $pager['list'][$key] = $this->getService()->toProductCategoryApiArray($category, true, $this->getIdentity());
         }
+
         return $pager;
     }
 
     /**
-     * Get pairs of product categories
+     * Get pairs of product categories.
+     *
      * @return array
      */
     public function category_get_pairs($data)
@@ -117,42 +122,44 @@ class Guest extends \Api_Abstract
     /**
      * Return slider data for product types.
      * Products are grouped by type. You can pass parameter to select product type for slider
-     * Product configuration must have slider_%s keys
-     * 
+     * Product configuration must have slider_%s keys.
+     *
      * @optional string $type - product type for slider - default = hosting
      * @optional string $format - return format. Default is array . You can choose json format, to directly inject to javascript
+     *
      * @return mixed
      */
     public function get_slider($data)
     {
         $format = $this->di['array_get']($data, 'format', null);
         $type = $this->di['array_get']($data, 'type', 'hosting');
-        
-        $products = $this->di['db']->find('Product', 'type = :type', array(':type' => $type));
-        if(count($products) <= 0) {
-            return array();
+
+        $products = $this->di['db']->find('Product', 'type = :type', [':type' => $type]);
+        if (count($products) <= 0) {
+            return [];
         }
 
-        $slider = array();
+        $slider = [];
         foreach ($products as $productModel) {
             $product = $this->getService()->toApiArray($productModel);
             $pc = $product['config'];
-            $s = array(
-                'product_id'    => $product['id'],
-                'slug'          => $product['slug'],
-                'title'         => $product['title'],
-                'pricing'       => $product['pricing'],
-            );
-            foreach($pc as $k=>$v) {
-                if(strpos($k, 'slider_') !== false) {
+            $s = [
+                'product_id' => $product['id'],
+                'slug' => $product['slug'],
+                'title' => $product['title'],
+                'pricing' => $product['pricing'],
+            ];
+            foreach ($pc as $k => $v) {
+                if (false !== strpos($k, 'slider_')) {
                     $s[substr($k, strlen('slider_'))] = $v;
                 }
             }
             $slider[] = $s;
         }
-        if($format == 'json') {
+        if ('json' == $format) {
             return json_encode($slider);
         }
+
         return $slider;
     }
 }

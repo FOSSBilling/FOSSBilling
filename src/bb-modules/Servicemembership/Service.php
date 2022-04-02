@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,6 +11,7 @@
  */
 
 namespace Box\Mod\Servicemembership;
+
 class Service implements \Box\InjectionAwareInterface
 {
     protected $di;
@@ -37,7 +38,6 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param \Model_ClientOrder $order
      * @return void
      */
     public function action_create(\Model_ClientOrder $order)
@@ -55,8 +55,7 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     * @return bool
      */
     public function action_activate(\Model_ClientOrder $order)
     {
@@ -64,10 +63,9 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     *
      * @todo
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     *
+     * @return bool
      */
     public function action_renew(\Model_ClientOrder $order)
     {
@@ -75,10 +73,9 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     *
      * @todo
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     *
+     * @return bool
      */
     public function action_suspend(\Model_ClientOrder $order)
     {
@@ -86,10 +83,9 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     *
      * @todo
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     *
+     * @return bool
      */
     public function action_unsuspend(\Model_ClientOrder $order)
     {
@@ -97,10 +93,9 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     *
      * @todo
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     *
+     * @return bool
      */
     public function action_cancel(\Model_ClientOrder $order)
     {
@@ -108,9 +103,7 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * 
-     * @param \Model_ClientOrder $order
-     * @return boolean
+     * @return bool
      */
     public function action_uncancel(\Model_ClientOrder $order)
     {
@@ -118,7 +111,6 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param \Model_ClientOrder $order
      * @return void
      */
     public function action_delete(\Model_ClientOrder $order)
@@ -126,7 +118,7 @@ class Service implements \Box\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
 
-        if($service instanceof \Model_ServiceMembership) {
+        if ($service instanceof \Model_ServiceMembership) {
             $this->di['db']->trash($service);
         }
     }
@@ -134,7 +126,7 @@ class Service implements \Box\InjectionAwareInterface
     public function toApiArray(\Model_ServiceMembership $model, $deep = false, $identity = null)
     {
         $result = $this->di['db']->toArray($model);
+
         return $result;
     }
-
 }

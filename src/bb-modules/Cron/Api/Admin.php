@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,7 +11,7 @@
  */
 
 /**
- * Cron management 
+ * Cron management.
  */
 
 namespace Box\Mod\Cron\Api;
@@ -21,17 +21,17 @@ class Admin extends \Api_Abstract
     /**
      * Returns cron job information. When it was last executed, where cron job
      * file is located.
-     * 
+     *
      * @return array
      */
     public function info($data)
     {
         return $this->getService()->getCronInfo();
     }
-    
+
     /**
-     * Run cron
-     * 
+     * Run cron.
+     *
      * @return bool
      */
     public function run($data)

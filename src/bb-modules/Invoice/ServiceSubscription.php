@@ -1,6 +1,6 @@
 <?php
 /**
-* BoxBilling
+* BoxBilling.
 *
 * @copyright BoxBilling, Inc (https://www.boxbilling.org)
 * @license   Apache-2.0
@@ -9,7 +9,9 @@
 * This source file is subject to the Apache-2.0 License that is bundled
 * with this source code in the file LICENSE
 */
+
 namespace Box\Mod\Invoice;
+
 use Box\InjectionAwareInterface;
 
 class ServiceSubscription implements InjectionAwareInterface
@@ -37,22 +39,22 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function create(\Model_Client $cient, \Model_PayGateway $pg, array $data)
     {
-        $model                 = $this->di['db']->dispense('Subscription');
-        $model->client_id      = $data['client_id'];
+        $model = $this->di['db']->dispense('Subscription');
+        $model->client_id = $data['client_id'];
         $model->pay_gateway_id = $data['gateway_id'];
 
-        $model->sid        = $this->di['array_get']($data, 'sid', NULL);
-        $model->status     = $this->di['array_get']($data, 'status', NULL);
-        $model->period     = $this->di['array_get']($data, 'period', NULL);
-        $model->amount     = $this->di['array_get']($data, 'amount', NULL);
-        $model->currency   = $this->di['array_get']($data, 'currency', NULL);
-        $model->rel_id     = $this->di['array_get']($data, 'rel_id', NULL);
-        $model->rel_type   = $this->di['array_get']($data, 'rel_type', NULL);
+        $model->sid = $this->di['array_get']($data, 'sid', null);
+        $model->status = $this->di['array_get']($data, 'status', null);
+        $model->period = $this->di['array_get']($data, 'period', null);
+        $model->amount = $this->di['array_get']($data, 'amount', null);
+        $model->currency = $this->di['array_get']($data, 'currency', null);
+        $model->rel_id = $this->di['array_get']($data, 'rel_id', null);
+        $model->rel_type = $this->di['array_get']($data, 'rel_type', null);
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
-        $newId             = $this->di['db']->store($model);
+        $newId = $this->di['db']->store($model);
 
-        $this->di['events_manager']->fire(array('event' => 'onAfterAdminSubscriptionCreate', 'params' => array('id' => $newId)));
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionCreate', 'params' => ['id' => $newId]]);
 
         $this->di['logger']->info('Created subscription %s', $newId);
 
@@ -61,37 +63,37 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function update(\Model_Subscription $model, array $data)
     {
-        $model->status     = $this->di['array_get']($data, 'status', $model->status);
-        $model->sid        = $this->di['array_get']($data, 'sid', $model->sid);
-        $model->period     = $this->di['array_get']($data, 'period', $model->period);
-        $model->amount     = $this->di['array_get']($data, 'amount', $model->amount);
-        $model->currency   = $this->di['array_get']($data, 'currency', $model->currency);
+        $model->status = $this->di['array_get']($data, 'status', $model->status);
+        $model->sid = $this->di['array_get']($data, 'sid', $model->sid);
+        $model->period = $this->di['array_get']($data, 'period', $model->period);
+        $model->amount = $this->di['array_get']($data, 'amount', $model->amount);
+        $model->currency = $this->di['array_get']($data, 'currency', $model->currency);
         $model->updated_at = date('Y-m-d H:i:s');
-        $newId             = $this->di['db']->store($model);
+        $newId = $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated subscription %s', $newId);
+
         return true;
     }
 
-
     public function toApiArray(\Model_Subscription $model, $deep = false, $identity = null)
     {
-        $result = array(
-            'id'         => $model->id,
-            'sid'        => $model->sid,
-            'period'     => $model->period,
-            'amount'     => $model->amount,
-            'currency'   => $model->currency,
-            'status'     => $model->status,
+        $result = [
+            'id' => $model->id,
+            'sid' => $model->sid,
+            'period' => $model->period,
+            'amount' => $model->amount,
+            'currency' => $model->currency,
+            'status' => $model->status,
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,
-        );
+        ];
         $client = $this->di['db']->load('Client', $model->client_id);
         if ($client instanceof \Model_Client) {
-            $clientService    = $this->di['mod_service']('Client');
+            $clientService = $this->di['mod_service']('Client');
             $result['client'] = $clientService->toApiArray($client, false, $identity);
         } else {
-            $result['client'] = array();
+            $result['client'] = [];
         }
 
         $gtw = $this->di['db']->load('PayGateway', $model->pay_gateway_id);
@@ -99,7 +101,7 @@ class ServiceSubscription implements InjectionAwareInterface
             $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
             $result['gateway'] = $payGatewayService->toApiArray($gtw, false, $identity);
         } else {
-            $result['gateway'] = array();
+            $result['gateway'] = [];
         }
 
         return $result;
@@ -110,9 +112,10 @@ class ServiceSubscription implements InjectionAwareInterface
         $id = $model->id;
         $this->di['db']->trash($model);
 
-        $this->di['events_manager']->fire(array('event'=>'onAfterAdminSubscriptionDelete', 'params'=>array('id'=>$id)));
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionDelete', 'params' => ['id' => $id]]);
 
         $this->di['logger']->info('Removed subscription %s', $id);
+
         return true;
     }
 
@@ -122,19 +125,18 @@ class ServiceSubscription implements InjectionAwareInterface
             FROM subscription
             WHERE 1 ';
 
+        $id = $this->di['array_get']($data, 'id', null);
+        $sid = $this->di['array_get']($data, 'sid', null);
+        $search = $this->di['array_get']($data, 'search', null);
+        $invoice_id = $this->di['array_get']($data, 'invoice_id', null);
+        $gateway_id = $this->di['array_get']($data, 'gateway_id', null);
+        $client_id = $this->di['array_get']($data, 'client_id', null);
+        $status = $this->di['array_get']($data, 'status', null);
+        $currency = $this->di['array_get']($data, 'currency', null);
 
-        $id         = $this->di['array_get']($data, 'id', NULL);
-        $sid        = $this->di['array_get']($data, 'sid', NULL);
-        $search     = $this->di['array_get']($data, 'search', NULL);
-        $invoice_id = $this->di['array_get']($data, 'invoice_id', NULL);
-        $gateway_id = $this->di['array_get']($data, 'gateway_id', NULL);
-        $client_id  = $this->di['array_get']($data, 'client_id', NULL);
-        $status     = $this->di['array_get']($data, 'status', NULL);
-        $currency   = $this->di['array_get']($data, 'currency', NULL);
-
-        $date_from = $this->di['array_get']($data, 'date_from', NULL);
-        $date_to   = $this->di['array_get']($data, 'date_to', NULL);
-        $params    = array();
+        $date_from = $this->di['array_get']($data, 'date_from', null);
+        $date_to = $this->di['array_get']($data, 'date_to', null);
+        $params = [];
         if ($status) {
             $sql .= ' AND status = :status';
             $params['status'] = $status;
@@ -163,7 +165,6 @@ class ServiceSubscription implements InjectionAwareInterface
         if ($date_from) {
             $sql .= ' AND UNIX_TIMESTAMP(m.created_at) >= :date_from';
             $params['date_from'] = $date_from;
-
         }
 
         if ($date_to) {
@@ -187,33 +188,32 @@ class ServiceSubscription implements InjectionAwareInterface
             $params['sid'] = $sid;
         }
 
-
         $sql .= ' ORDER BY id DESC';
 
-        return array($sql, $params);
+        return [$sql, $params];
     }
 
     public function isSubscribable($invoice_id)
     {
-        $query = "SELECT COUNT(id) as cc
+        $query = 'SELECT COUNT(id) as cc
             FROM invoice_item
             WHERE invoice_id = :id
             GROUP BY invoice_id
-           ";
-        $count = $this->di['db']->getCell($query, array('id'=>$invoice_id));
-        if($count > 1) {
+           ';
+        $count = $this->di['db']->getCell($query, ['id' => $invoice_id]);
+        if ($count > 1) {
             return false;
         }
 
         // check if first invoice line has deined period
-        $query = "SELECT id, period
+        $query = 'SELECT id, period
             FROM invoice_item
             WHERE invoice_id = :id
             LIMIT 1
-           ";
-        $list = $this->di['db']->getAll($query, array(':id' => $invoice_id));
+           ';
+        $list = $this->di['db']->getAll($query, [':id' => $invoice_id]);
 
-        if(isset($list[0])
+        if (isset($list[0])
             && isset($list[0]['period'])
             && !empty($list[0]['period'])) {
             return true;
@@ -224,16 +224,17 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function getSubscriptionPeriod(\Model_Invoice $invoice)
     {
-        if(!$this->isSubscribable($invoice->id)) {
-            return NULL;
+        if (!$this->isSubscribable($invoice->id)) {
+            return null;
         }
 
-        $query = "SELECT period
+        $query = 'SELECT period
             FROM invoice_item
             WHERE invoice_id = :id
             LIMIT 1
-           ";
-        return $this->di['db']->getCell($query, array('id'=>$invoice->id));
+           ';
+
+        return $this->di['db']->getCell($query, ['id' => $invoice->id]);
     }
 
     public function unsubscribe(\Model_Subscription $model)

@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,14 +11,15 @@
  */
 
 /**
- * Orders management
+ * Orders management.
  */
+
 namespace Box\Mod\Order\Api;
 
 class Admin extends \Api_Abstract
 {
     /**
-     * Get order details
+     * Get order details.
      *
      * @param int $id - Order id
      *
@@ -26,14 +27,14 @@ class Admin extends \Api_Abstract
      */
     public function get($data)
     {
-        $deep  = isset($data['deep']) ? (bool)$data['deep'] : true;
+        $deep = isset($data['deep']) ? (bool) $data['deep'] : true;
         $order = $this->_getOrder($data);
 
         return $this->getService()->toApiArray($order, $deep, $this->getIdentity());
     }
 
     /**
-     * Return paginated list of orders
+     * Return paginated list of orders.
      *
      * @optional string $date_from - show only order places after this date
      * @optional string $date_to - show only order places till this date
@@ -42,15 +43,15 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $orderConfig         = $this->di['mod']('order')->getConfig();
+        $orderConfig = $this->di['mod']('order')->getConfig();
         $data['hide_addons'] = (isset($orderConfig['show_addons']) && $orderConfig['show_addons']) ? 0 : 1;
-        list($sql, $params) = $this->getService()->getSearchQuery($data);
+        [$sql, $params] = $this->getService()->getSearchQuery($data);
         $paginator = $this->di['pager'];
-        $per_page  = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+        $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
         $resultSet = $paginator->getAdvancedResultSet($sql, $params, $per_page);
 
         foreach ($resultSet['list'] as $key => $result) {
-            $orderObj                = $this->di['db']->getExistingModelById('ClientOrder', $result['id'], 'Order not found');
+            $orderObj = $this->di['db']->getExistingModelById('ClientOrder', $result['id'], 'Order not found');
             $resultSet['list'][$key] = $this->getService()->toApiArray($orderObj, true, $this->getIdentity());
         }
 
@@ -60,7 +61,7 @@ class Admin extends \Api_Abstract
     /**
      * Place new order for client. Admin is able to order disabled products.
      *
-     * @param int $client_id - Client id
+     * @param int $client_id  - Client id
      * @param int $product_id - Product id to be ordered
      *
      * @optional array $config - Depending on product type, you may need to pass product configuration options
@@ -78,20 +79,20 @@ class Admin extends \Api_Abstract
      */
     public function create($data)
     {
-        $required = array(
+        $required = [
             'client_id' => 'Client id not passed',
             'product_id' => 'Product id not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $client  = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
+        $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
         $product = $this->di['db']->getExistingModelById('Product', $data['product_id'], 'Product not found');
 
         return $this->getService()->createOrder($client, $product, $data);
     }
 
     /**
-     * Update order settings
+     * Update order settings.
      *
      * @param int $id - Order id
      *
@@ -140,7 +141,7 @@ class Admin extends \Api_Abstract
     {
         $order = $this->_getOrder($data);
 
-        if ($order->status == \Model_ClientOrder::STATUS_PENDING_SETUP || $order->status == \Model_ClientOrder::STATUS_FAILED_SETUP) {
+        if (\Model_ClientOrder::STATUS_PENDING_SETUP == $order->status || \Model_ClientOrder::STATUS_FAILED_SETUP == $order->status) {
             return $this->activate($data);
         }
 
@@ -148,7 +149,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Suspend order
+     * Suspend order.
      *
      * @param int $id - Order id
      *
@@ -159,16 +160,16 @@ class Admin extends \Api_Abstract
      */
     public function suspend($data)
     {
-        $order      = $this->_getOrder($data);
-        $skip_event = isset($data['skip_event']) ? (bool)$data['skip_event'] : false;
+        $order = $this->_getOrder($data);
+        $skip_event = isset($data['skip_event']) ? (bool) $data['skip_event'] : false;
 
-        $reason = $this->di['array_get']($data, 'reason', NULL);
+        $reason = $this->di['array_get']($data, 'reason', null);
 
         return $this->getService()->suspendFromOrder($order, $reason, $skip_event);
     }
 
     /**
-     * Unsuspend suspended order
+     * Unsuspend suspended order.
      *
      * @param int $id - Order id
      *
@@ -177,7 +178,7 @@ class Admin extends \Api_Abstract
     public function unsuspend($data)
     {
         $order = $this->_getOrder($data);
-        if ($order->status != \Model_ClientOrder::STATUS_SUSPENDED) {
+        if (\Model_ClientOrder::STATUS_SUSPENDED != $order->status) {
             throw new \Box_Exception('Only suspended orders can be unsuspended');
         }
 
@@ -185,7 +186,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Cancel order
+     * Cancel order.
      *
      * @param int $id - Order id
      *
@@ -195,16 +196,16 @@ class Admin extends \Api_Abstract
      */
     public function cancel($data)
     {
-        $order      = $this->_getOrder($data);
-        $skip_event = isset($data['skip_event']) ? (bool)$data['skip_event'] : false;
+        $order = $this->_getOrder($data);
+        $skip_event = isset($data['skip_event']) ? (bool) $data['skip_event'] : false;
 
-        $reason = $this->di['array_get']($data, 'reason', NULL);
+        $reason = $this->di['array_get']($data, 'reason', null);
 
         return $this->getService()->cancelFromOrder($order, $reason, $skip_event);
     }
 
     /**
-     * Uncancel canceled order
+     * Uncancel canceled order.
      *
      * @param int $id - Order id
      *
@@ -213,7 +214,7 @@ class Admin extends \Api_Abstract
     public function uncancel($data)
     {
         $order = $this->_getOrder($data);
-        if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
+        if (\Model_ClientOrder::STATUS_CANCELED != $order->status) {
             throw new \Box_Exception('Only canceled orders can be uncanceled');
         }
 
@@ -221,7 +222,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Delete order
+     * Delete order.
      *
      * @param int $id - Order id
      *
@@ -231,8 +232,8 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
-        $order         = $this->_getOrder($data);
-        $delete_addons = isset($data['delete_addons']) ? (bool)$data['delete_addons'] : false;
+        $order = $this->_getOrder($data);
+        $delete_addons = isset($data['delete_addons']) ? (bool) $data['delete_addons'] : false;
 
         if ($delete_addons) {
             $list = $this->getService()->getOrderAddonsList($order);
@@ -256,7 +257,7 @@ class Admin extends \Api_Abstract
 
     /**
      * Cancel all suspended orders.
-     * Configure how many days suspended order should be kept before canceling
+     * Configure how many days suspended order should be kept before canceling.
      *
      * @return bool
      */
@@ -266,9 +267,9 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Update order config
+     * Update order config.
      *
-     * @param int $id - Order id
+     * @param int   $id     - Order id
      * @param array $config - list of key value pairs of configuration fields
      *
      * @return bool
@@ -287,7 +288,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get order service data
+     * Get order service data.
      *
      * @param int $id - Order id
      *
@@ -301,7 +302,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get paginated order statuses history list
+     * Get paginated order statuses history list.
      *
      * @param int $id - Order id
      *
@@ -313,16 +314,16 @@ class Admin extends \Api_Abstract
 
         $data['client_order_id'] = $order->id;
 
-        list($sql, $bindings) = $this->getService()->getOrderStatusSearchQuery($data);
+        [$sql, $bindings] = $this->getService()->getOrderStatusSearchQuery($data);
         $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
+
         return $this->di['pager']->getSimpleResultSet($sql, $bindings, $per_page);
     }
 
-
     /**
-     * Add order status history change
+     * Add order status history change.
      *
-     * @param int $id - Order id
+     * @param int    $id     - Order id
      * @param string $status - order status
      *
      * @return array
@@ -331,9 +332,9 @@ class Admin extends \Api_Abstract
     {
         $order = $this->_getOrder($data);
 
-        $required = array(
+        $required = [
             'status' => 'Order status was not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $notes = $this->di['array_get']($data, 'notes', null);
@@ -342,7 +343,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Remove order status history item
+     * Remove order status history item.
      *
      * @param int $id - History line id
      *
@@ -350,16 +351,16 @@ class Admin extends \Api_Abstract
      */
     public function status_history_delete($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Order history line id not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         return $this->getService()->orderStatusRm($data['id']);
     }
 
     /**
-     * Return order statuses codes with counter
+     * Return order statuses codes with counter.
      *
      * @return array
      */
@@ -369,36 +370,36 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Return available invoice options
+     * Return available invoice options.
      *
      * @return array
      */
     public function get_invoice_options($data)
     {
-        return array(
+        return [
             'issue-invoice' => __('Automatically issue renewal invoices'),
-            'no-invoice'    => __('Issue invoices manually'),
-        );
+            'no-invoice' => __('Issue invoices manually'),
+        ];
     }
 
     /**
-     * Return order statuses codes with titles
+     * Return order statuses codes with titles.
      *
      * @return array
      */
     public function get_status_pairs($data)
     {
-        return array(
+        return [
             \Model_ClientOrder::STATUS_PENDING_SETUP => 'Pending setup',
-            \Model_ClientOrder::STATUS_FAILED_SETUP  => 'Setup failed',
-            \Model_ClientOrder::STATUS_ACTIVE        => 'Active',
-            \Model_ClientOrder::STATUS_SUSPENDED     => 'Suspended',
-            \Model_ClientOrder::STATUS_CANCELED      => 'Canceled',
-        );
+            \Model_ClientOrder::STATUS_FAILED_SETUP => 'Setup failed',
+            \Model_ClientOrder::STATUS_ACTIVE => 'Active',
+            \Model_ClientOrder::STATUS_SUSPENDED => 'Suspended',
+            \Model_ClientOrder::STATUS_CANCELED => 'Canceled',
+        ];
     }
 
     /**
-     * Return order addons list
+     * Return order addons list.
      *
      * @param int $id - Order id
      *
@@ -406,9 +407,9 @@ class Admin extends \Api_Abstract
      */
     public function addons($data)
     {
-        $model  = $this->_getOrder($data);
-        $list   = $this->getService()->getOrderAddonsList($model);
-        $result = array();
+        $model = $this->_getOrder($data);
+        $list = $this->getService()->getOrderAddonsList($model);
+        $result = [];
         foreach ($list as $order) {
             $result[] = $this->getService()->toApiArray($order);
         }
@@ -418,16 +419,16 @@ class Admin extends \Api_Abstract
 
     protected function _getOrder($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Order id not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         return $this->di['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
     }
 
     /**
-     * Deletes orders with given IDs
+     * Deletes orders with given IDs.
      *
      * @param array $ids - Order ids for deletion
      *
@@ -437,15 +438,15 @@ class Admin extends \Api_Abstract
      */
     public function batch_delete($data)
     {
-        $required = array(
+        $required = [
             'ids' => 'Orders ids not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $delete_addons = isset($data['delete_addons']) ? (bool)$data['delete_addons'] : false;
+        $delete_addons = isset($data['delete_addons']) ? (bool) $data['delete_addons'] : false;
 
         foreach ($data['ids'] as $id) {
-            $this->delete(array('id' => $id, 'delete_addons' => $delete_addons));
+            $this->delete(['id' => $id, 'delete_addons' => $delete_addons]);
         }
 
         return true;

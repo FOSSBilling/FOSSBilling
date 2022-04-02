@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -11,7 +11,7 @@
  */
 
 /**
- * Custom forms
+ * Custom forms.
  */
 
 namespace Box\Mod\Formbuilder\Api;
@@ -19,21 +19,23 @@ namespace Box\Mod\Formbuilder\Api;
 class Guest extends \Api_Abstract
 {
     /**
-     * Get custom order form details for product
-     * 
+     * Get custom order form details for product.
+     *
      * @param int $product_id - Product id
-     * 
+     *
      * @return array
-     * @throws Box_Exception 
+     *
+     * @throws Box_Exception
      */
     public function get($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Form id was not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-       
+
         $service = $this->getService();
+
         return $service->getForm($data['id']);
     }
 }

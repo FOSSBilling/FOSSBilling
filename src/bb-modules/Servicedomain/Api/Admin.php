@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -10,18 +10,17 @@
  * with this source code in the file LICENSE
  */
 
-
 namespace Box\Mod\Servicedomain\Api;
 
 /**
- * Domain order management
+ * Domain order management.
  */
 class Admin extends \Api_Abstract
 {
     /**
      * Update domain service.
      * Does not send actions to domain registrar. Used to sync domain details
-     * on BoxBilling
+     * on BoxBilling.
      *
      * @param int $order_id - domain order id
      *
@@ -34,7 +33,7 @@ class Admin extends \Api_Abstract
      * @optional bool $locked - flag to define if domain is locked or not
      * @optional string $transfer_code - domain EPP code
      *
-     * @return boolean
+     * @return bool
      */
     public function update($data)
     {
@@ -44,16 +43,16 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Update domain nameservers
+     * Update domain nameservers.
      *
-     * @param int $order_id - domain order id
-     * @param string $ns1 - 1 Nameserver hostname, ie: ns1.mydomain.com
-     * @param string $ns2 - 2 Nameserver hostname, ie: ns2.mydomain.com
+     * @param int    $order_id - domain order id
+     * @param string $ns1      - 1 Nameserver hostname, ie: ns1.mydomain.com
+     * @param string $ns2      - 2 Nameserver hostname, ie: ns2.mydomain.com
      *
      * @optional string $ns3 - 3 Nameserver hostname, ie: ns3.mydomain.com
      * @optional string $ns4 - 4 Nameserver hostname, ie: ns4.mydomain.com
      *
-     * @return boolean
+     * @return bool
      */
     public function update_nameservers($data)
     {
@@ -63,12 +62,12 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Update domain contact details
+     * Update domain contact details.
      *
-     * @param int $order_id - domain order id
-     * @param array $contact - Contact array must contain these fields: first_name, last_name, email, company, address1, address2, country, city, state, postcode, phone_cc, phone
+     * @param int   $order_id - domain order id
+     * @param array $contact  - Contact array must contain these fields: first_name, last_name, email, company, address1, address2, country, city, state, postcode, phone_cc, phone
      *
-     * @return boolean
+     * @return bool
      */
     public function update_contacts($data)
     {
@@ -78,11 +77,11 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Enable domain privacy protection
+     * Enable domain privacy protection.
      *
      * @param int $order_id - domain order id
      *
-     * @return boolean
+     * @return bool
      */
     public function enable_privacy_protection($data)
     {
@@ -92,11 +91,11 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Disable domain privacy protection
+     * Disable domain privacy protection.
      *
      * @param int $order_id - domain order id
      *
-     * @return boolean
+     * @return bool
      */
     public function disable_privacy_protection($data)
     {
@@ -106,11 +105,11 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get domain transfer code
+     * Get domain transfer code.
      *
      * @param int $order_id - domain order id
      *
-     * @return boolean
+     * @return bool
      */
     public function get_transfer_code($data)
     {
@@ -120,44 +119,45 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Lock domain
+     * Lock domain.
      *
      * @param int $order_id - domain order id
      *
-     * @return boolean
+     * @return bool
      */
     public function lock($data)
     {
         $s = $this->_getService($data);
 
-        return $this->getService()->lock($s);;
+        return $this->getService()->lock($s);
     }
 
     /**
-     * Unlock domain
+     * Unlock domain.
      *
      * @param int $order_id - domain order id
      *
-     * @return boolean
+     * @return bool
      */
     public function unlock($data)
     {
         $s = $this->_getService($data);
 
-        return $this->getService()->unlock($s);;
+        return $this->getService()->unlock($s);
     }
 
     /**
-     * Get paginated top level domains list
+     * Get paginated top level domains list.
+     *
      * @return array
      */
     public function tld_get_list($data)
     {
-        list($sql, $params) = $this->getService()->tldGetSearchQuery($data);
+        [$sql, $params] = $this->getService()->tldGetSearchQuery($data);
         $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
-        $pager    = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $tldArr) {
-            $tld                 = $this->di['db']->getExistingModelById('Tld', $tldArr['id'], sprintf('Tld #%s not found', $tldArr['id']));
+            $tld = $this->di['db']->getExistingModelById('Tld', $tldArr['id'], sprintf('Tld #%s not found', $tldArr['id']));
             $pager['list'][$key] = $this->getService()->tldToApiArray($tld);
         }
 
@@ -165,23 +165,24 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get top level domain details
+     * Get top level domain details.
      *
      * @param string $tld - top level domain, ie: .com
      *
      * @return array
+     *
      * @throws Box_Exception
      */
     public function tld_get($data)
     {
-        $required = array(
+        $required = [
             'tld' => 'TLD is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $tld = $data['tld'];
-        if ($tld[0] != '.') {
-            $tld = '.' . $tld;
+        if ('.' != $tld[0]) {
+            $tld = '.'.$tld;
         }
 
         $model = $this->getService()->tldFindOneByTld($tld);
@@ -193,18 +194,19 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Delete top level domain
+     * Delete top level domain.
      *
      * @param string $tld - top level domain, ie: .com
      *
      * @return bool
+     *
      * @throws Box_Exception
      */
     public function tld_delete($data)
     {
-        $required = array(
+        $required = [
             'tld' => 'TLD is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
@@ -217,26 +219,27 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Add new top level domain
+     * Add new top level domain.
      *
-     * @param string $tld - top level domain, ie: .com
-     * @param int $tld_registrar_id - domain registrar id
-     * @param float $price_registration - registration price
-     * @param float $price_renew - renewal price
-     * @param float $price_transfer - transfer price
+     * @param string $tld                - top level domain, ie: .com
+     * @param int    $tld_registrar_id   - domain registrar id
+     * @param float  $price_registration - registration price
+     * @param float  $price_renew        - renewal price
+     * @param float  $price_transfer     - transfer price
      *
      * @return bool
+     *
      * @throws Box_Exception
      */
     public function tld_create($data)
     {
-        $required = array(
-            'tld'                => 'TLD is missing',
-            'tld_registrar_id'   => 'TLD registrar id is missing',
+        $required = [
+            'tld' => 'TLD is missing',
+            'tld_registrar_id' => 'TLD registrar id is missing',
             'price_registration' => 'Registration price is missing',
-            'price_renew'        => 'Renewal price is missing',
-            'price_transfer'     => 'Transfer price is missing',
-        );
+            'price_renew' => 'Renewal price is missing',
+            'price_transfer' => 'Transfer price is missing',
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if ($this->getService()->tldAlreadyRegistered($data['tld'])) {
@@ -247,7 +250,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Update top level domain
+     * Update top level domain.
      *
      * @param string $tld - top level domain, ie: .com
      *
@@ -257,13 +260,14 @@ class Admin extends \Api_Abstract
      * @optional float $price_transfer - transfer price
      *
      * @return bool
+     *
      * @throws Box_Exception
      */
     public function tld_update($data)
     {
-        $required = array(
+        $required = [
             'tld' => 'TLD is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
@@ -275,19 +279,19 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get paginated registrars list
+     * Get paginated registrars list.
      *
      * @return array
      */
     public function registrar_get_list($data)
     {
-        list($sql, $params) = $this->getService()->registrarGetSearchQuery($data);
+        [$sql, $params] = $this->getService()->registrarGetSearchQuery($data);
         $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
-        $pager    = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
 
         $registrars = $this->di['db']->find('TldRegistrar', 'ORDER By name ASC');
 
-        $registrarsArr = array();
+        $registrarsArr = [];
         foreach ($registrars as $registrar) {
             $registrarsArr[] = $this->getService()->registrarToApiArray($registrar);
         }
@@ -298,7 +302,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get registrars pairs
+     * Get registrars pairs.
      *
      * @return array
      */
@@ -308,7 +312,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get available registrars for install
+     * Get available registrars for install.
      *
      * @return type
      */
@@ -318,7 +322,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Install domain registrar
+     * Install domain registrar.
      *
      * @param string $code - registrar code
      *
@@ -326,9 +330,9 @@ class Admin extends \Api_Abstract
      */
     public function registrar_install($data)
     {
-        $required = array(
+        $required = [
             'code' => 'registrar code is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $code = $data['code'];
@@ -340,7 +344,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Uninstall domain registrar
+     * Uninstall domain registrar.
      *
      * @param int $id - registrar id
      *
@@ -348,9 +352,9 @@ class Admin extends \Api_Abstract
      */
     public function registrar_delete($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Registrar ID is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
@@ -359,7 +363,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Copy domain registrar
+     * Copy domain registrar.
      *
      * @param int $id - registrar id
      *
@@ -367,9 +371,9 @@ class Admin extends \Api_Abstract
      */
     public function registrar_copy($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Registrar ID is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
@@ -378,7 +382,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get domain registrar details
+     * Get domain registrar details.
      *
      * @param int $id - registrar id
      *
@@ -386,9 +390,9 @@ class Admin extends \Api_Abstract
      */
     public function registrar_get($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Registrar ID is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $registrar = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
@@ -398,7 +402,8 @@ class Admin extends \Api_Abstract
 
     /**
      * Sync domain expiration dates with registrars.
-     * This action is run once a month
+     * This action is run once a month.
+     *
      * @return bool
      */
     public function batch_sync_expiration_dates($data)
@@ -407,7 +412,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Update domain registrar
+     * Update domain registrar.
      *
      * @param int $id - registrar id
      *
@@ -418,9 +423,9 @@ class Admin extends \Api_Abstract
      */
     public function registrar_update($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Registrar ID is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $model = $this->di['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
@@ -430,9 +435,9 @@ class Admin extends \Api_Abstract
 
     protected function _getService($data)
     {
-        $required = array(
+        $required = [
             'order_id' => 'Order ID is missing',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $orderId = $data['order_id'];
@@ -440,7 +445,7 @@ class Admin extends \Api_Abstract
         $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
 
         $orderService = $this->di['mod_service']('order');
-        $s            = $orderService->getOrderService($order);
+        $s = $orderService->getOrderService($order);
 
         if (!$s instanceof \Model_ServiceDomain) {
             throw new \Box_Exception('Domain order is not activated');

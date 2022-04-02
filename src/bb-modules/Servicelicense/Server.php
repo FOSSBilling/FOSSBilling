@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -14,14 +14,14 @@ namespace Box\Mod\Servicelicense;
 
 class Server implements \Box\InjectionAwareInterface
 {
-    private $_log = NULL;
+    private $_log = null;
 
-    private $_result = array(
-        'licensed_to' => NULL,
-        'created_at'  => NULL,
-        'expires_at'  => NULL,
-        'valid'       => FALSE,
-    );
+    private $_result = [
+        'licensed_to' => null,
+        'created_at' => null,
+        'expires_at' => null,
+        'valid' => false,
+    ];
 
     protected $di;
 
@@ -42,7 +42,9 @@ class Server implements \Box\InjectionAwareInterface
 
     /**
      * @deprecated
+     *
      * @param type $data
+     *
      * @return type
      */
     public function handle_deprecated($data)
@@ -50,13 +52,13 @@ class Server implements \Box\InjectionAwareInterface
         try {
             $this->process($data);
         } catch (\LogicException $e) {
-            $this->_log->info($e->getMessage() . ' ' . $e->getCode());
-            $this->_result['error']      = $e->getMessage();
+            $this->_log->info($e->getMessage().' '.$e->getCode());
+            $this->_result['error'] = $e->getMessage();
             $this->_result['error_code'] = $e->getCode();
         } catch (\Exception $e) {
             error_log($e);
-            $this->_log->info($e->getMessage() . ' ' . $e->getCode());
-            $this->_result['error']      = 'Licensing server is temporary unavailable';
+            $this->_log->info($e->getMessage().' '.$e->getCode());
+            $this->_result['error'] = 'Licensing server is temporary unavailable';
             $this->_result['error_code'] = $e->getCode();
         }
 
@@ -78,10 +80,10 @@ class Server implements \Box\InjectionAwareInterface
     private function getIp($checkProxy = true)
     {
         $ip = null;
-        if ($checkProxy && $this->getServer('HTTP_CLIENT_IP') != null) {
+        if ($checkProxy && null != $this->getServer('HTTP_CLIENT_IP')) {
             $ip = $this->getServer('HTTP_CLIENT_IP');
         } else {
-            if ($checkProxy && $this->getServer('HTTP_X_FORWARDED_FOR') != null) {
+            if ($checkProxy && null != $this->getServer('HTTP_X_FORWARDED_FOR')) {
                 $ip = $this->getServer('HTTP_X_FORWARDED_FOR');
             } else {
                 $ip = $this->getServer('REMOTE_ADDR');
@@ -89,7 +91,7 @@ class Server implements \Box\InjectionAwareInterface
         }
 
         $ips_arr = explode(',', $ip);
-        $ip      = trim($ips_arr[0]);
+        $ip = trim($ips_arr[0]);
 
         return $ip;
     }
@@ -97,10 +99,10 @@ class Server implements \Box\InjectionAwareInterface
     public function process($data)
     {
         if (!is_array($data)) {
-            $data = (json_decode($data, true)) ? json_decode($data, true) : array();
+            $data = (json_decode($data, true)) ? json_decode($data, true) : [];
         }
 
-        if (empty ($data)) {
+        if (empty($data)) {
             throw new \LogicException('Invalid request. Parameters missing?', 1000);
         }
 
@@ -109,7 +111,7 @@ class Server implements \Box\InjectionAwareInterface
         }
 
         $service = $this->di['mod_service']('servicelicense');
-        $model   = $this->di['db']->findOne('ServiceLicense', 'license_key = :license_key', array(':license_key' => $data['license']));
+        $model = $this->di['db']->findOne('ServiceLicense', 'license_key = :license_key', [':license_key' => $data['license']]);
 
         if (!$model instanceof \Model_ServiceLicense) {
             throw new \LogicException('Your license key is not valid.', 1005);
@@ -130,10 +132,10 @@ class Server implements \Box\InjectionAwareInterface
             throw new \LogicException('Path key is not present in call', 1004);
         }
 
-        $ip      = $this->getIp();
-        $host    = $data['host'];
+        $ip = $this->getIp();
+        $host = $data['host'];
         $version = $data['version'];
-        $path    = $data['path'];
+        $path = $data['path'];
 
         if (!$service->isLicenseActive($model)) {
             throw new \LogicException('License is not active', 1006);
@@ -156,9 +158,9 @@ class Server implements \Box\InjectionAwareInterface
         }
 
         $this->_result['licensed_to'] = $service->getOwnerName($model);
-        $this->_result['created_at']  = $model->created_at;
-        $this->_result['expires_at']  = $service->getExpirationDate($model);
-        $this->_result['valid']       = TRUE;
+        $this->_result['created_at'] = $model->created_at;
+        $this->_result['expires_at'] = $service->getExpirationDate($model);
+        $this->_result['valid'] = true;
 
         $array = $service->getAdditionalParams($model, $data);
         if (!empty($array)) {

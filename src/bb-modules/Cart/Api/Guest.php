@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -10,16 +10,15 @@
  * with this source code in the file LICENSE
  */
 
-
 namespace Box\Mod\Cart\Api;
 
 /**
- * Shopping cart management
+ * Shopping cart management.
  */
 class Guest extends \Api_Abstract
 {
     /**
-     * Get shopping cart contents
+     * Get shopping cart contents.
      *
      * @return array - shopping cart contents
      */
@@ -31,7 +30,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Completely remove shopping cart contents
+     * Completely remove shopping cart contents.
      *
      * @return bool
      */
@@ -43,7 +42,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Set shopping cart currency
+     * Set shopping cart currency.
      *
      * @param string $currency - New currency code to applied to shopping cart
      *
@@ -51,13 +50,13 @@ class Guest extends \Api_Abstract
      */
     public function set_currency($data)
     {
-        $required = array(
+        $required = [
             'currency' => 'Currency code not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $currencyService = $this->di['mod_service']('currency');
-        $currency        = $currencyService->getByCode($data['currency']);
+        $currency = $currencyService->getByCode($data['currency']);
         if (!$currency instanceof \Model_Currency) {
             throw new \Box_Exception('Currency not found');
         }
@@ -67,7 +66,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Retrieve information about currently selected shopping cart currency
+     * Retrieve information about currently selected shopping cart currency.
      *
      * @return array - Currency details
      */
@@ -76,7 +75,7 @@ class Guest extends \Api_Abstract
         $cart = $this->getService()->getSessionCart();
 
         $currencyService = $this->di['mod_service']('currency');
-        $currency        = $this->di['db']->load('Currency', $cart->currency_id);
+        $currency = $this->di['db']->load('Currency', $cart->currency_id);
         if (!$currency instanceof \Model_Currency) {
             $currency = $currencyService->getDefault();
         }
@@ -85,7 +84,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Apply Promo code to shopping cart
+     * Apply Promo code to shopping cart.
      *
      * @param string $promocode - Promo code string
      *
@@ -93,18 +92,17 @@ class Guest extends \Api_Abstract
      */
     public function apply_promo($data)
     {
-        $required = array(
+        $required = [
             'promocode' => 'Promo code not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
 
         $promo = $this->getService()->findActivePromoByCode($data['promocode']);
         if (!$promo instanceof \Model_Promo) {
             throw new \Box_Exception('Promo code is expired or does not exist');
         }
 
-        if (!$this->getService()->isPromoAvailableForClientGroup($promo)){
+        if (!$this->getService()->isPromoAvailableForClientGroup($promo)) {
             throw new \Box_Exception('Promo can not be applied to your account');
         }
 
@@ -118,7 +116,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Removes promo from shopping cart and resets discounted prices if any
+     * Removes promo from shopping cart and resets discounted prices if any.
      *
      * @return bool
      */
@@ -130,7 +128,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Removes product from shopping cart
+     * Removes product from shopping cart.
      *
      * @param int $id - Shopping cart item id
      *
@@ -138,9 +136,9 @@ class Guest extends \Api_Abstract
      */
     public function remove_item($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Cart item id not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $cart = $this->getService()->getSessionCart();
@@ -149,7 +147,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Adds product to shopping cart
+     * Adds product to shopping cart.
      *
      * @param int $id - Product ID
      *
@@ -163,16 +161,16 @@ class Guest extends \Api_Abstract
      */
     public function add_item($data)
     {
-        $required = array(
+        $required = [
             'id' => 'Product id not passed',
-        );
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $cart = $this->getService()->getSessionCart();
 
         $product = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
-        //reset cart by default
+        // reset cart by default
         if (!isset($data['multiple']) || !$data['multiple']) {
             $this->reset();
         }
