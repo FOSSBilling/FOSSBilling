@@ -9,7 +9,7 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
-class Server_Manager_Hestia extends Server_Manager
+class Server_Manager_Vesta extends Server_Manager
 {
     /**
      * Method is called just after obejct contruct is complete.
@@ -24,7 +24,7 @@ class Server_Manager_Hestia extends Server_Manager
 
     public function _getPort()
     {
-        if ($this->_config['port']) {
+        if (is_numeric($this->_config['port'])) {
             return $this->_config['port'];
         } else {
             return '8083';
@@ -39,7 +39,7 @@ class Server_Manager_Hestia extends Server_Manager
     public static function getForm()
     {
         return [
-            'label' => 'Hestia',
+            'label' => 'VestaCP',
         ];
     }
 
@@ -62,7 +62,7 @@ class Server_Manager_Hestia extends Server_Manager
      */
     public function getResellerLoginUrl()
     {
-        return '';
+        return 'https://google.com';
     }
 
     private function _makeRequest($params)
@@ -139,7 +139,7 @@ class Server_Manager_Hestia extends Server_Manager
     }
 
     /**
-     * Methods retrieves information from server, assign's new values to
+     * MEthods retrieves information from server, assignes new values to
      * cloned Server_Account object and returns it.
      *
      * @return Server_Account
@@ -184,6 +184,9 @@ class Server_Manager_Hestia extends Server_Manager
         // Server credentials
         $vst_command = 'v-add-user';
         $vst_returncode = 'yes';
+        $parts = explode(' ', $client->getFullName());
+        $lastname = array_pop($parts);
+        $firstname = implode(' ', $parts);
         // Prepare POST query
         $postvars = [
             'returncode' => $vst_returncode,
@@ -192,12 +195,13 @@ class Server_Manager_Hestia extends Server_Manager
             'arg2' => $this->create_tmp_file($a->getPassword()),
             'arg3' => $client->getEmail(),
             'arg4' => $packname,
-            'arg5' => trim($client->getFullName()),
+            'arg5' => trim($firstname),
+            'arg6' => trim($lastname),
         ];
         // Make request and create user
         $result = $this->_makeRequest($postvars);
         if (0 == $result) {
-            // Create Domain Prepare POST query
+// Create Domain Prepare POST query
             $postvars2 = [
                 'returncode' => 'yes',
                 'cmd' => 'v-add-domain',
@@ -205,14 +209,14 @@ class Server_Manager_Hestia extends Server_Manager
                 'arg2' => $a->getDomain(),
             ];
             $result2 = $this->_makeRequest($postvars2);
-        } else {
-            throw new Server_Exception('Server Manager Hestia CP Error: Unable to create User '.$result1);
-        }
-        if (0 != $result2) {
-            throw new Server_Exception('Server Manager Hestia CP Error: Create Domain failure '.$result2);
-        }
+            if ('0' != $result2) {
+                throw new Server_Exception('Server Manager Vesta CP Error: Create Domain failure '.$result2);
+            }
 
-        return true;
+            return true;
+        } else {
+            throw new Server_Exception('Server Manager Vesta CP Error: Unable to create User '.$result1);
+        }
     }
 
     /**
@@ -231,11 +235,11 @@ class Server_Manager_Hestia extends Server_Manager
         // Make request and suspend user
         $result = $this->_makeRequest($postvars);
         // Check if error 6 the account is suspended on server
-        if (6 == $result) {
+        if ('6' == $result) {
             return true;
         }
-        if (0 != $result) {
-            throw new Server_Exception('Server Manager Hestia CP Error: Suspend Account Error '.$result.$suspended);
+        if ('0' != $result) {
+            throw new Server_Exception('Server Manager Vesta CP Error: Suspend Account Error '.$result.$suspended);
         }
 
         return true;
@@ -258,8 +262,8 @@ class Server_Manager_Hestia extends Server_Manager
             ];
 
         $result = $this->_makeRequest($postvars);
-        if (0 != $result) {
-            throw new Server_Exception('Server Manager Hestia CP Error: Unsuspend Account Error '.$result);
+        if ('0' != $result) {
+            throw new Server_Exception('Server Manager Vesta CP Error: Unsuspend Account Error '.$result);
         }
 
         return true;
@@ -287,8 +291,8 @@ class Server_Manager_Hestia extends Server_Manager
         if ('3' == $result) {
             return true;
         } else {
-            if (0 != $result) {
-                throw new Server_Exception('Server Manager Hestia CP Error: Cancel Account Error '.$result);
+            if ('0' != $result) {
+                throw new Server_Exception('Server Manager Vesta CP Error: Cancel Account Error '.$result);
             }
         }
 
@@ -317,8 +321,8 @@ class Server_Manager_Hestia extends Server_Manager
         ];
         // Make request and change package
         $result = $this->_makeRequest($postvars);
-        if (0 != $result) {
-            throw new Server_Exception('Server Manager Hestia CP Error: Change User package Account Error '.$result);
+        if ('0' != $result) {
+            throw new Server_Exception('Server Manager Vesta CP Error: Change User package Account Error '.$result);
         }
 
         return true;
@@ -331,7 +335,7 @@ class Server_Manager_Hestia extends Server_Manager
      */
     public function changeAccountUsername(Server_Account $a, $new)
     {
-        throw new Server_Exception('Server Manager Hestia CP Error: Not Supported');
+        throw new Server_Exception('Server Manager Vesta CP Error: Not Supported');
     }
 
     /**
@@ -341,7 +345,7 @@ class Server_Manager_Hestia extends Server_Manager
      */
     public function changeAccountDomain(Server_Account $a, $new)
     {
-        throw new Server_Exception('Server Manager Hestia CP Error: Not Supported');
+        throw new Server_Exception('Server Manager Vesta CP Error: Not Supported');
     }
 
     /**
@@ -365,8 +369,8 @@ class Server_Manager_Hestia extends Server_Manager
         ];
         // Make request and change password
         $result = $this->_makeRequest($postvars);
-        if (0 != $result) {
-            throw new Server_Exception('Server Manager Hestia CP Error: Change Password Account Error '.$result);
+        if ('0' != $result) {
+            throw new Server_Exception('Server Manager Vesta CP Error: Change Password Account Error '.$result);
         }
 
         return true;
@@ -379,6 +383,6 @@ class Server_Manager_Hestia extends Server_Manager
      */
     public function changeAccountIp(Server_Account $a, $new)
     {
-        throw new Server_Exception('Server Manager Hestia CP Error: Not Supported');
+        throw new Server_Exception('Server Manager Vesta CP Error: Not Supported');
     }
 }
