@@ -162,4 +162,15 @@ class Admin extends \Api_Abstract
     {
         return $this->getService()->clearCache();
     }
+    
+    /**
+     * Gets the latest release notes.
+     *
+     * @return string
+     */
+    public function release_notes()
+    {
+        $updater = $this->di['updater'];
+        return $updater->getLatestReleaseNotes();
+    }
 }

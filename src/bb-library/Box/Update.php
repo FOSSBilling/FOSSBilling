@@ -44,7 +44,20 @@ class Box_Update
     }
 
     /**
-     * Return latest version number
+     * Returns latest release notes
+     * @return string
+     */
+    public function getLatestReleaseNotes()
+    {
+        $response = $this->_getLatestVersionInfo();
+        if(!isset($response['body'])){
+            return "**Error: Release info unavailable**";
+        }
+        return $response['body'];
+    }
+
+    /**
+     * Returns latest version number
      * @return string
      */
     public function getLatestVersion()
