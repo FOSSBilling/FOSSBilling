@@ -26,7 +26,7 @@
 {% endmacro %}
 
 {% macro status_name(status) %}
-    {{ status|replace({'_': " "})|title|trans }}
+    {{ status|replace({ '_': " " })|title|trans }}
 {% endmacro %}
 
 {# deprecated - use period_title filter #}
@@ -36,13 +36,10 @@
 
 {% macro markdown_quote(text) %}
 
-
-
 {% for line in text|split('\n') %}
 > {{ line }}
 {% endfor %}
 {% endmacro %}
-
 
 {% macro recaptcha() %}
 

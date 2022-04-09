@@ -1,5 +1,5 @@
 <div class="rowElem">
-    <label>{% trans 'Import existing' %}:</label>
+    <label>{{ 'Import existing'|trans }}:</label>
     <div class="formRight">
         <input type="radio" name="config[import]" value="1"/><label>Yes</label>
         <input type="radio" name="config[import]" value="0" checked="checked" /><label>No</label>
@@ -8,18 +8,18 @@
 </div>
 
 <div class="rowElem">
-    <label>{% trans 'Domain' %}:</label>
+    <label>{{ 'Domain'|trans }}:</label>
     <div class="formRight moreFields">
         <ul>
-            <li style="width: 200px"><input type="text" name="config[domain][owndomain_sld]]" value="" placeholder="{% trans 'Domain name' %}"></li>
-            <li style="width: 50px"><input type="text" name="config[domain][owndomain_tld]]" value=".com" placeholder="{% trans 'Domain TLD' %}"></li>
+            <li style="width: 200px"><input type="text" name="config[domain][owndomain_sld]]" value="" placeholder="{{ 'Domain name'|trans }}"></li>
+            <li style="width: 50px"><input type="text" name="config[domain][owndomain_tld]]" value=".com" placeholder="{{ 'Domain TLD'|trans }}"></li>
         </ul>
     </div>
     <div class="fix"></div>
 </div>
 
 <div class="rowElem">
-    <label>{% trans 'Username' %}:</label>
+    <label>{{ 'Username'|trans }}:</label>
     <div class="formRight">
         <input type="text" name="config[username]" value="" placeholder="Leave blank to generate"/>
     </div>
@@ -27,7 +27,7 @@
 </div>
 
 <div class="rowElem">
-    <label>{% trans 'Password' %}:</label>
+    <label>{{ 'Password'|trans }}:</label>
     <div class="formRight">
         <input type="text" name="config[password]" value="" placeholder="Leave blank to generate"/>
     </div>

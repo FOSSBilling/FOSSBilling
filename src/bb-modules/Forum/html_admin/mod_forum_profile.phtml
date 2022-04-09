@@ -1,16 +1,18 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
+
 {% block meta_title %}Forum - Client profile{% endblock %}
+
 {% set active_menu = 'support' %}
 
 {% block content %}
 
-{% set params = admin.extension_config_get({"ext":"mod_forum"}) %}
-{% set fp = admin.forum_profile_get({"client_id":client_id}) %}
-{% set posts = admin.forum_message_get_list({"client_id":client_id,"per_page":30, "page":request.page}|merge(request)) %}
+{% set params = admin.extension_config_get({ "ext": "mod_forum" }) %}
+{% set fp = admin.forum_profile_get({ "client_id": client_id }) %}
+{% set posts = admin.forum_message_get_list({ "client_id": client_id, "per_page": 30, "page": request.page }|merge(request)) %}
 {% set last_message = posts.list[0] %}
 <div class="widget simpleTabs">
-
     <ul class="tabs">
         <li><a href="#tab-index">{{ fp.name }} profile</a></li>
         <li><a href="#tab-points">Posts with points</a></li>
@@ -50,22 +52,24 @@
                     {% set points = fp.points %}
                     <tr>
                         <td>Points</td>
-                        <td><a href="#" onclick="$('#edit-points').toggle(); return false;"><span title="{% trans 'Approved' %}">{{ points }}</span></a></td>
+                        <td>
+                            <a href="#" onclick="$('#edit-points').toggle(); return false;">
+                                <span title="{{ 'Approved'|trans }}">{{ points }}</span>
+                            </a>
+                        </td>
                     </tr>
                     
                     <tr style="display: none;" id="edit-points">
                         <td>Edit points</td>
                         <td>
                             <form action="{{ 'api/admin/forum/points_update'|link }}" method="post" class="api-form">
-                            <input type="text" name="amount" value="{{points}}"/>
+                            <input type="text" name="amount" value="{{ points }}"/>
                             <input type="submit" value="Update"/>
-                            <input type="hidden" name="client_id" value="{{client_id}}"/>
+                            <input type="hidden" name="client_id" value="{{ client_id }}"/>
                             </form>
                         </td>
                     </tr>
-                    
                     {% endif %}
-                    
                 </tbody>
                 <tfoot>
                     <tr>
@@ -77,13 +81,13 @@
             <div class="fix"></div>
             
             <div class="help">
-                <h3>{% trans 'Recent posts' %}</h3>
+                <h3>{{ 'Recent posts'|trans }}</h3>
             </div>
             <table class="tableStatic wide">
                 <thead>
                     <tr>
-                        <td>{% trans 'Message' %}</td>
-                        <td>{% trans 'Date' %}</td>
+                        <td>{{ 'Message'|trans }}</td>
+                        <td>{{ 'Date'|trans }}</td>
                         <td style="width: 13%">Actions</td>
                     </tr>
                 </thead>
@@ -106,13 +110,13 @@
                 {% else %}
                     <tr>
                         <td colspan="3">
-                            {% trans 'The list is empty' %}
+                            {{ 'The list is empty'|trans }}
                         </td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
-            {% include "partial_pagination.phtml" with {'list': posts, 'url':'profile/'~client_id} %}
+            {% include "partial_pagination.phtml" with { 'list': posts, 'url': 'profile/'~client_id } %}
         </div>
         
         
@@ -121,13 +125,13 @@
             <table class="tableStatic wide">
                 <thead>
                     <tr>
-                        <th>{% trans 'Message' %}</th>
-                        <th style="width: 5%">{% trans 'Actions' %}</th>
+                        <th>{{ 'Message'|trans }}</th>
+                        <th style="width: 5%">{{ 'Actions'|trans }}</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    {% set posts = admin.forum_message_get_list({"per_page":20, "client_id":client_id, "with_points":1}|merge(request)) %}
+                    {% set posts = admin.forum_message_get_list({ "per_page": 20, "client_id": client_id, "with_points": 1 }|merge(request)) %}
                     {% for i, post in posts.list %}
                     <tr>
                         <td>
@@ -141,30 +145,25 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="2">{% trans 'The list is empty' %}</td>
+                        <td colspan="2">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
             {% else %}
             <div class="help">
-                <h3>{% trans 'Enable forum points feature in extension configuration page' %}</h3>
+                <h3>{{ 'Enable forum points feature in extension configuration page'|trans }}</h3>
                 <p><a href="{{'extension/settings/forum'|alink}}">Forum settings</a></p>
             </div>
             {% endif %}
         </div>
-        
     </div>
 </div>
-
 {% endblock %}
 
 {% block js %}
 <script type="text/javascript">
-    
-$(function() {
-
-});
-
+    $(function() {
+    });
 </script>
 {% endblock %}

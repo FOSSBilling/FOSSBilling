@@ -11,20 +11,18 @@
         <image>
             <url>{{ company.logo_url }}</url>
             <title>{{ company.name }}</title>
-            <link>{{ '/' | link }}</link>
+            <link>{{ '/'|link }}</link>
         </image>
-        {% for topic in guest.forum_get_topic_list({"per_page":100}).list %}
-        
+        {% for topic in guest.forum_get_topic_list({ "per_page": 100 }).list %}
         <item>
             <title>{{ topic.title | truncate(150) }}</title>
-            <guid isPermaLink="true">{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}</guid>
-            <link>{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}</link>
+            <guid isPermaLink="true">{{ '/forum'|link }}/{{ topic.forum.slug }}/{{ topic.slug }}</guid>
+            <link>{{ '/forum'|link }}/{{ topic.forum.slug }}/{{ topic.slug }}</link>
             <description>{{ topic.first.message | truncate(250) }}</description>
-            <category>{{topic.forum.category}}/{{topic.forum.title}}</category>
+            <category>{{ topic.forum.category }}/{{ topic.forum.title }}</category>
             <dc:creator>{{ topic.first.author.name }}</dc:creator>
             <pubDate>{{ topic.created_at|date("D, d M Y H:i:s O") }}</pubDate>
         </item>
         {% endfor %}
-
     </channel>
 </rss>

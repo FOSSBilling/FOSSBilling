@@ -3,77 +3,77 @@
 {% set hp = service.hosting_plan %}
 
 <div class="help">
-    <h2>{% trans 'Details' %}</h2>
+    <h2>{{ 'Details'|trans }}</h2>
 </div>
 <table class="tableStatic wide">
     <tbody>
         <tr class="noborder">
-            <td style="width: 30%;">{% trans 'Status' %}:</td>
+            <td style="width: 30%;">{{ 'Status'|trans }}:</td>
             <td>{{mf.status_name(order.status)}}</td>
         </tr>
 
         <tr>
-            <td>{% trans 'Domain' %}:</td>
+            <td>{{ 'Domain'|trans }}:</td>
             <td>
                 <a target="_blank" href="http://{{ service.domain }}">{{ service.domain }}</a>
             </td>
         </tr>
 
         <tr>
-            <td>{% trans 'Server Name' %}:</td>
+            <td>{{ 'Server Name'|trans }}:</td>
             <td><a href="{{ 'servicehosting/server'|alink }}/{{ server.id }}">{{ server.name }}</a></td>
         </tr>
 
         <tr>
-            <td>{% trans 'Hosting plan' %}:</td>
+            <td>{{ 'Hosting plan'|trans }}:</td>
             <td><a href="{{ 'servicehosting/plan'|alink }}/{{ hp.id }}">{{ hp.name }}</a></td>
         </tr>
 
         <tr>
-            <td>{% trans 'Server IP' %}:</td>
+            <td>{{ 'Server IP'|trans }}:</td>
             <td>{{ server.ip }}</td>
         </tr>
 
         <tr>
-            <td>{% trans 'Account IP' %}:</td>
+            <td>{{ 'Account IP'|trans }}:</td>
             <td>{{ service.ip }}</td>
         </tr>
 
         <tr>
-            <td>{% trans 'Username' %}:</td>
+            <td>{{ 'Username'|trans }}:</td>
             <td>{{ service.username }}</td>
         </tr>
 
         <tr>
-            <td>{% trans 'Nameserver 1' %}:</td>
+            <td>{{ 'Nameserver 1'|trans }}:</td>
             <td>{{ server.ns1 }}</td>
         </tr>
 
         <tr>
-            <td>{% trans 'Nameserver 2' %}:</td>
+            <td>{{ 'Nameserver 2'|trans }}:</td>
             <td>{{ server.ns2 }}</td>
         </tr>
 
         {% if server.ns3 %}
         <tr>
-            <td>{% trans 'Nameserver 3' %}:</td>
+            <td>{{ 'Nameserver 3'|trans }}:</td>
             <td>{{ server.ns3 }}</td>
         </tr>
         {% endif %}
 
         {% if server.ns4 %}
         <tr>
-            <td>{% trans 'Nameserver 4' %}:</td>
+            <td>{{ 'Nameserver 4'|trans }}:</td>
             <td>{{ server.ns4 }}</td>
         </tr>
         {% endif %}
 
         <tr>
-            <td>{% trans 'Bandwidth' %}:</td>
-            <td>{{ hp.bandwidth }} MB / {% trans 'per month' %}</td>
+            <td>{{ 'Bandwidth'|trans }}:</td>
+            <td>{{ hp.bandwidth }} MB / {{ 'per month'|trans }}</td>
         </tr>
         <tr>
-            <td>{% trans 'Disk quota' %}:</td>
+            <td>{{ 'Disk quota'|trans }}:</td>
             <td>{{ hp.quota }} MB</td>
         </tr>
 
@@ -83,12 +83,18 @@
             <td colspan="2">
                 <div class="aligncenter">
                     {{ order_actions }}
-                    <a class="btn55 mr10" href="{{ server.cpanel_url }}" target="_blank"><img src="images/icons/middlenav/linux.png" alt=""><span>{% trans 'Jump to cPanel' %}</span></a>
+                    <a class="btn55 mr10" href="{{ server.cpanel_url }}" target="_blank">
+                        <img src="images/icons/middlenav/linux.png" alt=""><span>{{ 'Jump to cPanel'|trans }}</span>
+                    </a>
                     {% if service.reseller %}
-                    <a class="btn55 mr10" href="{{ server.reseller_cpanel_url }}" target="_blank"><img src="images/icons/middlenav/linux.png" alt=""><span>{% trans 'Reseller control panel' %}</span></a>
+                    <a class="btn55 mr10" href="{{ server.reseller_cpanel_url }}" target="_blank">
+                        <img src="images/icons/middlenav/linux.png" alt=""><span>{{ 'Reseller control panel'|trans }}</span>
+                    </a>
                     {% endif %}
 
-                    <a href="{{ 'api/admin/servicehosting/sync'|link({'order_id' : order.id }) }}" data-api-confirm="Are you sure?" data-api-msg="Account was synced" class="btn55 mr10 api-link"><img src="images/icons/middlenav/transfer.png" alt=""><span>Sync with server</span></a>
+                    <a href="{{ 'api/admin/servicehosting/sync'|link({ 'order_id': order.id }) }}" data-api-confirm="Are you sure?" data-api-msg="Account was synced" class="btn55 mr10 api-link">
+                        <img src="images/icons/middlenav/transfer.png" alt=""><span>Sync with server</span>
+                    </a>
                 </div>
             </td>
         </tr>
@@ -96,13 +102,13 @@
 </table>
 
 <div class="help">
-    <h2>{% trans 'Change hosting plan' %}</h2>
+    <h2>{{ 'Change hosting plan'|trans }}</h2>
 </div>
 
-<form action="{{ 'api/admin/servicehosting/change_plan'|link }}" method="post" class="mainForm api-form save" data-api-msg="{% trans 'Hosting plan changed' %}">
+<form action="{{ 'api/admin/servicehosting/change_plan'|link }}" method="post" class="mainForm api-form save" data-api-msg="{{ 'Hosting plan changed'|trans }}">
 <fieldset>
     <div class="rowElem noborder">
-        <label>{% trans 'New hosting plan' %}:</label>
+        <label>{{ 'New hosting plan'|trans }}:</label>
         <div class="formRight">
             {{ mf.selectbox('plan_id', admin.servicehosting_hp_get_pairs, hp.id, 1) }}
         </div>
@@ -110,25 +116,25 @@
     </div>
 
     <input type="hidden" name="order_id" value="{{ order.id }}">
-    <input type="submit" value="{% trans 'Change' %}" class="greyishBtn submitForm" />
+    <input type="submit" value="{{ 'Change'|trans }}" class="greyishBtn submitForm" />
 </fieldset>
 </form>
 
 <div class="help">
-    <h2>{% trans 'Change account password' %}</h2>
+    <h2>{{ 'Change account password'|trans }}</h2>
 </div>
 
-<form action="{{ 'api/admin/servicehosting/change_password'|link }}" method="post" class="mainForm api-form save" data-api-msg="{% trans 'Account password changed' %}">
+<form action="{{ 'api/admin/servicehosting/change_password'|link }}" method="post" class="mainForm api-form save" data-api-msg="{{ 'Account password changed'|trans }}">
 <fieldset>
     <div class="rowElem noborder">
-        <label>{% trans 'Password' %}:</label>
+        <label>{{ 'Password'|trans }}:</label>
         <div class="formRight">
             <input type="password" name="password" required="required"/>
         </div>
         <div class="fix"></div>
     </div>
     <div class="rowElem">
-        <label>{% trans 'Password Confirm' %}:</label>
+        <label>{{ 'Password Confirm'|trans }}:</label>
         <div class="formRight">
             <input type="password" name="password_confirm"  required="required"/>
         </div>
@@ -136,18 +142,18 @@
     </div>
 
     <input type="hidden" name="order_id" value="{{ order.id }}">
-    <input type="submit" value="{% trans 'Change' %}" class="greyishBtn submitForm" />
+    <input type="submit" value="{{ 'Change'|trans }}" class="greyishBtn submitForm" />
 </fieldset>
 </form>
 
 <div class="help">
-    <h2>{% trans 'Change IP' %}</h2>
+    <h2>{{ 'Change IP'|trans }}</h2>
 </div>
 
-<form method="post" action="{{ 'api/admin/servicehosting/change_ip'|link }}" class="mainForm api-form save" data-api-msg="{% trans 'Account IP changed' %}">
+<form method="post" action="{{ 'api/admin/servicehosting/change_ip'|link }}" class="mainForm api-form save" data-api-msg="{{ 'Account IP changed'|trans }}">
 <fieldset>
     <div class="rowElem">
-        <label>{% trans 'IP' %}: </label>
+        <label>{{ 'IP'|trans }}: </label>
         <div class="formRight">
             <input type="text" name="ip" value="{{ request.ip|default(service.ip) }}" required="required">
         </div>
@@ -155,18 +161,18 @@
     </div>
 
     <input type="hidden" name="order_id" value="{{ order.id }}">
-    <input class="greyishBtn submitForm" type="submit" value="{% trans 'Change' %}">
+    <input class="greyishBtn submitForm" type="submit" value="{{ 'Change'|trans }}">
 </fieldset>
 </form>
 
 <div class="help">
-    <h2>{% trans 'Change username' %}</h2>
+    <h2>{{ 'Change username'|trans }}</h2>
 </div>
 
-<form method="post" action="{{ 'api/admin/servicehosting/change_username'|link }}" class="mainForm api-form save" data-api-msg="{% trans 'Account username changed' %}">
+<form method="post" action="{{ 'api/admin/servicehosting/change_username'|link }}" class="mainForm api-form save" data-api-msg="{{ 'Account username changed'|trans }}">
 <fieldset>
     <div class="rowElem">
-        <label>{% trans 'Username' %}: </label>
+        <label>{{ 'Username'|trans }}: </label>
         <div class="formRight">
             <input type="text" name="username" value="{{ request.username|default(service.username) }}" required="required">
         </div>
@@ -174,17 +180,17 @@
     </div>
 
     <input type="hidden" name="order_id" value="{{ order.id }}">
-    <input class="greyishBtn submitForm" type="submit" value="{% trans 'Change' %}">
+    <input class="greyishBtn submitForm" type="submit" value="{{ 'Change'|trans }}">
 </fieldset>
 </form>
 
 <div class="help">
-    <h2>{% trans 'Change domain' %}</h2>
+    <h2>{{ 'Change domain'|trans }}</h2>
 </div>
-<form method="post" action="{{ 'api/admin/servicehosting/change_domain'|link }}" class="mainForm api-form save" data-api-msg="{% trans 'Account domain changed' %}">
+<form method="post" action="{{ 'api/admin/servicehosting/change_domain'|link }}" class="mainForm api-form save" data-api-msg="{{ 'Account domain changed'|trans }}">
 <fieldset>
     <div class="rowElem">
-        <label>{% trans 'Domain' %}: </label>
+        <label>{{ 'Domain'|trans }}: </label>
         <div class="formRight moreFields">
             <ul>
                 <li style="width: 200px"><input type="text" name="sld" value="{{ request.domain|default(service.sld) }}" required="required"></li>
@@ -197,6 +203,6 @@
     </div>
 
     <input type="hidden" name="order_id" value="{{ order.id }}">
-    <input class="greyishBtn submitForm" type="submit" value="{% trans 'Change' %}">
+    <input class="greyishBtn submitForm" type="submit" value="{{ 'Change'|trans }}">
 </fieldset>
 </form>

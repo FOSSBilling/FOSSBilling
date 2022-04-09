@@ -1,12 +1,12 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
-{% block meta_title %}{% trans 'Terms and Conditions' %}{% endblock %}
+
+{% block meta_title %}{{ 'Terms and Conditions'|trans }}{% endblock %}
 
 {% block content %}
-
 <div class="h-block">
     <div class="h-block-header">
         <div class="icon"><span class="big-light-icon i-quote"></span></div>
-        <h2>{{ company.name }} {% trans 'Terms and Conditions' %}</h2>
+        <h2>{{ company.name }} {{ 'Terms and Conditions'|trans }}</h2>
         <p>{{ company.signature }}</p>
     </div>
     <div class="block">
@@ -15,5 +15,4 @@
         </div>
     </div>
 </div>
-
 {% endblock %}

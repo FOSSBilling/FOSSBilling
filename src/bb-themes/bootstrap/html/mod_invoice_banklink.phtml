@@ -1,6 +1,6 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
 {% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{% trans 'Processing payment ...' %}{% endblock %}
+{% block meta_title %}{{ 'Processing payment ...'|trans }}{% endblock %}
 
 {% block content %}
 
@@ -14,12 +14,12 @@
 {% endif %}
 
 {% if payment.type == 'form' %}
-<h2>{% trans 'Redirecting to payment gateway..' %}</h2>
+<h2>{{ 'Redirecting to payment gateway..'|trans }}</h2>
 <form name="payment_form" action="{{payment.service_url}}" method="post">
     {% for key, value in payment.result %}
     <input type="hidden" name="{{key}}" value="{{value}}" />
     {% endfor %}
-    <input class="btn btn-warning" type="submit" value="{% trans 'Please click here to continue if this page does not redirect automatically in 5 seconds' %}" id="payment_button"/>
+    <input class="btn btn-warning" type="submit" value="{{ 'Please click here to continue if this page does not redirect automatically in 5 seconds'|trans }}" id="payment_button"/>
 </form>
 
 <script type="text/javascript">

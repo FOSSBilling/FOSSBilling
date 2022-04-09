@@ -1,16 +1,16 @@
-{% if guest.extension_is_on({"mod":"formbuilder"}) %}
-{% set form = guest.formbuilder_get({"id":product.form_id}) %}
-        {% if form.style.show_title != "0" %}
-            <div style="text-align: center">
-                <h5>{{form.name}}</h5>
-            </div>
-        {% endif %}
+{% if guest.extension_is_on({ "mod": "formbuilder" }) %}
+    {% set form = guest.formbuilder_get({ "id": product.form_id }) %}
+    {% if form.style.show_title != "0" %}
+        <div style="text-align: center">
+            <h5>{{ form.name }}</h5>
+        </div>
+    {% endif %}
 
     <fieldset>
         {% for field in form.fields %}
            <div class="grid_6 alpha">
                 <p>
-                    {% if field.hide_label!=1 %}<label {% if form.style.type == 'horizontal' %}class="control-label"{% endif %} for="{{ field.name }}">{{ field.label }}</label>{% endif %}
+                    {% if field.hide_label != 1 %}<label {% if form.style.type == 'horizontal' %}class="control-label"{% endif %} for="{{ field.name }}">{{ field.label }}</label>{% endif %}
 
                     {% if field.type == "text" %}
 

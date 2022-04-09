@@ -1,11 +1,11 @@
 <div class="help">
-    <h5>{% trans 'Stock control settings' %}</h5>
+    <h5>{{ 'Stock control settings'|trans }}</h5>
 </div>
 
 <form method="post" action="{{ 'api/admin/product/update'|link }}" class="mainForm api-form save" data-api-msg="Settings updated">
 <fieldset>
     <div class="rowElem noborder">
-        <label>{% trans 'Enable stock control' %}:</label>
+        <label>{{ 'Enable stock control'|trans }}:</label>
         <div class="formRight">
             <input type="radio" name="stock_control" value="1"{% if product.stock_control %} checked="checked"{% endif %}/><label>Yes</label>
             <input type="radio" name="stock_control" value="0"{% if not product.stock_control %} checked="checked"{% endif %} /><label>No</label>
@@ -14,7 +14,7 @@
     </div>
     
     <div class="rowElem">
-        <label>{% trans 'Allow quantity select on order form' %}:</label>
+        <label>{{ 'Allow quantity select on order form'|trans }}:</label>
         <div class="formRight">
             <input type="radio" name="allow_quantity_select" value="1"{% if product.allow_quantity_select %} checked="checked"{% endif %}/><label>Yes</label>
             <input type="radio" name="allow_quantity_select" value="0"{% if not product.allow_quantity_select %} checked="checked"{% endif %} /><label>No</label>
@@ -23,34 +23,34 @@
     </div>
 
     <div class="rowElem">
-        <label>{% trans 'Quantity in stock' %}:</label>
+        <label>{{ 'Quantity in stock'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="quantity_in_stock" value="{{ product.quantity_in_stock }}">
         </div>
         <div class="fix"></div>
     </div>
     
-    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
 </fieldset>
     
 <input type="hidden" name="id" value="{{ product.id }}" />
 </form>
 
 <div class="help">
-    <h5>{% trans 'Plugin' %}</h5>
+    <h5>{{ 'Plugin'|trans }}</h5>
 </div>
 
 <form method="post" action="{{ 'api/admin/product/update'|link }}" class="mainForm api-form save" data-api-msg="Settings updated">
 <fieldset>
     <div class="rowElem noborder">
-        <label>{% trans 'Plugin name' %}:</label>
+        <label>{{ 'Plugin name'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="plugin" value="{{ product.plugin }}"/>
         </div>
         <div class="fix"></div>
     </div>
     
-    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
 </fieldset>
     
 <input type="hidden" name="id" value="{{ product.id }}" />
@@ -87,7 +87,7 @@
             </div>
             <div class="fix"></div>
         </div>
-        <input type="submit" value="{% trans 'Update configuration fields' %}" class="greyishBtn submitForm" />
+        <input type="submit" value="{{ 'Update configuration fields'|trans }}" class="greyishBtn submitForm" />
         <div class="fix"></div>
         <input type="hidden" name="id" value="{{ product.id }}"/>
     </fieldset>

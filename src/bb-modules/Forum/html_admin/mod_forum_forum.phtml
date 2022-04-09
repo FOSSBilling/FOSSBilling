@@ -1,18 +1,21 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
+
 {% set active_menu = 'support' %}
+
 {% block meta_title %}Forum{% endblock %}
 
 {% block content %}
 <div class="widget">
     <div class="head">
-        <h5>{% trans 'Forum details' %}</h5>
+        <h5>{{ 'Forum details'|trans }}</h5>
     </div>
 
     <form method="post" action="{{ 'api/admin/forum/update'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'forum'|alink }}">
         <fieldset>
             <div class="rowElem noborder">
-                <label>{% trans 'Category' %}:</label>
+                <label>{{ 'Category'|trans }}:</label>
                 <div class="formRight moreFields">
                     <ul>
                         <li style="width: 170px"><input type="text" name="category" value="{{forum.category}}" placeholder="" style="width: 150px"/></li>
@@ -24,39 +27,37 @@
                 <div class="fix"></div>
             </div>
             <div class="rowElem">
-                <label>{% trans 'Title' %}:</label>
+                <label>{{ 'Title'|trans }}:</label>
                 <div class="formRight">
                     <input type="text" name="title" value="{{forum.title}}" required="required" placeholder=""/>
                 </div>
                 <div class="fix"></div>
             </div>
             <div class="rowElem">
-                <label>{% trans 'Slug' %}:</label>
+                <label>{{ 'Slug'|trans }}:</label>
                 <div class="formRight">
                     <input type="text" name="slug" value="{{forum.slug}}" required="required" placeholder=""/>
                 </div>
                 <div class="fix"></div>
             </div>
             <div class="rowElem">
-                <label>{% trans 'Status' %}:</label>
+                <label>{{ 'Status'|trans }}:</label>
                 <div class="formRight">
-                    <input type="radio" name="status" value="active"{% if forum.status == 'active' %} checked="checked"{% endif %}/><label>{% trans 'Active' %}</label>
-                    <input type="radio" name="status" value="locked"{% if forum.status == 'locked' %} checked="checked"{% endif %}/><label>{% trans 'Locked' %}</label>
+                    <input type="radio" name="status" value="active"{% if forum.status == 'active' %} checked="checked"{% endif %}/><label>{{ 'Active'|trans }}</label>
+                    <input type="radio" name="status" value="locked"{% if forum.status == 'locked' %} checked="checked"{% endif %}/><label>{{ 'Locked'|trans }}</label>
                 </div>
                 <div class="fix"></div>
             </div>
             <div class="rowElem">
-                <label>{% trans 'Description' %}</label>
+                <label>{{ 'Description'|trans }}</label>
                 <div class="formRight">
                     <textarea name="description" cols="5" rows="4">{{ forum.description }}</textarea>
                 </div>
                 <div class="fix"></div>
             </div>
-            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+            <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
             <input type="hidden" name="id" value="{{ forum.id }}" />
         </fieldset>
     </form>
 </div>
-
-
 {% endblock %}

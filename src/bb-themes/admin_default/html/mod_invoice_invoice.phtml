@@ -1,23 +1,23 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
-{% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{% trans 'Invoice' %} {{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}{% endblock %}
-{% set active_menu = 'invoice' %}
 
+{% import "macro_functions.phtml" as mf %}
+
+{% block meta_title %}{{ 'Invoice'|trans }} {{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}{% endblock %}
+
+{% set active_menu = 'invoice' %}
 
 {% block breadcrumbs %}
 <ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
-    <li><a href="{{ 'invoice'|alink }}">{% trans 'Invoices' %}</a></li>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'invoice'|alink }}">{{ 'Invoices'|trans }}</a></li>
     <li class="lastB">{{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}</li>
 </ul>
 {% endblock %}
 
-
 {% block content %}
-
 <div class="widget simpleTabs tabsRight">
     <div class="head">
-        <h5>{% trans 'Invoice' %} #{{ invoice.id }}</h5>
+        <h5>{{ 'Invoice'|trans }} #{{ invoice.id }}</h5>
     </div>
 
     <ul class="tabs">
@@ -35,24 +35,26 @@
                 <table class="tableStatic wide">
                     <tbody>
                     <tr class="noborder">
-                        <td style="width: 20%"><label>{% trans 'ID' %}</label></td>
+                        <td style="width: 20%"><label>{{ 'ID'|trans }}</label></td>
                         <td>{{ invoice.id }}</td>
                     </tr>
                     <tr>
-                        <td><label>{% trans 'Number' %}</label></td>
+                        <td><label>{{ 'Number'|trans }}</label></td>
                         <td>{{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}</td>
                     </tr>
                     <tr>
-                        <td><label>{% trans 'Currency' %}</label></td>
+                        <td><label>{{ 'Currency'|trans }}</label></td>
                         <td>{{ invoice.currency }}</td>
                     </tr>
                     <tr>
-                        <td><label>{% trans 'Client' %}</label></td>
-                        <td><a href="{{ 'client/manage'|alink }}/{{ invoice.client.id }}">{{ invoice.client.first_name }} {{ invoice.client.last_name }}</a></td>
+                        <td><label>{{ 'Client'|trans }}</label></td>
+                        <td>
+                            <a href="{{ 'client/manage'|alink }}/{{ invoice.client.id }}">{{ invoice.client.first_name }} {{ invoice.client.last_name }}</a>
+                        </td>
                     </tr>
 
                     <tr>
-                        <td><label>{% trans 'Status' %}</label></td>
+                        <td><label>{{ 'Status'|trans }}</label></td>
                         <td>{{ mf.status_name(invoice.status) }}</td>
                     </tr>
 
@@ -64,33 +66,33 @@
                     {% endif %}
                     
                     <tr>
-                        <td><label>{% trans 'Total' %}</label></td>
+                        <td><label>{{ 'Total'|trans }}</label></td>
                         <td>{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
                     </tr>
                     
                     <tr>
-                        <td><label>{% trans 'Created at' %}</label></td>
+                        <td><label>{{ 'Created at'|trans }}</label></td>
                         <td>{{ invoice.created_at|bb_date }}</td>
                     </tr>
 
                     <tr>
-                        <td><label>{% trans 'Due at' %}</label></td>
+                        <td><label>{{ 'Due at'|trans }}</label></td>
                         <td>{{ invoice.due_at|bb_date }}</td>
                     </tr>
 
                     <tr>
-                        <td><label>{% trans 'Paid at' %}</label></td>
+                        <td><label>{{ 'Paid at'|trans }}</label></td>
                         <td>{% if invoice.paid_at %}{{ invoice.paid_at|bb_date }}{% else %}-{% endif %}</td>
                     </tr>
 
                     <tr>
-                        <td><label>{% trans 'Reminded at' %}</label></td>
-                        <td>{% if invoice.reminded_at %}{{ invoice.reminded_at|bb_date }} ({{invoice.reminded_at|timeago}} ago) {% endif %}</td>
+                        <td><label>{{ 'Reminded at'|trans }}</label></td>
+                        <td>{% if invoice.reminded_at %}{{ invoice.reminded_at|bb_date }} ({{ invoice.reminded_at|timeago }} ago) {% endif %}</td>
                     </tr>
                     
                     {% if invoice.notes %}
                     <tr>
-                        <td><label>{% trans 'Notes' %}</label></td>
+                        <td><label>{{ 'Notes'|trans }}</label></td>
                         <td>{{ invoice.notes|bbmd }}</td>
                     </tr>
                     {% endif %}
@@ -101,30 +103,29 @@
                             <td colspan="2">
                                 <div class="aligncenter">
                                     <a href="{{ 'invoice'|link }}/{{ invoice.hash }}" title="" class="btn55 mr10" target="_blank"><img src="images/icons/middlenav/preview.png" alt=""><span>View as client</span></a>
-                                    <a href="{{ 'api/admin/invoice/delete'|link({'id' : invoice.id}) }}" data-api-confirm="Are you sure?"  title="" class="btn55 mr10 api-link" data-api-redirect="{{ 'invoice'|alink }}"><img src="images/icons/middlenav/trash.png" alt=""><span>Delete</span></a>
+                                    <a href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id }) }}" data-api-confirm="Are you sure?" title="" class="btn55 mr10 api-link" data-api-redirect="{{ 'invoice'|alink }}"><img src="images/icons/middlenav/trash.png" alt=""><span>Delete</span></a>
                                     {% if invoice.status == 'unpaid' %}
-                                    <a href="{{ 'api/admin/invoice/send_reminder' | link({'id' : invoice.id})}}" title="" class="btn55 mr10 api-link" data-api-msg="Payment reminder was sent"><img src="images/icons/middlenav/mail.png" alt=""><span>Send reminder</span></a>
-                                    <a href="{{ 'api/admin/invoice/mark_as_paid'|link({'id' : invoice.id, 'execute' : 1}) }}" title="" class="btn55 mr10 api-link" data-api-reload="Invoice marked as paid"><img src="images/icons/middlenav/play2.png" alt=""><span>Mark as paid</span></a>
+                                    <a href="{{ 'api/admin/invoice/send_reminder'|link({ 'id': invoice.id}) }}" title="" class="btn55 mr10 api-link" data-api-msg="Payment reminder was sent"><img src="images/icons/middlenav/mail.png" alt=""><span>Send reminder</span></a>
+                                    <a href="{{ 'api/admin/invoice/mark_as_paid'|link({ 'id': invoice.id, 'execute': 1 }) }}" title="" class="btn55 mr10 api-link" data-api-reload="Invoice marked as paid"><img src="images/icons/middlenav/play2.png" alt=""><span>Mark as paid</span></a>
                                     {% endif %}
                                     
                                     {% if invoice.status == 'paid' %}
-                                    <a href="{{ 'api/admin/invoice/refund'|link({'id' : invoice.id}) }}" data-api-confirm="Are you sure?"  title="" class="btn55 mr10 api-link" data-api-redirect="{{ 'invoice'|alink }}"><img src="images/icons/middlenav/refresh4.png" alt=""><span>Refund</span></a>
+                                    <a href="{{ 'api/admin/invoice/refund'|link({ 'id': invoice.id }) }}" data-api-confirm="Are you sure?" title="" class="btn55 mr10 api-link" data-api-redirect="{{ 'invoice'|alink }}"><img src="images/icons/middlenav/refresh4.png" alt=""><span>Refund</span></a>
                                     {% endif %}
-                                    <a href="{{ 'invoice/pdf' | link }}/{{invoice.hash}}" target="_blank" class="btn55 mr10"><img src="images/icons/middlenav/incoming.png" alt=""><span>PDF</span></a>
+                                    <a href="{{ 'invoice/pdf' | link }}/{{ invoice.hash }}" target="_blank" class="btn55 mr10"><img src="images/icons/middlenav/incoming.png" alt=""><span>PDF</span></a>
                                 </div>
                             </td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
-
         </div>
 
         <div class="tab_content nopadding" id="tab-manage">
             <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="mainForm api-form" data-api-reload="Invoice updated">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Status' %}:</label>
+                        <label>{{ 'Status'|trans }}:</label>
                         <div class="formRight">
                             <input type="radio" name="status" value="paid"{% if invoice.status == 'paid' %} checked="checked"{% endif %}/><label>Paid</label>
                             <input type="radio" name="status" value="unpaid"{% if invoice.status == 'unpaid' %} checked="checked"{% endif %} /><label>Unpaid</label>
@@ -135,16 +136,16 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Approved' %}:</label>
+                        <label>{{ 'Approved'|trans }}:</label>
                         <div class="formRight">
                             <input type="radio" name="approved" value="1"{% if invoice.approved  %} checked="checked"{% endif %}/><label>Yes</label>
-                            <input type="radio" name="approved" value="0"{% if not invoice.approved %} checked="checked"{% endif %} /><label>No</label>
+                            <input type="radio" name="approved" value="0"{% if not invoice.approved %} checked="checked"{% endif %}/><label>No</label>
                         </div>
                         <div class="fix"></div>
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Serie and number' %}:</label>
+                        <label>{{ 'Serie and number'|trans }}:</label>
                         <div class="formRight moreFields">
                             <ul>
                                 <li style="width: 150px">
@@ -160,7 +161,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Tax' %}:</label>
+                        <label>{{ 'Tax'|trans }}:</label>
                         <div class="formRight moreFields">
                             <ul>
                                 <li style="width: 150px">
@@ -176,15 +177,15 @@
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Payment method' %}:</label>
+                        <label>{{ 'Payment method'|trans }}:</label>
                         <div class="formRight">
-                            {{ mf.selectbox('gateway_id', guest.invoice_gateways({"format":"pairs"}), invoice.gateway_id, 0, 'Select payment method') }}
+                            {{ mf.selectbox('gateway_id', guest.invoice_gateways({ "format": "pairs" }), invoice.gateway_id, 0, 'Select payment method') }}
                         </div>
                         <div class="fix"></div>
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Created at' %}:</label>
+                        <label>{{ 'Created at'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="created_at" value="{{ invoice.created_at|date('Y-m-d') }}" class="datepicker"/>
                         </div>
@@ -192,7 +193,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Due at' %}:</label>
+                        <label>{{ 'Due at'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="due_at" value="{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% endif %}" class="datepicker"/>
                         </div>
@@ -200,7 +201,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Paid at' %}:</label>
+                        <label>{{ 'Paid at'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="paid_at" value="{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% endif %}" class="datepicker"/>
                         </div>
@@ -208,14 +209,14 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Notes' %}:</label>
+                        <label>{{ 'Notes'|trans }}:</label>
                         <div class="formRight">
                             <textarea name="notes" cols="5" rows="6">{{ invoice.notes }}</textarea>
                         </div>
                         <div class="fix"></div>
                     </div>
 
-                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
                     <input type="hidden" name="id" value="{{ invoice.id }}" />
                 </fieldset>
             </form>
@@ -224,14 +225,14 @@
         <div class="tab_content nopadding" id="tab-texts">
             <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="mainForm api-form" data-api-msg="Invoice updated">
                 <fieldset>
-                    <label class="topLabel">{% trans 'Text before invoice items table' %}</label>
+                    <label class="topLabel">{{ 'Text before invoice items table'|trans }}</label>
                     <textarea name="text_1"  cols="5" rows="6" class="bb-textarea"/>{{ invoice.text_1 }}</textarea>
                 </fieldset>
                 
                 <fieldset>    
-                    <label class="topLabel">{% trans 'Text after invoice items table' %}</label>
+                    <label class="topLabel">{{ 'Text after invoice items table'|trans }}</label>
                     <textarea name="text_2" cols="5" rows="6" class="bb-textarea"/>{{ invoice.text_2 }}</textarea>
-                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
                     <input type="hidden" name="id" value="{{ invoice.id }}" />
                 </fieldset>
             </form>
@@ -246,7 +247,7 @@
                     <legend>Company details at the moment of purchase</legend>
 
                     <div class="rowElem noborder">
-                        <label>{% trans 'Company' %}:</label>
+                        <label>{{ 'Company'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="seller_company" value="{{ seller.company }}"/>
                         </div>
@@ -254,7 +255,7 @@
                     </div>
                     
                     <div class="rowElem">
-                        <label>{% trans 'Company VAT' %}:</label>
+                        <label>{{ 'Company VAT'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="seller_company_vat" value="{{ seller.company_vat }}"/>
                         </div>
@@ -262,7 +263,7 @@
                     </div>
                     
                     <div class="rowElem">
-                        <label>{% trans 'Company Number' %}:</label>
+                        <label>{{ 'Company Number'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="seller_company_number" value="{{ seller.company_number }}"/>
                         </div>
@@ -270,7 +271,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Address' %}:</label>
+                        <label>{{ 'Address'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="seller_address" value="{{ seller.address }}"/>
                         </div>
@@ -278,7 +279,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Phone' %}:</label>
+                        <label>{{ 'Phone'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="seller_phone" value="{{ seller.phone }}"/>
                         </div>
@@ -286,21 +287,20 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Email' %}:</label>
+                        <label>{{ 'Email'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="seller_email" value="{{ seller.email }}"/>
                         </div>
                         <div class="fix"></div>
                     </div>
 
-                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
                     <input type="hidden" name="id" value="{{ invoice.id }}" />
                 </fieldset>
             </form>
 
             <div class="fix"></div>
         </div>
-
 
         <div class="tab_content nopadding" id="tab-buyer-credentials">
             {% set buyer = invoice.buyer %}
@@ -309,7 +309,7 @@
                     <legend>Client details at the moment of purchase</legend>
 
                     <div class="rowElem noborder">
-                        <label>{% trans 'First name' %}:</label>
+                        <label>{{ 'First name'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="buyer_first_name" value="{{ buyer.first_name }}"/>
                         </div>
@@ -317,7 +317,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Last name' %}:</label>
+                        <label>{{ 'Last name'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="buyer_last_name" value="{{ buyer.last_name }}"/>
                         </div>
@@ -325,7 +325,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Company' %}:</label>
+                        <label>{{ 'Company'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="buyer_company" value="{{ buyer.company }}"/>
                         </div>
@@ -333,7 +333,7 @@
                     </div>
                     
                     <div class="rowElem">
-                        <label>{% trans 'Company VAT' %}:</label>
+                        <label>{{ 'Company VAT'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="buyer_company_vat" value="{{ buyer.company_vat }}"/>
                         </div>
@@ -341,7 +341,7 @@
                     </div>
                     
                     <div class="rowElem">
-                        <label>{% trans 'Company Number' %}:</label>
+                        <label>{{ 'Company Number'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="buyer_company_number" value="{{ buyer.company_number }}"/>
                         </div>
@@ -349,7 +349,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Address' %}:</label>
+                        <label>{{ 'Address'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="buyer_address" value="{{ buyer.address }}"/>
                         </div>
@@ -357,7 +357,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'City' %}:</label>
+                        <label>{{ 'City'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="buyer_city" value="{{ buyer.city }}"/>
                         </div>
@@ -365,7 +365,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'State' %}:</label>
+                        <label>{{ 'State'|trans }}:</label>
                         <div class="formRight">
                             {# mf.selectbox('buyer_state', guest.system_states, buyer.state, 0, 'Select state') #}
                             <input type="text" name="buyer_state" value="{{ buyer.state }}" />
@@ -374,7 +374,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Country' %}:</label>
+                        <label>{{ 'Country'|trans }}:</label>
                         <div class="formRight">
                             {{ mf.selectbox('buyer_country', guest.system_countries, buyer.country, 0, 'Select country') }}
                         </div>
@@ -382,7 +382,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Phone' %}:</label>
+                        <label>{{ 'Phone'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="buyer_phone" value="{{ buyer.phone }}"/>
                         </div>
@@ -390,7 +390,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Zip' %}:</label>
+                        <label>{{ 'Zip'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="buyer_zip" value="{{ buyer.zip }}"/>
                         </div>
@@ -398,14 +398,14 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Email' %}:</label>
+                        <label>{{ 'Email'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="buyer_email" value="{{ buyer.email }}"/>
                         </div>
                         <div class="fix"></div>
                     </div>
 
-                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
                     <input type="hidden" name="id" value="{{ invoice.id }}" />
                 </fieldset>
             </form>
@@ -419,19 +419,18 @@
 
 <div class="widget">
     <div class="head">
-        <h5>{% trans 'Invoice items' %}</h5>
+        <h5>{{ 'Invoice items'|trans }}</h5>
     </div>
 
 {% if not invoice.approved %}
-
     <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="mainForm api-form" data-api-reload="1">
         <fieldset>
         <table class="tableStatic wide">
             <thead>
                 <tr>
-                    <th>{% trans 'Title' %}</th>
-                    <th class="currency">{% trans 'Price' %}</th>
-                    <th>{% trans 'Tax' %}</th>
+                    <th>{{ 'Title'|trans }}</th>
+                    <th class="currency">{{ 'Price'|trans }}</th>
+                    <th>{{ 'Tax'|trans }}</th>
                     <th class="actions">&nbsp;</th>
                 </tr>
             </thead>
@@ -477,9 +476,9 @@
                 <tr>
                     <td colspan="4">
                         {% if not invoice.approved %}
-                        <a href="{{ 'api/admin/invoice/approve'|link({'id' : invoice.id}) }}"  title="" class="btnIconLeft mr10 api-link" data-api-reload="{{ 'invoices'|alink }}"><img src="images/icons/dark/check.png" alt="" class="icon"><span>Approve</span></a>
+                        <a href="{{ 'api/admin/invoice/approve'|link({ 'id': invoice.id }) }}"  title="" class="btnIconLeft mr10 api-link" data-api-reload="{{ 'invoices'|alink }}"><img src="images/icons/dark/check.png" alt="" class="icon"><span>Approve</span></a>
                         {% endif %}
-                        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" style="width:100px"/>
+                        <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" style="width:100px"/>
                     </td>
                 </tr>
             </tfoot>
@@ -494,9 +493,9 @@
         <thead>
             <tr>
                 <th  style="width: 11%;" colspan="2"></th>
-                <th style="width: 70%;">{% trans 'Title' %}</th>
-                <th style="width: 7%;">{% trans 'Tax' %}</th>
-                <th class="currency" style="width: 15%;">{% trans 'Total' %}</th>
+                <th style="width: 70%;">{{ 'Title'|trans }}</th>
+                <th style="width: 7%;">{{ 'Tax'|trans }}</th>
+                <th class="currency" style="width: 15%;">{{ 'Total'|trans }}</th>
             </tr>
         </thead>
 
@@ -545,23 +544,22 @@
 
 </div>
 
-{% set transactions = admin.invoice_transaction_get_list({"invoice_id":invoice.id,"per_page":100 }).list %}
+{% set transactions = admin.invoice_transaction_get_list({ "invoice_id": invoice.id, "per_page": 100 }).list %}
 
 {% if transactions|length > 0 %}
-
 <div class="widget">
     <div class="head">
-        <h5>{% trans 'Transactions' %}</h5>
+        <h5>{{ 'Transactions'|trans }}</h5>
     </div>
     <table class="tableStatic wide">
         <thead>
             <tr>
-                <th>{% trans 'ID' %}</th>
-                <th>{% trans 'Type' %}</th>
-                <th>{% trans 'Gateway' %}</th>
-                <th>{% trans 'Amount' %}</th>
-                <th>{% trans 'Status' %}</th>
-                 <th>{% trans 'Date' %}</th>
+                <th>{{ 'ID'|trans }}</th>
+                <th>{{ 'Type'|trans }}</th>
+                <th>{{ 'Gateway'|trans }}</th>
+                <th>{{ 'Amount'|trans }}</th>
+                <th>{{ 'Status'|trans }}</th>
+                 <th>{{ 'Date'|trans }}</th>
                 <th>&nbsp;</th>
             </tr>
         </thead>
@@ -569,54 +567,50 @@
         <tbody>
             {% for i, tx in transactions %}
             <tr>
-                <td>{{tx.txn_id}}</td>
-                <td>{{tx.type}}</td>
-                <td>{{tx.gateway}}</td>
+                <td>{{ tx.txn_id }}</td>
+                <td>{{ tx.type }}</td>
+                <td>{{ tx.gateway }}</td>
                 <td>{{ mf.currency_format( tx.amount, tx.currency) }}</td>
                 <td>{{ mf.status_name(tx.status) }}</td>
-                <td>{{tx.created_at|bb_datetime}}</td>
+                <td>{{ tx.created_at|bb_datetime }}</td>
                 <td style="width: 5%">
-                    <a class="bb-button btn14" href="{{ '/invoice/transaction'|alink }}/{{tx.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                    <a class="bb-button btn14" href="{{ '/invoice/transaction'|alink }}/{{ tx.id }}"><img src="images/icons/dark/pencil.png" alt=""></a>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
-
 {% endif %}
-
 {% endblock %}
 
 {% block sidebar2 %}
-
 <div class="widget">
     <div class="head">
-        <h2 class="dark-icon i-services">{% trans 'Actions' %}</h2>
+        <h2 class="dark-icon i-services">{{ 'Actions'|trans }}</h2>
     </div>
     <div class="block">
-        <button class="bb-button" type="button" onclick="window.print()"><span class="dark-icon i-print"></span> {% trans 'Print' %}</button>
+        <button class="bb-button" type="button" onclick="window.print()"><span class="dark-icon i-print"></span> {{ 'Print'|trans }}</button>
         {% if invoice.status == 'unpaid' %}
-        <a class="bb-button api-link" href="{{ 'api/client/invoice/delete'|link({'hash' : invoice.hash}) }}"  data-api-confirm="Are you sure?" data-api-redirect="{{ 'invoice'|alink }}"><span class="dark-icon i-bin"></span> {% trans 'Delete' %}</a>
+        <a class="bb-button api-link" href="{{ 'api/client/invoice/delete'|link({ 'hash': invoice.hash}) }}"  data-api-confirm="Are you sure?" data-api-redirect="{{ 'invoice'|alink }}"><span class="dark-icon i-bin"></span> {{ 'Delete'|trans }}</a>
         {% endif %}
     </div>
 </div>
-
-
 {% endblock %}
 
 {% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
 {% block js %}
 {% autoescape "js" %}
 <script type="text/javascript">
-$(function() {
-    $('input[name=gateway]:first').attr('checked', true);
-    $('#pay-now-button').click(function(){
-        var link = $('input[name=gateway]:checked').val();
-        bb.redirect(link);
-        return false;
+    $(function() {
+        $('input[name=gateway]:first').attr('checked', true);
+        $('#pay-now-button').click(function() {
+            var link = $('input[name=gateway]:checked').val();
+            bb.redirect(link);
+            
+            return false;
+        });
     });
-});
 </script>
 {% endautoescape %}
 {% endblock %}

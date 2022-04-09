@@ -1,6 +1,6 @@
 {% extends "layout_default.phtml" %}
 
-{% block meta_title %}{% trans 'Error' %}{% endblock %}
+{% block meta_title %}{{ 'Error'|trans }}{% endblock %}
 
 {% block body_class %}error-page{% endblock %}
 {% block body %}
@@ -10,7 +10,7 @@
     {% else %}
         <h1>404</h1>
     {% endif %}
-    <p class="description">{% trans 'Whoops! This is not the web page you are looking for.' %}</p>
+    <p class="description">{{ 'Whoops! This is not the web page you are looking for.'|trans }}</p>
     <p class="alert alert-danger">{{ exception.getMessage }}.</p>
     <a href="{{ '/' | link}}" class="btn btn-alt btn-primary btn-large" title="Back to Homepage">Back to Homepage</a>
 </section>

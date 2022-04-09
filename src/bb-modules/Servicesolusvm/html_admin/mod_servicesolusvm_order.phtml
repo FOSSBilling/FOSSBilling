@@ -1,5 +1,5 @@
     <div class="rowElem">
-        <label>{% trans 'Hostname' %}:</label>
+        <label>{{ 'Hostname'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="config[hostname]" value="" placeholder="VPS hostname"/>
         </div>
@@ -7,7 +7,7 @@
     </div>
 
     <div class="rowElem">
-        <label>{% trans 'Template' %}</label>
+        <label>{{ 'Template'|trans }}</label>
         <div class="formRight">
             {{ mf.selectbox('config[template]', guest.servicesolusvm_get_templates, null, 1) }}
         </div>

@@ -19,11 +19,17 @@
 <div id="topNav">
     <div class="fixed">
         <div class="wrapper">
-            <div class="backTo"><a href="{{ '/'|link }}" title=""><img src="images/icons/topnav/mainWebsite.png" alt="" /><span>{% trans 'Main website' %}</span></a></div>
+            <div class="backTo"><a href="{{ '/'|link }}" title=""><img src="images/icons/topnav/mainWebsite.png" alt="" /><span>{{ 'Main website'|trans }}</span></a></div>
             <div class="userNav">
                 <ul>
-                    <li class="loading" style="display:none;"><img src="images/loader.gif" alt="" /><span>{% trans 'Loading ...' %}</span></li>
-                    <li><a href="http://docs.boxbilling.org/{% if help_query %}en/latest/search.html?q={{help_query}}&check_keywords=yes&area=default{% endif %}" title="" target="_blank"><img src="images/icons/topnav/help.png" alt="" /><span>{% trans 'Help' %}</span></a></li>
+                    <li class="loading" style="display:none;">
+                        <img src="images/loader.gif" alt="" /><span>{{ 'Loading ...'|trans }}</span>
+                    </li>
+                    <li>
+                        <a href="http://docs.boxbilling.org/{% if help_query %}en/latest/search.html?q={{help_query}}&check_keywords=yes&area=default{% endif %}" title="" target="_blank">
+                            <img src="images/icons/topnav/help.png" alt="" /><span>{{ 'Help'|trans }}</span>
+                        </a>
+                    </li>
                 </ul>
             </div>
             <div class="fix"></div>

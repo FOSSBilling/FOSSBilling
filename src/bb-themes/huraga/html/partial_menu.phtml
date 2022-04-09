@@ -2,61 +2,61 @@
 
     {% if settings.side_menu_dashboard %}
     <li class="main-menu">
-        <a class="no-submenu" href="{{ '/'|link }}"><span class="awe-home"></span>{% trans 'Dashboard' %}</a>
+        <a class="no-submenu" href="{{ '/'|link }}"><span class="awe-home"></span>{{ 'Dashboard'|trans }}</a>
     </li>
     {% endif %}
     
     {% if settings.side_menu_order %}
     <li class="main-menu">
-        <a href="#" class="order-button"><span class="awe-shopping-cart"></span>{% trans 'Order' %}</a>
+        <a href="#" class="order-button"><span class="awe-shopping-cart"></span>{{ 'Order'|trans }}</a>
     </li>
     {% endif %}
 
     {% if settings.side_menu_support %}
     <li class="main-menu">
-        <a href="{{ '/support'|link }}"><span class="awe-wrench"></span>{% trans 'Support' %}</a>
+        <a href="{{ '/support'|link }}"><span class="awe-wrench"></span>{{ 'Support'|trans }}</a>
     </li>
     {% endif %}
 
     {% if settings.side_menu_services %}
     <li class="main-menu">
-        <a href="{{ '/order/service'|link }}"><span class="awe-cogs"></span>{% trans 'Services' %}</a>
+        <a href="{{ '/order/service'|link }}"><span class="awe-cogs"></span>{{ 'Services'|trans }}</a>
     </li>
     {% endif %}
 
     {% if settings.side_menu_invoices %}
     <li class="main-menu">
-        <a href="{{ '/invoice'|link }}"><span class="awe-file-alt"></span>{% trans 'Invoices' %}</a>
+        <a href="{{ '/invoice'|link }}"><span class="awe-file-alt"></span>{{ 'Invoices'|trans }}</a>
     </li>
     {% endif %}
 
     {% if settings.side_menu_emails %}
     <li class="main-menu">
-        <a  href="{{ '/email'|link }}"><span class="awe-envelope-alt"></span>{% trans 'Emails' %}</a>
+        <a  href="{{ '/email'|link }}"><span class="awe-envelope-alt"></span>{{ 'Emails'|trans }}</a>
     </li>
     {% endif %}
 
     {% if settings.side_menu_payments %}
     <li class="main-menu">
-        <a href="{{ '/client/balance'|link }}"><span class="awe-credit-card"></span>{% trans 'Payments history' %}</a>
+        <a href="{{ '/client/balance'|link }}"><span class="awe-credit-card"></span>{{ 'Payments history'|trans }}</a>
     </li>
     {% endif %}
 
     {% if guest.extension_is_on({"mod":"news"}) %}
     <li class="main-menu">
-        <a href="{{ '/news'|link }}"><span class="awe-edit"></span>{% trans 'Blog' %}</a>
+        <a href="{{ '/news'|link }}"><span class="awe-edit"></span>{{ 'Blog'|trans }}</a>
     </li>
     {% endif %}
 
     {% if guest.extension_is_on({"mod":"kb"}) %}
     <li class="main-menu">
-        <a href="{{ '/kb'|link }}"><span class="awe-book"></span>{% trans 'Knowledge Base' %}</a>
+        <a href="{{ '/kb'|link }}"><span class="awe-book"></span>{{ 'Knowledge Base'|trans }}</a>
     </li>
     {% endif %}
 
     {% if guest.extension_is_on({"mod":"forum"}) %}
     <li class="main-menu">
-        <a href="{{ '/forum'|link }}"><span class="awe-comments"></span>{% trans 'Forum' %}</a>
+        <a href="{{ '/forum'|link }}"><span class="awe-comments"></span>{{ 'Forum'|trans }}</a>
     </li>
     {% endif %}
 </ul>

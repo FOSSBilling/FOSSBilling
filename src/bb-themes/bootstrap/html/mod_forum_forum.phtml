@@ -3,20 +3,21 @@
 {% block meta_title %}{{ forum.title }}{% endblock %}
 
 {% block content_before %}
-		<!-- Page Heading/Breadcrumbs -->
-        <div class="row">
-            <div class="col-lg-12">
-                <h1 class="page-header">{{ forum.title }}
-				<small>{{ forum.description }}</small>
-				</h1>
-				<ol class="breadcrumb">
-					<li><a href="{{ 'forum'|link }}">{% trans 'Forum' %}</a></li>
-					<li class="active">{{ forum.title }}</li>
-				</ol>
-            </div>
-        </div>
-        <!-- /.row -->
+	<!-- Page Heading/Breadcrumbs -->
+	<div class="row">
+		<div class="col-lg-12">
+			<h1 class="page-header">{{ forum.title }}
+			<small>{{ forum.description }}</small>
+			</h1>
+			<ol class="breadcrumb">
+				<li><a href="{{ 'forum'|link }}">{{ 'Forum'|trans }}</a></li>
+				<li class="active">{{ forum.title }}</li>
+			</ol>
+		</div>
+	</div>
+	<!-- /.row -->
 {% endblock %}
+
 {% block content %}
 	<div class="list-group">
         {% set topics = guest.forum_get_topic_list({"forum_id":forum.id, "per_page":20,"page":request.page}) %}
@@ -25,44 +26,44 @@
 			<h4 class="list-group-item-heading">
 				{% if topic.status == "locked" %}<i class="fa fa-lock"></i> {% endif %}
 				<strong>{{topic.title}}</strong>
-				<small class="pull-right"><strong>{{ topic.stats.posts_count }} {% trans 'Replies' %}</strong> - {{ topic.stats.views_count }} {% trans 'Views' %}</small>
+				<small class="pull-right"><strong>{{ topic.stats.posts_count }} {{ 'Replies'|trans }}</strong> - {{ topic.stats.views_count }} {{ 'Views'|trans }}</small>
 			</h4>
 			<p class="list-group-item-text">
-				{% trans 'Last post' %}: {{ topic.last.created_at|timeago }} {% trans 'ago' %} {% trans 'by' %} <img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"> {{ topic.last.author.name }}
+				{{ 'Last post'|trans }}: {{ topic.last.created_at|timeago }} {{ 'ago'|trans }} {{ 'by'|trans }} <img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"> {{ topic.last.author.name }}
 			</p>
         </a>
-        {% else %}{% trans 'The list is empty' %}
+        {% else %}{{ 'The list is empty'|trans }}
         {% endfor %}
     </div>
     {% include "partial_pagination.phtml" with {'list': topics} %}
 
     <p class="text-center">
-        <a class="btn btn-default" href="{{ '/forum'|link }}"><i class="fa fa-arrow-left"></i> {% trans 'Forums' %}</a>
+        <a class="btn btn-default" href="{{ '/forum'|link }}"><i class="fa fa-arrow-left"></i> {{ 'Forums'|trans }}</a>
         {% if client %}
-        <a class="btn btn-primary" role="button" data-toggle="collapse" href="#new-topic" aria-expanded="false" aria-controls="new-topic">{% trans 'New topic' %}</a>
+        <a class="btn btn-primary" role="button" data-toggle="collapse" href="#new-topic" aria-expanded="false" aria-controls="new-topic">{{ 'New topic'|trans }}</a>
         {% else %}
-        <a class="btn btn-primary" href="" data-toggle="modal" data-target="#login">{% trans 'Login' %}</a>
+        <a class="btn btn-primary" href="" data-toggle="modal" data-target="#login">{{ 'Login'|trans }}</a>
         {% endif %}
     </p>
 	
 	<div class="collapse well" id="new-topic">
-		<h4>{% trans 'Start new topic in' %} "{{ forum.title }}"</h4>
+		<h4>{{ 'Start new topic in'|trans }} "{{ forum.title }}"</h4>
 		<form method="post" action="" class="api_form" data-api-url="client/forum/start_topic" data-api-tocreated="{{ 'forum'|link }}/{{ forum.slug }}">
 			<div class="control-group form-group">
                 <div class="controls">
-                    <label>{% trans 'Topic title' %}:</label>
+                    <label>{{ 'Topic title'|trans }}:</label>
                     <input type="text" class="form-control" name="topic" value="{{ request.topic }}" required="required">
                 </div>
             </div>
 			<div class="control-group form-group">
 				<div class="controls">
-					<label>{% trans 'Message' %}:</label>
+					<label>{{ 'Message'|trans }}:</label>
 					<textarea rows="10" cols="100" class="form-control" name="message" style="resize:none" data-provide="markdown" data-iconlibrary="fa" required="required">{{ request.message }}</textarea>
 				</div>
 			</div>
 			<input type="hidden" name="return" value="slug">
             <input type="hidden" name="forum_id" value="{{ forum.id }}">
-			<input class="btn btn-primary" type="submit" value="{% trans 'Create new topic' %}">
+			<input class="btn btn-primary" type="submit" value="{{ 'Create new topic'|trans }}">
 		</form>
 	</div>
 

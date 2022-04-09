@@ -10,7 +10,7 @@
                     <small>{{category.description }}</small>
                 </h1>
 				<ol class="breadcrumb">
-					<li><a href="{{ 'kb'|link }}">{% trans 'Knowledge base' %}</a></li>
+					<li><a href="{{ 'kb'|link }}">{{ 'Knowledge base'|trans }}</a></li>
 					<li class="active">{{ category.title }}</li>
 				</ol>
             </div>
@@ -29,16 +29,16 @@
                 <hr>
 				{% else %}
 					<p>
-						{% trans 'Try using other keyword. No matches not for keyword:' %}
+						{{ 'Try using other keyword. No matches not for keyword:'|trans }}
 						<b>{{ request.q }}</b>
 					</p>
 				{% endif %}
 	
 	<div class="well">
-        <h4>{% trans 'What are you looking for?' %}</h4>
+        <h4>{{ 'What are you looking for?'|trans }}</h4>
 		<form method="get" action="{{ 'kb'|link }}">
             <div class="input-group">
-				<input name="q" type="text" class="form-control" value="{{ request.q }}" placeholder="{% trans 'What are you looking for?' %}">
+				<input name="q" type="text" class="form-control" value="{{ request.q }}" placeholder="{{ 'What are you looking for?'|trans }}">
                 <span class="input-group-btn">
                     <button class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
                 </span>
@@ -47,6 +47,6 @@
     </div>
 			
 	<div class="text-center">
-		<a class="btn btn-default" href="{{ 'kb'|link }}"><i class="fa fa-arrow-left"></i> {% trans 'Back to list' %}</a>
+		<a class="btn btn-default" href="{{ 'kb'|link }}"><i class="fa fa-arrow-left"></i> {{ 'Back to list'|trans }}</a>
 	</div>
 {% endblock %}

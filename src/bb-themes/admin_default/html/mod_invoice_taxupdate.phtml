@@ -14,36 +14,36 @@
             <form method="post" action="{{ 'api/admin/invoice/tax_update'|link }}" data-api-redirect="{{ 'invoice/tax'|alink }}" class="mainForm save api-form">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Tax title' %}:</label>
+                        <label>{{ 'Tax title'|trans }}:</label>
                         <div class="formRight">
-                            <input type="text" name="name" value="{{tax.name}}" required="required" placeholder="{% trans 'sales Tax' %}"/>
+                            <input type="text" name="name" value="{{tax.name}}" required="required" placeholder="{{ 'sales Tax'|trans }}"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Tax rate' %}:</label>
+                        <label>{{ 'Tax rate'|trans }}:</label>
                         <div class="formRight">
-                            <input type="text" name="taxrate" value="{{tax.taxrate}}" required="required" placeholder="{% trans '18' %}" style="width: 100px"/> %
+                            <input type="text" name="taxrate" value="{{tax.taxrate}}" required="required" placeholder="{{ '18'|trans }}" style="width: 100px"/> %
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Country' %}:</label>
+                        <label>{{ 'Country'|trans }}:</label>
                         <div class="formRight">
                             {{ mf.selectbox('country', guest.system_countries, tax.country, 0, 'Apply to all countries') }}
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'State' %}:</label>
+                        <label>{{ 'State'|trans }}:</label>
                         <div class="formRight">
                             {# mf.selectbox('state', guest.system_states, tax.state, 0, 'Apply to all states') #}
-                            <input type="text" name="state" value="{{ tax.state }}" placeholder="{% trans 'Leave empty to apply to all states' %}"/>
+                            <input type="text" name="state" value="{{ tax.state }}" placeholder="{{ 'Leave empty to apply to all states'|trans }}"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <input type="hidden" name="id" value="{{ tax.id }}"/>
-                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>

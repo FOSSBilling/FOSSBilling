@@ -1,5 +1,9 @@
 {% macro q(bool) %}
-{% if bool %}{% trans 'Yes' %}{% else %}{% trans 'No' %}{% endif %}
+{% if bool %}
+    {{ 'Yes'|trans }}
+{% else %}
+    {{ 'No'|trans }}
+{% endif %}
 {% endmacro %}
 
 {% macro selectbox(name, options, selected, required, nullOption) %}
@@ -12,7 +16,7 @@
 {% endmacro %}
 
 {% macro selectboxtld(name, options, selected, required) %}
-    <select name="{{ name }}" {% if required %}required="required"{% endif%} style="width:80px;">
+    <select name="{{ name }}" {% if required %}required="required"{% endif %} style="width:80px;">
         {% for data in options %}
         <option value="{{ data.tld }}" label="{{ data.tld }}" {% if selected == data.tld %}selected="selected"{% endif %}>{{ data.tld }}</option>
         {% endfor %}
@@ -24,7 +28,9 @@
     <div class="dataTables_filter">
         <form method="get" action="">
             <input type="hidden" name="_url" value="{{request._url}}"/>
-            <label>{% trans %}Search:{% endtrans %} <input type="text" name="search" placeholder="{% trans %}Enter search text..{% endtrans %}" value="{{request.search}}"><div class="srch"></div></label>
+            <label>{{ 'Search:'|trans }} <input type="text" name="search" placeholder="{{ 'Enter search text..'|trans }}" value="{{ request.search }}">
+                <div class="srch"></div>
+            </label>
         </form>
     </div>
 </div>
@@ -33,7 +39,7 @@
 {% macro build_form(elements, values) %}
     {% for name, element in elements %}
     <div class="rowElem">
-            {% if element[0] == 'select'%}
+            {% if element[0] == 'select' %}
             <label class="topLabel">{{ element[1].label }}{% if element[1].description %} - {{ element[1].description }}{% endif %}</label>
             <div class="formBottom">
                 <select name="config[{{ name }}]">
@@ -43,7 +49,7 @@
                 </select>
             </div>
             <div class="fix"></div>
-            {% elseif element[0] == 'radio'%}
+            {% elseif element[0] == 'radio' %}
             <label>{{ element[1].label }}{% if element[1].description %} - {{ element[1].description }}{% endif %}</label>
             <div class="formRight">
                 {% for k,v in element[1].multiOptions %}
@@ -51,7 +57,7 @@
                 {% endfor %}
             </div>
             <div class="fix"></div>
-            {% elseif element[0] == 'textarea'%}
+            {% elseif element[0] == 'textarea' %}
             <label class="topLabel" for="el-{{ name }}">{{ element[1].label }}{% if element[1].description %} - {{ element[1].description }}{% endif %}</label>
             <div class="formBottom">
                 <textarea id="el-{{ name }}" name="config[{{ name }}]" cols="5" rows="20" required="required">{{ values[name] }}</textarea>
@@ -116,8 +122,6 @@
 {% endmacro %}
 
 {% macro markdown_quote(text) %}
-
-
 
 {% for line in text|split('\n') %}
 > {{ line }}

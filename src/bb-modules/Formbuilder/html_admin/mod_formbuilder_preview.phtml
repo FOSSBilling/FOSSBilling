@@ -1,5 +1,5 @@
 <div class="rowElem preview">
-    <label for="{{field.name}}">{% if field.hide_label != 1 %}{{ field.label }}{% endif %}</label>
+    <label for="{{ field.name }}">{% if field.hide_label != 1 %}{{ field.label }}{% endif %}</label>
 
     <div class="formRight">
         {% if field.type == "text" %}
@@ -17,7 +17,7 @@
         {% elseif field.type == "select" %}
             {% if field.options is empty %}
             <ul>
-                <li style="width: 80%"><blockquote>{% trans 'Please click on "Edit" in order to add new select box' %}</blockquote></li>
+                <li style="width: 80%"><blockquote>{{ 'Please click on "Edit" in order to add new select box'|trans }}</blockquote></li>
             </ul>
             {% else %}
                 <select name="{{ field.name }}" required="required"   id="{{field.name}}"
@@ -33,7 +33,7 @@
         {% elseif field.type == "checkbox" %}
             {% if field.options is empty %}
             <ul>
-                <li style="width: 80%"><blockquote>{% trans 'Please click on "Edit" in order to add new checkbox' %}</blockquote></li>
+                <li style="width: 80%"><blockquote>{{ 'Please click on "Edit" in order to add new checkbox'|trans }}</blockquote></li>
             </ul>
             {% else %}
                 {% for k,v in field.options %}
@@ -46,7 +46,7 @@
         {% elseif field.type == "radio" %}
             {% if field.options is empty %}
                 <ul>
-                    <li style="width: 80%"><blockquote>{% trans 'Please click on "Edit" in order to add new radio box' %}</blockquote></li>
+                    <li style="width: 80%"><blockquote>{{ 'Please click on "Edit" in order to add new radio box'|trans }}</blockquote></li>
                 </ul>
             {% else %}
                 {% for k,v in field.options %}
@@ -70,5 +70,4 @@
         <a class="btn14 rm" href="#" data-field-id="{{field.id}}"><img src="images/icons/dark/trash.png" alt="" class="icon"></a>
     </div>
     <div class="fix"></div>
-
 </div>

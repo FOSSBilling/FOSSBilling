@@ -1,8 +1,9 @@
 {% if header %}
-<div class="help">
-    <h5>{{ header }}</h5>
-</div>
+    <div class="help">
+        <h5>{{ header }}</h5>
+    </div>
 {% endif %}
+
 <table class="tableStatic wide">
     <thead>
         <tr>
@@ -12,15 +13,14 @@
             <td width="18%">&nbsp;</td>
         </tr>
     </thead>
-
     <tbody>
-        {% set extensions = admin.extension_get_latest({"type":type}) %}
+        {% set extensions = admin.extension_get_latest({ "type": type}) %}
         {% for extension in extensions %}
         <tr>
             <td><img src="{{ extension.icon_url }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;"/></td>
             <td>
                 <a class="bb-button" href="{{ extension.project_url }}" target="_blank" title="View extension details">{{ extension.name|truncate(40) }} {{ extension.version }}</a>
-                <br/>by <a href="{{extension.author_url}}" target="_blank">{{extension.author}}</a>
+                <br/>by <a href="{{extension.author_url}}" target="_blank">{{ extension.author }}</a>
             </td>
             <td>{{ extension.description|truncate(150) }}</td>
             <td class="actions">
@@ -40,5 +40,4 @@
             <td colspan="4"></td>
         </tr>
     </tfoot>
-
 </table>

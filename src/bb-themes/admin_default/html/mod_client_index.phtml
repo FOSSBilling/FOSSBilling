@@ -1,19 +1,19 @@
 {% import "macro_functions.phtml" as mf %}
 {% extends "layout_default.phtml" %}
 {% set active_menu = 'client' %}
-{% block meta_title %}{% trans 'Clients' %}{% endblock %}
+{% block meta_title %}{{ 'Clients'|trans }}{% endblock %}
 
 {% block top_content %}
 {% if request.show_filter %}
 <div class="widget filterWidget">
-    <div class="head"><h5 class="iMagnify">{% trans 'Filter clients' %}</h5></div>
+    <div class="head"><h5 class="iMagnify">{{ 'Filter clients'|trans }}</h5></div>
     <div class="body nopadding">
 
         <form method="get" action="" class="mainForm">
             <input type="hidden" name="_url" value="{{ request._url }}" />
             <fieldset>
                 <div class="rowElem noborder">
-                    <label>{% trans 'ID' %}</label>
+                    <label>{{ 'ID'|trans }}</label>
                     <div class="formRight">
                         <input type="text" name="id" value="{{ request.id }}">
                     </div>
@@ -21,7 +21,7 @@
                 </div>
 
                 <div class="rowElem">
-                    <label>{% trans 'Name' %}</label>
+                    <label>{{ 'Name'|trans }}</label>
                     <div class="formRight">
                         <input type="text" name="name" value="{{ request.name }}">
                     </div>
@@ -29,7 +29,7 @@
                 </div>
                 
                 <div class="rowElem">
-                    <label>{% trans 'Company name' %}</label>
+                    <label>{{ 'Company name'|trans }}</label>
                     <div class="formRight">
                         <input type="text" name="company" value="{{ request.company }}">
                     </div>
@@ -37,7 +37,7 @@
                 </div>
 
                 <div class="rowElem">
-                    <label>{% trans 'Email' %}</label>
+                    <label>{{ 'Email'|trans }}</label>
                     <div class="formRight">
                         <input type="text" name="email" value="{{ request.email }}" />
                     </div>
@@ -45,7 +45,7 @@
                 </div>
 
                 <div class="rowElem">
-                    <label>{% trans 'Group' %}:</label>
+                    <label>{{ 'Group'|trans }}:</label>
                     <div class="formRight">
                         {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'All groups') }}
                     </div>
@@ -53,18 +53,18 @@
                 </div>
 
                 <div class="rowElem">
-                    <label>{% trans 'Status' %}:</label>
+                    <label>{{ 'Status'|trans }}:</label>
                     <div class="formRight">
-                        <input type="radio" name="status" value=""{% if not request.status %} checked="checked"{% endif %}/><label>{% trans 'All' %}</label>
-                        <input type="radio" name="status" value="active"{% if request.status == 'active' %} checked="checked"{% endif %}/><label>{% trans 'Active' %}</label>
-                        <input type="radio" name="status" value="suspended"{% if request.status == 'suspended' %} checked="checked"{% endif %} /><label>{% trans 'Suspended' %}</label>
-                        <input type="radio" name="status" value="canceled"{% if request.status == 'canceled' %} checked="checked"{% endif %} /><label>{% trans 'Canceled' %}</label>
+                        <input type="radio" name="status" value=""{% if not request.status %} checked="checked"{% endif %}/><label>{{ 'All'|trans }}</label>
+                        <input type="radio" name="status" value="active"{% if request.status == 'active' %} checked="checked"{% endif %}/><label>{{ 'Active'|trans }}</label>
+                        <input type="radio" name="status" value="suspended"{% if request.status == 'suspended' %} checked="checked"{% endif %} /><label>{{ 'Suspended'|trans }}</label>
+                        <input type="radio" name="status" value="canceled"{% if request.status == 'canceled' %} checked="checked"{% endif %} /><label>{{ 'Canceled'|trans }}</label>
                     </div>
                     <div class="fix"></div>
                 </div>
 
                 <div class="rowElem">
-                    <label>{% trans 'Registration date' %}</label>
+                    <label>{{ 'Registration date'|trans }}</label>
                     <div class="formRight moreFields">
                         <ul>
                             <li style="width: 100px"><input type="text" name="date_from" value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
@@ -76,7 +76,7 @@
                 </div>
                 
                 <input type="hidden" name="show_filter" value="1" />
-                <input type="submit" value="{% trans 'Filter' %}" class="greyishBtn submitForm" />
+                <input type="submit" value="{{ 'Filter'|trans }}" class="greyishBtn submitForm" />
             </fieldset>
         </form>
         <div class="fix"></div>
@@ -86,10 +86,12 @@
 {% set count_clients = admin.client_get_statuses %}
 <div class="stats">
     <ul>
-        <li><a href="{{ 'client'|alink({'status' : 'active'}) }}" class="count green" title="">{{ count_clients.active }}</a><span>{% trans 'Active' %}</span></li>
-        <li><a href="{{ 'client'|alink({'status' : 'suspended'}) }}" class="count blue" title="">{{ count_clients.suspended }}</a><span>{% trans 'Suspended' %}</span></li>
-        <li><a href="{{ 'client'|alink({'status' : 'canceled'}) }}" class="count red" title="">{{ count_clients.canceled }}</a><span>{% trans 'Canceled' %}</span></li>
-        <li class="last"><a href="{{ 'client'|alink }}" class="count grey" title="">{{count_clients.active + count_clients.canceled + count_clients.suspended}}</a><span>{% trans 'Total' %}</span></li>
+        <li><a href="{{ 'client'|alink({'status' : 'active'}) }}" class="count green" title="">{{ count_clients.active }}</a><span>{{ 'Active'|trans }}</span></li>
+        <li><a href="{{ 'client'|alink({'status' : 'suspended'}) }}" class="count blue" title="">{{ count_clients.suspended }}</a><span>{{ 'Suspended'|trans }}</span></li>
+        <li><a href="{{ 'client'|alink({'status' : 'canceled'}) }}" class="count red" title="">{{ count_clients.canceled }}</a><span>{{ 'Canceled'|trans }}</span></li>
+        <li class="last">
+            <a href="{{ 'client'|alink }}" class="count grey" title="">{{count_clients.active + count_clients.canceled + count_clients.suspended}}</a><span>{{ 'Total'|trans }}</span>
+        </li>
     </ul>
     <div class="fix"></div>
 </div>
@@ -100,10 +102,10 @@
 <div class="widget simpleTabs">
 
     <ul class="tabs">
-        <li><a href="#tab-index">{% trans 'Clients' %}</a></li>
-        <li><a href="#tab-new">{% trans 'New client' %}</a></li>
-        <li><a href="#tab-groups">{% trans 'Groups' %}</a></li>
-        <li><a href="#tab-new-group">{% trans 'New group' %}</a></li>
+        <li><a href="#tab-index">{{ 'Clients'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New client'|trans }}</a></li>
+        <li><a href="#tab-groups">{{ 'Groups'|trans }}</a></li>
+        <li><a href="#tab-new-group">{{ 'New group'|trans }}</a></li>
     </ul>
 
     <div class="tabs_container">
@@ -115,11 +117,11 @@
                 <thead>
                     <tr>
                         <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
-                        <td colspan="2">{% trans 'Name' %}</td>
-                        <td>{% trans 'Company' %}</td>
-                        <td width="30%">{% trans 'Email' %}</td>
-                        <td>{% trans 'Status' %}</td>
-                        <td>{% trans 'Date' %}</td>
+                        <td colspan="2">{{ 'Name'|trans }}</td>
+                        <td>{{ 'Company'|trans }}</td>
+                        <td width="30%">{{ 'Email'|trans }}</td>
+                        <td>{{ 'Status'|trans }}</td>
+                        <td>{{ 'Date'|trans }}</td>
                         <td width="13%">&nbsp;</td>
                     </tr>
                 </thead>
@@ -146,14 +148,14 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="7">{% trans 'The list is empty' %}</td>
+                        <td colspan="7">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
 
-            {% include "partial_batch_delete.phtml" with {'action' : 'admin/client/batch_delete'} %}
-            {% include "partial_pagination.phtml" with {'list': clients, 'url':'client'} %}
+            {% include "partial_batch_delete.phtml" with { 'action' : 'admin/client/batch_delete' } %}
+            {% include "partial_pagination.phtml" with { 'list': clients, 'url':'client' } %}
         </div>
 
         <div class="fix"></div>
@@ -163,29 +165,29 @@
             <form method="post" action="{{ 'api/admin/client/create'|link }}" class="mainForm api-form save" data-api-redirect="{{ 'client'|alink }}">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Status' %}:</label>
+                        <label>{{ 'Status'|trans }}:</label>
                         <div class="formRight noborder">
-                            <input type="radio" name="status" value="active" checked="checked"/><label>{% trans 'Active' %}</label>
-                            <input type="radio" name="status" value="canceled"/><label>{% trans 'Canceled' %}</label>
+                            <input type="radio" name="status" value="active" checked="checked"/><label>{{ 'Active'|trans }}</label>
+                            <input type="radio" name="status" value="canceled"/><label>{{ 'Canceled'|trans }}</label>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Group' %}:</label>
+                        <label>{{ 'Group'|trans }}:</label>
                         <div class="formRight">
                             {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'Select group') }}
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Email' %}:</label>
+                        <label>{{ 'Email'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="email" value="{{request.email}}" required="required"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Name' %}:</label>
+                        <label>{{ 'Name'|trans }}:</label>
                         <div class="formRight moreFields">
                             <ul>
                                 <li style="width: 200px"><input type="text" name="first_name" value="{{request.first_name}}" required="required"/></li>
@@ -196,35 +198,35 @@
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Company' %}:</label>
+                        <label>{{ 'Company'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="company" value="{{request.company}}"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Address Line 1' %}:</label>
+                        <label>{{ 'Address Line 1'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="address_1" value="{{request.address_1}}"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Address Line 2' %}:</label>
+                        <label>{{ 'Address Line 2'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="address_2" value="{{request.address_2}}"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'City' %}:</label>
+                        <label>{{ 'City'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="city" value="{{request.city}}"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'State' %}:</label>
+                        <label>{{ 'State'|trans }}:</label>
                         <div class="formRight">
                             {# mf.selectbox('state', guest.system_states, request.state, 0, 'Select state') #}
                             <input type="text" name="state" value="{{ request.state }}" />
@@ -232,21 +234,21 @@
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Country' %}:</label>
+                        <label>{{ 'Country'|trans }}:</label>
                         <div class="formRight">
                             {{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Select country') }}
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Postcode' %}:</label>
+                        <label>{{ 'Postcode'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="postcode" value="{{request.postcode}}"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Phone' %}:</label>
+                        <label>{{ 'Phone'|trans }}:</label>
                         <div class="formRight moreFields">
                             <ul>
                                 <li><input type="text" name="phone_cc" value="{{request.phone_cc}}"/></li>
@@ -258,7 +260,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Currency' %}:</label>
+                        <label>{{ 'Currency'|trans }}:</label>
                         <div class="formRight">
                             {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'Select currency') }}
                         </div>
@@ -266,14 +268,14 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Password' %}:</label>
+                        <label>{{ 'Password'|trans }}:</label>
                         <div class="formRight">
                             <input type="password" name="password" value="" required="required"/>
                         </div>
                         <div class="fix"></div>
                     </div>
 
-                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
@@ -282,8 +284,8 @@
             <table class="tableStatic wide">
                 <thead>
                     <tr>
-                        <td>{% trans 'Title' %}</td>
-                        <td width="13%">{% trans 'Actions' %}</td>
+                        <td>{{ 'Title'|trans }}</td>
+                        <td width="13%">{{ 'Actions'|trans }}</td>
                     </tr>
                 </thead>
 
@@ -298,7 +300,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="2">{% trans 'The list is empty' %}</td>
+                        <td colspan="2">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -311,14 +313,14 @@
             <form method="post" action="{{ 'api/admin/client/group_create'|link }}" class="mainForm api-form save" data-api-redirect="{{ 'client'|alink }}">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Title' %}:</label>
+                        <label>{{ 'Title'|trans }}:</label>
                         <div class="formRight noborder">
                             <input type="text" name="title" value="{{request.title}}" required="required"/>
                         </div>
                         <div class="fix"></div>
                     </div>
 
-                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>

@@ -5,12 +5,11 @@
 
 {% block content %}
 <div class="widget simpleTabs">
-
     <ul class="tabs">
-        <li><a href="#tab-index">{% trans 'Tax rules' %}</a></li>
-        <li><a href="#tab-new">{% trans 'New tax rule' %}</a></li>
-        <li><a href="#tab-settings">{% trans 'Tax settings' %}</a></li>
-        <li><a href="#tab-eu-vat">{% trans 'EU VAT' %}</a></li>
+        <li><a href="#tab-index">{{ 'Tax rules'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New tax rule'|trans }}</a></li>
+        <li><a href="#tab-settings">{{ 'Tax settings'|trans }}</a></li>
+        <li><a href="#tab-eu-vat">{{ 'EU VAT'|trans }}</a></li>
     </ul>
 
     <div class="tabs_container">
@@ -20,11 +19,11 @@
                 <thead>
                     <tr>
                         <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
-                        <td>{% trans 'Name' %}</td>
-                        <td>{% trans 'Country' %}</td>
-                        <td>{% trans 'State/Region' %}</td>
-                        <td>{% trans 'Tax rate' %}</td>
-                        <td>{% trans 'Actions' %}</td>
+                        <td>{{ 'Name'|trans }}</td>
+                        <td>{{ 'Country'|trans }}</td>
+                        <td>{{ 'State/Region'|trans }}</td>
+                        <td>{{ 'Tax rate'|trans }}</td>
+                        <td>{{ 'Actions'|trans }}</td>
                     </tr>
                 </thead>
 
@@ -35,16 +34,16 @@
                     <td>{{ tax.name }}</td>
                     <td>
                         {% if tax.country %}
-                        {{ guest.system_countries[tax.country] }}
+                            {{ guest.system_countries[tax.country] }}
                         {% else %}
-                        {% trans 'Applies to any country' %}
+                            {{ 'Applies to any country'|trans }}
                         {% endif %}
                     </td>
                     <td>
                         {% if tax.state %}
-                        {{ tax.state }}
+                            {{ tax.state }}
                         {% else %}
-                        {% trans 'Applies to any state' %}
+                            {{ 'Applies to any state'|trans }}
                         {% endif %}
                     </td>
                     <td>{{ tax.taxrate }}%</td>
@@ -60,7 +59,7 @@
                 <tbody>
                     <tr>
                         <td colspan="5">
-                            {% trans 'The list is empty' %}
+                            {{ 'The list is empty'|trans }}
                         </td>
                     </tr>
                 </tbody>
@@ -74,14 +73,14 @@
             <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="mainForm save api-form" data-api-msg="Tax settings updated">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Enable tax support' %}:</label>
+                        <label>{{ 'Enable tax support'|trans }}:</label>
                         <div class="formRight">
-                            <input type="radio" name="tax_enabled" value="1"{% if admin.system_param({"key":"tax_enabled"}) %} checked="checked"{% endif %} /><label>{% trans 'Yes' %}</label>
-                            <input type="radio" name="tax_enabled" value="0"{% if not admin.system_param({"key":"tax_enabled"}) %} checked="checked"{% endif %} /><label>{% trans 'No' %}</label>
+                            <input type="radio" name="tax_enabled" value="1"{% if admin.system_param({ "key": "tax_enabled" }) %} checked="checked"{% endif %} /><label>{{ 'Yes'|trans }}</label>
+                            <input type="radio" name="tax_enabled" value="0"{% if not admin.system_param({ "key": "tax_enabled" }) %} checked="checked"{% endif %} /><label>{{ 'No'|trans }}</label>
                         </div>
                         <div class="fix"></div>
                     </div>
-                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
@@ -89,8 +88,8 @@
         <div class="tab_content nopadding" id="tab-eu-vat">
 
             <div class="help">
-                <h3>{% trans 'Automatic VAT Tax Rules Setup' %}</h3>
-                <p>{% trans 'If you would like BoxBilling to automatically setup the EU VAT tax rules for you for all EU Member States then simply enter your VAT Label & local VAT rate below and click the submit button. <strong>This action will delete any existing tax rules</strong> and configure the VAT rates for all EU countries.' %}</p>
+                <h3>{{ 'Automatic VAT Tax Rules Setup'|trans }}</h3>
+                <p>{{ 'If you would like BoxBilling to automatically setup the EU VAT tax rules for you for all EU Member States then simply enter your VAT Label & local VAT rate below and click the submit button. <strong>This action will delete any existing tax rules</strong> and configure the VAT rates for all EU countries.'|trans }}</p>
             </div>
             <br/>
             <div class="aligncenter">
@@ -104,35 +103,35 @@
             <form method="post" action="{{ 'api/admin/invoice/tax_create'|link }}" class="mainForm save api-form" data-api-reload="1">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Tax title' %}:</label>
+                        <label>{{ 'Tax title'|trans }}:</label>
                         <div class="formRight">
-                            <input type="text" name="name" value="{{request.name}}" required="required" placeholder="{% trans 'sales Tax' %}"/>
+                            <input type="text" name="name" value="{{request.name}}" required="required" placeholder="{{ 'sales Tax'|trans }}"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Tax rate' %}:</label>
+                        <label>{{ 'Tax rate'|trans }}:</label>
                         <div class="formRight">
-                            <input type="text" name="taxrate" value="{{request.taxrate}}" required="required" placeholder="{% trans '18' %}" style="width: 100px"/> %
+                            <input type="text" name="taxrate" value="{{request.taxrate}}" required="required" placeholder="{{ '18'|trans }}" style="width: 100px"/> %
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Country' %}:</label>
+                        <label>{{ 'Country'|trans }}:</label>
                         <div class="formRight">
                             {{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Apply to all countries') }}
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'State' %}:</label>
+                        <label>{{ 'State'|trans }}:</label>
                         <div class="formRight">
                             {# mf.selectbox('state', guest.system_states, request.state, 0, 'Apply to all states') #}
-                            <input type="text" name="state" value="{{ request.state }}" placeholder="{% trans 'Leave empty to apply to all states' %}"/>
+                            <input type="text" name="state" value="{{ request.state }}" placeholder="{{ 'Leave empty to apply to all states'|trans }}"/>
                         </div>
                         <div class="fix"></div>
                     </div>
-                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>

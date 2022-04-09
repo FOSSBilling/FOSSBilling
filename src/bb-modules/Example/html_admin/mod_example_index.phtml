@@ -1,6 +1,6 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
 
-{% block meta_title %}{% trans 'Example module' %}{% endblock %}
+{% block meta_title %}{{ 'Example module'|trans }}{% endblock %}
 
 {% set active_menu = 'example' %}
 
@@ -8,11 +8,11 @@
 
 <div class="widget">
     <div class="head">
-        <h5>{% trans 'Example module for developers' %}</h5>
+        <h5>{{ 'Example module for developers'|trans }}</h5>
     </div>
 
     <div class="help">
-        <h3>{% trans 'This is an example extension' %}</h3>
+        <h3>{{ 'This is an example extension'|trans }}</h3>
     </div>
     <ul>
         <li><a href="{{ 'example'|alink }}">Example module index</a></li>
@@ -28,19 +28,17 @@
     {# Check if example parameters passed to template file #}
     {% if youparamname %}
     <div class="help">
-        <h3>{% trans 'Parameters from Controller' %}</h3>
+        <h3>{{ 'Parameters from Controller'|trans }}</h3>
     </div>
     <div class="body">
         <p>You have passed parameter youparamname: <strong>{{ youparamname }}</strong></p>
     </div>
     {% endif %}
 
-
-
     {# Check if example parameters passed to template file #}
     {% if userid %}
     <div class="help">
-        <h3>{% trans 'Parameters from URL' %}</h3>
+        <h3>{{ 'Parameters from URL'|trans }}</h3>
     </div>
     <div class="body">
         <p>You have passed parameter userid: <strong>{{ userid }}</strong></p>
@@ -50,7 +48,7 @@
     {% if api_example %}
         {# API example #}
         <div class="help">
-            <h3>{% trans 'API example' %}</h3>
+            <h3>{{ 'API example'|trans }}</h3>
         </div>
         <div class="body">
         <h5 class="pt12">Data from API and passed to template from controller</h5>
@@ -65,12 +63,11 @@
 
 <div class="widget">
     <div class="head">
-        <h5>{% trans 'README' %}</h5>
+        <h5>{{ 'README'|trans }}</h5>
     </div>
     
     <div class="body list arrowBlue">
         {{ guest.example_readme|bbmd }}
     </div>
 </div>
-
 {% endblock %}

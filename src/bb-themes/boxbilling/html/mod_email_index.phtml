@@ -1,22 +1,21 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
 
-{% block meta_title %}{% trans 'Emails' %}{% endblock %}
+{% block meta_title %}{{ 'Emails'|trans }}{% endblock %}
 
 {% block content %}
-
 <div class="h-block">
     <div class="h-block-header">
         <div class="icon"><span class="big-light-icon i-email"></span></div>
-        <h2>{% trans 'Emails we have sent you'%}</h2>
-        <p>{% trans 'Here you can track emails we have sent you' %}</p>
+        <h2>{{ 'Emails we have sent you'|trans }}</h2>
+        <p>{{ 'Here you can track emails we have sent you'|trans }}</p>
     </div>
     <div class="block">
         <table>
             <thead>
                 <tr>
-                    <th>{% trans 'Email subject' %}</th>
-                    <th>{% trans 'To' %}</th>
-                    <th>{% trans 'Date sent' %}</th>
+                    <th>{{ 'Email subject'|trans }}</th>
+                    <th>{{ 'To'|trans }}</th>
+                    <th>{{ 'Date sent'|trans }}</th>
                     <th>&nbsp;</th>
                 </tr>
             </thead>
@@ -32,7 +31,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="4">{% trans 'The list is empty' %}</td>
+                    <td colspan="4">{{ 'The list is empty'|trans }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -41,5 +40,4 @@
 </div>
 
 {% include "partial_pagination.phtml" with {'list': emails} %}
-
 {% endblock %}

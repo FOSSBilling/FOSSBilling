@@ -1,20 +1,23 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% set active_menu = 'order' %}
+
 {% import "macro_functions.phtml" as mf %}
 
-{% block meta_title %}{% trans 'Orders' %}{% endblock %}
+{% block meta_title %}{{ 'Orders'|trans }}{% endblock %}
 
 {% block top_content %}
 {% if request.show_filter %}
 <div class="widget filterWidget">
-    <div class="head"><h5 class="iMagnify">{% trans 'Filter orders' %}</h5></div>
+    <div class="head">
+        <h5 class="iMagnify">{{ 'Filter orders'|trans }}</h5>
+    </div>
     <div class="body nopadding">
-
         <form method="get" action="" class="mainForm">
             <input type="hidden" name="_url" value="{{ request._url }}" />
             <fieldset>
                 <div class="rowElem noborder">
-                    <label>{% trans 'ID' %}</label>
+                    <label>{{ 'ID'|trans }}</label>
                     <div class="formRight">
                         <input type="text" name="id" value="{{ request.id }}">
                     </div>
@@ -22,7 +25,7 @@
                 </div>
 
                 <div class="rowElem">
-                    <label>{% trans 'Title' %}</label>
+                    <label>{{ 'Title'|trans }}</label>
                     <div class="formRight">
                         <input type="text" name="title" value="{{ request.title }}">
                     </div>
@@ -30,7 +33,7 @@
                 </div>
 
                 <div class="rowElem">
-                    <label>{% trans 'Status' %}</label>
+                    <label>{{ 'Status'|trans }}</label>
                     <div class="formRight">
                         {{ mf.selectbox('status', admin.order_get_status_pairs, request.status, 0, 'All statuses') }}
                     </div>
@@ -38,7 +41,7 @@
                 </div>
 
                 <div class="rowElem">
-                    <label>{% trans 'Type' %}:</label>
+                    <label>{{ 'Type'|trans }}:</label>
                     <div class="formRight">
                         {{ mf.selectbox('type', admin.product_get_types, request.type, 0, 'All types') }}
                     </div>
@@ -46,7 +49,7 @@
                 </div>
                 
                 <div class="rowElem">
-                    <label>{% trans 'Product' %}:</label>
+                    <label>{{ 'Product'|trans }}:</label>
                     <div class="formRight">
                         {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All products') }}
                     </div>
@@ -54,7 +57,7 @@
                 </div>
 
                 <div class="rowElem">
-                    <label>{% trans 'Period' %}</label>
+                    <label>{{ 'Period'|trans }}</label>
                     <div class="formRight">
                         {{ mf.selectbox('period', guest.system_periods, request.period, 0, 'All periods') }}
                     </div>
@@ -62,7 +65,7 @@
                 </div>
                 
                 <div class="rowElem">
-                    <label>{% trans 'Invoice option' %}</label>
+                    <label>{{ 'Invoice option'|trans }}</label>
                     <div class="formRight">
                         {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, request.invoice_option, 0, 'All types') }}
                     </div>
@@ -70,19 +73,23 @@
                 </div>
 
                 <div class="rowElem">
-                    <label>{% trans 'Creation date' %}</label>
+                    <label>{{ 'Creation date'|trans }}</label>
                     <div class="formRight moreFields">
                         <ul>
-                            <li style="width: 100px"><input type="text" name="date_from" value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
+                            <li style="width: 100px">
+                                <input type="text" name="date_from" value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/>
+                            </li>
                             <li class="sep">-</li>
-                            <li style="width: 100px"><input type="text" name="date_to" value="{% if request.date_to %}{{ request.date_to|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
+                            <li style="width: 100px">
+                                <input type="text" name="date_to" value="{% if request.date_to %}{{ request.date_to|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/>
+                            </li>
                         </ul>
                     </div>
                     <div class="fix"></div>
                 </div>
 
                 <input type="hidden" name="show_filter" value="1" />
-                <input type="submit" value="{% trans 'Filter' %}" class="greyishBtn submitForm" />
+                <input type="submit" value="{{ 'Filter'|trans }}" class="greyishBtn submitForm" />
             </fieldset>
         </form>
         <div class="fix"></div>
@@ -92,10 +99,10 @@
 {% set count_orders = admin.order_get_statuses %}
 <div class="stats">
     <ul>
-        <li><a href="{{ 'order'|alink({'status' : 'pending_setup'}) }}" class="count green" title="">{{ count_orders.pending_setup }}</a><span>{% trans 'Pending setup' %}</span></li>
-        <li><a href="{{ 'order'|alink({'status' : 'active'}) }}" class="count blue" title="">{{ count_orders.active }}</a><span>{% trans 'Active' %}</span></li>
-        <li><a href="{{ 'order'|alink({'status' : 'suspended'}) }}" class="count red" title="">{{ count_orders.suspended }}</a><span>{% trans 'Suspended' %}</span></li>
-        <li class="last"><a href="{{ 'order'|alink }}" class="count grey" title="">{{ count_orders.total }} </a><span>{% trans 'Total' %}</span></li>
+        <li><a href="{{ 'order'|alink({'status': 'pending_setup'}) }}" class="count green" title="">{{ count_orders.pending_setup }}</a><span>{{ 'Pending setup'|trans }}</span></li>
+        <li><a href="{{ 'order'|alink({'status': 'active'}) }}" class="count blue" title="">{{ count_orders.active }}</a><span>{{ 'Active'|trans }}</span></li>
+        <li><a href="{{ 'order'|alink({'status': 'suspended'}) }}" class="count red" title="">{{ count_orders.suspended }}</a><span>{{ 'Suspended'|trans }}</span></li>
+        <li class="last"><a href="{{ 'order'|alink }}" class="count grey" title="">{{ count_orders.total }} </a><span>{{ 'Total'|trans }}</span></li>
     </ul>
     <div class="fix"></div>
 </div>
@@ -108,8 +115,8 @@
 
 <div class="widget simpleTabs">
     <ul class="tabs">
-        <li><a href="#tab-index">{% trans 'Orders' %}</a></li>
-        <li><a href="#tab-new">{% trans 'New order' %}</a></li>
+        <li><a href="#tab-index">{{ 'Orders'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New order'|trans }}</a></li>
     </ul>
 
     <div class="tabs_container">
@@ -120,18 +127,18 @@
             <thead>
                 <tr>
                     <td style="width: 3%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
-                    <td style="width: 5%">{% trans 'ID' %}</td>
-                    <td width="13%">{% trans 'Client' %}</td>
-                    <td width="45%">{% trans 'Title' %}</td>
-                    <td style="width: 7%">{% trans 'Amount' %}</td>
-                    <td>{% trans 'Period' %}</td>
-                    <td>{% trans 'Status' %}</td>
+                    <td style="width: 5%">{{ 'ID'|trans }}</td>
+                    <td width="13%">{{ 'Client'|trans }}</td>
+                    <td width="45%">{{ 'Title'|trans }}</td>
+                    <td style="width: 7%">{{ 'Amount'|trans }}</td>
+                    <td>{{ 'Period'|trans }}</td>
+                    <td>{{ 'Status'|trans }}</td>
                     <td style="width: 10%">&nbsp;</td>
                 </tr>
             </thead>
 
             <tbody>
-                {% set orders = admin.order_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+                {% set orders = admin.order_get_list({ "per_page": 30, "page": request.page }|merge(request)) %}
                 {% for i, order in orders.list %}
                 <tr>
                     <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ order.id }}"/></td>
@@ -149,19 +156,19 @@
                     <td>{{ mf.period_name(order.period) }}</td>
                     <td>{{ mf.status_name(order.status) }}</td>
                     <td class="actions">
-                        <a class="bb-button btn14" href="{{ '/order/manage'|alink }}/{{order.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
-                        <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/order/delete'|link({'id' : order.id}) }}" data-api-redirect="{{ 'order'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                        <a class="bb-button btn14" href="{{ '/order/manage'|alink }}/{{ order.id }}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                        <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/order/delete'|link({ 'id' : order.id }) }}" data-api-redirect="{{ 'order'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="8">{% trans 'The list is empty' %}</td>
+                    <td colspan="8">{{ 'The list is empty'|trans }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        {% include "partial_pagination.phtml" with {'list': orders, 'url':'order'} %}
-        {% include "partial_batch_delete.phtml" with {'action' : 'admin/order/batch_delete'} %}
+        {% include "partial_pagination.phtml" with { 'list': orders, 'url': 'order' } %}
+        {% include "partial_batch_delete.phtml" with { 'action': 'admin/order/batch_delete' } %}
         </div>
     </div>
     
@@ -169,10 +176,10 @@
         <form method="post" action="{{ 'order/new'|alink }}" class="mainForm">
             <fieldset>
                 <div class="rowElem noborder">
-                    <label>{% trans 'Client' %}</label>
+                    <label>{{ 'Client'|trans }}</label>
                     <div class="formRight">
                         {% if not request.client_id %}
-                        <input type="text" id="client_selector" placeholder="{% trans 'Start typing clients name, email or ID' %}" required="required"/>
+                        <input type="text" id="client_selector" placeholder="{{ 'Start typing clients name, email or ID'|trans }}" required="required"/>
                         <input type="hidden" name="client_id" value="{{ request.client_id }}" id="client_id"/>
                         {% else %}
                             {% set client = admin.client_get({"id":request.client_id}) %}
@@ -182,14 +189,14 @@
                     <div class="fix"></div>
                 </div>
                 <div class="rowElem">
-                    <label>{% trans 'Product' %}:</label>
+                    <label>{{ 'Product'|trans }}:</label>
                     <div class="formRight">
                         {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 1) }}
                     </div>
                     <div class="fix"></div>
                 </div>
                 
-            <input type="submit" value="{% trans 'Continue' %}" class="greyishBtn submitForm" />
+            <input type="submit" value="{{ 'Continue'|trans }}" class="greyishBtn submitForm" />
             {% if request.client_id %}
             <input type="hidden" name="client_id" value="{{ request.client_id}}" />
             {% endif %}
@@ -197,47 +204,45 @@
         </form>
     </div>
 </div>
-
 {% endblock %}
 
 {% block head %}
 <link href="css/jquery-ui.css" rel="stylesheet" type="text/css" />
-<script type="text/javascript" src="js/jquery-ui.js"></script>
+<script src="js/jquery-ui.js"></script>
 {% endblock %}
 
 {% block js%}
 {% if not request.client_id %}
-<script type="text/javascript">
-$(function() {
-
-	$('#client_selector').autocomplete({
-        source: function( request, response ) {
-            $.ajax({
-                url: bb.restUrl('admin/client/get_pairs'),
-                dataType: "json",
-                data: {
-                    per_page: 10,
-                    search: request.term
-                },
-                success: function( data ) {
-                    response( $.map( data.result, function( name, id) {
-                        return {
-                            label: name,
-                            value: id
-                        }
-                    }));
-                }
-            });
-        },
-        minLength: 1,
-        select: function( event, ui ) {
-            $("#client_selector").val(ui.item.label);
-            $("#client_id").val(ui.item.value);
-            return false;
-        }
+<script>
+    $(function() {
+        $('#client_selector').autocomplete({
+            source: function(request, response) {
+                $.ajax({
+                    url: bb.restUrl('admin/client/get_pairs'),
+                    dataType: "json",
+                    data: {
+                        per_page: 10,
+                        search: request.term
+                    },
+                    success: function( data ) {
+                        response( $.map( data.result, function(name, id) {
+                            return {
+                                label: name,
+                                value: id
+                            }
+                        }));
+                    }
+                });
+            },
+            minLength: 1,
+            select: function(event, ui) {
+                $("#client_selector").val(ui.item.label);
+                $("#client_id").val(ui.item.value);
+                
+                return false;
+            }
+        });
     });
-
-});
 </script>
 {% endif %}
 {% endblock %}

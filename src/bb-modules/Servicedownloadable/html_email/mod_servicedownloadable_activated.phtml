@@ -6,7 +6,7 @@ Hello {{ c.first_name }} {{ c.last_name }},
 
 Your **{{ order.title }}** is now active and ready for download.
 
-Login to members area: {{'login'|link({'email' : c.email }) }}
+Login to members area: {{ 'login'|link({ 'email': c.email }) }}
 Download URL: {{ 'servicedownloadable/get-file'|link }}/{{ order.id }}     
 
 {{ guest.system_company.signature }}

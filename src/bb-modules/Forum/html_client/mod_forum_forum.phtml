@@ -1,9 +1,11 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
 
 {% block meta_title %}{{ forum.title }}{% endblock %}
+
 {% block meta_description %}{{ forum.description }}{% endblock %}
+
 {% block breadcrumb %}
-	<li> <a href="{{ '/forum' | link }}">{% trans 'Forum' %}</a><span class="divider">/</span> </li>
+	<li> <a href="{{ '/forum' | link }}">{{ 'Forum'|trans }}</a><span class="divider">/</span> </li>
     <li> {{ forum.title }}</li>
 {% endblock %}
 {% block content %}
@@ -16,13 +18,13 @@
                 {{ forum.description }}
                 <ul class="data-header-actions">
                     <li>
-                        <button class="btn btn-alt" type="button" onclick="parent.location='{{ '/forum'|link }}'">{% trans 'Forum list' %}</button>
+                        <button class="btn btn-alt" type="button" onclick="parent.location=\"{{ '/forum'|link }}\"">{{ 'Forum list'|trans }}</button>
                     </li>
                     <li>
                         {% if client %}
-                        <a href="#new-topic-modal" class="btn btn-alt btn-info" type="button" role="button" data-toggle="modal" id="new-topic">{% trans 'New topic' %}</a>
+                        <a href="#new-topic-modal" class="btn btn-alt btn-info" type="button" role="button" data-toggle="modal" id="new-topic">{{ 'New topic'|trans }}</a>
                         {% else %}
-                        <button class="btn btn-alt" type="button" onclick="parent.location='{{ '/login'|link }}'"><span class="awe-comments"></span> {% trans 'Register' %}</button>
+                        <button class="btn btn-alt" type="button" onclick="parent.location=\"{{ '/login'|link }}\""><span class="awe-comments"></span> {{ 'Register'|trans }}</button>
                         {% endif %}
                     </li>
                 </ul>
@@ -33,10 +35,10 @@
                     <tr>
                         <th style="width:5%">&nbsp;</th>
                         <th style="width:5%">&nbsp;</th>
-                        <th style="width:40%">{% trans 'Thread / Thread Starter' %}</th>
-                        <th>{% trans 'Last post' %}</th>
-                        <th>{% trans 'Replies' %}</th>
-                        <th>{% trans 'Views' %}</th>
+                        <th style="width:40%">{{ 'Thread / Thread Starter'|trans }}</th>
+                        <th>{{ 'Last post'|trans }}</th>
+                        <th>{{ 'Replies'|trans }}</th>
+                        <th>{{ 'Views'|trans }}</th>
                     </tr>
                 </thead>
 
@@ -57,7 +59,7 @@
                         </td>
                         <td>
                             {{ topic.last.created_at|bb_date }}
-                            <p style="font-size: .9em">{% trans 'by' %} <a href="{{ '/forum'|link }}/{{forum.slug}}/{{topic.slug}}#m-{{ topic.last.id }}">{{ topic.last.author.name }} {#<img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"></a>#}</p>
+                            <p style="font-size: .9em">{{ 'by'|trans }} <a href="{{ '/forum'|link }}/{{ forum.slug }}/{{ topic.slug }}#m-{{ topic.last.id }}">{{ topic.last.author.name }} {#<img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"></a>#}</p>
                         </td>
                         <td>{{ topic.stats.posts_count }}</td>
                         <td>{{ topic.stats.views_count }}</td>
@@ -66,7 +68,7 @@
                     {% else %}
 
                     <tr>
-                        <td colspan="6">{% trans 'The list is empty' %}</td>
+                        <td colspan="6">{{ 'The list is empty'|trans }}</td>
                     </tr>
 
                     {% endfor %}
@@ -84,19 +86,19 @@
 <div class="modal hide fade" id="new-topic-modal">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h3><span class="awe-comments"></span> {% trans 'Start new topic in' %} "{{ forum.title }}"</h3>
+        <h3><span class="awe-comments"></span> {{ 'Start new topic in'|trans }} "{{ forum.title }}"</h3>
     </div>
     <div class="modal-body">
         <form action="" method="post" id="forum-new-topic" class="form-horizontal" style="background-color: white; border: 0px">
             <div class="control-group">
-                <label class="control-label" for="topic">{% trans 'Topic title' %}: </label>
+                <label class="control-label" for="topic">{{ 'Topic title'|trans }}: </label>
                 <div class="controls">
                     <input type="text" name="topic" id="topic" value="{{ request.topic }}" required="required">
                 </div>
             </div>
 
             <div class="control-group">
-                <label class="control-label" for="message">{% trans 'Topic message' %}: </label>
+                <label class="control-label" for="message">{{ 'Topic message'|trans }}: </label>
                 <div class="controls">
                     <textarea name="message" id="message" cols="5" rows="5" required="required">{{ request.message }}</textarea>
                 </div>
@@ -105,27 +107,26 @@
                 <input type="hidden" name="forum_id" value="{{ forum.id }}">
     </div>
     <div class="modal-footer" aria-hidden="true">
-        <input class="btn btn-primary btn-large" type="submit" value="{% trans 'Create new topic' %}">
+        <input class="btn btn-primary btn-large" type="submit" value="{{ 'Create new topic'|trans }}">
     </div>
     </form>
 </div>
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript">
+<script>
 $(function() {
-
-    $('#forum-new-topic').bind('submit', function(){
+    $('#forum-new-topic').bind('submit', function() {
         bb.post(
             'client/forum/start_topic',
             $(this).serialize(),
             function(result) {
-                bb.redirect('{{ "forum"|link }}' + '/' + '{{ forum.slug }}' + '/' + result);
+                bb.redirect("{{ 'forum'|link }}" + '/' + '{{ forum.slug }}' + '/' + result);
             }
         );
+        
         return false;
     });
-
 });
 </script>
 {% endblock %}

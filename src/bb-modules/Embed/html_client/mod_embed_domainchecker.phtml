@@ -63,23 +63,24 @@
 </form>
 
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-<script type="text/javascript">
-$(function() {
-    $('#domain-checker').bind('submit',function(event){
-        $.post('{{ constant('BB_URL_API') }}guest/servicedomain/check',
-        $(this).serialize(),
-        function(json) {
-            if(json.error) {
-                alert(json.error.message);
-            } else if(json.result) {
-                alert('Domain is available');
-            } else {
-                alert('Domain is already registered');
-            }
-        }, 'json');
-        return false;
+<script>
+    $(function() {
+        $('#domain-checker').bind('submit', function(event) {
+            $.post("{{ constant('BB_URL_API') }}guest/servicedomain/check",
+            $(this).serialize(),
+            function(json) {
+                if (json.error) {
+                    alert(json.error.message);
+                } else if (json.result) {
+                    alert('Domain is available');
+                } else {
+                    alert('Domain is already registered');
+                }
+            }, 'json');
+            
+            return false;
+        });
     });
-});
 </script>
 </body>
 </html>

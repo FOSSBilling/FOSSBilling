@@ -1,7 +1,9 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{% trans 'Contact us' %}{% endblock %}
-{% block breadcrumb %}{% trans 'Contact us' %}{% endblock %}
+
+{% block meta_title %}{{ 'Contact us'|trans }}{% endblock %}
+{% block breadcrumb %}{{ 'Contact us'|trans }}{% endblock %}
 
 {% block content %}
 {% set company = guest.system_company %}
@@ -10,35 +12,35 @@
         <article class=" span12 data-block">
             <div class="data-container">
                 <header>
-                    <h2>{% trans 'Contact us' %}</h2>
+                    <h2>{{ 'Contact us'|trans }}</h2>
                     <p>{{ company.signature }}</p>
                 </header>
                 <section>
                     <form method="post" action="" id="public-ticket-create" class="form form-horizontal span6">
                         <fieldset>
                             <div class="control-group">
-                                <label for="name">{% trans 'Name' %}: </label>
+                                <label for="name">{{ 'Name'|trans }}: </label>
                                 <div class="controls">
                                     <input type="text" name="name" value="{{request.name}}" required="required" id="name">
                                 </div>
                             </div>
 
                             <div class="control-group">
-                                <label for="email">{% trans 'Email' %}: </label>
+                                <label for="email">{{ 'Email'|trans }}: </label>
                                 <div class="controls">
                                     <input type="email" name="email" value="{{request.email}}" required="required" id="email">
                                 </div>
                             </div>
 
                             <div class="control-group">
-                                <label for="subject">{% trans 'Subject' %}: </label>
+                                <label for="subject">{{ 'Subject'|trans }}: </label>
                                 <div class="controls">
                                     <input type="text" name="subject" value="{{request.subject}}" required="required" id="subject">
                                 </div>
                             </div>
 
                             <div class="control-group">
-                                <label for="message">{% trans 'Message' %}: </label>
+                                <label for="message">{{ 'Message'|trans }}: </label>
                                 <div class="controls">
                                     <textarea name="message" cols="5" rows="5" required="required" id="message">{{request.message}}</textarea>
                                 </div>
@@ -48,7 +50,7 @@
                             {{ mf.recaptcha }}
                             <div class="control-group">
                                 <div class="controls">
-                                    <button class="btn btn-primary btn-large pull-right" type="submit" value="{% trans 'Send' %}" data-loading-text="Loading...">{% trans 'Send' %}</button>
+                                    <button class="btn btn-primary btn-large pull-right" type="submit" value="{{ 'Send'|trans }}" data-loading-text="Loading...">{{ 'Send'|trans }}</button>
                                 </div>
                             </div>
 
@@ -92,18 +94,20 @@
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript">
+<script>
 $(function() {
     $('#anti-spam').remove();
-    $('#public-ticket-create').bind('submit',function(event){
+
+    $('#public-ticket-create').bind('submit', function(event) {
         $('.wait').show();
         bb.post(
             'guest/support/ticket_create',
             $(this).serialize(),
             function(result) {
-                bb.redirect('{{ 'support/contact-us/conversation'|link }}' + '/' + result);
+                bb.redirect("{{ 'support/contact-us/conversation'|link }}" + '/' + result);
             }
         );
+
         return false;
     });
 });

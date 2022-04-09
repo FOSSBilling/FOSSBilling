@@ -1,22 +1,20 @@
 {% extends "layout_default.phtml" %}
 {% set active_menu = 'products' %}
-{% block meta_title %}{% trans 'Addons' %}{% endblock %}
+{% block meta_title %}{{ 'Addons'|trans }}{% endblock %}
 
 {% block breadcrumbs %}
 <ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
-    <li><a href="{{ 'product'|alink }}">{% trans 'Products' %}</a></li>
-    <li class="lastB">{% trans 'Addons' %}</li>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a></li>
+    <li class="lastB">{{ 'Addons'|trans }}</li>
 </ul>
 {% endblock %}
 
 {% block content %}
-
 <div class="widget simpleTabs">
-
     <ul class="tabs">
-        <li><a href="#tab-index">{% trans 'Addons' %}</a></li>
-        <li><a href="#tab-new">{% trans 'New Addon' %}</a></li>
+        <li><a href="#tab-index">{{ 'Addons'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New Addon'|trans }}</a></li>
     </ul>
 
     <div class="tabs_container">
@@ -36,7 +34,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="2">{% trans 'The list is empty' %}</td>
+                        <td colspan="2">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -51,46 +49,46 @@
             <form method="post" action="{{ 'api/admin/product/addon_create'|link }}" class="mainForm api-form save" data-api-jsonp="onAfterAddonCreate">
             <fieldset>
                 <div class="rowElem">
-                    <label>{% trans 'Status' %}:</label>
+                    <label>{{ 'Status'|trans }}:</label>
                     <div class="formRight">
-                        <input type="radio" name="status" value="enabled"/><label>{% trans 'Enabled' %}</label>
-                        <input type="radio" name="status" value="disabled" checked="checked"/><label>{% trans 'Disabled' %}</label>
+                        <input type="radio" name="status" value="enabled"/><label>{{ 'Enabled'|trans }}</label>
+                        <input type="radio" name="status" value="disabled" checked="checked"/><label>{{ 'Disabled'|trans }}</label>
                     </div>
                     <div class="fix"></div>
                 </div>
                 <div class="rowElem">
-                    <label>{% trans 'Activation' %}:</label>
+                    <label>{{ 'Activation'|trans }}:</label>
                     <div class="formRight">
-                        <input type="radio" name="setup" value="after_order"/><label>{% trans 'After order is placed' %}</label>
-                        <input type="radio" name="setup" value="after_payment" checked="checked"/><label>{% trans 'After payment is received' %}</label>
-                        <input type="radio" name="setup" value="manual"/><label>{% trans 'Manual activation' %}</label>
+                        <input type="radio" name="setup" value="after_order"/><label>{{ 'After order is placed'|trans }}</label>
+                        <input type="radio" name="setup" value="after_payment" checked="checked"/><label>{{ 'After payment is received'|trans }}</label>
+                        <input type="radio" name="setup" value="manual"/><label>{{ 'Manual activation'|trans }}</label>
                     </div>
                     <div class="fix"></div>
                 </div>
 
                 <div class="rowElem">
-                    <label>{% trans 'Icon' %}:</label>
+                    <label>{{ 'Icon'|trans }}:</label>
                     <div class="formRight">
                         <input type="text" name="icon_url" value="{{product.icon_url}}" placeholder=""/>
                     </div>
                     <div class="fix"></div>
                 </div>
                 <div class="rowElem">
-                    <label>{% trans 'Title' %}:</label>
+                    <label>{{ 'Title'|trans }}:</label>
                     <div class="formRight">
                         <input type="text" name="title" value="{{product.title}}" required="required" placeholder=""/>
                     </div>
                     <div class="fix"></div>
                 </div>
                 <div class="rowElem">
-                    <label>{% trans 'Description' %}:</label>
+                    <label>{{ 'Description'|trans }}:</label>
                     <div class="formRight">
                         <textarea name="description" cols="5" rows="5">{{product.description}}</textarea>
                     </div>
                     <div class="fix"></div>
                 </div>
 
-                <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
             </fieldset>
             </form>
 
@@ -98,16 +96,13 @@
 
     </div>
 </div>
-
 {% endblock %}
 
 {% block js %}
 <script type="text/javascript">
-    
     function onAfterAddonCreate(result)
     {
         bb.redirect("{{ 'product/addon/'|alink }}/" + result);
-    }
-    
+    }    
 </script>
 {% endblock %}

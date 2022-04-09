@@ -1,18 +1,20 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
+
 {% set active_menu = 'support' %}
+
 {% block meta_title %}Forum topic{% endblock %}
 
 {% block content %}
-
 <div class="widget simpleTabs tabsRight">
     <div class="head">
-        <h5>{{topic.title}}</h5>
+        <h5>{{ topic.title }}</h5>
     </div>
 
     <ul class="tabs">
-        <li><a href="#tab-info">{% trans 'Details' %}</a></li>
-        <li><a href="#tab-manage">{% trans 'Manage' %}</a></li>
+        <li><a href="#tab-info">{{ 'Details'|trans }}</a></li>
+        <li><a href="#tab-manage">{{ 'Manage'|trans }}</a></li>
     </ul>
 
     <div class="tabs_container">
@@ -22,44 +24,44 @@
                 <table class="tableStatic wide">
                     <tbody>
                     <tr class="noborder">
-                        <td style="width: 15%"><label>{% trans 'Forum' %}</label></td>
-                        <td><a href="{{ 'forum'|alink({'forum_id' : topic.forum.id }) }}">{{ topic.forum.title }}</a></td>
+                        <td style="width: 15%"><label>{{ 'Forum'|trans }}</label></td>
+                        <td><a href="{{ 'forum'|alink({ 'forum_id': topic.forum.id }) }}">{{ topic.forum.title }}</a></td>
                     </tr>
 
                     <tr>
-                        <td><label>{% trans 'Title' %}</label></td>
+                        <td><label>{{ 'Title'|trans }}</label></td>
                         <td>{{ topic.title }}</td>
                     </tr>
 
                     <tr>
-                        <td><label>{% trans 'Started by' %}</label></td>
+                        <td><label>{{ 'Started by'|trans }}</label></td>
                         <td>{{ topic.first.author.name }}</td>
                     </tr>
                     <tr>
-                        <td>{% trans 'Views' %}</td>
+                        <td>{{ 'Views'|trans }}</td>
                         <td>{{ topic.stats.views_count }}</td>
                     </tr>
                     <tr>
-                        <td>{% trans 'Messages' %}</td>
+                        <td>{{ 'Messages'|trans }}</td>
                         <td>{{ topic.stats.posts_count }}</td>
                     </tr>
                     <tr>
-                        <td><label>{% trans 'Status' %}</label></td>
+                        <td><label>{{ 'Status'|trans }}</label></td>
                         <td>{{ mf.status_name(topic.status) }}</td>
                     </tr>
 
                     <tr>
-                        <td><label>{% trans 'Sticky' %}</label></td>
+                        <td><label>{{ 'Sticky'|trans }}</label></td>
                         <td>{{ mf.q(topic.sticky) }}</td>
                     </tr>
 
                     <tr>
-                        <td><label>{% trans 'Created at' %}</label></td>
+                        <td><label>{{ 'Created at'|trans }}</label></td>
                         <td>{{ topic.created_at|date('Y-m-d') }}</td>
                     </tr>
 
                     <tr>
-                        <td><label>{% trans 'Updated at' %}</label></td>
+                        <td><label>{{ 'Updated at'|trans }}</label></td>
                         <td>{{ topic.due_at|date('Y-m-d') }}</td>
                     </tr>
 
@@ -84,35 +86,35 @@
             <form method="post" action="{{ 'api/admin/forum/topic_update'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'forum'|alink }}">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Forum' %}:</label>
+                        <label>{{ 'Forum'|trans }}:</label>
                         <div class="formRight">
                             {{ mf.selectbox('forum_id', admin.forum_get_pairs, topic.forum.id, 1) }}
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Title' %}:</label>
+                        <label>{{ 'Title'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="title" value="{{topic.title}}" required="required" placeholder=""/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Slug' %}:</label>
+                        <label>{{ 'Slug'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="slug" value="{{topic.slug}}" required="required" placeholder=""/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Views' %}:</label>
+                        <label>{{ 'Views'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="views" value="{{topic.stats.views_count}}" required="required" placeholder=""/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Status' %}:</label>
+                        <label>{{ 'Status'|trans }}:</label>
                         <div class="formRight">
                             <input type="radio" name="status" value="active"{% if topic.status == 'active' %} checked="checked"{% endif %}/><label>Active</label>
                             <input type="radio" name="status" value="locked"{% if topic.status == 'locked' %} checked="checked"{% endif %}/><label>Locked</label>
@@ -120,14 +122,14 @@
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Sticky' %}:</label>
+                        <label>{{ 'Sticky'|trans }}:</label>
                         <div class="formRight">
                             <input type="radio" name="sticky" value="1"{% if topic.sticky %} checked="checked"{% endif %}/><label>Yes</label>
                             <input type="radio" name="sticky" value="0"{% if not topic.sticky %} checked="checked"{% endif %}/><label>No</label>
                         </div>
                         <div class="fix"></div>
                     </div>
-                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
                     <input type="hidden" name="id" value="{{ topic.id }}" />
                 </fieldset>
             </form>
@@ -146,9 +148,9 @@
     </div>
     <ul class="tabs">
         <li><a href="#m-{{message.id}}"><img src="{{ message.author.email|gravatar }}?size=20" alt="{{ message.author.name }}" class="gravatar"/>#{{ i+1 }}</a></li>
-        <li><a href="#reply-{{message.id}}"><span class="iSpeech"></span>{% trans 'Reply' %}</a></li>
-        <li><a href="#quote-{{message.id}}"><span class="iBubbles"></span>{% trans 'Quote' %}</a></li>
-        <li><a href="#details-{{message.id}}"><span class="iPencil"></span>{% trans 'Details' %}</a></li>
+        <li><a href="#reply-{{message.id}}"><span class="iSpeech"></span>{{ 'Reply'|trans }}</a></li>
+        <li><a href="#quote-{{message.id}}"><span class="iBubbles"></span>{{ 'Quote'|trans }}</a></li>
+        <li><a href="#details-{{message.id}}"><span class="iPencil"></span>{{ 'Details'|trans }}</a></li>
     </ul>
     <div class="tabs_container">
         <div class="fix"></div>
@@ -157,7 +159,7 @@
                 <fieldset>
                     <textarea name="message" cols="5" rows="10" required="required" class="bb-textarea">{{ message.message }}</textarea>
                     <input type="hidden" name="id" value="{{ message.id }}">
-                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
 
@@ -172,7 +174,7 @@
 
 {{ profile.signature }}</textarea>
                     <input type="hidden" name="forum_topic_id" value="{{ topic.id }}">
-                    <input type="submit" value="{% trans 'Post' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Post'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
@@ -185,7 +187,7 @@
 {{ profile.signature }}
 {{ mf.markdown_quote(message.message) }}</textarea>
                     <input type="hidden" name="forum_topic_id" value="{{ topic.id }}">
-                    <input type="submit" value="{% trans 'Post' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Post'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
@@ -194,22 +196,22 @@
             <table class="tableStatic wide">
                 <tbody>
                 <tr class="noborder">
-                    <td><label>{% trans 'ID' %}</label></td>
+                    <td><label>{{ 'ID'|trans }}</label></td>
                     <td>{{ message.id }}</td>
                 </tr>
 
                 <tr>
-                    <td><label>{% trans 'IP' %}</label></td>
+                    <td><label>{{ 'IP'|trans }}</label></td>
                     <td>{{ message.ip|default('-') }} {{ message.ip|ipcountryname|default('Unknown') }}</td>
                 </tr>
 
                 <tr>
-                    <td><label>{% trans 'Created at' %}</label></td>
+                    <td><label>{{ 'Created at'|trans }}</label></td>
                     <td>{{ message.created_at|date("l, d F Y") }}</td>
                 </tr>
 
                 <tr>
-                    <td><label>{% trans 'Updated at' %}</label></td>
+                    <td><label>{{ 'Updated at'|trans }}</label></td>
                     <td>{{ message.updated_at|date("l, d F Y") }}</td>
                 </tr>
 
@@ -230,9 +232,7 @@
 </div>
 {% endfor %}
 </div>
-
-{% include "partial_pagination.phtml" with {'list': messages, 'url':'forum/topic/'~topic.id} %}
-
+{% include "partial_pagination.phtml" with { 'list': messages, 'url': 'forum/topic/'~topic.id } %}
 {% endblock %}
 
 {% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

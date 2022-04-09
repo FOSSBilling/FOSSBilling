@@ -1,22 +1,23 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
+
 {% block meta_title %}{{ product.title }}{% endblock %}
 
 {% block content_before %}
-{% include "partial_steps.phtml" with {'selected': 2} %}
+    {% include "partial_steps.phtml" with { 'selected': 2 } %}
 {% endblock %}
 
 {% block content %}
-
-{% set periods = guest.system_periods %}
-{% set pricing = product.pricing %}
+    {% set periods = guest.system_periods %}
+    {% set pricing = product.pricing %}
 
 <form method="post" action="" class="api_form" data-api-url="guest/cart/add_item" data-api-redirect="{{ 'cart'|link }}">
     <div class="h-block">
         <div class="h-block-header">
             <div class="icon"><span class="number">2</span></div>
-            <h2>{% trans 'Configure' %}</h2>
-            <p>{% trans 'Please configure VPS service.' %}</p>
+            <h2>{{ 'Configure'|trans }}</h2>
+            <p>{{ 'Please configure VPS service.'|trans }}</p>
         </div>
         <div class="block">
             <div class="grid_8 alpha">
@@ -26,7 +27,7 @@
                         {{ product.description|bbmd }}
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Hostname' %}:</label>
+                        <label>{{ 'Hostname'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="hostname" value="" placeholder="VPS hostname"/>
                         </div>
@@ -34,7 +35,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Template' %}</label>
+                        <label>{{ 'Template'|trans }}</label>
                         <div class="formRight">
                             {{ mf.selectbox('template', guest.servicesolusvm_get_templates, null, 1) }}
                         </div>
@@ -44,7 +45,7 @@
                 </div>
             </div>
             <div class="grid_4 omega">
-                {% include 'partial_pricing.phtml' with {'product': product} %}
+                {% include 'partial_pricing.phtml' with { 'product': product } %}
             </div>
             <div class="clear"></div>
         </div>
@@ -55,28 +56,29 @@
 {% endblock %}
 
 {% block sidebar2 %}
-{% include 'partial_currency.phtml' %}
+    {% include 'partial_currency.phtml' %}
 {% endblock %}
 
 {% block js %}
 <script type="text/javascript">
     $(function() {
-
         if($(".addons").length && $(".addons").is(':hidden')) {
-            $('#order-button').one('click', function(){
+            $('#order-button').one('click', function() {
                 $(this).hide();
                 $('.addons').slideDown('fast');
+
                 return false;
             });
         }
 
-        $('#period-selector').change(function(){
+        $('#period-selector').change(function() {
             $('.period').hide();
             $('.period.' + $(this).val()).show();
         }).trigger('change');
 
-        $('.addon-period-selector').change(function(){
+        $('.addon-period-selector').change(function() {
             var r = $(this).attr('rel');
+            
             $('#' + r + ' span').hide();
             $('#' + r + ' span.' + $(this).val()).fadeIn();
         }).trigger('change');

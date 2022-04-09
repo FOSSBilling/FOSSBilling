@@ -1,5 +1,8 @@
 <?php
+
 namespace Box\Mod\System;
+
+use Twig\Environment;
 
 class ServiceTest extends \BBTestCase {
     /**
@@ -267,13 +270,19 @@ class ServiceTest extends \BBTestCase {
         $vars = array(
             '_client_id' => 1
         );
-        $twigMock = $this->getMockBuilder('\Twig\Environment')->disableOriginalConstructor()->getMock();
+        
+        $twigMock = $this->getMockBuilder(Environment::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        
         $twigMock->expects($this->atLeastOnce())
             ->method('addGlobal');
-        $twigMock->method('createTemplate')
-                 ->willReturn(new \FakeTemplateWrapper('test'));
-        $twigMock->method('load')
-                 ->willReturn(new \FakeTemplateWrapper('test'));
+        // $twigMock->method('createTemplate')
+        //     ->willReturn(new \FakeTemplateWrapper('test'));
+        // $twigMock->method('load')
+        //     ->willReturn(new \FakeTemplateWrapper('test'));
+        $twigMock->method('render')
+            ->willReturn('');
                  
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

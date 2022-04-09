@@ -1,7 +1,8 @@
 {% extends "layout_public.phtml" %}
-{% block meta_title %}{% trans 'About us' %}{% endblock %}
-{% set company = guest.system_company %}
 
+{% block meta_title %}{{ 'About us'|trans }}{% endblock %}
+
+{% set company = guest.system_company %}
 
 {% block body %}
 <br/>
@@ -11,7 +12,7 @@
             <article class="span12 data-block">
                 <div class="data-container">
                     <header>
-                        <h1>{% trans 'About us' %}</h1>
+                        <h1>{{ 'About us'|trans }}</h1>
                         <p>{{ company.signature }}</p>
                     </header>
                     <section>
@@ -21,6 +22,8 @@
             </article>
         </div>
     </div>
-    <div class="offset5"><a href="{{ '/' | link}}" class="btn btn-alt btn-primary btn-large" title="Back to Homepage">{% trans 'Back to Homepage' %}</a></div>
+    <div class="offset5">
+        <a href="{{ '/'|link}}" class="btn btn-alt btn-primary btn-large" title="Back to Homepage">{{ 'Back to Homepage'|trans }}</a>
+    </div>
 </section>
 {% endblock %}

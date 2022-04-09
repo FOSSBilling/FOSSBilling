@@ -5,12 +5,12 @@
         </div>
     <div class="grid_7 alpha">
         <div class="box">
-            <h2>{% trans 'License details' %}</h2>
+            <h2>{{ 'License details'|trans }}</h2>
             <table>
                 <tbody>
                     <tr>
                         <td>
-                            {% trans 'Key' %}
+                            {{ 'Key'|trans }}
                         </td>
                         <td>
                             <strong>{{ service.license_key }}</strong>
@@ -20,13 +20,13 @@
                     {% if service.validate_ip %}
                     <tr>
                         <td>
-                            {% trans 'Valid IPs' %}
+                            {{ 'Valid IPs'|trans }}
                         </td>
                         <td>
                             {% for ip in service.ips %}
                             {{ ip }} <br/>
                             {% else %}
-                            {% trans 'All ips' %}
+                            {{ 'All ips'|trans }}
                             {% endfor %}
                         </td>
                     </tr>
@@ -35,13 +35,13 @@
                     {% if service.validate_host %}
                     <tr>
                         <td>
-                            {% trans 'Valid Domains' %}
+                            {{ 'Valid Domains'|trans }}
                         </td>
                         <td>
                             {% for host in service.hosts %}
                             {{ host }} <br/>
                             {% else %}
-                            {% trans 'All hosts' %}
+                            {{ 'All hosts'|trans }}
                             {% endfor %}
                         </td>
                     </tr>
@@ -50,13 +50,13 @@
                     {% if service.validate_version %}
                     <tr>
                         <td>
-                            {% trans 'Valid Versions' %}
+                            {{ 'Valid Versions'|trans }}
                         </td>
                         <td>
                             {% for version in service.versions %}
                             {{ version }} <br/>
                             {% else %}
-                            {% trans 'All versions' %}
+                            {{ 'All versions'|trans }}
                             {% endfor %}
                         </td>
                     </tr>
@@ -65,13 +65,13 @@
                     {% if service.validate_path %}
                     <tr>
                         <td>
-                            {% trans 'Valid Install paths' %}
+                            {{ 'Valid Install paths'|trans }}
                         </td>
                         <td>
                             {% for path in service.paths %}
                             {{ path }} <br/>
                             {% else %}
-                            {% trans 'All paths' %}
+                            {{ 'All paths'|trans }}
                             {% endfor %}
                         </td>
                     </tr>
@@ -83,10 +83,10 @@
     </div>
     <div class="grid_5 omega">
         <div class="box">
-            <h2>{% trans 'Reset license' %}</h2>
-            <p>{% trans 'You can reset your license parameters if you have changed your server' %}</p>
+            <h2>{{ 'Reset license'|trans }}</h2>
+            <p>{{ 'You can reset your license parameters if you have changed your server'|trans }}</p>
             <div class="block">
-                <p><button class="bb-button" type="button" id="license-reset">{% trans 'Reset' %}</button></p>
+                <p><button class="bb-button" type="button" id="license-reset">{{ 'Reset'|trans }}</button></p>
             </div>
         </div>
     </div>
@@ -95,8 +95,8 @@
 
 <script type="text/javascript">
 $(function() {
-    $('#license-reset').bind('click',function(event){
-        if(confirm('{% trans 'Are you sure?' %}')) {
+    $('#license-reset').bind('click', function(event) {
+        if (confirm("{{ 'Are you sure?'|trans }}")) {
             bb.post(
                 'client/servicelicense/reset',
                 { order_id: {{ order.id }} },
@@ -105,6 +105,7 @@ $(function() {
                 }
             );
         }
+
         return false;
     });
 });

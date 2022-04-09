@@ -1,20 +1,19 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{% trans 'Knowledge Base' %}{% endblock %}
+{% block meta_title %}{{ 'Knowledge Base'|trans }}{% endblock %}
 {% set active_menu = 'kb' %}
+
 {% block content %}
-
 <div class="widget simpleTabs">
-
     <ul class="tabs">
-        <li><a href="#tab-index">{% trans 'Articles' %}</a></li>
-        <li><a href="#tab-new-article">{% trans 'New article' %}</a></li>
-        <li><a href="#tab-new-category">{% trans 'New category' %}</a></li>
-        <li><a href="#tab-categories">{% trans 'Manage categories' %}</a></li>
+        <li><a href="#tab-index">{{ 'Articles'|trans }}</a></li>
+        <li><a href="#tab-new-article">{{ 'New article'|trans }}</a></li>
+        <li><a href="#tab-new-category">{{ 'New category'|trans }}</a></li>
+        <li><a href="#tab-categories">{{ 'Manage categories'|trans }}</a></li>
     </ul>
 
     <div class="tabs_container">
-
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-index">
 
@@ -22,10 +21,10 @@
         <table class="tableStatic wide">
             <thead>
                 <tr>
-                    <td>{% trans 'Title' %}</td>
-                    <td>{% trans 'Category' %}</td>
-                    <td>{% trans 'Status' %}</td>
-                    <td>{% trans 'Views' %}</td>
+                    <td>{{ 'Title'|trans }}</td>
+                    <td>{{ 'Category'|trans }}</td>
+                    <td>{{ 'Status'|trans }}</td>
+                    <td>{{ 'Views'|trans }}</td>
                     <td>&nbsp;</td>
                 </tr>
             </thead>
@@ -46,7 +45,7 @@
             {% else %}
                 <tr>
                     <td colspan="4">
-                        {% trans 'The list is empty' %}
+                        {{ 'The list is empty'|trans }}
                     </td>
                 </tr>
             
@@ -62,7 +61,7 @@
             <form method="post" action="{{ 'api/admin/kb/article_create'|link }}" class="mainForm api-form" data-api-reload="1">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Category' %}:</label>
+                        <label>{{ 'Category'|trans }}:</label>
                         <div class="formRight">
                             {{ mf.selectbox('kb_article_category_id', admin.kb_category_get_pairs, request.kb_article_category_id, 1) }}
                         </div>
@@ -70,7 +69,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Title' %}:</label>
+                        <label>{{ 'Title'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
                         </div>
@@ -78,32 +77,32 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Status' %}:</label>
+                        <label>{{ 'Status'|trans }}:</label>
                         <div class="formRight">
-                            <input type="radio" name="status" value="draft" checked="checked"/><label>{% trans 'Draft' %}</label>
-                            <input type="radio" name="status" value="active"/><label>{% trans 'Active' %}</label>
+                            <input type="radio" name="status" value="draft" checked="checked"/><label>{{ 'Draft'|trans }}</label>
+                            <input type="radio" name="status" value="active"/><label>{{ 'Active'|trans }}</label>
                         </div>
                         <div class="fix"></div>
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Content' %}</label>
+                        <label>{{ 'Content'|trans }}</label>
                         <div class="formRight">
                             <textarea name="content" cols="5" rows="10">{{ request.content }}</textarea>
                         </div>
                         <div class="fix"></div>
                     </div>
-                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
 
         <div class="tab_content nopadding" id="tab-new-category">
 
-            <form method="post" action="{{ 'api/admin/kb/category_create'|link }}" class="mainForm save api-form" data-api-reload="{% trans 'Category created' %}">
+            <form method="post" action="{{ 'api/admin/kb/category_create'|link }}" class="mainForm save api-form" data-api-reload="{{ 'Category created'|trans }}">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Title' %}:</label>
+                        <label>{{ 'Title'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="title" value="" required="required"/>
                         </div>
@@ -111,14 +110,14 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Description' %}:</label>
+                        <label>{{ 'Description'|trans }}:</label>
                         <div class="formRight">
                             <textarea name="description" cols="5" rows="20"></textarea>
                         </div>
                         <div class="fix"></div>
                     </div>
 
-                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
@@ -136,16 +135,13 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="3">{% trans 'The list is empty' %}</td>
+                        <td colspan="3">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-
     </div>
-
     <div class="fix"></div>
 </div>
-
 {% endblock %}

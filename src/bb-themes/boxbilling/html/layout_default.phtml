@@ -1,4 +1,4 @@
-{% set company  = guest.system_company %}
+{% set company = guest.system_company %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -26,7 +26,7 @@
 </head>
 
 <body>
-{% if guest.extension_is_on({"mod":"cookieconsent"}) %}
+{% if guest.extension_is_on({ "mod": "cookieconsent" }) %}
     {% include 'mod_cookieconsent_index.phtml' ignore missing%}
 {% endif %}
 <div class="header">
@@ -45,24 +45,24 @@
             {% if client %}
             <ul class="middleNav">
                 <li>
-                    <a href="{{ 'dashboard'|link }}" class="show-tip" title="{% trans 'Dashboard' %}"><span class="big-dark-icon i-home"></span></a>
+                    <a href="{{ 'dashboard'|link }}" class="show-tip" title="{{ 'Dashboard'|trans }}"><span class="big-dark-icon i-home"></span></a>
                 </li>
                 <li>
-                    <a href="{{ 'cart'|link }}" class="show-tip" title="{% trans 'Shopping cart' %}"><span class="big-dark-icon i-cart"></span></a>
+                    <a href="{{ 'cart'|link }}" class="show-tip" title="{{ 'Shopping cart'|trans }}"><span class="big-dark-icon i-cart"></span></a>
                 </li>
                 <li>
-                    <a href="{{ 'client/me'|link }}" class="show-tip" title="{% trans 'Profile' %}"><span class="big-dark-icon i-profile"></span></a>
+                    <a href="{{ 'client/me'|link }}" class="show-tip" title="{{ 'Profile'|trans }}"><span class="big-dark-icon i-profile"></span></a>
                 </li>
                 <li>
-                    <a href="client/client/logout" class="show-tip api" title="{% trans 'Sign out' %}"><span class="big-dark-icon i-logout"></span></a>
+                    <a href="client/client/logout" class="show-tip api" title="{{ 'Sign out'|trans }}"><span class="big-dark-icon i-logout"></span></a>
                 </li>
             </ul>
 
             {% else %}
             {% block header_buttons %}
             <div class="top-buttons">
-                <a id="login-form-link" class="bb-button bb-button-submit" href="{{ 'login'|link }}">{% trans 'Sign in' %}</a>
-                <a class="bb-button bb-button-red" href="{{ 'login'|link({'register' : 1}) }}">{% trans 'Register' %}</a>
+                <a id="login-form-link" class="bb-button bb-button-submit" href="{{ 'login'|link }}">{{ 'Sign in'|trans }}</a>
+                <a class="bb-button bb-button-red" href="{{ 'login'|link({'register' : 1}) }}">{{ 'Register'|trans }}</a>
             </div>
             {% endblock %}
             {% endif %}
@@ -87,21 +87,21 @@
             {% if not client %}
             <div class="widget" id="login-form" style="display: none;" >
                 <div class="head">
-                    <h2 class="dark-icon i-profile">{% trans 'Login to client area' %}</h2>
+                    <h2 class="dark-icon i-profile">{{ 'Login to client area'|trans }}</h2>
                 </div>
                 <div class="block">
                 <form action="" method="post" class="api_form" data-api-url="{{ 'api/guest/client/login'|link }}" data-api-redirect="{{ ''|link }}">
                     <fieldset>
-                        <legend>{% trans 'Login to client area' %}</legend>
+                        <legend>{{ 'Login to client area'|trans }}</legend>
                         <p>
-                            <input type="email" name="email" value="{{ request.email }}" required="required" placeholder="{% trans 'Email address' %}">
+                            <input type="email" name="email" value="{{ request.email }}" required="required" placeholder="{{ 'Email address'|trans }}">
                         </p>
                         <p>
-                            <input type="password" name="password" value="" required="required" placeholder="{% trans 'Password' %}">
+                            <input type="password" name="password" value="" required="required" placeholder="{{ 'Password'|trans }}">
                         </p>
-                        <a class="bb-button" href="{{ 'reset-password'|link }}">{% trans 'Reset password' %}</a>
+                        <a class="bb-button" href="{{ 'reset-password'|link }}">{{ 'Reset password'|trans }}</a>
                         <input type="hidden" name="remember" value="1" />
-                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Sign in' %}" style="float: right">
+                        <input class="bb-button bb-button-submit" type="submit" value="{{ 'Sign in'|trans }}" style="float: right">
                     </fieldset>
                 </form>
                 </div>
@@ -116,7 +116,7 @@
             {% if languages|length > 1 %}
             <div class="widget">
                 <div class="head">
-                    <h2 class="dark-icon i-drag">{% trans 'Select language' %}</h2>
+                    <h2 class="dark-icon i-drag">{{ 'Select language'|trans }}</h2>
                 </div>
                 <div class="block">
                     <select name="lang" class="language_selector">
@@ -140,7 +140,7 @@
         {% if guest.extension_is_on({"mod":'kb'}) %}
         <div class="grid_4">
             <div class="box">
-                <h2>{% trans 'Popular articles' %}</h2>
+                <h2>{{ 'Popular articles'|trans }}</h2>
                 <div class="block">
                     <ul>
                         {% for i, article in guest.kb_article_get_list({"per_page":4, "page" : 1}).list %}
@@ -155,7 +155,7 @@
         {% if guest.extension_is_on({"mod":'news'}) %}
         <div class="grid_4">
             <div class="box">
-                <h2>{% trans 'Recent posts' %}</h2>
+                <h2>{{ 'Recent posts'|trans }}</h2>
                 <div class="block">
                     <ul>
                         {% set posts = guest.news_get_list({"per_page": 4, "page" : 1}) %}
@@ -176,13 +176,13 @@
                 <div class="block">
                     <ul>
                         <li>
-                            <a href="{{ '/about-us'|link }}">{% trans 'About us' %}</a>
+                            <a href="{{ '/about-us'|link }}">{{ 'About us'|trans }}</a>
                         </li>
                         <li>
-                            <a href="{{ '/tos'|link }}">{% trans 'Terms and Conditions' %}</a>
+                            <a href="{{ '/tos'|link }}">{{ 'Terms and Conditions'|trans }}</a>
                         </li>
                         <li>
-                            <a href="{{ '/privacy-policy'|link }}">{% trans 'Privacy Policy' %}</a>
+                            <a href="{{ '/privacy-policy'|link }}">{{ 'Privacy Policy'|trans }}</a>
                         </li>
                         {% if guest.extension_is_on({"mod":'branding'}) %}
                         <li>
@@ -220,7 +220,7 @@
         <div class="clear"></div>
     </div>
 </div>
-<div class="loading dim" style="display:none"><div class="popup_block"><h3>{% trans 'Loading ..' %}</h3></div></div>
+<div class="loading dim" style="display:none"><div class="popup_block"><h3>{{ 'Loading ..'|trans }}</h3></div></div>
     {% block js %}{% endblock %}
     <noscript>NOTE: Many features on BoxBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
 {% include 'partial_pending_messages.phtml' ignore missing %}

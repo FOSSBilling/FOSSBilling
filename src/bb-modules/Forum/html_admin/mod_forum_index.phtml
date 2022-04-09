@@ -1,60 +1,58 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
+
 {% set active_menu = 'support' %}
+
 {% block meta_title %}Forum{% endblock %}
 
 {% block content %}
 <div class="widget simpleTabs">
-
     <ul class="tabs">
-        <li><a href="#tab-index">{% trans 'Posts' %}</a></li>
-        <li><a href="#tab-topics">{% trans 'Topics' %}</a></li>
-        <li><a href="#tab-forums">{% trans 'Forums' %}</a></li>
-        <li><a href="#tab-new">{% trans 'New topic' %}</a></li>
-        <li><a href="#tab-new-forum">{% trans 'New forum' %}</a></li>
+        <li><a href="#tab-index">{{ 'Posts'|trans }}</a></li>
+        <li><a href="#tab-topics">{{ 'Topics'|trans }}</a></li>
+        <li><a href="#tab-forums">{{ 'Forums'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New topic'|trans }}</a></li>
+        <li><a href="#tab-new-forum">{{ 'New forum'|trans }}</a></li>
     </ul>
 
     <div class="tabs_container">
-
         <div class="fix"></div>
-        
         <div class="tab_content nopadding" id="tab-index">
         {{ mf.table_search }}
         <table class="tableStatic wide">
             <thead>
                 <tr>
-                    <td colspan="2">{% trans 'Message' %}</td>
-                    <td>{% trans 'Date' %}</td>
+                    <td colspan="2">{{ 'Message'|trans }}</td>
+                    <td>{{ 'Date'|trans }}</td>
                     <td style="width: 13%">Actions</td>
                 </tr>
             </thead>
 
             <tbody>
-            {% set posts = admin.forum_message_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+            {% set posts = admin.forum_message_get_list({ "per_page": 30, "page": request.page }|merge(request)) %}
             {% for i, post in posts.list %}
             <tr class="msg-id-{{post.id}}">
-                <td style="width: 5%;"><a href="{{ 'forum/profile'|alink }}/{{post.author.id}}"><img src="{{  post.author.gravatar }}?size=20" alt="{{post.author.id}}" /></a></td>
+                <td style="width: 5%;"><a href="{{ 'forum/profile'|alink }}/{{ post.author.id }}"><img src="{{ post.author.gravatar }}?size=20" alt="{{post.author.id}}" /></a></td>
                 <td>
-                    <a href="{{ 'forum/topic'|alink }}/{{post.forum_topic_id}}#msg-{{post.id}}" target="_blank">{{post.forum_title}}</a>
+                    <a href="{{ 'forum/topic'|alink }}/{{ post.forum_topic_id }}#msg-{{ post.id }}" target="_blank">{{post.forum_title}}</a>
                     <br/>
                     {{ post.message|truncate(80) }}</td>
                 <td>{{ post.created_at|timeago }} ago</td>
                 <td class="actions">
-                    <a class="bb-button btn14" href="{{ '/forum/topic'|alink }}/{{post.forum_topic_id}}#msg-{{post.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
-                    <a class="bb-button btn14 bb-rm-tr api-link" href="{{ 'api/admin/forum/message_delete'|link({'id' : post.id})}}" data-api-confirm="Are you sure?"><img src="images/icons/dark/trash.png" alt=""></a>
+                    <a class="bb-button btn14" href="{{ '/forum/topic'|alink }}/{{ post.forum_topic_id }}#msg-{{ post.id }}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                    <a class="bb-button btn14 bb-rm-tr api-link" href="{{ 'api/admin/forum/message_delete'|link({ 'id': post.id })}}" data-api-confirm="Are you sure?"><img src="images/icons/dark/trash.png" alt=""></a>
                 </td>
             </tr>
             
             {% else %}
                 <tr>
-                    <td colspan="4">
-                        {% trans 'The list is empty' %}
-                    </td>
+                    <td colspan="4">{{ 'The list is empty'|trans }}</td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
-        {% include "partial_pagination.phtml" with {'list': posts, 'url':'forum'} %}
+        {% include "partial_pagination.phtml" with { 'list': posts, 'url': 'forum' } %}
         </div>
             
         <div class="tab_content nopadding" id="tab-topics">
@@ -62,17 +60,17 @@
             <table class="tableStatic wide">
                 <thead>
                     <tr>
-                        <td style="width: 60%">{% trans 'Title' %}</td>
-                        <td>{% trans 'Replies' %}</td>
-                        <td>{% trans 'Views' %}</td>
-                        <td>{% trans 'Status' %}</td>
-                        <td>{% trans 'Sticky' %}</td>
+                        <td style="width: 60%">{{ 'Title'|trans }}</td>
+                        <td>{{ 'Replies'|trans }}</td>
+                        <td>{{ 'Views'|trans }}</td>
+                        <td>{{ 'Status'|trans }}</td>
+                        <td>{{ 'Sticky'|trans }}</td>
                         <td style="width: 13%">Actions</td>
                     </tr>
                 </thead>
 
                 <tbody>
-                {% set topics = admin.forum_topic_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+                {% set topics = admin.forum_topic_get_list({ "per_page": 30, "page": request.page }|merge(request)) %}
                 {% for i, topic in topics.list %}
 
                 <tr>
@@ -89,13 +87,13 @@
                 {% else %}
                     <tr>
                         <td colspan="6">
-                            {% trans 'The list is empty' %}
+                            {{ 'The list is empty'|trans }}
                         </td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
-            {% include "partial_pagination.phtml" with {'list': topics, 'url':'forum'} %}
+            {% include "partial_pagination.phtml" with { 'list': topics, 'url': 'forum' } %}
         </div>
 
         <div class="tab_content nopadding" id="tab-new">
@@ -103,30 +101,30 @@
             <form method="post" action="{{ 'api/admin/forum/topic_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'forum'|alink }}">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Forum' %}:</label>
+                        <label>{{ 'Forum'|trans }}:</label>
                         <div class="formRight">
                             {{ mf.selectbox('forum_id', admin.forum_get_pairs, request.forum_id, 1) }}
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Status' %}:</label>
+                        <label>{{ 'Status'|trans }}:</label>
                         <div class="formRight">
-                            <input type="radio" name="status" value="active" checked="checked"/><label>{% trans 'Active' %}</label>
-                            <input type="radio" name="status" value="locked" /><label>{% trans 'Locked' %}</label>
+                            <input type="radio" name="status" value="active" checked="checked"/><label>{{ 'Active'|trans }}</label>
+                            <input type="radio" name="status" value="locked" /><label>{{ 'Locked'|trans }}</label>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Sticky' %}:</label>
+                        <label>{{ 'Sticky'|trans }}:</label>
                         <div class="formRight">
-                            <input type="radio" name="sticky" value="1" /><label>{% trans 'Yes' %}</label>
-                            <input type="radio" name="sticky" value="0" checked="checked"/><label>{% trans 'No' %}</label>
+                            <input type="radio" name="sticky" value="1" /><label>{{ 'Yes'|trans }}</label>
+                            <input type="radio" name="sticky" value="0" checked="checked"/><label>{{ 'No'|trans }}</label>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Title' %}:</label>
+                        <label>{{ 'Title'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
                         </div>
@@ -134,13 +132,13 @@
                     </div>
                     
                     <div class="rowElem">
-                        <label>{% trans 'Message' %}</label>
+                        <label>{{ 'Message'|trans }}</label>
                         <div class="formRight">
                             <textarea name="message" cols="5" rows="10">{{ request.message }}</textarea>
                         </div>
                         <div class="fix"></div>
                     </div>
-                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
@@ -150,35 +148,35 @@
             <form method="post" action="{{ 'api/admin/forum/create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'forum'|alink }}">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Category' %}:</label>
+                        <label>{{ 'Category'|trans }}:</label>
                         <div class="formRight">
-                            <input type="text" name="category" value="{{request.category}}" placeholder=""/>
+                            <input type="text" name="category" value="{{ request.category }}" placeholder=""/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Title' %}:</label>
+                        <label>{{ 'Title'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Status' %}:</label>
+                        <label>{{ 'Status'|trans }}:</label>
                         <div class="formRight">
-                            <input type="radio" name="status" value="active" checked="checked"/><label>{% trans 'Active' %}</label>
-                            <input type="radio" name="status" value="locked" /><label>{% trans 'Locked' %}</label>
+                            <input type="radio" name="status" value="active" checked="checked"/><label>{{ 'Active'|trans }}</label>
+                            <input type="radio" name="status" value="locked" /><label>{{ 'Locked'|trans }}</label>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Description' %}</label>
+                        <label>{{ 'Description'|trans }}</label>
                         <div class="formRight">
                             <textarea name="description" cols="5" rows="4">{{ request.description }}</textarea>
                         </div>
                         <div class="fix"></div>
                     </div>
-                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
             <div class="fix"></div>
@@ -190,24 +188,24 @@
                     <table class="tableStatic wide">
                         <thead>
                             <tr>
-                                <td style="width: 5%">{% trans 'Sorting' %}</td>
-                                <td>{% trans 'Title' %}</td>
-                                <td>{% trans 'Actions' %}</td>
+                                <td style="width: 5%">{{ 'Sorting'|trans }}</td>
+                                <td>{{ 'Title'|trans }}</td>
+                                <td>{{ 'Actions'|trans }}</td>
                             </tr>
                         </thead>
                             
                         <tbody>
                         {% for category, forums in admin.forum_get_categories %}
                         <tr class="group">
-                            <th colspan="3">{{category}}</th>
+                            <th colspan="3">{{ category }}</th>
                         </tr>
                         {% for forum in forums %}
                         <tr>
-                            <td><input type="text" name="priority[{{forum.id}}]" value="{{ forum.priority }}" style="width:30px;"></td>
+                            <td><input type="text" name="priority[{{ forum.id }}]" value="{{ forum.priority }}" style="width:30px;"></td>
                             <td>{{forum.title}}</td>
                             <td class="actions" style="width:13%">
                                 <a class="bb-button btn14" href="{{ '/forum/'|alink }}/{{forum.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
-                                <a class="bb-button btn14 bb-rm-tr api-link" href="{{'api/admin/forum/delete'|link({'id' : forum.id}) }}" data-api-redirect="{{ 'forum'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                                <a class="bb-button btn14 bb-rm-tr api-link" href="{{'api/admin/forum/delete'|link({ 'id': forum.id }) }}" data-api-redirect="{{ 'forum'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -220,13 +218,11 @@
                             </tr>
                         </tfoot>
                     </table>
-                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
-        
         <div class="fix"></div>
     </div>
 </div>
-
 {% endblock %}

@@ -38,26 +38,26 @@
     <form method="post" action="" id="public-ticket-create">
         <fieldset>
             <p>
-                <label>{% trans 'Name' %}: </label>
-                <input type="text" name="name" value="{{request.name}}" required="required">
+                <label>{{ 'Name'|trans }}: </label>
+                <input type="text" name="name" value="{{ request.name }}" required="required">
             </p>
 
             <p>
-                <label>{% trans 'Email' %}: </label>
-                <input type="email" name="email" value="{{request.email}}" required="required">
+                <label>{{ 'Email'|trans }}: </label>
+                <input type="email" name="email" value="{{ request.email }}" required="required">
             </p>
 
             <p>
-                <label>{% trans 'Subject' %}: </label>
-                <input type="text" name="subject" value="{{request.subject}}" required="required">
+                <label>{{ 'Subject'|trans }}: </label>
+                <input type="text" name="subject" value="{{ request.subject }}" required="required">
             </p>
 
             <p>
-                <label>{% trans 'Message' %}: </label>
-                <textarea name="message" cols="5" rows="5" required="required">{{request.message}}</textarea>
+                <label>{{ 'Message'|trans }}: </label>
+                <textarea name="message" cols="5" rows="5" required="required">{{ request.message }}</textarea>
             </p>
 
-            {% if guest.extension_is_on({"mod":"spamchecker"}) %}
+            {% if guest.extension_is_on({ "mod": "spamchecker" }) %}
             {% set rc = guest.spamchecker_recaptcha %}
                 {% if rc.enabled %}
                     {% if rc.version == 2 %}
@@ -75,13 +75,15 @@
                          <div id="recaptcha_widget" style="display:none">
 
                            <div id="recaptcha_image"></div>
-                           <div class="recaptcha_only_if_incorrect_sol" style="color:red">{% trans 'Incorrect please try again' %}</div>
+                           <div class="recaptcha_only_if_incorrect_sol" style="color:red">{{ 'Incorrect please try again'|trans }}</div>
 
                            <p>
-                               <label>{% trans 'Enter the words above' %}</label>
-                               <br/>
-                               <input type="text" id="recaptcha_response_field" name="recaptcha_response_field" style="width: 245px"/>
-                                <a class="bb-button" href="javascript:Recaptcha.reload()" style="float: right"><span class="dark-icon i-reload"></span></a>
+                                <label>{{ 'Enter the words above'|trans }}</label>
+                                <br/>
+                                <input type="text" id="recaptcha_response_field" name="recaptcha_response_field" style="width: 245px"/>
+                                <a class="bb-button" href="javascript:Recaptcha.reload()" style="float: right">
+                                    <span class="dark-icon i-reload"></span>
+                                </a>
                            </p>
                          </div>
 
@@ -96,28 +98,28 @@
                 {% endif %}
             {% endif %}
 
-            <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Send' %}" style="width: auto;"/>
-
+            <input class="bb-button bb-button-submit" type="submit" value="{{ 'Send'|trans }}" style="width: auto;"/>
         </fieldset>
 
         <input type="hidden" name="anti-spam" value="1" id="anti-spam" required="required"/>
     </form>
 
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-<script type="text/javascript">
+<script>
 $(function() {
     $('#anti-spam').remove();
 
-    $('#public-ticket-create').bind('submit',function(event){
-        $.post('{{ constant('BB_URL_API') }}guest/support/ticket_create',
+    $('#public-ticket-create').bind('submit', function(event) {
+        $.post("{{ constant('BB_URL_API') }}guest/support/ticket_create",
         $(this).serialize(),
         function(json) {
             if(json.error) {
                 alert(json.error.message);
             } else {
-                parent.window.location = '{{ 'support/contact-us/conversation'|link }}' + '/' + json.result;
+                parent.window.location = "{{ 'support/contact-us/conversation'|link }}" + '/' + json.result;
             }
         }, 'json');
+
         return false;
     });
 });

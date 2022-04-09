@@ -1,4 +1,5 @@
 {% set currencies = guest.currency_get_pairs %}
+
 {% if currencies|length > 1 %}
         <select name="currency" class="currency_selector input-mini pull-right">
             {% set selected = guest.cart_get_currency.code %}

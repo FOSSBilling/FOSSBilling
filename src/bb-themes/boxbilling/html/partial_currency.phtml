@@ -1,8 +1,9 @@
 {% set currencies = guest.currency_get_pairs %}
+
 {% if currencies|length > 1 %}
 <div class="widget">
     <div class="head">
-        <h2 class="dark-icon i-payment">{% trans 'Select currency' %}</h2>
+        <h2 class="dark-icon i-payment">{{ 'Select currency'|trans }}</h2>
     </div>
     <div class="block">
         <select name="currency" class="currency_selector">

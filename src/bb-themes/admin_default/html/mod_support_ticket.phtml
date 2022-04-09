@@ -1,28 +1,30 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{{ticket.subject}} - {{ ticket.messages|length }} {% trans 'message(s)' %}{% endblock %}
+
+{% block meta_title %}{{ ticket.subject }} - {{ ticket.messages|length }} {{ 'message(s)'|trans }}{% endblock %}
 
 {% block breadcrumbs %}
 <ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
-    <li><a href="{{ 'support'|alink }}">{% trans 'Support tickets' %}</a></li>
-    <li class="lastB">#{{ticket.id}}  - {{ticket.subject}}</li>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'support'|alink }}">{{ 'Support tickets'|trans }}</a></li>
+    <li class="lastB">#{{ ticket.id }} - {{ ticket.subject }}</li>
 </ul>
 {% endblock %}
 
 {% set active_menu = 'support' %}
-{% block content %}
 
+{% block content %}
 <div class="widget simpleTabs tabsRight">
     <div class="head">
         <h5 class="iSpeech">{{ ticket.subject }}</h5>
     </div>
 
     <ul class="tabs">
-        <li><a href="#tab-index">{% trans 'Ticket' %}</a></li>
-        <li><a href="#tab-manage">{% trans 'Manage' %}</a></li>
-        <li><a href="#tab-notes">{% if ticket.notes|length > 0%}{{ticket.notes|length}} - {% endif %}{% trans 'Notes' %}</a></li>
-        <li><a href="#tab-support">{% trans 'Client tickets' %}</a></li>
+        <li><a href="#tab-index">{{ 'Ticket'|trans }}</a></li>
+        <li><a href="#tab-manage">{{ 'Manage'|trans }}</a></li>
+        <li><a href="#tab-notes">{% if ticket.notes|length > 0%}{{ ticket.notes|length }} - {% endif %}{{ 'Notes'|trans }}</a></li>
+        <li><a href="#tab-support">{{ 'Client tickets'|trans }}</a></li>
     </ul>
     
     <div class="tabs_container">
@@ -31,24 +33,24 @@
             <table class="tableStatic wide">
                 <tbody>
                     <tr class="noborder">
-                        <td style="width: 30%">{% trans 'Ticket ID' %}</td>
-                        <td><b>#{{ticket.id}}</b></td>
+                        <td style="width: 30%">{{ 'Ticket ID'|trans }}</td>
+                        <td><b>#{{ ticket.id }}</b></td>
                     </tr>
 
                     <tr>
-                        <td>{% trans 'Client' %}</td>
-                        <td>#{{ticket.client.id}} <a href="{{ 'client/manage'|alink }}/{{ ticket.client.id }}">{{ticket.client.first_name}} {{ticket.client.last_name}}</a></td>
+                        <td>{{ 'Client'|trans }}</td>
+                        <td>#{{ ticket.client.id }} <a href="{{ 'client/manage'|alink }}/{{ ticket.client.id }}">{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a></td>
                     </tr>
                     
                     <tr>
-                        <td>{% trans 'Help desk' %}</td>
+                        <td>{{ 'Help desk'|trans }}</td>
                         <td class="shd">
                             {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, ticket.support_helpdesk_id, 1) }}
                         </td>
                     </tr>
 
                     <tr>
-                        <td>{% trans 'Status' %}</td>
+                        <td>{{ 'Status'|trans }}</td>
                         <td>
                             {% for tcode,tstatus in admin.support_ticket_get_statuses({"titles":1}) %}
                             <label><input class="tst" type="radio" name="status" value="{{tcode}}" {% if ticket.status == tcode %}checked="checked"{% endif %} /> {{ tstatus }}</label>
@@ -57,8 +59,8 @@
                     </tr>
                     
                     <tr>
-                        <td>{% trans 'Time opened' %}</td>
-                        <td>{{ticket.created_at|date('l, d F Y')}}</td>
+                        <td>{{ 'Time opened'|trans }}</td>
+                        <td>{{ ticket.created_at|date('l, d F Y') }}</td>
                     </tr>
 
                  </tbody>
@@ -67,43 +69,48 @@
                 <tbody>
                 {% if task.task %}
                 <tr>
-                    <td><label>{% trans 'Task' %}</label></td>
+                    <td><label>{{ 'Task'|trans }}</label></td>
                     <td><strong>{{ mf.status_name(task.task) }}</strong></td>
                 </tr>
                 {% endif %}
 
                 {% if task.type == 'order' %}
                 <tr>
-                    <td><label>{% trans 'Related to' %}</label></td>
+                    <td><label>{{ 'Related to'|trans }}</label></td>
                     <td><a href="{{ 'order/manage'|alink }}/{{ task.id }}">Order #{{ task.id }}</a></td>
                 </tr>
                 {% endif %}
 
                 {% if task.task == 'upgrade' %}
                 <tr>
-                    <td><label>{% trans 'Upgrade to' %}</label></td>
-                    <td><a href="{{ 'product/manage'|alink }}/{{task.new_value}}">{{ admin.product_get_pairs[task.new_value] }}</a></td>
+                    <td><label>{{ 'Upgrade to'|trans }}</label></td>
+                    <td><a href="{{ 'product/manage'|alink }}/{{ task.new_value }}">{{ admin.product_get_pairs[task.new_value] }}</a></td>
                 </tr>
                 {% endif %}
 
                 </tbody>
-
-                 <tfoot>
-                     <tr>
-                         <td colspan="2">
+                <tfoot>
+                    <tr>
+                        <td colspan="2">
                             <div class="aligncenter">
                                 {% if ticket.status != 'closed' %}
-                                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btn55 mr10 api-link" ><img src="images/icons/middlenav/stop.png" alt=""><span>{% trans 'Close ticket' %}</span></a>
+                                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btn55 mr10 api-link" >
+                                    <img src="images/icons/middlenav/stop.png" alt=""><span>{{ 'Close ticket'|trans }}</span>
+                                </a>
                                 {% endif %}
-                                <a href="{{ 'api/admin/support/ticket_delete'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink }}" class="btn55 mr10 api-link"><img src="images/icons/middlenav/trash.png" alt=""><span>{% trans 'Delete' %}</span></a>
+                                <a href="{{ 'api/admin/support/ticket_delete'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink }}" class="btn55 mr10 api-link">
+                                    <img src="images/icons/middlenav/trash.png" alt=""><span>{{ 'Delete'|trans }}</span>
+                                </a>
 
                                 {% if task.status == 'pending' %}
-                                <a href="{{ 'api/admin/support/task_complete'|link({'id' : ticket.id }) }}" class="btn55 mr10 api-link" data-api-reload="1"><img src="images/icons/middlenav/check.png" alt="" data-api-reload="1"><span>{% trans 'Set Task complete' %}</span></a>
+                                <a href="{{ 'api/admin/support/task_complete'|link({'id' : ticket.id }) }}" class="btn55 mr10 api-link" data-api-reload="1">
+                                    <img src="images/icons/middlenav/check.png" alt="" data-api-reload="1"><span>{{ 'Set Task complete'|trans }}</span>
+                                </a>
                                 {% endif %}
                             </div>
-                         </td>
-                     </tr>
-                 </tfoot>
+                        </td>
+                    </tr>
+                </tfoot>
             </table>
             <div class="fix"></div>
         </div>
@@ -112,7 +119,7 @@
             <form method="post" action="{{ 'api/admin/support/ticket_update'|link }}" class="mainForm api-form" data-api-reload="1">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Subject' %}</label>
+                        <label>{{ 'Subject'|trans }}</label>
                         <div class="formRight noborder">
                             <input type="text" name="subject" value="{{ticket.subject}}" required="required"/>
                         </div>
@@ -120,7 +127,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Help desk' %}</label>
+                        <label>{{ 'Help desk'|trans }}</label>
                         <div class="formRight">
                             {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, ticket.support_helpdesk_id, 1) }}
                         </div>
@@ -128,21 +135,21 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Status' %}</label>
+                        <label>{{ 'Status'|trans }}</label>
                         <div class="formRight">
-                            {{ mf.selectbox('status', admin.support_ticket_get_statuses({"titles":1}), ticket.status, 1) }}
+                            {{ mf.selectbox('status', admin.support_ticket_get_statuses({ "titles": 1 }), ticket.status, 1) }}
                         </div>
                         <div class="fix"></div>
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Priority' %}</label>
+                        <label>{{ 'Priority'|trans }}</label>
                         <div class="formRight">
                             <input type="text" name="priority" value="{{ticket.priority}}"/>
                         </div>
                         <div class="fix"></div>
                     </div>
-                     <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                     <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
                 <input type="hidden" name="id" value="{{ ticket.id }}">
             </form>
@@ -167,7 +174,7 @@
                             <form method="post" action="{{ 'api/admin/support/note_create'|link }}" class="mainForm api-form" data-api-reload="1">
                                 <fieldset>
                                     <textarea name="note" cols="5" rows="5" required="required" placeholder="Add new note" style="width: 98%"></textarea>
-                                    <input type="submit" value="{% trans 'Add note' %}" class="greyishBtn submitForm" style=" margin-top: 22px; width: 100px"/>
+                                    <input type="submit" value="{{ 'Add note'|trans }}" class="greyishBtn submitForm" style=" margin-top: 22px; width: 100px"/>
                                     <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
                                 </fieldset>
                             </form>
@@ -198,11 +205,15 @@
                         <td>{{ ticket.subject|truncate(30) }}</td>
                         <td>{{ ticket.helpdesk.name }}</td>
                         <td>{{ mf.status_name(ticket.status) }}</td>
-                        <td class="actions"><a class="bb-button btn14" href="{{ '/support/ticket'|alink }}/{{ticket.id}}"><img src="images/icons/dark/pencil.png" alt=""></a></td>
+                        <td class="actions">
+                            <a class="bb-button btn14" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">
+                                <img src="images/icons/dark/pencil.png" alt="">
+                            </a>
+                        </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5">{% trans 'The list is empty' %}</td>
+                        <td colspan="5">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -210,7 +221,9 @@
                 <tfoot>
                     <tr>
                         <td colspan="5">
-                            <a href="{{ 'support'|alink({'client_id' : client.id})}}#tab-new" class="btnIconLeft mr10 mt5" ><img src="images/icons/dark/help.png" alt="" class="icon"><span>{% trans 'New support ticket' %}</span></a>
+                            <a href="{{ 'support'|alink({ 'client_id': client.id}) }}#tab-new" class="btnIconLeft mr10 mt5">
+                                <img src="images/icons/dark/help.png" alt="" class="icon"><span>{{ 'New support ticket'|trans }}</span>
+                            </a>
                         </td>
                     </tr>
                 </tfoot>
@@ -239,8 +252,8 @@
 
 <div class="widget" id="reply-box">
     <div class="head">
-        <h5 class="iSpeech">{% trans 'Reply as' %} {{ profile.name }}</h5>
-        {%  include 'mod_support_canned_selector.phtml' %}
+        <h5 class="iSpeech">{{ 'Reply as'|trans }} {{ profile.name }}</h5>
+        {% include 'mod_support_canned_selector.phtml' %}
     </div>
 
     <form method="post" action="{{ 'api/admin/support/ticket_reply'|link }}" class="mainForm api-form" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}">
@@ -253,22 +266,21 @@
 {{ profile.signature }}
 {{ ticket.helpdesk.signature }}</textarea>
             <input type="hidden" name="id" value="{{ ticket.id }}">
-            <input type="submit" value="{% trans 'Post' %}" class="greyishBtn submitForm" />
-
+            <input type="submit" value="{{ 'Post'|trans }}" class="greyishBtn submitForm" />
 
             <div class="body">
-                <a href="#"  class="btnIconLeft mr10" id="toggleMessages" ><span>{% trans 'Show/Hide messages' %}</span></a>
+                <a href="#"  class="btnIconLeft mr10" id="toggleMessages" ><span>{{ 'Show/Hide messages'|trans }}</span></a>
 
                 {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
-                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id }) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btnIconLeft mr10 api-link" ><span>{% trans 'Close ticket' %}</span></a>
+                <a href="{{ 'api/admin/support/ticket_close'|link({'id' : ticket.id }) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btnIconLeft mr10 api-link" >
+                    <span>{{ 'Close ticket'|trans }}</span>
+                </a>
                 {% endif %}
             </div>
         </fieldset>
     </form>
-
     <div class="clear"></div>
 </div>
-
 {% endblock %}
 
 {% block js%}
@@ -279,6 +291,7 @@ function setSelRange(inputEl, selStart, selEnd) {
      inputEl.setSelectionRange(selStart, selEnd); 
    } else if (inputEl.createTextRange) { 
      var range = inputEl.createTextRange(); 
+
      range.collapse(true); 
      range.moveEnd('character', selEnd); 
      range.moveStart('character', selStart); 
@@ -287,24 +300,32 @@ function setSelRange(inputEl, selStart, selEnd) {
 }
 
 $(function() {
-
     $('#reply-box textarea').focus();
+
     var ta = document.getElementById('rt');
     var pos = ta.innerHTML.indexOf('\n') + 2;
+
     setSelRange(ta, pos, pos);
  
     $('.shd select').change(function(){
-        bb.get('admin/support/ticket_update', {id:{{ticket.id}}, support_helpdesk_id: $(this).val()});
+        bb.get('admin/support/ticket_update', {
+            id: {{ ticket.id }},
+            support_helpdesk_id: $(this).val()
+        });
     });
     
     $('input.tst').click(function(){
-        bb.get('admin/support/ticket_update', {id:{{ticket.id}}, status: $(this).val()});
+        bb.get('admin/support/ticket_update', {
+            id: {{ ticket.id }},
+            status: $(this).val()
+        });
     });
 
     $('.conversation').on('click', '.head', function(e){
         if( e.target !== this )
             return;
         $(this).siblings('.body').toggle();
+
         return false;
     });
 

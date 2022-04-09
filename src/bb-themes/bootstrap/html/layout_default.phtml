@@ -1,4 +1,4 @@
-{% set company  = guest.system_company %}
+{% set company = guest.system_company %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -83,36 +83,36 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="{{''|link }}">{{company.name}}</a>
+                <a class="navbar-brand" href="{{ ''|link }}">{{company.name}}</a>
             </div>
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id="mainmenu">
 				<ul class="nav navbar-nav navbar-right">
-					<li><a href="{{ 'cart'|link }}" title="{% trans 'Shopping cart' %}"><i class="fa fa-shopping-cart"></i> {% trans 'Shopping cart' %}</a></li>
-					{% if settings.side_menu_home %}<li class="visible-xs"><a href="{{ ''|link }}" title="{% trans 'Home' %}" ><i class="fa fa-home"></i> {% trans 'Home' %}</a></li>{% endif %}
-					{% if settings.side_menu_order %}<li class="visible-xs"><a href="{{ '/order'|link }}" title="{% trans 'Order' %}" ><i class="fa fa-shopping-cart"></i> {% trans 'Order' %}</a></li>{% endif %}
-					{% if settings.side_menu_blog and guest.extension_is_on({"mod":"news"}) %}<li class="visible-xs"><a href="{{ '/news'|link }}" title="{% trans 'Blog' %}" ><i class="fa fa-bullhorn"></i> {% trans 'Blog' %}</a></li>{% endif %}
-					{% if settings.side_menu_forum and guest.extension_is_on({"mod":"forum"}) %}<li class="visible-xs"><a href="{{ '/forum'|link }}"><i class="fa fa-comments"></i> {% trans 'Forum' %}</a></li>{% endif %}
-					{% if settings.side_menu_kb and guest.extension_is_on({"mod":"kb"}) %}<li class="visible-xs"><a href="{{ 'kb'|link }}" title="{% trans 'Knowledge Base' %}"><i class="fa fa-graduation-cap"></i> {% trans 'Knowledge Base' %}</a></li>{% endif %}
-					{% if settings.side_menu_contact %}<li class="visible-xs"><a href="{{ '/support/contact-us'|link }}"><i class="fa fa-envelope"></i> {% trans 'Contact us' %}</a></li>{% endif %}
+					<li><a href="{{ 'cart'|link }}" title="{{ 'Shopping cart'|trans }}"><i class="fa fa-shopping-cart"></i> {{ 'Shopping cart'|trans }}</a></li>
+					{% if settings.side_menu_home %}<li class="visible-xs"><a href="{{ ''|link }}" title="{{ 'Home'|trans }}" ><i class="fa fa-home"></i> {{ 'Home'|trans }}</a></li>{% endif %}
+					{% if settings.side_menu_order %}<li class="visible-xs"><a href="{{ '/order'|link }}" title="{{ 'Order'|trans }}" ><i class="fa fa-shopping-cart"></i> {{ 'Order'|trans }}</a></li>{% endif %}
+					{% if settings.side_menu_blog and guest.extension_is_on({ "mod": "news" }) %}<li class="visible-xs"><a href="{{ '/news'|link }}" title="{{ 'Blog'|trans }}" ><i class="fa fa-bullhorn"></i> {{ 'Blog'|trans }}</a></li>{% endif %}
+					{% if settings.side_menu_forum and guest.extension_is_on({ "mod": "forum" }) %}<li class="visible-xs"><a href="{{ '/forum'|link }}"><i class="fa fa-comments"></i> {{ 'Forum'|trans }}</a></li>{% endif %}
+					{% if settings.side_menu_kb and guest.extension_is_on({ "mod": "kb" }) %}<li class="visible-xs"><a href="{{ 'kb'|link }}" title="{{ 'Knowledge Base'|trans }}"><i class="fa fa-graduation-cap"></i> {{ 'Knowledge Base'|trans }}</a></li>{% endif %}
+					{% if settings.side_menu_contact %}<li class="visible-xs"><a href="{{ '/support/contact-us'|link }}"><i class="fa fa-envelope"></i> {{ 'Contact us'|trans }}</a></li>{% endif %}
 					{% if client %}
 					{% set profile = client.client_get %}
-						{% if settings.side_menu_services %}<li class="visible-xs"><a href="{{ 'order/service'|link }}" title="{% trans 'Services' %}"><i class="fa fa-cog"></i> {% trans 'Services' %}</a></li>{% endif %}
-						{% if settings.side_menu_support %}<li class="visible-xs"><a href="{{ 'support'|link }}" title="{% trans 'Tickets' %}"><i class="fa fa-life-ring"></i> {% trans 'Support' %}</a></li>{% endif %}
-						{% if settings.side_menu_invoices %}<li class="visible-xs"><a href="{{ 'invoice'|link }}" title="{% trans 'Invoices' %}"><i class="fa fa-credit-card"></i> {% trans 'Invoices' %}</a></li>{% endif %}
-						<li><a href="{{ ''|link }}" title="{% trans 'Dashboard' %}"><i class="fa fa-home"></i> {% trans 'Dashboard' %}</a></li>
+						{% if settings.side_menu_services %}<li class="visible-xs"><a href="{{ 'order/service'|link }}" title="{{ 'Services'|trans }}"><i class="fa fa-cog"></i> {{ 'Services'|trans }}</a></li>{% endif %}
+						{% if settings.side_menu_support %}<li class="visible-xs"><a href="{{ 'support'|link }}" title="{{ 'Tickets'|trans }}"><i class="fa fa-life-ring"></i> {{ 'Support'|trans }}</a></li>{% endif %}
+						{% if settings.side_menu_invoices %}<li class="visible-xs"><a href="{{ 'invoice'|link }}" title="{{ 'Invoices'|trans }}"><i class="fa fa-credit-card"></i> {{ 'Invoices'|trans }}</a></li>{% endif %}
+						<li><a href="{{ ''|link }}" title="{{ 'Dashboard'|trans }}"><i class="fa fa-home"></i> {{ 'Dashboard'|trans }}</a></li>
 						<li class="dropdown">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-user"></i> {{ (profile.first_name ~ " " ~ profile.last_name) }} <span class="caret"></span></a>
 							<ul class="dropdown-menu">
-								<li><a href="{{ 'client/me'|link }}" title="{% trans 'Profile' %}"><i class="fa fa-user"></i> {% trans 'Manage profile' %}</a></li>
-								{% if settings.show_client_emails %}<li><a href="{{ 'email'|link }}" title="{% trans 'Emails'%}"><i class="fa fa-envelope"></i> {% trans 'Emails'%}</a></li>{% endif %}
-								{% if settings.show_client_balance %}<li><a href="{{ 'client/balance'|link }}"><i class="fa fa-bank"></i> {% trans 'Balance' %}: {{ profile.balance | money(profile.currency) }}</a></li>{% endif %}
-								<li><a href="{{ 'client/logout'|link }}" title="{% trans 'Sign out' %}"><i class="fa fa-sign-out-alt"></i> {% trans 'Sign out' %}</a></li>
+								<li><a href="{{ 'client/me'|link }}" title="{{ 'Profile'|trans }}"><i class="fa fa-user"></i> {{ 'Manage profile'|trans }}</a></li>
+								{% if settings.show_client_emails %}<li><a href="{{ 'email'|link }}" title="{{ 'Emails'|trans }}"><i class="fa fa-envelope"></i> {{ 'Emails'|trans }}</a></li>{% endif %}
+								{% if settings.show_client_balance %}<li><a href="{{ 'client/balance'|link }}"><i class="fa fa-bank"></i> {{ 'Balance'|trans }}: {{ profile.balance | money(profile.currency) }}</a></li>{% endif %}
+								<li><a href="{{ 'client/logout'|link }}" title="{{ 'Sign out'|trans }}"><i class="fa fa-sign-out-alt"></i> {{ 'Sign out'|trans }}</a></li>
 							</ul>
 						</li>
 					{% else %}			
-						<li><a href="" data-toggle="modal" data-target="#login">{% trans 'Sign in' %}</a></li>
-						<li><a href="{{ 'login'|link({'register' : 1}) }}">{% trans 'Register' %}</a></li>
+						<li><a href="" data-toggle="modal" data-target="#login">{{ 'Sign in'|trans }}</a></li>
+						<li><a href="{{ 'login'|link({ 'register': 1 }) }}">{{ 'Register'|trans }}</a></li>
 					{% endif %}
 				</ul>
             </div>
@@ -139,7 +139,7 @@
 
 			<!--{% set languages = guest.extension_languages %}
 				{% if languages|length > 1 %}
-					<h2>{% trans 'Select language' %}</h2>
+					<h2>{{ 'Select language'|trans }}</h2>
 							<select name="lang">
 							{% for lang in languages %}
 								<option value="{{ lang }}" >{{ lang|trans }}</option>
@@ -166,24 +166,24 @@
 			{% block content_after %}{% endblock %}
 
 			{% if not client %}
-			<div class="modal fade" id="login" tabindex="-1" role="dialog" aria-labelledby="{% trans 'Login to client area' %}">
+			<div class="modal fade" id="login" tabindex="-1" role="dialog" aria-labelledby="{{ 'Login to client area'|trans }}">
 				<div class="modal-dialog" role="document">
 					<div class="modal-content">
 						<div class="modal-header">
 							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-							<h4 class="modal-title" id="myModalLabel">{% trans 'Login to client area' %}</h4>
+							<h4 class="modal-title" id="myModalLabel">{{ 'Login to client area'|trans }}</h4>
 						</div>
 						<div class="modal-body">
 							<form action="" method="post" class="api_form" data-api-url="{{ 'api/guest/client/login'|link }}" data-api-reload="1">
 								<div class="control-group form-group">
 									<div class="controls">
-										<label>{% trans 'Email address' %}:</label>
-										<input type="email" class="form-control" name="email" value="{{ request.email }}" required="required" placeholder="{% trans 'Email address' %}">
+										<label>{{ 'Email address'|trans }}:</label>
+										<input type="email" class="form-control" name="email" value="{{ request.email }}" required="required" placeholder="{{ 'Email address'|trans }}">
 									</div>
 								</div>
 								<div class="control-group form-group">
 									<div class="controls">
-										<label>{% trans 'Password' %}:</label>
+										<label>{{ 'Password'|trans }}:</label>
 										<input type="password" class="form-control" name="password" value="" required="required">
 									</div>
 								</div>
@@ -191,9 +191,9 @@
 						</div>
 						<div class="modal-footer">
 								<button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i></button>
-								<a class="btn btn-success" href="{{ '/login'|link({'register' : 1}) }}">{% trans 'Create new account' %}</a>
-								<a class="btn btn-warning" href="{{ 'reset-password'|link }}">{% trans 'Reset password' %}</a>
-								<input class="btn btn-primary" type="submit" value="{% trans 'Sign in' %}">
+								<a class="btn btn-success" href="{{ '/login'|link({'register' : 1}) }}">{{ 'Create new account'|trans }}</a>
+								<a class="btn btn-warning" href="{{ 'reset-password'|link }}">{{ 'Reset password'|trans }}</a>
+								<input class="btn btn-primary" type="submit" value="{{ 'Sign in'|trans }}">
 							</form>
 						</div>
 					</div>
@@ -215,9 +215,9 @@
 						{% endif %}
 					</p>
 					<ul class="list-inline">
-                        <li><a href="{{ '/about-us'|link }}">{% trans 'About us' %}</a></li>
-                        <li><a href="{{ '/tos'|link }}">{% trans 'Terms and Conditions' %}</a></li>
-                        <li><a href="{{ '/privacy-policy'|link }}">{% trans 'Privacy Policy' %}</a></li><br />
+                        <li><a href="{{ '/about-us'|link }}">{{ 'About us'|trans }}</a></li>
+                        <li><a href="{{ '/tos'|link }}">{{ 'Terms and Conditions'|trans }}</a></li>
+                        <li><a href="{{ '/privacy-policy'|link }}">{{ 'Privacy Policy'|trans }}</a></li><br />
 						{% for i in 1..5 %}
 							{% if settings['footer_link_' ~ loop.index ~ '_enabled'] %}
 							<li>
@@ -230,12 +230,12 @@
 							{% endif %}
 						{% endfor %}
 						{% if guest.extension_is_on({"mod":'branding'}) or settings.footer_branding_enabled %}
-							<li><a href="https://github.com/boxbilling/boxbilling" title="Billing Software" target="_blank">{% trans 'Powered by the BoxBilling Community' %}</a></li>
+							<li><a href="https://github.com/boxbilling/boxbilling" title="Billing Software" target="_blank">{{ 'Powered by the BoxBilling Community'|trans }}</a></li>
 						{% endif %}
                     </ul>
 					
 				</div>
-				{% if settings.footer_to_top_enabled %}<a href="#top" class="btn btn-default pull-right"><i class="fa fa-arrow-up"></i> {% trans 'Top' %}</a>{% endif %}
+				{% if settings.footer_to_top_enabled %}<a href="#top" class="btn btn-default pull-right"><i class="fa fa-arrow-up"></i> {{ 'Top'|trans }}</a>{% endif %}
 			</div>
         </footer>
 	{% endif %}

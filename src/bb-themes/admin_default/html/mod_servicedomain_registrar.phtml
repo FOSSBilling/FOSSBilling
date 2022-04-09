@@ -1,22 +1,21 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
 {% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{% trans 'Registrar' %} {{ registrar.title }}{% endblock %}
+{% block meta_title %}{{ 'Registrar'|trans }} {{ registrar.title }}{% endblock %}
 {% set active_menu = 'system' %}
 
 {% block breadcrumbs %}
 <ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
-    <li><a href="{{ 'servicedomain'|alink }}">{% trans 'Domain management' %}</a></li>
-    <li><a href="{{ 'servicedomain'|alink }}#tab-registrars">{% trans 'Registrars' %}</a></li>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'servicedomain'|alink }}">{{ 'Domain management'|trans }}</a></li>
+    <li><a href="{{ 'servicedomain'|alink }}#tab-registrars">{{ 'Registrars'|trans }}</a></li>
     <li class="lastB">{{ registrar.title }}</li>
 </ul>
 {% endblock %}
 
 {% block content %}
-
 <div class="widget">
     <div class="head">
-        <h5>{% trans 'Registrar configuration' %}</h5>
+        <h5>{{ 'Registrar configuration'|trans }}</h5>
     </div>
 
     <div class="help">
@@ -27,7 +26,7 @@
     <form method="post" action="{{ 'api/admin/servicedomain/registrar_update'|link }}" class="mainForm save api-form" data-api-msg="Registrar updated">
     <fieldset>
         <div class="rowElem noborder">
-            <label>{% trans 'Enable test mode' %}:</label>
+            <label>{{ 'Enable test mode'|trans }}:</label>
             <div class="formRight">
                 <input type="radio" name="test_mode" value="1"{% if registrar.test_mode %} checked="checked"{% endif %}/><label>Yes</label>
                 <input type="radio" name="test_mode" value="0"{% if not registrar.test_mode %} checked="checked"{% endif %} /><label>No</label>
@@ -36,7 +35,7 @@
         </div>
 
         <div class="rowElem">
-            <label>{% trans 'Registrar title' %}:</label>
+            <label>{{ 'Registrar title'|trans }}:</label>
             <div class="formRight">
                 <input type="text" name="title" value="{{registrar.title}}" />
             </div>
@@ -46,7 +45,7 @@
         {# Build form elements from registrar configuration array #}
         {{ mf.build_form(registrar.form, registrar.config) }}
 
-        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+        <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
         <input type="hidden" name="id" value="{{ registrar.id }}" />
     </fieldset>
     </form>

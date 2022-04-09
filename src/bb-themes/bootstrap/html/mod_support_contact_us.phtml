@@ -1,6 +1,6 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
 {% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{% trans 'Contact us' %}{% endblock %}
+{% block meta_title %}{{ 'Contact us'|trans }}{% endblock %}
 
 {% set company = guest.system_company %}
 
@@ -8,10 +8,10 @@
 		<!-- Page Heading/Breadcrumbs -->
         <div class="row">
             <div class="col-lg-12">
-                <h1 class="page-header">{% trans 'Contact us' %}</h1>
+                <h1 class="page-header">{{ 'Contact us'|trans }}</h1>
 				<ol class="breadcrumb">
-					<li><a href="{{''|link }}">{% trans 'Home' %}</a></li>
-					<li class="active">{% trans 'Contact us' %}</li>
+					<li><a href="{{''|link }}">{{ 'Home'|trans }}</a></li>
+					<li class="active">{{ 'Contact us'|trans }}</li>
 				</ol>
             </div>
         </div>
@@ -26,25 +26,25 @@
                 <form method="post" action="" class="api_form" data-api-url="guest/support/ticket_create" data-api-tocreated="{{ 'support/contact-us/conversation'|link }}">
                     <div class="control-group form-group">
                         <div class="controls">
-                            <label>{% trans 'Name' %}:</label>
+                            <label>{{ 'Name'|trans }}:</label>
                             <input type="text" class="form-control" name="name" value="{% if client %}{{ (profile.first_name ~ " " ~ profile.last_name) }}{% else %}{{request.name}}{% endif %}" required="required">
                         </div>
                     </div>
                     <div class="control-group form-group">
                         <div class="controls">
-                            <label>{% trans 'Email address' %}:</label>
+                            <label>{{ 'Email address'|trans }}:</label>
                             <input type="email" class="form-control" name="email" value="{% if client %}{{ profile.email }}{% else %}{{request.name}}{% endif %}" required="required">
                         </div>
                     </div>
 					<div class="control-group form-group">
                         <div class="controls">
-                            <label>{% trans 'Subject' %}:</label>
+                            <label>{{ 'Subject'|trans }}:</label>
                             <input type="text" class="form-control" name="subject" value="{{request.subject}}" required="required">
                         </div>
                     </div>
                     <div class="control-group form-group">
                         <div class="controls">
-                            <label>{% trans 'Message' %}:</label>
+                            <label>{{ 'Message'|trans }}:</label>
                             <textarea rows="10" cols="100" class="form-control" name="message" maxlength="999" style="resize:none" required="required" data-provide="markdown" data-iconlibrary="fa">{{request.message}}</textarea>
                         </div>
                     </div>
@@ -54,7 +54,7 @@
 					
                     <div id="success"></div>
                     <!-- For success/fail messages -->
-					<input class="btn btn-primary" type="submit" value="{% trans 'Send' %}" />
+					<input class="btn btn-primary" type="submit" value="{{ 'Send'|trans }}" />
                 </form>
             </div>
             <!-- Contact Details Column -->

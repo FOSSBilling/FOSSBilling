@@ -1,9 +1,10 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{{ticket.subject}}{% endblock %}
+
+{% block meta_title %}{{ ticket.subject }}{% endblock %}
 
 {% block content %}
-
 <div class="h-block forum">
     <div class="h-block-header">
         <div class="icon"><span class="big-light-icon i-support"></span></div>
@@ -19,8 +20,8 @@
         </div>
         <ul class="tabs">
             <li><a href="#m-{{message.id}}">#{{ i+1 }}</a></li>
-            <li><a href="#reply-{{message.id}}"><span class="dark-icon i-support"></span>{% trans 'Reply' %}</a></li>
-            <li><a href="#quote-{{message.id}}"><span class="dark-icon i-quote"></span>{% trans 'Quote' %}</a></li>
+            <li><a href="#reply-{{message.id}}"><span class="dark-icon i-support"></span>{{ 'Reply'|trans }}</a></li>
+            <li><a href="#quote-{{message.id}}"><span class="dark-icon i-quote"></span>{{ 'Quote'|trans }}</a></li>
         </ul>
         <div class="tabs_container">
             <div class="tab_content" id="m-{{message.id}}">
@@ -44,7 +45,7 @@
                             <textarea name="content" cols="5" rows="10" required="required"></textarea>
                         </p>
                         <input type="hidden" name="id" value="{{ ticket.id }}">
-                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Post' %}">
+                        <input class="bb-button bb-button-submit" type="submit" value="{{ 'Post'|trans }}">
                     </fieldset>
                 </form>
             </div>
@@ -56,7 +57,7 @@
                             <textarea name="content" cols="5" rows="10" required="required">{{ mf.markdown_quote(message.content) }}</textarea>
                         </p>
                         <input type="hidden" name="id" value="{{ ticket.id }}">
-                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Post' %}">
+                        <input class="bb-button bb-button-submit" type="submit" value="{{ 'Post'|trans }}">
                     </fieldset>
                 </form>
             </div>
@@ -74,29 +75,29 @@
         <table>
             <tbody>
                 <tr>
-                    <td>{% trans 'Ticket ID' %}</td>
-                    <td><b>#{{ticket.id}}</b></td>
+                    <td>{{ 'Ticket ID'|trans }}</td>
+                    <td><b>#{{ ticket.id }}</b></td>
                 </tr>
 
                 <tr>
-                    <td>{% trans 'Help desk' %}</td>
-                    <td>{{ticket.helpdesk.name}}</td>
+                    <td>{{ 'Help desk'|trans }}</td>
+                    <td>{{ ticket.helpdesk.name }}</td>
                 </tr>
 
                 <tr>
-                    <td>{% trans 'Status' %}</td>
-                    <td>{{mf.status_name(ticket.status)}}</td>
+                    <td>{{ 'Status'|trans }}</td>
+                    <td>{{ mf.status_name(ticket.status) }}</td>
                 </tr>
 
                 <tr>
-                    <td>{% trans 'Time opened' %}</td>
-                    <td>{{ticket.created_at|bb_date }}</td>
+                    <td>{{ 'Time opened'|trans }}</td>
+                    <td>{{ ticket.created_at|bb_date }}</td>
                 </tr>
 
                 {% if ticket.rel_type == 'order' and ticket.rel_id %}
                 <tr>
-                    <td>{% trans 'Related to' %}</td>
-                    <td><a href="{{ 'order/service/manage'|link }}/{{ ticket.rel_id }}">{% trans 'Service #' %} {{ ticket.rel_id }}</a></td>
+                    <td>{{ 'Related to'|trans }}</td>
+                    <td><a href="{{ 'order/service/manage'|link }}/{{ ticket.rel_id }}">{{ 'Service #'|trans }} {{ ticket.rel_id }}</a></td>
                 </tr>
                 {% endif %}
              </tbody>
@@ -105,10 +106,10 @@
                  <tr>
                      <td colspan="2">
 
-                     <a class="bb-button" href="{{ '/support'|link }}"><span class="dark-icon i-arrow"></span>{% trans 'Tickets list' %}</a>
+                     <a class="bb-button" href="{{ '/support'|link }}"><span class="dark-icon i-arrow"></span>{{ 'Tickets list'|trans }}</a>
 
                      {% if ticket.status != 'closed' %}
-                        <button class="bb-button" type="button" id="ticket-close">{% trans 'Close ticket' %}</button>
+                        <button class="bb-button" type="button" id="ticket-close">{{ 'Close ticket'|trans }}</button>
                         {% endif %}
                      </td>
                  </tr>
@@ -121,18 +122,18 @@
 
 {% block js %}
 <script type="text/javascript">
-$(function() {
+    $(function() {
+        $('#ticket-close').bind('click', function(event) {
+            bb.post(
+                "{{ 'api/client/support/ticket_close'|link }}",
+                { id: {{ ticket.id }} },
+                function(result) {
+                    bb.redirect("{{ 'support'|link }}");
+                }
+            );
 
-    $('#ticket-close').bind('click',function(event){
-        bb.post(
-            "{{ 'api/client/support/ticket_close'|link }}",
-            { id: {{ ticket.id }} },
-            function(result) {
-                bb.redirect('{{ "support"|link }}');
-            }
-        );
-        return false;
+            return false;
+        });
     });
-});
 </script>
 {% endblock %}

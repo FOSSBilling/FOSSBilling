@@ -1,8 +1,7 @@
 {% set company = guest.system_company %}
 <html>
-
 <head>
-    <title>{% trans 'System undergoing maintenance' %}</title>
+    <title>{{ 'System undergoing maintenance'|trans }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -15,13 +14,12 @@
         }
     </style>
 </head>
-
 <body>
     <div style="margin:50px 40px; font-size: 16px;">
-        <h1>{% trans 'System undergoing maintenance' %}</h1>
-        <p>{% trans 'Our systems are undergoing a maintenance. We\'ll be back soon.' %}</p>
+        <h1>{{ 'System undergoing maintenance'|trans }}</h1>
+        <p>{{ 'Our systems are undergoing a maintenance. We\'ll be back soon.'|trans }}</p>
         <hr>
-        <h4>{% trans 'While we\'re away, you can still reach us over other channels.' %}</h1>
+        <h4>{{ 'While we\'re away, you can still reach us over other channels.'|trans }}</h1>
         <li>
             {{ company.name }}
         </li>
@@ -42,5 +40,4 @@
         </li>
     </div>
 </body>
-
 </html>

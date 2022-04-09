@@ -5,9 +5,10 @@
     </div>
     <div class="grid_12 alpha omega">
         <div class="box">
-            <h2>{% trans 'Download file' %}</h2>
+            <h2>{{ 'Download file'|trans }}</h2>
             <div class="block">
-                <a class="bb-button bb-button-submit" href="{{ 'servicedownloadable/get-file'|link }}/{{ order.id }}"><span class="light-icon i-downloads"></span> {% trans 'Download' %}</a>
+                <a class="bb-button bb-button-submit" href="{{ 'servicedownloadable/get-file'|link }}/{{ order.id }}">
+                    <span class="light-icon i-downloads"></span> {{ 'Download'|trans }}</a>
             </div>
         </div>
     </div>

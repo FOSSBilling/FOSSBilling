@@ -1,68 +1,68 @@
 {% extends "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
 
-{% block meta_title %}{% trans 'Profile' %}{% endblock %}
-{% set active_menu = 'system' %}
+{% block meta_title %}{{ 'Profile'|trans }}{% endblock %}
 
+{% set active_menu = 'system' %}
 
 {% block breadcrumbs %}
 <ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
-    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
-    <li><a href="{{ 'extension/settings/staff'|alink }}">{% trans 'Staff' %}</a></li>
-    <li class="lastB">{{staff.name}}</li>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+    <li><a href="{{ 'extension/settings/staff'|alink }}">{{ 'Staff'|trans }}</a></li>
+    <li class="lastB">{{ staff.name }}</li>
 </ul>
 {% endblock %}
 
 {% block content %}
-
 {% if staff.role == 'cron' %}
 <div class="nNote nInformation hideit first">
-    <p><strong>{% trans 'INFORMATION' %}: </strong>{% trans 'This staff member is used by BoxBilling to perform system tasks and can not be removed.' %}</p>
+    <p><strong>{{ 'INFORMATION'|trans }}: </strong>{{ 'This staff member is used by BoxBilling to perform system tasks and can not be removed.'|trans }}</p>
 </div>
 {% endif %}
 
 <!-- Full width tabs --> 
 <div class="widget simpleTabs">
     <ul class="tabs">
-        <li><a href="#tab-profile">{% trans 'Profile' %}</a></li>
-        <li><a href="#tab-permissions">{% trans 'Permissions' %}</a></li>
-        <li><a href="#tab-password">{% trans 'Password' %}</a></li>
-        <li><a href="#tab-api">{% trans 'API' %}</a></li>
+        <li><a href="#tab-profile">{{ 'Profile'|trans }}</a></li>
+        <li><a href="#tab-permissions">{{ 'Permissions'|trans }}</a></li>
+        <li><a href="#tab-password">{{ 'Password'|trans }}</a></li>
+        <li><a href="#tab-api">{{ 'API'|trans }}</a></li>
     </ul>
 
     <div class="tab_container">
         <div id="tab-profile" class="tab_content nopadding">
             
             <div class="help">
-                <h3>{% trans 'Manage staff member details' %}</h3>
+                <h3>{{ 'Manage staff member details'|trans }}</h3>
             </div>
 
-            <form method="post" action="admin/staff/update" class="mainForm api-form" data-api-msg="{% trans 'This staff member updated.' %}">
+            <form method="post" action="admin/staff/update" class="mainForm api-form" data-api-msg="{{ 'This staff member updated.'|trans }}">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Group' %}</label>
+                        <label>{{ 'Group'|trans }}</label>
                         <div class="formRight">
                             {{ mf.selectbox('admin_group_id', admin.staff_group_get_pairs, staff.group.id, 1) }}
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label for="name">{% trans 'Name' %}</label>
+                        <label for="name">{{ 'Name'|trans }}</label>
                         <div class="formRight">
                             <input type="text" name="name" value="{{staff.name}}" required="required"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label for="email">{% trans 'Email' %}</label>
+                        <label for="email">{{ 'Email'|trans }}</label>
                         <div class="formRight">
                             <input type="text" name="email" value="{{staff.email}}" required="required"/>
                         </div>
                         <div class="fix"></div>
                     </div>  
                     <div class="rowElem">
-                        <label>{% trans 'Status' %}</label>
+                        <label>{{ 'Status'|trans }}</label>
                         <div class="formRight">
                             <input type="radio" name="status" value="active"{% if staff.status == 'active' %} checked="checked"{% endif %}/><label>Active</label>
                             <input type="radio" name="status" value="inactive"{% if staff.status == 'inactive' %} checked="checked"{% endif %} /><label>Inactive</label>
@@ -70,14 +70,14 @@
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label for="signature">{% trans 'Signature' %}</label>
+                        <label for="signature">{{ 'Signature'|trans }}</label>
                         <div class="formRight">
                             <textarea name="signature" cols="5" rows="2">{{staff.signature}}</textarea>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <input type="hidden" name="id" value="{{ staff.id }}">
-                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
@@ -85,16 +85,16 @@
         <div id="tab-permissions" class="tab_content nopadding">
             <div class="help">
                 {% set member_name = staff.name %}
-                <h3>{% trans %}{{ member_name }} permissions{% endtrans %}</h3>
+                <h3>{{ '{{ member_name }} permissions'|trans }}</h3>
             </div>
             
             {% if staff.role == 'admin' %}
             <div class="body">
-                <p>{% trans 'Administrator account is allowed to do everything' %}</p>
+                <p>{{ 'Administrator account is allowed to do everything'|trans }}</p>
             </div>
             {% else %}
-            {% set prms = admin.staff_permissions_get({"id":staff.id}) %}
-            <form method="post" action="admin/staff/permissions_update" class="mainForm api-form" data-api-msg="{% trans 'Permissions updated' %}">
+            {% set prms = admin.staff_permissions_get({ "id": staff.id }) %}
+            <form method="post" action="admin/staff/permissions_update" class="mainForm api-form" data-api-msg="{{ 'Permissions updated'|trans }}">
             <input type="hidden" name="permissions[]" value="">
                 
             <table class="tableStatic wide">
@@ -103,7 +103,7 @@
                         <td style="width: 5%">
                             <input type="checkbox" id="perm-check" /> 
                         </td>
-                        <td>{% trans 'Module' %}</td>
+                        <td>{{ 'Module'|trans }}</td>
                     </tr>
                 </thead>
                 
@@ -111,7 +111,7 @@
                 {% for mod in mods %}
                 <tr>
                     <td>
-                        <input type="checkbox" name="permissions[{{mod}}]" value="1" class="perm" {% if prms[mod] %}checked="checked"{% endif %}/> 
+                        <input type="checkbox" name="permissions[{{ mod }}]" value="1" class="perm" {% if prms[mod] %}checked="checked"{% endif %}/> 
                     </td>
                     <td>{{mod|title}}</td>
                 </tr>
@@ -122,7 +122,7 @@
                 <tr>
                     <td colspan="2">
                         <input type="hidden" name="id" value="{{ staff.id }}">
-                        <input type="submit" value="{% trans 'Save' %}" class="greyishBtn" />
+                        <input type="submit" value="{{ 'Save'|trans }}" class="greyishBtn" />
                     </td>
                 </tr>
                 </tfoot>
@@ -133,20 +133,20 @@
             
         <div id="tab-password" class="tab_content nopadding">
             <div class="help">
-                <h3>{% trans 'Change staff member password' %}</h3>
+                <h3>{{ 'Change staff member password'|trans }}</h3>
             </div>
 
-            <form method="post" action="admin/staff/change_password" class="mainForm api-form" data-api-msg="{% trans 'Staff member password changed' %}">
+            <form method="post" action="admin/staff/change_password" class="mainForm api-form" data-api-msg="{{ 'Staff member password changed'|trans }}">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label for="password">{% trans 'Password' %}</label>
+                        <label for="password">{{ 'Password'|trans }}</label>
                         <div class="formRight">
                         <input type="password" name="password" required="required"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label for="password_confirm">{% trans 'Repeat same password' %}</label>
+                        <label for="password_confirm">{{ 'Repeat same password'|trans }}</label>
                         <div class="formRight">
                         <input type="password" name="password_confirm" required="required"/>
                         </div>
@@ -154,51 +154,47 @@
                     </div>
                     
                     <input type="hidden" name="id" value="{{ staff.id }}">
-                    <input type="submit" value="{% trans 'Submit' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Submit'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
         
         <div id="tab-api" class="tab_content nopadding">
             <div class="help">
-                <h3>{% trans 'Api key is used to manage system via other interfaces.' %}</h3>
+                <h3>{{ 'Api key is used to manage system via other interfaces.'|trans }}</h3>
             </div>
 
             <form method="post" action="admin/profile/generate_api_key" class="mainForm api-form" data-api-reload="1">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'API key' %}</label>
+                        <label>{{ 'API key'|trans }}</label>
                         <div class="formRight">
                             <input type="text" value="{{ admin.profile_get.api_token }}"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <input type="hidden" name="id" value="{{ staff.id }}">
-                    <input type="submit" value="{% trans 'Generate new key' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Generate new key'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
-
         </div>
     </div>
     <div class="fix"></div>	 
 </div>
-
 {% endblock %}
-
 
 {% block js%}
 <script type="text/javascript">
+    $(function() {
+        $('#perm-check').click(function() {
+            if ($('#perm-check').is(':checked')) {
+                $('.perm').prop('checked', true);
+            } else {
+                $('.perm').prop('checked', false);
+            }
 
-$(function() {
-    $('#perm-check').click(function(){
-        if($('#perm-check').is(':checked')) {
-            $('.perm').prop('checked', true);
-        } else {
-            $('.perm').prop('checked', false);
-        }
-        $.uniform.update(".perm");
-    });
-});
-    
+            $.uniform.update(".perm");
+        });
+    });    
 </script>
 {% endblock %}

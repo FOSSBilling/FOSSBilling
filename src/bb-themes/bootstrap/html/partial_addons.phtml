@@ -1,6 +1,6 @@
 {% if product.addons|length > 0 %}
 <div class="addons well" style="display: none;">
-	<h4>{% trans 'Addons & extras' %}</h4>
+	<h4>{{ 'Addons & extras'|trans }}</h4>
 	<ul class="list-group">
 		{% for addon in product.addons %}
 			<li class="list-group-item">
@@ -43,7 +43,7 @@
 		<li class="list-group-item"></li>
 	</ul>
 	<div class="text-center" >
-		<button class="btn btn-success btn-lg" type="submit">{% trans 'Order now' %}</button>
+		<button class="btn btn-success btn-lg" type="submit">{{ 'Order now'|trans }}</button>
 	</div>
 </div>
 {% endif %}

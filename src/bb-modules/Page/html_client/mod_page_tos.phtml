@@ -1,5 +1,7 @@
 {% extends "layout_public.phtml" %}
-{% block meta_title %}{% trans 'Terms and Conditions' %}{% endblock %}
+
+{% block meta_title %}{{ 'Terms and Conditions'|trans }}{% endblock %}
+
 {% set company = guest.system_company %}
 
 {% block body %}
@@ -10,7 +12,7 @@
             <article class="span12 data-block">
                 <div class="data-container">
                     <header>
-                        <h1>{{ company.name }} {% trans 'Terms and Conditions' %}</h1>
+                        <h1>{{ company.name }} {{ 'Terms and Conditions'|trans }}</h1>
                         <p>{{ company.signature }}</p>
                     </header>
                     <section>
@@ -20,6 +22,7 @@
             </article>
         </div>
     </div>
-    <div class="offset5"><a href="{{ '/' | link}}" class="btn btn-alt btn-primary btn-large" title="Back to Homepage">{% trans 'Back to Homepage' %}</a></div>
+    <div class="offset5">
+        <a href="{{ '/'|link}}" class="btn btn-alt btn-primary btn-large" title="Back to Homepage">{{ 'Back to Homepage'|trans }}</a></div>
 </section>
 {% endblock %}

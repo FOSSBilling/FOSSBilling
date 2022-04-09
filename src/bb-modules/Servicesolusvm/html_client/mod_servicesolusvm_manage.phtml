@@ -4,78 +4,78 @@
     <article class="span12 data-block">
         <div class="data-container">
             <header>
-                <h2>{% trans 'VPS management' %}</h2>
+                <h2>{{ 'VPS management'|trans }}</h2>
                 <ul class="data-header-actions">
-                    <li class="domain-tabs active"><a href="#tab-details" class="btn btn-inverse btn-alt">{% trans 'Details' %}</a></li>
-                    <li class="domain-tabs"><a href="#tab-stats" class="btn btn-inverse btn-alt">{% trans 'Statistics' %}</a></li>
-                    <li class="domain-tabs"><a href="#tab-manage" class="btn btn-inverse btn-alt">{% trans 'Manage' %}</a></li>
-                    <li class="domain-tabs"><a href="#tab-ca-pass" class="btn btn-inverse btn-alt">{% trans 'Control Panel' %}</a></li>
+                    <li class="domain-tabs active"><a href="#tab-details" class="btn btn-inverse btn-alt">{{ 'Details'|trans }}</a></li>
+                    <li class="domain-tabs"><a href="#tab-stats" class="btn btn-inverse btn-alt">{{ 'Statistics'|trans }}</a></li>
+                    <li class="domain-tabs"><a href="#tab-manage" class="btn btn-inverse btn-alt">{{ 'Manage'|trans }}</a></li>
+                    <li class="domain-tabs"><a href="#tab-ca-pass" class="btn btn-inverse btn-alt">{{ 'Control Panel'|trans }}</a></li>
                 </ul>
             </header>
             <section class="tab-content">
                 <div class="tab-pane active" id="tab-details">
-                    {% set info = client.servicesolusvm_info({"order_id":order.id}) %}
+                    {% set info = client.servicesolusvm_info({ "order_id": order.id }) %}
                     <table class="table table-striped table-bordered table-condensed">
                         <tbody>
                         <tr>
-                            <td>{% trans 'State' %}:</td>
+                            <td>{{ 'State'|trans }}:</td>
                             <td>
-                                <span id="vps-status" class="label label- label-{% if info.state == 'online'%}success{% elseif info.state == 'offline'%}inverse{% endif %}">{{ info.state }}</span>
+                                <span id="vps-status" class="label label- label-{% if info.state == 'online' %}success{% elseif info.state == 'offline' %}inverse{% endif %}">{{ info.state }}</span>
                                 <span class="span1 offset1">&nbsp;</span>
-                                <a href="{{ 'api/client/servicesolusvm/status'|link({'order_id' : order.id}) }}" data-api-jsonp="onAfterStatusCheck" class="api-link btn btn-primary btn-mini">{% trans 'Refresh' %}</a>
+                                <a href="{{ 'api/client/servicesolusvm/status'|link({ 'order_id': order.id }) }}" data-api-jsonp="onAfterStatusCheck" class="api-link btn btn-primary btn-mini">{{ 'Refresh'|trans }}</a>
                             </td>
                         </tr>
 
                         <tr>
-                            <td>{% trans 'Hostname' %}:</td>
+                            <td>{{ 'Hostname'|trans }}:</td>
                             <td>
                                 <a target="_blank" href="http://{{ service.hostname }}">{{ service.hostname }}</a>
                             </td>
                         </tr>
 
                         <tr>
-                            <td>{% trans 'Plan' %}:</td>
+                            <td>{{ 'Plan'|trans }}:</td>
                             <td>{{ service.plan }}</td>
                         </tr>
 
                         <tr>
-                            <td>{% trans 'Operating system' %}:</td>
+                            <td>{{ 'Operating system'|trans }}:</td>
                             <td>{{ service.template }}</td>
                         </tr>
 
                         <tr>
-                            <td>{% trans 'IP address' %}:</td>
+                            <td>{{ 'IP address'|trans }}:</td>
                             <td><strong>{{ info.mainipaddress }}</strong></td>
                         </tr>
 
                         <tr>
-                            <td>{% trans 'Additional IP addresses' %}:</td>
+                            <td>{{ 'Additional IP addresses'|trans }}:</td>
                             <td>{{ info.ipaddresses }}</td>
                         </tr>
 
                         <tr>
-                            <td>{% trans 'Type' %}:</td>
+                            <td>{{ 'Type'|trans }}:</td>
                             <td>{{ info.type|title }}</td>
                         </tr>
 
                         <tr>
-                            <td>{% trans 'Root password' %}:</td>
+                            <td>{{ 'Root password'|trans }}:</td>
                             <td>{{ service.rootpassword ? service.rootpassword : '******'}}</td>
                         </tr>
 
                         {#
                         <tr>
-                            <td>{% trans 'Node / ID / VMID' %}:</td>
+                            <td>{{ 'Node / ID / VMID'|trans }}:</td>
                             <td>{{ info.node }} / {{service.vserverid}} / {{service.virtid}} </td>
                         </tr>
 
                         <tr>
-                            <td>{% trans 'Client area username / password' %}:</td>
-                            <td>{{ service.username }} / {{ service.password }} <a href="{{service.master_url}}" target="_blank" class="">{% trans '[Go client area]' %}</a></td>
+                            <td>{{ 'Client area username / password'|trans }}:</td>
+                            <td>{{ service.username }} / {{ service.password }} <a href="{{service.master_url}}" target="_blank" class="">{{ '[Go client area]'|trans }}</a></td>
                         </tr>
 
                         <tr>
-                            <td>{% trans 'Console user / password' %}:</td>
+                            <td>{{ 'Console user / password'|trans }}:</td>
                             <td>{{ service.consoleuser }} / {{ service.consolepassword }}</td>
                         </tr>
                         #}
@@ -88,18 +88,18 @@
                     <div class="body" style="width: 34%; float: left;">
                         {% set bw = info.bandwidth|split(',') %}
                         <table class="table table-striped table-bordered table-condensed">
-                            <caption>{% trans 'Bandwidth' %}</caption>
+                            <caption>{{ 'Bandwidth'|trans }}</caption>
                             <tbody>
                             <tr>
-                                <td>{% trans 'Total' %}:</td>
+                                <td>{{ 'Total'|trans }}:</td>
                                 <td>{{ bw[0]|size }}</td>
                             </tr>
                             <tr>
-                                <td>{% trans 'Used' %}:</td>
+                                <td>{{ 'Used'|trans }}:</td>
                                 <td>{{ bw[1]|size }}</td>
                             </tr>
                             <tr>
-                                <td>{% trans 'Free' %}:</td>
+                                <td>{{ 'Free'|trans }}:</td>
                                 <td>{{ bw[2]|size }}</td>
                             </tr>
                             </tbody>
@@ -118,18 +118,18 @@
                     <div class="body" style="width: 32%; float: left;">
                         {% set ram = info.memory|split(',') %}
                         <table class="table table-striped table-bordered table-condensed">
-                            <caption>{% trans 'Memory' %}</caption>
+                            <caption>{{ 'Memory'|trans }}</caption>
                             <tbody>
                             <tr>
-                                <td>{% trans 'Total' %}:</td>
+                                <td>{{ 'Total'|trans }}:</td>
                                 <td>{{ ram[0]|size }}</td>
                             </tr>
                             <tr>
-                                <td>{% trans 'Used' %}:</td>
+                                <td>{{ 'Used'|trans }}:</td>
                                 <td>{{ ram[1]|size }}</td>
                             </tr>
                             <tr>
-                                <td>{% trans 'Free' %}:</td>
+                                <td>{{ 'Free'|trans }}:</td>
                                 <td>{{ ram[2]|size }}</td>
                             </tr>
                             </tbody>
@@ -148,18 +148,18 @@
                     <div class="body" style="width: 34%; float: left;">
                         {% set hdd = info.hdd|split(',') %}
                         <table class="table table-striped table-bordered table-condensed">
-                            <caption>{% trans 'Disk usage' %}</caption>
+                            <caption>{{ 'Disk usage'|trans }}</caption>
                             <tbody>
                             <tr>
-                                <td>{% trans 'Total' %}:</td>
+                                <td>{{ 'Total'|trans }}:</td>
                                 <td>{{ hdd[0]|size }}</td>
                             </tr>
                             <tr>
-                                <td>{% trans 'Used' %}:</td>
+                                <td>{{ 'Used'|trans }}:</td>
                                 <td>{{ hdd[1]|size }}</td>
                             </tr>
                             <tr>
-                                <td>{% trans 'Free' %}:</td>
+                                <td>{{ 'Free'|trans }}:</td>
                                 <td>{{ hdd[2]|size }}</td>
                             </tr>
                             </tbody>
@@ -184,8 +184,8 @@
                     </div>
                     {% else %}
                     <div class="block" style="text-align: center;">
-                        <h2>{% trans 'Boot up server to see statistics' %}</h2>
-                        <a class="btn btn-primary api-link" href="{{ 'api/client/servicesolusvm/boot'|link({'order_id' : order.id}) }}" data-api-confirm="{% trans 'Are you sure?' %}" data-api-msg="{% trans 'VPS booting. Reload page after a few moments.' %}">{% trans 'Boot' %}</a>
+                        <h2>{{ 'Boot up server to see statistics'|trans }}</h2>
+                        <a class="btn btn-primary api-link" href="{{ 'api/client/servicesolusvm/boot'|link({ 'order_id': order.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-msg="{{ 'VPS booting. Reload page after a few moments.'|trans }}">{{ 'Boot'|trans }}</a>
                     </div>
                     {% endif %}
 
@@ -193,65 +193,65 @@
                 <div class="tab-pane" id="tab-manage">
 
                     <div class="control-group controls-row">
-                        <h2>{% trans 'Change status' %}</h2>
-                        <a href="{{ 'api/client/servicesolusvm/reboot'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="{% trans 'VPS rebooting. Refresh page after a few moments.' %}" class="btn btn-warning api-link">{% trans 'Reboot' %}</a>
-                        <a href="{{ 'api/client/servicesolusvm/boot'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="{% trans 'VPS booting. Refresh page after a few moments.' %}" class="btn btn-success api-link">{% trans 'Boot' %}</a>
-                        <a href="{{ 'api/client/servicesolusvm/shutdown'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="{% trans 'VPS shutdown' %}" class="btn btn-danger api-link">{% trans 'Shutdown' %}</a>
+                        <h2>{{ 'Change status'|trans }}</h2>
+                        <a href="{{ 'api/client/servicesolusvm/reboot'|link({ 'order_id': order.id }) }}" data-api-confirm="Are you sure?" data-api-msg="{{ 'VPS rebooting. Refresh page after a few moments.'|trans }}" class="btn btn-warning api-link">{{ 'Reboot'|trans }}</a>
+                        <a href="{{ 'api/client/servicesolusvm/boot'|link({ 'order_id': order.id }) }}" data-api-confirm="Are you sure?" data-api-msg="{{ 'VPS booting. Refresh page after a few moments.'|trans }}" class="btn btn-success api-link">{{ 'Boot'|trans }}</a>
+                        <a href="{{ 'api/client/servicesolusvm/shutdown'|link({ 'order_id': order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="{{ 'VPS shutdown'|trans }}" class="btn btn-danger api-link">{{ 'Shutdown'|trans }}</a>
                     </div>
 
                     <div class="control-group controls-row">
-                        <h2>{% trans 'Change hostname' %}</h2>
-                        <form method="post" action="{{ 'api/client/servicesolusvm/set_hostname'|link }}" class="api-form" data-api-msg="{% trans 'Hostname changed' %}">
+                        <h2>{{ 'Change hostname'|trans }}</h2>
+                        <form method="post" action="{{ 'api/client/servicesolusvm/set_hostname'|link }}" class="api-form" data-api-msg="{{ 'Hostname changed'|trans }}">
                             <fieldset>
                                 <p>
-                                    <label>{% trans 'New hostname' %}: </label>
-                                    <input type="text" name="hostname" value="{{service.hostname}}" placeholder="{% trans 'Enter new hostname' %}"/>
+                                    <label>{{ 'New hostname'|trans }}: </label>
+                                    <input type="text" name="hostname" value="{{ service.hostname }}" placeholder="{{ 'Enter new hostname'|trans }}"/>
                                 </p>
                                 <input type="hidden" name="order_id" value="{{ order.id }}" />
-                                <button class="btn btn-primary" type="submit" value="{% trans 'Change' %}">{% trans 'Change hostname' %}</button>
+                                <button class="btn btn-primary" type="submit" value="{{ 'Change'|trans }}">{{ 'Change hostname'|trans }}</button>
                             </fieldset>
                         </form>
                     </div>
 
                     <div class="control-group controls-row">
-                        <h2>{% trans 'Change operating system' %}</h2>
-                        <form method="post" action="{{ 'api/client/servicesolusvm/rebuild'|link }}" class="api-form" data-api-msg="{% trans 'Operating system is being changed' %}">
+                        <h2>{{ 'Change operating system'|trans }}</h2>
+                        <form method="post" action="{{ 'api/client/servicesolusvm/rebuild'|link }}" class="api-form" data-api-msg="{{ 'Operating system is being changed'|trans }}">
                             <fieldset>
                                 <p>
-                                    <label>{% trans 'New operating system' %}: </label>
-                                    {% set plans = guest.servicesolusvm_get_templates({"type":info.type}) %}
+                                    <label>{{ 'New operating system'|trans }}: </label>
+                                    {% set plans = guest.servicesolusvm_get_templates({ "type": info.type }) %}
                                     {{ mf.selectbox('template', plans, service.template, 1, 'Select template') }}
                                 </p>
                                 <input type="hidden" name="order_id" value="{{ order.id }}" />
-                                <button class="btn btn-primary" type="submit" value="{% trans 'Change' %}">{% trans 'Change OS' %}</button>
+                                <button class="btn btn-primary" type="submit" value="{{ 'Change'|trans %}">{{ 'Change OS'|trans }}</button>
                             </fieldset>
                         </form>
                     </div>
 
                     <div class="control-group controls-row">
-                        <h2>{% trans 'Change root password' %}</h2>
-                        <form method="post" action="{{ 'api/client/servicesolusvm/set_root_password'|link }}" class="api-form" data-api-msg="{% trans 'Root password changed' %}">
+                        <h2>{{ 'Change root password'|trans }}</h2>
+                        <form method="post" action="{{ 'api/client/servicesolusvm/set_root_password'|link }}" class="api-form" data-api-msg="{{ 'Root password changed'|trans }}">
                             <fieldset>
                                 <p>
-                                    <label>{% trans 'New password' %}: </label>
-                                    <input type="text" name="password" value="{{ request.domain|default(service.tld) }}" required="required" placeholder="{% trans 'Enter new root password' %}">
+                                    <label>{{ 'New password'|trans }}: </label>
+                                    <input type="text" name="password" value="{{ request.domain|default(service.tld) }}" required="required" placeholder="{{ 'Enter new root password'|trans }}">
                                 </p>
                                 <input type="hidden" name="order_id" value="{{ order.id }}" />
-                                <button class="btn btn-primary" type="submit" value="{% trans 'Change' %}">{% trans 'Change password' %}</button>
+                                <button class="btn btn-primary" type="submit" value="{{ 'Change'|trans }}">{{ 'Change password'|trans }}</button>
                             </fieldset>
                         </form>
                     </div>
                 </div>
                 <div class="tab-pane" id="tab-ca-pass">
-                        <h2>{% trans 'Login details' %}</h2>
+                        <h2>{{ 'Login details'|trans }}</h2>
                     <table class="table table-striped table-bordered table-condensed">
                         <tbody>
                         <tr>
-                            <td>{% trans 'Username' %}:</td>
+                            <td>{{ 'Username'|trans }}:</td>
                             <td>{{ service.username }}</td>
                         </tr>
                         <tr>
-                            <td>{% trans 'Password' %}:</td>
+                            <td>{{ 'Password'|trans }}:</td>
                             <td>{{ service.password ? service.password : '*********' }}</td>
                         </tr>
                         </tbody>
@@ -259,8 +259,8 @@
                         <tr>
                             <td colspan="2">
                                 <div class="aligncenter">
-                                    <a href="{{service.master_url}}" target="_blank" class="btn btn-primary">{% trans 'Open control panel' %}</a>
-                                    <a href="#" class="btn btn-primary" onclick="$('#changepass').slideToggle(); return false;">{% trans 'Change password' %}</a>
+                                    <a href="{{service.master_url}}" target="_blank" class="btn btn-primary">{{ 'Open control panel'|trans }}</a>
+                                    <a href="#" class="btn btn-primary" onclick="$('#changepass').slideToggle(); return false;">{{ 'Change password'|trans }}</a>
                                 </div>
                             </td>
                         </tr>
@@ -269,15 +269,15 @@
 
                     <div class="control-group controls-row">
                         <div class="block" style="display: none;" id="changepass">
-                            <h2>{% trans 'Change client area password' %}</h2>
-                            <form method="post" action="{{ 'api/client/servicesolusvm/change_password'|link }}" class="api-form" data-api-msg="{% trans 'Client area password changed' %}">
+                            <h2>{{ 'Change client area password'|trans }}</h2>
+                            <form method="post" action="{{ 'api/client/servicesolusvm/change_password'|link }}" class="api-form" data-api-msg="{{ 'Client area password changed'|trans }}">
                                 <fieldset>
                                     <p>
-                                        <label>{% trans 'New password' %}: </label>
-                                        <input type="text" name="password" value="" placeholder="{% trans 'Enter new password' %}"/>
+                                        <label>{{ 'New password'|trans }}: </label>
+                                        <input type="text" name="password" value="" placeholder="{{ 'Enter new password'|trans }}"/>
                                     </p>
                                     <input type="hidden" name="order_id" value="{{ order.id }}" />
-                                    <button class="btn btn-primary" type="submit" value="{% trans 'Change' %}">{% trans 'Change password' %}</button>
+                                    <button class="btn btn-primary" type="submit" value="{{ 'Change'|trans }}">{{ 'Change password'|trans }}</button>
                                 </fieldset>
                             </form>
                         </div>
@@ -289,15 +289,14 @@
     </article>
 </div>
 
-
-<script type="text/javascript">
+<script>
     $(function() {
-        $('.domain-tabs a').bind('click',function(e){
+        $('.domain-tabs a').bind('click', function(e) {
             e.preventDefault();
             $(this).tab('show');
         });
-        function onAfterStatusCheck(result)
-        {
+
+        function onAfterStatusCheck(result) {
             $('#vps-status').text(result);
         }
     });

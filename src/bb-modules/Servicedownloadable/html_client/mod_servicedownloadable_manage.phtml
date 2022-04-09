@@ -3,10 +3,10 @@
     <article class="span12 data-block">
         <div class="data-container">
             <header>
-                <h2>{% trans 'Download ' %} {{service.filename}}</h2>
+                <h2>{{ 'Download'|trans }} {{ service.filename }}</h2>
             </header>
             <section>
-                <a class="btn btn-primary btn-large" href="{{ 'servicedownloadable/get-file'|link }}/{{ order.id }}">{% trans 'Download' %}</a>
+                <a class="btn btn-primary btn-large" href="{{ 'servicedownloadable/get-file'|link }}/{{ order.id }}">{{ 'Download'|trans }}</a>
             </section>
         </div>
     </article>

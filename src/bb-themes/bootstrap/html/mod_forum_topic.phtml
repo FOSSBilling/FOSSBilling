@@ -10,7 +10,7 @@
 					<small>{{ forum.title }}</small>
 				</h1>
 				<ol class="breadcrumb">
-					<li><a href="{{ 'forum'|link }}">{% trans 'Forum' %}</a></li>
+					<li><a href="{{ 'forum'|link }}">{{ 'Forum'|trans }}</a></li>
 					<li><a href="{{ '/forum'|link }}/{{forum.slug}}">{{ forum.title }}</a></li>
 					<li class="active">{{ topic.title }}</li>
 				</ol>
@@ -24,8 +24,8 @@
 		<ul class="list-inline">
 			<li><img src="{{ topic.first.author.email|gravatar }}?size=20" alt="{{ message.author.name }}"></li>
 			<li>{{topic.created_at|date('Y-m-d h:i')}}</li>
-			<li><strong>{{ topic.stats.views_count }}</strong> {% trans 'Views' %}</li>
-			<li><strong>{{ topic.stats.posts_count }}</strong> {% trans 'Messages' %}</li>
+			<li><strong>{{ topic.stats.views_count }}</strong> {{ 'Views'|trans }}</li>
+			<li><strong>{{ topic.stats.posts_count }}</strong> {{ 'Messages'|trans }}</li>
 			{% if client %}
 				{% if client.forum_is_favorite({"id":topic.id}) %}
 				<li><a href="{{ 'api/client/forum/favorite_remove'|link({'id' : topic.id}) }}" class="api" data-api-reload="1">Remove from favorites</a></li>
@@ -58,7 +58,7 @@
 		<hr>
         {% else %}
             <div class="box">
-                <div class="block">{% trans 'No replies in this topic' %}</div>
+                <div class="block">{{ 'No replies in this topic'|trans }}</div>
             </div>
         {% endfor %}
 		{% include "partial_pagination.phtml" with {'list': messages} %}
@@ -66,17 +66,17 @@
 			<a class="btn btn-default" href="{{ '/forum'|link }}/{{forum.slug}}"><i class="fa fa-arrow-left"></i> {{ forum.title }}</a>
 			{% if client %}
 				{% if topic.status != "locked" %}
-					<a class="btn btn-primary" role="button" data-toggle="collapse" href="#reply" aria-expanded="false" aria-controls="reply">{% trans 'Reply' %}</a>
+					<a class="btn btn-primary" role="button" data-toggle="collapse" href="#reply" aria-expanded="false" aria-controls="reply">{{ 'Reply'|trans }}</a>
 				{% else %}
 					<button class="btn btn-danger" disabled="disabled" >{{ mf.status_name(topic.status) }}</button>
 				{% endif %}
 			{% else %}
-				<a class="btn btn-primary" href="" data-toggle="modal" data-target="#login">{% trans 'Login' %}</a>
+				<a class="btn btn-primary" href="" data-toggle="modal" data-target="#login">{{ 'Login'|trans }}</a>
 			{% endif %}
 		</p>
 		
 		<div class="collapse well" id="reply">
-			<h4>{% trans 'Post new message in forum' %}</h4>
+			<h4>{{ 'Post new message in forum'|trans }}</h4>
 			<form method="post" action="" class="api_form" data-api-url="client/forum/post_message" data-api-reload="1">
 				<div class="control-group form-group">
 					<div class="controls">
@@ -84,7 +84,7 @@
 					</div>
 				</div>
 				<input type="hidden" name="forum_topic_id" value="{{ topic.id }}">
-				<input class="btn btn-primary" type="submit" value="{% trans 'Post' %}">
+				<input class="btn btn-primary" type="submit" value="{{ 'Post'|trans }}">
 			</form>
 		</div>
 

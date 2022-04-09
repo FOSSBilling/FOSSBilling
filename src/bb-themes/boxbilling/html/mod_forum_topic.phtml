@@ -1,37 +1,37 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
 {% block meta_title %}{{ topic.title }}{% endblock %}
 
 {% block content_after %}
-
 <div class="widget">
     <div class="head">
-        <h2 class="dark-icon i-forum">{% trans 'Topic information' %}</h2>
+        <h2 class="dark-icon i-forum">{{ 'Topic information'|trans }}</h2>
     </div>
     <table>
         <tbody>
             <tr>
-                <td>{% trans 'Forum' %}</td>
+                <td>{{ 'Forum'|trans }}</td>
                 <td><a href="{{ '/forum'|link }}/{{forum.slug}}">{{ forum.title }}</a></td>
             </tr>
             <tr>
-                <td>{% trans 'Topic' %}</td>
+                <td>{{ 'Topic'|trans }}</td>
                 <td><a href="{{ '/forum'|link }}/{{forum.slug}}/{{topic.slug}}">{{ topic.title }}</a></td>
             </tr>
             <tr>
-                <td>{% trans 'Started By' %}</td>
+                <td>{{ 'Started By'|trans }}</td>
                 <td>{{ topic.first.author.name }}</td>
             </tr>
             <tr>
-                <td>{% trans 'Views' %}</td>
+                <td>{{ 'Views'|trans }}</td>
                 <td>{{ topic.stats.views_count }}</td>
             </tr>
             <tr>
-                <td>{% trans 'Messages' %}</td>
+                <td>{{ 'Messages'|trans }}</td>
                 <td>{{ topic.stats.posts_count }}</td>
             </tr>
             <tr>
-                <td>{% trans 'Since' %}</td>
+                <td>{{ 'Since'|trans }}</td>
                 <td>{{topic.created_at|bb_date}}</td>
             </tr>
         </tbody>
@@ -58,7 +58,7 @@
 </div>
 
 <p>
-    <a class="bb-button" href="{{ '/forum'|link }}/{{forum.slug}}"><span class="dark-icon i-arrow"></span> {% trans 'Back to threads list' %}</a>
+    <a class="bb-button" href="{{ '/forum'|link }}/{{forum.slug}}"><span class="dark-icon i-arrow"></span> {{ 'Back to threads list'|trans }}</a>
 </p>
 
 {% endblock %}
@@ -81,8 +81,8 @@
             </div>
             <ul class="tabs">
                 <li><a href="#m-{{message.id}}">#{{ i+1 }}</a></li>
-                <li><a href="#reply-{{message.id}}"><span class="dark-icon i-support"></span>{% trans 'Reply' %}</a></li>
-                <li><a href="#quote-{{message.id}}"><span class="dark-icon i-quote"></span>{% trans 'Quote' %}</a></li>
+                <li><a href="#reply-{{message.id}}"><span class="dark-icon i-support"></span>{{ 'Reply'|trans }}</a></li>
+                <li><a href="#quote-{{message.id}}"><span class="dark-icon i-quote"></span>{{ 'Quote'|trans }}</a></li>
             </ul>
             <div class="tabs_container">
                 <div class="tab_content" id="m-{{message.id}}">
@@ -102,12 +102,12 @@
                 <div class="tab_content" id="reply-{{message.id}}">
                     <form method="post" action="" class="api_form" data-api-url="client/forum/post_message" data-api-reload="1">
                         <fieldset>
-                            <legend>{% trans 'Post new message in forum' %}</legend>
+                            <legend>{{ 'Post new message in forum'|trans }}</legend>
                             <p>
                                 <textarea name="message" cols="5" rows="10" required="required"></textarea>
                             </p>
                             <input type="hidden" name="forum_topic_id" value="{{ topic.id }}">
-                            <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Post' %}">
+                            <input class="bb-button bb-button-submit" type="submit" value="{{ 'Post'|trans }}">
                         </fieldset>
                     </form>
                 </div>
@@ -115,12 +115,12 @@
                 <div class="tab_content" id="quote-{{message.id}}">
                     <form method="post" action="" class="api_form" data-api-url="client/forum/post_message" data-api-reload="1">
                         <fieldset>
-                            <legend>{% trans 'Post new message in forum' %}</legend>
+                            <legend>{{ 'Post new message in forum'|trans }}</legend>
                             <p>
                                 <textarea name="message" cols="5" rows="10" required="required">{{ mf.markdown_quote(message.message) }}</textarea>
                             </p>
                             <input type="hidden" name="forum_topic_id" value="{{ topic.id }}">
-                            <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Post' %}">
+                            <input class="bb-button bb-button-submit" type="submit" value="{{ 'Post'|trans }}">
                         </fieldset>
                     </form>
                 </div>
@@ -129,12 +129,11 @@
 
         {% else %}
             <div class="box">
-                <div class="block">{% trans 'No replies in this topic' %}</div>
+                <div class="block">{{ 'No replies in this topic'|trans }}</div>
             </div>
         {% endfor %}
         </div>
     </div>
 
-    {% include "partial_pagination.phtml" with {'list': messages} %}
-
+    {% include "partial_pagination.phtml" with { 'list': messages } %}
 {% endblock %}

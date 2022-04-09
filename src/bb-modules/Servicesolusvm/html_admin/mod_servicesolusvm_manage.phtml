@@ -1,63 +1,63 @@
-{% set node_online = admin.servicesolusvm_test_connection({"return":'bool'}) %}
+{% set node_online = admin.servicesolusvm_test_connection({ "return": 'bool' }) %}
 
 {% if node_online and service.vserverid %}
-{% set info = admin.servicesolusvm_info({"order_id":order.id}) %}
+    {% set info = admin.servicesolusvm_info({ "order_id": order.id }) %}
 
 <div class="help">
-    <h2>{% trans 'Details' %}</h2>
+    <h2>{{ 'Details'|trans }}</h2>
 </div>
 
 <table class="tableStatic wide">
     <tbody>
         <tr class="noborder">
-            <td style="width: 30%">{% trans 'State' %}:</td>
+            <td style="width: 30%">{{ 'State'|trans }}:</td>
             <td>{{ info.state|title }}</td>
         </tr>
 
         <tr>
-            <td>{% trans 'Hostname' %}:</td>
+            <td>{{ 'Hostname'|trans }}:</td>
             <td>
                 <a target="_blank" href="http://{{ service.hostname }}">{{ service.hostname }}</a>
             </td>
         </tr>
 
         <tr>
-            <td>{% trans 'Type' %}:</td>
+            <td>{{ 'Type'|trans }}:</td>
             <td>{{ info.type|title }}</td>
         </tr>
         
         <tr>
-            <td>{% trans 'Node / ID / VMID' %}:</td>
-            <td>{{ info.node }} / {{service.vserverid}} / {{service.virtid}} </td>
+            <td>{{ 'Node / ID / VMID'|trans }}:</td>
+            <td>{{ info.node }} / {{ service.vserverid }} / {{ service.virtid }} </td>
         </tr>
         
         <tr>
-            <td>{% trans 'Operating System' %}:</td>
+            <td>{{ 'Operating System'|trans }}:</td>
             <td>{{ service.template }}</td>
         </tr>
         
         <tr>
-            <td>{% trans 'IP address' %}:</td>
+            <td>{{ 'IP address'|trans }}:</td>
             <td><strong>{{ info.mainipaddress }}</strong></td>
         </tr>
         
         <tr>
-            <td>{% trans 'Additional IP addresses' %}:</td>
+            <td>{{ 'Additional IP addresses'|trans }}:</td>
             <td>{{ info.ipaddresses }}</td>
         </tr>
         
         <tr>
-            <td>{% trans 'Root password' %}:</td>
+            <td>{{ 'Root password'|trans }}:</td>
             <td>{{ service.rootpassword }}</td>
         </tr>
         
         <tr>
-            <td>{% trans 'Client area username / password' %}:</td>
+            <td>{{ 'Client area username / password'|trans }}:</td>
             <td>{{ service.username }} / {{ service.password }}</td>
         </tr>
         
         <tr>
-            <td>{% trans 'Console user / password' %}:</td>
+            <td>{{ 'Console user / password'|trans }}:</td>
             <td>{{ service.consoleuser }} / {{ service.consolepassword }}</td>
         </tr>
 
@@ -66,8 +66,8 @@
         <tr>
             <td colspan="2">
                 <div class="aligncenter">
-                    <a href="{{service.master_url}}" target="_blank" class="btn55 mr10"><img src="images/icons/middlenav/user2.png" alt=""><span>{% trans 'Client area' %}</span></a>
-                    <a href="{{service.master_url}}/admincp" target="_blank" class="btn55 mr10"><img src="images/icons/middlenav/adminUser2.png" alt=""><span>{% trans 'Admin area' %}</span></a>
+                    <a href="{{service.master_url}}" target="_blank" class="btn55 mr10"><img src="images/icons/middlenav/user2.png" alt=""><span>{{ 'Client area'|trans }}</span></a>
+                    <a href="{{service.master_url}}/admincp" target="_blank" class="btn55 mr10"><img src="images/icons/middlenav/adminUser2.png" alt=""><span>{{ 'Admin area'|trans }}</span></a>
                     <a href="{{ 'api/admin/servicesolusvm/status'|link({'order_id' : order.id}) }}" data-api-jsonp="onAfterStatusCheck" class="btn55 mr10 api-link"><img src="images/icons/middlenav/transfer.png" alt=""><span>Check Status</span></a>
                     <a href="{{ 'api/admin/servicesolusvm/reboot'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="VPS rebooted" class="btn55 mr10 api-link"><img src="images/icons/middlenav/refresh4.png" alt=""><span>Reboot</span></a>
                     <a href="{{ 'api/admin/servicesolusvm/boot'|link({'order_id' : order.id}) }}" data-api-confirm="Are you sure?" data-api-msg="VPS booted" class="btn55 mr10 api-link"><img src="images/icons/middlenav/electroPlug.png" alt=""><span>Boot</span></a>
@@ -87,49 +87,49 @@
 </table>
 
 <div class="help">
-    <h5>{% trans 'Change root password' %}</h5>
+    <h5>{{ 'Change root password'|trans }}</h5>
 </div>
 
 <form method="post" action="{{ 'api/admin/servicesolusvm/set_root_password'|link }}" class="mainForm api-form save" data-api-msg="Root password changed">
     <fieldset>
         <div class="rowElem noborder">
-            <label>{% trans 'New password' %}:</label>
+            <label>{{ 'New password'|trans }}:</label>
             <div class="formRight">
                 <input type="text" name="password" value="" placeholder="Enter new password"/>
             </div>
             <div class="fix"></div>
         </div>
         <input type="hidden" name="order_id" value="{{ order.id }}" />
-        <input type="submit" value="{% trans 'Change' %}" class="greyishBtn submitForm" />
+        <input type="submit" value="{{ 'Change'|trans }}" class="greyishBtn submitForm" />
     </fieldset>
 </form>
 
 <div class="help">
-    <h5>{% trans 'Change hostname' %}</h5>
+    <h5>{{ 'Change hostname'|trans }}</h5>
 </div>
 
 <form method="post" action="{{ 'api/admin/servicesolusvm/set_hostname'|link }}" class="mainForm api-form save" data-api-msg="Hostname changed">
     <fieldset>
         <div class="rowElem noborder">
-            <label>{% trans 'New hostname' %}:</label>
+            <label>{{ 'New hostname'|trans }}:</label>
             <div class="formRight">
                 <input type="text" name="hostname" value="" placeholder="Enter new hostname"/>
             </div>
             <div class="fix"></div>
         </div>
         <input type="hidden" name="order_id" value="{{ order.id }}" />
-        <input type="submit" value="{% trans 'Change' %}" class="greyishBtn submitForm" />
+        <input type="submit" value="{{ 'Change'|trans }}" class="greyishBtn submitForm" />
     </fieldset>
 </form>
 
 <div class="help">
-    <h5>{% trans 'Change plan' %}</h5>
+    <h5>{{ 'Change plan'|trans }}</h5>
 </div>
 
 <form method="post" action="{{ 'api/admin/servicesolusvm/set_plan'|link }}" class="mainForm api-form save" data-api-msg="Plan changed">
     <fieldset>
         <div class="rowElem noborder">
-            <label>{% trans 'New plan' %}:</label>
+            <label>{{ 'New plan'|trans }}:</label>
             <div class="formRight">
                 {% set plans = admin.servicesolusvm_get_plans({"type":info.type}) %}
                 {{ mf.selectbox('plan', plans, service.plan, 1, 'Select plan') }}
@@ -137,18 +137,18 @@
             <div class="fix"></div>
         </div>
         <input type="hidden" name="order_id" value="{{ order.id }}" />
-        <input type="submit" value="{% trans 'Change' %}" class="greyishBtn submitForm" />
+        <input type="submit" value="{{ 'Change'|trans }}" class="greyishBtn submitForm" />
     </fieldset>
 </form>
 
 <div class="help">
-    <h5>{% trans 'Rebuild' %}</h5>
+    <h5>{{ 'Rebuild'|trans }}</h5>
 </div>
 
 <form method="post" action="{{ 'api/admin/servicesolusvm/rebuild'|link }}" class="mainForm api-form save" data-api-msg="VPS rebuilt">
     <fieldset>
         <div class="rowElem noborder">
-            <label>{% trans 'New template' %}:</label>
+            <label>{{ 'New template'|trans }}:</label>
             <div class="formRight">
                 {% set plans = admin.servicesolusvm_get_templates({"type":info.type}) %}
                 {{ mf.selectbox('template', plans, service.template, 1, 'Select template') }}
@@ -156,30 +156,30 @@
             <div class="fix"></div>
         </div>
         <input type="hidden" name="order_id" value="{{ order.id }}" />
-        <input type="submit" value="{% trans 'Rebuild' %}" class="greyishBtn submitForm" />
+        <input type="submit" value="{{ 'Rebuild'|trans }}" class="greyishBtn submitForm" />
     </fieldset>
 </form>
 
 {% if info.state != 'disabled' %}
 <div class="help">
-    <h5>{% trans 'Usage statistics' %}</h5>
+    <h5>{{ 'Usage statistics'|trans }}</h5>
 </div>
 
 <div class="body" style="width: 210px; float: left;">
     {% set bw = info.bandwidth|split(',') %}
     <table class="tableStatic wide with-border">
-        <caption>{% trans 'Bandwidth' %}</caption>
+        <caption>{{ 'Bandwidth'|trans }}</caption>
         <tbody>
             <tr>
-                <td>{% trans 'Total' %}:</td>
+                <td>{{ 'Total'|trans }}:</td>
                 <td>{{ bw[0]|size }}</td>
             </tr>
             <tr>
-                <td>{% trans 'Used' %}:</td>
+                <td>{{ 'Used'|trans }}:</td>
                 <td>{{ bw[1]|size }}</td>
             </tr>
             <tr>
-                <td>{% trans 'Free' %}:</td>
+                <td>{{ 'Free'|trans }}:</td>
                 <td>{{ bw[2]|size }}</td>
             </tr>
         </tbody>
@@ -187,7 +187,7 @@
             <tr>
                 <td colspan="2">
                     <div class="progressbar" style="border: 1px solid #DDD; padding: 2px;">
-                        <div style="background-color: #82d453; width: {{bw[3]}}%; height: 20px;"></div>
+                        <div style="background-color: #82d453; width: {{ bw[3] }}%; height: 20px;"></div>
                     </div>
                 </td>
             </tr>
@@ -198,18 +198,18 @@
 <div class="body" style="width: 215px; float: left;">
     {% set ram = info.memory|split(',') %}
     <table class="tableStatic wide with-border">
-        <caption>{% trans 'Memory' %}</caption>
+        <caption>{{ 'Memory'|trans }}</caption>
         <tbody>
             <tr>
-                <td>{% trans 'Total' %}:</td>
+                <td>{{ 'Total'|trans }}:</td>
                 <td>{{ ram[0]|size }}</td>
             </tr>
             <tr>
-                <td>{% trans 'Used' %}:</td>
+                <td>{{ 'Used'|trans }}:</td>
                 <td>{{ ram[1]|size }}</td>
             </tr>
             <tr>
-                <td>{% trans 'Free' %}:</td>
+                <td>{{ 'Free'|trans }}:</td>
                 <td>{{ ram[2]|size }}</td>
             </tr>
         </tbody>
@@ -217,7 +217,7 @@
             <tr>
                 <td colspan="2">
                     <div class="progressbar" style="border: 1px solid #DDD; padding: 2px;">
-                        <div style="background-color: #82d453; width: {{ram[3]}}%; height: 20px;"></div>
+                        <div style="background-color: #82d453; width: {{ ram[3] }}%; height: 20px;"></div>
                     </div>
                 </td>
             </tr>
@@ -228,18 +228,18 @@
 <div class="body" style="width: 215px; float: left;">
     {% set hdd = info.hdd|split(',') %}
     <table class="tableStatic wide with-border">
-        <caption>{% trans 'Disk usage' %}</caption>
+        <caption>{{ 'Disk usage'|trans }}</caption>
         <tbody>
             <tr>
-                <td>{% trans 'Total' %}:</td>
+                <td>{{ 'Total'|trans }}:</td>
                 <td>{{ hdd[0]|size }}</td>
             </tr>
             <tr>
-                <td>{% trans 'Used' %}:</td>
+                <td>{{ 'Used'|trans }}:</td>
                 <td>{{ hdd[1]|size }}</td>
             </tr>
             <tr>
-                <td>{% trans 'Free' %}:</td>
+                <td>{{ 'Free'|trans }}:</td>
                 <td>{{ hdd[2]|size }}</td>
             </tr>
         </tbody>
@@ -247,7 +247,7 @@
             <tr>
                 <td colspan="2">
                     <div class="progressbar" style="border: 1px solid #DDD; padding: 2px;">
-                        <div style="background-color: #82d453; width: {{hdd[3]}}%; height: 20px;"></div>
+                        <div style="background-color: #82d453; width: {{ hdd[3] }}%; height: 20px;"></div>
                     </div>
                 </td>
             </tr>
@@ -258,24 +258,24 @@
 <div class="clear"></div>
 
 <div class="help">
-    <h5>{% trans 'Traffic' %}</h5>
+    <h5>{{ 'Traffic'|trans }}</h5>
 </div>
 
 <div class="body aligncenter">
-    <img src="{{service.master_url}}{{ info.trafficgraph }}" alt="">
+    <img src="{{ service.master_url }}{{ info.trafficgraph }}" alt="">
 </div>
 
 <div class="help">
-    <h5>{% trans 'Load' %}</h5>
+    <h5>{{ 'Load'|trans }}</h5>
 </div>
 <div class="body aligncenter">
-    <img src="{{service.master_url}}{{ info.loadgraph }}" alt="">
+    <img src="{{ service.master_url }}{{ info.loadgraph }}" alt="">
 </div>
 <div class="help">
-    <h5>{% trans 'Memory' %}</h5>
+    <h5>{{ 'Memory'|trans }}</h5>
 </div>
 <div class="body aligncenter">
-    <img src="{{service.master_url}}{{ info.memorygraph }}" alt="">
+    <img src="{{ service.master_url }}{{ info.memorygraph }}" alt="">
 </div>
 
 {% endif %}
@@ -283,61 +283,61 @@
 {% else %}
 <div class="body">
     <div class="nNote nWarning first">
-        <p><strong>{% trans 'INFORMATION' %}: </strong>{% trans 'Master node is offline, order is not yet activated or API is not configured properly.' %}</p>
+        <p><strong>{{ 'INFORMATION'|trans }}: </strong>{{ 'Master node is offline, order is not yet activated or API is not configured properly.'|trans }}</p>
     </div>
 </div>
 {% endif %}
 
 <div class="help">
-    <h5>{% trans 'Service management' %}</h5>
-    <p>{% trans 'Changing settings does not send actions to SolusVM server.' %}</p>
+    <h5>{{ 'Service management'|trans }}</h5>
+    <p>{{ 'Changing settings does not send actions to SolusVM server.'|trans }}</p>
 </div>
 
 <form method="post" action="{{ 'api/admin/servicesolusvm/update'|link }}" class="mainForm api-form save" data-api-msg="Configuration updated">
     <fieldset>
         <div class="rowElem noborder">
-            <label>{% trans 'Template' %}:</label>
+            <label>{{ 'Template'|trans }}:</label>
             <div class="formRight">
-                <input type="text" name="template" value="{{service.template}}" placeholder=""/>
+                <input type="text" name="template" value="{{ service.template }}" placeholder=""/>
             </div>
             <div class="fix"></div>
         </div>
 
         <div class="rowElem">
-            <label>{% trans 'Hostname' %}:</label>
+            <label>{{ 'Hostname'|trans }}:</label>
             <div class="formRight">
-                <input type="text" name="hostname" value="{{service.hostname}}" placeholder=""/>
+                <input type="text" name="hostname" value="{{ service.hostname }}" placeholder=""/>
             </div>
             <div class="fix"></div>
         </div>
 
         <div class="rowElem">
-            <label>{% trans 'Plan' %}:</label>
+            <label>{{ 'Plan'|trans }}:</label>
             <div class="formRight">
-                <input type="text" name="plan" value="{{service.plan}}" placeholder=""/>
+                <input type="text" name="plan" value="{{ service.plan }}" placeholder=""/>
             </div>
             <div class="fix"></div>
         </div>
         
         <div class="rowElem">
-            <label>{% trans 'Main IP address' %}:</label>
+            <label>{{ 'Main IP address'|trans }}:</label>
             <div class="formRight">
-                <input type="text" name="mainipaddress" value="{{service.mainipaddress}}" placeholder=""/>
+                <input type="text" name="mainipaddress" value="{{ service.mainipaddress }}" placeholder=""/>
             </div>
             <div class="fix"></div>
         </div>
 
         {#
         <div class="rowElem">
-            <label>{% trans 'Custom memory' %}:</label>
+            <label>{{ 'Custom memory'|trans }}:</label>
             <div class="formRight">
-                <input type="text" name="custommemory" value="{{service.custommemory}}" placeholder=""/>
+                <input type="text" name="custommemory" value="{{ service.custommemory }}" placeholder=""/>
             </div>
             <div class="fix"></div>
         </div>
 
         <div class="rowElem">
-            <label>{% trans 'Custom diskspace' %}:</label>
+            <label>{{ 'Custom diskspace'|trans }}:</label>
             <div class="formRight">
                 <input type="text" name="customdiskspace" value="{{service.customdiskspace}}" placeholder=""/>
             </div>
@@ -345,7 +345,7 @@
         </div>
 
         <div class="rowElem">
-            <label>{% trans 'Custom bandwidth' %}:</label>
+            <label>{{ 'Custom bandwidth'|trans }}:</label>
             <div class="formRight">
                 <input type="text" name="custombandwidth" value="{{service.custombandwidth}}" placeholder=""/>
             </div>
@@ -353,7 +353,7 @@
         </div>
 
         <div class="rowElem">
-            <label>{% trans 'Custom cpu' %}:</label>
+            <label>{{ 'Custom cpu'|trans }}:</label>
             <div class="formRight">
                 <input type="text" name="customcpu" value="{{service.customcpu}}" placeholder=""/>
             </div>
@@ -362,13 +362,12 @@
         #}
 
         <input type="hidden" name="order_id" value="{{ order.id }}" />
-        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+        <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
     </fieldset>
 </form>
 
 <script type="text/javascript">
-    function onAfterStatusCheck(result)
-    {
+    function onAfterStatusCheck(result) {
         bb.msg(result);
     }
 </script>

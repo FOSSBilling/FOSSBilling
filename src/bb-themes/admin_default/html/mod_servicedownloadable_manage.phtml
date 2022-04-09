@@ -1,24 +1,23 @@
 <div class="help">
-    <h2>{% trans 'File information' %}</h2>
+    <h2>{{ 'File information'|trans }}</h2>
 </div>
 
 <table class="tableStatic wide">
     <tbody>
         <tr class="noborder">
-            <td>{% trans 'Filename' %}:</td>
+            <td>{{ 'Filename'|trans }}:</td>
             <td>{{ service.filename  }}</td>
         </tr>
 
         <tr>
-            <td>{% trans 'Location' %}:</td>
+            <td>{{ 'Location'|trans }}:</td>
             <td>{{ service.path }}</td>
         </tr>
         
         <tr>
-            <td>{% trans 'Downloads' %}:</td>
+            <td>{{ 'Downloads'|trans }}:</td>
             <td>{{ service.downloads }}</td>
         </tr>
-
     </tbody>
     <tfoot>
         <tr>
@@ -28,22 +27,22 @@
 </table>
 
 <div class="help">
-    <h2>{% trans 'Upload new file for this order' %}</h2>
-    <p>{% trans 'Use this function to update existing order file. Client will be able to download new file from client area' %}</p>
+    <h2>{{ 'Upload new file for this order'|trans }}</h2>
+    <p>{{ 'Use this function to update existing order file. Client will be able to download new file from client area'|trans }}</p>
 </div>
 
 <form method="post" action="" class="mainForm" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
 <fieldset>
     
     <div class="rowElem">
-        <label>{% trans 'Upload new file' %}:</label>
+        <label>{{ 'Upload new file'|trans }}:</label>
         <div class="formRight noborder">
             <input type="file" name="file_data" id="file_data">
         </div>
         <div class="fix"></div>
     </div>
 
-    <input type="submit" value="{% trans 'Upload' %}" class="greyishBtn submitForm" id="bb-upload-button"/>
+    <input type="submit" value="{{ 'Upload'|trans }}" class="greyishBtn submitForm" id="bb-upload-button"/>
 </fieldset>
 
 <input type="hidden" name="order_id" value="{{ order.id }}">

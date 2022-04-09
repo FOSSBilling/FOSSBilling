@@ -1,6 +1,6 @@
 {# Sets blank layout if another page if ajax request or if another page is request as home for non-clients #}
 {% extends request.ajax or (not client and settings.home_page != "menuicons") ? "layout_blank.phtml" : "layout_default.phtml" %}
-{% block meta_title %}{% trans 'Client Area' %}{% endblock %}
+{% block meta_title %}{{ 'Client Area'|trans }}{% endblock %}
 {% import "macro_functions.phtml" as mf %}
 
 {% if not settings.home_sidemenu %}
@@ -12,14 +12,14 @@
 	{% if client %}
 		<div class="row">
 			<div class="col-lg-12">
-				<h1 class="page-header">{% trans 'Dashboard' %}</h1>
+				<h1 class="page-header">{{ 'Dashboard'|trans }}</h1>
 			</div>
 		</div>	
 	{% else %}
 		{% if settings.home_page == "menuicons" %}
 			<div class="row">
 				<div class="col-lg-12">
-					<h1 class="page-header">{% trans 'Home' %}</h1>
+					<h1 class="page-header">{{ 'Home'|trans }}</h1>
 				</div>
 			</div>
 		{% endif %}
@@ -44,11 +44,11 @@
 					<div class="panel panel-default">
 						<div class="panel-heading">
 							<h4>
-								<i class="fa fa-cog"></i> {% trans 'Services' %}
+								<i class="fa fa-cog"></i> {{ 'Services'|trans }}
 								{% if client.order_get_list({"expiring":1}).total > 0 %}
-									<span class="label label-primary">{{ client.order_get_list({"expiring":1}).total }} {% trans 'Soon expires' %}</span>
+									<span class="label label-primary">{{ client.order_get_list({"expiring":1}).total }} {{ 'Soon expires'|trans }}</span>
 								{% endif %}
-								<a class="btn btn-default btn-xs pull-right" href="{{ 'order/service'|link }}">{% trans 'All services' %}</a>
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'order/service'|link }}">{{ 'All services'|trans }}</a>
 							</h4>
 						</div>
 						<div class="list-group text-center">
@@ -56,7 +56,7 @@
 							{% for i, service in services.list %}
 							<a href="{{ '/order/service/manage'|link }}/{{service.id}}" class="list-group-item">{{service.title}} #{{ service.id }}</a>
 							{% endfor %}
-							<a class="list-group-item list-group-item-success" href="{{ 'order'|link }}">{% trans 'New order' %}</a>
+							<a class="list-group-item list-group-item-success" href="{{ 'order'|link }}">{{ 'New order'|trans }}</a>
 						</div>
 					</div>
 				</div>
@@ -67,11 +67,11 @@
 					<div class="panel panel-default">
 						<div class="panel-heading">
 							<h4>
-								<i class="fa fa-life-ring"></i> {% trans 'Support' %}
+								<i class="fa fa-life-ring"></i> {{ 'Support'|trans }}
 								{% if client.support_ticket_get_list({"status":'on_hold'}).total > 0 %}
 									<span class="label label-warning">{{ client.support_ticket_get_list({"status":'on_hold'}).total }} {{ mf.status_name("on_hold") }}</span>
 								{% endif %}
-								<a class="btn btn-default btn-xs pull-right" href="{{ 'support'|link }}">{% trans 'All tickets' %}</a>
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'support'|link }}">{{ 'All tickets'|trans }}</a>
 							</h4>
 						</div>
 						<div class="list-group text-center">
@@ -83,7 +83,7 @@
 							{% for i, ticket in tickets_open.list %}
 								<a href="{{ 'support/ticket'|link }}/{{ticket.id}}" class="list-group-item">{{ticket.subject}} <span class="label label-default">{{ticket.helpdesk.name}}</span></a>
 							{% endfor %}
-							<a class="list-group-item list-group-item-info" href="{{ 'support'|link({'ticket' : 1}) }}">{% trans 'New ticket' %}</a>
+							<a class="list-group-item list-group-item-info" href="{{ 'support'|link({'ticket' : 1}) }}">{{ 'New ticket'|trans }}</a>
 						</div>
 					</div>
 				</div>
@@ -94,11 +94,11 @@
 					<div class="panel panel-default">
 						<div class="panel-heading">
 							<h4>
-								<i class="fa fa-credit-card"></i> {% trans 'Invoices' %}
+								<i class="fa fa-credit-card"></i> {{ 'Invoices'|trans }}
 								{% if client.invoice_get_list({"status":"unpaid"}).total > 0 %}
-									<span class="label label-danger">{{ client.invoice_get_list({"status":"unpaid"}).total }} {% trans 'Unpaid' %}</span>
+									<span class="label label-danger">{{ client.invoice_get_list({"status":"unpaid"}).total }} {{ 'Unpaid'|trans }}</span>
 								{% endif %}
-								<a class="btn btn-default btn-xs pull-right" href="{{ 'invoice'|link }}">{% trans 'All Invoices' %}</a>
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'invoice'|link }}">{{ 'All Invoices'|trans }}</a>
 							</h4>
 						</div>
 						<div class="list-group text-center">
@@ -106,10 +106,10 @@
 							{% for i, invoice in unpaid_invoices %}
 							<a href="{{ 'invoice'|link }}/{{ invoice.hash }}" class="list-group-item">
 								<strong class="list-group-item-heading">{{ "Invoice #%05s"|format(invoice.id) }}</strong>
-								<p class="list-group-item-text">{% trans 'Due Date' %}: {{ invoice.due_at|date("d/m/Y") }} - <strong>{{ invoice.total | money(invoice.currency) }}</strong></p>
+								<p class="list-group-item-text">{{ 'Due Date'|trans }}: {{ invoice.due_at|date("d/m/Y") }} - <strong>{{ invoice.total | money(invoice.currency) }}</strong></p>
 							</a>
 							{% endfor %}
-							{% if client.invoice_get_list({"status":"unpaid"}).total > 0 %}<a class="list-group-item list-group-item-danger" href="{{ 'invoice'|link }}">{{ client.invoice_get_list({"status":"unpaid"}).total }} {% trans 'Unpaid' %}</a>{% endif %}
+							{% if client.invoice_get_list({"status":"unpaid"}).total > 0 %}<a class="list-group-item list-group-item-danger" href="{{ 'invoice'|link }}">{{ client.invoice_get_list({"status":"unpaid"}).total }} {{ 'Unpaid'|trans }}</a>{% endif %}
 						</div>
 					</div>
 				</div>
@@ -120,8 +120,8 @@
 					<div class="panel panel-default">
 						<div class="panel-heading">
 							<h4>
-								<i class="fa fa-fw fa-shopping-cart"></i> {% trans 'Recent orders' %}
-								<a class="btn btn-default btn-xs pull-right" href="{{ 'order'|link }}">{% trans 'New order' %}</a>
+								<i class="fa fa-fw fa-shopping-cart"></i> {{ 'Recent orders'|trans }}
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'order'|link }}">{{ 'New order'|trans }}</a>
 							</h4>
 						</div>
 						<div class="list-group">
@@ -141,14 +141,14 @@
 					<div class="panel panel-default">
 						<div class="panel-heading">
 							<h4>
-								<i class="fa fa-fw fa-envelope"></i> {% trans 'Recent emails' %}
-								<a class="btn btn-default btn-xs pull-right" href="{{ 'email'|link }}">{% trans 'Emails' %}</a>
+								<i class="fa fa-fw fa-envelope"></i> {{ 'Recent emails'|trans }}
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'email'|link }}">{{ 'Emails'|trans }}</a>
 							</h4>
 						</div>
 						<div class="list-group">
 							{% for i, email in client.email_get_list({"per_page":5}).list %}
 							<a href="{{ 'email'|link }}/{{email.id}}" class="list-group-item">
-								{{email.subject|truncate(30)}} <small>- {{ email.created_at|timeago }} {% trans 'ago' %}</small>
+								{{email.subject|truncate(30)}} <small>- {{ email.created_at|timeago }} {{ 'ago'|trans }}</small>
 							</a>
 							{% endfor %}
 						</div>
@@ -161,15 +161,15 @@
 					<div class="panel panel-default">
 						<div class="panel-heading">
 							<h4>
-								<i class="fa fa-fw fa-graduation-cap"></i> {% trans 'Knowledge Base' %}
-								<a class="btn btn-default btn-xs pull-right" href="{{ 'kb'|link }}">{% trans 'Knowledge Base' %}</a>
+								<i class="fa fa-fw fa-graduation-cap"></i> {{ 'Knowledge Base'|trans }}
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'kb'|link }}">{{ 'Knowledge Base'|trans }}</a>
 							</h4>
 						</div>
 						<div class="list-group panel" id="kb">
 							<span class="list-group-item">
 								<form method="get" action="{{ 'kb'|link }}">
 									<div class="input-group">
-										<input name="q" type="text" class="form-control" value="{{ request.q }}" placeholder="{% trans 'What are you looking for?' %}">
+										<input name="q" type="text" class="form-control" value="{{ request.q }}" placeholder="{{ 'What are you looking for?'|trans }}">
 										<span class="input-group-btn">
 											<button class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
 										</span>
@@ -194,8 +194,8 @@
 					<div class="panel panel-default">
 						<div class="panel-heading">
 							<h4>
-								<i class="fa fa-fw fa-bullhorn"></i> {% trans 'News & Announcements' %}
-								<a class="btn btn-default btn-xs pull-right" href="{{ 'news'|link }}">{% trans 'Blog' %}</a>
+								<i class="fa fa-fw fa-bullhorn"></i> {{ 'News & Announcements'|trans }}
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'news'|link }}">{{ 'Blog'|trans }}</a>
 							</h4>
 						</div>
 						<div class="list-group">
@@ -214,8 +214,8 @@
 					<div class="panel panel-default">
 						<div class="panel-heading">
 							<h4>
-								<i class="fa fa-fw fa-comments"></i> {% trans 'Favorite topics' %}
-								<a class="btn btn-default btn-xs pull-right" href="{{ 'forum'|link }}">{% trans 'Forum' %}</a>
+								<i class="fa fa-fw fa-comments"></i> {{ 'Favorite topics'|trans }}
+								<a class="btn btn-default btn-xs pull-right" href="{{ 'forum'|link }}">{{ 'Forum'|trans }}</a>
 							</h4>
 						</div>
 						<div class="list-group">
@@ -223,7 +223,7 @@
 							<a href="{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}#m-{{ topic.last.id }}" class="list-group-item">
 								<h4 class="list-group-item-heading">{{topic.title}}</h4>
 								<p class="list-group-item-text">
-									<i>{% trans 'Last post' %}:</i> <img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"> {{ topic.last.author.name }} <strong>{{ topic.last.created_at|date('Y-m-d h:i') }}</strong>
+									<i>{{ 'Last post'|trans }}:</i> <img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"> {{ topic.last.author.name }} <strong>{{ topic.last.created_at|date('Y-m-d h:i') }}</strong>
 								</p>
 							</a>
 							{% endfor %}
@@ -253,8 +253,8 @@
 							</span>
 						</div>
 						<div class="panel-body">
-							<h4><a href="{{ '/order'|link }}">{% trans 'Order' %}</a></h4>
-							<p>{% trans 'Choose products we offer for selling' %}</p>
+							<h4><a href="{{ '/order'|link }}">{{ 'Order'|trans }}</a></h4>
+							<p>{{ 'Choose products we offer for selling'|trans }}</p>
 						</div>
 					</div>
 				</div>
@@ -268,8 +268,8 @@
 							</span>
 						</div>
 						<div class="panel-body">
-							<h4><a href="{{ '/login'|link({'register' : 1}) }}">{% trans 'Register' %}</a></h4>
-							<p>{% trans 'Become a member and manage services' %}</p>
+							<h4><a href="{{ '/login'|link({'register' : 1}) }}">{{ 'Register'|trans }}</a></h4>
+							<p>{{ 'Become a member and manage services'|trans }}</p>
 						</div>
 					</div>
 				</div>
@@ -283,7 +283,7 @@
 							</span>
 						</div>
 						<div class="panel-body">
-							<h4><a href="{{ '/support/contact-us'|link }}">{% trans 'Contact Us' %}</a></h4>
+							<h4><a href="{{ '/support/contact-us'|link }}">{{ 'Contact Us'|trans }}</a></h4>
 							<p>Get assistance for your service</p>
 						</div>
 					</div>
@@ -299,8 +299,8 @@
 							</span>
 						</div>
 						<div class="panel-body">
-							<h4><a href="{{ '/news'|link }}">{% trans 'Announcements' %}</a></h4>
-							<p>{% trans 'Track our latest posts' %}</p>
+							<h4><a href="{{ '/news'|link }}">{{ 'Announcements'|trans }}</a></h4>
+							<p>{{ 'Track our latest posts'|trans }}</p>
 						</div>
 					</div>
 				</div>
@@ -316,8 +316,8 @@
 							</span>
 						</div>
 						<div class="panel-body">
-							<h4><a href="{{ '/kb'|link }}">{% trans 'Knowledge Base' %}</a></h4>
-							<p>{% trans 'Browse our KB for answers and FAQs' %}</p>
+							<h4><a href="{{ '/kb'|link }}">{{ 'Knowledge Base'|trans }}</a></h4>
+							<p>{{ 'Browse our KB for answers and FAQs'|trans }}</p>
 						</div>
 					</div>
 				</div>

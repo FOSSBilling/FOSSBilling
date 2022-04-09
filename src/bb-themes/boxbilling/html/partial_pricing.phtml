@@ -1,29 +1,27 @@
 <div class="box">
     <div class="block pricing">
-
         <div class="total">
             {% if pricing.type == 'free' %}
-            
                 {% if product.allow_quantity_select %}
-                    <label>{% trans 'Quantity:' %}
+                    <label>{{ 'Quantity:'|trans }}
                         <input type="text" name="quantity" value="1" style="width:30px;"/>
                     </label>
                     <hr/>
                 {% endif %}
                 
-                <p>{% trans 'Total price:' %}</p>
+                <p>{{ 'Total price:'|trans }}</p>
                 <div class="currency">{{ 0 | money_convert }}</div>
             {% endif %}
 
             {% if pricing.type == 'once'  %}
                 {% if product.allow_quantity_select %}
-                    <label>{% trans 'Quantity:' %}
+                    <label>{{ 'Quantity:'|trans }}
                         <input type="text" name="quantity" value="1" style="width:30px;"/>
                     </label>
                     <hr/>
                 {% endif %}
 
-                <p>{% trans 'Total price:' %}</p>
+                <p>{{ 'Total price:'|trans }}</p>
                 <div class="currency">{{ (pricing.once.price + pricing.once.setup) | money_convert }}</div>
             {% endif %}
 
@@ -31,7 +29,7 @@
         {% if pricing.type == 'recurrent'  %}
         
         {% if product.allow_quantity_select %}
-            <label>{% trans 'Quantity:' %}
+            <label>{{ 'Quantity:'|trans }}
                 <input type="text" name="quantity" value="1" style="width:30px;"/>
             </label>
             <hr/>
@@ -46,38 +44,37 @@
         </select>
 
         {% for code,prices in pricing.recurrent %}
-        {% if prices.enabled %}
-        {% if prices.setup > 0 %}
-        <div class="period {{code}}" style="display: none;">
-            <table>
-                <tr>
-                    <td>{% trans 'Price' %}</td>
-                    <td>{{ prices.price | money_convert }}</td>
-                </tr>
-                <tr>
-                    <td>{% trans 'Setup Price' %}</td>
-                    <td>{{ prices.setup | money_convert }}</td>
-                </tr>
-            </table>
-        </div>
-        {% endif %}
-        {% endif %}
-
+            {% if prices.enabled %}
+                {% if prices.setup > 0 %}
+                    <div class="period {{ code }}" style="display: none;">
+                        <table>
+                            <tr>
+                                <td>{{ 'Price'|trans }}</td>
+                                <td>{{ prices.price | money_convert }}</td>
+                            </tr>
+                            <tr>
+                                <td>{{ 'Setup Price'|trans }}</td>
+                                <td>{{ prices.setup | money_convert }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                {% endif %}
+            {% endif %}
         {% endfor %}
 
         <hr/>
-        <p>{% trans 'Total price:' %}</p>
+        <p>{{ 'Total price:'|trans }}</p>
         {% for code,prices in pricing.recurrent %}
-        <div class="currency period {{code}}">{{ (prices.price + prices.setup) | money_convert }}</div>
+            <div class="currency period {{code}}">{{ (prices.price + prices.setup)|money_convert }}</div>
         {% endfor %}
         
         {% endif %}
         </div>
 
         {% if product.addons|length > 0 %}
-        <button class="bb-button bb-button-submit bb-button-big" type="submit" id="order-button">{% trans 'Continue' %}</button>
+        <button class="bb-button bb-button-submit bb-button-big" type="submit" id="order-button">{{ 'Continue'|trans }}</button>
         {% else %}
-        <button class="bb-button bb-button-submit bb-button-big" type="submit" id="order-button">{% trans 'Order now' %}</button>
+        <button class="bb-button bb-button-submit bb-button-big" type="submit" id="order-button">{{ 'Order now'|trans }}</button>
         {% endif %}
         </div>
-    </div>
+</div>

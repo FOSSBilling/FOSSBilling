@@ -4,12 +4,11 @@
 
 {% block content %}
 <div class="widget simpleTabs">
-
     <ul class="tabs">
-        <li><a href="#tab-staff">{% trans 'Staff members' %}</a></li>
-        <li><a href="#tab-new">{% trans 'New staff member' %}</a></li>
-        <li><a href="#tab-groups">{% trans 'Manage groups' %}</a></li>
-        <li><a href="#tab-new-group">{% trans 'New group' %}</a></li>
+        <li><a href="#tab-staff">{{ 'Staff members'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New staff member'|trans }}</a></li>
+        <li><a href="#tab-groups">{{ 'Manage groups'|trans }}</a></li>
+        <li><a href="#tab-new-group">{{ 'New group'|trans }}</a></li>
     </ul>
 
     <div class="tabs_container">
@@ -20,10 +19,10 @@
             <table class="tableStatic wide">
                 <thead>
                     <tr>
-                        <td colspan="2">{% trans 'Name' %}</td>
-                        <td>{% trans 'Email' %}</td>
-                        <td>{% trans 'Group' %}</td>
-                        <td>{% trans 'Status' %}</td>
+                        <td colspan="2">{{ 'Name'|trans }}</td>
+                        <td>{{ 'Email'|trans }}</td>
+                        <td>{{ 'Group'|trans }}</td>
+                        <td>{{ 'Status'|trans }}</td>
                         <td style="width: 5%">&nbsp;</td>
                     </tr>
                 </thead>
@@ -48,7 +47,7 @@
                 <tbody>
                     <tr>
                         <td colspan="5">
-                            {% trans 'The list is empty' %}
+                            {{ 'The list is empty'|trans }}
                         </td>
                     </tr>
                 </tbody>
@@ -62,7 +61,7 @@
             <form method="post" action="{{ 'api/admin/staff/create'|link }}" class="mainForm api-form" data-api-jsonp="onAfterStaffCreate">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Group' %}</label>
+                        <label>{{ 'Group'|trans }}</label>
                         <div class="formRight">
                             {{ mf.selectbox('admin_group_id', admin.staff_group_get_pairs, '', 1) }}
                         </div>
@@ -70,7 +69,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Name' %}</label>
+                        <label>{{ 'Name'|trans }}</label>
                         <div class="formRight">
                             <input type="text" name="name" value="" required="required"/>
                         </div>
@@ -78,36 +77,36 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Email' %}</label>
+                        <label>{{ 'Email'|trans }}</label>
                         <div class="formRight">
                             <input type="email" name="email" value="{{ request.email }}" required="required"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Password' %}</label>
+                        <label>{{ 'Password'|trans }}</label>
                         <div class="formRight">
                             <input type="password" name="password" required="required" />
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Signature' %}</label>
+                        <label>{{ 'Signature'|trans }}</label>
                         <div class="formRight">
                             <textarea name="signature" cols="5" rows="2"></textarea>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Status' %}:</label>
+                        <label>{{ 'Status'|trans }}:</label>
                         <div class="formRight">
-                            <input type="radio" name="status" value="inactive" checked="checked"/><label>{% trans 'Inactive' %}</label>
-                            <input type="radio" name="status" value="active"/><label>{% trans 'Active' %}</label>
+                            <input type="radio" name="status" value="inactive" checked="checked"/><label>{{ 'Inactive'|trans }}</label>
+                            <input type="radio" name="status" value="active"/><label>{{ 'Active'|trans }}</label>
                         </div>
                         <div class="fix"></div>
                     </div>
 
-                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
@@ -118,7 +117,7 @@
             <table class="tableStatic wide">
                 <thead>
                     <tr>
-                        <td>{% trans 'Name' %}</td>
+                        <td>{{ 'Name'|trans }}</td>
                         <td style="width: 13%">&nbsp;</td>
                     </tr>
                 </thead>
@@ -139,7 +138,7 @@
                 <tbody>
                     <tr>
                         <td colspan="5">
-                            {% trans 'The list is empty' %}
+                            {{ 'The list is empty'|trans }}
                         </td>
                     </tr>
                 </tbody>
@@ -153,13 +152,13 @@
             <form method="post" action="{{ 'api/admin/staff/group_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'staff'|alink }}">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Name' %}</label>
+                        <label>{{ 'Name'|trans }}</label>
                         <div class="formRight">
                             <input type="text" name="name" value="" required="required"/>
                         </div>
                         <div class="fix"></div>
                     </div>
-                    <input type="submit" value="{% trans 'Create group' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create group'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>

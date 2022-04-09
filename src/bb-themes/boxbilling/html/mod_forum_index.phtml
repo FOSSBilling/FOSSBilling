@@ -1,13 +1,13 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
 
-{% block meta_title %}{% trans 'Forum' %}{% endblock %}
+{% block meta_title %}{{ 'Forum'|trans }}{% endblock %}
 
 {% block content %}
     <div class="h-block">
         <div class="h-block-header">
             <div class="icon"><span class="big-light-icon i-forum"></span></div>
-            <h2>{% trans 'Forum' %}</h2>
-            <p>{% trans 'Welcome to our forums. If you wish to become a member and post, you have to be registered member.' %}</p>
+            <h2>{{ 'Forum'|trans }}</h2>
+            <p>{{ 'Welcome to our forums. If you wish to become a member and post, you have to be registered member.'|trans }}</p>
         </div>
         <div class="block">
 
@@ -17,9 +17,9 @@
                 <thead>
                     <tr>
                         <th>&nbsp;</th>
-                        <th style="width:80%;">{% trans 'Forum' %}</th>
-                        <th>{% trans 'Threads' %}</th>
-                        <th>{% trans 'Posts' %}</th>
+                        <th style="width:80%;">{{ 'Forum'|trans }}</th>
+                        <th>{{ 'Threads'|trans }}</th>
+                        <th>{{ 'Posts'|trans }}</th>
                     </tr>
                 </thead>
 
@@ -44,16 +44,16 @@
             {% endfor %}
             
             {% if client and client.forum_favorites %}
-            <h2>{% trans 'Favorite topics' %}</h2>
+            <h2>{{ 'Favorite topics'|trans }}</h2>
             <table>
                 <thead>
                     <tr>
                         <th style="width:5%">&nbsp;</th>
                         <th style="width:5%">&nbsp;</th>
-                        <th style="width:40%">{% trans 'Thread / Thread Starter' %}</th>
-                        <th>{% trans 'Last post' %}</th>
-                        <th>{% trans 'Replies' %}</th>
-                        <th>{% trans 'Views' %}</th>
+                        <th style="width:40%">{{ 'Thread / Thread Starter'|trans }}</th>
+                        <th>{{ 'Last post'|trans }}</th>
+                        <th>{{ 'Replies'|trans }}</th>
+                        <th>{{ 'Views'|trans }}</th>
                     </tr>
                 </thead>
 
@@ -67,12 +67,12 @@
                             <img src="{{ topic.first.author.email|gravatar }}?size=30" alt="{{ topic.first.author.name }}" />
                         </td>
                         <td>
-                            <a href="{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}">{{topic.title}}</a>
+                            <a href="{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}">{{ topic.title }}</a>
                             <p style="font-size: .9em">{{ topic.first.author.name }}</p>
                         </td>
                         <td>
                             {{ topic.last.created_at|bb_date }}
-                            <p style="font-size: .9em">{% trans 'by' %} <a href="{{ '/forum'|link }}/{{topic.forum.slug}}/{{topic.slug}}#m-{{ topic.last.id }}">{{ topic.last.author.name }} {#<img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"></a>#}</p>
+                            <p style="font-size: .9em">{{ 'by'|trans }} <a href="{{ '/forum'|link }}/{{ topic.forum.slug }}/{{ topic.slug }}#m-{{ topic.last.id }}">{{ topic.last.author.name }} {#<img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"></a>#}</p>
                         </td>
                         <td>{{ topic.stats.posts_count }}</td>
                         <td>{{ topic.stats.views_count }}</td>
@@ -81,7 +81,7 @@
                     {% else %}
 
                     <tr>
-                        <td colspan="6">{% trans 'The list is empty' %}</td>
+                        <td colspan="6">{{ 'The list is empty'|trans }}</td>
                     </tr>
 
                     {% endfor %}
@@ -94,7 +94,9 @@
     </div>
 
     {% if not client %}
-    <p><button class="bb-button bb-button-red" type="button" onclick="parent.location='{{ '/login'|link }}'">{% trans 'Register' %}</button></p>
+    <p>
+        <button class="bb-button bb-button-red" type="button" onclick="parent.location='{{ '/login'|link }}'">{{ 'Register'|trans }}</button>
+    </p>
     {% endif %}
-    
+   
 {% endblock %}

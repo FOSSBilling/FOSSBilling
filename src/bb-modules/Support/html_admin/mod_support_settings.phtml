@@ -1,13 +1,16 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{% trans 'Support settings' %}{% endblock %}
+
+{% block meta_title %}{{ 'Support settings'|trans }}{% endblock %}
+
 {% set active_menu = 'system' %}
 
 {% block breadcrumbs %}
 <ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
-    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
-    <li class="lastB">{% trans 'Support settings' %}</li>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+    <li class="lastB">{{ 'Support settings'|trans }}</li>
 </ul>
 {% endblock %}
 
@@ -16,33 +19,31 @@
 <div class="widget simpleTabs">
 
     <ul class="tabs">
-        <li><a href="#tab-index">{% trans 'Settings' %}</a></li>
-        <li><a href="#tab-helpdesks">{% trans 'Help desks' %}</a></li>
-        <li><a href="#tab-new-helpdesk">{% trans 'New help desk' %}</a></li>
+        <li><a href="#tab-index">{{ 'Settings'|trans }}</a></li>
+        <li><a href="#tab-helpdesks">{{ 'Help desks'|trans }}</a></li>
+        <li><a href="#tab-new-helpdesk">{{ 'New help desk'|trans }}</a></li>
     </ul>
 
     <div class="tabs_container">
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-index">
-
-            {% set params = admin.extension_config_get({"ext":"mod_support"}) %}
-
-            <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Configuration updated' %}">
+            {% set params = admin.extension_config_get({ "ext": "mod_support" }) %}
+            <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
 
                 <fieldset>
-                    <legend>{% trans 'Auto responder settings' %}</legend>
+                    <legend>{{ 'Auto responder settings'|trans }}</legend>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Enable auto responder' %}</label>
+                        <label>{{ 'Enable auto responder'|trans }}</label>
                         <div class="formRight">
-                            <input type="radio" name="autorespond_enable" value="1" {% if params.autorespond_enable == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
-                            <input type="radio" name="autorespond_enable" value="0" {% if not params.autorespond_enable %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+                            <input type="radio" name="autorespond_enable" value="1" {% if params.autorespond_enable == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                            <input type="radio" name="autorespond_enable" value="0" {% if not params.autorespond_enable %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
                         </div>
                         <div class="fix"></div>
                     </div>
 
                     <div id="autorespond_enable" {% if not params.autorespond_enable %}style="display:none;"{% endif %}>
                     <div class="rowElem">
-                        <label class="">{% trans 'Auto respond message' %}</label>
+                        <label class="">{{ 'Auto respond message'|trans }}</label>
                         <div class="formRight">
                             <select name="autorespond_message_id" style="width: 250px;">
                                 {% for response in admin.support_canned_get_list({"per_page":90}).list %}
@@ -56,19 +57,19 @@
         </fieldset>
 
         <fieldset>
-            <legend>{% trans 'Delay message - selected canned response message will be added to default reply message' %}</legend>
+            <legend>{{ 'Delay message - selected canned response message will be added to default reply message'|trans }}</legend>
             <div class="rowElem noborder">
-                <label>{% trans 'Enable delay message' %}</label>
+                <label>{{ 'Enable delay message'|trans }}</label>
                 <div class="formRight">
-                    <input type="radio" name="delay_enable" value="1" {% if params.delay_enable == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
-                    <input type="radio" name="delay_enable" value="0" {% if not params.delay_enable %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+                    <input type="radio" name="delay_enable" value="1" {% if params.delay_enable == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                    <input type="radio" name="delay_enable" value="0" {% if not params.delay_enable %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
                 </div>
                 <div class="fix"></div>
             </div>
 
             <div id="delay_enable" {% if not params.delay_enable %}style="display:none;"{% endif %}>
             <div class="rowElem">
-                <label class="">{% trans 'Delay hours' %}</label>
+                <label class="">{{ 'Delay hours'|trans }}</label>
                 <div class="formRight">
                     <input type="text" name="delay_hours" value="{{ params.delay_hours|default(24) }}" style="width: 40px;" placeholder="24"/>
                 </div>
@@ -76,7 +77,7 @@
             </div>
 
             <div class="rowElem">
-                <label class="">{% trans 'Delay reply' %}</label>
+                <label class="">{{ 'Delay reply'|trans }}</label>
                 <div class="formRight">
                     <select name="delay_message_id" style="width: 250px;">
                         {% for response in admin.support_canned_get_list({"per_page":90}).list %}
@@ -88,16 +89,16 @@
             </div>
     </div>
 
-    <legend>{% trans 'Wait time - how many hours user needs to wait until consequent ticket submission' %}</legend>
+    <legend>{{ 'Wait time - how many hours user needs to wait until consequent ticket submission'|trans }}</legend>
     <div class="rowElem noborder">
-        <label>{% trans 'Wait time in hours' %}</label>
+        <label>{{ 'Wait time in hours'|trans }}</label>
         <div class="formRight">
             <input type="text" name="wait_hours"  value="{{ params.wait_hours }}" />
         </div>
         <div class="fix"></div>
     </div>
 
-    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
     <input type="hidden" name="ext" value="mod_support" />
     </fieldset>
     </form>
@@ -109,9 +110,9 @@
             <table class="tableStatic wide">
                 <thead>
                 <tr>
-                    <th style="width: 40%">{% trans 'Title' %}</th>
-                    <th>{% trans 'Email' %}</th>
-                    <th>{% trans 'Close tickets after' %}</th>
+                    <th style="width: 40%">{{ 'Title'|trans }}</th>
+                    <th>{{ 'Email'|trans }}</th>
+                    <th>{{ 'Close tickets after'|trans }}</th>
                     <th style="width: 13%">&nbsp;</th>
                 </tr>
                 </thead>
@@ -133,7 +134,7 @@
                 <tbody>
                 <tr>
                     <td colspan="4">
-                        {% trans 'The list is empty' %}
+                        {{ 'The list is empty'|trans }}
                     </td>
                 </tr>
                 </tbody>
@@ -147,74 +148,69 @@
             <form method="post" action="{{ 'api/admin/support/helpdesk_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'extension/settings/support'|alink }}">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Title' %}</label>
+                        <label>{{ 'Title'|trans }}</label>
                         <div class="formRight noborder">
                             <input type="text" name="name" value="{{ helpdesk.name }}" required="required"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Email' %}</label>
+                        <label>{{ 'Email'|trans }}</label>
                         <div class="formRight">
                             <input type="text" name="email" value="{{ helpdesk.email }}" required="required"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Signature' %}</label>
+                        <label>{{ 'Signature'|trans }}</label>
                         <div class="formRight">
                             <textarea name="signature" cols="5" rows="3">{{ helpdesk.signature }}</textarea>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Close after' %}</label>
+                        <label>{{ 'Close after'|trans }}</label>
                         <div class="formRight">
                             <input type="text" name="close_after" value="{{ helpdesk.close_after|default('48') }}" required="required"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Can reopen' %}</label>
+                        <label>{{ 'Can reopen'|trans }}</label>
                         <div class="formRight">
-                            <input type="radio" name="can_reopen" value="1" checked="checked"/><label>{% trans 'Yes' %}</label>
-                            <input type="radio" name="can_reopen" value="0"/><label>{% trans 'No' %}</label>
+                            <input type="radio" name="can_reopen" value="1" checked="checked"/><label>{{ 'Yes'|trans }}</label>
+                            <input type="radio" name="can_reopen" value="0"/><label>{{ 'No'|trans }}</label>
                         </div>
                         <div class="fix"></div>
                     </div>
 
-                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
                     <input type="hidden" name="id" value="{{ helpdesk.id }}"/>
                 </fieldset>
             </form>
-
         </div>
     </div>
-
 </div>
 {% endblock %}
 
-
 {% block js %}
-<script type="text/javascript">
-    
+<script>
 $(function() {
-    $('input[name=autorespond_enable]').click(function(){
-        if($(this).val() == 1) {
+    $('input[name=autorespond_enable]').click(function() {
+        if ($(this).val() == 1) {
             $('#autorespond_enable').slideDown();
         } else {
             $('#autorespond_enable').slideUp();
         }
     });
     
-    $('input[name=delay_enable]').click(function(){
-        if($(this).val() == 1) {
+    $('input[name=delay_enable]').click(function() {
+        if ($(this).val() == 1) {
             $('#delay_enable').slideDown();
         } else {
             $('#delay_enable').slideUp();
         }
     });
 });
-
 </script>
 {% endblock %}

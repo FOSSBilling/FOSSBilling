@@ -1,21 +1,26 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
 {% block meta_title %}Clients login history{% endblock %}
 {% set active_menu = 'activity' %}
 
 {% block content %}
 <div class="widget">
-    <div class="head"><h5 class="iFrames">{% trans 'Clients logins history' %}</h5></div>
+    <div class="head">
+        <h5 class="iFrames">{{ 'Clients logins history'|trans }}</h5>
+    </div>
 
 {{ mf.table_search }}
 <table class="tableStatic wide">
     <thead>
         <tr>
-            <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
-            <td colspan="2">{% trans 'Client' %}</td>
-            <td>{% trans 'IP' %}</td>
-            <td>{% trans 'Country' %}</td>
-            <td>{% trans 'Date' %}</td>
+            <td style="width: 2%">
+                <input type="checkbox" class="batch-delete-master-checkbox"/>
+            </td>
+            <td colspan="2">{{ 'Client'|trans }}</td>
+            <td>{{ 'IP'|trans }}</td>
+            <td>{{ 'Country'|trans }}</td>
+            <td>{{ 'Date'|trans }}</td>
             <td style="width: 5%">&nbsp;</td>
         </tr>
     </thead>
@@ -37,7 +42,7 @@
     {% else %}
     <tr>
         <td colspan="6">
-            {% trans 'The list is empty' %}
+            {{ 'The list is empty'|trans }}
         </td>
     </tr>
     {% endfor %}

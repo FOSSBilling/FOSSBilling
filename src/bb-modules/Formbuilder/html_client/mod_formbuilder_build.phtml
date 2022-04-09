@@ -1,12 +1,12 @@
-{% if guest.extension_is_on({"mod":"formbuilder"}) %}
-{% set form = guest.formbuilder_get({"id":product.form_id}) %}
-        {% if form.style.show_title != "0" %}
-        <div class="control-group">
-            <div class="controls">
-                <legend>{{form.name}}</legend>
-            </div>
+{% if guest.extension_is_on({ "mod": "formbuilder" }) %}
+    {% set form = guest.formbuilder_get({ "id": product.form_id }) %}
+    {% if form.style.show_title != "0" %}
+    <div class="control-group">
+        <div class="controls">
+            <legend>{{ form.name }}</legend>
         </div>
-        {% endif %}
+    </div>
+    {% endif %}
 
     <fieldset>
         {% for field in form.fields %}

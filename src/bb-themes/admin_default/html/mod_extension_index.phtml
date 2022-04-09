@@ -1,33 +1,34 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{% trans 'Extensions' %}{% endblock %}
+
+{% block meta_title %}{{ 'Extensions'|trans }}{% endblock %}
+
 {% set active_menu = 'extensions' %}
 
 {% block content %}
 <div class="widget simpleTabs">
-
     <ul class="tabs">
-        <li><a href="#tab-index">{% trans 'Extensions' %}</a></li>
-        <li><a href="#tab-core">{% trans 'Update BoxBilling' %}</a></li>
-        <li><a href="#tab-about">{% trans 'Learn more about extensions' %}</a></li>
-        <li><a href="#tab-hooks">{% trans 'Hooks' %}</a></li>
+        <li><a href="#tab-index">{{ 'Extensions'|trans }}</a></li>
+        <li><a href="#tab-core">{{ 'Update BoxBilling'|trans }}</a></li>
+        <li><a href="#tab-about">{{ 'Learn more about extensions'|trans }}</a></li>
+        <li><a href="#tab-hooks">{{ 'Hooks'|trans }}</a></li>
     </ul>
 
     <div class="tabs_container">
-
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-index">
             <div class="help">
                 <h5>BoxBilling extensions</h5>
-                <p>{% trans %}Activate or deactivate extensions{% endtrans %}</p>
+                <p>{{ 'Activate or deactivate extensions'|trans }}</p>
             </div>
             <table class="tableStatic wide">
                 <thead>
                     <tr>
                         <td width="3%">&nbsp;</td>
-                        <td width="20%">{% trans 'Extension' %}</td>
-                        <td>{% trans 'Description' %}</td>
-                        <td style="width: 21%;">{% trans 'Actions' %}</td>
+                        <td width="20%">{{ 'Extension'|trans }}</td>
+                        <td>{{ 'Description'|trans }}</td>
+                        <td style="width: 21%;">{{ 'Actions'|trans }}</td>
                     </tr>
                 </thead>
 
@@ -43,23 +44,29 @@
                     <td>
                         {% if ext.type == 'mod' %}
                             {% if ext.status == 'installed' %}
-                            <a class="api-link bb-button btn14" href="{{ 'api/admin/extension/deactivate' |link({'type' : ext.type, 'id' : ext.id}) }}" data-api-confirm="Are you sure?" data-api-reload="Module was deactivated" title="{% trans 'Deactivate' %}"><img src="images/icons/dark/close.png" alt="" class="icon"></a>
+                            <a class="api-link bb-button btn14" href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id }) }}" data-api-confirm="Are you sure?" data-api-reload="Module was deactivated" title="{{ 'Deactivate'|trans }}">
+                                <img src="images/icons/dark/close.png" alt="" class="icon">
+                            </a>
                             {% else %}
-                            <a class="btnIconLeft mr10 api-link" href="{{ 'api/admin/extension/activate' |link({'type' : ext.type, 'id' : ext.id}) }}" data-api-confirm="Are you sure?" data-api-jsonp="onAfterModuleActivated"><img src="images/icons/dark/cog.png" alt="" class="icon"><span>Activate</span></a>
+                            <a class="btnIconLeft mr10 api-link" href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id }) }}" data-api-confirm="Are you sure?" data-api-jsonp="onAfterModuleActivated">
+                                <img src="images/icons/dark/cog.png" alt="" class="icon"><span>Activate</span>
+                            </a>
                             {% endif %}
                         {% else %}
                         &nbsp;
                         {% endif %}
 
                         {% if ext.has_settings %}
-                            <a class="bb-button btn14" href="{{ 'extension/settings'|alink }}/{{ext.id}}"><img src="images/icons/dark/pencil.png" alt="" class="icon" title="{% trans 'Module settings' %}"></a>
+                            <a class="bb-button btn14" href="{{ 'extension/settings'|alink }}/{{ ext.id }}">
+                                <img src="images/icons/dark/pencil.png" alt="" class="icon" title="{{ 'Module settings'|trans }}">
+                            </a>
                         {% endif %}
                     </td>
                 </tr>
                 {% else %}
                     <tr>
                         <td colspan="4">
-                            {% trans 'The list is empty' %}
+                            {{ 'The list is empty'|trans }}
                         </td>
                     </tr>
                 {% endfor %}
@@ -81,16 +88,16 @@
             <table class="tableStatic wide">
                 <thead>
                     <tr>
-                        <td>{% trans 'Extension' %}</td>
-                        <td>{% trans 'Hook' %}</td>
+                        <td>{{ 'Extension'|trans }}</td>
+                        <td>{{ 'Hook'|trans }}</td>
                     </tr>
                 </thead>
 
                 <tbody>
-                {% for hook in admin.hook_get_list({"per_page":90}).list %}
+                {% for hook in admin.hook_get_list({ "per_page": 90 }).list %}
                 <tr>
                     <td>
-                        {{ hook.rel_id | capitalize}}
+                        {{ hook.rel_id|capitalize}}
                     </td>
                     <td>
                         {{ hook.event }}
@@ -103,8 +110,8 @@
             
         <div class="tab_content nopadding" id="tab-core">
             <div class="help">
-                <h3>{% trans 'Automatic update' %}</h3>
-                <p>{% trans %}Automatic updater is a tool to update BoxBilling to latest version in one click. Works on these hosting environments where PHP has permissions to overwrite files uploaded via FTP.{% endtrans %}</p>
+                <h3>{{ 'Automatic update'|trans }}</h3>
+                <p>{{ 'Automatic updater is a tool to update BoxBilling to latest version in one click. Works on these hosting environments where PHP has permissions to overwrite files uploaded via FTP.'|trans }}</p>
             </div>
 
             <div class="body">
@@ -113,8 +120,8 @@
             </div>
 
             <div class="help">
-                <h3>{% trans %}Manual update{% endtrans %}</h3>
-                <p>{% trans %}Manual update is a solution when auto updater can not work on current installation environment{% endtrans %}</p>
+                <h3>{{ 'Manual update'|trans }}</h3>
+                <p>{{ 'Manual update is a solution when auto updater can not work on current installation environment'|trans }}</p>
             </div>
 
             <div class="body list arrowGreen">
@@ -122,7 +129,7 @@
                     <li>Download the latest release from <a href="https://github.com/boxbilling/boxbilling/releases" target="_blank">GitHub</a></li>
                     <li>Extract the files into your computer</li>
                     <li>Upload (overwrite) extracted files via FTP to <strong>{{ constant('BB_PATH_ROOT') }}</strong></li>
-                    <li>When the uploading is done, execute <a href="{{constant('BB_URL')}}bb-update.php" target="_blank">{{constant('BB_URL')}}bb-update.php</a> in your browser</li>
+                    <li>When the uploading is done, execute <a href="{{ constant('BB_URL') }}bb-update.php" target="_blank">{{ constant('BB_URL') }}bb-update.php</a> in your browser</li>
                     <li>Your BoxBilling is now updated to latest version.</li>
                 </ul>
             </div>
@@ -130,8 +137,8 @@
         
         <div class="tab_content nopadding" id="tab-about">
             <div class="help">
-                <h3>{% trans 'Extending BoxBilling' %}</h3>
-                <p>{% trans %}BoxBilling gives developers all the capabilities to customize, integrate & extend the core system into your own website & applications.{% endtrans %}</p>
+                <h3>{{ 'Extending BoxBilling'|trans }}</h3>
+                <p>{{ 'BoxBilling gives developers all the capabilities to customize, integrate & extend the core system into your own website & applications.'|trans }}</p>
             </div>
             <div class="body">
                 <h2 class="pt20">More extensions</h2>
@@ -169,7 +176,6 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block js %}
@@ -180,9 +186,9 @@
 
     function onAfterModuleActivated(result) {
         if(result.redirect && result.type == 'mod') {
-            bb.redirect("{{ '' | alink}}/" + result.id);
+            bb.redirect("{{ ''|alink}}/" + result.id);
         } else if(result.has_settings) {
-            bb.redirect("{{ 'extension/settings'|alink }}/"+result.id);
+            bb.redirect("{{ 'extension/settings'|alink }}/" + result.id);
         } else {
             bb.reload();
         }

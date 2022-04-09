@@ -5,17 +5,17 @@
 
 {% block content %}
 <div class="widget">
-    <div class="head"><h5 class="iFrames">{% trans 'System activity' %}</h5></div>
+    <div class="head"><h5 class="iFrames">{{ 'System activity'|trans }}</h5></div>
 
 {{ mf.table_search }}
 <table class="tableStatic wide">
     <thead>
         <tr>
             <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
-            <td colspan="2">{% trans 'Message' %}</td>
-            <td>{% trans 'Ip' %}</td>
-            <td>{% trans 'Country' %}</td>
-            <td>{% trans 'Date' %}</td>
+            <td colspan="2">{{ 'Message'|trans }}</td>
+            <td>{{ 'Ip'|trans }}</td>
+            <td>{{ 'Country'|trans }}</td>
+            <td>{{ 'Date'|trans }}</td>
             <td style="width: 5%">&nbsp;</td>
         </tr>
     </thead>
@@ -39,13 +39,13 @@
         <td>{{ event.ip|ipcountryname|default('Unknown') }}</td>
         <td>{{ event.created_at|date('Y-m-d H:i') }}</td>
         <td class="actions">
-            <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="{% trans 'Are you sure?' %}" data-api-redirect="{{ 'activity'|alink }}" href="{{ 'api/admin/activity/log_delete'|link({'id' : event.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+            <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'activity'|alink }}" href="{{ 'api/admin/activity/log_delete'|link({'id' : event.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
         </td>
     </tr>
     {% else %}
     <tr>
         <td colspan="6">
-            {% trans 'The list is empty' %}
+            {{ 'The list is empty'|trans }}
         </td>
     </tr>
     {% endfor %}

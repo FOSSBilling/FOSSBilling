@@ -2,7 +2,7 @@
 <hr/>
 <section>
     <header>
-        <h2>{% trans 'Addons & extras' %}</h2>
+        <h2>{{ 'Addons & extras'|trans }}</h2>
     </header>
 </section>
 <div class="row-fluid">
@@ -32,7 +32,7 @@
                         <select name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
                         {% for code,prices in addon.pricing.recurrent %}
                         {% if prices.enabled %}
-                        <option value="{{code}}">{{ periods[code] }} {{ prices.price | money_convert }} {% if prices.setup != '0.00' %}{% trans 'Setup:' %} {{prices.setup | money_convert}}{% endif %}</option>
+                        <option value="{{code}}">{{ periods[code] }} {{ prices.price | money_convert }} {% if prices.setup != '0.00' %}{{ 'Setup:'|trans }} {{prices.setup | money_convert}}{% endif %}</option>
                         {% endif %}
                         {% endfor %}
                     </select>

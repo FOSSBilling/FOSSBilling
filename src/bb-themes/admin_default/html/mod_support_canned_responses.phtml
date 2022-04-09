@@ -1,11 +1,12 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
 
 {% block breadcrumbs %}
 <ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
-    <li><a href="{{ 'support'|alink }}">{% trans 'Support' %}</a></li>
-    <li class="lastB">{% trans 'Canned responses' %}</li>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a></li>
+    <li class="lastB">{{ 'Canned responses'|trans }}</li>
 </ul>
 {% endblock %}
 
@@ -14,12 +15,11 @@
 
 {% block content %}
 <div class="widget simpleTabs">
-
     <ul class="tabs">
-        <li><a href="#tab-index">{% trans 'Canned responses' %}</a></li>
-        <li><a href="#tab-new">{% trans 'New response' %}</a></li>
-        <li><a href="#tab-new-category">{% trans 'New category' %}</a></li>
-        <li><a href="#tab-categories">{% trans 'Categories' %}</a></li>
+        <li><a href="#tab-index">{{ 'Canned responses'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New response'|trans }}</a></li>
+        <li><a href="#tab-new-category">{{ 'New category'|trans }}</a></li>
+        <li><a href="#tab-categories">{{ 'Categories'|trans }}</a></li>
     </ul>
 
     <div class="tabs_container">
@@ -31,8 +31,8 @@
         <table class="tableStatic wide">
             <thead>
                 <tr>
-                    <td>{% trans 'Title' %}</td>
-                    <td>{% trans 'Category' %}</td>
+                    <td>{{ 'Title'|trans }}</td>
+                    <td>{{ 'Category'|trans }}</td>
                     <td style="width: 13%">&nbsp;</td>
                 </tr>
             </thead>
@@ -51,58 +51,56 @@
             {% else %}
             <tr>
                 <td colspan="3">
-                    {% trans 'The list is empty' %}
+                    {{ 'The list is empty'|trans }}
                 </td>
             </tr>
             {% endfor %}
             </tbody>
         </table>
-        {% include "partial_pagination.phtml" with {'list': responses, 'url':'support/canned-responses'} %}
+        {% include "partial_pagination.phtml" with { 'list': responses, 'url': 'support/canned-responses' } %}
         </div>
 
         <div class="tab_content nopadding" id="tab-new">
-
             <form method="post" action="{{ 'api/admin/support/canned_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Category' %}:</label>
+                        <label>{{ 'Category'|trans }}:</label>
                         <div class="formRight">
                             {{ mf.selectbox('category_id', admin.support_canned_category_pairs, '', 1) }}
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Title' %}:</label>
+                        <label>{{ 'Title'|trans }}:</label>
                         <div class="formRight">
-                            <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
+                            <input type="text" name="title" value="{{ request.title }}" required="required" placeholder=""/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     
                     <div class="rowElem">
-                        <label>{% trans 'Content' %}</label>
+                        <label>{{ 'Content'|trans }}</label>
                         <div class="formRight">
                             <textarea name="content" cols="5" rows="10">{{ request.content }}</textarea>
                         </div>
                         <div class="fix"></div>
                     </div>
-                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
 
         <div class="tab_content nopadding" id="tab-new-category">
-
             <form method="post" action="{{ 'api/admin/support/canned_category_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Title' %}:</label>
+                        <label>{{ 'Title'|trans }}:</label>
                         <div class="formRight">
                             <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
                         </div>
                         <div class="fix"></div>
                     </div>
-                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
@@ -120,14 +118,12 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="3">{% trans 'The list is empty' %}</td>
+                        <td colspan="3">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-
     </div>
 </div>
-
 {% endblock %}

@@ -1,17 +1,17 @@
-{% set form = guest.formbuilder_get({"id":order.form_id}) %}
+{% set form = guest.formbuilder_get({ "id": order.form_id }) %}
 {% set config = order.config %}
 <form class="api-form"  action="{{ 'api/admin/order/update_config'|link }}" data-api-msg="Order was updated">
-        <input type="hidden" name="config[form_id]" value="{{config.form_id}}" />
-        <input type="hidden" name="config[id]" value="{{config.id}}" />
-        <input type="hidden" name="config[product_id]" value="{{form.product_id}}" />
-        <input type="hidden" name="config[type]" value="{{config.type}}" />
-        <input type="hidden" name="config[quantity]" value="{{config.quantity}}" />
-        <input type="hidden" name="config[price]" value="{{config.price}}" />
-        <input type="hidden" name="config[setup_price]" value="{{config.setup_price}}" />
-        <input type="hidden" name="config[discount]" value="{{config.discount}}" />
-        <input type="hidden" name="config[discount_price]" value="{{config.discount_price}}" />
-        <input type="hidden" name="config[discount_setup]" value="{{config.discount_setup}}" />
-        <input type="hidden" name="config[total]" value="{{config.total}}" />
+        <input type="hidden" name="config[form_id]" value="{{ config.form_id }}" />
+        <input type="hidden" name="config[id]" value="{{ config.id }}" />
+        <input type="hidden" name="config[product_id]" value="{{ form.product_id }}" />
+        <input type="hidden" name="config[type]" value="{{ config.type }}" />
+        <input type="hidden" name="config[quantity]" value="{{ config.quantity }}" />
+        <input type="hidden" name="config[price]" value="{{ config.price }}" />
+        <input type="hidden" name="config[setup_price]" value="{{ config.setup_price }}" />
+        <input type="hidden" name="config[discount]" value="{{ config.discount }}" />
+        <input type="hidden" name="config[discount_price]" value="{{ config.discount_price }}" />
+        <input type="hidden" name="config[discount_setup]" value="{{ config.discount_setup }}" />
+        <input type="hidden" name="config[total]" value="{{ config.total }}" />
 
         {% for field in form.fields %}
         <div class="rowElem">
@@ -52,7 +52,7 @@
 
                 {% elseif field.type == "textarea" %}
                 <div style="width: auto; max-width:50%;">
-                    <textarea id="{{field.name}}" name="config[{{field.name}}]" style="width: {{field.options.width}}px; height: {{field.options.height}}px; overflow: scroll;"
+                    <textarea id="{{field.name}}" name="config[{{ field.name }}]" style="width: {{ field.options.width }}px; height: {{ field.options.height }}px; overflow: scroll;"
                         {% if field.required==1 %}required="required"{% endif %}
                         {% if field.readonly==1%}readonly="readonly"{% endif %}
                     >{{ attribute (order.config, field.name)}}</textarea>
@@ -63,17 +63,16 @@
         </div>
         {% endfor %}
 
-        <input type="hidden" name="id" value="{{order.id}}" />
+        <input type="hidden" name="id" value="{{ order.id }}" />
         <div class="rowElem">
             <label></label>
             <div class="formRight">
-                <button type="submit" class="btn blueBtn pull-right">{% trans 'Update' %}</button>
+                <button type="submit" class="btn blueBtn pull-right">{{ 'Update'|trans }}</button>
             </div>
             <div class="fix"></div>
         </div>
-
-
 </form>
+
 <script type="text/javascript">
     $(function () {
         $("form").submit( function () {

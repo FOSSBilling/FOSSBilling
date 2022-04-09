@@ -1,5 +1,5 @@
 <div class="help">
-    <h2>{{ order.title }} {% trans 'management' %}</h2>
+    <h2>{{ order.title }} {{ 'management'|trans }}</h2>
 </div>
 
 {#
@@ -22,7 +22,7 @@
         </div>
         {% endfor %}
 
-        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+        <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
         <input type="hidden" name="order_id" value="{{ order.id }}"/>
     </fieldset>
 </form>

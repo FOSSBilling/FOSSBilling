@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
 {% block meta_title %}{{ order.title }}{% endblock %}
 
@@ -10,66 +11,66 @@
     <div class="h-block">
         <div class="h-block-header">
             <div class="icon"><span class="big-light-icon i-services"></span></div>
-            <h2>{% trans 'Service details' %}</h2>
-            <p>{% trans 'All information about your service' %}</p>
+            <h2>{{ 'Service details'|trans }}</h2>
+            <p>{{ 'All information about your service'|trans }}</p>
         </div>
         <div class="block">
             <table>
                 <tbody>
                 <tr>
-                    <td><label>{% trans 'Order' %}</label></td>
+                    <td><label>{{ 'Order'|trans }}</label></td>
                     <td>#{{ order.id }}</td>
                 </tr>
 
                 <tr>
-                    <td><label>{% trans 'Product name' %}</label></td>
+                    <td><label>{{ 'Product name'|trans }}</label></td>
                     <td><strong>{{ order.title }}</strong></td>
                 </tr>
 
                 <tr>
-                    <td><label>{% trans 'Payment amount' %}</label></td>
+                    <td><label>{{ 'Payment amount'|trans }}</label></td>
                     <td>{{ order.total | money(order.currency) }}</td>
                 </tr>
 
                 {% if order.period %}
                 <tr>
-                    <td><label>{% trans 'Billing cycle' %}</label></td>
+                    <td><label>{{ 'Billing cycle'|trans }}</label></td>
                     <td>{{ order.period | period_title }}</td>
                 </tr>
                 {% endif %}
                 
                 <tr>
-                    <td><label>{% trans 'Order status' %}</label></td>
+                    <td><label>{{ 'Order status'|trans }}</label></td>
                     <td>{{mf.status_name(order.status)}}</td>
                 </tr>
 
                 <tr>
-                    <td><label>{% trans 'Order created' %}</label></td>
+                    <td><label>{{ 'Order created'|trans }}</label></td>
                     <td>{{ order.created_at|bb_date }}</td>
                 </tr>
 
                 <tr>
-                    <td><label>{% trans 'Activated at' %}</label></td>
+                    <td><label>{{ 'Activated at'|trans }}</label></td>
                     <td>{% if order.activated_at %}{{ order.activated_at|bb_date }}{% else %}-{% endif %}</td>
                 </tr>
 
                 {% if order.period %}
                 <tr>
-                    <td><label>{% trans 'Renewal date' %} {% if order.expires_at %} in {{ order.expires_at|daysleft }} day(s) {% endif %}</label></td>
+                    <td><label>{{ 'Renewal date'|trans }} {% if order.expires_at %} in {{ order.expires_at|daysleft }} day(s) {% endif %}</label></td>
                     <td>{% if order.expires_at %}{{ order.expires_at|bb_date }}{% else %}-{% endif %}</td>
                 </tr>
                 {% endif %}
                 
                 {% if order.notes %}
                 <tr>
-                    <td><label>{% trans 'Order notes' %}</label></td>
+                    <td><label>{{ 'Order notes'|trans }}</label></td>
                     <td>{{ order.notes|bbmd }}</td>
                 </tr>
                 {% endif %}
 
                 {% if order.active_tickets > 0 %}
                 <tr>
-                    <td><label>{% trans 'Active support tickets' %}</label></td>
+                    <td><label>{{ 'Active support tickets'|trans }}</label></td>
                     <td>
                         <div class="num"><a href="{{ 'support'|link }}" class="redNum">{{ order.active_tickets }}</a></div>
                         {# <div class="num"><a href="{{ 'support'|link }}" class="greenNum">{{ order.active_tickets }}</a></div> #}
@@ -84,20 +85,20 @@
                         <td colspan="2">
                             
                         {% if order.period %}
-                        <button class="bb-button bb-button-submit" type="button" id="renewal-button"><span class="light-icon i-invoice"></span> {% trans 'Renew now' %}</button>
+                        <button class="bb-button bb-button-submit" type="button" id="renewal-button"><span class="light-icon i-invoice"></span> {{ 'Renew now'|trans }}</button>
                         {% endif %}
 
                         {% if upgradables %}
-                        <button class="bb-button bb-button-submit" type="button" id="request-upgrade"><span class="light-icon i-order"></span> {% trans 'Request Upgrade' %}</button>
+                        <button class="bb-button bb-button-submit" type="button" id="request-upgrade"><span class="light-icon i-order"></span> {{ 'Request Upgrade'|trans }}</button>
                         {% endif %}
 
-                        <button class="bb-button bb-button-submit" type="button" id="open-ticket"><span class="light-icon i-support"></span> {% trans 'Open ticket' %}</button>
+                        <button class="bb-button bb-button-submit" type="button" id="open-ticket"><span class="light-icon i-support"></span> {{ 'Open ticket'|trans }}</button>
                         {% if order.status == 'pending_setup' %}
-                        <a class="bb-button api bb-button-submit" href="{{'api/client/order/delete' | link({'id' : order.id})}}" data-api-redirect="{{ 'order/service'|link }}"><span class="light-icon i-bin"></span> {% trans 'Cancel' %}</a>
+                        <a class="bb-button api bb-button-submit" href="{{'api/client/order/delete' | link({'id' : order.id})}}" data-api-redirect="{{ 'order/service'|link }}"><span class="light-icon i-bin"></span> {{ 'Cancel'|trans }}</a>
                         {% endif %}
 
                         {% if order.status == 'active' %}
-                        <button class="bb-button bb-button-submit" type="button" id="request-cancellation"><span class="light-icon i-forum"></span> {% trans 'Request Cancellation' %}</button>
+                        <button class="bb-button bb-button-submit" type="button" id="request-cancellation"><span class="light-icon i-forum"></span> {{ 'Request Cancellation'|trans }}</button>
                         {% endif %}
 
                         </td>
@@ -109,30 +110,30 @@
 
     <div class="widget request-cancelation" style="display: none;">
         <div class="head">
-            <h2 class="dark-icon i-services">{% trans 'Request Cancellation' %}</h2>
+            <h2 class="dark-icon i-services">{{ 'Request Cancellation'|trans }}</h2>
         </div>
         <div class="block">
             <form action="" method="post">
                 <fieldset>
                     <p>
-                        <label>{% trans 'Help desk' %}: </label>
+                        <label>{{ 'Help desk'|trans }}: </label>
                         {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
                     </p>
 
                     <p>
-                        <label>{% trans 'Subject' %}: </label>
-                        <input type="text" name="subject" value="{% trans 'I would like to cancel' %} {{ order.title }}" required="required"/>
+                        <label>{{ 'Subject'|trans }}: </label>
+                        <input type="text" name="subject" value="{{ 'I would like to cancel'|trans }} {{ order.title }}" required="required"/>
                     </p>
 
                     <p>
-                        <label>{% trans 'Reason' %}: </label>
+                        <label>{{ 'Reason'|trans }}: </label>
                         <textarea name="content" cols="5" rows="5" required="required">{{ request.content|e }}</textarea>
                     </p>
 
                     <input type="hidden" name="rel_type" value="order">
                     <input type="hidden" name="rel_id" value="{{ order.id }}">
                     <input type="hidden" name="rel_task" value="cancel">
-                    <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Submit' %}">
+                    <input class="bb-button bb-button-submit" type="submit" value="{{ 'Submit'|trans }}">
                 </fieldset>
             </form>
         </div>
@@ -140,30 +141,30 @@
 
     <div class="widget open-ticket" style="display: none;">
         <div class="head">
-            <h2 class="dark-icon i-services">{% trans 'Open new support ticket regarding this order' %}</h2>
+            <h2 class="dark-icon i-services">{{ 'Open new support ticket regarding this order'|trans }}</h2>
         </div>
         <div class="block">
             <form action="" method="post">
                 <fieldset>
-                    <legend>{% trans 'Submit new support ticket. Ticket will be visible in support section after submission' %}</legend>
+                    <legend>{{ 'Submit new support ticket. Ticket will be visible in support section after submission'|trans }}</legend>
                     <p>
-                        <label>{% trans 'Help desk' %}: </label>
+                        <label>{{ 'Help desk'|trans }}: </label>
                         {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
                     </p>
 
                     <p>
-                        <label>{% trans 'Subject' %}: </label>
+                        <label>{{ 'Subject'|trans }}: </label>
                         <input type="text" name="subject" value="{{ request.subject|e }}" required="required"/>
                     </p>
 
                     <p>
-                        <label>{% trans 'Message' %}: </label>
+                        <label>{{ 'Message'|trans }}: </label>
                         <textarea name="content" cols="5" rows="5" required="required">{{ request.content|e }}</textarea>
                     </p>
 
                     <input type="hidden" name="rel_type" value="order">
                     <input type="hidden" name="rel_id" value="{{ order.id }}">
-                    <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Submit' %}">
+                    <input class="bb-button bb-button-submit" type="submit" value="{{ 'Submit'|trans }}">
                 </fieldset>
             </form>
         </div>
@@ -171,36 +172,36 @@
 
     <div class="widget" id="upgrades" style="display: none;">
         <div class="head">
-            <h2 class="dark-icon i-services">{% trans 'Request upgrade' %}</h2>
+            <h2 class="dark-icon i-services">{{ 'Request upgrade'|trans }}</h2>
         </div>
         <div class="block">
             <div class="block">
                 <form action="" method="post" class="api_form" data-api-url="client/support/ticket_create" data-api-msg="Upgrade request received">
                     <fieldset>
                         <p>
-                            <label>{% trans 'Help desk' %}: </label>
+                            <label>{{ 'Help desk'|trans }}: </label>
                             {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
                         </p>
 
                         <p>
-                            <label>{% trans 'Subject' %}: </label>
-                            <input type="text" name="subject" value="{% trans 'I would like to upgrade' %} {{ order.title }}" required="required"/>
+                            <label>{{ 'Subject'|trans }}: </label>
+                            <input type="text" name="subject" value="{{ 'I would like to upgrade'|trans }} {{ order.title }}" required="required"/>
                         </p>
 
                         <p>
-                            <label>{% trans 'Upgrade to' %}: </label>
+                            <label>{{ 'Upgrade to'|trans }}: </label>
                             {{ mf.selectbox('rel_new_value', upgradables, '', 1) }}
                         </p>
 
                         <p>
-                            <label>{% trans 'Notes' %}: </label>
-                            <textarea name="content" cols="5" rows="5" placeholder="Your comment">{% trans 'I would like to upgrade' %} {{ order.title }}</textarea>
+                            <label>{{ 'Notes'|trans }}: </label>
+                            <textarea name="content" cols="5" rows="5" placeholder="Your comment">{{ 'I would like to upgrade'|trans }} {{ order.title }}</textarea>
                         </p>
 
                         <input type="hidden" name="rel_type" value="order">
                         <input type="hidden" name="rel_id" value="{{ order.id }}">
                         <input type="hidden" name="rel_task" value="upgrade">
-                        <input class="bb-button bb-button-submit" type="submit" value="{% trans 'Request' %}">
+                        <input class="bb-button bb-button-submit" type="submit" value="{{ 'Request'|trans }}">
                     </fieldset>
                 </form>
             </div>
@@ -212,16 +213,16 @@
 {% if addons|length > 0 %}
     <div class="widget">
         <div class="head">
-            <h2 class="dark-icon i-services">{% trans 'Addons you have ordered with this service' %}</h2>
+            <h2 class="dark-icon i-services">{{ 'Addons you have ordered with this service'|trans }}</h2>
         </div>
         <table>
             <thead>
                 <tr>
-                    <th>{% trans 'Product/Service' %}</th>
-                    <th>{% trans 'Price' %}</th>
-                    <th>{% trans 'Billing Cycle' %}</th>
-                    <th>{% trans 'Next due date' %}</th>
-                    <th>{% trans 'Status' %}</th>
+                    <th>{{ 'Product/Service'|trans }}</th>
+                    <th>{{ 'Price'|trans }}</th>
+                    <th>{{ 'Billing Cycle'|trans }}</th>
+                    <th>{{ 'Next due date'|trans }}</th>
+                    <th>{{ 'Status'|trans }}</th>
                     <th>&nbsp</th>
                 </tr>
             </thead>
@@ -243,7 +244,7 @@
 {% endif %}
 {% endif %}
 
-<p><a class="bb-button" href="{{ '/order/service'|link }}"><span class="dark-icon i-arrow"></span> {% trans 'Back to services' %}</a></p>
+<p><a class="bb-button" href="{{ '/order/service'|link }}"><span class="dark-icon i-arrow"></span> {{ 'Back to services'|trans }}</a></p>
 
 
 {% if guest.system_template_exists({"file":service_partial})%}
@@ -258,24 +259,24 @@
 {# block sidebar2 %}
     <div class="widget">
         <div class="head">
-            <h2 class="dark-icon i-services">{% trans 'Actions' %}</h2>
+            <h2 class="dark-icon i-services">{{ 'Actions'|trans }}</h2>
         </div>
         <div class="block">
         {% if order.period %}
-        <p><button class="bb-button bb-button-submit" type="button" id="renewal-button"><span class="light-icon i-invoice"></span> {% trans 'Renew now' %}</button></p>
+        <p><button class="bb-button bb-button-submit" type="button" id="renewal-button"><span class="light-icon i-invoice"></span> {{ 'Renew now'|trans }}</button></p>
         {% endif %}
 
         {% if upgradables %}
-        <p><button class="bb-button bb-button-submit" type="button" id="request-upgrade"><span class="light-icon i-order"></span> {% trans 'Request Upgrade' %}</button></p>
+        <p><button class="bb-button bb-button-submit" type="button" id="request-upgrade"><span class="light-icon i-order"></span> {{ 'Request Upgrade'|trans }}</button></p>
         {% endif %}
 
-        <p><button class="bb-button bb-button-submit" type="button" id="open-ticket"><span class="light-icon i-support"></span> {% trans 'Open ticket' %}</button></p>
+        <p><button class="bb-button bb-button-submit" type="button" id="open-ticket"><span class="light-icon i-support"></span> {{ 'Open ticket'|trans }}</button></p>
         {% if order.status == 'pending_setup' %}
-        <p><a class="bb-button api bb-button-submit" href="{{'api/client/order/delete' | link({'id' : order.id})}}" data-api-redirect="{{ 'order/service'|link }}"><span class="light-icon i-bin"></span> {% trans 'Cancel' %}</a></p>
+        <p><a class="bb-button api bb-button-submit" href="{{'api/client/order/delete' | link({'id' : order.id})}}" data-api-redirect="{{ 'order/service'|link }}"><span class="light-icon i-bin"></span> {{ 'Cancel'|trans }}</a></p>
         {% endif %}
         
         {% if order.status == 'active' %}
-        <p><button class="bb-button bb-button-submit" type="button" id="request-cancellation"><span class="light-icon i-forum"></span> {% trans 'Request Cancellation' %}</button></p>
+        <p><button class="bb-button bb-button-submit" type="button" id="request-cancellation"><span class="light-icon i-forum"></span> {{ 'Request Cancellation'|trans }}</button></p>
         {% endif %}
 
         </div>
@@ -287,7 +288,6 @@
 <script type="text/javascript">
 $(function() {
     $('#renewal-button').click(function(){
-
         if(confirm("This will generate new invoice. Are you sure you want to continue?")) {
             bb.post(
                 'client/invoice/renewal_invoice',
@@ -299,21 +299,21 @@ $(function() {
         }
     });
 
-    $('#request-cancellation').click(function(){
+    $('#request-cancellation').click(function() {
         $('div.request-cancelation').slideToggle();
         $('div.open-ticket').slideUp();
     });
 
-    $('#open-ticket').click(function(){
+    $('#open-ticket').click(function() {
         $('div.open-ticket').slideToggle();
         $('div.request-cancelation').slideUp();
     });
 
-    $('#request-upgrade').click(function(){
+    $('#request-upgrade').click(function() {
         $('#upgrades').slideToggle();
     });
 
-    $('.open-ticket form').submit(function(){
+    $('.open-ticket form').submit(function() {
         bb.post(
             'client/support/ticket_create',
             $(this).serialize(),
@@ -323,10 +323,11 @@ $(function() {
                 $('#open-ticket').fadeOut();
             }
         );
+
         return false;
     });
 
-    $('.request-cancelation form').submit(function(){
+    $('.request-cancelation form').submit(function() {
         bb.post(
             'client/support/ticket_create',
             $(this).serialize(),
@@ -336,6 +337,7 @@ $(function() {
                 $('#request-cancellation').fadeOut();
             }
         );
+        
         return false;
     });
 });

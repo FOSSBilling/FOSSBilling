@@ -1,40 +1,36 @@
 {% extends "layout_default.phtml" %}
 
-{% block meta_title %}{% trans 'Staff Group management' %}{% endblock %}
+{% block meta_title %}{{ 'Staff Group management'|trans }}{% endblock %}
 {% set active_menu = 'system' %}
-
 
 {% block breadcrumbs %}
 <ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
-    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
-    <li><a href="{{ 'extension/settings/staff'|alink }}">{% trans 'Staff' %}</a></li>
-    <li><a href="{{ 'extension/settings/staff'|alink }}#tab-groups">{% trans 'Groups' %}</a></li>
-    <li class="lastB">{{group.name}}</li>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+    <li><a href="{{ 'extension/settings/staff'|alink }}">{{ 'Staff'|trans }}</a></li>
+    <li><a href="{{ 'extension/settings/staff'|alink }}#tab-groups">{{ 'Groups'|trans }}</a></li>
+    <li class="lastB">{{ group.name }}</li>
 </ul>
 {% endblock %}
 
 {% block content %}
-
 <div class="widget">
-
     <div class="head">
-        <h5>{% trans 'Manage staff member details' %}</h5>
+        <h5>{{ 'Manage staff member details'|trans }}</h5>
     </div>
 
-    <form method="post" action="{{ 'api/admin/staff/group_update'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Staff group updated' %}">
+    <form method="post" action="{{ 'api/admin/staff/group_update'|link }}" class="mainForm api-form" data-api-msg="{{ 'Staff group updated'|trans }}">
         <fieldset>
             <div class="rowElem noborder">
-                <label for="name">{% trans 'Name' %}</label>
+                <label for="name">{{ 'Name'|trans }}</label>
                 <div class="formRight">
                     <input type="text" name="name" value="{{group.name}}" required="required"/>
                 </div>
                 <div class="fix"></div>
             </div>
             <input type="hidden" name="id" value="{{ group.id }}">
-            <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+            <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
         </fieldset>
     </form>
 </div>
-
 {% endblock %}

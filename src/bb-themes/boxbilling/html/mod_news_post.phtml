@@ -4,7 +4,6 @@
 {% block meta_description %}{{post.description}}{% endblock %}
 
 {% block opengraph %}
-
     <meta property="og:title" content="{{ post.title }}" />
     <meta property="og:description" content="{{ post.description }}" />
     <meta property="og:type" content="article" />
@@ -24,8 +23,8 @@
     <div class="h-block">
         <div class="h-block-header">
             <div class="icon"><span class="big-light-icon i-blog"></span></div>
-            <h2>{{post.title|truncate(50)}}</h2>
-            <p>{{post.created_at|bb_date}} {% trans 'by '%} {{ post.author.name }}</p>
+            <h2>{{ post.title|truncate(50) }}</h2>
+            <p>{{ post.created_at|bb_date }} {{ 'by'|trans }} {{ post.author.name }}</p>
         </div>
         <div class="block articles">
             <div class="article last">
@@ -36,15 +35,14 @@
         </div>
     </div>
 
-    {% if guest.extension_is_on({"mod":"comment"}) %}{% include "mod_comment_block.phtml" %}{% endif %}
+    {% if guest.extension_is_on({ "mod": "comment" }) %}{% include "mod_comment_block.phtml" %}{% endif %}
 
-    <p><a class="bb-button" href="{{ 'news'|link }}"><span class="dark-icon i-arrow"></span> {% trans 'Back to list' %}</a></p>
-
+    <p><a class="bb-button" href="{{ 'news'|link }}"><span class="dark-icon i-arrow"></span> {{ 'Back to list'|trans }}</a></p>
 {% endblock %}
 
 {# block sidebar2 %}
 <div class="box">
-    <h2>{% trans 'Other recent posts' %}</h2>
+    <h2>{{ 'Other recent posts'|trans }}</h2>
     <div class="block" id="list-items">
         <ul class="menu">
             {% set posts = guest.news_get_list({"per_page": 5}) %}
@@ -56,5 +54,4 @@
         </ul>
     </div>
 </div>
-
 {% endblock #}

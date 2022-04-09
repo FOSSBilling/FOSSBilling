@@ -1,25 +1,26 @@
 {% extends "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{% trans 'Staff' %}{% endblock %}
+
+{% block meta_title %}{{ 'Staff'|trans }}{% endblock %}
 {% set active_menu = 'system' %}
 
 {% block breadcrumbs %}
 <ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
-    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
-    <li class="lastB">{% trans 'Staff' %}</li>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+    <li class="lastB">{{ 'Staff'|trans }}</li>
 </ul>
 {% endblock %}
 
 {% block content %}
 <div class="widget simpleTabs">
-
     <ul class="tabs">
-        <li><a href="#tab-staff">{% trans 'Staff' %}</a></li>
-        <li><a href="#tab-settings">{% trans 'Settings' %}</a></li>
-        <li><a href="#tab-new">{% trans 'New staff member' %}</a></li>
-        <li><a href="#tab-groups">{% trans 'Manage groups' %}</a></li>
-        <li><a href="#tab-new-group">{% trans 'New group' %}</a></li>
+        <li><a href="#tab-staff">{{ 'Staff'|trans }}</a></li>
+        <li><a href="#tab-settings">{{ 'Settings'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New staff member'|trans }}</a></li>
+        <li><a href="#tab-groups">{{ 'Manage groups'|trans }}</a></li>
+        <li><a href="#tab-new-group">{{ 'New group'|trans }}</a></li>
     </ul>
 
     <div class="tabs_container">
@@ -30,16 +31,16 @@
             <table class="tableStatic wide">
                 <thead>
                     <tr>
-                        <td colspan="2">{% trans 'Name' %}</td>
-                        <td>{% trans 'Email' %}</td>
-                        <td>{% trans 'Group' %}</td>
-                        <td>{% trans 'Status' %}</td>
+                        <td colspan="2">{{ 'Name'|trans }}</td>
+                        <td>{{ 'Email'|trans }}</td>
+                        <td>{{ 'Group'|trans }}</td>
+                        <td>{{ 'Status'|trans }}</td>
                         <td style="width: 5%">&nbsp;</td>
                     </tr>
                 </thead>
                 
                 <tbody>
-                {% set members = admin.staff_get_list({"per_page":100, "page":request.page}|merge(request)) %}
+                {% set members = admin.staff_get_list({ "per_page": 100, "page": request.page }|merge(request)) %}
                 {% for i, member in members.list %}
                 <tr>
                     <td style="width: 5%"><a href="{{ 'staff/manage'|alink }}/{{ member.id }}"><img src="{{ member.email|gravatar }}?size=25" alt="{{ member.id }}" /></a></td>
@@ -58,7 +59,7 @@
                 <tbody>
                     <tr>
                         <td colspan="5">
-                            {% trans 'The list is empty' %}
+                            {{ 'The list is empty'|trans }}
                         </td>
                     </tr>
                 </tbody>
@@ -70,21 +71,21 @@
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-settings">
             {% set params = admin.extension_config_get({"ext":"mod_staff"}) %}
-            <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Configuration updated' %}">
+            <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
 
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Check login IP' %}</label>
+                        <label>{{ 'Check login IP'|trans }}</label>
                         <div class="formRight">
-                            <input type="radio" name="check_ip" value="1" {% if params.check_ip == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
-                            <input type="radio" name="check_ip" value="0" {% if not params.check_ip %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+                            <input type="radio" name="check_ip" value="1" {% if params.check_ip == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                            <input type="radio" name="check_ip" value="0" {% if not params.check_ip %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
                         </div>
                         <div class="fix"></div>
                     </div>
 
                     <div id="check_ip" {% if not params.check_ip %}style="display:none;"{% endif %}>
                         <div class="rowElem">
-                            <label class="topLabel">{% trans 'Allowed IPs. One per line' %}</label>
+                            <label class="topLabel">{{ 'Allowed IPs. One per line'|trans }}</label>
                             <div class="formBottom">
                                 <textarea name="allowed_ips" cols="5" rows="5" placeholder="{{ admin.system_env({"ip":1}) }}" />{{ params.allowed_ips }}</textarea>
                             </div>
@@ -92,7 +93,7 @@
                         </div>
                     </div>
 
-                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
                     <input type="hidden" name="ext" value="mod_staff" />
                 </fieldset>
             </form>
@@ -104,7 +105,7 @@
             <form method="post" action="{{ 'api/admin/staff/create'|link }}" class="mainForm api-form" data-api-jsonp="onAfterStaffCreate">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Group' %}</label>
+                        <label>{{ 'Group'|trans }}</label>
                         <div class="formRight">
                             {{ mf.selectbox('admin_group_id', admin.staff_group_get_pairs, '', 1) }}
                         </div>
@@ -112,7 +113,7 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Name' %}</label>
+                        <label>{{ 'Name'|trans }}</label>
                         <div class="formRight">
                             <input type="text" name="name" value="" required="required"/>
                         </div>
@@ -120,36 +121,36 @@
                     </div>
 
                     <div class="rowElem">
-                        <label>{% trans 'Email' %}</label>
+                        <label>{{ 'Email'|trans }}</label>
                         <div class="formRight">
                             <input type="email" name="email" value="{{ request.email }}" required="required"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Password' %}</label>
+                        <label>{{ 'Password'|trans }}</label>
                         <div class="formRight">
                             <input type="password" name="password" required="required" />
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Signature' %}</label>
+                        <label>{{ 'Signature'|trans }}</label>
                         <div class="formRight">
                             <textarea name="signature" cols="5" rows="2"></textarea>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
-                        <label>{% trans 'Status' %}:</label>
+                        <label>{{ 'Status'|trans }}:</label>
                         <div class="formRight">
-                            <input type="radio" name="status" value="inactive" checked="checked"/><label>{% trans 'Inactive' %}</label>
-                            <input type="radio" name="status" value="active"/><label>{% trans 'Active' %}</label>
+                            <input type="radio" name="status" value="inactive" checked="checked"/><label>{{ 'Inactive'|trans }}</label>
+                            <input type="radio" name="status" value="active"/><label>{{ 'Active'|trans }}</label>
                         </div>
                         <div class="fix"></div>
                     </div>
 
-                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
@@ -160,7 +161,7 @@
             <table class="tableStatic wide">
                 <thead>
                     <tr>
-                        <td>{% trans 'Name' %}</td>
+                        <td>{{ 'Name'|trans }}</td>
                         <td style="width: 13%">&nbsp;</td>
                     </tr>
                 </thead>
@@ -181,7 +182,7 @@
                 <tbody>
                     <tr>
                         <td colspan="5">
-                            {% trans 'The list is empty' %}
+                            {{ 'The list is empty'|trans }}
                         </td>
                     </tr>
                 </tbody>
@@ -195,13 +196,13 @@
             <form method="post" action="{{ 'api/admin/staff/group_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'extension/settings/staff'|alink }}">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Name' %}</label>
+                        <label>{{ 'Name'|trans }}</label>
                         <div class="formRight">
                             <input type="text" name="name" value="" required="required"/>
                         </div>
                         <div class="fix"></div>
                     </div>
-                    <input type="submit" value="{% trans 'Create group' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create group'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
@@ -213,19 +214,18 @@
 
 {% block js %}
 <script type="text/javascript">
-function onAfterStaffCreate(id) {
-    bb.redirect("{{ 'staff/manage'|alink }}/" + id + '#tab-permissions');
-}
+    function onAfterStaffCreate(id) {
+        bb.redirect("{{ 'staff/manage'|alink }}/" + id + '#tab-permissions');
+    }
 
-$(function() {
-    $('input[name=check_ip]').click(function(){
-        if($(this).val() == 1) {
-            $('#check_ip').slideDown();
-        } else {
-            $('#check_ip').slideUp();
-        }
+    $(function() {
+        $('input[name=check_ip]').click(function() {
+            if ($(this).val() == 1) {
+                $('#check_ip').slideDown();
+            } else {
+                $('#check_ip').slideUp();
+            }
+        });
     });
-});
-
 </script>
 {% endblock %}

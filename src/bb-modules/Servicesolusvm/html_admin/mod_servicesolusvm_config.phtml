@@ -1,12 +1,12 @@
 <div class="help">
-    <h5>{% trans 'SolusVM configuration' %}</h5>
+    <h5>{{ 'SolusVM configuration'|trans }}</h5>
     <p>More information what does each configuration parameter means at {{ 'http://wiki.solusvm.com/index.php/API:Admin'|autolink|raw }}</p>
 </div>
 
 <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm api-form save" data-api-reload="1">
 <fieldset>
     <div class="rowElem noborder">
-        <label>{% trans 'Virtualization type' %}:</label>
+        <label>{{ 'Virtualization type'|trans }}:</label>
         <div class="formRight">
             {{ mf.selectbox('config[vtype]', admin.servicesolusvm_get_virtualization_types, product.config.vtype, 0, 'Select type') }}
         </div>
@@ -17,41 +17,41 @@
     
     {#
     <div class="rowElem">
-        <label>{% trans 'Auto select node' %}:</label>
+        <label>{{ 'Auto select node'|trans }}:</label>
         <div class="formRight">
-            <input type="radio" name="config[autoselectnode]" value="1" {% if product.config.autoselectnode == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
-            <input type="radio" name="config[autoselectnode]" value="0" {% if not product.config.autoselectnode %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+            <input type="radio" name="config[autoselectnode]" value="1" {% if product.config.autoselectnode == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+            <input type="radio" name="config[autoselectnode]" value="0" {% if not product.config.autoselectnode %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
         </div>
         <div class="fix"></div>
     </div>
     #}
     
     <div class="rowElem">
-        <label>{% trans 'Node' %}:</label>
+        <label>{{ 'Node'|trans }}:</label>
         <div class="formRight">
             {% set nodes = admin.servicesolusvm_get_nodes({"type":product.config.vtype}) %}
             {% if nodes %}
             {{ mf.selectbox('config[node]', nodes, product.config.node, 0, 'Select node') }}
             {% else %}
-            {% trans 'Make sure BoxBilling can connect to SolusVM master server and check if nodes are configured for selected virtualizator type. Refresh page if you have changed virtualization type to see new nodes.' %}
+            {{ 'Make sure BoxBilling can connect to SolusVM master server and check if nodes are configured for selected virtualizator type. Refresh page if you have changed virtualization type to see new nodes.'|trans }}
             {% endif %}
         </div>
         <div class="fix"></div>
     </div>
     
     <div class="rowElem">
-        <label>{% trans 'Plan' %}:</label>
+        <label>{{ 'Plan'|trans }}:</label>
         <div class="formRight">
-            {% set plans = admin.servicesolusvm_get_plans({"type":product.config.vtype}) %}
+            {% set plans = admin.servicesolusvm_get_plans({ "type": product.config.vtype }) %}
             {% if plans %}
             {{ mf.selectbox('config[plan]', plans, product.config.plan, 0, 'Select plan') }}
             {% else %}
-            {% trans 'Make sure BoxBilling can connect to SolusVM master server and check if plans are configured for selected virtualizator type.' %}
+            {{ 'Make sure BoxBilling can connect to SolusVM master server and check if plans are configured for selected virtualizator type.'|trans }}
             {% endif %}
         </div>
         <div class="fix"></div>
     </div>
-    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
 </fieldset>
     
 <input type="hidden" name="config[cluster_id]" value="1" />
@@ -60,9 +60,9 @@
 
 <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm api-form save" data-api-msg="Plan confuguration updated">
 <fieldset>
-    <legend>{% trans 'Plan parameters' %}</legend>
+    <legend>{{ 'Plan parameters'|trans }}</legend>
     <div class="rowElem">
-        <label>{% trans 'IPs amount' %}:</label>
+        <label>{{ 'IPs amount'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="config[ips]" value="{{product.config.ips}}" required="required" placeholder="Define how many ips should be assigned for new VPS"/>
         </div>
@@ -70,7 +70,7 @@
     </div>
     
     <div class="rowElem">
-        <label>{% trans 'Guaranteed RAM' %}:</label>
+        <label>{{ 'Guaranteed RAM'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="config[custommemory]" value="{{product.config.custommemory}}" placeholder="Overide plan memory with this amount. Number of MB"/>
         </div>
@@ -78,7 +78,7 @@
     </div>
     
     <div class="rowElem">
-        <label>{% trans 'Hdd Space' %}:</label>
+        <label>{{ 'Hdd Space'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="config[customdiskspace]" value="{{product.config.customdiskspace}}" placeholder="Overide plan diskspace with this amount. Number of GB"/>
         </div>
@@ -86,7 +86,7 @@
     </div>
     
     <div class="rowElem">
-        <label>{% trans 'Bandwidth' %}:</label>
+        <label>{{ 'Bandwidth'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="config[custombandwidth]" value="{{product.config.custombandwidth}}" placeholder="Overide plan bandwidth with this amount. Number of GB per month"/>
         </div>
@@ -94,7 +94,7 @@
     </div>
     
     <div class="rowElem">
-        <label>{% trans 'CPU cores' %}:</label>
+        <label>{{ 'CPU cores'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="config[customcpu]" value="{{product.config.customcpu}}" placeholder="Overide plan cpu cores with this amount"/>
         </div>
@@ -102,7 +102,7 @@
     </div>
     
     <div class="rowElem">
-        <label>{% trans 'Custom extraip' %}:</label>
+        <label>{{ 'Custom extraip'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="config[customextraip]" value="{{product.config.customextraip}}" placeholder="Add this amount of extra ips"/>
         </div>
@@ -110,7 +110,7 @@
     </div>
     
     <div class="rowElem">
-        <label>{% trans 'HVMT' %}:</label>
+        <label>{{ 'HVMT'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="config[hvmt]" value="{{product.config.hvmt}}" placeholder="[0|1] This allows to to define templates & isos for Xen HVM"/>
         </div>
@@ -118,16 +118,16 @@
     </div>
     
     <div class="rowElem">
-        <label>{% trans 'Issue cPanel License' %}:</label>
+        <label>{{ 'Issue cPanel License'|trans }}:</label>
         <div class="formRight">
-            <input type="radio" name="config[issuelicense]" value="1" {% if product.config.issuelicense == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
-            <input type="radio" name="config[issuelicense]" value="0" {% if not product.config.issuelicense %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+            <input type="radio" name="config[issuelicense]" value="1" {% if product.config.issuelicense == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+            <input type="radio" name="config[issuelicense]" value="0" {% if not product.config.issuelicense %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
         </div>
         <div class="fix"></div>
     </div>
     
     {% endif %}
-    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
 </fieldset>
 <input type="hidden" name="id" value="{{ product.id }}" />
 </form>
@@ -137,7 +137,7 @@
     <legend>Slider information. Set values to be displayed for client on order page</legend>
     
     <div class="rowElem">
-        <label>{% trans 'Dedicated CPU' %}:</label>
+        <label>{{ 'Dedicated CPU'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="config[slider_cpu]" value="{{product.config.slider_cpu}}" placeholder="4.2GHz"/>
         </div>
@@ -145,7 +145,7 @@
     </div>
     
     <div class="rowElem">
-        <label>{% trans 'Dedicated RAM' %}:</label>
+        <label>{{ 'Dedicated RAM'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="config[slider_ram]" value="{{product.config.slider_ram}}" placeholder="1504MB"/>
         </div>
@@ -153,7 +153,7 @@
     </div>
     
     <div class="rowElem">
-        <label>{% trans 'Disk space' %}:</label>
+        <label>{{ 'Disk space'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="config[slider_hdd]" value="{{product.config.slider_hdd}}" placeholder="40GB"/>
         </div>
@@ -161,7 +161,7 @@
     </div>
     
     <div class="rowElem">
-        <label>{% trans 'Network transfer' %}:</label>
+        <label>{{ 'Network transfer'|trans }}:</label>
         <div class="formRight">
             <input type="text" name="config[slider_bandwidth]" value="{{product.config.slider_bandwidth}}" placeholder="4TB"/>
         </div>
@@ -169,14 +169,14 @@
     </div>
     
     <div class="rowElem">
-        <label>{% trans 'Description' %}:</label>
+        <label>{{ 'Description'|trans }}:</label>
         <div class="formRight">
-            <textarea name="config[slider_desc]" placeholder="Very simple description, like: Perfect for WordPress hosting">{{product.config.slider_bandwidth}}</textarea>
+            <textarea name="config[slider_desc]" placeholder="Very simple description, like: Perfect for WordPress hosting">{{ product.config.slider_bandwidth }}</textarea>
         </div>
         <div class="fix"></div>
     </div>
     
-    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
 </fieldset>
     
 <input type="hidden" name="config[cluster_id]" value="1" />

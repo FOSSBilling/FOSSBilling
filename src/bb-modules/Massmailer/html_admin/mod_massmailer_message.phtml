@@ -1,31 +1,32 @@
 {% extends "layout_default.phtml" %}
-{% block meta_title %}{{ msg.subject}}{% endblock %}
+
+{% block meta_title %}{{ msg.subject }}{% endblock %}
+
 {% set active_menu = 'system' %}
 
 {% block content %}
 <div class="widget">
-    
     <div class="head">
-        <h5>{% trans 'Send Email Message' %} - {{ msg.subject}}</h5>
+        <h5>{{ 'Send Email Message'|trans }} - {{ msg.subject }}</h5>
     </div>
     
     <form method="post" action="admin/massmailer/update" class="mainForm save api-form" data-api-jsonp="onAfterMessageUpdate" id="msg-form">
         <fieldset>
             
             <div class="rowElem noborder">
-                <label>{% trans 'From' %}</label>
+                <label>{{ 'From'|trans }}</label>
                 <div class="formRight moreFields">
                     <ul>
-                        <li style="width: 250px"><input type="text" name="from_name" value="{{msg.from_name}}" required="required" title="{% trans 'From name' %}"/></li>
+                        <li style="width: 250px"><input type="text" name="from_name" value="{{msg.from_name}}" required="required" title="{{ 'From name'|trans }}"/></li>
                         <li class="sep"></li>
-                        <li style="width: 245px"><input type="text" name="from_email" value="{{msg.from_email}}" required="required"  title="{% trans 'From email' %}"/></li>
+                        <li style="width: 245px"><input type="text" name="from_email" value="{{msg.from_email}}" required="required"  title="{{ 'From email'|trans }}"/></li>
                     </ul>
                 </div>
                 <div class="fix"></div>
             </div>
             
             <div class="rowElem">
-                <label>{% trans 'Subject' %}</label>
+                <label>{{ 'Subject'|trans }}</label>
                 <div class="formRight">
                     <input type="text" name="subject" value="{{ msg.subject }}" required="required"/>
                 </div>
@@ -35,15 +36,15 @@
             </fieldset>
         
             <fieldset>
-                <legend>{% trans 'Recipients filter. Select none to send message to all clients' %}</legend>
+                <legend>{{ 'Recipients filter. Select none to send message to all clients'|trans }}</legend>
             <div class="rowElem">
-                <label>{% trans 'Client status and group' %}</label>
+                <label>{{ 'Client status and group'|trans }}</label>
                 <div class="formRight">
                     <input type="hidden" name="filter" />
                     <select name="filter[client_status][]" multiple="multiple" size="3">
-                        <option value="active" {% if 'active' in msg.filter.client_status %} selected="selected"{% endif %}>{% trans 'Active' %}</option>
-                        <option value="suspended" {% if 'suspended' in msg.filter.client_status %} selected="selected"{% endif %}>{% trans 'Suspended' %}</option>
-                        <option value="canceled" {% if 'canceled' in msg.filter.client_status %} selected="selected"{% endif %}>{% trans 'Canceled' %}</option>
+                        <option value="active" {% if 'active' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Active'|trans }}</option>
+                        <option value="suspended" {% if 'suspended' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Suspended'|trans }}</option>
+                        <option value="canceled" {% if 'canceled' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Canceled'|trans }}</option>
                     </select>
                     
                     <select name="filter[client_groups][]" multiple="multiple" size="5">
@@ -56,7 +57,7 @@
             </div>
 
             <div class="rowElem">
-                <label>{% trans 'Has order' %}</label>
+                <label>{{ 'Has order'|trans }}</label>
                 <div class="formRight">
                             <select name="filter[has_order_with_status][]" multiple="multiple" size="5">
                                 {% for id,label in admin.order_get_status_pairs %}
@@ -74,7 +75,7 @@
                 </fieldset>
         
             <fieldset>
-                <legend>{% trans 'Message content' %}</legend>
+                <legend>{{ 'Message content'|trans }}</legend>
             <div class="rowElem">
                 <div class="formBottom">
                     <textarea name="content" cols="5" rows="20" placeholder="Email content">{{ msg.content }}</textarea>
@@ -88,33 +89,31 @@
                 </div>
             </div>
             
-            <input type="submit" value="{% trans 'Update and preview' %}" class="greyishBtn submitForm" />
-            <input type="button" value="{% trans 'Send test message' %}" class="blueBtn submitForm" id="send-test-msg" style="float: left;"/>
-            <input type="button" value="{% trans 'Send message to clients' %}" class="greenBtn submitForm" id="send-msg" style="float: left;"/>
+            <input type="submit" value="{{ 'Update and preview'|trans }}" class="greyishBtn submitForm" />
+            <input type="button" value="{{ 'Send test message'|trans }}" class="blueBtn submitForm" id="send-test-msg" style="float: left;"/>
+            <input type="button" value="{{ 'Send message to clients'|trans }}" class="greenBtn submitForm" id="send-msg" style="float: left;"/>
             <input type="hidden" name="id" value="{{ msg.id }}"/>
         </fieldset>
     </form>
     
-            <div class="body">
-                <a href="{{ 'massmailer'|alink }}"  title="" class="btnIconLeft mr10"><img src="images/icons/dark/arrowLeft.png" alt="" class="icon"><span>{% trans 'Back to list' %}</span></a>
-            </div>
+    <div class="body">
+        <a href="{{ 'massmailer'|alink }}"  title="" class="btnIconLeft mr10"><img src="images/icons/dark/arrowLeft.png" alt="" class="icon"><span>{{ 'Back to list'|trans }}</span></a>
+    </div>
 </div>
-
 {% endblock %}
 
 {% block js %}
 {% autoescape "js" %}
 <script type="text/javascript">
-function onAfterMessageUpdate()
-{
-        bb.post('admin/massmailer/preview', {id:'{{msg.id}}'}, function(result){
+function onAfterMessageUpdate() {
+        bb.post('admin/massmailer/preview', {id:'{{msg.id}}'}, function(result) {
             $('#preview').show();
             $('#preview .econtent').html(result.content);
             $('#preview .esubject').html(result.subject);
         });
 }
 $(function() {
-    $('#send-msg').click(function(){
+    $('#send-msg').click(function() {
         jConfirm('Send message to clients?', 'Confirm', function(confirm) {
             if(confirm) {
                 bb.post('admin/massmailer/send', {id:{{ msg.id }}}, function(result){
@@ -122,17 +121,19 @@ $(function() {
                 });
             }
         });
+        
         return false;
     });
     
-    $('#send-test-msg').click(function(){
+    $('#send-test-msg').click(function() {
         jConfirm('Send test message?', 'Confirm', function(confirm) {
             if(confirm) {
-                bb.post('admin/massmailer/send_test', {id:{{ msg.id }}}, function(result){
+                bb.post('admin/massmailer/send_test', { id: {{ msg.id } }}, function(result) {
                     bb.msg('Message was sent');
                 });
             }
         });
+
         return false;
     });
 });

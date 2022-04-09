@@ -8,7 +8,7 @@
     {% if i == page %}
         <a class="bb-button bb-button-submit" href="#" onclick="return false;">{{ i }}</a>
     {%else%}
-        <a class="bb-button" href="?{% for k,v in {}|merge(request)|merge({'page': i}) %}{{k}}={{v}}{% if loop.last == FALSE %}&{%endif%}{% endfor %}">{{ i }}</a>
+        <a class="bb-button" href="?{% for k,v in {}|merge(request)|merge({ 'page': i }) %}{{ k }}={{ v }}{% if loop.last == FALSE %}&{% endif %}{% endfor %}">{{ i }}</a>
     {% endif %}
     </li>
   {% endfor %}

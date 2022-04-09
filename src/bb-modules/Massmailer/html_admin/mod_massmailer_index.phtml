@@ -1,15 +1,17 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
+
 {% block meta_title %}Mass mailer{% endblock %}
+
 {% set active_menu = 'system' %}
 
 {% block content %}
 <div class="widget simpleTabs">
-
     <ul class="tabs">
-        <li><a href="#tab-index">{% trans 'Mass Mail Messages' %}</a></li>
-        <li><a href="#tab-new">{% trans 'Create new mass mail message' %}</a></li>
-        <li><a href="#tab-settings">{% trans 'Settings' %}</a></li>
+        <li><a href="#tab-index">{{ 'Mass Mail Messages'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'Create new mass mail message'|trans }}</a></li>
+        <li><a href="#tab-settings">{{ 'Settings'|trans }}</a></li>
     </ul>
 
     <div class="tabs_container">
@@ -21,15 +23,15 @@
         <table class="tableStatic wide">
             <thead>
                 <tr>
-                    <td style="width: 30%">{% trans 'Subject' %}</td>
-                    <td>{% trans 'From' %}</td>
-                    <td>{% trans 'Status' %}</td>
+                    <td style="width: 30%">{{ 'Subject'|trans }}</td>
+                    <td>{{ 'From'|trans }}</td>
+                    <td>{{ 'Status'|trans }}</td>
                     <td style="width: 18%">&nbsp;</td>
                 </tr>
             </thead>
 
             <tbody>
-            {% set msgs = admin.massmailer_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+            {% set msgs = admin.massmailer_get_list({ "per_page": 30, "page": request.page }|merge(request)) %}
             {% for i, msg in msgs.list %}
             <tr>
                 <td>{{ msg.subject }}</td>
@@ -44,7 +46,7 @@
             {% else %}
             <tr>
                 <td colspan="4">
-                    {% trans 'The list is empty' %}
+                    {{ 'The list is empty'|trans }}
                 </td>
             </tr>
             {% endfor %}
@@ -58,26 +60,24 @@
             <form method="post" action="admin/massmailer/create" class="mainForm api-form" data-api-jsonp="onAfterCreateMM">
                 <fieldset>
                     <div class="rowElem noborder">
-                        <label>{% trans 'Subject' %}:</label>
+                        <label>{{ 'Subject'|trans }}:</label>
                         <div class="formRight">
-                            <input type="text" name="subject" value="{{request.subject}}" required="required" placeholder="Message subject"/>
+                            <input type="text" name="subject" value="{{ request.subject }}" required="required" placeholder="Message subject"/>
                         </div>
                         <div class="fix"></div>
                     </div>
-                    <input type="submit" value="{% trans 'Create' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
                 </fieldset>
             </form>
         </div>
 
         <div class="tab_content nopadding" id="tab-settings">
             <div class="help">
-                <h3>{% trans 'Mass Mail Settings' %}</h3>
+                <h3>{{ 'Mass Mail Settings'|trans }}</h3>
             </div>
     
             {% set params = admin.extension_config_get({"ext":"mod_massmailer"}) %}
-
-            <form method="post" action="admin/extension/config_save" class="mainForm api-form" data-api-msg="{% trans 'Configuration updated' %}">
-
+            <form method="post" action="admin/extension/config_save" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
                 <fieldset>
                     <div class="rowElem noborder">
                         <div class="moreFields">
@@ -93,30 +93,26 @@
                     </div>
                     
                     <div class="rowElem">
-                        <label class="topLabel">{% trans 'Client ID to send test email while creating message' %}</label>
+                        <label class="topLabel">{{ 'Client ID to send test email while creating message'|trans }}</label>
                         <div class="formBottom">
                             <input type="text" value="{{ params.test_client_id }}" name="test_client_id" placeholder="Test client ID"/>
                         </div>
                         <div class="fix"></div>
                     </div>
                     
-                    <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
                     <input type="hidden" name="ext" value="mod_massmailer" />
                 </fieldset>
-                
             </form>
         </div>
-
     </div>
 </div>
-
 {% endblock %}
 
 {% block js %}
 <script type="text/javascript">
-function onAfterCreateMM(mid)
-{
-    bb.redirect("{{ 'massmailer/message'|alink }}/" + mid);
-}
+    function onAfterCreateMM(mid) {
+        bb.redirect("{{ 'massmailer/message'|alink }}/" + mid);
+    }
 </script>
 {% endblock %}

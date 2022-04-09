@@ -1,51 +1,50 @@
 {% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+
 {% import "macro_functions.phtml" as mf %}
-{% block meta_title %}{% trans 'SEO settings' %}{% endblock %}
+
+{% block meta_title %}{{ 'SEO settings'|trans }}{% endblock %}
+
 {% set active_menu = 'system' %}
 
 {% block breadcrumbs %}
 <ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
-    <li><a href="{{ 'system'|alink }}">{% trans 'Settings' %}</a></li>
-    <li class="lastB">{% trans 'SEO settings' %}</li>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+    <li class="lastB">{{ 'SEO settings'|trans }}</li>
 </ul>
 {% endblock %}
 
 {% block content %}
-
 <div class="widget">
     <div class="head">
-        <h5 class="iCog">{% trans 'SEO settings' %}</h5>
+        <h5 class="iCog">{{ 'SEO settings'|trans }}</h5>
     </div>
 
-{% set params = admin.extension_config_get({"ext":"mod_seo"}) %}
-
-<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{% trans 'Configuration updated' %}">
-    
-    <fieldset>
-        <legend>Sitemap</legend>
-        <div class="rowElem noborder">
-            <label>{% trans 'Ping sitemap to Google' %}</label>
-            <div class="formRight">
-                <input type="radio" name="sitemap_google" value="1" {% if params.sitemap_google == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
-                <input type="radio" name="sitemap_google" value="0" {% if not params.sitemap_google %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+    {% set params = admin.extension_config_get({ "ext": "mod_seo" }) %}
+    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+        <fieldset>
+            <legend>Sitemap</legend>
+            <div class="rowElem noborder">
+                <label>{{ 'Ping sitemap to Google'|trans }}</label>
+                <div class="formRight">
+                    <input type="radio" name="sitemap_google" value="1" {% if params.sitemap_google == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                    <input type="radio" name="sitemap_google" value="0" {% if not params.sitemap_google %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
+                </div>
+                <div class="fix"></div>
             </div>
-            <div class="fix"></div>
-        </div>
-        
-        <div class="rowElem">
-            <label>{% trans 'Ping sitemap to Bing' %}</label>
-            <div class="formRight">
-                <input type="radio" name="sitemap_bing" value="1" {% if params.sitemap_bing == "1" %}checked="checked"{% endif %}/><label>{% trans 'Yes' %}</label>
-                <input type="radio" name="sitemap_bing" value="0" {% if not params.sitemap_bing %}checked="checked"{% endif %}/><label>{% trans 'No' %}</label>
+            
+            <div class="rowElem">
+                <label>{{ 'Ping sitemap to Bing'|trans }}</label>
+                <div class="formRight">
+                    <input type="radio" name="sitemap_bing" value="1" {% if params.sitemap_bing == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                    <input type="radio" name="sitemap_bing" value="0" {% if not params.sitemap_bing %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
+                </div>
+                <div class="fix"></div>
             </div>
-            <div class="fix"></div>
-        </div>
 
-        <input type="submit" value="{% trans 'Update' %}" class="greyishBtn submitForm" />
-        <input type="hidden" name="ext" value="mod_seo" />
-    </fieldset>
-</form>
-
+            <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
+            <input type="hidden" name="ext" value="mod_seo" />
+        </fieldset>
+    </form>
 </div>
 {% endblock %}

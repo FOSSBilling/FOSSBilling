@@ -1,7 +1,7 @@
 {% set product = request.order ? guest.product_get({"id":request.order}) : null %}
 <div class="accordion-group" id="product-configuration">
     <div class="accordion-heading">
-        <a class="accordion-toggle" href="#order" data-parent="#accordion1" data-toggle="collapse"><span class="awe-cog"></span> {% trans 'Product Configuration' %}</a>
+        <a class="accordion-toggle" href="#order" data-parent="#accordion1" data-toggle="collapse"><span class="awe-cog"></span> {{ 'Product Configuration'|trans }}</a>
     </div>
     {% if product %}
     <div id="order" class="accordion-body collapse {% if request.order%}in{%endif%}">
@@ -23,7 +23,7 @@
                     {% endfor %}
                 </select>
                 {% elseif product.pricing.type == 'free' %}
-                <span class="label label-info">{% trans 'FREE' %}</span>
+                <span class="label label-info">{{ 'FREE'|trans }}</span>
                 {% else %}
                 <span class="label label-info">{{ product.pricing.once.price | money_convert }}</span>
                 {% endif %}
@@ -45,7 +45,7 @@
 
             <input type="hidden" name="multiple" value="1" />
             <input type="hidden" name="id" value="{{ product.id }}" />
-               <button type="submit" class="btn btn-primary">{% trans 'Order' %}</button>
+               <button type="submit" class="btn btn-primary">{{ 'Order'|trans }}</button>
         </div>
         </form>
     </div>

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -1063,7 +1064,7 @@ class Service implements InjectionAwareInterface
         if (\Model_Invoice::STATUS_PAID == $invoice->status) {
             return true;
         }
-
+        
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceSendReminder', 'params' => ['id' => $invoice->id]]);
 
         $invoice->reminded_at = date('Y-m-d H:i:s');
@@ -1504,9 +1505,11 @@ class Service implements InjectionAwareInterface
         $invoices = $this->di['db']->find('Invoice', 'client_id = ?', [$client->id]);
         foreach ($invoices as $invoice) {
             $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
+            
             foreach ($invoiceItems as $invoiceItem) {
                 $this->di['db']->trash($invoiceItem);
             }
+
             $this->di['db']->trash($invoice);
         }
     }
@@ -1517,6 +1520,7 @@ class Service implements InjectionAwareInterface
     public function isInvoiceTypeDeposit(\Model_Invoice $invoice)
     {
         $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
+
         foreach ($invoiceItems as $item) {
             if (\Model_InvoiceItem::TYPE_DEPOSIT == $item->type) {
                 return true;

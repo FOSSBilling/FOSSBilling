@@ -4,15 +4,14 @@
 
 {% block breadcrumbs %}
 <ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{% trans 'Home' %}</a></li>
-    <li><a href="{{ 'servicehosting'|alink }}">{% trans 'Hosting plans and servers' %}</a></li>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'servicehosting'|alink }}">{{ 'Hosting plans and servers'|trans }}</a></li>
     <li class="lastB">{{ hp.name }}</li>
 </ul>
 {% endblock %}
 
 {% block content %}
 <div class="widget">
-
     <div class="head">
         <h5 class="iList">Manage hosting plan</h5>
     </div>
@@ -20,7 +19,7 @@
     <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" class="mainForm api-form" data-api-msg="Hosting plan updated">
         <fieldset>
             <div class="rowElem noborder">
-                <label>{% trans 'Name' %}:</label>
+                <label>{{ 'Name'|trans }}:</label>
                 <div class="formRight">
                     <input type="text" name="name" value="{{ hp.name }}" required="required" placeholder="Unique name to identify this hosting plan">
                 </div>
@@ -28,7 +27,7 @@
             </div>
 
             <div class="rowElem">
-                <label>{% trans 'Disk quota' %}:</label>
+                <label>{{ 'Disk quota'|trans }}:</label>
                 <div class="formRight">
                     <input type="text" name="quota" value="{{ hp.quota }}" placeholder="">
                 </div>
@@ -36,49 +35,49 @@
             </div>
             
             <div class="rowElem">
-                <label>{% trans 'Bandwidth' %}:</label>
+                <label>{{ 'Bandwidth'|trans }}:</label>
                 <div class="formRight">
                     <input type="text" name="bandwidth" value="{{ hp.bandwidth }}" placeholder="">
                 </div>
                 <div class="fix"></div>
             </div>
             <div class="rowElem">
-                <label>{% trans 'Max Addon domains' %}:</label>
+                <label>{{ 'Max Addon domains'|trans }}:</label>
                 <div class="formRight">
                     <input type="text" name="max_addon" value="{{ hp.max_addon }}" placeholder="">
                 </div>
                 <div class="fix"></div>
             </div>
             <div class="rowElem">
-                <label>{% trans 'Max FTP accounts' %}:</label>
+                <label>{{ 'Max FTP accounts'|trans }}:</label>
                 <div class="formRight">
                     <input type="text" name="max_ftp" value="{{ hp.max_ftp }}" placeholder="">
                 </div>
                 <div class="fix"></div>
             </div>
             <div class="rowElem">
-                <label>{% trans 'Max SQL Databases' %}:</label>
+                <label>{{ 'Max SQL Databases'|trans }}:</label>
                 <div class="formRight">
                     <input type="text" name="max_sql" value="{{ hp.max_sql }}" placeholder="">
                 </div>
                 <div class="fix"></div>
             </div>
             <div class="rowElem">
-                <label>{% trans 'Max Email Accounts' %}:</label>
+                <label>{{ 'Max Email Accounts'|trans }}:</label>
                 <div class="formRight">
                     <input type="text" name="max_pop" value="{{ hp.max_pop }}" placeholder="">
                 </div>
                 <div class="fix"></div>
             </div>
             <div class="rowElem">
-                <label>{% trans 'Max Subdomains' %}:</label>
+                <label>{{ 'Max Subdomains'|trans }}:</label>
                 <div class="formRight">
                     <input type="text" name="max_sub" value="{{ hp.max_sub }}" placeholder="">
                 </div>
                 <div class="fix"></div>
             </div>
             <div class="rowElem">
-                <label>{% trans 'Max Parked Domains' %}:</label>
+                <label>{{ 'Max Parked Domains'|trans }}:</label>
                 <div class="formRight">
                     <input type="text" name="max_park" value="{{ hp.max_park }}" placeholder="">
                 </div>
@@ -86,30 +85,30 @@
             </div>
             </fieldset>
         
-        {% if hp.config|length > 0 %}
+            {% if hp.config|length > 0 %}
             <fieldset>
-                <legend>{% trans 'Server manager specific parameters' %}</legend>
-            {% for name, value in hp.config %}
-            <div class="rowElem">
-                <label class="topLabel">{{ name }}:</label>
-                    <div class="formBottom">
-                        <textarea rows="2" cols="" name="config[{{ name }}]">{{ value }}</textarea>
-                    </div>
-                <div class="fix"></div>
-            </div>
-            {% endfor %}
+                <legend>{{ 'Server manager specific parameters'|trans }}</legend>
+                {% for name, value in hp.config %}
+                <div class="rowElem">
+                    <label class="topLabel">{{ name }}:</label>
+                        <div class="formBottom">
+                            <textarea rows="2" cols="" name="config[{{ name }}]">{{ value }}</textarea>
+                        </div>
+                    <div class="fix"></div>
+                </div>
+                {% endfor %}
             </fieldset>
             {% endif %}
             
             <fieldset>
-            <input type="submit" value="{% trans 'Update hosting plan' %}" class="greyishBtn submitForm" />
+            <input type="submit" value="{{ 'Update hosting plan'|trans }}" class="greyishBtn submitForm" />
             <input type="hidden" name="id" value="{{ hp.id }}"/>
             </fieldset>
     </form>
 
     <div class="help">
-        <h3>{% trans 'Hosting plan additional parameters' %}</h3>
-        <p>{% trans 'Depending on server manager used to setup hosting account you may require provide additional parameters. List of parameters server managers requires you can find on extensions page.' %}</p>
+        <h3>{{ 'Hosting plan additional parameters'|trans }}</h3>
+        <p>{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters. List of parameters server managers requires you can find on extensions page.'|trans }}</p>
     </div>
 
     <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" class="mainForm save api-form" data-api-reload="1">
@@ -119,7 +118,7 @@
                 </div>
                 <div class="floatright twoOne">
                 <div class="rowElem noborder"><label class="topLabel">Parameter value:</label><div class="formBottom"><textarea rows="7" cols="" name="new_config_value"></textarea></div><div class="fix"></div></div>
-                <input type="submit" value="{% trans 'Add new configuration field' %}" class="greyishBtn submitForm" />
+                <input type="submit" value="{{ 'Add new configuration field'|trans }}" class="greyishBtn submitForm" />
                 </div>
                 <div class="fix"></div>
             <input type="hidden" name="id" value="{{ hp.id }}"/>

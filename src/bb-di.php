@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -9,20 +10,27 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
+
+declare(strict_types=1);
+
 $di = new Box_Di();
+
 $di['config'] = function () {
     $array = include BB_PATH_ROOT.'/bb-config.php';
 
     return new Box_Config($array);
 };
+
 $di['logger'] = function () use ($di) {
     $log = new Box_Log();
     $log->setDi($di);
 
     $log_to_db = isset($di['config']['log_to_db']) && $di['config']['log_to_db'];
+
     if ($log_to_db) {
         $activity_service = $di['mod_service']('activity');
         $writer2 = new Box_LogDb($activity_service);
+
         if ($di['auth']->isAdminLoggedIn()) {
             $admin = $di['loggedin_admin'];
             $log->setEventItem('admin_id', $admin->id);
@@ -30,6 +38,7 @@ $di['logger'] = function () use ($di) {
             $client = $di['loggedin_client'];
             $log->setEventItem('client_id', $client->id);
         }
+
         $log->addWriter($writer2);
     } else {
         $logFile = $di['config']['path_logs'];
@@ -39,12 +48,14 @@ $di['logger'] = function () use ($di) {
 
     return $log;
 };
+
 $di['crypt'] = function () use ($di) {
     $crypt = new Box_Crypt();
     $crypt->setDi($di);
 
     return $crypt;
 };
+
 $di['pdo'] = function () use ($di) {
     $c = $di['config']['db'];
 
@@ -74,6 +85,7 @@ $di['pdo'] = function () use ($di) {
 
     return $pdo;
 };
+
 $di['db'] = function () use ($di) {
     require_once dirname(__FILE__).DIRECTORY_SEPARATOR.'rb.php';
     R::setup($di['pdo']);
@@ -93,12 +105,14 @@ $di['db'] = function () use ($di) {
 
     return $db;
 };
+
 $di['pager'] = function () use ($di) {
     $service = new Box_Pagination();
     $service->setDi($di);
 
     return $service;
 };
+
 $di['url'] = function () use ($di) {
     $url = new Box_Url();
     $url->setDi($di);
@@ -106,43 +120,53 @@ $di['url'] = function () use ($di) {
 
     return $url;
 };
+
 $di['mod'] = $di->protect(function ($name) use ($di) {
     $mod = new Box_Mod($name);
     $mod->setDi($di);
 
     return $mod;
 });
+
 $di['mod_service'] = $di->protect(function ($mod, $sub = '') use ($di) {
     return $di['mod']($mod)->getService($sub);
 });
+
 $di['mod_config'] = $di->protect(function ($name) use ($di) {
     return $di['mod']($name)->getConfig();
 });
+
 $di['events_manager'] = function () use ($di) {
     $service = new Box_EventManager();
     $service->setDi($di);
 
     return $service;
 };
+
 $di['session'] = function () use ($di) {
     $handler = new PdoSessionHandler($di['pdo']);
 
     return new Box_Session($handler);
 };
+
 $di['cookie'] = function () use ($di) {
     $service = new Box_Cookie();
     $service->setDi($di);
 
     return $service;
 };
+
 $di['request'] = function () use ($di) {
     $service = new Box_Request();
     $service->setDi($di);
 
     return $service;
 };
+
 $di['cache'] = function () { return new FileCache(); };
+
 $di['auth'] = function () use ($di) { return new Box_Authorization($di); };
+
 $di['twig'] = $di->factory(function () use ($di) {
     $config = $di['config'];
     $options = $config['twig'];
@@ -156,10 +180,12 @@ $di['twig'] = $di->factory(function () use ($di) {
     // $twig->addExtension(new Twig\Extension\OptimizerExtension());
     $twig->addExtension(new \Twig\Extension\StringLoaderExtension());
     $twig->addExtension(new Twig\Extension\DebugExtension());
-    $twig->addExtension(new Twig\Extensions\I18nExtension());
+    $twig->addExtension(new Symfony\Bridge\Twig\Extension\TranslationExtension());
     $twig->addExtension($box_extensions);
-    $twig->getExtension(Twig\Extension\CoreExtension::class)->setDateFormat($config['locale_date_format']);
-    $twig->getExtension(Twig\Extension\CoreExtension::class)->setTimezone($config['timezone']);
+    $twig->getExtension(Twig\Extension\CoreExtension::class)
+        ->setDateFormat($config['locale_date_format']);
+    $twig->getExtension(Twig\Extension\CoreExtension::class)
+        ->setTimezone($config['timezone']);
 
     // add globals
     if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 'XMLHttpRequest' == $_SERVER['HTTP_X_REQUESTED_WITH']) {
@@ -176,6 +202,7 @@ $di['is_client_logged'] = function () use ($di) {
     if (!$di['auth']->isClientLoggedIn()) {
         $api_str = '/api/';
         $url = $di['request']->getQuery('_url');
+
         if (0 === strncasecmp($url, $api_str, strlen($api_str))) {
             // Throw Exception if api request
             throw new Exception('Client is not logged in');
@@ -212,6 +239,7 @@ $di['loggedin_client'] = function () use ($di) {
 
     return $di['db']->getExistingModelById('Client', $client_id);
 };
+
 $di['loggedin_admin'] = function () use ($di) {
     if ('cli' == php_sapi_name() || 'cgi' == substr(php_sapi_name(), 0, 3)) {
         return $di['mod_service']('staff')->getCronAdmin();
@@ -244,11 +272,13 @@ $di['api'] = $di->protect(function ($role) use ($di) {
         default:
             throw new Exception('Unrecognized Handler type: '.$role);
     }
+
     $api = new Api_Handler($identity);
     $api->setDi($di);
 
     return $api;
 });
+
 $di['api_guest'] = function () use ($di) { return $di['api']('guest'); };
 $di['api_client'] = function () use ($di) { return $di['api']('client'); };
 $di['api_admin'] = function () use ($di) { return $di['api']('admin'); };
@@ -267,6 +297,7 @@ $di['validator'] = function () use ($di) {
 
     return $validator;
 };
+
 $di['guzzle_client'] = function () use ($di) {
     return new GuzzleHttp\Client([
         'headers' => [
@@ -276,27 +307,32 @@ $di['guzzle_client'] = function () use ($di) {
         'timeout' => $di['config']['guzzle']['timeout'],
     ]);
 };
+
 $di['mail'] = function () {
     return new Box_Mail();
 };
+
 $di['extension'] = function () use ($di) {
     $extension = new \Box_Extension();
     $extension->setDi($di);
 
     return $extension;
 };
+
 $di['updater'] = function () use ($di) {
     $updater = new \Box_Update();
     $updater->setDi($di);
 
     return $updater;
 };
+
 $di['curl'] = function ($url) use ($di) {
     $curl = new \Box_Curl($url);
     $curl->setDi($di);
 
     return $curl;
 };
+
 $di['zip_archive'] = function () {return new ZipArchive(); };
 
 $di['server_package'] = function () {return new Server_Package(); };
@@ -370,11 +406,14 @@ $di['pdf'] = function () use ($di) {
 $di['geoip'] = function () { return new \GeoIp2\Database\Reader(BB_PATH_LIBRARY.'/GeoLite2-Country.mmdb'); };
 
 $di['password'] = function () { return new Box_Password(); };
+
 $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
     $tr = new Box_Translate();
+    
     if (!empty($textDomain)) {
         $tr->setDomain($textDomain);
     }
+
     $cookieBBlang = $di['cookie']->get('BBLANG');
     $locale = !empty($cookieBBlang) ? $cookieBBlang : $di['config']['locale'];
 
@@ -384,6 +423,7 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
 
     return $tr;
 });
+
 $di['array_get'] = $di->protect(function (array $array, $key, $default = null) {
     return array_key_exists($key, $array) ? $array[$key] : $default;
 });

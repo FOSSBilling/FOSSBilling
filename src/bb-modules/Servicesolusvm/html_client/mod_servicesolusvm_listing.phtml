@@ -2,51 +2,51 @@
 
 {% set periods = guest.system_periods %}
 {% set pricing = product.pricing %}
-{% set slider = guest.product_get_slider({"type":"solusvm"}) %}
+{% set slider = guest.product_get_slider({ "type": "solusvm" }) %}
 
 <form method="get" action="{{'order'|link}}" id="vps-order">
-        <div class="block">
-            <div class="order_vps">
-                <h2 id="product_title"></h2>
-                <div class="slider_bg">
-                    <div id="slider"></div>
-                </div>
+    <div class="block">
+        <div class="order_vps">
+            <h2 id="product_title"></h2>
+            <div class="slider_bg">
+                <div id="slider"></div>
             </div>
-            
-            <div class="params">
-                <div class="box first">
-                    <h4>{% trans 'CPU' %}:</h4>
-                    <div id="cpu"></div>	    
-                </div>
-                <div class="box">
-                    <h4>{% trans 'RAM' %}:</h4>
-                    <div id="ram"></div>
-                </div>
-                <div class="box">
-                    <h4>{% trans 'Disk space' %}:</h4>
-                    <div id="hdd"></div>
-                </div>
-                <div class="box">
-                    <h4>{% trans 'Bandwidth' %}:</h4>
-                    <div id="bandwidth"></div>
-                </div>
-                <div class="box last">
-                    <h4>{% trans 'Monthly price' %}:</h4>
-                    <div id="price"></div>
-                </div>
-                <div class="clear"></div>
-            </div>
-            <div class="clear"></div>
         </div>
-    
-        <div class="block">
-            <button class="bb-button bb-button-submit bb-button-big" type="submit" id="order-button" style="float:right;">{% trans 'Order now' %}</button>
-            <div class="desc">
-                <div id="product_desc"></div>
+        
+        <div class="params">
+            <div class="box first">
+                <h4>{{ 'CPU'|trans }}:</h4>
+                <div id="cpu"></div>	    
+            </div>
+            <div class="box">
+                <h4>{{ 'RAM'|trans }}:</h4>
+                <div id="ram"></div>
+            </div>
+            <div class="box">
+                <h4>{{ 'Disk space'|trans }}:</h4>
+                <div id="hdd"></div>
+            </div>
+            <div class="box">
+                <h4>{{ 'Bandwidth'|trans }}:</h4>
+                <div id="bandwidth"></div>
+            </div>
+            <div class="box last">
+                <h4>{{ 'Monthly price'|trans }}:</h4>
+                <div id="price"></div>
             </div>
             <div class="clear"></div>
         </div>
         <div class="clear"></div>
+    </div>
+    
+    <div class="block">
+        <button class="bb-button bb-button-submit bb-button-big" type="submit" id="order-button" style="float:right;">{{ 'Order now'|trans }}</button>
+        <div class="desc">
+            <div id="product_desc"></div>
+        </div>
+        <div class="clear"></div>
+    </div>
+    <div class="clear"></div>
     <input type="hidden" name="_url" value="/order" />
     <input type="hidden" name="period" value="1M" />
 </form>
