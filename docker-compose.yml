@@ -10,7 +10,7 @@ services:
     networks:
       backend:
   php:
-    image: chialab/php:7.4-fpm
+    image: chialab/php:8.0-fpm
     volumes:
       - ${PWD}/:/var/www/html
     environment:
