@@ -1,0 +1,14 @@
+<div class="col-sm-10 mb-3 position-realtive{% if message.author.name == ticket.messages.1.author.name %} offset-sm-2{% endif %}">
+    <div
+        class="card{% if message.author.name == ticket.messages.1.author.name %} border-success bg-success{% endif %}"
+        {% if message.author.name == ticket.messages.1.author.name %}style="--bs-bg-opacity: .15;"{% endif %}
+    >
+        <div class="card-header">
+            <img src="{{ message.author.email|gravatar }}&size=20" class="rounded-circle me-2" alt="{{ message.author.name }}">
+            {{ message.author.name }}
+            <span class="float-end text-secondary">{{ message.created_at }}</span>
+        </div>
+        <div class="card-body">{{ message.content|bbmd }}</div>
+        <div class="position-absolute bottom-0 end-0 small pb-1 pe-3 text-secondary">{{ message.created_at|timeago }} {{ 'ago'|trans }}</div>
+    </div>
+</div>

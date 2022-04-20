@@ -1,0 +1,20 @@
+{% if list.pages > 1 %}
+    {% set page = list.page %}
+
+    <hr>
+    <nav aria-label="{{ 'Page navigation'|trans }}">
+        <ul class="pagination justify-content-center">
+        {% for i in 1..list.pages %}
+            {% if i == page %}
+                <li class="page-item active">
+                    <a href="#" class="page-link" onclick="return false;">{{ i }}</a>
+                </li>
+            {%else%}
+                <li class="page-item">
+                    <a href="?{% for k, v in {}|merge(request)|merge({'page': i}) %}{{ k }}={{ v }}{% if loop.last == false %}&{% endif %}{% endfor %}" class="page-link">{{ i }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+    </nav>
+{% endif %}

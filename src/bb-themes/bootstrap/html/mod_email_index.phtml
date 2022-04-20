@@ -1,15 +1,9 @@
-{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% extends request.ajax ? 'layout_blank.phtml' : 'layout_default.phtml' %}
 
 {% block meta_title %}{{ 'Emails'|trans }}{% endblock %}
 
 {% block content_before %}
-    <!-- Page Heading/Breadcrumbs -->
-    <div class="row">
-        <div class="col-lg-12">
-            <h1 class="page-header">{{ 'Emails we have sent you'|trans }}<h1>
-        </div>
-    </div>
-    <!-- /.row -->
+    <h1>{{ 'Emails we have sent you'|trans }}</h1>
 {% endblock %}
 
 {% block content %}
@@ -26,12 +20,16 @@
             {% set emails = client.email_get_list({ "per_page": 10, "page": request.page }) %}
             {% for i, email in emails.list %}
             <tr class="{{ cycle(['odd', 'even'], i) }}">
-                <td><a href="{{ 'email'|link }}/{{ email.id }}">{{ email.subject }}</a></td>
+                <td>
+                    <a href="{{ 'email'|link }}/{{ email.id }}">{{ email.subject }}</a>
+                </td>
                 <td>{{ email.created_at|date('Y-m-d h:i') }}</td>
                 <td class="actions">
                     <div class="pull-right">
-                        <a href="{{ 'api/client/email/delete'|link({ 'id': email.id }) }}" data-api-reload="1" class="api btn btn-danger btn-sm"><i class="fa fa-trash"></i> {{ 'Delete'|trans }}</a>
-                        <a href="{{ 'email'|link }}/{{ email.id }}" class="btn btn-primary btn-sm" ><i class="fa fa-search"></i> {{ 'View'|trans }}</a>
+                        <a href="{{ 'api/client/email/delete'|link({ 'id': email.id }) }}" data-api-reload="1" class="api btn btn-danger btn-sm">
+                            <i class="fa fa-trash"></i> {{ 'Delete'|trans }}</a>
+                        <a href="{{ 'email'|link }}/{{ email.id }}" class="btn btn-primary btn-sm" >
+                            <i class="fa fa-search"></i> {{ 'View'|trans }}</a>
                     </div>
                 </td>
             </tr>
@@ -43,5 +41,5 @@
         </tbody>
     </table>
 
-    {% include "partial_pagination.phtml" with {'list': emails} %}
+    {% include '_pagination.phtml' with { 'list': emails } %}
 {% endblock %}

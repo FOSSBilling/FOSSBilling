@@ -1,0 +1,27 @@
+<div class="modal fade" id="modalAddFunds" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="post" class="api-form" data-api-url="client/invoice/funds_invoice" data-api-tocreated="{{ 'invoice'|link }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="myModalLabel">{{ 'Add funds'|trans }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-secondary">{{ 'You can add funds to your account in advance and have ballance for future payments.'|trans }}</p>
+                    <div class="my-3">
+                        <label class="form-label" for="inputLoginEmail">{{ 'Amount'|trans }}:</label>
+                        <div class="input-group">
+                            <input class="form-control" id="inputLoginEmail" type="text" name="amount" required>
+                            <span class="input-group-text">{{ profile.currency }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer d-block">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success" type="submit">{{ 'Add'|trans }}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

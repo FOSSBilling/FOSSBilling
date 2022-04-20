@@ -1,16 +1,16 @@
-{% macro selectbox(name, options, selected, required, nullOption) %}
-    <select name="{{ name }}" {% if required %}required="required"{% endif%} class="form-control">
+{% macro selectbox(name, options, selected, required, nullOption, id) %}
+    <select class="form-select" id="{{ id }}" name="{{ name }}" {% if required %} required{% endif%}>
         {% if nullOption %}<option value="">-- {{ nullOption }} --</option>{% endif %}
-        {% for val,label in options %}
-        <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
+        {% for val, label in options %}
+            <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected{% endif %}>{{ label|e }}</option>
         {% endfor %}
     </select>
 {% endmacro %}
 
 {% macro selectboxtld(name, options, selected, required) %}
-    <select name="{{ name }}" {% if required %}required="required"{% endif%} class="form-control">
+    <select name="{{ name }}" {% if required %}required{% endif%} class="form-select">
         {% for data in options %}
-        <option value="{{ data.tld }}" label="{{ data.tld }}" {% if selected == data.tld %}selected="selected"{% endif %}>{{ data.tld }}</option>
+            <option value="{{ data.tld }}" label="{{ data.tld }}" {% if selected == data.tld %}selected{% endif %}>{{ data.tld }}</option>
         {% endfor %}
     </select>
 {% endmacro %}
@@ -26,7 +26,7 @@
 {% endmacro %}
 
 {% macro status_name(status) %}
-    {{ status|replace({'_': " "})|title|trans }}
+    {{ status|replace({ '_': " " })|title|trans }}
 {% endmacro %}
 
 {# deprecated - use period_title filter #}
@@ -35,24 +35,20 @@
 {% endmacro %}
 
 {% macro markdown_quote(text) %}
-
-
-
 {% for line in text|split('\n') %}
 > {{ line }}
 {% endfor %}
 {% endmacro %}
 
-
 {% macro recaptcha() %}
+    {% if guest.extension_is_on({ 'mod': 'spamchecker' }) %}
+        {% set rc = guest.spamchecker_recaptcha %}
 
-{% if guest.extension_is_on({"mod":"spamchecker"}) %}
-{% set rc = guest.spamchecker_recaptcha %}
-    {% if rc.enabled %}
-        {% if rc.version == 2 %}
-            <script src='https://www.google.com/recaptcha/api.js' async defer></script>
-            <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
+        {% if rc.enabled %}
+            {% if rc.version == 2 %}
+                <script src='https://www.google.com/recaptcha/api.js' async defer></script>
+                <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
+            {% endif %}
         {% endif %}
     {% endif %}
-{% endif %}
 {% endmacro %}

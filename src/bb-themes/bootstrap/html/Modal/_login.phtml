@@ -1,0 +1,33 @@
+<div class="modal fade" id="login" tabindex="-1" role="dialog" aria-labelledby="{{ 'Login to client area'|trans }}">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="post" class="api-form" data-api-url="{{ 'api/guest/client/login'|link }}" data-api-reload="1">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="myModalLabel">{{ 'Login to client area'|trans }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="inputLoginEmail">{{ 'Email address'|trans }}:</label>
+                        <input class="form-control" id="inputLoginEmail" type="email" name="email" value="{{ request.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="inputLoginPassword">{{ 'Password'|trans }}:</label>
+                        <input class="form-control" id="inputLoginPassword" type="password" name="password" value="{{ request.password }}" required>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input class="form-check-input" id="checkboxLoginRemember" type="checkbox" name="remember" checked>
+                        <label class="form-check-label" for="checkboxLoginRemember">Remember me</label>
+                        <a href="{{ 'reset-password'|link }}" class="float-end">{{ 'Reset password'|trans }}</a>
+                    </div>
+                </div>
+                <div class="modal-footer d-block">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success" type="submit">{{ 'Login'|trans }}</button>
+                        <a class="btn btn-link" href="#" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#registration">{{ 'Register'|trans }}</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,11 +1,20 @@
+Master
+------------------------------------------------------------------------------
+
+**General:**
+* Updated bb-themes/bootstrap to Bootstrap 5
+
+Release 4.22-beta.1.1
+------------------------------------------------------------------------------
+
 Release 4.22-beta.1.2 !!Update in progress!!
 ------------------------------------------------------------------------------
 
 **General:**
-* 
+*
 
 **Security:**
-* 
+*
 
 **Bug Fixes:**
 * Fix plesk integration
@@ -22,7 +31,7 @@ Release 4.22-beta.1.1
 
 **Security:**
 * Fixed three instances of XSS vulnerabilities
-* Use random_bytes instead of uniqid since it actually generates cryptographically secure pseudo-random bytes 
+* Use random_bytes instead of uniqid since it actually generates cryptographically secure pseudo-random bytes
 
 **Bug Fixes**
 * Bugfixes with Bootstrap theme
@@ -86,7 +95,7 @@ Release 4.17
 ------------------------------------------------------------------------------
 * Added Stripe payment adapter
 * Send email notification to helpdesk email address (created new mod_support_helpdesk_ticket_open email template)
-* Added `Cookieconsent` extension for displaying notification about cookies which is required by EU cookie law 
+* Added `Cookieconsent` extension for displaying notification about cookies which is required by EU cookie law
 * Updated Plesk server manager to Plesk 12
 * Updated mod_email_queue and queue tables columns. Removed MySql reserved words.
 * Updated domain product type startingFromPrice value calculation.
@@ -103,7 +112,7 @@ Release 4.16
 * Invoices can be downloaded as PDF in boxbilling theme
 * Added language picker for client in huraga theme
 * Updated translations:
-  * merged admin.po into messages.po 
+  * merged admin.po into messages.po
   * added language selector in admin area
 * Bluepay payment adapter no longer supported. Adapter file moved to boxbilling/extensions repository
 * Added direct link to "support ticket message"
@@ -147,7 +156,7 @@ Release 4.15 (2015-02-19)
 Release 4.14 (2015-02-03)
 ------------------------------------------------------------------------------
 
-* New event hook:  
+* New event hook:
     * onBeforeThemeSettingsSave
 * New API(client) calls:
     * invoice_get_tax_rate
@@ -177,7 +186,7 @@ Release 4.13 (2015-01-15)
 * Vagrant configuration added
 * Interkassa payment adapter updated to v2
 * Interlaced images support added to invoice pdf
-* Fixed email template rendering 
+* Fixed email template rendering
 * Web cron removed
 * Fixed file manager module.
 * Fixed date format in emails
@@ -249,21 +258,21 @@ Release 2.11.28 (2012-11-28)
 * Updating Twig to 1.10.3
 * Cron option: Enable web based cron. This method requires that site has visitors and special theme tag support
 * Major admin area theme update. Using fluid layout. Added breadcrumbs
-* News module updates    
+* News module updates
 * Ability to change payment gateway in invoice payment page
 * Immediately redirect to payment gateway after checkout if payment gateway was selected
 * Defautl theme update: Show client login/signup form before checkout button in shopping cart
-* Search can be made by order meta keys   
+* Search can be made by order meta keys
 * Added new database table *client_order_meta* to store custom order data
 * new statistic method to get number of sales by country
 * new statistic method to get number of clients in country
-* Do not use ajax when loading statistics in admin dashboard    
-* Show Last month statistics in dashboard    
+* Do not use ajax when loading statistics in admin dashboard
+* Show Last month statistics in dashboard
 * Render mod_page_login.phtml instead of mod_client_login.phtml template if template exists
 * Allow create any template mod_client_*.phtml to be accessed by client only
 * Added redirects module. Usefull to redirect deprecated URLs to new ones
 * Simplified payment gateway logic. Now it is a simple file, no need to extend any class.
-* New event hooks:  
+* New event hooks:
     * onBeforeAdminExtensionConfigSave
     * onAfterAdminExtensionConfigSave
     * onBeforeProductAddedToCart
@@ -271,7 +280,7 @@ Release 2.11.28 (2012-11-28)
 * Removed hostinger branding
 * Option to enable/disable ability for client to change his email
 * Ability to require email confirmation in welcome email
-* Ability to define required fields for client registration form    
+* Ability to define required fields for client registration form
 * Ability to disable new client registrations
 * Invoices are not generated for 0 amount orders
 * Performance and multiple bug fixes
@@ -281,13 +290,13 @@ Release 2.9.14 (2012-09-14)
 
 * Added new field for service license - checked_at
 * Support tickets canned responses are grouped
-* Support settings option: auto responder and delay message 
+* Support settings option: auto responder and delay message
 * Preview ticket notes in tickets listing page
 * Ticket page updates in admin area
 * Ability to generate email templates for enabled extensions before first event occurrence
 * Ability to define which IPs are allowed to login to admin area
 * Redesigned settings page. All configurable extensions are listed in this page.
-* Simplified payment gateway adapters transaction processing logic. 
+* Simplified payment gateway adapters transaction processing logic.
   Now you can use API inside payment gateway method **processTransaction**
   Requires new parameter (new_transaction_process_logic) to be added to settings table to enable this option
 * Option to skip calling event hook in order suspend and cancel actions
@@ -295,7 +304,7 @@ Release 2.9.14 (2012-09-14)
 Release 2.9.10 (2012-09-10)
 ------------------------------------------------------------------------------
 
-* Search clients by company name in clients listing page 
+* Search clients by company name in clients listing page
 * Ability to define staff member permissions
 * New parameter in bb-config.php file BB_LOCALE_TIME_FORMAT - to define localized time format
 * Add: New filter to display translatable date with time: bb_datetime
@@ -312,7 +321,7 @@ Release 2.9.10 (2012-09-10)
 * No country detected flag fix
 * Print invoice total issue fix
 * Do not show help desks grouping in admin area support tickets listing
-* Forums has new attribute - category 
+* Forums has new attribute - category
 * Forum messages can now be rated with points
 * RedBean update to 3.2.3
 
@@ -357,12 +366,12 @@ Release 2.7.2 (2012-07-02)
 * Order renewal logic parameter. Can select how renewal date is calculated
 * added new field in client database to define authorization type
 * admin/client/create password is not mandatory
-* admin/client/get can now find client by email  
+* admin/client/get can now find client by email
 * Invoices duplicate listing issue fix
 * Added Akismet checking for forum posts in spamChecker module
 * Support for php-gettext if gettext extension is not installed on server.
 * AliPay payment gateway updates
-* Added Thank You page. Clients can be redirected after payment instead of invoice. 
+* Added Thank You page. Clients can be redirected after payment instead of invoice.
 
 Release 2.6.22 (2012-06-22)
 ------------------------------------------------------------------------------
@@ -370,7 +379,7 @@ Release 2.6.22 (2012-06-22)
 * Invoice tax calculation bug fix
 * Whm/Cpanel invalid body response issue updates
 * Fixed order event hooks
-* Can not create currency issue fix. Change currency price format from %price% to {{price}}. Solving an for servers where mod_security is enabled. 
+* Can not create currency issue fix. Change currency price format from %price% to {{price}}. Solving an for servers where mod_security is enabled.
 * Fix for issue: Email templates are cached and does not auto refresh if BB_DEBUG mode is false
 * Add message to notification center after client makes post to forum topic. Notification center extension must be enabled.
 
@@ -378,11 +387,11 @@ Release 2.6.17 (2012-06-17)
 ------------------------------------------------------------------------------
 
 * New SolusVM VPS product type. Ability to import clients and existing servers from SolusVM master server. Full control from admin and client area.
-* New product type BoxBiling license. Ability to sell BoxBilling licenses from any BoxBilling installation. Enable 
+* New product type BoxBiling license. Ability to sell BoxBilling licenses from any BoxBilling installation. Enable
 * Email templates are generated on first event occurrence. Until then it can not be managed.
 * Ability to filter orders by invoice option: issue invoice manually or automatically.
 * Ability to preview email templates. Old email templates are deprecated.
-* Ability to place new order for clients from admin area 
+* Ability to place new order for clients from admin area
 * Ability to change currency price format
 * Deprecated bb-library/Hook bindings. Now event hooks are binded from modules Service.php class
 * php mcrypt extension is now mandatory
@@ -396,13 +405,13 @@ Release 2.6.17 (2012-06-17)
 * All extensions can call other extension event hooks
 * All extensions can hook into cron job event
 * Added new API methods **extension_config_get** and **extension_config_save** to store encrypted extension configuration data
-* Admin layout contains more blocks. Gives more freedom for extensions developers. 
+* Admin layout contains more blocks. Gives more freedom for extensions developers.
 * Admin area dashboard statistics links now filters data for today and yesterday
 * Ability to load custom listing template file for order index page
 * Check if template file exists function for guest API guest.system_template_exists({"file":"mod_index_dashboard.phtml"})
 * Ability to create admin account if none exists from admin area interface instead of login form.
 * Default sort order for new products
-* Products grouped by type can now be ordered on *slider* type form 
+* Products grouped by type can now be ordered on *slider* type form
 * Bug fix when installed in subfolder named same as one of the modules
 * Client profile management page updates - split to sections
 * Adding dotTk domain registrar to official version
@@ -435,7 +444,7 @@ Release v2.4.30 (2012-04-30)
 * https links updates
 * https://github.com/boxbilling/BoxBilling/issues/115 fix
 * Password issue fix: https://github.com/boxbilling/BoxBilling/issues/114
-* Including http://redbeanphp.com/ ORM in bb-library/rb.php For extensions as a helper 
+* Including http://redbeanphp.com/ ORM in bb-library/rb.php For extensions as a helper
 * Simplifie nginx server support. Routing includes only 2 simple rules
 * Adding new core module mod_api. Api is now accessible from yourdomain.com/api/role/module/method. bb-api is deprecated and will be removed in 2.6 version
 * Gravatar url uses ssl if BoxBilling is on https

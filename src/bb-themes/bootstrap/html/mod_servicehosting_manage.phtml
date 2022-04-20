@@ -1,0 +1,201 @@
+{% if order.status == 'active' %}
+    <hr>
+    <h2>{{ 'Manage hosting account'|trans }}</h2>
+
+    <ul class="nav nav-tabs nav-justified mb-3" id="ntTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#details">{{ 'Details'|trans }}</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#change-password">{{ 'Password'|trans }}</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#change-domain">{{ 'Domain'|trans }}</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#change-username">{{ 'Username'|trans }}</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="tabHostingContent">
+        <div class="tab-pane fade show active" id="details" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <h3>{{ 'Details'|trans }}</h3>
+                    {% set server = service.server %}
+                    {% set hp = service.hosting_plan %}
+
+                    <dl class="row ">
+                        <dt class="col-6">{{ 'Domain'|trans }}:</dt>
+                        <dd class="col-6"><a target="_blank" href="https://{{ service.domain }}">{{ service.domain }}</a></dd>
+
+                        <dt class="col-6">{{ 'Server IP'|trans }}:</dt>
+                        <dd class="col-6">{{ server.ip }}</dd>
+
+                        <dt class="col-6">{{ 'Server hostname'|trans }}:</dt>
+                        <dd class="col-6">{{ server.hostname }}</dd>
+
+                        <dt class="col-6">{{ 'Username'|trans }}:</dt>
+                        <dd class="col-6">{{ service.username }}</dd>
+
+                        <dt class="col-6">{{ 'Password'|trans }}:</dt>
+                        <dd class="col-6">******</dd>
+
+                        <dt class="col-6">{{ 'Hosting plan'|trans }}:</dt>
+                        <dd class="col-6">{{ hp.name }}</dd>
+
+                        <dt class="col-6">{{ 'Maximum sites'|trans }}:</dt>
+                        <dd class="col-6">{{ hp.max_addon }}</dd>
+
+                        <dt class="col-6">{{ 'Disk quota'|trans }}:</dt>
+                        <dd class="col-6">{{ hp.quota }} MB</dd>
+                    </dl>
+
+                    <p>
+                    {% if service.domain_order_id %}
+                        <a class="bb-button" href="{{ '/order/service/manage'|link }}/{{ service.domain_order_id }}">{{ 'Manage domain'|trans }}</a>
+                    {% endif %}
+
+                    {% if service.reseller %}
+                        <a class="bb-button bb-button-submit" href="{{ server.reseller_cpanel_url }}" target="_blank">{{ 'Reseller control panel'|trans }}</a>
+                    {% endif %}
+                    </p>
+                </div>
+                <div class="col">
+                    <h3>{{ 'Nameservers'|trans }}</h3>
+                    <dl class="row ">
+                        <dt class="col-6">{{ 'Nameserver 1'|trans }}:</dt>
+                        <dd class="col-6">{{ server.ns1 }}</dd>
+
+                        <dt class="col-6">{{ 'Nameserver 2'|trans }}:</dt>
+                        <dd class="col-6">{{ server.ns2 }}</dd>
+
+                        {% if server.ns3 %}
+                            <dt class="col-6">{{ 'Nameserver 3'|trans }}:</dt>
+                            <dd class="col-6">{{ server.ns3 }}</dd>
+                        {% endif %}
+
+                        {% if server.ns4 %}
+                            <dt class="col-6">{{ 'Nameserver 4'|trans }}:</dt>
+                            <dd class="col-6">{{ server.ns4 }}</dd>
+                        {% endif %}
+                    </dt>
+
+                    <h3>{{ 'FTP details'|trans }}</h3>
+                    <p>{{ 'Use these details to connect to your FTP account.'|trans }}</p>
+                    <dl class="row ">
+                        <dt class="col-6">{{ 'FTP IP'|trans }}:</dt>
+                        <dd class="col-6">{{ server.ip }}</dd>
+
+                        <dt class="col-6">{{ 'FTP Username'|trans }}:</dt>
+                        <dd class="col-6">{{ service.username }}</dd>
+
+                        <dt class="col-6">{{ 'FTP Password'|trans }}:</dt>
+                        <dd class="col-6">******</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="d-grid">
+                <a class="btn btn-primary" href="{{ server.cpanel_url }}" target="_blank">{{ 'Jump to control panel'|trans }}</a>
+            </div>
+        </div>
+    
+        <div class="tab-pane fade" id="change-password" role="tabpanel">
+            <h3>{{ 'Change account password'|trans }}</h3>
+            <p class="text-secondary">{{ 'Change your FTP/SSH control panel password.'|trans }}</p>
+            <div class="col-md-8 col-xl-6 mx-auto">
+                <form method="post" id="change-password">
+                    <div class="mb-3">
+                        <label class="form-label" for="inputPanelPassword">{{ 'Password'|trans }}: </label>
+                        <input type="password" class="form-control" id="inputPanelPassword" name="password" value="{{ request.password }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="inputPanelPasswordRepeat">{{ 'Password Confirm'|trans }}: </label>
+                        <input type="password" class="form-control" for="inputPanelPasswordRepeat" name="password_confirm" value="{{ request.password_confirm }}" required>
+                    </div>
+                    <input type="hidden" name="order_id" value="{{ order.id }}">
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">{{ 'Change password'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="change-domain" role="tabpanel">
+            <h2>{{ 'Change domain'|trans }}</h2>
+            <div class="col-md-8 col-xl-6 mx-auto">
+                <form method="post" id="change-domain">
+                    <div class="mb-3">
+                        <label class="form-label" for="inputDomain">{{ 'Domain'|trans }}:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control w-50" id="inputDomain" name="sld" value="{{ request.domain|default(service.sld) }}" required>
+                            <input type="text" class="form-control" name="tld" value="{{ request.domain|default(service.tld) }}" required>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="order_id" value="{{ order.id }}">
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">{{ 'Change'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="change-username" role="tabpanel">
+            <h2>{{ 'Change username'|trans }}</h2>
+            <div class="col-md-8 col-xl-6 mx-auto">
+                <form action="" method="post" id="change-username">
+                    <div class="mb-3">
+                        <label class="form-label" for="inputUsername">{{ 'Username'|trans }}: </label>
+                        <input type="text" class="form-control" id="inputUsername" name="username" value="{{ request.username|default(service.username) }}" required>
+                    </div>
+                    <input type="hidden" name="order_id" value="{{ order.id }}">
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">{{ 'Change'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    $('#change-domain').bind('submit', event => {
+        bb.post(
+            'client/servicehosting/change_domain',
+            $(event.target).serialize(),
+            function(result) {
+                boxbilling.message("{{ 'Domain name was changed'|trans }}");
+            }
+        );
+
+        return false;
+    });
+
+    $('#change-username').bind('submit', event => {
+        bb.post(
+            'client/servicehosting/change_username',
+            $(event.target).serialize(),
+            function(result) {
+                boxbilling.message("{{ 'Account Username was changed'|trans }}");
+            }
+        );
+
+        return false;
+    });
+
+    $('#change-password').bind('submit', event => {
+        bb.post(
+            'client/servicehosting/change_password',
+            $(event.target).serialize(),
+            function(result) {
+                boxbilling.message("{{ 'Account Password was changed'|trans }}");
+            }
+        );
+
+        return false;
+    });
+});
+</script>
+{% endif %}

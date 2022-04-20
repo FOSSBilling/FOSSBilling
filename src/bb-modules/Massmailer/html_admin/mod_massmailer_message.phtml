@@ -1,4 +1,4 @@
-{% extends "layout_default.phtml" %}
+{% extends 'layout_default.phtml' %}
 
 {% block meta_title %}{{ msg.subject }}{% endblock %}
 
@@ -17,9 +17,9 @@
                 <label>{{ 'From'|trans }}</label>
                 <div class="formRight moreFields">
                     <ul>
-                        <li style="width: 250px"><input type="text" name="from_name" value="{{msg.from_name}}" required="required" title="{{ 'From name'|trans }}"/></li>
+                        <li style="width: 250px"><input type="text" name="from_name" value="{{ msg.from_name }}" required="required" title="{{ 'From name'|trans }}"/></li>
                         <li class="sep"></li>
-                        <li style="width: 245px"><input type="text" name="from_email" value="{{msg.from_email}}" required="required"  title="{{ 'From email'|trans }}"/></li>
+                        <li style="width: 245px"><input type="text" name="from_email" value="{{ msg.from_email }}" required="required"  title="{{ 'From email'|trans }}"/></li>
                     </ul>
                 </div>
                 <div class="fix"></div>
@@ -89,35 +89,38 @@
                 </div>
             </div>
             
-            <input type="submit" value="{{ 'Update and preview'|trans }}" class="greyishBtn submitForm" />
-            <input type="button" value="{{ 'Send test message'|trans }}" class="blueBtn submitForm" id="send-test-msg" style="float: left;"/>
-            <input type="button" value="{{ 'Send message to clients'|trans }}" class="greenBtn submitForm" id="send-msg" style="float: left;"/>
-            <input type="hidden" name="id" value="{{ msg.id }}"/>
+            <input type="submit" value="{{ 'Update and preview'|trans }}" class="greyishBtn submitForm">
+            <input type="button" value="{{ 'Send test message'|trans }}" class="blueBtn submitForm" id="send-test-msg" style="float: left;">
+            <input type="button" value="{{ 'Send message to clients'|trans }}" class="greenBtn submitForm" id="send-msg" style="float: left;">
+            <input type="hidden" name="id" value="{{ msg.id }}">
         </fieldset>
     </form>
     
     <div class="body">
-        <a href="{{ 'massmailer'|alink }}"  title="" class="btnIconLeft mr10"><img src="images/icons/dark/arrowLeft.png" alt="" class="icon"><span>{{ 'Back to list'|trans }}</span></a>
+        <a href="{{ 'massmailer'|alink }}"  title="" class="btnIconLeft mr10">
+            <img src="images/icons/dark/arrowLeft.png" alt="" class="icon"><span>{{ 'Back to list'|trans }}</span>
+        </a>
     </div>
 </div>
 {% endblock %}
 
 {% block js %}
 {% autoescape "js" %}
-<script type="text/javascript">
+<script>
 function onAfterMessageUpdate() {
-        bb.post('admin/massmailer/preview', {id:'{{msg.id}}'}, function(result) {
+        bb.post('admin/massmailer/preview', { id: '{{ msg.id }}' }, function(result) {
             $('#preview').show();
             $('#preview .econtent').html(result.content);
             $('#preview .esubject').html(result.subject);
         });
 }
+
 $(function() {
     $('#send-msg').click(function() {
         jConfirm('Send message to clients?', 'Confirm', function(confirm) {
-            if(confirm) {
-                bb.post('admin/massmailer/send', {id:{{ msg.id }}}, function(result){
-                    bb.msg('Message was added to mail queue and will be sent with scheduled tasks.');
+            if (confirm) {
+                bb.post('admin/massmailer/send', { id: {{ msg.id }} }, function(result) {
+                    bb.msg("{{ 'Message was added to mail queue and will be sent with scheduled tasks.'|trans }}");
                 });
             }
         });
@@ -127,9 +130,9 @@ $(function() {
     
     $('#send-test-msg').click(function() {
         jConfirm('Send test message?', 'Confirm', function(confirm) {
-            if(confirm) {
-                bb.post('admin/massmailer/send_test', { id: {{ msg.id } }}, function(result) {
-                    bb.msg('Message was sent');
+            if (confirm) {
+                bb.post('admin/massmailer/send_test', { id: {{ msg.id }} }, function(result) {
+                    bb.msg("{{ 'Message was sent'|trans }}");
                 });
             }
         });

@@ -1,114 +1,98 @@
-{% extends request.ajax ? "layout_blank.phtml" : "layout_default.phtml" %}
+{% extends request.ajax ? 'layout_blank.phtml' : 'layout_default.phtml' %}
 
-{% import "macro_functions.phtml" as mf %}
+{% import 'macro_functions.phtml' as mf %}
 
 {% block meta_title %}{{ product.title }}{% endblock %}
 
 {% block content_before %}
-    <!-- Page Heading/Breadcrumbs -->
-    <div class="row">
-        <div class="col-lg-12">
-            <h1 class="page-header">{{ product.title }}</h1>
-            {#{ product.description|bbmd }#}
-            {% include 'partial_steps.phtml' with { 'selected': 2, 'product': product } %}
-        </div>
-    </div>
-    <!-- /.row -->
+    <h1>{{ product.title }}</h1>
+    {# { product.description|bbmd } #}
+    {% include '_order-steps.phtml' with { 'selected': 2, 'product': product } %}
 {% endblock %}
 
 {% block content %}
     {% set periods = guest.system_periods %}
     {% set pricing = product.pricing %}
 
-<form method="post" action="" class="api_form" data-api-url="guest/cart/add_item" data-api-redirect="{{ 'cart'|link }}">
-	{#<h2 class="dark-icon i-services">{{ 'Domain configuration'|trans }}</h2>#}
+<form method="post" class="api-form" data-api-url="guest/cart/add_item" data-api-redirect="{{ 'cart'|link }}">
+    {#<h2 class="dark-icon i-services">{{ 'Domain configuration'|trans }}</h2>#}
 
 <div class="row">
-	<div class="col-sm-12">
-	<ul class="nav nav-tabs nav-justified" id="tabs">
-        <li class="active"><a href="#owndomain" data-toggle="tab" rel="owndomain"><i class="fa fa-tree"></i> {{ 'Use own'|trans }}</a></li>
-		<li class=""><a href="#register" data-toggle="tab" rel="register"><i class="fa fa-tree"></i> {{ 'Register new domain'|trans }}</a></li>
-        <li class=""><a href="#transfer" data-toggle="tab" rel="transfer"><i class="fa fa-car"></i> {{ 'Transfer my domain'|trans }}</a></li>
-     </ul>
-	</div>
-	
-	<div class="tab-content text-center well col-sm-12">
-		<div class="tab-pane fade active in" id="owndomain">
-            <h4>{{ 'I will use my existing domain and update nameservers'|trans }}</h4>
-			<div class="form-group form-inline">
-				<div class="input-group">
-					<div class="input-group-addon">
-						<input type="text" class="form-control" name="domain[owndomain_sld]" value="{{ request.owndomain_sld }}" placeholder="{{ 'Enter your domain name'|trans }}">
-					</div>
-					<div class="input-group-addon">
-						<input type="text" class="form-control" name="domain[owndomain_tld]" value="{{ request.owndomain_tld|default('.com') }}" >
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="tab-pane fade in" id="register">
-            <h4>{{ 'Register new domain'|trans }}</h4>
-			<div class="form-group form-horizontal">
-				<div class="input-group">
-					<div class="input-group-addon">
-						<input type="text" class="form-control" name="domain[register_sld]" value="{{ request.register_sld }}" placeholder="{{ 'Enter your domain name'|trans }}">
-                    </div>
-					<div class="input-group-addon">
-						{% if product.config.free_domain == 1 %}
-							{% set tlds = guest.serviceHosting_free_tlds({'product_id' : product.id}) %}
-						{% else %}
-							{% set tlds = guest.serviceDomain_tlds({"allow_register":1})%}
-						{% endif %}
-						{{ mf.selectboxtld('domain[register_tld]', tlds)}}
-					</div>
-					<div class="input-group-addon">
-						<button class="btn btn-success btn-sm" type="button" id="domain-check">{{ 'Check'|trans }}</button>
-					</div>
-				</div>
-			</div>
-			<div class="form-group col-md-4 col-md-offset-8">
-                    <div id="domain-config" style="display:none;">
-						<hr>
-                        <h4>{{ 'Period'|trans }}:</h4>
-                        {{ mf.selectbox('domain[register_years]', {}) }}
-                    </div>
-			</div>
-			
-		</div>
-		<div class="tab-pane fade in" id="transfer">
-            <h4>{{ 'Transfer your domain from another registrar'|trans }}</h4>
-			<div class="form-group form-horizontal">
-				<div class="input-group">
-					<div class="input-group-addon">
-						<input type="text" class="form-control" name="domain[transfer_sld]" value="{{ request.transfer_sld }}" placeholder="{{ 'Enter your domain name'|trans }}">
-                    </div>
-					<div class="input-group-addon">
-						{{ mf.selectboxtld('domain[transfer_tld]', guest.serviceDomain_tlds({ "allow_transfer": 1 })) }}
-					</div>
-					<div class="input-group-addon">
-						<button class="btn btn-success btn-sm" type="button" id="transfer-check">{{ 'Check'|trans }}</button>
-					</div>
-				</div>
-			</div>
-			<div class="form-group col-md-4 col-md-offset-8">
+    <div class="col">
+        <ul class="nav nav-tabs nav-justified mb-3" id="tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a href="#owndomain" class="nav-link active" data-bs-toggle="tab" rel="owndomain">
+                    <i class="fa fa-tree me-2"></i>{{ 'Own'|trans }}</a>
+            </li>
+            <li class="nav-item">
+                <a href="#register" class="nav-link" data-bs-toggle="tab" rel="register">
+                    <i class="fa fa-plus me-2"></i>{{ 'Register'|trans }}</a>
+            </li>
+            <li class="nav-item">
+                <a href="#transfer" class="nav-link" data-bs-toggle="tab" rel="transfer">
+                    <i class="fa fa-car me-2"></i>{{ 'Transfer'|trans }}</a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div class="row">
+    <div class="tab-content text-center col-md-10 col-xl-8 mx-auto">
+        <div class="tab-pane fade show active" id="owndomain">
+            <p class="lead text-center">{{ 'I will use my existing domain and update nameservers'|trans }}</p>
+            <div class="form-group form-inline">
+                <div class="input-group">
+                    <input type="text" class="form-control w-50" name="domain[owndomain_sld]" value="{{ request.owndomain_sld }}" placeholder="{{ 'Enter your domain name'|trans }}">
+                    <input type="text" class="form-control" name="domain[owndomain_tld]" value="{{ request.owndomain_tld|default('.com') }}">
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade in" id="register">
+            <p class="lead text-center">{{ 'Register new domain'|trans }}</p>
+            <div class="input-group">
+                <input type="text" class="form-control w-50" name="domain[register_sld]" value="{{ request.register_sld }}" placeholder="{{ 'Enter your domain name'|trans }}">
+                {% if product.config.free_domain == 1 %}
+                    {% set tlds = guest.serviceHosting_free_tlds({ 'product_id': product.id }) %}
+                {% else %}
+                    {% set tlds = guest.serviceDomain_tlds({ 'allow_register': 1 })%}
+                {% endif %}
+                {{ mf.selectboxtld('domain[register_tld]', tlds) }}
+                <button class="btn btn-success" type="button" id="domain-check">{{ 'Check'|trans }}</button>
+            </div>
+            <div id="domain-config" style="display:none;">
+                <hr>
+                <label class="form-label">{{ 'Period'|trans }}:</label>
+                {{ mf.selectbox('domain[register_years]', {}) }}
+            </div>
+        </div>
+        <div class="tab-pane fade in" id="transfer">
+            <p class="lead text-center">{{ 'Transfer your domain from another registrar'|trans }}</p>
+            <div class="form-group form-horizontal">
+                <div class="input-group">
+                    <input type="text" class="form-control w-50" name="domain[transfer_sld]" value="{{ request.transfer_sld }}" placeholder="{{ 'Enter your domain name'|trans }}">
+                    {{ mf.selectboxtld('domain[transfer_tld]', guest.serviceDomain_tlds({ 'allow_transfer': 1 })) }}
+                    <button class="btn btn-success" type="button" id="transfer-check">{{ 'Check'|trans }}</button>
+                </div>
+            </div>
+            <div class="form-group col-md-4 col-md-offset-8">
                 <div id="domain-transfer-config" style="display:none;">
-					<hr>
+                    <hr>
                     <h4>{{ 'Transfer price'|trans }}: <span id="transfer-price"></span></h4>
                      <input type="text" class="form-control" name="domain[transfer_code]" value="{{ request.transfer_code }}" placeholder="{{ 'Enter domain transfer code'|trans }}">
                 </div>
-			</div>
-		</div>
-	</div>
-	<div class="col-md-4 col-md-offset-8 text-center">
-		{% include 'partial_currency.phtml' %}
-		<hr>
-		{% include 'partial_pricing.phtml' with { 'product': product } %}
-	</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-10 col-xl-8 mx-auto text-center">
+        {% include 'partial_currency.phtml' %}
+        <hr>
+        {% include 'partial_pricing.phtml' with { 'product': product } %}
+    </div>
 </div>
     {% include 'partial_addons.phtml' with { 'product': product } %}
     
-    <input type="hidden" name="domain[action]" value="owndomain" id="domain-action"/>
-    <input type="hidden" name="id" value="{{ product.id }}" />
+    <input type="hidden" name="domain[action]" value="owndomain" id="domain-action">
+    <input type="hidden" name="id" value="{{ product.id }}">
 </form>
 {% endblock %}
 
@@ -116,7 +100,7 @@
 {% set currency = guest.cart_get_currency %}
 <script>
 $(function() {
-	$('#tabs li a').bind('click', function() {
+    $('#tabs li a').bind('click', function() {
         $('#domain-action').val($(this).attr('rel'));
     });
 
@@ -193,8 +177,7 @@ $(function() {
         );
     }
 
-    function setTransferPricing(tld)
-    {
+    function setTransferPricing(tld) {
         bb.post(
             'guest/servicedomain/pricing',
             { tld: tld },

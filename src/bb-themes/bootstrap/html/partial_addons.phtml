@@ -1,49 +1,44 @@
 {% if product.addons|length > 0 %}
-<div class="addons well" style="display: none;">
-	<h4>{{ 'Addons & extras'|trans }}</h4>
-	<ul class="list-group">
-		{% for addon in product.addons %}
-			<li class="list-group-item">
-				<h4 class="list-group-item-heading">
-					<input type="hidden" name="addons[{{ addon.id }}][selected]" value="0">
-					<input type="checkbox" name="addons[{{ addon.id }}][selected]" value="1" id="addon_{{ addon.id }}">
-					{{ addon.title }}
-				</h4>
-				<p class="list-group-item-text form-inline">
-					{{ addon.description|bbmd }}
-					{% if addon.pricing.type is same as('recurrent') %}
-					<div class="form-group">
-						<div class="input-group">
-							<select name="addons[{{ addon.id }}][period]" class="addon-period-selector form-control" rel="addon-periods-{{ addon.id }}">
-							{% for code,prices in addon.pricing.recurrent %}
-								{% if prices.enabled %}
-								<option value="{{code}}">{{ periods[code] }}</option>
-								{% endif %}
-							{% endfor %}
-							</select>
-							<div id="addon-periods-{{ addon.id }}" class="input-group-addon">
-							{% for code,prices in addon.pricing.recurrent %}
-								<span class="{{code}}">{{ (prices.price + prices.setup) | money_convert }}</span>
-							{% endfor %}
-							</div>
-						</div>
-					</div>
-					{% endif %}
+<div class="addons" style="display: none;">
+    <h4>{{ 'Addons & extras'|trans }}</h4>
+    <ul class="list-group mb-3">
+        {% for addon in product.addons %}
+            <li class="list-group-item">
+                <div class="form-check">
+                    <input type="hidden" name="addons[{{ addon.id }}][selected]" value="0">
+                    <input type="checkbox" class="form-check-input" name="addons[{{ addon.id }}][selected]" value="1" id="addon_{{ addon.id }}">
+                    <label for="addon_{{ addon.id }}">{{ addon.title }}</label>
+                </div>
+                <div class="text-secondary">{{ addon.description|bbmd }}</div>
+                {% if addon.pricing.type is same as('recurrent') %}
+                    <div class="input-group">
+                        <select name="addons[{{ addon.id }}][period]" class="addon-period-selector form-select" rel="addon-periods-{{ addon.id }}">
+                        {% for code,prices in addon.pricing.recurrent %}
+                            {% if prices.enabled %}
+                            <option value="{{ code }}">{{ periods[code] }}</option>
+                            {% endif %}
+                        {% endfor %}
+                        </select>
+                        <div id="addon-periods-{{ addon.id }}" class="input-group-text text-success">
+                        {% for code,prices in addon.pricing.recurrent %}
+                            <span class="{{ code }}">{{ (prices.price + prices.setup)|money_convert }}</span>
+                        {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
 
-					{% if addon.pricing.type is same as('once') %}
-						<h4 class="text-right"><strong>{{ (addon.pricing.once.price + addon.pricing.once.setup) | money_convert }}</strong></h4>
-					{% endif %}
+                {% if addon.pricing.type is same as('once') %}
+                    <p class="text-success float-end">{{ (addon.pricing.once.price + addon.pricing.once.setup)|money_convert }}</p>
+                {% endif %}
 
-					{% if addon.pricing.type is same as('free') %}
-						<h4 class="text-right"><strong>{{ 0 | money_convert }}</strong></h4>
-					{% endif %}	
-				</p>	
-			</li>
-		{% endfor %}
-		<li class="list-group-item"></li>
-	</ul>
-	<div class="text-center" >
-		<button class="btn btn-success btn-lg" type="submit">{{ 'Order now'|trans }}</button>
-	</div>
+                {% if addon.pricing.type is same as('free') %}
+                    <p class="text-success float-end">{{ 0|money_convert }}</p>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+    <div class="text-center" >
+        <button class="btn btn-success btn-lg" type="submit">{{ 'Order now'|trans }}</button>
+    </div>
 </div>
 {% endif %}

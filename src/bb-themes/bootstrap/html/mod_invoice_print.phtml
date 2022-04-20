@@ -1,76 +1,73 @@
-{% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
+{% set nr = invoice.serie ~ '%05s'|format(invoice.nr) %}
 {% set seller = invoice.seller %}
 {% set buyer = invoice.buyer %}
 {% set company  = guest.system_company %}
+<!DOCTYPE html>
 <html>
     <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-        <link rel='stylesheet' type='text/css' href="{{ ('css/bootstrap.css')|asset_url }}" media="screen">
-        <link rel='stylesheet' type='text/css' href="{{ ('css/bootstrap.css')|asset_url }}" media="print">
+        <meta charset="utf-8">
+        <link rel='stylesheet' type='text/css' href="{{ ('css/bootstrap.min.css')|asset_url }}" media="screen">
+        <link rel='stylesheet' type='text/css' href="{{ ('css/bootstrap.min.css')|asset_url }}" media="print">
 
-        <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}">
+        {% if settings.favicon %}
+		<link rel="icon" href="{{ settings.favicon }}">
+    	{% endif %}
 
         <style>
-    @media print {
-        .dl-horizontal dt{
+        @media print {
+            .dl-horizontal dt {
+                width: auto;
+            }
+            .invoice-well dt {
+                padding-right: 5px;
+            }
+            #proforma-invoice{
+                margin-left: auto;
+                margin-right: auto;
+                display: block;
+            }
+
+            #invoice-title{
+                text-align: center;
+                padding-bottom: 3%;
+            }
+        }
+
+        .dl-horizontal dt {
             width: auto;
         }
-        .dl-horizontal dd{
-            margin-left: 30%;
-        }
-        .invoice-well dt{
+        .invoice-well dt {
             padding-right: 5px;
         }
-        #proforma-invoice{
+        #proforma-invoice {
+            width: 650px;
             margin-left: auto;
             margin-right: auto;
             display: block;
         }
 
-        #invoice-title{
+        #invoice-title {
             text-align: center;
             padding-bottom: 3%;
         }
-    }
-    .dl-horizontal dt{
-        width: auto;
-    }
-    .dl-horizontal dd{
-        margin-left: 30%;
-    }
-    .invoice-well dt{
-        padding-right: 5px;
-    }
-    #proforma-invoice{
-        width: 650px;
-        margin-left: auto;
-        margin-right: auto;
-        display: block;
-    }
 
-    #invoice-title{
-        text-align: center;
-        padding-bottom: 3%;
-    }
+        .invoice-well img {
+            margin-bottom: 5px;
+            max-height: 50px;
+        }
 
-    .invoice-well img {
-        margin-bottom: 5px;
-        max-height: 50px;
-    }
-
-    .col {
-        padding-right: 5px;
-        padding-left: 5px;
-    }
-
-</style>
+        .col {
+            padding-right: 5px;
+            padding-left: 5px;
+        }
+    </style>
     </head>
-    <body>
+    <body onload="window.print()">
     <div class="row" id="proforma-invoice">
         <article class="span10 data-block" style="margin-left: 0px">
             <div class="data-container">
                 <header>
-                    <h2 id="invoice-title">{{ 'Invoice'|trans }} {{nr}}</h2>
+                    <h2 id="invoice-title">{{ 'Invoice'|trans }} {{ nr }}</h2>
                 </header>
                 <section>
                     <div class="row row-fluid">
@@ -99,7 +96,7 @@
                                     </dd>
                                     <dt>{{ 'Invoice status'|trans }}:</dt>
                                     <dd>
-                                    <span class="label {% if invoice.status == 'paid' %} label-success{% elseif invoice.status == 'unpaid' %}label-warning{% endif %}">
+                                    <span class="badge {% if invoice.status == 'paid' %}bg-success{% elseif invoice.status == 'unpaid' %}bg-warning{% endif %}">
                                           <span class="{% if invoice.status == 'paid' %}awe-ok-sign{% elseif invoice.status == 'unpaid' %}awe-exclamation-sign{% endif %}"></span>
                                           {{ invoice.status|capitalize }}
                                     </span>
@@ -108,82 +105,80 @@
                             </div>
                         </div>
                         <div class="col col-xs-4">
-                            <div class="well small">
+                            <div class="small">
                                 <h4>{{ 'Company'|trans }}</h4>
                                 <dl class="dl-horizontal">
                                     {% if seller.company %}
-                                    <dt>{{ 'Name'|trans }}:</dt>
-                                    <dd>{{seller.company}}</dd>
+                                        <dt>{{ 'Name'|trans }}:</dt>
+                                        <dd>{{seller.company}}</dd>
                                     {% endif %}
 
                                     {% if seller.company_vat%}
-                                    <dt>{{ 'VAT'|trans }}:</dt>
-                                    <dd>{{seller.company_vat}}</dd>
+                                        <dt>{{ 'VAT'|trans }}:</dt>
+                                        <dd>{{seller.company_vat}}</dd>
                                     {% endif %}
 
                                     {% if seller.address%}
-                                    <dt>{{ 'Address'|trans }}:</dt>
-                                    <dd>{{seller.address}}</dd>
+                                        <dt>{{ 'Address'|trans }}:</dt>
+                                        <dd>{{seller.address}}</dd>
                                     {% endif %}
 
                                     {% if seller.phone %}
-                                    <dt>{{ 'Phone'|trans }}:</dt>
-                                    <dd>{{seller.phone}}</dd>
+                                        <dt>{{ 'Phone'|trans }}:</dt>
+                                        <dd>{{seller.phone}}</dd>
                                     {% endif %}
 
                                     {% if seller.email %}
-                                    <dt>{{ 'Email'|trans }}:</dt>
-                                    <dd>{{seller.email}}</dd>
+                                        <dt>{{ 'Email'|trans }}:</dt>
+                                        <dd>{{seller.email}}</dd>
                                     {% endif %}
 
                                     {% if seller.account_number %}
-                                    <dt>{{ 'Account'|trans }}:</dt>
-                                    <dd>{{seller.account_number}}</dd>
+                                        <dt>{{ 'Account'|trans }}:</dt>
+                                        <dd>{{seller.account_number}}</dd>
                                     {% endif %}
 
                                     {% if seller.note %}
-                                    <dt>{{ 'Note'|trans }}:</dt>
-                                    <dd>{{seller.note}}</dd>
+                                        <dt>{{ 'Note'|trans }}:</dt>
+                                        <dd>{{seller.note}}</dd>
                                     {% endif %}
                                 </dl>
                             </div>
                         </div>
-
-
                         <div class="col col-xs-4">
-                            <div class="well small">
-                                <h4>{{ 'Billing & Delivery address'|trans }}</h4>
+                            <div class="small">
+                                <h4>{{ 'Client'|trans }}</h4>
                                 <dl class="dl-horizontal">
                                     {% if buyer.first_name or buyer.last_name %}
-                                    <dt>{{ 'Name'|trans }}:</dt>
-                                    <dd>{{buyer.first_name}} {{buyer.last_name}}</dd>
+                                        <dt>{{ 'Name'|trans }}:</dt>
+                                        <dd>{{ buyer.first_name }} {{ buyer.last_name }}</dd>
                                     {% endif %}
 
                                     {% if buyer.company %}
-                                    <dt>{{ 'Company'|trans }}:</dt>
-                                    <dd>{{buyer.company}}</dd>
+                                        <dt>{{ 'Company'|trans }}:</dt>
+                                        <dd>{{buyer.company}}</dd>
                                     {% endif %}
 
                                     {% if buyer.company_number %}
-                                    <dt>{{ 'Company number'|trans }}:</dt>
-                                    <dd>{{buyer.company_number}}</dd>
+                                        <dt>{{ 'Company number'|trans }}:</dt>
+                                        <dd>{{ buyer.company_number }}</dd>
                                     {% endif %}
 
                                     {% if buyer.company_vat %}
-                                    <dt>{{ 'Company VAT'|trans }}:</dt>
-                                    <dd>{{buyer.company_vat}}</dd>
+                                        <dt>{{ 'Company VAT'|trans }}:</dt>
+                                        <dd>{{ buyer.company_vat }}</dd>
                                     {% endif %}
 
                                     {% if buyer.address %}
-                                    <dt>{{ 'Address'|trans }}:</dt>
-                                    <dd>{{buyer.address}}</dd>
-                                    <dd>{{buyer.city}}, {{buyer.state}}</dd>
-                                    <dd>{{buyer.zip}}, {{guest.system_countries[buyer.country]}}</dd>
+                                        <dt>{{ 'Address'|trans }}:</dt>
+                                        <dd>{{ buyer.address }}</dd>
+                                        <dd>{{ buyer.city }}, {{ buyer.state }}</dd>
+                                        <dd>{{ buyer.zip }}, {{ guest.system_countries[buyer.country] }}</dd>
                                     {% endif %}
 
                                     {% if buyer.phone %}
-                                    <dt>{{ 'Phone'|trans }}:</dt>
-                                    <dd>{{buyer.phone}}</dd>
+                                        <dt>{{ 'Phone'|trans }}:</dt>
+                                        <dd>{{ buyer.phone }}</dd>
                                     {% endif %}
                                 </dl>
                             </div>
@@ -206,49 +201,45 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% for i, item in invoice.lines %}
-                        <tr>
-                            <td>{{ i+1 }}.</td>
-                            <td>
-                                {% if item.order_id%}
-                                {{ item.title }}
-                                {% else %}
-                                {{ item.title }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {{ item.price | money(invoice.currency) }}
-                                {% if item.quantity > 1 %}
-                                x {{ item.quantity }} {# item.unit #}
-                                {% endif %}
-                            </td>
-                            <td >{{ item.total | money(invoice.currency) }}</td>
-                        </tr>
-
+                        {% for item in invoice.lines %}
+                            <tr>
+                                <td>{{ loop.index }}.</td>
+                                <td>
+                                    {% if item.order_id %}
+                                        {{ item.title }}
+                                    {% else %}
+                                        {{ item.title }}
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {{ item.price|money(invoice.currency) }}
+                                    {% if item.quantity > 1 %}
+                                    x {{ item.quantity }} {# item.unit #}
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">{{ item.total|money(invoice.currency) }}</td>
+                            </tr>
                         {% endfor %}
                         </tbody>
-
                     </table>
-                    <hr/>
                     <div class="row row-fluid">
                         <div class="col-xs-4 col-xs-offset-8">
                             <table class="table">
                                 {% if invoice.tax > 0 %}
                                 <tr>
                                     <td>{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
-                                    <td>{{ invoice.tax | money(invoice.currency) }}</td>
+                                    <td>{{ invoice.tax|money(invoice.currency) }}</td>
                                 </tr>
                                 {% endif %}
                                 {% if invoice.discount > 0 %}
                                 <tr>
                                     <td>{{ 'Discount'|trans }}</td>
-                                    <td>{{ invoice.discount | money(invoice.currency) }}</td>
+                                    <td>{{ invoice.discount|money(invoice.currency) }}</td>
                                 </tr>
                                 {% endif %}
-
                                 <tr>
                                     <td><strong>{{ 'Total'|trans }}</strong></td>
-                                    <td><strong>{{ invoice.total | money(invoice.currency) }}</strong></td>
+                                    <td class="text-end"><strong>{{ invoice.total|money(invoice.currency) }}</strong></td>
                                 </tr>
                             </table>
                         </div>
