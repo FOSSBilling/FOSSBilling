@@ -1,0 +1,108 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}Client settings{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+    <li class="lastB">{{ 'Client settings'|trans }}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+    {% set params = admin.extension_config_get({"ext":"mod_client"}) %}
+<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+
+<div class="widget simpleTabs">
+    <ul class="tabs">
+        <li><a href="#tab-index">{{ 'General'|trans }}</a></li>
+        <li><a href="#tab-custom-fields">{{ 'Custom Fields'|trans }}</a></li>
+    </ul>
+    
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div id="tab-index" class="tab_content nopadding">
+            <fieldset>
+                <div class="rowElem noborder">
+                    <label>{{ 'Allow new signups'|trans }}</label>
+                    <div class="formRight">
+                        <input type="radio" name="allow_signup" value="1"{% if params.allow_signup %} checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                        <input type="radio" name="allow_signup" value="0"{% if not params.allow_signup %} checked="checked"{% endif %} /><label>{{ 'No'|trans }}</label>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <div class="rowElem">
+                    <label>{{ 'Require email confirmation'|trans }}</label>
+                    <div class="formRight">
+                        <input type="radio" name="require_email_confirmation" value="1"{% if params.require_email_confirmation %} checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                        <input type="radio" name="require_email_confirmation" value="0"{% if not params.require_email_confirmation %} checked="checked"{% endif %} /><label>{{ 'No'|trans }}</label>
+                        <span class="formNote">{{ 'After enabling this feature, all existing users will have to confirm their emails if it was not done before'|trans }}.</span>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{{ 'Allow email change'|trans }}</label>
+                    <div class="formRight">
+                        <input type="radio" name="allow_change_email" value="1"{% if params.allow_change_email %} checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                        <input type="radio" name="allow_change_email" value="0"{% if not params.allow_change_email %} checked="checked"{% endif %} /><label>{{ 'No'|trans }}</label>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{{ 'Required fields'|trans }}</label>
+                    <div class="formRight">
+                        <select multiple="multiple" class="multiple" title="{{ 'Select required fields'|trans }}" name="required[]">
+                            <optgroup label="General">
+                                <option value="last_name" {% if 'last_name' in params.required %}selected{% endif %}>{{ 'Last Name'|trans }}</option>
+                                <option value="company" {% if 'company' in params.required %}selected{% endif %}>{{ 'Company'|trans }}</option>
+                                <option value="gender" {% if 'gender' in params.required %}selected{% endif %}>{{ 'Gender'|trans }}</option>
+                                <option value="birthday" {% if 'birthday' in params.required %}selected{% endif %}>{{ 'Birthday'|trans }}</option>
+                            </optgroup>
+                            <optgroup label="Address">
+                                <option value="country" {% if 'country' in params.required %}selected{% endif %}>{{ 'Country'|trans }}</option>
+                                <option value="city" {% if 'city' in params.required %}selected{% endif %}>{{ 'City'|trans }}</option>
+                                <option value="state" {% if 'state' in params.required %}selected{% endif %}>{{ 'State'|trans }}</option>
+                                <option value="address_1" {% if 'address_1' in params.required %}selected{% endif %}>{{ 'Address Line 1'|trans }}</option>
+                                <option value="address_2" {% if 'address_2' in params.required %}selected{% endif %}>{{ 'Address Line 2'|trans }}</option>
+                                <option value="postcode" {% if 'last_name' in params.required %}selected{% endif %}>{{ 'Post code'|trans }}</option>
+                                <option value="phone" {% if 'phone' in params.required %}selected{% endif %}>{{ 'Phone'|trans }}</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
+            </fieldset>
+        </div>
+        <div id="tab-custom-fields" class="tab_content nopadding">
+            <fieldset>
+                {% for i in 1..10 %}
+                {% set field_name = 'custom_' ~ i %}
+                {% set custom_field = attribute(params.custom_fields, field_name) %}
+                <div class="rowElem noborder">
+                    <label>{% if custom_field.title is not empty %} {{ custom_field.title }} ({{ 'Custom_'|trans }}{{ i }}) {% else %}{{ 'Custom_'|trans }}{{ i }}{% endif %}</label>
+                    <div class="formRight">
+                        <input type="checkbox" name="custom_fields[{{ field_name }}][active]" value="1"{% if custom_field.active %} checked="checked"{% endif %}/><label>{{ 'Active'|trans }}</label>
+                        <input type="checkbox" name="custom_fields[{{ field_name }}][required]" value="1"{% if custom_field.required %} checked="checked"{% endif %}/><label>{{ 'Required'|trans }}</label>
+                        <input type="text" placeholder="Field title" name="custom_fields[{{ field_name }}][title]" value="{{custom_field.title}}" style="width: 300px"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <hr/>
+                {% endfor %}
+                <input type="submit" value="{{ 'Update profile'|trans }}" class="greyishBtn submitForm" />
+            </fieldset>
+        </div>
+    </div>
+</div>
+    
+    <input type="hidden" name="ext" value="mod_client" />
+    </form>
+{% endblock %}

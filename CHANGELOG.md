@@ -2,6 +2,7 @@ Master
 ------------------------------------------------------------------------------
 
 **General:**
+* Templates extensions .phtml ranamed to .html.twig
 * Updated bb-themes/bootstrap to Bootstrap 5
 
 Release 4.22-beta.1.1

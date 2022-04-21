@@ -1,0 +1,17 @@
+{% extends "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'Error'|trans }}{% endblock %}
+
+{% block body_class %}error-page{% endblock %}
+{% block body %}
+<section class="error-container">
+    {% if exception.getCode %}
+        <h1>{{ exception.getCode }}</h1>
+    {% else %}
+        <h1>404</h1>
+    {% endif %}
+    <p class="description">{{ 'Whoops! This is not the web page you are looking for.'|trans }}</p>
+    <p class="alert alert-danger">{{ exception.getMessage }}.</p>
+    <a href="{{ '/' | link}}" class="btn btn-alt btn-primary btn-large" title="Back to Homepage">Back to Homepage</a>
+</section>
+{% endblock %}

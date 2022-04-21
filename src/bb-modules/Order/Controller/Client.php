@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -51,7 +52,7 @@ class Client implements \Box\InjectionAwareInterface
         $api = $this->di['api_guest'];
         $product = $api->product_get(['slug' => $slug]);
         $tpl = 'mod_service'.$product['type'].'_order';
-        if ($api->system_template_exists(['file' => $tpl.'.phtml'])) {
+        if ($api->system_template_exists(['file' => $tpl.'.html.twig'])) {
             return $app->render($tpl, ['product' => $product]);
         }
 
@@ -63,7 +64,7 @@ class Client implements \Box\InjectionAwareInterface
         $api = $this->di['api_guest'];
         $product = $api->product_get(['id' => $id]);
         $tpl = 'mod_service'.$product['type'].'_order';
-        if ($api->system_template_exists(['file' => $tpl.'.phtml'])) {
+        if ($api->system_template_exists(['file' => $tpl.'.html.twig'])) {
             return $app->render($tpl, ['product' => $product]);
         }
 

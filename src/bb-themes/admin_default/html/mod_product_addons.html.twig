@@ -1,0 +1,108 @@
+{% extends "layout_default.html.twig" %}
+{% set active_menu = 'products' %}
+{% block meta_title %}{{ 'Addons'|trans }}{% endblock %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a></li>
+    <li class="lastB">{{ 'Addons'|trans }}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget simpleTabs">
+    <ul class="tabs">
+        <li><a href="#tab-index">{{ 'Addons'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New Addon'|trans }}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+
+            <table class="tableStatic wide">
+                <tbody>
+                    {% for addon_id, addon_title in admin.product_addon_get_pairs %}
+                    <tr {% if loop.first %}class="noborder"{% endif %}>
+                        <td><label for="addon_{{ addon_id }}">{{addon_title}}</label></td>
+                        <td class="actions" style="width:13%">
+                            <a class="bb-button btn14" href="{{ '/product/addon'|alink }}/{{addon_id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                            <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" data-api-redirect="{{ 'product/addons'|alink }}" href="{{ 'api/admin/product/delete'|link({'id' : addon_id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="fix"></div>
+
+        <div class="tab_content nopadding" id="tab-new">
+            
+            <form method="post" action="{{ 'api/admin/product/addon_create'|link }}" class="mainForm api-form save" data-api-jsonp="onAfterAddonCreate">
+            <fieldset>
+                <div class="rowElem">
+                    <label>{{ 'Status'|trans }}:</label>
+                    <div class="formRight">
+                        <input type="radio" name="status" value="enabled"/><label>{{ 'Enabled'|trans }}</label>
+                        <input type="radio" name="status" value="disabled" checked="checked"/><label>{{ 'Disabled'|trans }}</label>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <div class="rowElem">
+                    <label>{{ 'Activation'|trans }}:</label>
+                    <div class="formRight">
+                        <input type="radio" name="setup" value="after_order"/><label>{{ 'After order is placed'|trans }}</label>
+                        <input type="radio" name="setup" value="after_payment" checked="checked"/><label>{{ 'After payment is received'|trans }}</label>
+                        <input type="radio" name="setup" value="manual"/><label>{{ 'Manual activation'|trans }}</label>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label>{{ 'Icon'|trans }}:</label>
+                    <div class="formRight">
+                        <input type="text" name="icon_url" value="{{product.icon_url}}" placeholder=""/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <div class="rowElem">
+                    <label>{{ 'Title'|trans }}:</label>
+                    <div class="formRight">
+                        <input type="text" name="title" value="{{product.title}}" required="required" placeholder=""/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <div class="rowElem">
+                    <label>{{ 'Description'|trans }}:</label>
+                    <div class="formRight">
+                        <textarea name="description" cols="5" rows="5">{{product.description}}</textarea>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
+            </fieldset>
+            </form>
+
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+    function onAfterAddonCreate(result)
+    {
+        bb.redirect("{{ 'product/addon/'|alink }}/" + result);
+    }    
+</script>
+{% endblock %}

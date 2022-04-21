@@ -1,0 +1,33 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'Blog'|trans }}{% endblock %}
+
+{% block content %}
+<div class="h-block">
+    <div class="h-block-header">
+        <div class="icon"><span class="big-light-icon i-blog"></span></div>
+        <h2>{{ 'News & Announcements'|trans }}</h2>
+        <p>{{ 'Track our latest posts'|trans }}</p>
+    </div>
+    <div class="block articles">
+    {% set posts = guest.news_get_list({ "page": request.page, "per_page": 5 }) %}
+    {% for i, post in posts.list %}
+        <div class="article{% if loop.last %} last{% endif%}">
+            <h2><a href="{{ '/news'|link }}/{{post.slug}}">{{ post.title }}</a></h2>
+            {% if post.excerpt %}
+                {{ post.excerpt|bbmd }}
+            {% else %}
+                {{ post.content|bbmd }}
+            {% endif %}
+            <p class="meta">{{ post.updated_at|bb_date }}</p>
+            <a class="bb-button read_more" href="{{ '/news'|link }}/{{post.slug}}">{{ 'Read more..'|trans }}</a>
+        </div>
+    {% else %}
+    <p>The list is empty</p>
+    {% endfor %}
+    </div>
+    <div class="clear"></div>
+</div>
+
+{% include "partial_pagination.html.twig" with { 'list': posts } %}
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ 'Blog'|trans }}{% endblock %}
+
+{% block content_before %}
+    <h1>{{ 'News & Announcements'|trans }}</h1>
+    <p class="text-secondary">{{ 'Track our latest posts'|trans }}</p>
+{% endblock %}
+
+{% block content %}
+    {% set posts = guest.news_get_list({ 'page': request.page, 'per_page': 5 }) %}
+
+    {% for i, post in posts.list %}
+        <div class="row">
+            {% if post.image %}
+            <div class="col-md-6">
+                <a href="{{ '/news'|link }}/{{ post.slug }}">
+                   <img class="img-responsive img-hover" src="{{ post.image }}" alt="{{ post.title }}">
+                </a>
+            </div>
+            <div class="col-md-6">
+            {% else %}
+            <div class="col-md-12">
+            {% endif %}
+                <h3><a href="{{ '/news'|link }}/{{ post.slug }}">{{ post.title }}</a></h3>
+                <p class="text-secondary">{{ post.updated_at|date('Y-m-d h:i') }}</p>
+                <p>
+                    {% if post.excerpt %}
+                        {{ post.excerpt|bbmd }}
+                    {% else %}
+                        {{ post.content|bbmd }}
+                    {% endif %}
+                </p>
+                <a href="{{ '/news'|link }}/{{ post.slug }}">{{ 'Read more...'|trans }}</a>
+            </div>
+        </div>
+        {% if not loop.last %}<hr>{% endif %}
+    {% else %}
+        <p class="text-secondary text-center">The list is empty</p>
+    {% endfor %}
+        
+    {% include '_pagination.html.twig' with { 'list': posts } %}
+{% endblock %}

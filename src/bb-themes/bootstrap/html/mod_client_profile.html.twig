@@ -1,0 +1,190 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Profile details'|trans }}{% endblock %}
+
+{% set profile = client.client_get %}
+
+{% block content_before %}
+    <h1 class="page-header">{{ 'Profile details'|trans }}</h1>
+    <p class="text-secondary">{{ 'Keep your profile up to date'|trans }}</p>
+{% endblock %}
+
+{% block content %}
+    <section class="row">
+        <div class="col-sm-3 text-center">
+            <img src="{{ profile.email|gravatar }}&size=100" class="img-thumbnail rounded-circle" alt="{{ 'Gravatar'|trans }}">
+        </div>
+        <div class="col">
+            {% if profile.company %}
+            <div>{{ profile.company }}</div>
+            {% endif %}
+            <div>{{ profile.last_name }} {{ profile.first_name }}</div>
+            <div>{{ profile.phone }}</div>
+            <div>{{ profile.email }}</div>
+        </div>
+    </section>
+    <hr>
+    <section class="row">
+        <div class="col-lg-12">
+            <ul id="tabProfile" class="nav nav-tabs nav-justified mb-3" role="tablist">
+                <li class="nav-item active" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#details">
+                        <i class="fa fa-user me-2"></i>{{ 'Details'|trans }}</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#password">
+                        <i class="fa fa-key me-2"></i>{{ 'Password'|trans }}</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#gravatar">
+                        <i class="fa fa-camera me-2"></i>{{ 'Gravatar'|trans }}</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#currency">
+                        <i class="fa fa-coins me-2"></i>{{ 'Currency'|trans }}</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#api">
+                        <i class="fa fa-plug me-2"></i>{{ 'API'|trans }}</button>
+                </li>
+            </ul>
+
+            <div id="myTabContent" class="tab-content">
+                <div class="tab-pane fade show active" id="details">
+                    <h4>{{ 'Update profile'|trans }}</h4>
+                    <form class="api-form" method="post" data-api-url="client/client/update" data-api-msg="{{ 'Profile updated'|trans }}">
+                    <div class="well row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="inputEmail">{{ 'Email Address'|trans }}:</label>
+                                <input type="email" class="form-control" id="inputEmail" name="email" value="{{ profile.email }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <diw class="row">
+                                    <div class="col">
+                                        <label class="form-label" for="inputFirstName">{{ 'First name'|trans }}:</label>
+                                        <input type="text" class="form-control" id="inputFirstName" name="first_name" value="{{ profile.first_name }}" required>
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label" for="inputLastName">{{ 'Last name'|trans }}:</label>
+                                        <input type="text" class="form-control" id="inputLastName" name="last_name" value="{{ profile.last_name }}" required>
+                                    </div>
+                                </diw>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="inputCompany">{{ 'Company name'|trans }}:</label>
+                                <input type="text" class="form-control" id="inputCompany" name="company" value="{{ profile.company }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="inputPhone">{{ 'Phone'|trans }}:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">+</span>
+                                    <input type="text" class="form-control" name="phone_cc" value="{{ profile.phone_cc }}" placeholder="xxx" required>
+                                    <input type="text" class="form-control w-50" id="inputPhone" name="phone" value="{{ profile.phone }}" placeholder="xxx-xx-xx" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="inputAddress1">{{ 'Address'|trans }}:</label>
+                                <input type="text" class="form-control" for="inputAddress1" name="address_1" value="{{ profile.address_1 }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="inputAddress2">{{ 'Address 2'|trans }}:</label>
+                                <input type="text" class="form-control" for="inputAddress2" name="address_2" value="{{ profile.address_2 }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="inputCity">{{ 'City'|trans }}:</label>
+                                <input type="text" class="form-control" id="inputCity" name="city" value="{{ profile.city }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <div class="row">
+                                    <div class="col-5">
+                                        <label class="form-label" for="selectCountry">{{ 'Country'|trans }}:</label>
+                                        {{ mf.selectbox('country', guest.system_countries, profile.country, 1, 'Select country', 'selectCountry') }}
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label" for="inputState">{{ 'State'|trans }}:</label>
+                                        {# mf.selectbox('state', guest.system_states, profile.state, 0, 'Select state') #}
+                                        <input type="text" class="form-control" id="inputState" name="state" value="{{ profile.state }}">
+                                    </div>
+                                    <div class="col-3">
+                                        <label class="form-label" for="inputZip">{{ 'Zip'|trans }}:</label>
+                                        <input type="text" class="form-control" id="inputZip" name="postcode" value="{{ profile.postcode }}" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+                        </div>
+                    </div>
+                    </form>
+                </div>
+                <div class="tab-pane fade" id="password">
+                    <h4>{{ 'Change password'|trans }}</h4>
+                    <form method="post" class="col-md-6 mx-auto api-form" data-api-url="client/client/change_password" data-api-msg="{{ 'Password changed'|trans }}">
+                        <div class="mb-3">
+                            <label class="form-label" for="inputPassword">{{ 'Password'|trans }}:</label>
+                            <input type="password" class="form-control" id="inputPassword" name="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="inputPasswordRepeat">{{ 'Password confirm'|trans }}:</label>
+                            <input type="password" class="form-control" id="inputPasswordRepeat" name="password_confirm" required>
+                        </div>
+                        <div class="d-grid">
+                            <button class="btn btn-primary" type="submit">{{ 'Change password'|trans }}</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="tab-pane fade" id="gravatar">
+                    <h4>{{ 'Gravatar'|trans }}</h4>
+                    <div class="text-center">
+                        <div class="mb-3 mx-auto">
+                            <img class="img-thumbnail rounded-circle" src="{{ profile.email|gravatar }}&size=100" alt="{{ 'Gravatar'|trans }}">
+                        </div>
+                        <p class="text-secondary">{{ 'Please register with'|trans }} <b>{{ profile.email }}</b> {{ 'at '|trans }} <a target="_blank" href="http://gravatar.com">Gravatar.com</a> {{ 'to change your profile image. Gravatar image updates may not appear immediately.'|trans }}</p>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="currency">
+                    <h4>{{ 'Currency'|trans }}</h4>
+                    <div>
+                        {% if profile.currency %}
+                            <p>{{ 'Your profile currency is'|trans }}: <strong>{{ profile.currency }}</strong></p>
+                            <p class="text-secondary">{{ 'Create new client profile if you want to manage your money in other currency.'|trans }}</p>
+                        {% else %}
+                            <p class="text-secondary">{{ 'Your profile currency will be defined after your first order. Once your currency is set, all your profile accounting will be managed in that currency and can not be changed.'|trans }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="api">
+                    <h4>{{ 'API key'|trans }}</h4>
+                    <div class="well">
+                        <p class="text-secondary">{{ 'API key allows integration with external applications. You will need this key for authentication.'|trans }} {{ 'Warning! Resetting the key will break existing applications using it.'|trans }}</p>
+                        {% if client.client_api_key_get is not empty %}
+                            <p class="alert alert-info text-center">
+                                <strong>{{ 'Your API key'|trans }}:</strong><br>{{ client.client_api_key_get }}
+                            </p>
+                            <form method="post" class="api-form" data-api-url="client/client/api_key_reset" data-api-msg="{{ 'API key was changed. Please refresh the page.'|trans }}">
+                                <div class="d-grid">
+                                    <input class="btn btn-danger" type="submit" value="{{ 'Reset key'|trans }}">
+                                </div>
+                            </form>
+                        {% else %}
+                            <p class="alert alert-info text-center">
+                                <strong>{{ 'No API key yet'|trans }}</strong>
+                            </p>
+                            <form method="post" class="api-form" data-api-url="client/client/api_key_reset" data-api-msg="{{ 'API key was changed. Please refresh the page.'|trans }}">
+                                <div class="d-grid">
+                                    <input class="btn btn-primary" type="submit" value="{{ 'Create'|trans }}">
+                                </div>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

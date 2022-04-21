@@ -1,0 +1,141 @@
+{% import 'macro_functions.html.twig' as mf %}
+
+{% set r = guest.client_required %}
+
+<form class="api-form" method="post" data-api-url="guest/client/create" data-api-reload="1">
+    <div class="modal fade" id="registration" tabindex="-1" role="dialog" aria-labelledby="{{ 'Sign in'|trans }}">
+        <div class="modal-dialog modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="myModalLabel">{{ 'Sign in'|trans }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="inputRegistrationEmail">{{ 'Email address'|trans }}:</label>
+                        <input class="form-control" id="inputRegistrationEmail" type="email" name="email" value="{{ request.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="inputRegistrationFirstName">{{ 'First name'|trans }}:</label>
+                        <input class="form-control" id="inputRegistrationFirstName" type="text" name="first_name" value="{{ request.first_name }}" required>
+                    </div>
+                    {% if 'last_name' in r %}
+                        <div class="mb-3">
+                            <label class="form-label" for="inputRegistrationLastName">{{ 'Last name'|trans }}:</label>
+                            <input class="form-control" id="inputRegistrationLastName" type="text" name="last_name" value="{{ request.last_name }}" required>
+                        </div>
+                    {% endif %}
+
+                    {% if 'company' in r %}
+                        <div class="mb-3">
+                            <label class="form-label" for="inputRegistrationCompany">{{ 'Company'|trans }}:</label>
+                            <input class="form-control" id="inputRegistrationCompany" type="text" name="company" value="{{ request.company }}" required>
+                        </div>
+                    {% endif %}
+
+                    {% if 'birthday' in r %}
+                        <div class="mb-3">
+                            <label class="form-label" for="inputRegistrationBirthday">{{ 'Birthday'|trans }}:</label>
+                            <input class="form-control" id="inputRegistrationBirthday" type="date" name="birthday">
+                        </div>
+                    {% endif %}
+
+                    {% if 'gender' in r %}
+                        <div class="mb-3">
+                            <label class="form-label" for="selectGender">{{ 'Gender'|trans }}: </label>
+                            <select class="form-select" id="selectGender" name="gender">
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+                    {% endif %}
+
+                    {% set custom_fields = guest.client_custom_fields %}
+
+                    {% for field_name, field in custom_fields %}
+                        {% if field.active %}
+                            <div class="form-group">
+                                <label class="form-label" for="{{ field_name }}">{% if field.title is not empty %}{{ field.title }}{% else %} {{ field_name | capitalize }} {% endif %}</label>
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="{{ field_name }}" name="{{ field_name }}" value="{{ attribute(request, field_name) }}"{% if field.required %} required{% endif %}>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if 'address_1' in r %}
+                    <div class="mb-3">
+                        <label class="form-label" for="inputAddress1">{{ 'Address'|trans }}:</label>
+                        <input class="form-control" id="inputAddress1" type="text" name="address_1" value="{{ request.address_1 }}">
+                    </div>
+                    {% endif %}
+
+                    {% if 'address_2' in r %}
+                    <div class="mb-3">
+                        <label class="form-label" for="inputAddress2">{{ 'Address 2'|trans }}:</label>
+                        <input class="form-control" id="inputAddress2" type="text" name="address_2" value="{{ request.address_2 }}">
+                    </div>
+                    {% endif %}
+
+                    {% if 'city' in r %}
+                    <div class="mb-3">
+                        <label class="form-label" for="inputCity">{{ 'City'|trans }}:</label>
+                        <input class="form-control" id="inputCity" type="text" name="city" value="{{ request.city }}">
+                    </div>
+                    {% endif %}
+
+                    {% if 'country' in r %}
+                    <div class="mb-3">
+                        <label class="form-label" for="selectCoutry">{{ 'Country'|trans }}:</label>
+                        {{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Select country', 'selectCoutry') }}
+                    </div>
+                    {% endif %}
+
+                    {% if 'state' in r %}
+                    <div class="mb-3">
+                        <label class="form-label" for="selectState">{{ 'State'|trans }}:</label>
+                        {# mf.selectbox('state', guest.system_states, request.state, 0, 'Select state') #}
+                        <input class="form-control" id="selectState" type="text" name="state" value="{{ request.state }}">
+                    </div>
+                    {% endif %}
+
+                    {% if 'postcode' in r %}
+                    <div class="mb-3">
+                        <label class="form-label" for="selectZip">{{ 'Zip'|trans }}:</label>
+                        <input class="form-control" id="selectZip" type="text" name="postcode" value="{{ request.postcode }}">
+                    </div>
+                    {% endif %}
+
+                    {% if 'phone' in r %}
+                    <div class="mb-3 row">
+                        <label class="form-label" for="inputRegistrationPhone">{{ 'Phone number'|trans }}:</label>
+                        <div class="input-group">
+                            <span class="input-group-text">+</span>
+                            <input class="form-control" type="text" name="phone_cc" value="{{ request.phone_cc }}">
+                            <input class="form-control w-75" id="inputRegistrationPhone" name="phone" type="tel" value="{{ request.phone }}">
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label" for="inputRegistrationPassword">{{ 'Password'|trans }}:</label>
+                        <div class="input-group">
+                            <input class="form-control" id="inputRegistrationPassword" type="password" name="password" required>
+                            <span class="input-group-text password-toggler">
+                                <i class="fa fa-eye"></i>
+                            </span>
+                            <input class="form-control" id="inputRegistrationPasswordRepeat" type="password" name="password_confirm" placeholder="{{ 'Password confirm'|trans }}" required>
+                        </div>
+                    </div>
+                    {{ mf.recaptcha }}
+                </div>
+                <div class="modal-footer d-block">
+                    <div class="d-grid gap-2">
+                        <input class="btn btn-success" type="submit" value="{{ 'Register'|trans }}">
+                        <button class="btn btn-link" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#login">{{ 'Login'|trans }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

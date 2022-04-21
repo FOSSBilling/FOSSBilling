@@ -78,7 +78,7 @@ class Admin extends \Api_Abstract
     /**
      * Check if passed file name template exists for admin area.
      *
-     * @param string $file - template file name, example: mod_index_dashboard.phtml
+     * @param string $file - template file name, example: mod_index_dashboard.html.twig
      *
      * @return bool
      */
@@ -162,7 +162,7 @@ class Admin extends \Api_Abstract
     {
         return $this->getService()->clearCache();
     }
-    
+
     /**
      * Gets the latest release notes.
      *

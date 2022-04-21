@@ -1,0 +1,44 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Login'|trans }} / {{ 'Register'|trans }}{% endblock %}
+
+{% block content_before %}
+    <h1>{{ 'Login'|trans }} / {{ 'Register'|trans }}</h1>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ ''|link }}">{{ 'Home'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Login'|trans }} / {{ 'Register'|trans }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    {% if not client %}
+        <ul class="nav nav-pills justify-content-center mb-3" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button
+                    class="nav-link{% if not request.register %} active{% endif %}"
+                    data-bs-toggle="modal"
+                    data-bs-target="#login"
+                    role="tab"
+                    aria-controls="login"
+                    aria-selected="true">{{ 'Login'|trans }}</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button
+                    class="nav-link{% if request.register %} active{% endif %}"
+                    data-bs-toggle="modal"
+                    data-bs-target="#registration"
+                    role="tab"
+                    aria-controls="register"
+                    aria-selected="true">{{ 'Register'|trans }}</button>
+            </li>
+        </ul>
+    {% else %}
+        <script>
+            window.location.replace("{{ 'client/me'|link }}");
+        </script>
+    {% endif %}
+{% endblock %}

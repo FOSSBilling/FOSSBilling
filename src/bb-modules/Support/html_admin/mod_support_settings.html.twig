@@ -1,0 +1,216 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}{{ 'Support settings'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+    <li class="lastB">{{ 'Support settings'|trans }}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{{ 'Settings'|trans }}</a></li>
+        <li><a href="#tab-helpdesks">{{ 'Help desks'|trans }}</a></li>
+        <li><a href="#tab-new-helpdesk">{{ 'New help desk'|trans }}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+            {% set params = admin.extension_config_get({ "ext": "mod_support" }) %}
+            <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+
+                <fieldset>
+                    <legend>{{ 'Auto responder settings'|trans }}</legend>
+                    <div class="rowElem noborder">
+                        <label>{{ 'Enable auto responder'|trans }}</label>
+                        <div class="formRight">
+                            <input type="radio" name="autorespond_enable" value="1" {% if params.autorespond_enable == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                            <input type="radio" name="autorespond_enable" value="0" {% if not params.autorespond_enable %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div id="autorespond_enable" {% if not params.autorespond_enable %}style="display:none;"{% endif %}>
+                    <div class="rowElem">
+                        <label class="">{{ 'Auto respond message'|trans }}</label>
+                        <div class="formRight">
+                            <select name="autorespond_message_id" style="width: 250px;">
+                                {% for response in admin.support_canned_get_list({"per_page":90}).list %}
+                                <option value="{{ response.id }}" {% if params.autorespond_message_id == response.id %}selected="selected"{% endif %}>{{ response.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+        </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>{{ 'Delay message - selected canned response message will be added to default reply message'|trans }}</legend>
+            <div class="rowElem noborder">
+                <label>{{ 'Enable delay message'|trans }}</label>
+                <div class="formRight">
+                    <input type="radio" name="delay_enable" value="1" {% if params.delay_enable == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                    <input type="radio" name="delay_enable" value="0" {% if not params.delay_enable %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div id="delay_enable" {% if not params.delay_enable %}style="display:none;"{% endif %}>
+            <div class="rowElem">
+                <label class="">{{ 'Delay hours'|trans }}</label>
+                <div class="formRight">
+                    <input type="text" name="delay_hours" value="{{ params.delay_hours|default(24) }}" style="width: 40px;" placeholder="24"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label class="">{{ 'Delay reply'|trans }}</label>
+                <div class="formRight">
+                    <select name="delay_message_id" style="width: 250px;">
+                        {% for response in admin.support_canned_get_list({"per_page":90}).list %}
+                        <option value="{{ response.id }}" {% if params.delay_message_id == response.id %}selected="selected"{% endif %}>{{ response.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fix"></div>
+            </div>
+    </div>
+
+    <legend>{{ 'Wait time - how many hours user needs to wait until consequent ticket submission'|trans }}</legend>
+    <div class="rowElem noborder">
+        <label>{{ 'Wait time in hours'|trans }}</label>
+        <div class="formRight">
+            <input type="text" name="wait_hours"  value="{{ params.wait_hours }}" />
+        </div>
+        <div class="fix"></div>
+    </div>
+
+    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
+    <input type="hidden" name="ext" value="mod_support" />
+    </fieldset>
+    </form>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-helpdesks">
+
+            {{ mf.table_search }}
+            <table class="tableStatic wide">
+                <thead>
+                <tr>
+                    <th style="width: 40%">{{ 'Title'|trans }}</th>
+                    <th>{{ 'Email'|trans }}</th>
+                    <th>{{ 'Close tickets after'|trans }}</th>
+                    <th style="width: 13%">&nbsp;</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                {% for helpdesk in admin.support_helpdesk_get_list({"per_page":50, "page":request.page}|merge(request)).list %}
+                <tr>
+                    <td>{{ helpdesk.name }}</td>
+                    <td>{{ helpdesk.email }}</td>
+                    <td>{{ helpdesk.close_after }} hour(s)</td>
+                    <td class="actions">
+                        <a class="bb-button btn14" href="{{ '/support/helpdesk'|alink }}/{{helpdesk.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                        <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" data-api-redirect="{{ 'extension/settings/support'|alink }}" href="{{ 'api/admin/support/helpdesk_delete'|link({'id' : helpdesk.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                    </td>
+                </tr>
+                </tbody>
+
+                {% else %}
+                <tbody>
+                <tr>
+                    <td colspan="4">
+                        {{ 'The list is empty'|trans }}
+                    </td>
+                </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new-helpdesk">
+
+            <form method="post" action="{{ 'api/admin/support/helpdesk_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'extension/settings/support'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{{ 'Title'|trans }}</label>
+                        <div class="formRight noborder">
+                            <input type="text" name="name" value="{{ helpdesk.name }}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Email'|trans }}</label>
+                        <div class="formRight">
+                            <input type="text" name="email" value="{{ helpdesk.email }}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Signature'|trans }}</label>
+                        <div class="formRight">
+                            <textarea name="signature" cols="5" rows="3">{{ helpdesk.signature }}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Close after'|trans }}</label>
+                        <div class="formRight">
+                            <input type="text" name="close_after" value="{{ helpdesk.close_after|default('48') }}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Can reopen'|trans }}</label>
+                        <div class="formRight">
+                            <input type="radio" name="can_reopen" value="1" checked="checked"/><label>{{ 'Yes'|trans }}</label>
+                            <input type="radio" name="can_reopen" value="0"/><label>{{ 'No'|trans }}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
+                    <input type="hidden" name="id" value="{{ helpdesk.id }}"/>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+$(function() {
+    $('input[name=autorespond_enable]').click(function() {
+        if ($(this).val() == 1) {
+            $('#autorespond_enable').slideDown();
+        } else {
+            $('#autorespond_enable').slideUp();
+        }
+    });
+    
+    $('input[name=delay_enable]').click(function() {
+        if ($(this).val() == 1) {
+            $('#delay_enable').slideDown();
+        } else {
+            $('#delay_enable').slideUp();
+        }
+    });
+});
+</script>
+{% endblock %}

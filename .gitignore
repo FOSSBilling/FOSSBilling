@@ -28,4 +28,4 @@ npm-debug.log
 .history/
 
 ### friendsofphp/php-cs-fixer ###
-src/.php-cs-fixer.cache
+.php-cs-fixer.cache

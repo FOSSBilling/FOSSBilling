@@ -1,0 +1,41 @@
+{# Sets blank layout if another page if ajax request or if another page is request as home for non-clients #}
+
+{% extends request.ajax or (not client and settings.home_page != 'menuicons') ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Client Area'|trans }}{% endblock %}
+
+{% if not settings.home_sidemenu %}
+    {% if not client %}{% set side_menu = 'hidden' %}{% endif %}
+{% endif %}
+
+{% block content_before %}
+    {% if client %}
+        <h1 class="visually-hidden">{{ 'Dashboard'|trans }}</h1>
+    {% else %}
+        {% if settings.home_page == 'menuicons' %}
+            <h1 class="visually-hidden">{{ 'Home'|trans }}</h1>
+        {% endif %}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if client %}
+        {% include 'Index/_index-client.html.twig' %}
+    {% else %}
+        {% if settings.home_page == 'menuicons' %}
+            {% include 'Index/_index-anonymous.html.twig' %}
+        {% elseif settings.home_page == 'order' %}
+            {% include 'mod_order_index.html.twig' %}
+        {% elseif settings.home_page == 'blog' %}
+            {% include 'mod_news_index.html.twig' %}
+        {% elseif settings.home_page == 'login' %}
+            {% include 'mod_page_login.html.twig' %}
+        {% elseif settings.home_page == 'contact' %}
+            {% include 'mod_support_contact_us.html.twig' %}
+        {% elseif settings.home_page == 'kb' %}
+            {% include 'mod_kb_index.html.twig' %}
+        {% endif %}
+    {% endif %}
+{% endblock %}

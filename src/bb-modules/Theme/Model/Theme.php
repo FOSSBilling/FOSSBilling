@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -43,7 +44,7 @@ class Theme
     public function getSnippets()
     {
         $path = $this->getPathHtml();
-        $snippets = glob($path.DIRECTORY_SEPARATOR.'snippet_*.phtml');
+        $snippets = glob($path.DIRECTORY_SEPARATOR.'snippet_*.html.twig');
         $result = [];
         foreach ($snippets as $snippet) {
             $result[basename($snippet)] = str_replace('snippet_', '', pathinfo($snippet, PATHINFO_FILENAME));

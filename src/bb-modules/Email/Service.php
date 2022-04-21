@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -225,7 +226,7 @@ class Service implements \Box\InjectionAwareInterface
         $matches = [];
         preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', $code, $matches);
         $mod = $matches[1];
-        $path = BB_PATH_MODS.'/'.ucfirst($mod).'/html_email/'.$code.'.phtml';
+        $path = BB_PATH_MODS.'/'.ucfirst($mod).'/html_email/'.$code.'.html.twig';
 
         if (file_exists($path)) {
             $tpl = file_get_contents($path);
@@ -471,7 +472,7 @@ class Service implements \Box\InjectionAwareInterface
 
     public function templateBatchGenerate()
     {
-        $pattern = BB_PATH_MODS.'/*/html_email/*.phtml';
+        $pattern = BB_PATH_MODS.'/*/html_email/*.html.twig';
         $list = glob($pattern);
         foreach ($list as $path) {
             $code = pathinfo($path, PATHINFO_FILENAME);

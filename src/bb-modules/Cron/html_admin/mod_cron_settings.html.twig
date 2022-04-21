@@ -1,0 +1,73 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}{{ 'Cron settings'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+    <li class="lastB">{{ 'Cron settings'|trans }}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget">
+    <div class="head">
+        <h5 class="iCog">{{ 'Cron settings'|trans }}</h5>
+    </div>
+
+    <div class="help">
+        <h3>{{ 'Setup scheduled tasks to be executed once a day'|trans }}</h3>
+        <p>{{ 'Scheduled tasks must be enabled immediately after installation. Cron is responsible for sending your clients reminder about payments, domain renewal notices and many more.'|trans }}</p>
+    </div>
+
+    {% set cron = admin.cron_info %}
+    <table class="tableStatic wide">
+        <tbody>
+            <tr class="noborder">
+                <td>{{ 'Timezone'|trans }}</td>
+                <td align="right">{{ "now"|date('e') }}</td>
+            </tr>
+
+            <tr>
+                <td>{{ 'Time on server'|trans }}</td>
+                <td align="right">{{ "now"|date('Y-m-d H:i:s') }}</td>
+            </tr>
+            <tr>
+                <td>{{ 'Last time scheduled tasks were executed'|trans }}</td>
+                <td align="right">
+                    {% if cron.last_cron_exec %}
+                        {{ cron.last_cron_exec|date('Y-m-d H:i:s') }}
+                        ({{ cron.last_cron_exec|timeago }} ago)
+                    {% else %}
+                        {{ 'Scheduled tasks were never executed'|trans }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>{{ 'Unix crontab setup:'|trans }}</td>
+                <td align="right"><pre>*/5 * * * * php {{ cron.cron_path}}</pre></td>
+            </tr>
+            <tr>
+                <td>{{ 'Execute scheduled tasks from browser'|trans }}</td>
+                <td align="right"><pre>{{ cron.cron_url}}</pre></td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="2">
+                    <div class="aligncenter">
+                    <a href="{{ cron.cron_url}}" title="" class="btn55 mr10" target="_blank">
+                        <img src="images/icons/middlenav/airplane.png" alt=""><span>{{ 'Execute now'|trans }}</span>
+                    </a>
+                    </div>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+{% endblock %}

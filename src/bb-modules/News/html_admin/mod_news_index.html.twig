@@ -1,0 +1,99 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% set active_menu = 'support' %}
+
+{% block meta_title %}{{ 'News'|trans }}{% endblock %}
+
+{% block content %}
+<div class="widget simpleTabs">
+    <ul class="tabs">
+        <li><a href="#tab-index">{{ 'News and announcements'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New announcement'|trans }}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+
+        {{ mf.table_search }}
+        <table class="tableStatic wide">
+            <thead>
+                <tr>
+                    <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
+                    <td colspan="2">{{ 'Title'|trans }}</td>
+                    <td>{{ 'Active'|trans }}</td>
+                    <td>{{ 'Date'|trans }}</td>
+                    <td style="width: 13%">&nbsp;</td>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% set posts = admin.news_get_list({ "per_page": 30, "page": request.page }|merge(request)) %}
+            {% for i, post in posts.list %}
+            <tr>
+                <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ post.id }}"/></td>
+                <td>{{ post.id }}</td>
+                <td>{{ post.title }}</td>
+                <td>{{ mf.status_name(post.status) }}</td>
+                <td>{{ post.created_at|bb_datetime }}</td>
+                <td class="actions">
+                    <a class="bb-button btn14" href="{{ '/news/post'|alink }}/{{ post.id }}">
+                        <img src="images/icons/dark/pencil.png" alt="">
+                    </a>
+                    <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/news/delete'|link({ 'id': post.id }) }}" data-api-redirect="{{ 'news'|alink }}">
+                        <img src="images/icons/dark/trash.png" alt="">
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5">
+                        {{ 'The list is empty'|trans }}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% include "partial_pagination.html.twig" with { 'list': posts, 'url': 'news/index' } %}
+        {% include "partial_batch_delete.html.twig" with { 'action': 'admin/news/batch_delete' } %}
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new">
+            <form method="post" action="{{ 'api/admin/news/create'|link }}" class="mainForm api-form" data-api-redirect="{{ 'news'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{{ 'Title'|trans }}:</label>
+                        <div class="formRight">
+                            <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Status'|trans }}:</label>
+                        <div class="formRight">
+                            <input type="radio" name="status" value="draft"checked="checked"/><label>{{ 'Draft'|trans }}</label>
+                            <input type="radio" name="status" value="active"/><label>{{ 'Active'|trans }}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Content'|trans }}</label>
+                        <div class="formRight">
+                            <p>If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.</p>
+                            <br/>
+                            <textarea name="content" cols="5" rows="10" class="bb-textarea">{{ request.content }}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

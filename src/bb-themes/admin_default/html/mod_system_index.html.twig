@@ -1,0 +1,43 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% import "macro_functions.html.twig" as mf %}
+{% block meta_title %}{{ 'Settings'|trans }}{% endblock %}
+{% set active_menu = 'system' %}
+{% set params = admin.system_get_params %}
+{% block content %}
+
+<div class="widget simpleTabs">
+    <ul class="tabs">
+        <li>
+            <a href="#tab-index">{{ 'Settings'|trans }}</a>
+        </li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div id="tab-index" class="tab_content nopadding">
+            {{ mf.table_search }}
+            <table class="tableStatic wide">
+                <tbody>
+                    {% for ext in admin.extension_get_list({ "active": 1, "has_settings": 1 }|merge(request)) %}
+                    <tr {{ loop.first ? 'style="border-top:0;"' : '' }} class="hover-row">
+                        <td style="width: 32px;">
+                            <a href="{{ 'extension/settings'|alink }}/{{ext.id}}">
+                                <img src="{{ ext.icon_url }}" alt="{{ext.name}}" style="width: 32px; height: 32px;"/>
+                            </a>
+                        </td>
+                        <td style="border: 0; font-weight: bold;">
+                            <a href="{{ 'extension/settings'|alink }}/{{ext.id}}">{{ ext.name }}</a>
+                        </td>
+                        <td style="width: 5%; border: 0;">
+                            <a class="bb-button btn14" href="{{ 'extension/settings'|alink }}/{{ext.id}}">
+                                <img src="images/icons/dark/play.png" alt="" class="icon" title="{{ 'Module settings'|trans }}">
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

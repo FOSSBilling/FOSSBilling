@@ -1,0 +1,208 @@
+{% import "macro_functions.html.twig" as mf %}
+{% set server = service.server %}
+{% set hp = service.hosting_plan %}
+
+<div class="help">
+    <h2>{{ 'Details'|trans }}</h2>
+</div>
+<table class="tableStatic wide">
+    <tbody>
+        <tr class="noborder">
+            <td style="width: 30%;">{{ 'Status'|trans }}:</td>
+            <td>{{mf.status_name(order.status)}}</td>
+        </tr>
+
+        <tr>
+            <td>{{ 'Domain'|trans }}:</td>
+            <td>
+                <a target="_blank" href="http://{{ service.domain }}">{{ service.domain }}</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td>{{ 'Server Name'|trans }}:</td>
+            <td><a href="{{ 'servicehosting/server'|alink }}/{{ server.id }}">{{ server.name }}</a></td>
+        </tr>
+
+        <tr>
+            <td>{{ 'Hosting plan'|trans }}:</td>
+            <td><a href="{{ 'servicehosting/plan'|alink }}/{{ hp.id }}">{{ hp.name }}</a></td>
+        </tr>
+
+        <tr>
+            <td>{{ 'Server IP'|trans }}:</td>
+            <td>{{ server.ip }}</td>
+        </tr>
+
+        <tr>
+            <td>{{ 'Account IP'|trans }}:</td>
+            <td>{{ service.ip }}</td>
+        </tr>
+
+        <tr>
+            <td>{{ 'Username'|trans }}:</td>
+            <td>{{ service.username }}</td>
+        </tr>
+
+        <tr>
+            <td>{{ 'Nameserver 1'|trans }}:</td>
+            <td>{{ server.ns1 }}</td>
+        </tr>
+
+        <tr>
+            <td>{{ 'Nameserver 2'|trans }}:</td>
+            <td>{{ server.ns2 }}</td>
+        </tr>
+
+        {% if server.ns3 %}
+        <tr>
+            <td>{{ 'Nameserver 3'|trans }}:</td>
+            <td>{{ server.ns3 }}</td>
+        </tr>
+        {% endif %}
+
+        {% if server.ns4 %}
+        <tr>
+            <td>{{ 'Nameserver 4'|trans }}:</td>
+            <td>{{ server.ns4 }}</td>
+        </tr>
+        {% endif %}
+
+        <tr>
+            <td>{{ 'Bandwidth'|trans }}:</td>
+            <td>{{ hp.bandwidth }} MB / {{ 'per month'|trans }}</td>
+        </tr>
+        <tr>
+            <td>{{ 'Disk quota'|trans }}:</td>
+            <td>{{ hp.quota }} MB</td>
+        </tr>
+
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="2">
+                <div class="aligncenter">
+                    {{ order_actions }}
+                    <a class="btn55 mr10" href="{{ server.cpanel_url }}" target="_blank">
+                        <img src="images/icons/middlenav/linux.png" alt=""><span>{{ 'Jump to cPanel'|trans }}</span>
+                    </a>
+                    {% if service.reseller %}
+                    <a class="btn55 mr10" href="{{ server.reseller_cpanel_url }}" target="_blank">
+                        <img src="images/icons/middlenav/linux.png" alt=""><span>{{ 'Reseller control panel'|trans }}</span>
+                    </a>
+                    {% endif %}
+
+                    <a href="{{ 'api/admin/servicehosting/sync'|link({ 'order_id': order.id }) }}" data-api-confirm="Are you sure?" data-api-msg="Account was synced" class="btn55 mr10 api-link">
+                        <img src="images/icons/middlenav/transfer.png" alt=""><span>Sync with server</span>
+                    </a>
+                </div>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+<div class="help">
+    <h2>{{ 'Change hosting plan'|trans }}</h2>
+</div>
+
+<form action="{{ 'api/admin/servicehosting/change_plan'|link }}" method="post" class="mainForm api-form save" data-api-msg="{{ 'Hosting plan changed'|trans }}">
+<fieldset>
+    <div class="rowElem noborder">
+        <label>{{ 'New hosting plan'|trans }}:</label>
+        <div class="formRight">
+            {{ mf.selectbox('plan_id', admin.servicehosting_hp_get_pairs, hp.id, 1) }}
+        </div>
+        <div class="fix"></div>
+    </div>
+
+    <input type="hidden" name="order_id" value="{{ order.id }}">
+    <input type="submit" value="{{ 'Change'|trans }}" class="greyishBtn submitForm" />
+</fieldset>
+</form>
+
+<div class="help">
+    <h2>{{ 'Change account password'|trans }}</h2>
+</div>
+
+<form action="{{ 'api/admin/servicehosting/change_password'|link }}" method="post" class="mainForm api-form save" data-api-msg="{{ 'Account password changed'|trans }}">
+<fieldset>
+    <div class="rowElem noborder">
+        <label>{{ 'Password'|trans }}:</label>
+        <div class="formRight">
+            <input type="password" name="password" required="required"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+    <div class="rowElem">
+        <label>{{ 'Password Confirm'|trans }}:</label>
+        <div class="formRight">
+            <input type="password" name="password_confirm"  required="required"/>
+        </div>
+        <div class="fix"></div>
+    </div>
+
+    <input type="hidden" name="order_id" value="{{ order.id }}">
+    <input type="submit" value="{{ 'Change'|trans }}" class="greyishBtn submitForm" />
+</fieldset>
+</form>
+
+<div class="help">
+    <h2>{{ 'Change IP'|trans }}</h2>
+</div>
+
+<form method="post" action="{{ 'api/admin/servicehosting/change_ip'|link }}" class="mainForm api-form save" data-api-msg="{{ 'Account IP changed'|trans }}">
+<fieldset>
+    <div class="rowElem">
+        <label>{{ 'IP'|trans }}: </label>
+        <div class="formRight">
+            <input type="text" name="ip" value="{{ request.ip|default(service.ip) }}" required="required">
+        </div>
+        <div class="fix"></div>
+    </div>
+
+    <input type="hidden" name="order_id" value="{{ order.id }}">
+    <input class="greyishBtn submitForm" type="submit" value="{{ 'Change'|trans }}">
+</fieldset>
+</form>
+
+<div class="help">
+    <h2>{{ 'Change username'|trans }}</h2>
+</div>
+
+<form method="post" action="{{ 'api/admin/servicehosting/change_username'|link }}" class="mainForm api-form save" data-api-msg="{{ 'Account username changed'|trans }}">
+<fieldset>
+    <div class="rowElem">
+        <label>{{ 'Username'|trans }}: </label>
+        <div class="formRight">
+            <input type="text" name="username" value="{{ request.username|default(service.username) }}" required="required">
+        </div>
+        <div class="fix"></div>
+    </div>
+
+    <input type="hidden" name="order_id" value="{{ order.id }}">
+    <input class="greyishBtn submitForm" type="submit" value="{{ 'Change'|trans }}">
+</fieldset>
+</form>
+
+<div class="help">
+    <h2>{{ 'Change domain'|trans }}</h2>
+</div>
+<form method="post" action="{{ 'api/admin/servicehosting/change_domain'|link }}" class="mainForm api-form save" data-api-msg="{{ 'Account domain changed'|trans }}">
+<fieldset>
+    <div class="rowElem">
+        <label>{{ 'Domain'|trans }}: </label>
+        <div class="formRight moreFields">
+            <ul>
+                <li style="width: 200px"><input type="text" name="sld" value="{{ request.domain|default(service.sld) }}" required="required"></li>
+                <li class="sep">-</li>
+                <li style="width: 100px"><input type="text" name="tld" value="{{ request.domain|default(service.tld) }}" required="required"></li>
+            </ul>
+        </div>
+
+        <div class="fix"></div>
+    </div>
+
+    <input type="hidden" name="order_id" value="{{ order.id }}">
+    <input class="greyishBtn submitForm" type="submit" value="{{ 'Change'|trans }}">
+</fieldset>
+</form>

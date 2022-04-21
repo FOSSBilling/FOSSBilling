@@ -1,0 +1,28 @@
+{% extends "layout_public.html.twig" %}
+
+{% block meta_title %}{{ 'Terms and Conditions'|trans }}{% endblock %}
+
+{% set company = guest.system_company %}
+
+{% block body %}
+<br/>
+<section class="container" role="main">
+    <div class="content-block">
+        <div class="row">
+            <article class="span12 data-block">
+                <div class="data-container">
+                    <header>
+                        <h1>{{ company.name }} {{ 'Terms and Conditions'|trans }}</h1>
+                        <p>{{ company.signature }}</p>
+                    </header>
+                    <section>
+                        {{ company.tos|bbmd }}
+                    </section>
+                </div>
+            </article>
+        </div>
+    </div>
+    <div class="offset5">
+        <a href="{{ '/'|link}}" class="btn btn-alt btn-primary btn-large" title="Back to Homepage">{{ 'Back to Homepage'|trans }}</a></div>
+</section>
+{% endblock %}

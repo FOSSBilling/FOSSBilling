@@ -1,0 +1,152 @@
+{% extends "layout_default.html.twig" %}
+{% block meta_title %}Product promos{% endblock %}
+{% set active_menu = 'products' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a></li>
+    <li><a href="{{ 'product/promos'|alink }}">{{ 'Product promotions'|trans }}</a></li>
+    <li class="lastB">{{ promo.code }}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget">
+    <div class="head">
+        <h5>{{ 'Manage coupon code'|trans }}</h5>
+    </div>
+
+    <form method="post" action="{{ 'api/admin/product/promo_update'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'product/promos'|alink }}">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{{ 'Code'|trans }}</label>
+                <div class="formRight">
+                    <input type="text" name="code" value="{{ promo.code }}" required="required"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{{ 'Discount type'|trans }}</label>
+                <div class="formRight moreFields">
+                    <ul>
+                        <li style="width: 270px">
+                            <input type="radio" name="type" value="absolute" {% if promo.type == 'absolute' %}checked="checked"{% endif %}/><label>Absolute</label>
+                            <input type="radio" name="type" value="percentage" {% if promo.type == 'percentage' %}checked="checked"{% endif %}/><label>Percentage</label>
+                        </li>
+                        <li style="width: 100px"><input type="text" name="value" value="{{ promo.value }}" required="required"/></li>
+                    </ul>
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            <div class="rowElem">
+                <label>{{ 'Recurring'|trans }}</label>
+                <div class="formRight moreFields">
+                    <input type="radio" name="recurring" value="0" {% if not promo.recurring %}checked="checked"{% endif %}/><label>Applies to first order only</label>
+                    <input type="radio" name="recurring" value="1" {% if promo.recurring %}checked="checked"{% endif %}/><label>Applies to first order and renewals</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            <div class="rowElem">
+                <label>{{ 'Active'|trans }}</label>
+                <div class="formRight">
+                    <input type="radio" name="active" value="1" {% if promo.active %}checked="checked"{% endif %}/><label>Yes</label>
+                    <input type="radio" name="active" value="0" {% if not promo.active %}checked="checked"{% endif %}/><label>No</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            <div class="rowElem">
+                <label>{{ 'Free setup'|trans }}</label>
+                <div class="formRight">
+                    <input type="radio" name="freesetup" value="1" {% if promo.freesetup %}checked="checked"{% endif %}/><label>Yes</label>
+                    <input type="radio" name="freesetup" value="0" {% if not promo.freesetup %}checked="checked"{% endif %}/><label>No</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>{{ 'Promo code limitations'|trans }}</legend>
+            
+            <div class="rowElem">
+                <label>{{ 'Once per client'|trans }}</label>
+                <div class="formRight">
+                    <input type="radio" name="once_per_client" value="1" {% if promo.once_per_client %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                    <input type="radio" name="once_per_client" value="0" {% if not promo.once_per_client %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            <div class="rowElem">
+                <label>{{ 'Max uses (zero for unlimited)'|trans }}</label>
+                <div class="formRight">
+                    <input type="text" name="maxuses" value="{{ promo.maxuses }}" class="dirRight" title="Leave blank for unlimited uses"  placeholder="0"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{{ 'Used'|trans }}</label>
+                <div class="formRight">
+                    <input type="text" name="used" value="{{ promo.used }}" class="dirRight" title="How many times promo code was used"  placeholder="0"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{{ 'Period when code is valid'|trans }}</label>
+                <div class="formRight moreFields">
+                    <ul>
+                        <li style="width: 100px"><input type="text" name="start_at" value="{% if promo.start_at %}{{ promo.start_at|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
+                        <li class="sep">-</li>
+                        <li style="width: 100px"><input type="text" name="end_at" value="{% if promo.end_at %}{{ promo.end_at|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
+                    </ul>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{{ 'Products'|trans }}</label>
+                <div class="formRight">
+                    {% set products = admin.product_get_pairs %}
+                    <input type="hidden" name="products" value="">
+                    <select name="products[]" multiple="multiple" class="multiple" size="{{products|length}}">
+                        {% for id,product in products %}
+                        <option value="{{id}}" {% if id in promo.products %}selected="selected"{% endif %}>{{ product }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{{ 'Periods (Select none to apply to all periods)'|trans }}</label>
+                <div class="formRight">
+                    {% set periods = guest.system_periods %}
+                    <input type="hidden" name="periods" value="">
+                    <select name="periods[]" multiple="multiple" class="multiple" size="{{periods|length}}">
+                        {% for id,period in periods %}
+                        <option value="{{id}}" {% if id in promo.periods %}selected="selected"{% endif %}>{{ period }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{{ 'Client Groups (Select none to apply to all client groups)'|trans }}</label>
+                <div class="formRight">
+                    {% set client_groups = admin.client_group_get_pairs %}
+                    <input type="hidden" name="client_groups" value="">
+                    <select name="client_groups[]" multiple="multiple" class="multiple" size="{{groups|length}}">
+                        {% for id, client_group in client_groups %}
+                        <option value="{{id}}" {% if id in promo.client_groups %}selected="selected"{% endif %}>{{ client_group }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
+            <input type="hidden" name="id" value="{{ promo.id }}" />
+        </fieldset>
+    </form>
+</div>
+{% endblock %}

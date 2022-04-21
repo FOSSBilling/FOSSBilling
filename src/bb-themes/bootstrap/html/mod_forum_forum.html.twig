@@ -1,0 +1,66 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ forum.title }}{% endblock %}
+
+{% block content_before %}
+    <h1>{{ forum.title }}</h1>
+    <p class="text-secondary">{{ forum.description }}</p>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ 'forum'|link }}">{{ 'Forum'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active">{{ forum.title }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    <div class="list-group mb-3">
+        {% set topics = guest.forum_get_topic_list({ 'forum_id': forum.id, 'per_page': 20, 'page': request.page }) %}
+        {% for i, topic in topics.list %}
+        <a href="{{ '/forum'|link }}/{{ forum.slug }}/{{ topic.slug }}" class="list-group-item{% if topic.status == 'locked' %} disabled{% endif %}">
+            <h4 class="list-group-item-heading">
+                {% if topic.status == 'locked' %}<i class="fa fa-lock me-2"></i>{% endif %}
+                <strong>{{ topic.title }}</strong>
+                <small class="float-end"><strong>{{ topic.stats.posts_count }} {{ 'Replies'|trans }}</strong> - {{ topic.stats.views_count }} {{ 'Views'|trans }}</small>
+            </h4>
+            <div class="list-group-item-text text-secondary">
+                {{ 'Last post'|trans }}: {{ topic.last.created_at|timeago }} {{ 'ago'|trans }} {{ 'by'|trans }}
+                <img src="{{ topic.last.author.email|gravatar }}&size=20" class="media-object rounded-circle mx-2" alt="{{ topic.last.author.name }}">
+                {{ topic.last.author.name }}
+            </div>
+        </a>
+        {% else %}
+            <p class="text-secondary text-center">{{ 'The list is empty'|trans }}</p>
+        {% endfor %}
+    </div>
+    {% include '_pagination.html.twig' with { 'list': topics } %}
+
+    <p class="text-center">
+        <a class="btn btn-default" href="{{ '/forum'|link }}">
+            <i class="fa fa-arrow-left me-2"></i>{{ 'Forums'|trans }}</a>
+        {% if client %}
+            <a class="btn btn-primary" role="button" data-bs-toggle="collapse" href="#new-topic" aria-expanded="false" aria-controls="new-topic">{{ 'New topic'|trans }}</a>
+        {% else %}
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#login">{{ 'Login'|trans }}</button>
+        {% endif %}
+    </p>
+
+    <div class="collapse" id="new-topic">
+        <h4>{{ 'Start new topic in'|trans }} "{{ forum.title }}"</h4>
+        <form class="api-form" method="post" data-api-url="client/forum/start_topic" data-api-tocreated="{{ 'forum'|link }}/{{ forum.slug }}">
+            <div class="mb-3">
+                <label class="form-label" for="inputTopic">{{ 'Topic title'|trans }}:</label>
+                <input type="text" class="form-control" id="inputTopic" name="topic" value="{{ request.topic }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="textareaMessage">{{ 'Message'|trans }}:</label>
+                <textarea class="form-control p-3" id="textareaMessage" name="message" rows="10" style="resize:none" data-provide="markdown" data-iconlibrary="fa" required>{{ request.message }}</textarea>
+            </div>
+            <input type="hidden" name="return" value="slug">
+            <input type="hidden" name="forum_id" value="{{ forum.id }}">
+            <div class="d-grid">
+                <input class="btn btn-primary" type="submit" value="{{ 'Create new topic'|trans }}">
+            </div>
+        </form>
+    </div>
+{% endblock %}

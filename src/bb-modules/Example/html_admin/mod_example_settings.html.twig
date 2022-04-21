@@ -1,0 +1,53 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}Example extension settings{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+    <li class="lastB">{{ 'Example module settings'|trans }}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget">
+    <div class="head">
+        <h5 class="iCog">{{ 'Example module settings'|trans }}</h5>
+    </div>
+
+{% set params = admin.extension_config_get({ "ext": "mod_example" }) %}
+
+<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+    <div class="help">
+        <h3>{{ 'Example extension settings'|trans }}</h3>
+        <p>{{ 'Every extension can have settings page. Only requirement is to have mod_example_settings.html.twig page in html_admin folder'|trans }}</p>
+    </div>
+    
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{{ 'Parameter title'|trans }}</label>
+            <div class="formRight">
+                <input type="text" name="custom_param" value="{{ params.custom_param }}" placeholder="{{ 'Example custom value'|trans }}"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{{ 'Public parameter title'|trans }}</label>
+            <div class="formRight">
+                <input type="text" name="public[param]" value="{{ params.public.param }}" placeholder="{{ 'This setting will be accessible by the Guest API'|trans }}"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
+        <input type="hidden" name="ext" value="mod_example" />
+    </fieldset>
+</form>
+</div>
+{% endblock %}

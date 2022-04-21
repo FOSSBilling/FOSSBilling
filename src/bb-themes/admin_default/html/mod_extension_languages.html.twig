@@ -1,0 +1,70 @@
+{% extends "layout_default.html.twig" %}
+
+{% block meta_title %}Client area languages{% endblock %}
+
+{% set active_menu = 'extensions' %}
+
+{% block content %}
+<div class="widget simpleTabs">
+    <ul class="tabs">
+        <li><a href="#tab-index">{{ 'Client area languages'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New language'|trans }}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td>{{ 'Language'|trans }}</td>
+                        <td>{{ 'Code'|trans }}</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for lang in admin.extension_languages %}
+                <tr>
+                    <td>{{ lang.title }}</td>
+                    <td style="width: 10%">{{ lang.locale }}</td>
+                </tr>
+                </tbody>
+
+                {% else %}
+                <tbody>
+                    <tr>
+                        <td colspan="2">
+                            {{ 'The list is empty'|trans }}
+                        </td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+        </div>
+        
+        <div class="tab_content nopadding" id="tab-new">
+            {% include "partial_extensions.html.twig" with { 'type': 'translation', 'header': "List of translations on extensions site" } only %}
+            <div class="body">
+                <h1 class="pt10">{{ 'BoxBilling in your language'|trans }}</h1>
+                <p>{{ 'Although BoxBilling displays in U.S. English by default, the software has the built-in capability to be used in any language. Follow instructions bellow to install new language.'|trans }}</p>
+                
+                <div class="pt20 list arrowGrey">
+                    <ul>
+                        <li>{{ 'Check if your language translation file is available at'|trans }} <a href="https://www.transifex.com/projects/p/boxbilling/" target="_blank">{{ 'BoxBilling translations repository'|trans }}</a></li>
+                        <li>{{ 'Download language files and place them to'|trans }} <strong>{{ constant('BB_PATH_LANGS') }}</strong></li>
+                        <li>{{ 'Language will be automatically available and can be changed in client area'|trans }}</li>
+                        <li>{{ 'Read'|trans }} <a href="http://docs.boxbilling.org/en/latest/reference/language.html" title="Installing BoxBilling in Your Language" target="_blank">{{ 'Installing BoxBilling in Your Language'|trans }}</a> {{ 'to learn how to install files that will transform BoxBilling so it displays in your language.'|trans }}</li>
+                        <li>{{ 'Translations can be made with'|trans }} <a href="http://www.poedit.net/" target="_blank">http://www.poedit.net/</a> {{ 'software'|trans }}</li>
+                    </ul>
+                </div>
+
+                <h5 class="pt20">{{ 'Changing default language'|trans }}</h5>
+                <p>{{ 'Default language can be set in'|trans }} <em>bb-config.php</em> parameter <strong>define('BB_LOCALE', 'en_US');</strong></p>
+
+                <h5 class="pt20">{{ 'Removing language'|trans }}</h5>
+                <p>{{ 'Removing languages from BoxBilling is really simple. Just delete language folder you wish from'|trans }} <strong>{{ constant('BB_PATH_LANGS') }}</strong></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
