@@ -92,20 +92,20 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label class="form-label">{{ 'Help desk'|trans }}:</label>
-                            {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                            <label class="form-label" for="selectTicketUpgradeHelpdesk">{{ 'Help desk'|trans }}:</label>
+                            {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1, false, 'selectTicketUpgradeHelpdesk') }}
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">{{ 'Subject'|trans }}:</label>
-                            <input type="text" class="form-control" name="subject" value="{{ 'I would like to upgrade'|trans }} {{ order.title }}" required>
+                            <label class="form-label" for="inputTicketUpgradeSubject">{{ 'Subject'|trans }}:</label>
+                            <input type="text" class="form-control" id="inputTicketUpgradeSubject" name="subject" value="{{ 'I would like to upgrade'|trans }} {{ order.title }}" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">{{ 'Upgrade to'|trans }}: </label>
-                            {{ mf.selectbox('rel_new_value', upgradables, '', 1) }}
+                            <label class="form-label" for="inputTicketUpgradeTariff">{{ 'Upgrade to'|trans }}: </label>
+                            {{ mf.selectbox('rel_new_value', upgradables, '', 1, false, 'inputTicketUpgradeTariff') }}
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">{{ 'Notes'|trans }}:</label>
-                            <textarea class="form-control p-3" name="content" rows="10" maxlength="999" style="resize:none" required>{{ 'I would like to upgrade'|trans }} {{ order.title }}</textarea>
+                            <label class="form-label" for="inputTicketUpgradeMessage">{{ 'Notes'|trans }}:</label>
+                            <textarea class="form-control p-3" id="inputTicketUpgradeMessage" name="content" rows="10" maxlength="999" style="resize:none" required>{{ 'I would like to upgrade'|trans }} {{ order.title }}</textarea>
                         </div>
                         <input type="hidden" name="rel_type" value="order">
                         <input type="hidden" name="rel_id" value="{{ order.id }}">
@@ -113,7 +113,7 @@
                     </div>
                     <div class="modal-footer d-block">
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">{{ 'Request'|trans }}</button>
+                            <button type="submit" class="btn btn-primary">{{ 'Submit'|trans }}</button>
                         </div>
                     </div>
                 </form>

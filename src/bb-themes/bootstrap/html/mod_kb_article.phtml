@@ -31,11 +31,11 @@
     <h4>{{ 'What are you looking for?'|trans }}</h4>
     <form method="get" action="{{ 'kb'|link }}">
         <div class="input-group my-3">
-            <input name="q" type="text" class="form-control" value="{{ request.q }}" placeholder="{{ 'What are you looking for?'|trans }}">
+            <input name="q" type="text" class="form-control" value="{{ request.q }}">
             <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i></button>
         </div>
     </form>
-            
+
     <div class="text-center">
         <a class="btn btn-default" href="{{ 'kb'|link }}">
             <i class="fa fa-arrow-left me-2"></i>{{ 'Back to list'|trans }}</a>

@@ -68,7 +68,7 @@
             </div>
 
             <div class="tab-pane fade" id="tab-nameservers">
-                <h4>{{ 'Domain Nameservers'|trans }}</h4>
+                <h4>{{ 'Domain nameservers'|trans }}</h4>
                 <form method="post" class="api-form" data-api-url="client/servicedomain/update_nameservers" data-api-msg="{{ 'Nameservers updated'|trans }}">
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -111,7 +111,7 @@
                                         <input type="text" class="form-control" name="contact[first_name]" value="{{ request.first_name|default(service.contact.first_name) }}" required>
                                     </div>
                                     <div class="col">
-                                        <label>{{ 'Last Name'|trans }}:</label>
+                                        <label>{{ 'Last name'|trans }}:</label>
                                         <input type="text" class="form-control" name="contact[last_name]" value="{{ request.last_name|default(service.contact.last_name) }}" required>
                                     </div>
                                 </div>

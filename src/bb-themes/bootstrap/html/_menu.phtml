@@ -12,9 +12,9 @@
         {% if settings.side_menu_services %}
         <a href="{{ 'order/service'|link }}" title="{{ 'Services'|trans }}" class="list-group-item d-flex justify-content-between align-items-center{% if request._url starts with '/order/service' %} list-group-item-success{% endif %}">
             <span class="text-success"><i class="fa fa-cog me-2"></i>{{ 'Services'|trans }}</span>
-            
+
             {% set suspendedServices = client.order_get_list({ 'status': 'suspended' }).total %}
-            
+
             {% if suspendedServices > 0 %}
                 <span class="badge bg-danger rounded-pill">{{ suspendedServices }}</span>
             {% endif %}
@@ -32,7 +32,7 @@
         <a href="{{ 'support'|link }}" title="{{ 'Tickets'|trans }}" class="list-group-item d-flex justify-content-between align-items-center{% if request._url == '/support' %} list-group-item-info{% endif %}">
             <span class="text-info"><i class="fa fa-life-ring me-2"></i>{{ 'Support'|trans }}</span>
             {% set openedTickets = client.support_ticket_get_list({ 'status': 'open' }).list|length %}
-            
+
             {% if openedTickets > 0 %}
                 <span class="badge bg-danger rounded-pill">{{ openedTickets }}</span>
             {% endif %}
@@ -50,8 +50,8 @@
         <i class="fa fa-comments me-2"></i>{{ 'Forum'|trans }}</a>
     {% endif %}
     {% if settings.side_menu_kb and guest.extension_is_on({ 'mod': 'kb' }) %}
-    <a href="{{ 'kb'|link }}" title="{{ 'Knowledge Base'|trans }}" class="list-group-item{% if request._url starts with '/kb' %} active{% endif %}">
-        <i class="fa fa-graduation-cap me-2"></i>{{ 'Knowledge Base'|trans }}</a>
+    <a href="{{ 'kb'|link }}" title="{{ 'Knowledge base'|trans }}" class="list-group-item{% if request._url starts with '/kb' %} active{% endif %}">
+        <i class="fa fa-graduation-cap me-2"></i>{{ 'Knowledge base'|trans }}</a>
     {% endif %}
     {% if settings.side_menu_contact %}
     <a href="{{ '/support/contact-us'|link }}" class="list-group-item list-group-item-action{% if request._url starts with '/support/contact-us' %} active{% endif %}">
