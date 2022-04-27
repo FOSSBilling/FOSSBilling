@@ -1,18 +1,38 @@
 {
-  "name": "BoxBilling ",
-  "version": "0.1.0",
-  "author": "BoxBilling inc",
+  "name": "BoxBilling",
+  "author": "BoxBilling Community",
+  "license": "Apache-2",
   "repository": {
     "type": "git",
-    "url": "https://github.com/boxbilling/boxbilling"
+    "url": "git+https://github.com/boxbilling/boxbilling.git"
   },
   "devDependencies": {
+    "@fortawesome/fontawesome-free": "^6.1.1",
+    "babel-core": "^6.26.3",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-register": "^6.26.0",
+    "bootstrap": "^5.1.3",
+    "bootstrap-markdown": "^2.10.0",
     "grunt": "^1.4.1",
     "grunt-concat-css": "*",
     "grunt-contrib-clean": "*",
     "grunt-contrib-concat": "*",
     "grunt-contrib-cssmin": "^4.0.0",
     "grunt-contrib-uglify": "^5.1.0",
-    "grunt-spritesmith": "^6.8.0"
+    "grunt-spritesmith": "^6.8.0",
+    "gulp": "^4.0.2",
+    "gulp-chug": "^0.5.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-sass": "^5.1.0",
+    "gulp-uglify": "^3.0.2",
+    "gulp-uglifycss": "^1.1.0",
+    "jquery": "^3.6.0",
+    "upath": "^2.0.1",
+    "yargs": "^17.4.1"
+  },
+  "scripts": {
+    "build": "gulp build",
+    "watch": "gulp watch"
   }
 }

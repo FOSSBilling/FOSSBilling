@@ -22,11 +22,8 @@
     {% if settings.theme != 'default' %}
         <link href="{{ 'css/themes/theme-'|asset_url }}{{ settings.theme }}.min.css" rel="stylesheet">
     {% else %}
-        <link href="{{ 'css/bootstrap.min.css'|asset_url }}" rel="stylesheet">
+        <link href="{{ 'css/boxbilling-bundle.min.css'|asset_url }}" rel="stylesheet">
     {% endif %}
-
-    <!-- Bootstrap Markdown Editor -->
-    <link href="{{ 'css/bootstrap-markdown.min.css'|asset_url }}" rel="stylesheet">
 
     {% if settings.inject_css|default %}
         <!-- Custom CSS -->
@@ -34,10 +31,6 @@
             {{ settings.inject_css|raw }}
         </style>
     {% endif %}
-
-    <!-- Font Awesome -->
-    <link href="{{ 'font-awesome/css/fontawesome.min.css'|asset_url }}" rel="stylesheet">
-    <link href="{{ 'font-awesome/css/solid.min.css'|asset_url }}" rel="stylesheet">
 
     {% block opengraph %}{% endblock %}
     {% block head %}{% endblock %}
@@ -279,13 +272,7 @@
         </footer>
     {% endif %}
 
-    <script src="{{ 'js/jquery.js'|asset_url }}"></script>
-    <script src="{{ 'js/bootstrap.min.js' | asset_url }}"></script>
-    <script src="{{ 'js/boxbilling.js'|asset_url }}"></script>
-    <!-- Bootstrap Markdown Editor -->
-    <script src="{{ 'js/bootstrap-markdown.js'|asset_url }}"></script>
-    <script src="{{ 'js/to-markdown.js'|asset_url }}"></script>
-    <script src="{{ 'js/markdown.js'|asset_url }}"></script>
+    <script src="{{ 'js/boxbilling-bundle.min.js'|asset_url }}"></script>
 
     {% if settings.inject_javascript|default %}
         <!-- Custom Javascript -->
