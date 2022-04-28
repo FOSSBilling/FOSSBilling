@@ -63,9 +63,7 @@ build:          ## Build App with Docker CI image
 release:        ## App release
     echo "TRAVIS_BUILD_NUMBER:" $(TRAVIS_BUILD_NUMBER)
     echo "TRAVIS_TAG:" $(TRAVIS_TAG)
-    npm install -g grunt-cli
     npm install
-    grunt
     gulp build
     ant release
 
