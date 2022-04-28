@@ -38,9 +38,6 @@ jobs:
         run: composer validate
         working-directory: ./src
 
-      - name: Install Grunt-CLI
-        run: npm install -g grunt-cli
-
       - name: Installing NPM dependencies
         run: npm install
 
@@ -57,8 +54,8 @@ jobs:
           cp LICENSE ./build/source/
           cp CHANGELOG.md ./build/source/
 
-      - name: Running Grunt
-        run: grunt
+      - name: Build assets
+        run: gulp build
         working-directory: ./build/source
 
       - name: Installing Composer dependencies
