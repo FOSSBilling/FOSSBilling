@@ -41,7 +41,7 @@ div.help blockquote {
     padding: 3px 0 2px 0;
     text-align: center;
     border-left: 1px solid #D5D5D5;
-    background: #EFEFEF url(../images/leftNavBg.png) repeat-x;
+    background: #EFEFEF url(../../images/leftNavBg.png) repeat-x;
     border-bottom: 1px solid #D5D5D5;
     font-size: 11px;
     color: #878787;
@@ -179,7 +179,7 @@ div.bull.task.pending_payment {
     border-bottom: 1px solid #CCC;
     color: #333;
     margin-bottom: 1px;
-    background-image: url("../images/arrows.png");
+    background-image: url("../../images/arrows.png");
     background-position: 98% 10px;
     background-repeat: no-repeat;
 }
@@ -299,7 +299,7 @@ div.bull.task.pending_payment {
     display: inline-block;
     width: 16px;
     height: 11px;
-    background: url(../images/csg-4ffefaac101ed.png) no-repeat top left;
+    background: url(../../images/csg-4ffefaac101ed.png) no-repeat top left;
 }
 .flag-{ background-position: -1000px -1000px; width: 16px; height: 11px; }
 .flag-AD{ background-position: 0 0; width: 16px; height: 11px; }

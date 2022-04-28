@@ -244,7 +244,7 @@
                 {% endfor %}
             </table>
         </div>
-        
+
         <div class="tab_content nopadding" id="tab-staff">
             <table class="tableStatic wide">
                 <tbody>
@@ -276,8 +276,8 @@
 
 {% block js %}
 {% if admin.system_is_allowed({"mod":"stats"}) %}
-<script src="js/flot/jquery.flot.js"></script>
-<script src="js/flot/excanvas.min.js"></script>
+<script src="assets/js/flot/jquery.flot.js"></script>
+<script src="assets/js/flot/excanvas.min.js"></script>
 <script>
     $(function() {
         setPlotDataData('graph-income', {{ admin.stats_get_income({ 'date_from': request.date_from, 'date_to': request.date_to }) | json_encode }} );

@@ -1,3 +1,5 @@
+'use strict';
+
 import gulp from 'gulp';
 import concat from 'gulp-concat';
 import uglify from 'gulp-uglify';
@@ -8,7 +10,7 @@ import upath from 'upath';
 const { argv } = yargs
   .options({
     nodeModulesPath: {
-      'description': '<path> pathe to node_modules directory',
+      'description': '<path> path to node_modules directory',
       type: 'string',
       requiresArgs: true,
       required: false,

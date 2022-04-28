@@ -47,7 +47,7 @@
                     </div>
                     <div class="fix"></div>
                 </div>
-                
+
                 <div class="rowElem">
                     <label>{{ 'Product'|trans }}:</label>
                     <div class="formRight">
@@ -63,7 +63,7 @@
                     </div>
                     <div class="fix"></div>
                 </div>
-                
+
                 <div class="rowElem">
                     <label>{{ 'Invoice option'|trans }}</label>
                     <div class="formRight">
@@ -171,7 +171,7 @@
         {% include "partial_batch_delete.html.twig" with { 'action': 'admin/order/batch_delete' } %}
         </div>
     </div>
-    
+
     <div class="tab_content nopadding" id="tab-new">
         <form method="post" action="{{ 'order/new'|alink }}" class="mainForm">
             <fieldset>
@@ -195,7 +195,7 @@
                     </div>
                     <div class="fix"></div>
                 </div>
-                
+
             <input type="submit" value="{{ 'Continue'|trans }}" class="greyishBtn submitForm" />
             {% if request.client_id %}
             <input type="hidden" name="client_id" value="{{ request.client_id}}" />
@@ -206,10 +206,10 @@
 </div>
 {% endblock %}
 
-{% block head %}
-<link href="css/jquery-ui.css" rel="stylesheet" type="text/css" />
-<script src="js/jquery-ui.js"></script>
-{% endblock %}
+{# {% block head %} #}
+{# <link href="css/jquery-ui.css" rel="stylesheet" type="text/css" /> #}
+{# <script src="js/jquery-ui.js"></script> #}
+{# {% endblock %} #}
 
 {% block js%}
 {% if not request.client_id %}
@@ -238,7 +238,7 @@
             select: function(event, ui) {
                 $("#client_selector").val(ui.item.label);
                 $("#client_id").val(ui.item.value);
-                
+
                 return false;
             }
         });
