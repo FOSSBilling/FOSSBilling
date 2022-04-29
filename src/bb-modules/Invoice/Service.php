@@ -100,7 +100,7 @@ class Service implements InjectionAwareInterface
 
         if (null !== $client) {
             $sql .= ' AND (cl.first_name LIKE :client_search OR cl.last_name LIKE :client_search OR cl.id = :client OR cl.email = :client)';
-            $params['client_search'] = $client.'%';
+            $params['client_search'] = $client . '%';
             $params['client'] = $client;
         }
 
@@ -127,7 +127,7 @@ class Service implements InjectionAwareInterface
         if ($search) {
             $sql .= ' AND (p.id = :int OR p.nr LIKE :search_like OR p.id LIKE :search OR pi.title LIKE :search_like)';
             $params['int'] = (int) preg_replace('/[^0-9]/', '', $search);
-            $params['search_like'] = '%'.$search.'%';
+            $params['search_like'] = '%' . $search . '%';
             $params['search'] = $search;
         }
 
@@ -179,7 +179,7 @@ class Service implements InjectionAwareInterface
         $result['nr'] = $row['nr'];
 
         $nr = (is_numeric($result['nr'])) ? $result['nr'] : $result['id'];
-        $result['serie_nr'] = $result['serie'].sprintf('%05s', $nr);
+        $result['serie_nr'] = $result['serie'] . sprintf('%05s', $nr);
 
         $result['hash'] = $row['hash'];
         $result['gateway_id'] = $row['gateway_id'];
@@ -222,7 +222,7 @@ class Service implements InjectionAwareInterface
             'company' => !empty($row['seller_company']) ? $row['seller_company'] : $c['name'],
             'company_vat' => $row['seller_company_vat'],
             'company_number' => $row['seller_company_number'],
-            'address' => !empty($row['seller_address']) ? $row['seller_address'] : trim($c['address_1'].' '.$c['address_2'].' '.$c['address_2']),
+            'address' => !empty($row['seller_address']) ? $row['seller_address'] : trim($c['address_1'] . ' ' . $c['address_2'] . ' ' . $c['address_2']),
             'phone' => !empty($row['seller_phone']) ? $row['seller_phone'] : $c['tel'],
             'email' => !empty($row['seller_email']) ? $row['seller_email'] : $c['email'],
             'account_number' => !empty($c['account_number']) ? $c['account_number'] : null,
@@ -496,7 +496,7 @@ class Service implements InjectionAwareInterface
         $model->seller_company = $seller['name'];
         $model->seller_company_vat = $seller['vat_number'];
         $model->seller_company_number = $seller['number'];
-        $model->seller_address = trim($seller['address_1'].' '.$seller['address_2'].' '.$seller['address_3']);
+        $model->seller_address = trim($seller['address_1'] . ' ' . $seller['address_2'] . ' ' . $seller['address_3']);
         $model->seller_phone = $seller['tel'];
         $model->seller_email = $seller['email'];
 
@@ -505,11 +505,11 @@ class Service implements InjectionAwareInterface
         $model->buyer_company = $buyer['company'];
         $model->buyer_company_vat = $buyer['company_vat'];
         $model->buyer_company_number = $buyer['company_number'];
-        $model->buyer_address = $buyer['address_1'].' '.$buyer['address_2'];
+        $model->buyer_address = $buyer['address_1'] . ' ' . $buyer['address_2'];
         $model->buyer_city = $buyer['city'];
         $model->buyer_state = $buyer['state'];
         $model->buyer_country = $buyer['country'];
-        $model->buyer_phone = $buyer['phone_cc'].' '.$buyer['phone'];
+        $model->buyer_phone = $buyer['phone_cc'] . ' ' . $buyer['phone'];
         $model->buyer_email = $buyer['email'];
         $model->buyer_zip = $buyer['postcode'];
 
@@ -517,7 +517,7 @@ class Service implements InjectionAwareInterface
         if (!is_numeric($invoice_due_days)) {
             $invoice_due_days = 1;
         }
-        $due_time = strtotime('+'.$invoice_due_days.' day');
+        $due_time = strtotime('+' . $invoice_due_days . ' day');
         $model->due_at = date('Y-m-d H:i:s', $due_time);
 
         $model->serie = $systemService->getParamValue('invoice_series');
@@ -965,7 +965,7 @@ class Service implements InjectionAwareInterface
 
         // invoice due date
         if ($due_days > 0) {
-            $proforma->due_at = date('Y-m-d H:i:s', strtotime('+'.$due_days.' days'));
+            $proforma->due_at = date('Y-m-d H:i:s', strtotime('+' . $due_days . ' days'));
             $this->di['db']->store($proforma);
         } elseif ($order->expires_at) {
             $proforma->due_at = $order->expires_at;
@@ -1064,7 +1064,7 @@ class Service implements InjectionAwareInterface
         if (\Model_Invoice::STATUS_PAID == $invoice->status) {
             return true;
         }
-        
+
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceSendReminder', 'params' => ['id' => $invoice->id]]);
 
         $invoice->reminded_at = date('Y-m-d H:i:s');
@@ -1214,33 +1214,30 @@ class Service implements InjectionAwareInterface
             $currencyCode = $client->currency;
         }
 
+        $localeDateFormat = $this->di['config']['locale_date_format'];
         $invoice = $this->toApiArray($invoice, false, $identity);
         $systemService = $this->di['mod_service']('System');
         $company = $systemService->getCompany();
+
         $pdf = $this->di['pdf'];
         $pdf->AddPage();
-
         $pdf->AddFont('DejaVu', '', 'DejaVuSansCondensed.ttf', true);
         $pdf->AddFont('DejaVu', 'B', 'DejaVuSansCondensed-Bold.ttf', true);
-        $pdf->SetFont('DejaVu', 'B', 20);
-        $font_size = 8;
+
         $left = 10;
-
-        $pdf->text(90, 20, $invoice['serie_nr']);
-
-        $pdf->SetFont('DejaVu', '', $font_size);
+        $fontSize = 12;
 
         if (isset($company['logo_url']) && !empty($company['logo_url'])) {
             $url = $company['logo_url'];
             if ('.png' === substr($url, -4)) {
-                $pdf->ImagePngWithAlpha($_SERVER['DOCUMENT_ROOT'].$url, $left + 75, 35, 50);
+                $pdf->ImagePngWithAlpha($_SERVER['DOCUMENT_ROOT'] . $url, $left + 15, 15, 50);
             } else {
                 // Converting to .png
                 $img = imagecreatefromstring(file_get_contents($url));
                 if ($img) {
                     $filename = 'logo.png';
                     if (imagepng($img, $filename)) {
-                        $pdf->ImagePngWithAlpha($filename, $left + 75, 35, 50);
+                        $pdf->ImagePngWithAlpha($filename, $left + 15, 15, 50);
                         unlink($filename);
                     }
                 } else {
@@ -1249,88 +1246,98 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $localeDateFormat = $this->di['config']['locale_date_format'];
         $invoiceDate = strftime($localeDateFormat, strtotime($this->di['array_get']($invoice, 'due_at', $invoice['created_at'])));
-        $invoice_info = __('Invoice number: ').$invoice['nr']."\n".
-            __('Invoice date: ').$invoiceDate."\n".
-            __('Due date: ').strftime($localeDateFormat, strtotime($invoice['due_at']))."\n".
-            __('Invoice status: ').ucfirst($invoice['status']);
-        $pdf->SetFont('DejaVu', 'B', $font_size);
-        $pdf->text($left + 15, 75, __('Invoice'));
-        $pdf->SetFont('DejaVu', '', $font_size);
 
-        $pdf->SetXY($left, 70);
-        $pdf->MultiCell(60, 10, "\n".$invoice_info, 0, 'L', 0);
+        $invoiceInfo = sprintf("%s: %s\n", __('Invoice number'), $invoice['serie_nr']);
+        $invoiceInfo .= sprintf("%s: %s\n", __('Invoice date'), $invoiceDate);
+        $invoiceInfo .= sprintf("%s: %s\n", __('Due date'), strftime($localeDateFormat, strtotime($invoice['due_at'])));
+        $invoiceInfo .= sprintf("%s: %s\n", __('Invoice status'), ucfirst($invoice['status']));
 
-        $company_info = __('Name: ').$invoice['seller']['company']."\n".
-            __('Address: ').$invoice['seller']['address']."\n".
-            __('Company VAT: ').$invoice['seller']['company_vat']."\n".
-            __('Company number: ').$invoice['seller']['company_number']."\n".
-            __('Account: ').$invoice['seller']['account_number']."\n".
-            __('Phone: ').$invoice['seller']['phone']."\n".
-            __('Email: ').$invoice['seller']['email'];
-        $pdf->SetFont('DejaVu', 'B', $font_size);
-        $pdf->text(95, 75, __('Company'));
-        $pdf->SetFont('DejaVu', '', $font_size);
-        $pdf->SetXY(75, 70);
-        $pdf->MultiCell(60, 10, "\n".$company_info, 0, 'L', 0);
+        $pdf->SetXY($pdf->GetPageWidth() / 2, $pdf->GetY());
+        $pdf->SetFont('DejaVu', '', $fontSize);
+        $pdf->MultiCell($pdf->GetPageWidth() / 2, 6, "\n" . $invoiceInfo, 0, 'L', 0);
 
-        $buyer_info = __('Name: ').$invoice['buyer']['first_name'].' '.$invoice['buyer']['last_name']."\n".
-            __('Company: ').$invoice['buyer']['company']."\n".
-            __('Address: ').$invoice['buyer']['address']."\n".
-            __('Company VAT: ').$invoice['seller']['company_vat']."\n".
-            __('Company number: ').$invoice['seller']['company_number']."\n".
-            __('Phone: ').$invoice['buyer']['phone'];
-        $pdf->SetFont('DejaVu', 'B', $font_size);
-        $pdf->text(145, 75, __('Billing and delivery address'));
-        $pdf->SetFont('DejaVu', '', $font_size);
+        $pdf->SetXY($left, 50);
+        $pdf->SetLineWidth(0.5);
+        $pdf->Line($pdf->GetX(), $pdf->GetY(), $pdf->GetPageWidth() - $pdf->GetX(), $pdf->GetY());
 
-        $pdf->SetXY(140, 70);
-        $pdf->MultiCell(60, 10, "\n".$buyer_info, 0, 'L', 0);
+        $pdf->SetFont('DejaVu', 'B', $fontSize);
+        $pdf->Text($left, 75, __('Company'));
+
+        $companyInfo = sprintf("%s: %s\n", __('Address'), $invoice['seller']['address']);
+        $companyInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['seller']['company_vat']);
+        $companyInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['seller']['company_number']);
+        $companyInfo .= sprintf("%s: %s\n", __('Account'), $invoice['seller']['account_number']);
+        $companyInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['seller']['phone']);
+        $companyInfo .= sprintf("%s: %s\n", __('Email'), $invoice['seller']['email']);
+
+        $pdf->SetXY($left, 75);
+        $pdf->SetFont('DejaVu', '', $fontSize);
+        $pdf->MultiCell(90, 6, "\n" . $companyInfo, 0, 'L', 0);
+
+        $pdf->SetFont('DejaVu', 'B', $fontSize);
+        $pdf->Text($pdf->GetPageWidth() / 2, 75, __('Billing and delivery address'));
+
+        $buyerInfo = sprintf("%s: %s %s\n", __('Name'), $invoice['buyer']['first_name'], $invoice['buyer']['last_name']);
+        $buyerInfo .= sprintf("%s: %s\n", __('Company'), $invoice['buyer']['company']);
+        $buyerInfo .= sprintf("%s: %s\n", __('Address'), $invoice['buyer']['address']);
+        $buyerInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['seller']['company_vat']);
+        $buyerInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['seller']['company_number']);
+        $buyerInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['buyer']['phone']);
+
+        $pdf->SetXY($pdf->GetPageWidth() / 2, 75);
+        $pdf->SetFont('DejaVu', '', $fontSize);
+        $pdf->MultiCell(90, 6, "\n" . $buyerInfo, 0, 'L', 0);
 
         $header = [__('#'), __('Title'), __('Price'), __('Total')];
-        $pdf->SetXY($left, 175);
-        $w = [10, 120, 30, 30];
+        $pdf->SetXY($left, 155);
+        $pdf->SetLineWidth(0.1);
+        $align = ['C', 'L', 'C', 'R'];
+        $width = [10, 120, 30, 30];
 
         $counted = count($header);
         for ($i = 0; $i < $counted; ++$i) {
-            $pdf->Cell($w[$i], 7, $header[$i], 1, 0, 'C');
+            $pdf->SetFillColor(74, 74, 74);
+            $pdf->SetTextColor(255);
+            $pdf->Cell($width[$i], 10, $header[$i], 0, 0, $align[$i], true);
         }
+        $pdf->SetTextColor(0);
         $pdf->Ln();
 
+        $pdf->SetFillColor(240, 240, 240);
+        $fill = true;
         $nr = 1;
         foreach ($invoice['lines'] as $row) {
-            $pdf->Cell($w[0], 6, $nr++, 'LR');
-            $pdf->Cell($w[1], 6, $row['title'], 'LR');
-            $pdf->Cell($w[2], 6, ($row['quantity'] > 1) ? $row['quantity'].' x '.$this->money($row['price'], $currencyCode) : $this->money($row['price'], $currencyCode), 'LR', 0, 'R');
-            $pdf->Cell($w[3], 6, $this->money($row['total'], $currencyCode), 'LR', 0, 'R');
+            $pdf->Cell($width[0], 10, $nr++, 0, 0, 'C', $fill);
+            $pdf->Cell($width[1], 10, $row['title'], 0, 0, 'L', $fill);
+            $pdf->Cell($width[2], 10, ($row['quantity'] > 1) ? $row['quantity'] . ' x ' . $this->money($row['price'], $currencyCode) : $this->money($row['price'], $currencyCode), 0, 0, 'C', $fill);
+            $pdf->Cell($width[3], 10, $this->money($row['total'], $currencyCode), 0, 0, 'R', $fill);
             $pdf->Ln();
+            $fill = !$fill;
         }
-        $pdf->Cell(array_sum($w), 0, '', 'T');
+        $pdf->Cell(array_sum($width), 0, '', 'T');
 
-        $y = $pdf->GetY();
-        $pdf->SetXY(120, $y + 10);
+        $pdf->SetXY(140, $pdf->GetY() + 10);
         if ($invoice['tax'] > 0) {
-            $pdf->Cell(40, 6, $invoice['taxname'].' '.$invoice['taxrate'].'%', 'LRTB', 0, 'C');
-            $pdf->Cell(40, 6, $this->money($invoice['tax'], $currencyCode), 'LRTB', 0, 'C');
+            $pdf->Cell(30, 6, sprintf('%s %s%%', $invoice['taxname'], $invoice['taxrate']), '', 0, 'C');
+            $pdf->Cell(30, 6, $this->money($invoice['tax'], $currencyCode), '', 0, 'R');
             $pdf->Ln();
-            $pdf->SetX(120);
         }
 
-        $pdf->SetX(120);
+        $pdf->SetX(140);
         if (isset($invoice['discount']) && $invoice['discount'] > 0) {
-            $pdf->Cell(40, 8, __('Discount '), 'LRTB', 0, 'C');
-            $pdf->Cell(40, 8, $this->money($invoice['discount'], $currencyCode), 'LRTB', 0, 'C');
+            $pdf->Cell(40, 8, __('Discount '), '', 0, 'C');
+            $pdf->Cell(40, 8, $this->money($invoice['discount'], $currencyCode), '', 0, 'R');
             $pdf->Ln();
-            $pdf->SetX(120);
         }
 
-        $pdf->SetFont('DejaVu', 'B', $font_size + 2);
-        $pdf->Cell(40, 10, __('Total'), 'LRTB', 0, 'C');
-        $pdf->Cell(40, 10, $this->money($invoice['total'], $currencyCode), 'LRTB', 0, 'C');
+        $pdf->SetX(140);
+        $pdf->SetFont('DejaVu', 'B', $fontSize + 2);
+        $pdf->Cell(30, 10, __('Total'), '', 0, 'C');
+        $pdf->Cell(30, 10, $this->money($invoice['total'], $currencyCode), '', 0, 'R');
         $pdf->Ln();
 
-        $pdf->Output($invoice['serie_nr'].'.pdf', 'I');
+        $pdf->Output($invoice['serie_nr'] . '.pdf', 'I');
     }
 
     private function money($price, $currencyCode)
@@ -1341,7 +1348,7 @@ class Service implements InjectionAwareInterface
     public function addNote(\Model_Invoice $model, $note)
     {
         $n = $model->notes;
-        $model->notes = $n.date('Y-m-d H:i:s').': '.$note.'       '.PHP_EOL;
+        $model->notes = $n . date('Y-m-d H:i:s') . ': ' . $note . '       ' . PHP_EOL;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
@@ -1477,7 +1484,7 @@ class Service implements InjectionAwareInterface
             $bs->setUnit($period->getUnit());
 
             $mpi->setSubscription($bs);
-            $mpi->setTitle('Subscription for '.$subitem->title);
+            $mpi->setTitle('Subscription for ' . $subitem->title);
         }
 
         return $mpi;
@@ -1505,7 +1512,7 @@ class Service implements InjectionAwareInterface
         $invoices = $this->di['db']->find('Invoice', 'client_id = ?', [$client->id]);
         foreach ($invoices as $invoice) {
             $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
-            
+
             foreach ($invoiceItems as $invoiceItem) {
                 $this->di['db']->trash($invoiceItem);
             }
