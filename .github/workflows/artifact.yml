@@ -54,7 +54,7 @@ jobs:
           cp LICENSE ./build/source/
           cp CHANGELOG.md ./build/source/
 
-      - name: Build assets
+      - name: Building assets
         run: gulp build
         working-directory: ./build/source
 
