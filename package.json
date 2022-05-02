@@ -13,6 +13,6 @@
     "grunt-contrib-concat": "*",
     "grunt-contrib-cssmin": "^4.0.0",
     "grunt-contrib-uglify": "^5.2.1",
-    "grunt-spritesmith": "^6.8.0"
+    "grunt-spritesmith": "^6.10.0"
   }
 }
