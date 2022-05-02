@@ -7,7 +7,7 @@
     "url": "https://github.com/boxbilling/boxbilling"
   },
   "devDependencies": {
-    "grunt": "^1.4.1",
+    "grunt": "^1.5.2",
     "grunt-concat-css": "*",
     "grunt-contrib-clean": "*",
     "grunt-contrib-concat": "*",
