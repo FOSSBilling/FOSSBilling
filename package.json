@@ -6,8 +6,15 @@
     "type": "git",
     "url": "git+https://github.com/boxbilling/boxbilling.git"
   },
+  "dependencies": {
+    "autoprefixer": "^10.4.6",
+    "postcss": "^8.4.13",
+    "sass": "^1.51.0",
+    "tailwindcss": "^3.0.24"
+  },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^6.1.1",
+    "@tailwindcss/forms": "^0.5.0",
     "babel-core": "^6.26.3",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.7.0",
@@ -15,8 +22,10 @@
     "bootstrap": "^5.1.3",
     "bootstrap-markdown": "^2.10.0",
     "gulp": "^4.0.2",
+    "gulp-autoprefixer": "^8.0.0",
     "gulp-chug": "^0.5.1",
     "gulp-concat": "^2.6.1",
+    "gulp-postcss": "^9.0.1",
     "gulp-sass": "^5.1.0",
     "gulp-uglify": "^3.0.2",
     "gulp-uglifycss": "^1.1.0",

@@ -1,13 +1,15 @@
-{% extends "layout_login.html.twig" %}
+{% extends 'layout_login.html.twig' %}
 
 {% block meta_title %}{{ 'Login'|trans }}{% endblock %}
 
 {% block content %}
 
-<!-- Login form area -->
-<div class="loginWrapper">
-    <div class="loginLogo"><img src="{{ guest.system_company.logo_url }}" alt="" style="max-height: 75px"/></div>
-    <div class="loginPanel">
+<div class="max-w-screen-xl px-4 py-16 mx-auto sm:px-6 lg:px-8">
+    <div class="flex justify-center">
+            <img src="{{ guest.system_company.logo_url }}" class="p-12" alt="Boxbilling">
+        </div>
+    <div class="max-w-lg mx-auto bg-white shadow">
+
         {% if create_admin %}
         <div class="head"><h5 class="iUser">{{ 'Create main administrator account'|trans }}</h5></div>
         <form class="mainForm api-form" action="{{ 'api/guest/staff/create'|link }}" method="post" data-api-redirect="{{ 'index'|alink }}">
@@ -17,43 +19,57 @@
                     <div class="loginInput"><input id="req1" type="email" name="email" value="{{ request.email }}" placeholder="{{ 'Enter your email address'|trans }}"/></div>
                     <div class="fix"></div>
                 </div>
-                
+
                 <div class="loginRow">
                     <label for="req2">{{ 'Password'|trans }}:</label>
                     <div class="loginInput"><input id="req2" type="password" name="password" value="{{ request.password }}" placeholder="{{ 'Enter your password'|trans }}"/></div>
                     <div class="fix"></div>
                 </div>
-                
+
                 <div class="loginRow">
-                    <input type="submit" value="{{ 'Create administrator account'|trans }}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create administrator account'|trans }}" class="greyishBtn submitForm">
                     <div class="fix"></div>
                 </div>
             </fieldset>
         </form>
         {% else %}
-        <div class="head">
-            <h5 class="iUser"><i class="dark-sprite-icon sprite-user" style="margin-left: -25px; margin-right: 11px;"></i>{{ 'Login'|trans }}</h5>
-        </div>
-        <form class="mainForm api-form" action="{{ 'api/guest/staff/login'|link }}" method="post" data-api-redirect="{{ 'index'|alink }}">
-            <fieldset>
-                <div class="loginRow noborder">
-                    <label for="req1">{{ 'Email'|trans }}:</label>
-                    <div class="loginInput"><input id="req1" type="email" name="email" value="{{ request.email }}" placeholder="{{ 'Enter your email address'|trans }}" autofocus/></div>
-                    <div class="fix"></div>
-                </div>
-                
-                <div class="loginRow">
-                    <label for="req2">{{ 'Password'|trans }}:</label>
-                    <div class="loginInput"><input id="req2" type="password" name="password" value="{{ request.password }}" placeholder="{{ 'Enter your password'|trans }}"/></div>
-                    <div class="fix"></div>
-                </div>
-                
-                <div class="loginRow">
-                    <div class="rememberMe"><input type="checkbox" id="remember" name="remember" value="1" checked="checked"/><label for="remember">{{ 'Remember me'|trans }}</label></div>
-                    <input type="submit" value="{{ 'Log me in'|trans }}" class="greyishBtn submitForm" />
-                    <div class="fix"></div>
-                </div>
-            </fieldset>
+        <form class="p-8 mb-0 space-y-4 rounded-lg shadow-2xl api-form" action="{{ 'api/guest/staff/login'|link }}" method="post" data-api-redirect="{{ 'index'|alink }}">
+            <div>
+                <label class="block mb-2 text-sm font-medium" for="req1">{{ 'Email'|trans }}</label>
+                <input
+                    type="email"
+                    id="req1"
+                    class="w-full px-4 py-2 text-sm border-gray-200 rounded shadow-sm"
+                    name="email"
+                    value="{{ request.email }}"
+                    placeholder="{{ 'Enter your email address'|trans }}"
+                    required
+                    autofocus
+                >
+            </div>
+
+            <div>
+                <label class="block mb-2 text-sm font-medium" for="req2">{{ 'Password'|trans }}</label>
+                <input
+                    type="password"
+                    id="req2"
+                    class="w-full px-4 py-2 text-sm border-gray-200 rounded shadow-sm"
+                    name="password"
+                    value="{{ request.password }}"
+                    placeholder="{{ 'Enter your password'|trans }}"
+                    required
+                >
+            </div>
+
+            <div>
+                <input type="checkbox" id="remember" class="mr-1" name="remember" value="1" checked>
+                <label for="remember">{{ 'Remember me'|trans }}</label>
+            </div>
+            <input
+                type="submit"
+                class="block w-full px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded"
+                value="{{ 'Sign in'|trans }}"
+            >
         </form>
         {% endif %}
     </div>

@@ -7,6 +7,13 @@ import uglifycss from 'gulp-uglifycss';
 import yargs from 'yargs';
 import upath from 'upath';
 import spritesmith from 'gulp.spritesmith';
+import dartSass from 'sass';
+import gulpSass from 'gulp-sass';
+import postcss from 'gulp-postcss';
+import autoprefixer from 'autoprefixer';
+import tailwindcss from 'tailwindcss';
+
+const sass = gulpSass(dartSass);
 
 const { argv } = yargs
   .options({
@@ -90,6 +97,7 @@ export const buildThemeAdminJs = function buildThemeAdminJs() {
     'assets/js/jquery.ToTop.js',
     'assets/js/jquery.scrollTo-min.js',
     'assets/js/jquery-ui.js',
+    'assets/js/boxbilling.js',
   ];
 
   return gulp.src(files)
@@ -101,12 +109,7 @@ buildThemeAdminJs.description = 'Build Admin theme JS assets.';
 
 export const buildThemeAdminCSS = function buildThemeAdminCSS() {
   const files = [
-    'assets/css/reset.css',
-    'assets/css/jquery-ui.css',
-    'assets/css/bb.css',
-    'assets/css/dataTable.css',
-    'assets/css/ui_custom.css',
-    'assets/css/main.css',
+    'assets/scss/**/*.scss',
     'build/css/dark-icons-sprite.css',
     'build/css/dark-icons-23-sprite.css',
     'build/css/topnav-sprite.css',
@@ -114,6 +117,11 @@ export const buildThemeAdminCSS = function buildThemeAdminCSS() {
 
   return gulp.src(files)
     .pipe(concat('boxbilling-bundle.min.css'))
+    .pipe(postcss([
+      tailwindcss('tailwind.config.js'),
+      autoprefixer()
+    ]))
+    .pipe(sass().on('error', sass.logError))
     .pipe(uglifycss())
     .pipe(gulp.dest('build/css'));
 }
