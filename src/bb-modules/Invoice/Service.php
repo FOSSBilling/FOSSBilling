@@ -1264,7 +1264,8 @@ class Service implements InjectionAwareInterface
         $pdf->SetFont('DejaVu', 'B', $fontSize);
         $pdf->Text($left, 75, __('Company'));
 
-        $companyInfo = sprintf("%s: %s\n", __('Address'), $invoice['seller']['address']);
+        $companyInfo = sprintf("%s: %s\n", __('Name'), $invoice['seller']['company']);
+        $companyInfo .= sprintf("%s: %s\n", __('Address'), $invoice['seller']['address']);
         $companyInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['seller']['company_vat']);
         $companyInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['seller']['company_number']);
         $companyInfo .= sprintf("%s: %s\n", __('Account'), $invoice['seller']['account_number']);
