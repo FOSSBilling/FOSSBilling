@@ -28,7 +28,7 @@ services:
     restart: always
 
   mariadb:
-    image: mariadb:10.7.3
+    image: mariadb:10.6
     restart: always
     environment:
       MARIADB_ROOT_PASSWORD: default_mariadb_password
