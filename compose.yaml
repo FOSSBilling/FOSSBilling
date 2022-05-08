@@ -12,7 +12,7 @@ services:
       - back-tier
     depends_on:
       - php
-  
+
   php:
     image: chialab/php:8.0-fpm
     volumes:
@@ -26,7 +26,7 @@ services:
     networks:
       - back-tier
     restart: always
-  
+
   mariadb:
     image: mariadb:10.7.3
     restart: always
