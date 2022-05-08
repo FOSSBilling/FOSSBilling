@@ -1,14 +1,20 @@
 .SILENT:
 
-DOCKER_COMPOSE = docker-compose
+DOCKER_COMPOSE = docker compose
+DOCKER_WEB_CONTAINER_EXEC = $(DOCKER_COMPOSE) exec web
 DOCKER_PHP_CONTAINER_EXEC = $(DOCKER_COMPOSE) exec php
-DOCKER_DB_CONTAINER_EXEC = $(DOCKER_COMPOSE) exec database
+DOCKER_DB_CONTAINER_EXEC = $(DOCKER_COMPOSE) exec mariadb
 DOCKER_PHP_EXECUTABLE_CMD = php -dmemory_limit=1G
 
 help:           ## Show this help
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-all: start-recreate reinstall
+addx:
+	chmod +x ./bin/install.sh
+
+all: ## Will migrate other tasks to the bash script too
+	make addx
+	./bin/install.sh
 
 start:          ## Start app
 	$(DOCKER_COMPOSE) up -d
@@ -18,7 +24,7 @@ ifeq (,$(wildcard ./src/bb-config.php))
 endif
 
 start-recreate: ## Start app with full rebuild
-	$(DOCKER_COMPOSE) up -d  --build --force-recreate --remove-orphans
+	$(DOCKER_COMPOSE) up -d --build --force-recreate --remove-orphans
 
 stop:           ## Stop app
 	$(DOCKER_COMPOSE) stop
@@ -39,7 +45,8 @@ exec-db:        ## Enter DB container shell
 	$(DOCKER_DB_CONTAINER_EXEC) bash
 
 install: start  ## Install app after start
-	$(DOCKER_PHP_CONTAINER_EXEC) composer install --working-dir=src --no-progress --no-suggest --prefer-dist --no-dev
+	$(DOCKER_PHP_CONTAINER_EXEC) composer install --working-dir=src --no-progress --prefer-dist --no-dev
+	rm -rf ./src/install
 
 reinstall:      ## Reinstall app
 	rm -rf ./src/bb-config.php

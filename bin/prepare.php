@@ -7,7 +7,13 @@ $config = include $pathAppRoot . '/bb-config.php';
 
 $structureSql = '/sql/structure.sql';
 $contentSql = '/sql/content_test.sql';
+
 if (isset($argv[1]) && $argv[1] == 'production') {
+    $contentSql = '/sql/content.sql';
+    echo "Production content" . PHP_EOL;
+}
+
+if (getenv('PROD') == 'true') {
     $contentSql = '/sql/content.sql';
     echo "Production content" . PHP_EOL;
 }
@@ -40,7 +46,7 @@ while (!$connected && $iter > 0) {
         if(strpos($e->getMessage(), "Connection refused") !== false) {
             sleep(1); // mysql container might still not be up, lets wait
             $iter--;
-            echo "Waiting for database container to go up ".$iter . PHP_EOL;
+            echo "Waiting for the database container to go up ".$iter . PHP_EOL;
         } else {
             throw $e;
         }
@@ -92,4 +98,4 @@ do{
 }while($stmt->nextRowset());
 
 
-echo "Finished" . PHP_EOL;
+echo "Finished the prepration" . PHP_EOL;
