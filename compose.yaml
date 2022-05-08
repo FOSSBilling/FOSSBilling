@@ -22,7 +22,7 @@ services:
       DB_NAME: boxbilling
       DB_USER: root
       DB_PASS: default_mariadb_password
-      PROD   : true
+      PROD   : 'true'
     networks:
       - back-tier
     restart: always
