@@ -76,7 +76,7 @@ function rebuild_and_start() {
     cp $PATH_PREFIX/src/bb-config-sample.php $PATH_PREFIX/src/bb-config.php
     print_separator
     
-    print_header "Running the prepration script..."
+    print_header "Running the preparation script..."
 	$DOCKER_PHP_CONTAINER_EXEC $DOCKER_PHP_EXECUTABLE_CMD ./bin/prepare.php
     print_separator
 }
