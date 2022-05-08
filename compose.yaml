@@ -32,8 +32,6 @@ services:
     restart: always
     environment:
       MARIADB_ROOT_PASSWORD: default_mariadb_password
-    ports:
-      - 3306:3306
     networks:
     - back-tier
 networks:
