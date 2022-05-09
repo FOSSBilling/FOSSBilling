@@ -12,7 +12,10 @@ help:           ## Show this help
 addx:
 	chmod +x ./bin/install.sh
 
-all: ## Will migrate other tasks to the bash script too
+all:
+	make docker
+
+docker: ## Will migrate other tasks to the bash script too
 	make addx
 	./bin/install.sh
 
