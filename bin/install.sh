@@ -63,6 +63,19 @@ function print_separator() {
     echo -e "\e[1m----------------------------------------------------\e[0m"
 }
 
+# Create necessary directories if they don't exist
+function create_directories() {
+    mkdir -p $PATH_PREFIX/src/bb-data/{cache,log,uploads}
+}
+
+# Change folder permissions
+function change_folder_permissions() {
+    print_info "Changing folder permissions..."
+    chmod -R 777 $PATH_PREFIX/src/bb-data/{cache,log,uploads}
+    chmod -R 777 $PATH_PREFIX/src/bb-themes
+    print_success "Folder permissions changed."
+}
+
 # Start BoxBilling with a full rebuild
 function rebuild_and_start() {
     print_header "Starting BoxBilling with a full rebuild..."
@@ -162,6 +175,8 @@ if [ -f "$PATH_PREFIX/src/bb-config.php" ]; then
     print_separator
 fi
 
+create_directories
+change_folder_permissions
 rebuild_and_start
 install_composer_dependencies
 remove_installation_leftovers
