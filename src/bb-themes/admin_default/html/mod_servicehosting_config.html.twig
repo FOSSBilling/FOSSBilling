@@ -1,173 +1,193 @@
-{% import "macro_functions.html.twig" as mf %}
-<div class="help">
+{% import 'macro_functions.html.twig' as mf %}
+
+<div class="card-body">
     <h5>{{ 'Hosting settings'|trans }}</h5>
+    <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="api-form save" data-api-msg="{{ 'Hosting settings updated'|trans }}">
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Server'|trans }}:</label>
+            <div class="col">
+                {{ mf.selectbox('config[server_id]', admin.servicehosting_server_get_pairs, product.config.server_id, 0, 'Select server') }}
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Hosting plan'|trans }}:</label>
+            <div class="col">
+                {{ mf.selectbox('config[hosting_plan_id]', admin.servicehosting_hp_get_pairs, product.config.hosting_plan_id, 0, 'Select hosting plan') }}
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Reseller hosting'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioResellerYes" type="radio" name="config[reseller]" value="1"{% if product.config.reseller %} checked{% endif %}>
+                    <label class="form-check-label" for="radioResellerYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioResellerNo" type="radio" name="config[reseller]" value="0"{% if not product.config.reseller %} checked{% endif %}>
+                    <label class="form-check-label" for="radioResellerNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Free domain registration'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioFreeRegistrationYes" type="radio" name="config[free_domain]" value="1"{% if product.config.free_domain %} checked{% endif %}>
+                    <label class="form-check-label" for="radioFreeRegistrationYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioFreeRegistrationNo" type="radio" name="config[free_domain]" value="0"{% if not product.config.free_domain %} checked{% endif %}>
+                    <label class="form-check-label" for="radioFreeRegistrationNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
+        </div>
+        <div class="mb-3 row free-tlds-row">
+            <label class="form-label col-3 col-form-label">{{ 'Select free tlds'|trans }}</label>
+            <div class="col">
+                {% set tlds = guest.serviceDomain_tlds({ 'allow_register': 1 }) %}
+                <select class="form-select" name="config[free_tlds][]" multiple="multiple" size="{{ tlds|length }}"{% if product.config.free_domain %} required{% endif %}>
+                    {% for id,tld in tlds %}
+                    <option value="{{ tld.tld }}"{% if tld.tld in product.config.free_tlds %} selected{% endif %}>{{ tld.tld }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+            <!-- Select periods to offer free domains -->
+            <div class="mb-3 row free-periods-row">
+            <label class="form-label col-3 col-form-label">{{ 'Select free periods'|trans }}</label>
+            <div class="col">
+                <select class="form-select" name="config[free_domain_periods][]" multiple="multiple" size="6"{% if product.config.free_domain %} required{% endif %}>
+                    <option value="1M"{% if "1M" in product.config.free_domain_periods %} selected{% endif %}>1 {{ 'Month'|trans }}</option>
+                    <option value="3M"{% if "3M" in product.config.free_domain_periods %} selected{% endif %}>3 {{ 'Month'|trans }}</option>
+                    <option value="6M"{% if "6M" in product.config.free_domain_periods %} selected{% endif %}>6 {{ 'Month'|trans }}</option>
+                    <option value="1Y"{% if "1Y" in product.config.free_domain_periods %} selected{% endif %}>1 {{ 'Year'|trans }}</option>
+                    <option value="2Y"{% if "2Y" in product.config.free_domain_periods %} selected{% endif %}>2 {{ 'Years'|trans }}</option>
+                    <option value="3Y"{% if "3Y" in product.config.free_domain_periods %} selected{% endif %}>3 {{ 'Years'|trans }}</option>
+                </select>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Free domain transfer'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioFreeTransferYes" type="radio" name="config[free_transfer]" value="1"{% if product.config.free_transfer %} checked{% endif %}>
+                    <label class="form-check-label" for="radioFreeTransferYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" id="radioFreeTransferNo" type="radio" name="config[free_transfer]" value="0"{% if not product.config.free_transfer %} checked{% endif %}>
+                    <label class="form-check-label" for="radioFreeTransferNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" name="id" value="{{ product.id }}">
+        <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+    </form>
+    <hr>
+
+    <div class="d-flex align-items-center mb-3">
+        <h5 class="mb-0">{{ 'Hosting plans'|trans }}</h5>
+        <a href="{{ 'servicehosting#tab-new-server'|alink }}" class="ms-auto btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <use xlink:href="#plus" />
+            </svg>
+            {{ 'New hosting plan'|trans }}
+        </a>
+    </div>
+    <table class="table card-table table-vcenter table-striped text-nowrap">
+        <thead>
+            <tr>
+                <th>{{ 'Title'|trans }}</th>
+                <th class="w-1"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for id, plan in admin.servicehosting_hp_get_pairs %}
+            <tr>
+                <td>
+                    <a href="{{ '/servicehosting/plan'|alink }}/{{ id }}">{{ plan }}</a>
+                </td>
+                <td>
+                    <a class="btn btn-icon" href="{{ '/servicehosting/plan'|alink }}/{{ id }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <use xlink:href="#edit" />
+                        </svg>
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="text-muted" colspan="2">{{ 'The list is empty'|trans }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <hr>
+
+    <div class="d-flex align-items-center mb-3">
+        <h5 class="mb-0">{{ 'Servers'|trans }}</h5>
+        <a href="{{ 'servicehosting#tab-new-server'|alink }}" class="ms-auto btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <use xlink:href="#plus" />
+            </svg>
+            {{ 'New server'|trans }}
+        </a>
+    </div>
+    <table class="table card-table table-vcenter table-striped text-nowrap">
+        <thead>
+            <tr>
+                <th>{{ 'Title'|trans }}</th>
+                <th class="w-1"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for id, server in admin.servicehosting_server_get_pairs %}
+            <tr>
+                <td>
+                    <a href="{{ '/servicehosting/server'|alink }}/{{ id }}">{{ server }}</a>
+                </td>
+                <td>
+                    <a class="btn btn-icon" href="{{ '/servicehosting/server'|alink }}/{{ id }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <use xlink:href="#edit" />
+                        </svg>
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
-
-<form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm api-form save" data-api-msg="Hosting settings updated">
-<fieldset>
-    <div class="rowElem">
-        <label>{{ 'Server'|trans }}:</label>
-        <div class="formRight noborder">
-            {{ mf.selectbox('config[server_id]', admin.servicehosting_server_get_pairs, product.config.server_id, 0, 'Select server') }}
-        </div>
-        <div class="fix"></div>
-    </div>
-    <div class="rowElem">
-        <label>{{ 'Hosting plan'|trans }}:</label>
-        <div class="formRight">
-            {{ mf.selectbox('config[hosting_plan_id]', admin.servicehosting_hp_get_pairs, product.config.hosting_plan_id, 0, 'Select hosting plan') }}
-        </div>
-        <div class="fix"></div>
-    </div>
-    <div class="rowElem">
-        <label>{{ 'Reseller hosting'|trans }}:</label>
-        <div class="formRight">
-            <input type="radio" name="config[reseller]" value="1"{% if product.config.reseller %} checked="checked"{% endif %}/><label>Yes</label>
-            <input type="radio" name="config[reseller]" value="0"{% if not product.config.reseller %} checked="checked"{% endif %} /><label>No</label>
-        </div>
-        <div class="fix"></div>
-    </div>
-    <div class="rowElem">
-        <label>{{ 'Free domain registration'|trans }}:</label>
-        <div class="formRight">
-            <input type="radio" name="config[free_domain]" value="1"{% if product.config.free_domain %} checked="checked"{% endif %}/><label>Yes</label>
-            <input type="radio" name="config[free_domain]" value="0"{% if not product.config.free_domain %} checked="checked"{% endif %} /><label>No</label>
-        </div>
-        <div class="fix"></div>
-    </div>
-    <div class="rowElem free-tlds-row">
-        <label>{{ 'Select free tlds'|trans }}</label>
-        <div class="formRight">
-            {% set tlds = guest.serviceDomain_tlds({"allow_register":1}) %}
-            <select name="config[free_tlds][]" multiple="multiple" class="multiple" size="{{tlds|length}}" {% if product.config.free_domain %}required{% endif %}>
-                {% for id,tld in tlds %}
-                <option value="{{tld.tld}}" {% if tld.tld in product.config.free_tlds %}selected="selected"{% endif %}>{{tld.tld }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="fix"></div>
-    </div>
-		<!-- Select periods to offer free domains -->
-	    <div class="rowElem free-periods-row">
-        <label>{{ 'Select free periods'|trans }}</label>
-        <div class="formRight">
-            <select name="config[free_domain_periods][]" multiple="multiple" class="multiple" size="8" {% if product.config.free_domain %}required{% endif %}>
-                <option value="1M" {% if "1M" in product.config.free_domain_periods %}selected="selected"{% endif %}>1M</option>
-				<option value="3M" {% if "3M" in product.config.free_domain_periods %}selected="selected"{% endif %}>3M</option>
-				<option value="6M" {% if "6M" in product.config.free_domain_periods %}selected="selected"{% endif %}>6M</option>
-				<option value="1Y" {% if "1Y" in product.config.free_domain_periods %}selected="selected"{% endif %}>1Y</option>
-				<option value="2Y" {% if "2Y" in product.config.free_domain_periods %}selected="selected"{% endif %}>2Y</option>
-				<option value="3Y" {% if "3Y" in product.config.free_domain_periods %}selected="selected"{% endif %}>3Y</option>              
-            </select>
-        </div>
-        <div class="fix"></div>
-    </div>
-	
-    <div class="rowElem">
-        <label>{{ 'Free domain transfer'|trans }}:</label>
-        <div class="formRight">
-            <input type="radio" name="config[free_transfer]" value="1"{% if product.config.free_transfer %} checked="checked"{% endif %}/><label>Yes</label>
-            <input type="radio" name="config[free_transfer]" value="0"{% if not product.config.free_transfer %} checked="checked"{% endif %} /><label>No</label>
-        </div>
-        <div class="fix"></div>
-    </div>
-
-    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-</fieldset>
-        
-<input type="hidden" name="id" value="{{ product.id }}" />
-</form>
-
-<div class="help">
-    <h5>{{ 'Hosting plans'|trans }}</h5>
-</div>
-
-<table class="tableStatic wide">
-    <thead>
-        <tr>
-            <td>Title</td>
-            <td style="width:5%">&nbsp;</td>
-        </tr>
-    </thead>
-    <tbody>
-        {% for id, plan in admin.servicehosting_hp_get_pairs %}
-        <tr>
-            <td>{{plan}}</td>
-            <td class="actions"><a class="bb-button btn14" href="{{ '/servicehosting/plan'|alink }}/{{id}}"><img src="images/icons/dark/pencil.png" alt=""></a></td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="2">{{ 'The list is empty'|trans }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-    <tfoot>
-        <tr>
-            <td colspan="2">
-                <a href="{{ 'servicehosting#tab-new-plan'|alink }}" title="" class="btnIconLeft mr10 mt5"><img src="images/icons/dark/settings2.png" alt="" class="icon"><span>New hosting plan</span></a>
-            </td>
-        </tr>
-    </tfoot>
-</table>
-
-<div class="help">
-    <h5>{{ 'Servers'|trans }}</h5>
-</div>
-
-<table class="tableStatic wide">
-    <thead>
-        <tr>
-            <td>Title</td>
-            <td style="width:5%">&nbsp;</td>
-        </tr>
-    </thead>
-    <tbody>
-        {% for id, server in admin.servicehosting_server_get_pairs %}
-        <tr>
-            <td>{{server}}</td>
-            <td class="actions"><a class="bb-button btn14" href="{{ '/servicehosting/server'|alink }}/{{id}}"><img src="images/icons/dark/pencil.png" alt=""></a></td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="7">{{ 'The list is empty'|trans }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-    <tfoot>
-        <tr>
-            <td colspan="2">
-                <a href="{{ 'servicehosting#tab-new-server'|alink }}" title="" class="btnIconLeft mr10 mt5"><img src="images/icons/dark/computer.png" alt="" class="icon"><span>New server</span></a>
-            </td>
-        </tr>
-    </tfoot>
-</table>
 
 <script>
     var free_domain_radios = $('input:radio[name="config[free_domain]"]');
     var freeTldsRow = $('.free-tlds-row');
-	var freePerdsRow = $('.free-periods-row');
+    var freePerdsRow = $('.free-periods-row');
 
-    free_domain_radios.on('click', function(){
+    free_domain_radios.on('click', function() {
         if ($(this).val() == 1){
             freeTldsRow.fadeIn('slow');
-			freePerdsRow.fadeIn('slow');
+            freePerdsRow.fadeIn('slow');
             $('select[name="config[free_tlds][]"]').prop('required', true);
             $('select[name="config[free_domain_periods][]"]').prop('required', true);
         }
+
         if ($(this).val() == 0){
             $('select[name="config[free_domain_periods][]"]').prop('required', false);
             $('select[name="config[free_tlds][]"]').prop('required', false);
             $('select[name="config[free_tlds][]"] option:selected').prop('selected', false);
             $('select[name="config[free_domain_periods][]"] option:selected').prop('selected', false);
             freeTldsRow.fadeOut('slow');
-			freePerdsRow.fadeOut('slow');
+            freePerdsRow.fadeOut('slow');
         }
     });
 
-    if (free_domain_radios.filter('[value=0]:checked').length > 0){
+    if (free_domain_radios.filter('[value=0]:checked').length > 0) {
         freeTldsRow.hide();
-		freePerdsRow.hide();
+        freePerdsRow.hide();
     }
-
-
 </script>

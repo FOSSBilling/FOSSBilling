@@ -1,337 +1,439 @@
-{% import "macro_functions.html.twig" as mf %}
-{% extends "layout_default.html.twig" %}
+{% extends 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
 {% set active_menu = 'client' %}
+
 {% block meta_title %}{{ 'Clients'|trans }}{% endblock %}
 
 {% block top_content %}
 {% if request.show_filter %}
-<div class="widget filterWidget">
-    <div class="head"><h5 class="iMagnify">{{ 'Filter clients'|trans }}</h5></div>
-    <div class="body nopadding">
+    <section class="card mb-3">
+        <div class="card-body">
+            <h5>{{ 'Filter clients'|trans }}</h5>
 
-        <form method="get" action="" class="mainForm">
-            <input type="hidden" name="_url" value="{{ request._url }}" />
-            <fieldset>
-                <div class="rowElem noborder">
-                    <label>{{ 'ID'|trans }}</label>
-                    <div class="formRight">
-                        <input type="text" name="id" value="{{ request.id }}">
+            <form method="get">
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" name="id" value="{{ request.id }}">
                     </div>
-                    <div class="fix"></div>
+                </div>
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" name="name" value="{{ request.name }}">
+                    </div>
                 </div>
 
-                <div class="rowElem">
-                    <label>{{ 'Name'|trans }}</label>
-                    <div class="formRight">
-                        <input type="text" name="name" value="{{ request.name }}">
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Company name'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" name="company" value="{{ request.company }}">
                     </div>
-                    <div class="fix"></div>
-                </div>
-                
-                <div class="rowElem">
-                    <label>{{ 'Company name'|trans }}</label>
-                    <div class="formRight">
-                        <input type="text" name="company" value="{{ request.company }}">
-                    </div>
-                    <div class="fix"></div>
                 </div>
 
-                <div class="rowElem">
-                    <label>{{ 'Email'|trans }}</label>
-                    <div class="formRight">
-                        <input type="text" name="email" value="{{ request.email }}" />
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" name="email" value="{{ request.email }}">
                     </div>
-                    <div class="fix"></div>
                 </div>
 
-                <div class="rowElem">
-                    <label>{{ 'Group'|trans }}:</label>
-                    <div class="formRight">
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Group'|trans }}:</label>
+                    <div class="col">
                         {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'All groups') }}
                     </div>
-                    <div class="fix"></div>
                 </div>
 
-                <div class="rowElem">
-                    <label>{{ 'Status'|trans }}:</label>
-                    <div class="formRight">
-                        <input type="radio" name="status" value=""{% if not request.status %} checked="checked"{% endif %}/><label>{{ 'All'|trans }}</label>
-                        <input type="radio" name="status" value="active"{% if request.status == 'active' %} checked="checked"{% endif %}/><label>{{ 'Active'|trans }}</label>
-                        <input type="radio" name="status" value="suspended"{% if request.status == 'suspended' %} checked="checked"{% endif %} /><label>{{ 'Suspended'|trans }}</label>
-                        <input type="radio" name="status" value="canceled"{% if request.status == 'canceled' %} checked="checked"{% endif %} /><label>{{ 'Canceled'|trans }}</label>
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
+                    <div class="col">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" id="statusAll" name="status" value=""{% if not request.status %} checked{% endif %}>
+                            <label class="form-check-label" for="statusAll">{{ 'All'|trans }}</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" id="statusActive" name="status" value="active"{% if request.status == 'active' %} checked{% endif %}>
+                            <label class="form-check-label" for="statusActive">{{ 'Active'|trans }}</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" id="statusSuspended" name="status" value="suspended"{% if request.status == 'suspended' %} checked{% endif %}>
+                            <label class="form-check-label" for="statusSuspended">{{ 'Suspended'|trans }}</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" id="statusCanceled" name="status" value="canceled"{% if request.status == 'canceled' %} checked{% endif %}>
+                            <label class="form-check-label" for="statusCanceled">{{ 'Canceled'|trans }}</label>
+                        </div>
                     </div>
-                    <div class="fix"></div>
                 </div>
 
-                <div class="rowElem">
-                    <label>{{ 'Registration date'|trans }}</label>
-                    <div class="formRight moreFields">
-                        <ul>
-                            <li style="width: 100px"><input type="text" name="date_from" value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
-                            <li class="sep">-</li>
-                            <li style="width: 100px"><input type="text" name="date_to" value="{% if request.date_to %}{{ request.date_to|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
-                        </ul>
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Registration date'|trans }}</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <input class="form-control" type="date" name="date_from" value="{% if request.date_from %}{{ request.date_from|date('m/d/Y') }}{% endif %}" placeholder="{{ now|date('m/d/Y') }}" class="datepicker">
+                            <span class="input-group-text">-</span>
+                            <input class="form-control" type="date" name="date_to" value="{% if request.date_to %}{{ request.date_to|date('m/d/Y') }}{% endif %}" placeholder="{{ now|date('m/d/Y') }}" class="datepicker">
+                        </div>
                     </div>
-                    <div class="fix"></div>
                 </div>
-                
-                <input type="hidden" name="show_filter" value="1" />
-                <input type="submit" value="{{ 'Filter'|trans }}" class="greyishBtn submitForm" />
-            </fieldset>
-        </form>
-        <div class="fix"></div>
-    </div>
-</div>
+
+                <input type="hidden" name="_url" value="{{ request._url }}">
+                <input type="hidden" name="show_filter" value="1">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-75">{{ 'Filter'|trans }}</button>
+                    <a class="btn btn-danger w-25" href="{{ request._url }}?show_filter=1">{{ 'Reset'|trans }}</a>
+                </div>
+            </form>
+        </div>
+    </section>
 {% else %}
-{% set count_clients = admin.client_get_statuses %}
-<div class="stats">
-    <ul>
-        <li><a href="{{ 'client'|alink({'status' : 'active'}) }}" class="count green" title="">{{ count_clients.active }}</a><span>{{ 'Active'|trans }}</span></li>
-        <li><a href="{{ 'client'|alink({'status' : 'suspended'}) }}" class="count blue" title="">{{ count_clients.suspended }}</a><span>{{ 'Suspended'|trans }}</span></li>
-        <li><a href="{{ 'client'|alink({'status' : 'canceled'}) }}" class="count red" title="">{{ count_clients.canceled }}</a><span>{{ 'Canceled'|trans }}</span></li>
-        <li class="last">
-            <a href="{{ 'client'|alink }}" class="count grey" title="">{{count_clients.active + count_clients.canceled + count_clients.suspended}}</a><span>{{ 'Total'|trans }}</span>
-        </li>
-    </ul>
-    <div class="fix"></div>
-</div>
-{% endif %}
+    {% set count_clients = admin.client_get_statuses %}
+    <section class="row row-cards mb-3">
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'client'|alink({ 'status': 'active' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-success text-white avatar">{{ count_clients.active }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Active'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'client'|alink({ 'status': 'suspended' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-danger text-white avatar">{{ count_clients.suspended }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Suspended'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'client'|alink({ 'status': 'canceled' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-secondary text-white avatar">{{ count_clients.canceled }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Canceled'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'client'|alink }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-blue text-white avatar">{{ count_clients.active + count_clients.canceled + count_clients.suspended }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Total'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </section>
+    {% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="widget simpleTabs">
-
-    <ul class="tabs">
-        <li><a href="#tab-index">{{ 'Clients'|trans }}</a></li>
-        <li><a href="#tab-new">{{ 'New client'|trans }}</a></li>
-        <li><a href="#tab-groups">{{ 'Groups'|trans }}</a></li>
-        <li><a href="#tab-new-group">{{ 'New group'|trans }}</a></li>
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="index-tab" data-bs-toggle="tab" data-bs-target="#tab-index" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Clients'|trans }}</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="new-tab" data-bs-toggle="tab" data-bs-target="#tab-new" type="button" role="tab" aria-controls="new" aria-selected="false">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New client'|trans }}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="groups-tab" data-bs-toggle="tab" data-bs-target="#tab-groups" type="button" role="tab" aria-controls="groups" aria-selected="false">{{ 'Groups'|trans }}</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="new-group-tab" data-bs-toggle="tab" data-bs-target="#tab-new-group" type="button" role="tab" aria-controls="new-group" aria-selected="false">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New group'|trans }}
+            </button>
+        </li>
     </ul>
 
-    <div class="tabs_container">
+    <div class="card">
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+                {% include '_search.html.twig' %}
+                <div class="table-responsive">
+                    <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <thead>
+                            <tr>
+                                <th class="w-1">
+                                    <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
+                                </th>
+                                <th>{{ 'Name'|trans }}</th>
+                                <th>{{ 'Company'|trans }}</th>
+                                <th>{{ 'Status'|trans }}</th>
+                                <th>{{ 'Date'|trans }}</th>
+                                <th class="w-1"></th>
+                            </tr>
+                        </thead>
 
-        <div class="fix"></div>
-        <div class="tab_content nopadding" id="tab-index">
-            {{ mf.table_search }}
-            <table class="tableStatic wide">
-                <thead>
-                    <tr>
-                        <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
-                        <td colspan="2">{{ 'Name'|trans }}</td>
-                        <td>{{ 'Company'|trans }}</td>
-                        <td width="30%">{{ 'Email'|trans }}</td>
-                        <td>{{ 'Status'|trans }}</td>
-                        <td>{{ 'Date'|trans }}</td>
-                        <td width="13%">&nbsp;</td>
-                    </tr>
-                </thead>
+                        <tbody>
+                            {% set clients = admin.client_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                            {% for client in clients.list %}
+                            <tr>
+                                <td>
+                                    <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ client.id }}">
+                                </td>
+                                <td>
+                                    <div class="d-flex py-1 align-items-center">
+                                        <a href="{{ 'client/manage'|alink }}/{{ client.id }}">
+                                            <span class="avatar me-2" style="background-image: url({{ client.email|gravatar }}&size=40)"></span>
+                                        </a>
+                                        <div class="flex-fill">
+                                            <div class="font-weight-medium">
+                                                <a href="{{ 'client/manage'|alink }}/{{ client.id }}">{{ client.first_name }} {{ client.last_name }}</a>
+                                                <span class="flag flag-{{ client.country }}" title="{{ guest.system_countries[client.country] }}"></span>
+                                            </div>
+                                            <div class="text-muted">
+                                                <a href="#" class="text-reset">{{ client.email }}</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{{ 'client/manage'|alink }}/{{ client.id }}" title="{{ client.company }}">{{ client.company|default('-')|truncate(30) }}</a>
+                                </td>
+                                <td>
+                                    {% if client.status == 'active' %}
+                                        <span class="badge bg-success me-1"></span>
+                                    {% endif %}
+                                    {% if client.status == 'suspended' %}
+                                        <span class="badge bg-danger me-1"></span>
+                                    {% endif %}
+                                    {% if client.status == 'canceled' %}
+                                        <span class="badge bg-secondary me-1"></span>
+                                    {% endif %}
+                                    {{ mf.status_name(client.status) }}
+                                </td>
+                                <td>{{ client.created_at|date('Y-m-d') }}</td>
+                                <td>
+                                    <a class="btn btn-icon" href="{{ 'client/manage'|alink }}/{{ client.id }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                            <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
+                                            <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path>
+                                            <path d="M16 5l3 3"></path>
+                                        </svg>
+                                    </a>
+                                    <a class="btn btn-icon api-link" href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                            <line x1="4" y1="7" x2="20" y2="7"></line>
+                                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                                            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
+                                            <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7">{{ 'The list is empty'|trans }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
-                <tbody>
-                    {% set clients = admin.client_get_list({"per_page":30, "page":request.page}|merge(request)) %}
-                    {% for client in clients.list %}
-                    <tr>
-                        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ client.id }}"/></td>
-                        <td>
-                            <a href="{{ 'client/manage'|alink }}/{{ client.id }}"><img src="{{ client.email|gravatar }}?size=20" alt="{{ client.id }}" /></a>
-                        </td>
-                        <td>
-                            <span class="flag flag-{{ client.country }}" title="{{ guest.system_countries[client.country] }}"></span>
-                            <a href="{{ 'client/manage'|alink }}/{{ client.id }}" title="{{ client.first_name }} {{ client.last_name }}">{{ client.first_name|truncate('1', null, '.') }} {{ client.last_name|truncate(15) }}</a></td>
-                        <td><a href="{{ 'client/manage'|alink }}/{{ client.id }}" title="{{ client.company }}">{{ client.company|default('-')|truncate(30) }}</a></td>
-                        <td><a href="{{ 'client/manage'|alink }}/{{ client.id }}" title="{{ client.email }}">{{ client.email|truncate(30) }}</a></td>
-                        <td>{{ mf.status_name(client.status) }}</td>
-                        <td>{{ client.created_at|date('Y-m-d') }}</td>
-                        <td>
-                            <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/client/delete'|link({'id' : client.id}) }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/trash.png" alt=""></a>
-                            <a class="btn14" href="{{ 'client/manage'|alink }}/{{ client.id }}"><img src="images/icons/dark/pencil.png" alt=""></a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="7">{{ 'The list is empty'|trans }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                <div class="card-footer d-flex align-items-center">
+                    {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/client/batch_delete' } %}
+                    {% include '_pagination.html.twig' with { 'list': clients, 'url': 'client' } %}
+                </div>
+            </div>
 
-            {% include "partial_batch_delete.html.twig" with { 'action' : 'admin/client/batch_delete' } %}
-            {% include "partial_pagination.html.twig" with { 'list': clients, 'url':'client' } %}
+            <div class="tab-pane fade" id="tab-new" role="tabpanel">
+                <div class="card-body">
+                    <form method="post" action="{{ 'api/admin/client/create'|link }}" class="api-form save" data-api-redirect="{{ 'client'|alink }}">
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
+                            <div class="col">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="radioStatusActive" name="status" value="active" checked>
+                                    <label class="form-check-label" for="radioStatusActive">{{ 'Active'|trans }}</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="radioStatusCanceled" name="status" value="canceled">
+                                    <label class="form-check-label" for="radioStatusCanceled">{{ 'Canceled'|trans }}</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Group'|trans }}:</label>
+                            <div class="col">
+                                {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'Select group') }}
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}:</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="email" value="{{ request.email }}" required>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
+                            <div class="col">
+                                <div class="row g-2">
+                                    <div class="col">
+                                        <input class="form-control" type="text" name="first_name" value="{{ request.first_name }}" required>
+                                    </div>
+                                    <div class="col">
+                                        <input class="form-control" type="text" name="last_name" value="{{ request.last_name }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Company'|trans }}:</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="company" value="{{ request.company }}">
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Address Line 1'|trans }}:</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="address_1" value="{{ request.address_1 }}">
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Address Line 2'|trans }}:</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="address_2" value="{{ request.address_2 }}">
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'City'|trans }}:</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="city" value="{{ request.city }}">
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'State'|trans }}:</label>
+                            <div class="col">
+                                {# {{ mf.selectbox('state', guest.system_states, request.state, 0, 'Select state') }} #}
+                                <input class="form-control" type="text" name="state" value="{{ request.state }}">
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
+                            <div class="col">
+                                {{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Select country') }}
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Postcode'|trans }}:</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="postcode" value="{{ request.postcode }}">
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Phone'|trans }}:</label>
+                            <div class="col">
+                                <div class="input-group">
+                                    <span class="input-group-text">+</span>
+                                    <input class="form-control" type="text" name="phone_cc" value="{{ request.phone_cc }}">
+                                    {# <span class="input-group-text">-</span> #}
+                                    <input class="form-control w-50" type="text" name="phone" value="{{ request.phone }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}:</label>
+                            <div class="col">
+                                {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'Select currency') }}
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}:</label>
+                            <div class="col">
+                                <input class="form-control" type="password" name="password" value="" required>
+                            </div>
+                        </div>
+                        <input type="submit" class="btn btn-primary" value="{{ 'Create'|trans }}">
+                    </form>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tab-groups" role="tabpanel">
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>{{ 'Title'|trans }}</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for id, group in admin.client_group_get_pairs %}
+                        <tr>
+                            <td>{{ group }}</td>
+                            <td>
+                                <a class="btn btn-icon" href="{{ 'client/group'|alink }}/{{ id }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <use xlink:href="#edit" />
+                                    </svg>
+                                </a>
+                                <a class="btn btn-icon api-link" href="{{ 'api/admin/client/group_delete'|link({ 'id': id }) }}" data-api-reload="1" data-api-confirm="{{ 'Are you sure?'|trans }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <use xlink:href="#delete" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="2">{{ 'The list is empty'|trans }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab-pane fade" id="tab-new-group" role="tabpanel">
+                <div class="card-body">
+                    <form method="post" action="{{ 'api/admin/client/group_create'|link }}" class="api-form" data-api-redirect="{{ 'client'|alink }}">
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="title" value="{{ request.title }}" required>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
+                    </form>
+                </div>
+            </div>
         </div>
-
-        <div class="fix"></div>
-
-        <div class="tab_content nopadding" id="tab-new">
-
-            <form method="post" action="{{ 'api/admin/client/create'|link }}" class="mainForm api-form save" data-api-redirect="{{ 'client'|alink }}">
-                <fieldset>
-                    <div class="rowElem noborder">
-                        <label>{{ 'Status'|trans }}:</label>
-                        <div class="formRight noborder">
-                            <input type="radio" name="status" value="active" checked="checked"/><label>{{ 'Active'|trans }}</label>
-                            <input type="radio" name="status" value="canceled"/><label>{{ 'Canceled'|trans }}</label>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <div class="rowElem">
-                        <label>{{ 'Group'|trans }}:</label>
-                        <div class="formRight">
-                            {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'Select group') }}
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <div class="rowElem">
-                        <label>{{ 'Email'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="email" value="{{request.email}}" required="required"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <div class="rowElem">
-                        <label>{{ 'Name'|trans }}:</label>
-                        <div class="formRight moreFields">
-                            <ul>
-                                <li style="width: 200px"><input type="text" name="first_name" value="{{request.first_name}}" required="required"/></li>
-                                <li class="sep"></li>
-                                <li style="width: 200px"><input type="text" name="last_name" value="{{request.last_name}}"/></li>
-                            </ul>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <div class="rowElem">
-                        <label>{{ 'Company'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="company" value="{{request.company}}"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <div class="rowElem">
-                        <label>{{ 'Address Line 1'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="address_1" value="{{request.address_1}}"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <div class="rowElem">
-                        <label>{{ 'Address Line 2'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="address_2" value="{{request.address_2}}"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <div class="rowElem">
-                        <label>{{ 'City'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="city" value="{{request.city}}"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <div class="rowElem">
-                        <label>{{ 'State'|trans }}:</label>
-                        <div class="formRight">
-                            {# mf.selectbox('state', guest.system_states, request.state, 0, 'Select state') #}
-                            <input type="text" name="state" value="{{ request.state }}" />
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <div class="rowElem">
-                        <label>{{ 'Country'|trans }}:</label>
-                        <div class="formRight">
-                            {{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Select country') }}
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <div class="rowElem">
-                        <label>{{ 'Postcode'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="postcode" value="{{request.postcode}}"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <div class="rowElem">
-                        <label>{{ 'Phone'|trans }}:</label>
-                        <div class="formRight moreFields">
-                            <ul>
-                                <li><input type="text" name="phone_cc" value="{{request.phone_cc}}"/></li>
-                                <li class="sep"></li>
-                                <li style="width: 200px;"><input type="text" name="phone" value="{{request.phone}}"/></li>
-                            </ul>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-
-                    <div class="rowElem">
-                        <label>{{ 'Currency'|trans }}:</label>
-                        <div class="formRight">
-                            {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'Select currency') }}
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-
-                    <div class="rowElem">
-                        <label>{{ 'Password'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="password" name="password" value="" required="required"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-
-                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
-                </fieldset>
-            </form>
-        </div>
-
-        <div class="tab_content nopadding" id="tab-groups">
-            <table class="tableStatic wide">
-                <thead>
-                    <tr>
-                        <td>{{ 'Title'|trans }}</td>
-                        <td width="13%">{{ 'Actions'|trans }}</td>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {% for id,group in admin.client_group_get_pairs %}
-                    <tr>
-                        <td>{{ group }}</td>
-                        <td>
-                            <a class="btn14" href="{{ 'client/group'|alink }}/{{ id }}"><img src="images/icons/dark/pencil.png" alt=""></a>
-                            <a class="btn14 api-link bb-rm-tr" data-api-reload="1" data-api-confirm="Are you sure?" href="{{ 'api/admin/client/group_delete'|link({'id' : id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="2">{{ 'The list is empty'|trans }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-
-        <div class="tab_content nopadding" id="tab-new-group">
-
-            <form method="post" action="{{ 'api/admin/client/group_create'|link }}" class="mainForm api-form save" data-api-redirect="{{ 'client'|alink }}">
-                <fieldset>
-                    <div class="rowElem noborder">
-                        <label>{{ 'Title'|trans }}:</label>
-                        <div class="formRight noborder">
-                            <input type="text" name="title" value="{{request.title}}" required="required"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-
-                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
-                </fieldset>
-            </form>
-        </div>
-
     </div>
-</div>
-
 {% endblock %}
 
-{% block js %}
-
-
-
-{% endblock %}
+{% block js %}{% endblock %}

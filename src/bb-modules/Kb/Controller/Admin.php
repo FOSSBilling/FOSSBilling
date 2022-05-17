@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -40,7 +41,7 @@ class Admin implements \Box\InjectionAwareInterface
                 'location' => 'kb',
                 'label' => 'Knowledge Base',
                 'uri' => $this->di['url']->adminLink('kb'),
-                'class' => 'support',
+                'class' => 'info',
                 'sprite_class' => 'dark-sprite-icon sprite-docs',
             ],
             'subpages' => [

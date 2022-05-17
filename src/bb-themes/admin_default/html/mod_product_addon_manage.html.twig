@@ -1,74 +1,87 @@
-{% extends "layout_default.html.twig" %}
+{% extends 'layout_default.html.twig' %}
+
 {% set active_menu = 'products' %}
+
 {% block meta_title %}Product addon management{% endblock %}
 
 {% block breadcrumbs %}
-<ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
-    <li><a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a></li>
-    <li><a href="{{ 'product/addons'|alink }}">{{ 'Addons'|trans }}</a></li>
-    <li class="lastB">{{product.title}}</li>
-</ul>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'product/addons'|alink }}">{{ 'Addons'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ product.title }}</li>
+    </ol>
 {% endblock %}
 
 {% block content %}
-<div class="widget">
-
-    <div class="head">
+<div class="card">
+    <div class="card-body">
         <h5>{{ 'Edit product addon'|trans }}</h5>
+        <form method="post" action="{{ 'api/admin/product/addon_update'|link }}" class="api-form save" data-api-msg="{{ 'Addon updated'|trans }}">
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
+                <div class="col">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" id="statusEnabled" name="status" value="enabled"{% if product.status == 'enabled' %} checked{% endif %}>
+                        <label class="form-check-label" for="statusEnabled">{{ 'Enabled'|trans }}</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" id="statusDisabled" name="status" value="disabled"{% if product.status == 'disabled' %} checked{% endif %}>
+                        <label class="form-check-label" for="statusDisabled">{{ 'Disabled'|trans }}</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Activation'|trans }}:</label>
+                <div class="col">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" id="setupAfterPlaced" name="setup" value="after_order"{% if product.setup == 'after_order' %} checked{% endif %}>
+                        <label class="form-check-label" for="setupAfterPlaced">{{ 'After order is placed'|trans }}</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" id="setupAfterReceived" name="setup" value="after_payment"{% if product.setup == 'after_payment' %} checked{% endif %}>
+                        <label class="form-check-label" for="setupAfterReceived">{{ 'After payment is received'|trans }}</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" id="setupManual" name="setup" value="manual"{% if product.setup == 'manual' %} checked{% endif %}>
+                        <label class="form-check-label" for="setupManual">{{ 'Manual activation'|trans }}</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Icon'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="icon_url" value="{{ product.icon_url }}">
+                </div>
+            </div>
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="title" value="{{ product.title }}" required>
+                </div>
+            </div>
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Description'|trans }}:</label>
+                <div class="col">
+                    <textarea class="form-control" name="description" rows="5">{{ product.description }}</textarea>
+                </div>
+            </div>
+
+            {% include "partial_pricing.html.twig" with { 'product': product } %}
+
+            <input type="hidden" name="id" value="{{ product.id }}">
+            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+        </form>
     </div>
-
-<form method="post" action="{{ 'api/admin/product/addon_update'|link }}" class="mainForm api-form save" data-api-msg="Addon updated">
-    <fieldset>
-        <div class="rowElem">
-            <label>{{ 'Status'|trans }}:</label>
-            <div class="formRight">
-                <input type="radio" name="status" value="enabled"{% if product.status == 'enabled' %} checked="checked"{% endif %}/><label>Enabled</label>
-                <input type="radio" name="status" value="disabled"{% if product.status == 'disabled' %} checked="checked"{% endif %} /><label>Disabled</label>
-            </div>
-            <div class="fix"></div>
-        </div>
-        <div class="rowElem">
-            <label>{{ 'Activation'|trans }}:</label>
-            <div class="formRight">
-                <input type="radio" name="setup" value="after_order"{% if product.setup == 'after_order' %} checked="checked"{% endif %}/><label>After order is placed</label>
-                <input type="radio" name="setup" value="after_payment"{% if product.setup == 'after_payment' %} checked="checked"{% endif %} /><label>After payment is received</label>
-                <input type="radio" name="setup" value="manual"{% if product.setup == 'manual' %} checked="checked"{% endif %} /><label>Manual activation</label>
-            </div>
-            <div class="fix"></div>
-        </div>
-
-        <div class="rowElem">
-            <label>{{ 'Icon'|trans }}:</label>
-            <div class="formRight">
-                <input type="text" name="icon_url" value="{{product.icon_url}}" placeholder=""/>
-            </div>
-            <div class="fix"></div>
-        </div>
-        <div class="rowElem">
-            <label>{{ 'Title'|trans }}:</label>
-            <div class="formRight">
-                <input type="text" name="title" value="{{product.title}}" required="required" placeholder=""/>
-            </div>
-            <div class="fix"></div>
-        </div>
-        <div class="rowElem">
-            <label>{{ 'Description'|trans }}:</label>
-            <div class="formRight">
-                <textarea name="description" cols="5" rows="5">{{product.description}}</textarea>
-            </div>
-            <div class="fix"></div>
-        </div>
-
-        {% include "partial_pricing.html.twig" with {'product': product} %}
-
-        <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-    </fieldset>
-
-    <input type="hidden" name="id" value="{{ product.id }}" />
-</form>
 </div>
-
-
-
 {% endblock %}

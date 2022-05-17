@@ -1,128 +1,177 @@
-{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% import "macro_functions.html.twig" as mf %}
+{% import 'macro_functions.html.twig' as mf %}
 
 {% block breadcrumbs %}
-<ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
-    <li><a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a></li>
-    <li class="lastB">{{ 'Canned responses'|trans }}</li>
-</ul>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Canned responses'|trans }}</li>
+    </ol>
 {% endblock %}
 
 {% set active_menu = 'support' %}
 {% block meta_title %}Canned responses{% endblock %}
 
 {% block content %}
-<div class="widget simpleTabs">
-    <ul class="tabs">
-        <li><a href="#tab-index">{{ 'Canned responses'|trans }}</a></li>
-        <li><a href="#tab-new">{{ 'New response'|trans }}</a></li>
-        <li><a href="#tab-new-category">{{ 'New category'|trans }}</a></li>
-        <li><a href="#tab-categories">{{ 'Categories'|trans }}</a></li>
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Canned responses'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New response'|trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Categories'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-category" data-bs-toggle="tab">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New category'|trans }}
+            </a>
+        </li>
     </ul>
 
-    <div class="tabs_container">
-
-        <div class="fix"></div>
-        <div class="tab_content nopadding" id="tab-index">
-
-        {{ mf.table_search }}
-        <table class="tableStatic wide">
-            <thead>
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            {% include '_search.html.twig' %}
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Title'|trans }}</th>
+                        <th class="text-center">{{ 'Category'|trans }}</th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% set responses = admin.support_canned_get_list({ 'per_page': 90, 'page': request.page }|merge(request)) %}
+                {% for i, response in responses.list %}
                 <tr>
-                    <td>{{ 'Title'|trans }}</td>
-                    <td>{{ 'Category'|trans }}</td>
-                    <td style="width: 13%">&nbsp;</td>
+                    <td>
+                        <a href="{{ '/support/canned'|alink }}/{{ response.id }}">{{ response.title }}</a>
+                    </td>
+                    <td class="text-center">
+                        <a href="{{ '/support/canned-category'|alink }}/{{ response.category.id }}">{{ response.category.title }}</a>
+                    </td>
+                    <td>
+                        <a class="btn btn-icon" href="{{ '/support/canned'|alink }}/{{ response.id }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <use xlink:href="#edit" />
+                            </svg>
+                        </a>
+                        <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/support/canned_delete'|link({ 'id': response.id }) }}" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <use xlink:href="#delete" />
+                            </svg>
+                        </a>
+                    </td>
                 </tr>
-            </thead>
-
-            <tbody>
-            {% set responses = admin.support_canned_get_list({"per_page":90, "page":request.page}|merge(request)) %}
-            {% for i, response in responses.list %}
-            <tr>
-                <td>{{ response.title }}</td>
-                <td><a href="{{ '/support/canned-category'|alink }}/{{response.category.id}}">{{response.category.title}}</a></td>
-                <td class="actions">
-                    <a class="bb-button btn14" href="{{ '/support/canned'|alink }}/{{response.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
-                    <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/support/canned_delete'|link({'id' : response.id}) }}" data-api-redirect="{{ 'support/canned-responses'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="3">
-                    {{ 'The list is empty'|trans }}
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% include "partial_pagination.html.twig" with { 'list': responses, 'url': 'support/canned-responses' } %}
+                {% else %}
+                <tr>
+                    <td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% include '_pagination.html.twig' with { 'list': responses, 'url': 'support/canned-responses' } %}
         </div>
 
-        <div class="tab_content nopadding" id="tab-new">
-            <form method="post" action="{{ 'api/admin/support/canned_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
-                <fieldset>
-                    <div class="rowElem noborder">
-                        <label>{{ 'Category'|trans }}:</label>
-                        <div class="formRight">
+        <div class="tab-pane fade" id="tab-new" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'api/admin/support/canned_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
+                        <div class="col">
                             {{ mf.selectbox('category_id', admin.support_canned_category_pairs, '', 1) }}
                         </div>
-                        <div class="fix"></div>
                     </div>
-                    <div class="rowElem">
-                        <label>{{ 'Title'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="title" value="{{ request.title }}" required="required" placeholder=""/>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="title" value="{{ request.title }}" required>
                         </div>
-                        <div class="fix"></div>
                     </div>
-                    
-                    <div class="rowElem">
-                        <label>{{ 'Content'|trans }}</label>
-                        <div class="formRight">
-                            <textarea name="content" cols="5" rows="10">{{ request.content }}</textarea>
+
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}</label>
+                        <div class="col">
+                            <textarea class="form-control" name="content" rows="10">{{ request.content }}</textarea>
                         </div>
-                        <div class="fix"></div>
                     </div>
-                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
-                </fieldset>
-            </form>
+
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
+                </form>
+            </div>
         </div>
 
-        <div class="tab_content nopadding" id="tab-new-category">
-            <form method="post" action="{{ 'api/admin/support/canned_category_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
-                <fieldset>
-                    <div class="rowElem noborder">
-                        <label>{{ 'Title'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
-                </fieldset>
-            </form>
-        </div>
-        
-        <div class="tab_content nopadding" id="tab-categories">
-            <table class="tableStatic wide">
+        <div class="tab-pane fade" id="tab-categories" role="tabpanel">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Title'|trans }}</th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
                 <tbody>
                     {% for cat_id, cat_title in admin.support_canned_category_pairs %}
-                    <tr {% if loop.first %}class="noborder"{% endif %}>
-                        <td>{{cat_title}}</td>
-                        <td style="width:13%">
-                            <a class="bb-button btn14" href="{{ '/support/canned-category'|alink }}/{{cat_id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
-                            <a class="bb-button btn14 api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/support/canned_category_delete'|link({'id' : cat_id}) }}" data-api-redirect="{{ 'support/canned-responses'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                    <tr>
+                        <td>
+                            <a href="{{ '/support/canned-category'|alink }}/{{ cat_id }}">{{ cat_title }}</a>
+                        </td>
+                        <td>
+                            <a class="btn btn-icon" href="{{ '/support/canned-category'|alink }}/{{ cat_id }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon api-link"
+                                href="{{ 'api/admin/support/canned_category_delete'|link({ 'id': cat_id }) }}"
+                                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                data-api-redirect="{{ 'support/canned-responses'|alink }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <use xlink:href="#delete" />
+                                </svg>
+                            </a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="3">{{ 'The list is empty'|trans }}</td>
+                        <td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+
+        <div class="tab-pane fade" id="tab-new-category" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'api/admin/support/canned_category_create'|link }}" class="api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="title" value="{{ request.title }}" required>
+                        </div>
+                    </div>
+
+                    <input type="submit" value="{{ 'Create'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
         </div>
     </div>
 </div>

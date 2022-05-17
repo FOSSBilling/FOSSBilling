@@ -1,7 +1,10 @@
-{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
-{% import "macro_functions.html.twig" as mf %}
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
 {% set active_menu = 'invoice' %}
-{% block meta_title %}Subscription {{ subscription.sid }}{% endblock %}
+
+{% block meta_title %}{{ 'Subscription'|trans }} {{ subscription.sid }}{% endblock %}
 
 {% block content %}
 
@@ -21,7 +24,9 @@
                 <tbody>
                     <tr class="noborder">
                         <td>{{ 'Client'|trans }}</td>
-                        <td><a href="{{ 'client/manage'|alink }}/{{subscription.client.id}}">{{ subscription.client.first_name }} {{ subscription.client.last_name }}</a></td>
+                        <td>
+                            <a href="{{ 'client/manage'|alink }}/{{ subscription.client.id }}">{{ subscription.client.first_name }} {{ subscription.client.last_name }}</a>
+                        </td>
                     </tr>
 
                     <tr>
@@ -31,12 +36,12 @@
 
                     <tr>
                         <td>{{ 'Payment gateway'|trans }}</td>
-                        <td>{{subscription.gateway.title}}</td>
+                        <td>{{ subscription.gateway.title }}</td>
                     </tr>
 
                     <tr>
                         <td>{{ 'Subscription ID on payment gateway'|trans }}</td>
-                        <td>{{subscription.sid|default('-')}}</td>
+                        <td>{{ subscription.sid|default('-') }}</td>
                     </tr>
 
                     <tr>
@@ -46,13 +51,13 @@
 
                     <tr>
                         <td>{{ 'Created at'|trans }}</td>
-                        <td>{{subscription.created_at|date('l, d F Y')}}</td>
+                        <td>{{ subscription.created_at|date('l, d F Y') }}</td>
                     </tr>
 
                     {% if subscription.created_at != subscription.updated_at %}
                     <tr>
                         <td>{{ 'Updated at'|trans }}</td>
-                        <td>{{subscription.updated_at|date('l, d F Y')}}</td>
+                        <td>{{ subscription.updated_at|date('l, d F Y') }}</td>
                     </tr>
                     {% endif %}
                  </tbody>
@@ -61,8 +66,9 @@
                      <tr>
                          <td colspan="2">
                             <div class="aligncenter">
-                                <a class="btn55 mr10 api-link" href="{{ 'api/admin/invoice/subscription_delete'|link({'id' : subscription.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'invoice/subscriptions'|alink }}">
-                                    <img src="images/icons/middlenav/trash.png" alt=""><span>{{ 'Delete'|trans }}</span>
+                                <a class="btn55 mr10 api-link" href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice/subscriptions'|alink }}">
+                                    <img src="images/icons/middlenav/trash.png" alt="">
+                                    <span>{{ 'Delete'|trans }}</span>
                                 </a>
                             </div>
                          </td>
@@ -84,15 +90,17 @@
                     <div class="rowElem">
                         <label>{{ 'Subscription ID on payment gateway'|trans }}:</label>
                         <div class="formRight">
-                            <input type="text" name="sid" value="{{subscription.sid}}" required="required" placeholder=""/>
+                            <input type="text" name="sid" value="{{subscription.sid}}" required>
                         </div>
                         <div class="fix"></div>
                     </div>
                     <div class="rowElem">
                         <label>{{ 'Status'|trans }}:</label>
                         <div class="formRight">
-                            <input type="radio" name="status" value="active" {% if subscription.status == 'active' %} checked="checked"{% endif %}/><label>Active</label>
-                            <input type="radio" name="status" value="canceled" {% if subscription.status == 'canceled' %} checked="checked"{% endif %}/><label>Canceled</label>
+                            <input type="radio" name="status" value="active"{% if subscription.status == 'active' %} checked{% endif %}>
+                            <label>Active</label>
+                            <input type="radio" name="status" value="canceled"{% if subscription.status == 'canceled' %} checked{% endif %}>
+                            <label>Canceled</label>
                         </div>
                         <div class="fix"></div>
                     </div>
@@ -103,11 +111,11 @@
                         </div>
                         <div class="fix"></div>
                     </div>
-                    
+
                     <div class="rowElem">
                         <label>{{ 'Amount'|trans }}:</label>
                         <div class="formRight">
-                            <input type="text" name="amount" value="{{subscription.amount}}" required="required" placeholder=""/>
+                            <input type="text" name="amount" value="{{ subscription.amount }}" required>
                         </div>
                         <div class="fix"></div>
                     </div>
@@ -119,9 +127,9 @@
                         </div>
                         <div class="fix"></div>
                     </div>
-                    
-                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-                    <input type="hidden" name="id" value="{{ subscription.id }}" />
+
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm">
+                    <input type="hidden" name="id" value="{{ subscription.id }}">
                 </fieldset>
             </form>
         </div>
@@ -129,5 +137,4 @@
 
     <div class="fix"></div>
 </div>
-
 {% endblock %}

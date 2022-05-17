@@ -68,13 +68,17 @@ var bb = {
   },
   load: function (url, params) {
     var r = '';
+
     $.ajax({
       url: url,
       data: params,
       type: "GET",
-      success: function (data) { r = data; },
+      success: function (data) {
+        r = data;
+      },
       async: false
     });
+
     return r;
   },
   _afterComplete: function (obj, result) {
@@ -86,11 +90,13 @@ var bb = {
 
     if (obj.hasClass('bb-rm-tr')) {
       obj.closest('tr').addClass('highlight').fadeOut();
+
       return;
     }
 
     if (obj.attr('data-api-reload') !== undefined) {
       this.reload();
+
       return;
     }
 
@@ -99,7 +105,8 @@ var bb = {
     }
 
     if (obj.attr('data-api-msg') !== undefined) {
-      this.msg(obj.attr('data-api-msg'), 'success');
+      // this.msg(obj.attr('data-api-msg'), 'success');
+      boxbilling.message(obj.attr('data-api-msg'), 'success');
 
       return;
     }
@@ -125,9 +132,14 @@ var bb = {
     $("a.api-link").bind('click', function () {
       var obj = $(this);
       if (obj.attr('data-api-confirm') !== undefined) {
-        jConfirm(obj.attr('data-api-confirm'), 'Confirm your action', function (r) {
-          if (r) bb.get(obj.attr('href'), {}, function (result) { return bb._afterComplete(obj, result); });
-        });
+        // jConfirm(obj.attr('data-api-confirm'), 'Confirm your action', function (r) {
+        //   if (r) bb.get(obj.attr('href'), {}, function (result) { return bb._afterComplete(obj, result); });
+        // });
+        if (confirm(obj.attr('data-api-confirm'))) {
+          bb.get(obj.attr('href'), {}, function (result) {
+            return bb._afterComplete(obj, result);
+          });
+        }
       } else if (obj.attr('data-api-prompt') !== undefined) {
         jPrompt(obj.attr('data-api-prompt-text'), obj.attr('data-api-prompt-default'), obj.attr('data-api-prompt-title'), function (r) {
           if (r) {
@@ -280,7 +292,8 @@ $(function () {
   });
 
   //===== Form elements styling =====//
-  $(".mainForm select, .mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
+  // $(".mainForm select, .mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
+  $(".mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
 
   //===== Collapsible elements management =====//
   $('.exp').collapsible({
@@ -315,20 +328,17 @@ const boxbilling = {
   message: (message, type = 'info') => {
     switch (type) {
       case 'error':
-        color = 'red';
-        title = 'Error';
+        color = 'danger';
         break;
       case 'warning':
-        color = 'yellow';
-        title = 'Warning';
+        color = 'warning';
         break;
       default:
-        color = 'teal';
-        title = 'Info';
+        color = 'primary';
     }
 
     const container = document.createElement('div');
-    container.classList.add('fixed', 'w-full', 'md:w-1/2', 'xl:w-1/4', 'bottom-0', 'right-0', 'p-5');
+    container.classList.add('position-fixed', 'bottom-0', 'end-0', 'p-3');
     container.style.zIndex = 1070;
 
     const element = document.createElement('div');
@@ -339,25 +349,24 @@ const boxbilling = {
     element.setAttribute('aria-atomic', 'true');
 
     element.innerHTML = `
-    <div class="bg-${color}-100 border-t-4 border-${color}-500 rounded text-${color}-900 px-4 py-3 shadow-md" role="alert">
-      <div class="flex">
-        <div class="py-1">
-          <svg class="fill-current h-6 w-6 text-${color}-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z" /></svg>
-        </div>
-        <div>
-          <p class="font-bold">${title}</p>
-          <p class="text-sm">${message}</p>
-        </div>
-      </div>
-    </div>
-    `;
+            <div class="toast-header">
+                <span class="p-2 border border-light bg-${color} rounded-circle me-2"></span>
+                <strong class="me-auto">System message</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">${message}</div>
+        `;
+
+    element.addEventListener('hidden.bs.toast', () => {
+      container.remove();
+    });
+
+    const toast = new bootstrap.Toast(element);
 
     container.appendChild(element);
 
     document.querySelector('body').appendChild(container);
 
-    setTimeout(() => {
-      container.remove();
-    }, 5000);
+    toast.show();
   }
 };

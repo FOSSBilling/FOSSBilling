@@ -1,6 +1,6 @@
-{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% import "macro_functions.html.twig" as mf %}
+{% import 'macro_functions.html.twig' as mf %}
 
 {% block meta_title %}{{ 'Support tickets'|trans }}{% endblock %}
 
@@ -9,281 +9,327 @@
 {% block top_content %}
 
 {% if request.show_filter %}
-<div class="widget filterWidget">
-    <div class="head"><h5 class="iMagnify">{{ 'Filter support tickets'|trans }}</h5></div>
-    <div class="body nopadding">
-
-        <form method="get" action="" class="mainForm">
-            <input type="hidden" name="_url" value="{{ request._url }}" />
-            <fieldset>
-                <div class="rowElem noborder">
-                    <label>{{ 'Client ID'|trans }}</label>
-                    <div class="formRight">
-                        <input type="text" name="client_id" value="{{ request.client_id }}">
+    <section class="card mb-3">
+        <div class="card-body">
+            <h5>{{ 'Filter support tickets'|trans }}</h5>
+            <form method="get">
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Client ID'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" name="client_id" value="{{ request.client_id }}">
                     </div>
-                    <div class="fix"></div>
                 </div>
-
-                <div class="rowElem">
-                    <label>{{ 'Order ID'|trans }}</label>
-                    <div class="formRight">
-                        <input type="text" name="order_id" value="{{ request.order_id }}">
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Order ID'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" name="order_id" value="{{ request.order_id }}">
                     </div>
-                    <div class="fix"></div>
                 </div>
-
-                <div class="rowElem">
-                    <label>{{ 'Ticket subject'|trans }}</label>
-                    <div class="formRight">
-                        <input type="text" name="subject" value="{{ request.subject }}">
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Ticket subject'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" name="subject" value="{{ request.subject }}">
                     </div>
-                    <div class="fix"></div>
                 </div>
-
-                <div class="rowElem">
-                    <label>{{ 'Ticket messages'|trans }}</label>
-                    <div class="formRight">
-                        <input type="text" name="content" value="{{ request.content }}">
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Ticket messages'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" name="content" value="{{ request.content }}">
                     </div>
-                    <div class="fix"></div>
                 </div>
-
-                <div class="rowElem">
-                    <label>{{ 'Priority'|trans }}</label>
-                    <div class="formRight">
-                        <input type="text" name="priority" value="{{ request.priority }}">
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Priority'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" name="priority" value="{{ request.priority }}">
                     </div>
-                    <div class="fix"></div>
                 </div>
-
-                <div class="rowElem">
-                    <label>{{ 'Status'|trans }}</label>
-                        <div class="formRight">
-                            {{ mf.selectbox('status', admin.support_ticket_get_statuses({"titles":1}), request.status, 0, "All statuses") }}
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
+                    <div class="col">
+                        {{ mf.selectbox('status', admin.support_ticket_get_statuses({ 'titles': 1 }), request.status, 0, "All statuses") }}
+                    </div>
+                </div>
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Help desk'|trans }}:</label>
+                    <div class="col">
+                        {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, request.support_helpdesk_id, 0, "All help desks") }}
+                    </div>
+                </div>
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Created at'|trans }}</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <input class="form-control" type="date" name="date_from" value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker">
+                            <span class="input-group-text">-</span>
+                            <input class="form-control" type="date" name="date_to" value="{% if request.date_to %}{{ request.date_to|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker">
                         </div>
-                    <div class="fix"></div>
-                </div>
-
-                <div class="rowElem">
-                    <label>{{ 'Help desk'|trans }}:</label>
-                    <div class="formRight">
-                            {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, request.support_helpdesk_id, 0, "All help desks") }}
                     </div>
-                    <div class="fix"></div>
                 </div>
 
-                <div class="rowElem">
-                    <label>{{ 'Created at'|trans }}</label>
-                    <div class="formRight moreFields">
-                        <ul>
-                            <li style="width: 100px"><input type="text" name="date_from" value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
-                            <li class="sep">-</li>
-                            <li style="width: 100px"><input type="text" name="date_to" value="{% if request.date_to %}{{ request.date_to|date('Y-m-d') }}{%endif%}" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"/></li>
-                        </ul>
-                    </div>
-                    <div class="fix"></div>
+                <input type="hidden" name="_url" value="{{ request._url }}">
+                <input type="hidden" name="show_filter" value="1">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary w-75" type="submit">{{ 'Filter'|trans }}</button>
+                    <a class="btn btn-danger w-25" href="{{ request._url }}?show_filter=1">{{ 'Reset'|trans }}</a>
                 </div>
-
-                <input type="hidden" name="show_filter" value="1" />
-                <input type="submit" value="{{ 'Filter'|trans }}" class="greyishBtn submitForm" />
-            </fieldset>
-        </form>
-        <div class="fix"></div>
-    </div>
-</div>
+            </form>
+        </div>
+    </section>
 {% else %}
-{% set statuses = admin.support_ticket_get_statuses %}
-<div class="stats">
-    <ul>
-        <li>
-            <a href="{{ 'support'|alink({'status' : 'open'}) }}" class="count green" title="">{{ statuses.open }}</a>
-            <span>{{ 'Tickets waiting for staff reply'|trans }}</span>
-        </li>
-        <li>
-            <a href="{{ 'support'|alink({'status' : 'on_hold'}) }}" class="count blue" title="">{{ statuses.on_hold }}</a>
-            <span>{{ 'Tickets waiting for client reply'|trans }}</span>
-        </li>
-        <li>
-            <a href="{{ 'support'|alink({'status' : 'closed'}) }}" class="count grey" title="">{{ statuses.closed }}</a>
-            <span>{{ 'Solved tickets'|trans }}</span>
-        </li>
-        <li class="last">
-            <a href="{{ 'support'|alink }}" class="count grey" title="">{{ statuses.open + statuses.on_hold + statuses.closed }}</a>
-            <span>{{ 'Total'|trans }}</span>
-        </li>
-    </ul>
-    <div class="fix"></div>
-</div>
-{% endif %}
-
+    {% set statuses = admin.support_ticket_get_statuses %}
+    <section class="row row-cards mb-3">
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'support'|alink({ 'status': 'open' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-danger text-white avatar">{{ statuses.open }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Tickets waiting for staff reply'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'support'|alink({ 'status': 'on_hold' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-warning text-white avatar">{{ statuses.on_hold }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Tickets waiting for client reply'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'support'|alink({ 'status': 'closed' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-secondary text-white avatar">{{ statuses.closed }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Solved tickets'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'support'|alink }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-blue text-white avatar">{{ statuses.open + statuses.on_hold + statuses.closed }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Total'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </section>
+    {% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="widget simpleTabs">
-    <ul class="tabs">
-        <li><a href="#tab-index">{{ 'Support tickets'|trans }}</a></li>
-        <li><a href="#tab-new">{{ 'New ticket'|trans }}</a></li>
-        <li><a href="#tab-email">{{ 'New email'|trans }}</a></li>
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Support tickets'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New ticket'|trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-email" data-bs-toggle="tab">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New email'|trans }}
+            </a>
+        </li>
     </ul>
 
-    <div class="tabs_container">
-        <div class="fix"></div>
-        <div class="tab_content nopadding" id="tab-index">
-            {{ mf.table_search }}
-            <table class="tableStatic wide">
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
+            {% include '_search.html.twig' %}
+            <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
-                        <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
-                        <td colspan="2">{{ 'Client'|trans }}</td>
-                        <td>{{ 'Subject'|trans }}</td>
-                        <td>{{ 'Status'|trans }}</td>
-                        <td>{{ 'Helpdesk'|trans }}</td>
-                        <td style="width: 13%">&nbsp;</td>
+                        <th class="w-1">
+                            <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
+                        </th>
+                        <th>{{ 'Client'|trans }}</th>
+                        <th>{{ 'Subject'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                        <th>{{ 'Helpdesk'|trans }}</th>
+                        <th class="w-1"></th>
                     </tr>
                 </thead>
-
                 <tbody>
-                    {% set tickets = admin.support_ticket_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+                    {% set tickets = admin.support_ticket_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
                     {% for i, ticket in tickets.list %}
                     <tr class="priority_{{ ticket.priority }}">
-                        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ ticket.id }}"/></td>
-                        <td style="width:5%">
-                            <a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}"><img src="{{ ticket.client.email|gravatar }}?size=20" alt="gravatar" /></a>
-                        </td>
-                        <td style="width:20%">
-                            <a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}">{{ ticket.client.first_name|truncate(1, null, '.') }} {{ ticket.client.last_name }}</a>
+                        <td>
+                            <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ ticket.id }}">
                         </td>
                         <td>
-                            <a href="{{ 'support/ticket'|alink }}/{{ticket.id}}#reply-box">#{{ ticket.id }} - {{ ticket.subject|truncate(50) }} ({{ ticket.replies }})</a>
-                            <br/>
-                            {% if ticket.notes|length %}
-                            <a href="#" rel="{{ ticket.id }}" title="{{ ticket.notes|length }}" class="show-notes">
-                                <img src="images/icons/dark/notebook.png" alt="" />
-                            </a>
-                            {% endif %}
-                            {{ ticket.updated_at|timeago }} {{ 'ago'|trans }}
+                            <div class="d-flex py-1 align-items-center">
+                                <a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}">
+                                    <span class="avatar me-2" style="background-image: url({{ ticket.client.email|gravatar }}?size=40)"></span>
+                                </a>
+                                <div class="flex-fill">
+                                    <div class="font-weight-medium">
+                                        <a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}">{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a>
+                                    </div>
+                                    <div class="text-muted">{{ ticket.client.email }}</div>
+                                </div>
+                            </div>
                         </td>
-                        <td>{{ mf.status_name(ticket.status) }}</td>
+                        <td>
+                            <div>
+                                <a href="{{ 'support/ticket'|alink }}/{{ ticket.id }}#reply-box">#{{ ticket.id }} - {{ ticket.subject|truncate(50) }} ({{ ticket.replies }})</a>
+                            </div>
+                            {% if ticket.notes|length %}
+                                <a href="#" rel="{{ ticket.id }}" title="{{ ticket.notes|length }}" class="show-notes">
+                                    <img src="images/icons/dark/notebook.png" alt="" />
+                                </a>
+                            {% endif %}
+                            <span class="text-muted">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
+                        </td>
+                        <td>
+                            {% if ticket.status == 'open' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if ticket.status == 'on_hold' %}
+                                <span class="badge bg-warning me-1"></span>
+                            {% endif %}
+                            {% if ticket.status == 'closed' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(ticket.status) }}</td>
                         <td>{{ ticket.helpdesk.name }}</td>
-                        <td class="actions">
-                            <a class="bb-button btn14" href="{{ '/support/ticket'|alink }}/{{ticket.id}}#reply-box"><img src="images/icons/dark/pencil.png" alt=""></a>
-                            <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support'|alink }}" href="{{ 'api/admin/support/ticket_delete'|link({'id' : ticket.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                        <td>
+                            <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}#reply-box">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon api-link"
+                                href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}"
+                                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                data-api-redirect="{{ 'support'|alink }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <use xlink:href="#delete" />
+                                </svg>
+                            </a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6">{{ 'The list is empty'|trans }}</td>
+                        <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            {% include "partial_batch_delete.html.twig" with { 'action': 'admin/support/batch_delete' } %}
-            {% include "partial_pagination.html.twig" with { 'list': tickets, 'url': 'support' } %}
 
+            <div class="card-footer d-flex align-items-center">
+                {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/support/batch_delete' } %}
+                {% include '_pagination.html.twig' with { 'list': tickets, 'url': 'support' } %}
+            </div>
         </div>
 
-        <div class="tab_content nopadding" id="tab-new">
-            <div class="help">
-                <h3>{{ 'Open ticket for existing client'|trans }}</h3>
-            </div>
-
-            <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" class="mainForm api-form" data-api-redirect="{{ 'support'|alink }}">
-                <fieldset>
+        <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
+            <div class="card-body">
+                <h5>{{ 'Open ticket for existing client'|trans }}</h5>
+                <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" class="api-form" data-api-redirect="{{ 'support'|alink }}">
                     {% if not request.client_id %}
-                    <div class="rowElem noborder">
-                        <label>{{ 'Client'|trans }}</label>
-                        <div class="formRight noborder">
-                            <input type="text" id="client_selector" placeholder="{{ 'Start typing clients name, email or ID'|trans }}"/>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Client'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control js-autocomplete" type="text" placeholder="{{ 'Start typing clients name, email or ID'|trans }}">
                         </div>
-                        <div class="fix"></div>
                     </div>
                     {% endif %}
-                    <div class="rowElem">
-                        <label>{{ 'Help desk'|trans }}</label>
-                        <div class="formRight">
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Help desk'|trans }}</label>
+                        <div class="col">
                             {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, '', 1) }}
                         </div>
-                        <div class="fix"></div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="subject" value="{{ ticket.subject }}" required>
+                        </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Message'|trans }}</label>
+                        <div class="col">
+                            <textarea class="form-control" name="content" rows="10" required id="msg-area-{{ message.id }}">{{ profile.signature }}</textarea>
+                        </div>
                     </div>
 
-                    <div class="rowElem">
-                        <label>{{ 'Subject'|trans }}</label>
-                        <div class="formRight">
-                            <input type="text" name="subject" value="{{ticket.subject}}" required="required"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-
-                    <div class="rowElem">
-                        <label>{{ 'Message'|trans }}</label>
-                        <div class="formRight">
-                            <textarea name="content" cols="5" rows="10" required="required" id="msg-area-{{message.id}}">
-                                {{ profile.signature }}
-                            </textarea>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    
-                    <input type="hidden" name="client_id" value="{{ request.client_id }}" id="client_id"/>
-                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
-                </fieldset>
-            </form>
+                    <input type="hidden" name="client_id" value="{{ request.client_id }}" id="client_id">
+                    <button type="submit" class="btn btn-primary w-100">{{ 'Create'|trans }}</button>
+                </form>
+            </div>
         </div>
 
-        <div class="tab_content nopadding" id="tab-email">
-            <div class="help">
-                <h3>{{ 'Open public ticket for non client'|trans }}</h3>
+        <div class="tab-pane fade" id="tab-email" role="tabpanel" aria-labelledby="email-tab">
+            <div class="card-body">
+                <h5>{{ 'Open public ticket for non client'|trans }}</h5>
+                <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" class="mainForm api-form" data-api-jsonp="onAfterPublicTicketCreate">
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Receivers name'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="name" required placeholder="{{ 'John Smith'|trans }}">
+                        </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="email" required placeholder="{{ 'user@domail.com'|trans }}">
+                        </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="subject" value="{{ ticket.subject }}" required placeholder="{{ 'Email subject'|trans }}">
+                        </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Message'|trans }}</label>
+                        <div class="col">
+                            <textarea class="form-control" name="message" rows="10" required>{{ profile.signature }}</textarea>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="client_id" value="{{ request.client_id }}" id="client_id">
+                    <button type="submit" class="btn btn-primary w-100">{{ 'Create'|trans }}</button>
+                </form>
             </div>
-
-            <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" class="mainForm api-form" data-api-jsonp="onAfterPublicTicketCreate">
-                <fieldset>
-                    <div class="rowElem noborder">
-                        <label>{{ 'Receivers name'|trans }}</label>
-                        <div class="formRight noborder">
-                            <input type="text" name="name" required="required" placeholder="{{ 'John Smith'|trans }}"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    
-                    <div class="rowElem">
-                        <label>{{ 'Email'|trans }}</label>
-                        <div class="formRight noborder">
-                            <input type="text" name="email" required="required" placeholder="{{ 'to@gmail.com'|trans }}"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-
-                    <div class="rowElem">
-                        <label>{{ 'Subject'|trans }}</label>
-                        <div class="formRight">
-                            <input type="text" name="subject" value="{{ ticket.subject }}" required="required" placeholder="{{ 'Email subject'|trans }}"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-
-                    <div class="rowElem">
-                        <label>{{ 'Message'|trans }}</label>
-                        <div class="formRight">
-                            <textarea name="message" cols="5" rows="10" required="required">
-                                {{ profile.signature }}
-                            </textarea>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    
-                    <input type="hidden" name="client_id" value="{{ request.client_id }}" id="client_id"/>
-                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
-                </fieldset>
-            </form>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript">
+<script>
 $(function() {
-	$('#client_selector').autocomplete({
+	$('.js-autocomplete').autocomplete({
         source: function( request, response ) {
             $.ajax({
                 url: bb.restUrl('admin/client/get_pairs'),
@@ -304,9 +350,9 @@ $(function() {
         },
         minLength: 1,
         select: function( event, ui ) {
-            $("#client_selector").val(ui.item.label);
+            $(".js-autocomplete").val(ui.item.label);
             $("#client_id").val(ui.item.value);
-            
+
             return false;
         }
     });
@@ -320,7 +366,7 @@ $(function() {
             });
             jAlert(html, "{{ 'Notes'|trans }}");
         });
-        
+
         return false;
     });
 });

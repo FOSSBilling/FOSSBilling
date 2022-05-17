@@ -1,54 +1,59 @@
-{% extends "layout_default.html.twig" %}
+{% extends 'layout_default.html.twig' %}
 
 {% block meta_title %}Client area languages{% endblock %}
 
 {% set active_menu = 'extensions' %}
 
 {% block content %}
-<div class="widget simpleTabs">
-    <ul class="tabs">
-        <li><a href="#tab-index">{{ 'Client area languages'|trans }}</a></li>
-        <li><a href="#tab-new">{{ 'New language'|trans }}</a></li>
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Client area languages'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New language'|trans }}
+            </a>
+        </li>
     </ul>
 
-    <div class="tabs_container">
-        <div class="fix"></div>
-        <div class="tab_content nopadding" id="tab-index">
-            <table class="tableStatic wide">
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
-                        <td>{{ 'Language'|trans }}</td>
-                        <td>{{ 'Code'|trans }}</td>
+                        <th>{{ 'Language'|trans }}</th>
+                        <th>{{ 'Code'|trans }}</th>
                     </tr>
                 </thead>
-
                 <tbody>
                 {% for lang in admin.extension_languages %}
                 <tr>
                     <td>{{ lang.title }}</td>
-                    <td style="width: 10%">{{ lang.locale }}</td>
+                    <td class="w-1">{{ lang.locale }}</td>
                 </tr>
                 </tbody>
-
                 {% else %}
                 <tbody>
                     <tr>
-                        <td colspan="2">
-                            {{ 'The list is empty'|trans }}
+                        <td class="text-muted" colspan="2">{{ 'The list is empty'|trans }}
                         </td>
                     </tr>
                 </tbody>
                 {% endfor %}
             </table>
         </div>
-        
-        <div class="tab_content nopadding" id="tab-new">
-            {% include "partial_extensions.html.twig" with { 'type': 'translation', 'header': "List of translations on extensions site" } only %}
-            <div class="body">
-                <h1 class="pt10">{{ 'BoxBilling in your language'|trans }}</h1>
-                <p>{{ 'Although BoxBilling displays in U.S. English by default, the software has the built-in capability to be used in any language. Follow instructions bellow to install new language.'|trans }}</p>
-                
-                <div class="pt20 list arrowGrey">
+
+        <div class="tab-pane fade" id="tab-new" role="tabpanel">
+            {% include "partial_extensions.html.twig" with { 'type': 'translation', 'header': 'List of translations on extensions site'|trans } only %}
+            <div class="card-body">
+                <h3>{{ 'BoxBilling in your language'|trans }}</h3>
+                <p class="text-muted">{{ 'Although BoxBilling displays in U.S. English by default, the software has the built-in capability to be used in any language. Follow instructions bellow to install new language.'|trans }}</p>
+
+                <div>
                     <ul>
                         <li>{{ 'Check if your language translation file is available at'|trans }} <a href="https://www.transifex.com/projects/p/boxbilling/" target="_blank">{{ 'BoxBilling translations repository'|trans }}</a></li>
                         <li>{{ 'Download language files and place them to'|trans }} <strong>{{ constant('BB_PATH_LANGS') }}</strong></li>
@@ -58,10 +63,10 @@
                     </ul>
                 </div>
 
-                <h5 class="pt20">{{ 'Changing default language'|trans }}</h5>
+                <h5>{{ 'Changing default language'|trans }}</h5>
                 <p>{{ 'Default language can be set in'|trans }} <em>bb-config.php</em> parameter <strong>define('BB_LOCALE', 'en_US');</strong></p>
 
-                <h5 class="pt20">{{ 'Removing language'|trans }}</h5>
+                <h5>{{ 'Removing language'|trans }}</h5>
                 <p>{{ 'Removing languages from BoxBilling is really simple. Just delete language folder you wish from'|trans }} <strong>{{ constant('BB_PATH_LANGS') }}</strong></p>
             </div>
         </div>

@@ -7,14 +7,14 @@
     "url": "git+https://github.com/boxbilling/boxbilling.git"
   },
   "dependencies": {
+    "@tabler/core": "^1.0.0-beta9",
     "autoprefixer": "^10.4.6",
     "postcss": "^8.4.13",
-    "sass": "^1.51.0",
-    "tailwindcss": "^3.0.24"
+    "sass": "^1.51.0"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^6.1.1",
-    "@tailwindcss/forms": "^0.5.0",
+    "apexcharts": "^3.35.2",
     "babel-core": "^6.26.3",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.7.0",

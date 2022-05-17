@@ -400,22 +400,21 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 
 /* ===== UI Tabs ===== */
 
-.ui-tabs { position: relative; padding: .2em; zoom: 1; } /* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */
+.ui-tabs { position: relative; padding: .2em; zoom: 1; }
 .ui-tabs .ui-tabs-nav { margin: 0; padding: .2em .2em 0; }
 .ui-tabs .ui-tabs-nav li { list-style: none; float: left; position: relative; top: 1px; margin: 0 .2em 1px 0; border-bottom: 0 !important; padding: 0; white-space: nowrap; }
 .ui-tabs .ui-tabs-nav li a { float: left; padding: .5em 1em; text-decoration: none; }
 .ui-tabs .ui-tabs-nav li.ui-tabs-selected { margin-bottom: 0; padding-bottom: 1px; }
 .ui-tabs .ui-tabs-nav li.ui-tabs-selected a, .ui-tabs .ui-tabs-nav li.ui-state-disabled a, .ui-tabs .ui-tabs-nav li.ui-state-processing a { cursor: text; }
-.ui-tabs .ui-tabs-nav li a, .ui-tabs.ui-tabs-collapsible .ui-tabs-nav li.ui-tabs-selected a { cursor: pointer; } /* first selector in group seems obsolete, but required to overcome bug in Opera applying cursor: text overall if defined elsewhere... */
+.ui-tabs .ui-tabs-nav li a, .ui-tabs.ui-tabs-collapsible .ui-tabs-nav li.ui-tabs-selected a { cursor: pointer; }
 .ui-tabs .ui-tabs-panel { display: block; border-width: 0; padding: 1em 1.4em; background: none; }
 .ui-tabs .ui-tabs-hide { display: none !important; }
 
 
 
-
 /* ===== UI Datepicker ===== */
 
-.datepicker { width: 70px!important; }
+/*.datepicker { width: 70px!important; }*/
 .ui-datepicker { width: 17em; padding: .2em .2em 0; border: 1px solid #d5d5d5; background: #fafafa; margin-top: 1px; z-index: 3; display: none; }
 .ui-datepicker-append { margin-left: 10px; }
 .ui-datepicker .ui-datepicker-header { position:relative; padding:.2em 0; border: 1px solid #E7E7E7; background: url(../../images/leftNavBg.png) repeat-x; }
@@ -531,5 +530,5 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 .ui-menu .ui-menu-item a.ui-state-hover,
 .ui-menu .ui-menu-item a.ui-state-active {
 	font-weight: bold;
-    
+
 }

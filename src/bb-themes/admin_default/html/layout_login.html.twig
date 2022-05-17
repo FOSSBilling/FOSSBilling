@@ -6,16 +6,17 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <link rel="shortcut icon" href="favicon.ico">
+
     {% include "partial_bb_meta.html.twig" %}
 
+    <link rel="stylesheet" href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css">
     <link rel="stylesheet" href="build/css/boxbilling-bundle.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Cuprum">
 
     <script src="build/js/boxbilling-bundle.min.js?v={{ guest.system_version }}"></script>
 </head>
 
-<body class="bg-gray-100">
+<body class="border-top-wide border-primary d-flex flex-column theme-light">
     {% block content %}{% endblock %}
     {% block js %}{% endblock %}
 </body>

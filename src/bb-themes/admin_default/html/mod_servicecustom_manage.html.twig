@@ -16,13 +16,13 @@
         <div class="rowElem">
             <label class="topLabel">{{ name }}:</label>
                 <div class="formBottom">
-                    <textarea rows="2" cols="" name="config[{{ name }}]">{{ value }}</textarea>
+                    <textarea rows="2" name="config[{{ name }}]">{{ value }}</textarea>
                 </div>
             <div class="fix"></div>
         </div>
         {% endfor %}
 
-        <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-        <input type="hidden" name="order_id" value="{{ order.id }}"/>
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm">
     </fieldset>
 </form>

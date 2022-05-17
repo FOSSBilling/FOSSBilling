@@ -1,94 +1,83 @@
-<div class="help">
+<div class="card-body">
     <h5>{{ 'Stock control settings'|trans }}</h5>
-</div>
 
-<form method="post" action="{{ 'api/admin/product/update'|link }}" class="mainForm api-form save" data-api-msg="Settings updated">
-<fieldset>
-    <div class="rowElem noborder">
-        <label>{{ 'Enable stock control'|trans }}:</label>
-        <div class="formRight">
-            <input type="radio" name="stock_control" value="1"{% if product.stock_control %} checked="checked"{% endif %}/><label>Yes</label>
-            <input type="radio" name="stock_control" value="0"{% if not product.stock_control %} checked="checked"{% endif %} /><label>No</label>
-        </div>
-        <div class="fix"></div>
-    </div>
-    
-    <div class="rowElem">
-        <label>{{ 'Allow quantity select on order form'|trans }}:</label>
-        <div class="formRight">
-            <input type="radio" name="allow_quantity_select" value="1"{% if product.allow_quantity_select %} checked="checked"{% endif %}/><label>Yes</label>
-            <input type="radio" name="allow_quantity_select" value="0"{% if not product.allow_quantity_select %} checked="checked"{% endif %} /><label>No</label>
-        </div>
-        <div class="fix"></div>
-    </div>
-
-    <div class="rowElem">
-        <label>{{ 'Quantity in stock'|trans }}:</label>
-        <div class="formRight">
-            <input type="text" name="quantity_in_stock" value="{{ product.quantity_in_stock }}">
-        </div>
-        <div class="fix"></div>
-    </div>
-    
-    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-</fieldset>
-    
-<input type="hidden" name="id" value="{{ product.id }}" />
-</form>
-
-<div class="help">
-    <h5>{{ 'Plugin'|trans }}</h5>
-</div>
-
-<form method="post" action="{{ 'api/admin/product/update'|link }}" class="mainForm api-form save" data-api-msg="Settings updated">
-<fieldset>
-    <div class="rowElem noborder">
-        <label>{{ 'Plugin name'|trans }}:</label>
-        <div class="formRight">
-            <input type="text" name="plugin" value="{{ product.plugin }}"/>
-        </div>
-        <div class="fix"></div>
-    </div>
-    
-    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-</fieldset>
-    
-<input type="hidden" name="id" value="{{ product.id }}" />
-</form>
-
-<form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm save api-form" data-api-reload="1">
-    <fieldset>
-        <legend>Custom parameters</legend>
-        {% for k,v in product.config %}
-        <div class="rowElem">
-            <label>{{k}}:</label>
-            <div class="formRight">
-                <input type="text" name="config[{{k}}]" value="{{v}}">
+    <form method="post" action="{{ 'api/admin/product/update'|link }}" class="api-form save" data-api-msg="{{ 'Settings updated'|trans }}">
+        <div class="form-group mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Enable stock control'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" id="radioStockControlYes" name="stock_control" value="1"{% if product.stock_control %} checked{% endif %}>
+                    <label class="form-check-label" for="radioStockControlYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" id="radioStockControlNo" name="stock_control" value="0"{% if not product.stock_control %} checked{% endif %}>
+                    <label class="form-check-label" for="radioStockControlNo">{{ 'No'|trans }}</label>
+                </div>
             </div>
-            <div class="fix"></div>
+        </div>
+        <div class="form-group mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Allow quantity select on order form'|trans }}:</label>
+            <div class="col">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" id="radioAllowQuantitySelectYes" name="allow_quantity_select" value="1"{% if product.allow_quantity_select %} checked{% endif %}>
+                    <label class="form-check-label" for="radioAllowQuantitySelectYes">{{ 'Yes'|trans }}</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" id="radioAllowQuantitySelectNo" name="allow_quantity_select" value="0"{% if not product.allow_quantity_select %} checked{% endif %}>
+                    <label class="form-check-label" for="radioAllowQuantitySelectNo">{{ 'No'|trans }}</label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Quantity in stock'|trans }}:</label>
+            <div class="col">
+                <input class="form-control" type="text" name="quantity_in_stock" value="{{ product.quantity_in_stock }}">
+            </div>
+        </div>
+        <input type="hidden" name="id" value="{{ product.id }}">
+        <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary">
+    </form>
+    <hr>
+
+    <h5>{{ 'Plugin'|trans }}</h5>
+    <form method="post" action="{{ 'api/admin/product/update'|link }}" class="api-form save" data-api-msg="{{ 'Settings updated'|trans }}">
+        <div class="form-group mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Plugin name'|trans }}:</label>
+            <div class="col">
+                <input class="form-control" type="text" name="plugin" value="{{ product.plugin }}">
+            </div>
+        </div>
+        <input type="hidden" name="id" value="{{ product.id }}">
+        <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary">
+    </form>
+    <hr>
+
+    <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm save api-form" data-api-reload="1">
+        <h6>Custom parameters</h6>
+        {% for k, v in product.config %}
+        <div class="form-group mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ k }}:</label>
+            <div class="col">
+                <input class="form-control" type="text" name="config[{{ k }}]" value="{{ v }}">
+            </div>
         </div>
         {% endfor %}
-    </fieldset>
-    
-    <fieldset>
-        <legend>Add custom parameter</legend>
-        <div class="rowElem">
-            <label>Parameter name:</label>
-            <div class="formRight">
-                <input type="text" name="new_config_name">
+
+        <h6>Add custom parameter</h6>
+        <div class="form-group mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Parameter name'|trans }}:</label>
+            <div class="col">
+                <input class="form-control" type="text" name="new_config_name">
             </div>
-            <div class="fix"></div>
         </div>
 
-        <div class="rowElem">
-            <label>Parameter value:</label>
-            <div class="formRight noborder">
-                <textarea rows="7" cols="" name="new_config_value"></textarea>
+        <div class="form-group mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Parameter value'|trans }}:</label>
+            <div class="col">
+                <textarea class="form-control" name="new_config_value" rows="7"></textarea>
             </div>
-            <div class="fix"></div>
         </div>
-        <input type="submit" value="{{ 'Update configuration fields'|trans }}" class="greyishBtn submitForm" />
-        <div class="fix"></div>
-        <input type="hidden" name="id" value="{{ product.id }}"/>
-    </fieldset>
-</form>
+        <input type="hidden" name="id" value="{{ product.id }}">
+        <input type="submit" value="{{ 'Update configuration fields'|trans }}" class="btn btn-primary">
+    </form>
+</div>

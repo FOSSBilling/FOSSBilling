@@ -1,38 +1,49 @@
-{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% import "macro_functions.html.twig" as mf %}
+{% import 'macro_functions.html.twig' as mf %}
+
 {% set active_menu = 'support' %}
+
 {% block meta_title %}Canned category{% endblock %}
 
 {% block breadcrumbs %}
-<ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
-    <li><a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a></li>
-    <li><a href="{{ 'support/canned-responses'|alink }}">{{ 'Canned responses'|trans }}</a></li>
-    <li><a href="{{ 'support/canned-responses'|alink }}#tab-categories">{{ 'Categories'|trans }}</a></li>
-    <li class="lastB">{{category.title}}</li>
-</ul>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support'|alink }}">{{ 'Support'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support/canned-responses'|alink }}">{{ 'Canned responses'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support/canned-responses'|alink }}#tab-categories">{{ 'Categories'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{category.title}}</li>
+    </ol>
 {% endblock %}
 
 {% block content %}
-<div class="widget simpleTabs">
-    <div class="head">
-        <h5>{{ 'Canned category'|trans }}</h5>
-    </div>
-    
-    <form method="post" action="{{ 'api/admin/support/canned_category_update'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
-        <fieldset>
-            <div class="rowElem">
-                <label>{{ 'Title'|trans }}:</label>
-                <div class="formRight">
-                    <input type="text" name="title" value="{{category.title}}" required="required" placeholder=""/>
+<div class="card">
+    <div class="card-body">
+        <h3>{{ 'Canned category'|trans }}</h3>
+
+        <form method="post" action="{{ 'api/admin/support/canned_category_update'|link }}" class="api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="title" value="{{ category.title }}" required>
                 </div>
-                <div class="fix"></div>
             </div>
 
-            <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-            <input type="hidden" name="id" value="{{ category.id }}"/>
-        </fieldset>
-    </form>
+            <input type="hidden" name="id" value="{{ category.id }}">
+            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+        </form>
+    </div>
 </div>
 {% endblock %}

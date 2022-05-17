@@ -1,116 +1,133 @@
-{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% import "macro_functions.html.twig" as mf %}
+{% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ticket.subject}}{% endblock %}
+{% block meta_title %}{{ ticket.subject }}{% endblock %}
 
 {% set active_menu = 'support' %}
 
 {% block breadcrumbs %}
-<ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
-    <li><a href="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">{{ 'Public tickets'|trans }}</a></li>
-    <li class="lastB">#{{ticket.id}} - {{ticket.subject}}</li>
-</ul>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">{{ 'Public tickets'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">#{{ ticket.id }} - {{ ticket.subject }}</li>
+    </ol>
 {% endblock %}
 
 {% block content %}
-<div class="widget simpleTabs tabsRight">
-    <div class="head">
-        <h5 class="iSpeech">{{ ticket.subject }}</h5>
-    </div>
-
-    <ul class="tabs">
-        <li><a href="#tab-index">Ticket</a></li>
-        <li><a href="#tab-manage">Manage</a></li>
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Ticket'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-manage" data-bs-toggle="tab">{{ 'Manage'|trans }}</a>
+        </li>
     </ul>
 
-    <div class="tabs_container">
-        <div class="fix"></div>
-        <div class="tab_content nopadding" id="tab-index">
-            <table class="tableStatic wide">
+<div class="card mb-3">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
                 <tbody>
-                    <tr class="noborder">
+                    <tr>
                         <td>{{ 'Ticket ID'|trans }}</td>
-                        <td><b>#{{ticket.id}}</b></td>
+                        <td>#{{ ticket.id }}</td>
                     </tr>
-
+                    <tr>
+                        <td>{{ 'Subject'|trans }}</td>
+                        <td>{{ ticket.subject }}</td>
+                    </tr>
                     <tr>
                         <td>{{ 'Author'|trans }}</td>
                         <td>{{ ticket.author_name }}</td>
                     </tr>
-
                     <tr>
                         <td>{{ 'Email'|trans }}</td>
                         <td>{{ ticket.author_email }}</td>
                     </tr>
-
                     <tr>
                         <td>{{ 'Status'|trans }}</td>
-                        <td>{{ mf.status_name(ticket.status) }}</td>
+                        <td>
+                            {% if ticket.status == 'open' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if ticket.status == 'on_hold' %}
+                                <span class="badge bg-warning me-1"></span>
+                            {% endif %}
+                            {% if ticket.status == 'closed' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(ticket.status) }}
+                        </td>
                     </tr>
-
                     <tr>
                         <td>{{ 'Time opened'|trans }}</td>
-                        <td>{{ticket.created_at|date('l, d F Y')}}</td>
+                        <td>{{ ticket.created_at|date('l, d F Y') }}</td>
                     </tr>
-                    
                     {% if ticket.created_at != ticket.updated_at %}
                     <tr>
                         <td>{{ 'Last updated'|trans }}</td>
-                        <td>{{ticket.updated_at|timeago}} ago</td>
+                        <td>{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</td>
                     </tr>
                     {% endif %}
                  </tbody>
-
-                 <tfoot>
-                     <tr>
-                         <td colspan="2">
-                            <div class="aligncenter">
-                                {% if ticket.status != 'closed' %}
-                                <a href="{{ 'api/admin/support/public_ticket_close'|link({'id' : ticket.id}) }}" data-api-redirect="{{ 'support/public-tickets'|alink }}" class="btn55 mr10 api-link" ><img src="images/icons/middlenav/stop.png" alt=""><span>Close ticket</span></a>
-                                {% endif %}
-                                <a href="{{ 'api/admin/support/public_ticket_delete'|link({'id' : ticket.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support/public-tickets'|alink }}" class="btn55 mr10 api-link"><img src="images/icons/middlenav/trash.png" alt=""><span>Delete</span></a>
-                                <a href="{{ 'support/contact-us/conversation'|link }}/{{ ticket.hash }}" class="btn55 mr10" target="_blank"><img src="images/icons/middlenav/userComment.png" alt=""><span>Open as client</span></a>
-                            </div>
-                         </td>
-                     </tr>
-                 </tfoot>
             </table>
+
+            <div class="card-footer text-center">
+                {% if ticket.status != 'closed' %}
+                <a href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id }) }}" data-api-redirect="{{ 'support/public-tickets'|alink }}" class="btn55 mr10 api-link" >
+                    <img src="images/icons/middlenav/stop.png" alt="">
+                    <span>{{ 'Close ticket'|trans }}</span>
+                </a>
+                {% endif %}
+                <a href="{{ 'api/admin/support/public_ticket_delete'|link({ 'id' : ticket.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'support/public-tickets'|alink }}" class="btn55 mr10 api-link">
+                    <img src="images/icons/middlenav/trash.png" alt="">
+                    <span>{{ 'Delete'|trans }}</span>
+                </a>
+                <a href="{{ 'support/contact-us/conversation'|link }}/{{ ticket.hash }}" class="btn55 mr10" target="_blank">
+                    <img src="images/icons/middlenav/userComment.png" alt="">
+                    <span>{{ 'Open as client'|trans }}</span>
+                </a>
+            </div>
         </div>
 
-        <div class="tab_content nopadding" id="tab-manage">
-            <form method="post" action="{{ 'api/admin/support/public_ticket_update'|link }}" class="mainForm api-form" data-api-reload="1">
-                <fieldset>
-                    <div class="rowElem noborder">
-                        <label>{{ 'Subject'|trans }}</label>
-                        <div class="formRight noborder">
-                            <input type="text" name="subject" value="{{ ticket.subject }}" required="required"/>
+        <div class="tab-pane fade" id="tab-manage" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'api/admin/support/public_ticket_update'|link }}" class="api-form" data-api-reload="1">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="subject" value="{{ ticket.subject }}" required>
                         </div>
-                        <div class="fix"></div>
                     </div>
 
-                    <div class="rowElem">
-                        <label>{{ 'Status'|trans }}</label>
-                        <div class="formRight">
-                            {{ mf.selectbox('status', admin.support_ticket_get_statuses({ "titles": 1 }), ticket.status, 1) }}
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
+                        <div class="col">
+                            {{ mf.selectbox('status', admin.support_ticket_get_statuses({ 'titles': 1 }), ticket.status, 1) }}
                         </div>
-                        <div class="fix"></div>
                     </div>
 
-                     <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-                </fieldset>
-                <input type="hidden" name="id" value="{{ ticket.id }}">
-            </form>
+                    <input type="hidden" name="id" value="{{ ticket.id }}">
+                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
         </div>
-
     </div>
 </div>
 
 {% set canned_response_selector %}
 <div class="canned_response">
     <select name="canned_response" class="canned">
-    {% for response in admin.support_canned_get_list({"per_page":90}).list %}
+    {% for response in admin.support_canned_get_list({ 'per_page': 90 }).list %}
         <option value="{{ response.id }}">{{ response.title }}</option>
     {% endfor %}
     </select>
@@ -118,60 +135,69 @@
 {% endset %}
 
 <div class="conversation">
-{% for i, message in ticket.messages %}
-<div class="widget simpleTabs tabsRight">
-    <div class="head" style="cursor: pointer;">
-        <h5 class="no-icon"><img src="{{ message.author.email|gravatar }}?size=20" alt="{{ message.author.email }}" title="{{ message.author.email }}" class="gravatar"/> {{ message.author.name }}</h5>
-        <h5 style="float:right;">{{ message.created_at|bb_datetime }}</h5>
-    </div>
-    <div class="body">
-        {{ message.content|bbmd }}
-        <div class="clear"></div>
-    </div>
-    <div class="clear"></div>
-</div>
-{% endfor %}
+    {% for i, message in ticket.messages %}
+        <div class="card mb-3">
+            <div class="card-header" style="cursor: pointer;">
+                <span class="avatar avatar-xs me-2" style="background-image: url({{ message.author.email|gravatar }}?size=20)"></span>
+                {{ message.author.name }}
+                <span class="ms-auto text-muted">{{ message.created_at|bb_datetime }}</span>
+            </div>
+            <div class="card-body">
+                {{ message.content|bbmd }}
+            </div>
+        </div>
+    {% endfor %}
 </div>
 
-<div class="widget" id="reply-box">
-    <div class="head">
-        <h5 class="iSpeech">{{ 'Reply as'|trans }} {{ profile.name }}</h5>
-        {% include 'mod_support_canned_selector.html.twig' %}
-    </div>
+<div class="card" id="reply-box">
+    <form method="post" action="{{ 'api/admin/support/public_ticket_reply'|link }}" class="api-form" data-api-redirect="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">
+        <div class="card-body">
+            <div class="d-flex">
+                <h5>{{ 'Reply as'|trans }} {{ profile.name }}</h5>
+                <div class="ms-auto">{% include 'mod_support_canned_selector.html.twig' %}</div>
+            </div>
 
-    <form method="post" action="{{ 'api/admin/support/public_ticket_reply'|link }}" class="mainForm api-form" data-api-redirect="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">
-        <fieldset>
-            <textarea name="content" cols="5" rows="20" required="required" class="bb-textarea" id="rt">Hello {{ ticket.client.first_name }},
+            <textarea name="content" rows="10" required class="bb-textarea" id="rt">{{ 'Hello'|trans }} {{ ticket.client.first_name }},
 {{ canned_delay_message }}
-
-
 
 {{ profile.signature }}
 {{ ticket.helpdesk.signature }}</textarea>
+        </div>
+
+        <div class="card-footer d-flex gap-2">
+            <a href="#"  class="btn btn-secondary w-25" onclick="$('.conversation .card-body').toggle(); return false;">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#eye" />
+                </svg>
+                {{ 'Show/Hide messages'|trans }}
+            </a>
+
             <input type="hidden" name="id" value="{{ ticket.id }}">
-            <input type="submit" value="{{ 'Post'|trans }}" class="greyishBtn submitForm" />
+            <input type="submit" value="{{ 'Post'|trans }}" class="btn btn-primary w-100">
 
-            <div class="body">
-                <a href="#"  class="btnIconLeft mr10" onclick="$('.conversation .body').toggle(); return false;"><span>Show/Hide messages</span></a>
-
-                {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
-                <a href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id }) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}" class="btnIconLeft mr10 api-link" ><span>Close ticket</span></a>
-                {% endif %}
-            </div>
-        </fieldset>
+            {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
+            <a class="btn btn-danger w-25 api-link"
+                href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id }) }}"
+                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                data-api-redirect="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#check" />
+                </svg>
+                {{ 'Close ticket'|trans }}
+            </a>
+            {% endif %}
+        </div>
     </form>
-
-    <div class="clear"></div>
 </div>
 {% endblock %}
 
 {% block js%}
-<script type="text/javascript">
+<script>
     $(function() {
         $('#reply-box textarea').focus();
 
-        $('.conversation .head').click(function() {
-            $(this).siblings('.body').toggle();
+        $('.conversation .card-header').click(function() {
+            $(this).siblings('.card-body').toggle();
 
             return false;
         });

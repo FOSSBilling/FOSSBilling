@@ -1,54 +1,65 @@
-{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
-{% import "macro_functions.html.twig" as mf %}
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
 {% block meta_title %}{{ 'Registrar'|trans }} {{ registrar.title }}{% endblock %}
+
 {% set active_menu = 'system' %}
 
 {% block breadcrumbs %}
-<ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
-    <li><a href="{{ 'servicedomain'|alink }}">{{ 'Domain management'|trans }}</a></li>
-    <li><a href="{{ 'servicedomain'|alink }}#tab-registrars">{{ 'Registrars'|trans }}</a></li>
-    <li class="lastB">{{ registrar.title }}</li>
-</ul>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'servicedomain'|alink }}">{{ 'Domain management'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'servicedomain'|alink }}#tab-registrars">{{ 'Registrars'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ registrar.title }}</li>
+    </ol>
 {% endblock %}
 
 {% block content %}
-<div class="widget">
-    <div class="head">
-        <h5>{{ 'Registrar configuration'|trans }}</h5>
-    </div>
-
-    <div class="help">
+<div class="card">
+    <div class="card-body">
+        <h3>{{ 'Registrar configuration'|trans }}</h3>
         <h5>{{ registrar.title }}</h5>
-        <p>{{ registrar.label }}</p>
+        <p class="text-muted">{{ registrar.label }}</p>
+
+        <form method="post" action="{{ 'api/admin/servicedomain/registrar_update'|link }}" class="api-form" data-api-msg="{{ 'Registrar updated'|trans }}">
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Enable test mode'|trans }}:</label>
+                <div class="col">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="radioTestModeYes" type="radio" name="test_mode" value="1"{% if registrar.test_mode %} checked{% endif %}>
+                        <label class="form-check-label" for="radioTestModeYes">{{ 'Yes'|trans }}</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="radioTestModeNo" type="radio" name="test_mode" value="0"{% if not registrar.test_mode %} checked{% endif %}>
+                        <label class="form-check-label" for="radioTestModeNo">{{ 'No'|trans }}</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Registrar title'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="title" value="{{ registrar.title }}">
+                </div>
+            </div>
+
+            {# Build form elements from registrar configuration array #}
+            {{ mf.build_form(registrar.form, registrar.config) }}
+
+            <input type="hidden" name="id" value="{{ registrar.id }}">
+            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+        </form>
     </div>
-
-    <form method="post" action="{{ 'api/admin/servicedomain/registrar_update'|link }}" class="mainForm save api-form" data-api-msg="Registrar updated">
-    <fieldset>
-        <div class="rowElem noborder">
-            <label>{{ 'Enable test mode'|trans }}:</label>
-            <div class="formRight">
-                <input type="radio" name="test_mode" value="1"{% if registrar.test_mode %} checked="checked"{% endif %}/><label>Yes</label>
-                <input type="radio" name="test_mode" value="0"{% if not registrar.test_mode %} checked="checked"{% endif %} /><label>No</label>
-            </div>
-            <div class="fix"></div>
-        </div>
-
-        <div class="rowElem">
-            <label>{{ 'Registrar title'|trans }}:</label>
-            <div class="formRight">
-                <input type="text" name="title" value="{{registrar.title}}" />
-            </div>
-            <div class="fix"></div>
-        </div>
-
-        {# Build form elements from registrar configuration array #}
-        {{ mf.build_form(registrar.form, registrar.config) }}
-
-        <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-        <input type="hidden" name="id" value="{{ registrar.id }}" />
-    </fieldset>
-    </form>
 </div>
-
 {% endblock %}

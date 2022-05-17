@@ -2,6 +2,7 @@ Master
 ------------------------------------------------------------------------------
 
 **General:**
+* Rafactoring admin template with Tabler.io
 * Templates extensions .phtml ranamed to .html.twig
 * Updated bb-themes/bootstrap to Bootstrap 5
 

@@ -13,7 +13,7 @@
             <td>{{ 'Location'|trans }}:</td>
             <td>{{ service.path }}</td>
         </tr>
-        
+
         <tr>
             <td>{{ 'Downloads'|trans }}:</td>
             <td>{{ service.downloads }}</td>
@@ -33,7 +33,7 @@
 
 <form method="post" action="" class="mainForm" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
 <fieldset>
-    
+
     <div class="rowElem">
         <label>{{ 'Upload new file'|trans }}:</label>
         <div class="formRight noborder">
@@ -48,7 +48,7 @@
 <input type="hidden" name="order_id" value="{{ order.id }}">
 </form>
 
-<script type="text/javascript">
+<script>
 $(function() {
     $('body').append('<iframe id="uploadframe" name="uploadframe" style="display:none" />');
     $('#bb-upload-form').submit(function(){

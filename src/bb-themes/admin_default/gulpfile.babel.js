@@ -11,7 +11,6 @@ import dartSass from 'sass';
 import gulpSass from 'gulp-sass';
 import postcss from 'gulp-postcss';
 import autoprefixer from 'autoprefixer';
-import tailwindcss from 'tailwindcss';
 
 const sass = gulpSass(dartSass);
 
@@ -97,6 +96,8 @@ export const buildThemeAdminJs = function buildThemeAdminJs() {
     'assets/js/jquery.ToTop.js',
     'assets/js/jquery.scrollTo-min.js',
     'assets/js/jquery-ui.js',
+    upath.joinSafe(nodeModulesPath, '@tabler/core/dist/js/tabler.js'),
+    upath.joinSafe(nodeModulesPath, 'apexcharts/dist/apexcharts.js'),
     'assets/js/boxbilling.js',
   ];
 
@@ -110,15 +111,15 @@ buildThemeAdminJs.description = 'Build Admin theme JS assets.';
 export const buildThemeAdminCSS = function buildThemeAdminCSS() {
   const files = [
     'assets/scss/**/*.scss',
-    'build/css/dark-icons-sprite.css',
+    // 'build/css/dark-icons-sprite.css',
     'build/css/dark-icons-23-sprite.css',
     'build/css/topnav-sprite.css',
+    upath.joinSafe(nodeModulesPath, '@tabler/core/dist/css/tabler.css'),
   ];
 
   return gulp.src(files)
     .pipe(concat('boxbilling-bundle.min.css'))
     .pipe(postcss([
-      tailwindcss('tailwind.config.js'),
       autoprefixer()
     ]))
     .pipe(sass().on('error', sass.logError))
