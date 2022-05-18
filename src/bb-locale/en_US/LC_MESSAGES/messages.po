@@ -5854,7 +5854,7 @@ msgstr ""
 msgid "Payment"
 msgstr ""
 
-msgid "Powered by BoxBilling"
+msgid "Powered by FOSSBilling"
 msgstr ""
 
 msgid "You logged in successfully"
