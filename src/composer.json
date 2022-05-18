@@ -43,7 +43,7 @@
         "ext-gettext": "*"
     },
     "config": {
-        "vendor-dir": "bb-vendor"
+        "vendor-dir": "vendor"
     },
     "autoload": {
         "psr-0": {"": "bb-library"},

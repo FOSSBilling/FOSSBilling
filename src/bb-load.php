@@ -11,7 +11,7 @@
  */
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', (getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'production'));
 define('BB_PATH_ROOT', dirname(__FILE__));
-define('BB_PATH_VENDOR', BB_PATH_ROOT.'/bb-vendor');
+define('BB_PATH_VENDOR', BB_PATH_ROOT.'/vendor');
 define('BB_PATH_LIBRARY', BB_PATH_ROOT.'/bb-library');
 define('BB_PATH_THEMES', BB_PATH_ROOT.'/bb-themes');
 define('BB_PATH_MODS', BB_PATH_ROOT.'/bb-modules');
