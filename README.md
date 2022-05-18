@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://fossbilling.org/"><img src="https://raw.githubusercontent.com/fossbilling/fossbilling/master/src/bb-themes/fossbilling/assets/images/box.png" alt="fossbilling" width="125"></a>
+  <a href="https://fossbilling.org/"><img src="https://fossbilling.org/logo.png" alt="fossbilling" width="125"></a>
   <br>
   FOSSBilling
   <br>
