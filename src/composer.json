@@ -10,7 +10,7 @@
     },
     "readme": "https://github.com/FOSSBilling/FOSSBilling/blob/master/README.md",
     "type": "project",
-    "license": "Apache License 2.0",
+    "license": "Apache-2.0",
     "keywords": ["billing", "invoice", "client management"],
     "homepage": "https://fossbilling.org",
     "require": {
