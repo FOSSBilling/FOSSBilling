@@ -1,10 +1,15 @@
 {
-  "name": "FOSSBilling",
+  "name": "fossbilling",
   "version": "0.1.0",
-  "author": "FOSSBilling.org",
+  "author": "FOSSBilling Team",
+  "homepage": "https://fossbilling.org",
+  "license" : "Apache License 2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/FOSSBilling/FOSSBilling"
+    "url": "https://github.com/FOSSBilling/FOSSBilling.git"
+  },
+  "issues": {
+    "url" : "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
   "devDependencies": {
     "grunt": "^1.5.2",

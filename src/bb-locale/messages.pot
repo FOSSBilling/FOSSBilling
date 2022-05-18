@@ -2333,7 +2333,7 @@ msgstr ""
 msgid "Read"
 msgstr ""
 
-msgid "BoxBilling documentation"
+msgid "FossBilling documentation"
 msgstr ""
 
 msgid "for more information."

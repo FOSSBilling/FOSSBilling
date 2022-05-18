@@ -366,7 +366,7 @@ final class Box_Installer
         $content .= "E-mail: " . $admin_email . PHP_EOL;
         $content .= "Password: " . $admin_pass . PHP_EOL . PHP_EOL;
 
-        $content .= "Read BoxBilling documentation to get started https://docs.boxbilling.org/" . PHP_EOL;
+        $content .= "Read FossBilling documentation to get started https://docs.fossbilling.org/" . PHP_EOL;
         $content .= "Thank You for using BoxBilling." . PHP_EOL;
 
         $subject = sprintf('BoxBilling is ready at "%s"', BB_URL);
