@@ -11,7 +11,7 @@
       <directory>src/bb-library/php-gettext</directory>
       <directory>src/bb-modules/Servicecentovacast/ccapiclient</directory>
       <directory>src/bb-themes</directory>
-      <directory>src/bb-vendor</directory>
+      <directory>src/vendor</directory>
       <directory>src/install</directory>
       <file>src/bb-library/Box/Zip.php</file>
       <file>src/bb-library/PDF_ImageAlpha.php</file>

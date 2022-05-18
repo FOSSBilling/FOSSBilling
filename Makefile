@@ -51,7 +51,7 @@ test: start	## Run app tests
 	echo > ./src/bb-data/log/php_error.log
 	rm -rf src/install
 	$(DOCKER_PHP_CONTAINER_EXEC) composer install --working-dir=src --no-progress --no-suggest --prefer-dist
-	$(DOCKER_PHP_CONTAINER_EXEC) ./src/bb-vendor/bin/phpunit --dont-report-useless-tests ./tests/bb-modules/
+	$(DOCKER_PHP_CONTAINER_EXEC) ./src/vendor/bin/phpunit --dont-report-useless-tests ./tests/bb-modules/
 
 build:          ## Build App with Docker CI image
 	docker run --rm \

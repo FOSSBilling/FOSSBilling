@@ -42,9 +42,6 @@
     "suggest": {
         "ext-gettext": "*"
     },
-    "config": {
-        "vendor-dir": "vendor"
-    },
     "autoload": {
         "psr-0": {"": "bb-library"},
         "psr-4": {"Box\\Mod\\": "bb-modules"}
