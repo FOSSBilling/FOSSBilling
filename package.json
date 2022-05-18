@@ -1,10 +1,10 @@
 {
-  "name": "BoxBilling ",
+  "name": "FOSSBilling",
   "version": "0.1.0",
-  "author": "BoxBilling inc",
+  "author": "FOSSBilling.org",
   "repository": {
     "type": "git",
-    "url": "https://github.com/boxbilling/boxbilling"
+    "url": "https://github.com/FOSSBilling/FOSSBilling"
   },
   "devDependencies": {
     "grunt": "^1.5.2",
