@@ -27,9 +27,10 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-body">
-        <h5>{{ category.title }}</h5>
-        <form method="post" action="{{ 'api/admin/product/category_update'|link }}" class="api-form" data-api-msg="{{ 'Category updated'|trans }}">
+    <form method="post" action="{{ 'api/admin/product/category_update'|link }}" class="api-form" data-api-msg="{{ 'Category updated'|trans }}">
+        <div class="card-body">
+            <h3>{{ category.title }}</h3>
+
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                 <div class="col">
@@ -47,10 +48,19 @@
             <div class="mb-3">
                 <textarea class="bb-textarea" name="description" rows="5">{{ category.description }}</textarea>
             </div>
+        </div>
 
-            <input type="hidden" name="id" value="{{ category.id }}">
+        <input type="hidden" name="id" value="{{ category.id }}">
+
+        <div class="card-footer d-flex gap-2">
+            <a href="{{ 'product'|alink }}" class="btn btn-secondary w-25">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#arrow-sm-left" />
+                </svg>
+                {{ 'Go back'|trans }}
+            </a>
             <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
-        </fieldset>
+        </div>
     </form>
 </div>
 {% endblock %}
