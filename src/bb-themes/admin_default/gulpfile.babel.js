@@ -110,11 +110,11 @@ buildThemeAdminJs.description = 'Build Admin theme JS assets.';
 
 export const buildThemeAdminCSS = function buildThemeAdminCSS() {
   const files = [
+    upath.joinSafe(nodeModulesPath, '@tabler/core/dist/css/tabler.css'),
     'assets/scss/**/*.scss',
     // 'build/css/dark-icons-sprite.css',
     'build/css/dark-icons-23-sprite.css',
     'build/css/topnav-sprite.css',
-    upath.joinSafe(nodeModulesPath, '@tabler/core/dist/css/tabler.css'),
   ];
 
   return gulp.src(files)
