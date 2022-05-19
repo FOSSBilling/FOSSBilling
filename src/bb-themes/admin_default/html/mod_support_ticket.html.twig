@@ -78,8 +78,8 @@
                     </tr>
                  </tbody>
 
-                    {% set task = ticket.rel %}
-                    <tbody>
+                {% set task = ticket.rel %}
+                <tbody>
                     {% if task.task %}
                     <tr>
                         <td><label>{{ 'Task'|trans }}</label></td>
@@ -105,14 +105,24 @@
 
             <div class="card-footer text-center">
                 {% if ticket.status != 'closed' %}
-                <a href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'support'|alink({'status' : 'open' }) }}" class="btn55 mr10 api-link" >
-                    <img src="images/icons/middlenav/stop.png" alt="">
-                    <span>{{ 'Close ticket'|trans }}</span>
+                <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id }) }}"
+                    data-api-confirm="{{ 'Are you sure?'|trans }}"
+                    data-api-redirect="{{ 'support'|alink({ 'status': 'open' }) }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#close" />
+                    </svg>
+                    <span class="d-block text-secondary">{{ 'Close'|trans }}</span>
                 </a>
                 {% endif %}
-                <a href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'support'|alink }}" class="btn55 mr10 api-link">
-                    <img src="images/icons/middlenav/trash.png" alt="">
-                    <span>{{ 'Delete'|trans }}</span>
+                <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}"
+                    data-api-confirm="{{ 'Are you sure?'|trans }}"
+                    data-api-redirect="{{ 'support'|alink }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#delete" />
+                    </svg>
+                    <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
                 </a>
 
                 {% if task.status == 'pending' %}

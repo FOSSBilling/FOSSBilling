@@ -23,87 +23,92 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <ul class="tabs">
-        <li>
-            <a href="#tab-index">{{ 'Transaction'|trans }}</a>
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Transaction'|trans }}</a>
         </li>
-        <li>
-            <a href="#tab-manage">{{ 'Manage'|trans }}</a>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-manage" data-bs-toggle="tab" role="tab">{{ 'Manage'|trans }}</a>
         </li>
-        <li>
-            <a href="#tab-ipn">{{ 'IPN'|trans }}</a>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-note" data-bs-toggle="tab" role="tab">{{ 'Notes'|trans }}</a>
         </li>
-        <li>
-            <a href="#tab-note">{{ 'Notes'|trans }}</a>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-ipn" data-bs-toggle="tab" role="tab">{{ 'IPN'|trans }}</a>
         </li>
     </ul>
 
+<div class="card">
     <div class="tab-content">
-        <div class="tab_content nopadding" id="tab-index">
-            <div class="help">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            <div class="card-body">
                 <h3>{{ 'Transaction details'|trans }} #{{transaction.id}}</h3>
-            </div>
 
-            {% if transaction.error %}
-            <div class="body">
-                <strong class="red">{{ transaction.error_code }} - {{ transaction.error }}</strong>
-                <p>{{ 'If you are sure that this transaction is valid you can update transaction details in &quot;Manage&quot; tab and try processing transaction again'|trans }}</p>
-            </div>
-            {% endif%}
+                {% if transaction.error %}
+                    <strong class="red">{{ transaction.error_code }} - {{ transaction.error }}</strong>
+                    <p>{{ 'If you are sure that this transaction is valid you can update transaction details in &quot;Manage&quot; tab and try processing transaction again'|trans }}</p>
+                {% endif%}
 
-            <table class="tableStatic wide">
-                <tbody>
-                    <tr {% if not transaction.error %}class="noborder"{% endif %}>
-                        <td style="width: 35%">{{ 'ID'|trans }}</td>
-                        <td>{{ transaction.id }}</td>
-                    </tr>
-                    <tr>
-                        <td>{{ 'Invoice Id'|trans }}</td>
-                        <td><a href="{{ 'invoice/manage'|alink }}/{{ transaction.invoice_id }}">{{ transaction.invoice_id|default('-') }}</a></td>
-                    </tr>
-                    <tr>
-                        <td>{{ 'Amount'|trans }}</td>
-                        <td>{{ transaction.amount }} {{ transaction.currency }}</td>
-                    </tr>
-                    <tr>
-                        <td>{{ 'Payment gateway'|trans }}</td>
-                        <td>{{ transaction.gateway|default('-') }}</td>
-                    </tr>
-                    <tr>
-                        <td>{{ 'Transaction ID on payment gateway'|trans }}</td>
-                        <td>{{ transaction.txn_id|default('-') }}</td>
-                    </tr>
-                    <tr>
-                        <td>{{ 'Transaction status on payment gateway'|trans }}</td>
-                        <td>{{ mf.status_name(transaction.txn_status) }}</td>
-                    </tr>
-                    <tr>
-                        <td>{{ 'Status'|trans }}</td>
-                        <td>{{ mf.status_name(transaction.status) }}</td>
-                    </tr>
-                    <tr>
-                        <td>{{ 'IP'|trans }}</td>
-                        <td>{{ transaction.ip }} {{ transaction.ip|ipcountryname|default('Unknown') }}</td>
-                    </tr>
-                    {% if transaction.note %}
-                    <tr>
-                        <td>{{ 'Note'|trans }}</td>
-                        <td>{{ transaction.note }}</td>
-                    </tr>
-                    {% endif %}
-                    <tr>
-                        <td>{{ 'Received at'|trans }}</td>
-                        <td>{{ transaction.created_at|date('l, d F Y') }}</td>
-                    </tr>
-                    {% if transaction.created_at != transaction.updated_at %}
-                    <tr>
-                        <td>{{ 'Updated at'|trans }}</td>
-                        <td>{{ transaction.updated_at|date('l, d F Y') }}</td>
-                    </tr>
-                    {% endif %}
-                 </tbody>
-            </table>
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <tbody>
+                        <tr>
+                            <td class="w-50 text-end">{{ 'ID'|trans }}</td>
+                            <td>{{ transaction.id }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Invoice Id'|trans }}</td>
+                            <td>
+                                <a href="{{ 'invoice/manage'|alink }}/{{ transaction.invoice_id }}">{{ transaction.invoice_id|default('-') }}</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Amount'|trans }}</td>
+                            <td>{{ transaction.amount }} {{ transaction.currency }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Payment gateway'|trans }}</td>
+                            <td>{{ transaction.gateway|default('-') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Transaction ID on payment gateway'|trans }}</td>
+                            <td>{{ transaction.txn_id|default('-') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Transaction status on payment gateway'|trans }}</td>
+                            <td>{{ mf.status_name(transaction.txn_status) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Status'|trans }}</td>
+                            <td>{{ mf.status_name(transaction.status) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'IP'|trans }}</td>
+                            <td>{{ transaction.ip }} {{ transaction.ip|ipcountryname|default('Unknown') }}</td>
+                        </tr>
+                        {% if transaction.note %}
+                        <tr>
+                            <td class="text-end">{{ 'Note'|trans }}</td>
+                            <td>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <use xlink:href="#support" />
+                                </svg>
+                                <a href="#tab-note" data-bs-toggle="tab" role="button">{{ transaction.note }}</a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td class="text-end">{{ 'Received at'|trans }}</td>
+                            <td>{{ transaction.created_at|date('l, d F Y') }}</td>
+                        </tr>
+                        {% if transaction.created_at != transaction.updated_at %}
+                        <tr>
+                            <td class="text-end">{{ 'Updated at'|trans }}</td>
+                            <td>{{ transaction.updated_at|date('l, d F Y') }}</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
 
             <div class="card-footer text-center">
                 <a class="btn55 mr10 api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': transaction.id }) }}" data-api-reload="1">
@@ -117,162 +122,165 @@
                 </div>
         </div>
 
-        <div id="tab-manage" class="tab_content nopadding">
-            <form method="post" action="{{ 'api/admin/invoice/transaction_update'|link }}" class="api-form" data-api-reload="{{ 'Transaction updated'|trans }}">
-                    <legend>Transaction payment information</legend>
-                    <div class="rowElem">
-                        <label>{{ 'Invoice ID'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="invoice_id" value="{{ transaction.invoice_id }}">
+        <div class="tab-pane fade" id="tab-manage" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'api/admin/invoice/transaction_update'|link }}" class="api-form" data-api-reload="{{ 'Transaction updated'|trans }}">
+                    <h5>{{ 'Transaction payment information'|trans }}</h5>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Invoice ID'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="invoice_id" value="{{ transaction.invoice_id }}">
                         </div>
                     </div>
-                    <div class="rowElem">
-                        <label>{{ 'Amount'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="amount" value="{{ transaction.amount }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Amount'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="amount" value="{{ transaction.amount }}">
                         </div>
                     </div>
-                    <div class="rowElem">
-                        <label>{{ 'Currency'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="currency" value="{{ transaction.currency }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="currency" value="{{ transaction.currency }}">
                         </div>
                     </div>
 
-                <fieldset>
-                    <legend>{{ 'Transaction processing information'|trans }}</legend>
-                    <div class="rowElem">
-                        <label>{{ 'Payment Gateway'|trans }}:</label>
-                        <div class="formRight">
+                    <h5>{{ 'Transaction processing information'|trans }}</h5>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Payment Gateway'|trans }}:</label>
+                        <div class="col">
                             {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, transaction.gateway_id, 0, 'Select payment gateway') }}
                         </div>
                     </div>
-                    <div class="rowElem">
-                        <label>{{ 'Validate IPN'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="radio" name="validate_ipn" value="1"{% if transaction.validate_ipn  %} checked{% endif %}>
-                            <label>{{ 'Yes'|trans }}</label>
-                            <input type="radio" name="validate_ipn" value="0"{% if not transaction.validate_ipn %} checked{% endif %}>
-                            <label>{{ 'No'|trans }}</label>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Validate IPN'|trans }}:</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioValidateIpnYes" type="radio" name="validate_ipn" value="1"{% if transaction.validate_ipn  %} checked{% endif %}>
+                                <label class="form-check-label" for="radioValidateIpnYes">{{ 'Yes'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioValidateIpnNo" type="radio" name="validate_ipn" value="0"{% if not transaction.validate_ipn %} checked{% endif %}>
+                                <label class="form-check-label" for="radioValidateIpnNo">{{ 'No'|trans }}</label>
+                            </div>
                         </div>
                     </div>
-                </fieldset>
 
-                <fieldset>
-                    <legend>{{ 'Transaction information on payment gateway'|trans }}</legend>
-                    <div class="rowElem">
-                        <label>{{ 'Transaction type'|trans }}:</label>
-                        <div class="formRight">
+                    <h5>{{ 'Transaction information on payment gateway'|trans }}</h5>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Transaction type'|trans }}:</label>
+                        <div class="col">
                             {{ mf.selectbox('type', admin.invoice_transaction_types, transaction.type, 0, 'Select transaction type') }}
                         </div>
                     </div>
-                    <div class="rowElem">
-                        <label>{{ 'Transaction status on Payment Gateway'|trans }}:</label>
-                        <div class="formRight">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Transaction status on Payment Gateway'|trans }}:</label>
+                        <div class="col">
                             {{ mf.selectbox('txn_status', admin.invoice_transaction_gateway_statuses, transaction.txn_status, 0, 'Select status') }}
                         </div>
                     </div>
-                    <div class="rowElem">
-                        <label>{{ 'Transaction ID on Payment Gateway'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="txn_id" value="{{ transaction.txn_id }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Transaction ID on Payment Gateway'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="txn_id" value="{{ transaction.txn_id }}">
                         </div>
                     </div>
 
                     <input type="hidden" name="id" value="{{ transaction.id }}">
-                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
-                </fieldset>
-            </form>
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+                </form>
+            </div>
         </div>
 
-        <div id="tab-note" class="tab_content nopadding">
-            <div class="help">
+        <div class="tab-pane fade" id="tab-note" role="tabpanel">
+            <div class="card-body">
                 <h3>{{ 'Note about this transaction'|trans }}</h3>
 
                 <form method="post" action="{{ 'api/admin/invoice/transaction_update'|link }}" class="api-form" data-api-msg="{{ 'Transaction note updated.'|trans }}">
                     <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}:</label>
                         <div class="col">
                             <textarea class="form-control" name="note" rows="10">{{ transaction.note }}</textarea>
                         </div>
                     </div>
 
                     <input type="hidden" name="id" value="{{ transaction.id }}">
-                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary">
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
                 </form>
             </div>
         </div>
 
-        <div id="tab-ipn" class="tab_content nopadding">
-            <div class="help">
+        <div class="tab-pane fade" id="tab-ipn" role="tabpanel">
+            <div class="card-body">
                 <h3>{{ 'GET'|trans }}</h3>
             </div>
             {% if transaction.ipn.get %}
-            <table class="tableStatic wide">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
                 <tbody>
-                    {% for key,val in transaction.ipn.get %}
-                    <tr {% if loop.first %}class="noborder"{% endif %}>
-                        <td width="30%">{{ key }}</td>
+                    {% for key, val in transaction.ipn.get %}
+                    <tr>
+                        <td class="w-25">{{ key }}</td>
                         <td>{{ val }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
             {% else %}
-            <div class="body">
-                <p>{{ 'No GET parameters received'|trans }}</p>
+            <div class="card-body">
+                <p class="text-muted">{{ 'No GET parameters received'|trans }}</p>
             </div>
             {% endif %}
 
-            <div class="help">
+            <div class="card-body">
                 <h3>{{ 'POST'|trans }}</h3>
             </div>
             {% if transaction.ipn.post %}
-            <table class="tableStatic wide">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
                 <tbody>
-                    {% for key,val in transaction.ipn.post %}
-                    <tr {% if loop.first %}class="noborder"{% endif %}>
-                        <td width="30%">{{ key }}</td>
+                    {% for key, val in transaction.ipn.post %}
+                    <tr>
+                        <td class="w-25">{{ key }}</td>
                         <td>{{ val }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
             {% else %}
-            <div class="body">
-                <p>{{ 'No POST parameters received'|trans }}</p>
+            <div class="card-body">
+                <p class="text-muted">{{ 'No POST parameters received'|trans }}</p>
             </div>
             {% endif %}
 
-            <div class="help">
+            <div class="card-body">
                 <h3>{{ 'SERVER'|trans }}</h3>
             </div>
             {% if transaction.ipn.server %}
-            <table class="tableStatic wide">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
                 <tbody>
-                    {% for key,val in transaction.ipn.server %}
-                    <tr {% if loop.first %}class="noborder"{% endif %}>
-                        <td width="30%">{{ key }}</td>
+                    {% for key, val in transaction.ipn.server %}
+                    <tr>
+                        <td class="w-25">{{ key }}</td>
                         <td>{{ val }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
             {% else %}
-            <div class="body">
-                <p>{{ 'No SERVER parameters logged'|trans }}</p>
+            <div class="card-body">
+                <p class="text-muted">{{ 'No SERVER parameters logged'|trans }}</p>
             </div>
             {% endif %}
 
-            <div class="help">
+            <div class="card-body">
                 <h3>{{ 'http_raw_post_data'|upper}}</h3>
             </div>
             {% if transaction.ipn.http_raw_post_data %}
-            <div class="body">
+            <div class="card-body">
                 {{ transaction.ipn.http_raw_post_data }}
             </div>
             {% else %}
-            <div class="body">
-                <p>No {{ 'http_raw_post_data'|upper}} parameters received</p>
+            <div class="card-body">
+                <p>{{ 'No'|trans }} {{ 'http_raw_post_data'|upper }} {{ 'parameters received'|trans }}</p>
             </div>
             {% endif %}
         </div>

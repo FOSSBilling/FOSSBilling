@@ -17,27 +17,27 @@
                     <h2 class="card-title text-center mb-4">{{ 'Create main administrator account'|trans }}</h2>
                     <form class="api-form" action="{{ 'api/guest/staff/create'|link }}" method="post" data-api-redirect="{{ 'index'|alink }}">
                         <div class="mb-3">
-                            <label class="form-label" for="req1">{{ 'Email'|trans }}</label>
+                            <label class="form-label" for="inputEmail">{{ 'Email'|trans }}</label>
                             <div class="col">
-                                <input class="form-control" id="req1" type="email" name="email" value="{{ request.email }}" placeholder="{{ 'Enter your email address'|trans }}">
+                                <input class="form-control" id="inputEmail" type="email" name="email" value="{{ request.email }}" placeholder="{{ 'Enter your email address'|trans }}">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" for="req2">{{ 'Password'|trans }}</label>
+                            <label class="form-label" for="inputPassword">{{ 'Password'|trans }}</label>
                             <div class="col">
-                                <input class="form-control" id="req2" type="password" name="password" value="{{ request.password }}" placeholder="{{ 'Enter your password'|trans }}">
+                                <input class="form-control" id="inputPassword" type="password" name="password" value="{{ request.password }}" placeholder="{{ 'Enter your password'|trans }}">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <input type="submit" value="{{ 'Create administrator account'|trans }}" class="btn btn-primary w-100">
+                            <button class="btn btn-primary w-100" type="submit">{{ 'Create administrator account'|trans }}</button>
                         </div>
                     </form>
                 {% else %}
                     <form class="api-form" action="{{ 'api/guest/staff/login'|link }}" method="post" data-api-redirect="{{ 'index'|alink }}">
                         <div class="mb-3">
-                            <label class="form-label" for="req1">{{ 'Email'|trans }}</label>
+                            <label class="form-label" for="inputEmail">{{ 'Email'|trans }}</label>
                             <input class="form-control"
-                                id="req1"
+                                id="inputEmail"
                                 type="email"
                                 name="email"
                                 value="{{ request.email }}"
@@ -46,24 +46,21 @@
                                 autofocus>
                         </div>
                         <div class="mb-3">
-                            <label class="block mb-2 text-sm font-medium" for="req2">{{ 'Password'|trans }}</label>
+                            <label class="form-label" for="inputPassword">{{ 'Password'|trans }}</label>
                             <input class="form-control"
-                                id="req2"
+                                id="inputPassword"
                                 type="password"
                                 name="password"
                                 value="{{ request.password }}"
                                 placeholder="{{ 'Enter your password'|trans }}"
                                 required>
                         </div>
-                        <div class="mb-3">
-                            <input type="checkbox" id="remember" class="mr-1" name="remember" value="1" checked>
-                            <label for="remember">{{ 'Remember me'|trans }}</label>
+                        <div class="mb-3 form-check">
+                            <input class="form-check-input" id="inputRemember" type="checkbox" name="remember" value="1" checked>
+                            <label class="form-check-label" for="inputRemember">{{ 'Remember me'|trans }}</label>
                         </div>
                         <div class="form-footer">
-                            <input
-                                type="submit"
-                                class="btn btn-primary w-100"
-                                value="{{ 'Sign in'|trans }}">
+                            <button class="btn btn-primary w-100" type="submit">{{ 'Sign in'|trans }}</button>
                         </div>
                     </form>
                 {% endif %}

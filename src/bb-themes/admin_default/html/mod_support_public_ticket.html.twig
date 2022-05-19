@@ -38,23 +38,23 @@
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <tbody>
                     <tr>
-                        <td>{{ 'Ticket ID'|trans }}</td>
+                        <td class="w-50 text-end">{{ 'Ticket ID'|trans }}:</td>
                         <td>#{{ ticket.id }}</td>
                     </tr>
                     <tr>
-                        <td>{{ 'Subject'|trans }}</td>
+                        <td class="text-end">{{ 'Subject'|trans }}:</td>
                         <td>{{ ticket.subject }}</td>
                     </tr>
                     <tr>
-                        <td>{{ 'Author'|trans }}</td>
+                        <td class="text-end">{{ 'Author'|trans }}:</td>
                         <td>{{ ticket.author_name }}</td>
                     </tr>
                     <tr>
-                        <td>{{ 'Email'|trans }}</td>
+                        <td class="text-end">{{ 'Email'|trans }}:</td>
                         <td>{{ ticket.author_email }}</td>
                     </tr>
                     <tr>
-                        <td>{{ 'Status'|trans }}</td>
+                        <td class="text-end">{{ 'Status'|trans }}:</td>
                         <td>
                             {% if ticket.status == 'open' %}
                                 <span class="badge bg-success me-1"></span>
@@ -69,12 +69,12 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>{{ 'Time opened'|trans }}</td>
+                        <td class="text-end">{{ 'Time opened'|trans }}:</td>
                         <td>{{ ticket.created_at|date('l, d F Y') }}</td>
                     </tr>
                     {% if ticket.created_at != ticket.updated_at %}
                     <tr>
-                        <td>{{ 'Last updated'|trans }}</td>
+                        <td class="text-end">{{ 'Last updated'|trans }}:</td>
                         <td>{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</td>
                     </tr>
                     {% endif %}
@@ -83,18 +83,31 @@
 
             <div class="card-footer text-center">
                 {% if ticket.status != 'closed' %}
-                <a href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id }) }}" data-api-redirect="{{ 'support/public-tickets'|alink }}" class="btn55 mr10 api-link" >
-                    <img src="images/icons/middlenav/stop.png" alt="">
-                    <span>{{ 'Close ticket'|trans }}</span>
+                <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    href="{{ 'api/admin/support/public_ticket_close'|link({ 'id': ticket.id }) }}"
+                    data-api-redirect="{{ 'support/public-tickets'|alink }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#close" />
+                    </svg>
+                    <span class="d-block text-secondary">{{ 'Close'|trans }}</span>
                 </a>
                 {% endif %}
-                <a href="{{ 'api/admin/support/public_ticket_delete'|link({ 'id' : ticket.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'support/public-tickets'|alink }}" class="btn55 mr10 api-link">
-                    <img src="images/icons/middlenav/trash.png" alt="">
-                    <span>{{ 'Delete'|trans }}</span>
+                <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    href="{{ 'api/admin/support/public_ticket_delete'|link({ 'id' : ticket.id }) }}"
+                    data-api-confirm="{{ 'Are you sure?'|trans }}"
+                    data-api-redirect="{{ 'support/public-tickets'|alink }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#delete" />
+                    </svg>
+                    <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
                 </a>
-                <a href="{{ 'support/contact-us/conversation'|link }}/{{ ticket.hash }}" class="btn55 mr10" target="_blank">
-                    <img src="images/icons/middlenav/userComment.png" alt="">
-                    <span>{{ 'Open as client'|trans }}</span>
+                <a class="d-inline-block mx-1 btn bg-light bg-gradient"
+                    href="{{ 'support/contact-us/conversation'|link }}/{{ ticket.hash }}"
+                    target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#eye" />
+                    </svg>
+                    <span class="d-block text-secondary">{{ 'View as client'|trans }}</span>
                 </a>
             </div>
         </div>

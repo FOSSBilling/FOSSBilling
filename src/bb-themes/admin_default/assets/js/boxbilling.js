@@ -6,11 +6,10 @@ var bb = {
       data: params,
       dataType: 'json',
       error: function (jqXHR, textStatus, e) {
-        bb.msg(e, 'error');
+        boxbilling.message(e, 'error');
       },
       success: function (data) {
         if (data.error) {
-          // bb.msg(data.error.message, 'error');
           boxbilling.message(data.error.message, 'error');
         } else {
           if (typeof jsonp === 'function') {
@@ -29,11 +28,11 @@ var bb = {
       data: params,
       dataType: 'json',
       error: function (jqXHR, textStatus, e) {
-        bb.msg(e, 'error');
+        boxbilling.message(e, 'error');
       },
       success: function (data) {
         if (data.error) {
-          bb.msg(data.error.message, 'error');
+          boxbilling.message(data.error.message, 'error');
         } else {
           if (typeof jsonp === 'function') {
             return jsonp(data.result);
@@ -53,8 +52,11 @@ var bb = {
   error: function (txt, code) {
     jAlert(txt, 'Error code: ' + code);
   },
+  /**
+   * @deprecated Will be removed after testing. Use boxbilling.message()
+   */
   msg: function (txt, type) {
-    jAlert(txt, type);
+    boxbilling.message(txt, type);
   },
   redirect: function (url) {
     if (url === undefined) {
@@ -105,14 +107,13 @@ var bb = {
     }
 
     if (obj.attr('data-api-msg') !== undefined) {
-      // this.msg(obj.attr('data-api-msg'), 'success');
       boxbilling.message(obj.attr('data-api-msg'), 'success');
 
       return;
     }
 
     if (result) {
-      this.msg('Form updated', 'success');
+      boxbilling.message('Form updated', 'success');
 
       return;
     }

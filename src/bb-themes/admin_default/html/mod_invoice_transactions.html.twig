@@ -124,21 +124,39 @@
                 <td>
                     <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ tx.id }}">
                 </td>
-                <td>{% if tx.invoice_id %}<a href="{{ 'invoice/manage'|alink }}/{{ tx.invoice_id }}">#{{ tx.invoice_id }}</a>{% else %}n/a{% endif %}</td>
+                <td>
+                    {% if tx.invoice_id %}
+                        <a href="{{ 'invoice/manage'|alink }}/{{ tx.invoice_id }}">#{{ tx.invoice_id }}</a>
+                    {% else %}
+                        {{ 'n/a'|trans }}
+                    {% endif %}
+                </td>
                 <td>{{ mf.status_name(tx.type|default('-')) }}</td>
-                <td>{% if tx.error %}<a href="#" onclick="bb.msg('{{ tx.error }}','{{ tx.error_code }}'); return false;">{{ tx.error_code }}</a>{% else %}{{mf.status_name(tx.status) }}{% endif %}</td>
+                <td>
+                    {% if tx.error %}
+                        <a href="#" onclick="bb.msg('{{ tx.error }}', '{{ tx.error_code }}'); return false;">{{ tx.error_code }}</a>
+                    {% else %}
+                        {{ mf.status_name(tx.status) }}
+                    {% endif %}
+                </td>
                 <td>{{ tx.gateway }}</td>
                 <td>{{ mf.currency_format( tx.amount, tx.currency) }}</td>
                 <td>{{ tx.created_at|date('Y-m-d H:i') }}</td>
-                <td class="actions">
-                    <a class="btn14" href="{{ 'invoice/transaction'|alink }}/{{ tx.id }}">
-                        <img src="images/icons/dark/pencil.png" alt="">
+                <td>
+                    <a class="btn btn-icon" href="{{ 'invoice/transaction'|alink }}/{{ tx.id }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <use xlink:href="#edit" />
+                        </svg>
                     </a>
-                    <a class="btn14 api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': tx.id }) }}" data-api-msg="Processed" title="Process again">
-                        <img src="images/icons/dark/refresh4.png" alt="">
+                    <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': tx.id }) }}" data-api-msg="Processed" title="Process again">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <use xlink:href="#refresh" />
+                        </svg>
                     </a>
-                    <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': tx.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
-                        <img src="images/icons/dark/trash.png" alt="">
+                    <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': tx.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <use xlink:href="#delete" />
+                        </svg>
                     </a>
                 </td>
             </tr>

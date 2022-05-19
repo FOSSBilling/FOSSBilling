@@ -123,26 +123,26 @@
 
             <div class="card-footer text-center">
                 <a href="{{ 'invoice'|link }}/{{ invoice.hash }}" class="d-inline-block mx-1 btn bg-light bg-gradient" target="_blank">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <use xlink:href="#eye" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'View as client'|trans }}</span>
                 </a>
                 <a href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id }) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <use xlink:href="#delete" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
                 </a>
                 {% if invoice.status == 'unpaid' %}
                 <a href="{{ 'api/admin/invoice/send_reminder'|link({ 'id': invoice.id}) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-msg="Payment reminder was sent">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <use xlink:href="#mail" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Send reminder'|trans }}</span>
                 </a>
                 <a href="{{ 'api/admin/invoice/mark_as_paid'|link({ 'id': invoice.id, 'execute': 1 }) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-reload="Invoice marked as paid">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <use xlink:href="#check" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Mark as paid'|trans }}</span>
@@ -151,14 +151,14 @@
 
                 {% if invoice.status == 'paid' %}
                 <a href="{{ 'api/admin/invoice/refund'|link({ 'id': invoice.id }) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <use xlink:href="#receipt-refund" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Refund'|trans }}</span>
                 </a>
                 {% endif %}
                 <a href="{{ 'invoice/pdf'|link }}/{{ invoice.hash }}" class="d-inline-block mx-1 btn bg-light bg-gradient" target="_blank">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <use xlink:href="#download" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'PDF'|trans }}</span>
@@ -418,7 +418,7 @@
     </div>
 </div>
 
-<div class="card">
+<div class="card mb-3">
     <div class="card-body">
         <h5>{{ 'Invoice items'|trans }}</h5>
     </div>
@@ -479,7 +479,7 @@
             <tfoot>
                 <tr>
                     <td colspan="4" class="currency">
-                        Subtotal: {{ mf.currency_format(invoice.subtotal, invoice.currency) }}
+                        {{ 'Subtotal'|trans }}: {{ mf.currency_format(invoice.subtotal, invoice.currency) }}
                     </td>
                 </tr>
                 <tr>
@@ -489,7 +489,7 @@
                 </tr>
                 <tr>
                     <td colspan="4" class="currency">
-                        Total: {{ mf.currency_format(invoice.total, invoice.currency) }}
+                        {{ 'Total'|trans }}: {{ mf.currency_format(invoice.total, invoice.currency) }}
                     </td>
                 </tr>
             </tfoot>
@@ -543,17 +543,17 @@
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="5" class="currency">
+                <td colspan="5" class="text-end fw-bold">
                     Subtotal: {{ mf.currency_format(invoice.subtotal, invoice.currency) }}
                 </td>
             </tr>
             <tr>
-                <td colspan="5" class="currency">
+                <td colspan="5" class="text-end fw-bold">
                     {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ mf.currency_format(invoice.tax, invoice.currency) }}
                 </td>
             </tr>
             <tr>
-                <td colspan="5" class="currency">
+                <td colspan="5" class="text-end fw-bold">
                     Total: {{ mf.currency_format(invoice.total, invoice.currency) }}
                 </td>
             </tr>
@@ -562,46 +562,48 @@
 {% endif %}
 </div>
 
-{% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 100 }).list %}
+    {% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 100 }).list %}
+    {% if transactions|length > 0 %}
+    <div class="card">
+        <div class="card-body">
+            <h5>{{ 'Transactions'|trans }}</h5>
+        </div>
 
-{% if transactions|length > 0 %}
-<div class="widget">
-    <div class="head">
-        <h5>{{ 'Transactions'|trans }}</h5>
+        <table class="table card-table table-vcenter table-striped text-nowrap">
+            <thead>
+                <tr>
+                    <th>{{ 'ID'|trans }}</th>
+                    <th>{{ 'Type'|trans }}</th>
+                    <th>{{ 'Gateway'|trans }}</th>
+                    <th>{{ 'Amount'|trans }}</th>
+                    <th>{{ 'Status'|trans }}</th>
+                    <th>{{ 'Date'|trans }}</th>
+                    <th class="w-1"></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for i, tx in transactions %}
+                <tr>
+                    <td>{{ tx.txn_id }}</td>
+                    <td>{{ tx.type }}</td>
+                    <td>{{ tx.gateway }}</td>
+                    <td>{{ mf.currency_format( tx.amount, tx.currency) }}</td>
+                    <td>{{ mf.status_name(tx.status) }}</td>
+                    <td>{{ tx.created_at|bb_datetime }}</td>
+                    <td>
+                        <a class="btn btn-icon" href="{{ '/invoice/transaction'|alink }}/{{ tx.id }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <use xlink:href="#edit" />
+                            </svg>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    <table class="tableStatic wide">
-        <thead>
-            <tr>
-                <th>{{ 'ID'|trans }}</th>
-                <th>{{ 'Type'|trans }}</th>
-                <th>{{ 'Gateway'|trans }}</th>
-                <th>{{ 'Amount'|trans }}</th>
-                <th>{{ 'Status'|trans }}</th>
-                <th>{{ 'Date'|trans }}</th>
-                <th class="w-1"></th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for i, tx in transactions %}
-            <tr>
-                <td>{{ tx.txn_id }}</td>
-                <td>{{ tx.type }}</td>
-                <td>{{ tx.gateway }}</td>
-                <td>{{ mf.currency_format( tx.amount, tx.currency) }}</td>
-                <td>{{ mf.status_name(tx.status) }}</td>
-                <td>{{ tx.created_at|bb_datetime }}</td>
-                <td>
-                    <a class="bb-button btn14" href="{{ '/invoice/transaction'|alink }}/{{ tx.id }}">
-                        <img src="images/icons/dark/pencil.png" alt="">
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endif %}
+    {% endif %}
 {% endblock %}
 
 {% block sidebar2 %}

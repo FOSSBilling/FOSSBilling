@@ -2,54 +2,68 @@
     <h2>{{ 'Domain details'|trans }}</h2>
 </div>
 
-<table class="tableStatic wide">
+<table class="table card-table table-vcenter table-striped text-nowrap">
     <tbody>
-        <tr class="noborder">
-            <td style="width: 30%;">{{ 'Domain'|trans }}</td>
-            <td><a target="_blank" href="https://{{ service.domain }}">{{ service.domain }}</a></td>
+        <tr>
+            <td class="w-50 text-end">{{ 'Domain'|trans }}:</td>
+            <td>
+                <a target="_blank" href="https://{{ service.domain }}">{{ service.domain }}</a>
+            </td>
         </tr>
         <tr>
-            <td>{{ 'Registrar'|trans }}</td>
+            <td class="text-end">{{ 'Registrar'|trans }}:</td>
             <td>{{ service.registrar }}</td>
         </tr>
         <tr>
-            <td>{{ 'Nameserver 1'|trans }}</td>
+            <td class="text-end">{{ 'Nameserver 1'|trans }}:</td>
             <td>{{ service.ns1 }}</td>
         </tr>
         <tr>
-            <td>{{ 'Nameserver 2'|trans }}</td>
+            <td class="text-end">{{ 'Nameserver 2'|trans }}:</td>
             <td>{{ service.ns2 }}</td>
         </tr>
         <tr>
-            <td>{{ 'Nameserver 3'|trans }}</td>
+            <td class="text-end">{{ 'Nameserver 3'|trans }}:</td>
             <td>{{ service.ns3 }}</td>
         </tr>
         <tr>
-            <td>{{ 'Nameserver 4'|trans }}</td>
+            <td class="text-end">{{ 'Nameserver 4'|trans }}:</td>
             <td>{{ service.ns4 }}</td>
         </tr>
         <tr>
-            <td>{{ 'Transfer code'|trans }}</td>
+            <td class="text-end">{{ 'Transfer code'|trans }}:</td>
             <td>{{ service.transfer_code }}</td>
         </tr>
         <tr>
-            <td>{{ 'Privacy protected'|trans }}</td>
-            <td id="privacy-value">{{ service.privacy }}</td>
+            <td class="text-end">{{ 'Locked'|trans }}:</td>
+            <td id="locked-value">
+                {% if service.locked == 1 %}
+                    <span class="badge bg-danger me-1"></span> {{ 'Yes'|trans }}
+                {% else %}
+                    <span class="badge bg-success me-1"></span> {{ 'No'|trans }}
+                {% endif %}
+            </td>
         </tr>
         <tr>
-            <td>{{ 'Locked'|trans }}</td>
-            <td id="locked-value">{{ service.locked }}</td>
+            <td class="text-end">{{ 'Privacy protection'|trans }}:</td>
+            <td id="privacy-value">
+                {% if service.privacy == 1 %}
+                    <span class="badge bg-danger me-1"></span> {{ 'Enabled'|trans }}
+                {% else %}
+                    <span class="badge bg-success me-1"></span> {{ 'Disabled'|trans }}
+                {% endif %}
+            </td>
         </tr>
         <tr>
-            <td>{{ 'Registration/Renewal years'|trans }}</td>
+            <td class="text-end">{{ 'Registration/Renewal years'|trans }}:</td>
             <td>{{ service.period }}</td>
         </tr>
         <tr>
-            <td>{{ 'Registration date'|trans }}</td>
+            <td class="text-end">{{ 'Registration date'|trans }}:</td>
             <td>{{ service.registered_at|date('l, d F Y') }}</td>
         </tr>
         <tr>
-            <td>{{ 'Expires at'|trans }}</td>
+            <td class="text-end">{{ 'Expires at'|trans }}:</td>
             <td>{{ service.expires_at|date('l, d F Y') }}</td>
         </tr>
     </tbody>
@@ -58,25 +72,35 @@
 <div class="card-footer text-center">
     {{ order_actions }}
     {% if order.status == 'active' %}
-    <a class="btn55 mr10" type="button" id="get-epp">
-        <img src="images/icons/middlenav/key.png" alt="">
-        <span>{{ 'Get EPP'|trans }}</span>
+    <a class="d-inline-block mx-1 btn bg-light bg-gradient" type="button" id="get-epp">
+        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <use xlink:href="#key" />
+        </svg>
+        <span class="d-block text-secondary">{{ 'Get EPP'|trans }}</span>
     </a>
-    <a class="btn55 mr10" type="button" id="domain-unlock"{% if service.locked == 0 %} style="display:none;"{% endif %}>
-        <img src="images/icons/middlenav/locked2.png" alt="">
-        <span>{{ 'Unlock'|trans }}</span>
+    <a class="d-inline-block mx-1 btn btn-danger bg-gradient" type="button" id="domain-unlock">
+        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <use xlink:href="#lock-open" />
+        </svg>
+        <span class="d-block">{{ 'Unlock'|trans }}</span>
     </a>
-    <a class="btn55 mr10" type="button" id="domain-lock"{% if service.locked == 1 %} style="display:none;"{% endif %}>
-        <img src="images/icons/middlenav/unlocked.png" alt="">
-        <span>{{ 'Lock'|trans }}</span>
+    <a class="d-inline-block mx-1 btn bg-light bg-gradient" type="button" id="domain-lock">
+        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <use xlink:href="#lock-closed" />
+        </svg>
+        <span class="d-block text-secondary">{{ 'Lock'|trans }}</span>
     </a>
-    <a class="btn55 mr10" type="button" id="domain-disable-pp">
-        <img src="images/icons/middlenav/umbrella.png" alt="">
-        <span>{{ 'Disable privacy protection'|trans }}</span>
+    <a class="d-inline-block mx-1 btn btn-danger bg-gradient" type="button" id="domain-disable-pp">
+        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <use xlink:href="#eye" />
+        </svg>
+        <span class="d-block">{{ 'Disable privacy'|trans }}</span>
     </a>
-    <a class="btn55 mr10" type="button" id="domain-enable-pp">
-        <img src="images/icons/middlenav/umbrella.png" alt="">
-        <span>{{ 'Enable privacy protection'|trans }}</span>
+    <a class="d-inline-block mx-1 btn bg-light bg-gradient" type="button" id="domain-enable-pp">
+        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <use xlink:href="#eye-off" />
+        </svg>
+        <span class="d-block text-secondary">{{ 'Enable privacy'|trans }}</span>
     </a>
     {% endif %}
 </div>
@@ -218,12 +242,14 @@
 
 <script>
 $(function() {
-    {% if service.privacy == 0 %}
-        $('#domain-disable-pp').hide();
+    {% if service.locked == 0 %}
+        document.getElementById('domain-unlock').classList.remove('d-inline-block');
+        document.getElementById('domain-unlock').style.display = 'none';
     {% endif %}
 
-    {% if service.privacy == 1 %}
-        $('#domain-enable-pp').hide();
+    {% if service.locked == 1 %}
+        document.getElementById('domain-lock').classList.remove('d-inline-block');
+        document.getElementById('domain-lock').style.display = 'none';
     {% endif %}
 
     $('#domain-lock').bind('click', function(event) {
@@ -231,9 +257,12 @@ $(function() {
             'admin/servicedomain/lock',
             { order_id: {{ order.id }} },
             function(result) {
-                bb.msg('Domain locked');
-                $('#domain-lock').toggle();
-                $('#domain-unlock').toggle();
+                boxbilling.message("{{ 'Domain locked'|trans }}");
+
+                document.getElementById('domain-lock').classList.remove('d-inline-block');
+                document.getElementById('domain-lock').style.display = 'none';
+                document.getElementById('domain-unlock').classList.add('d-inline-block');
+
                 $('#locked-value').text('1');
             }
         );
@@ -244,22 +273,42 @@ $(function() {
             'admin/servicedomain/unlock',
             { order_id: {{ order.id }} },
             function(result) {
-                bb.msg('Domain unlocked');
-                $('#domain-lock').toggle();
-                $('#domain-unlock').toggle();
+                boxbilling.message("{{ 'Domain unlocked'|trans }}");
+
+                document.getElementById('domain-lock').classList.add('d-inline-block');
+                document.getElementById('domain-unlock').classList.remove('d-inline-block');
+                document.getElementById('domain-unlock').style.display = 'none';
+
                 $('#locked-value').text('0');
             }
         );
     });
+
+    {% if service.privacy == 0 %}
+        {# $('#domain-disable-pp').hide(); #}
+        document.getElementById('domain-disable-pp').classList.remove('d-inline-block');
+        document.getElementById('domain-disable-pp').style.display = 'none';
+    {% endif %}
+
+    {% if service.privacy == 1 %}
+        {# $('#domain-enable-pp').hide(); #}
+        document.getElementById('domain-enable-pp').classList.remove('d-inline-block');
+        document.getElementById('domain-enable-pp').style.display = 'none';
+    {% endif %}
 
     $('#domain-enable-pp').bind('click', function(event) {
         bb.post(
             'admin/servicedomain/enable_privacy_protection',
             { order_id: {{ order.id }} },
             function(result) {
-                bb.msg('Privacy Protection enabled');
-                $('#domain-enable-pp').toggle();
-                $('#domain-disable-pp').toggle();
+                boxbilling.message("{{ 'Privacy protection enabled'|trans }}");
+
+                {# $('#domain-enable-pp').toggle(); #}
+                {# $('#domain-disable-pp').toggle(); #}
+                document.getElementById('domain-enable-pp').classList.remove('d-inline-block');
+                document.getElementById('domain-enable-pp').style.display = 'none';
+                document.getElementById('domain-disable-pp').classList.add('d-inline-block');
+
                 $('#privacy-value').text('1');
             }
         );
@@ -270,9 +319,14 @@ $(function() {
             'admin/servicedomain/disable_privacy_protection',
             { order_id: {{ order.id }} },
             function(result) {
-                bb.msg('Privacy Protection disabled');
-                $('#domain-enable-pp').toggle();
-                $('#domain-disable-pp').toggle();
+                boxbilling.message("{{ 'Privacy protection disabled'|trans }}");
+
+                {# $('#domain-enable-pp').toggle(); #}
+                {# $('#domain-disable-pp').toggle(); #}
+                document.getElementById('domain-disable-pp').classList.remove('d-inline-block');
+                document.getElementById('domain-disable-pp').style.display = 'none';
+                document.getElementById('domain-enable-pp').classList.add('d-inline-block');
+
                 $('#privacy-value').text('0');
             }
         );
@@ -283,7 +337,7 @@ $(function() {
             'admin/servicedomain/get_transfer_code',
             { order_id: {{ order.id }} },
             function(result) {
-                bb.msg('Domain transfer code is: ' + result);
+                boxbilling.message("{{ 'Domain transfer code is: '|trans }}" + result);
             }
         );
     });

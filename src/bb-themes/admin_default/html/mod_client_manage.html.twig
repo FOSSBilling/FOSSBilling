@@ -97,6 +97,17 @@
                             <td>{{ 'Currency'|trans }}:</td>
                             <td>{{ client.currency|default('-') }}</td>
                         </tr>
+                        {% if client.notes %}
+                        <tr>
+                            <td>{{ 'Notes'|trans }}:</td>
+                            <td>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <use xlink:href="#support" />
+                                </svg>
+                                <a href="#tab-profile" data-bs-toggle="tab" role="button">{{ client.notes }}</a>
+                            </td>
+                        </tr>
+                        {% endif %}
                         <tr>
                             <td>IP:</td>
                             <td>{{ client.ip|default('-') }} {{ client.ip|ipcountryname|default('Unknown') }}</td>
@@ -120,21 +131,21 @@
                 </table>
             </div>
 
-            <div class="card-footer">
-                <a href="{{ 'client/login'|alink }}/{{ client.id }}" class="btn btn-primary" target="_blank">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <div class="card-footer text-center">
+                <a href="{{ 'client/login'|alink }}/{{ client.id }}" class="d-inline-block mx-1 btn bg-light bg-gradient" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <use xlink:href="#login" />
                     </svg>
-                    {{ 'Login to client area'|trans }}
+                    <span class="d-block text-secondary">{{ 'Login to client area'|trans }}</span>
                 </a>
-                <a class="btn btn-primary api-link"
+                <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
                     href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'client'|alink }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <use xlink:href="#delete" />
                     </svg>
-                    {{ 'Delete'|trans }}
+                    <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
                 </a>
             </div>
         </div>
