@@ -127,7 +127,7 @@ function handler_exception($e)
               display: inline-block;
               width: 140px;
               height: 140px;
-              background-image: url('/bb-themes/boxbilling/assets/images/box.png');
+              background-image: url('/themes/boxbilling/assets/images/box.png');
               background-size: cover;
             }
             

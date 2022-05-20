@@ -13,13 +13,13 @@ return (new PhpCsFixer\Config())
         (new PhpCsFixer\Finder())
             ->in(__DIR__)
             ->exclude([
-                'bb-data',
-                'bb-library',
-                'bb-locale',
-                'bb-themes',
+                'data',
+                'library',
+                'locale',
+                'themes',
                 'vendor',
                 'install',
-                'bb-modules/Wysiwyg'
+                'modules/Wysiwyg'
             ])
             ->notPath('rb.php')
     )

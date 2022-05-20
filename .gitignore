@@ -6,9 +6,9 @@ tmp
 src/.htaccess
 src/bb-config*
 !src/bb-config-sample.php
-src/bb-data/log/*
-src/bb-data/cache/*
-src/bb-data/tmp.txt
+src/data/log/*
+src/data/cache/*
+src/data/tmp.txt
 src/bb-test.php
 src/vendor*
 src/install/logs/*

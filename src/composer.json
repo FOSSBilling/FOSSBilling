@@ -43,10 +43,10 @@
         "ext-gettext": "*"
     },
     "autoload": {
-        "psr-0": {"": "bb-library"},
-        "psr-4": {"Box\\Mod\\": "bb-modules"}
+        "psr-0": {"": "library"},
+        "psr-4": {"Box\\Mod\\": "modules"}
     },
     "autoload-dev": {
-        "psr-0": { "": "../tests/bb-library" }
+        "psr-0": { "": "../tests/library" }
     }
 }

@@ -28,17 +28,17 @@ define('BB_URL_INSTALL', BB_URL . 'install/');
 define('BB_URL_ADMIN', BB_URL . 'index.php?_url=/bb-admin');
 
 define('BB_PATH_ROOT', realpath(dirname(__FILE__) . '/..'));
-define('BB_PATH_LIBRARY', BB_PATH_ROOT . '/bb-library');
+define('BB_PATH_LIBRARY', BB_PATH_ROOT . '/library');
 define('BB_PATH_VENDOR', BB_PATH_ROOT . '/vendor');
 define('BB_PATH_INSTALL_THEMES', BB_PATH_ROOT . '/install');
-define('BB_PATH_THEMES', BB_PATH_ROOT . '/bb-themes');
+define('BB_PATH_THEMES', BB_PATH_ROOT . '/themes');
 define('BB_PATH_LICENSE', BB_PATH_ROOT . '/LICENSE');
 define('BB_PATH_SQL', BB_PATH_ROOT . '/install/sql/structure.sql');
 define('BB_PATH_SQL_DATA', BB_PATH_ROOT . '/install/sql/content.sql');
 define('BB_PATH_INSTALL', BB_PATH_ROOT . '/install');
 define('BB_PATH_CONFIG', BB_PATH_ROOT . '/bb-config.php');
 define('BB_PATH_CRON', BB_PATH_ROOT . '/bb-cron.php');
-define('BB_PATH_LANGS', BB_PATH_ROOT . '/bb-locale');
+define('BB_PATH_LANGS', BB_PATH_ROOT . '/locale');
 
 /* 
   Config paths & templates
@@ -402,8 +402,8 @@ final class Box_Installer
             'locale' => 'en_US',
             'locale_date_format' => '%A, %d %B %G',
             'locale_time_format' => ' %T',
-            'path_data' => BB_PATH_ROOT . '/bb-data',
-            'path_logs' => BB_PATH_ROOT . '/bb-data/log/application.log',
+            'path_data' => BB_PATH_ROOT . '/data',
+            'path_logs' => BB_PATH_ROOT . '/data/log/application.log',
 
             'log_to_db' => true,
 
@@ -418,7 +418,7 @@ final class Box_Installer
             'twig' => [
                 'debug' => true,
                 'auto_reload' => true,
-                'cache' => BB_PATH_ROOT . '/bb-data/cache',
+                'cache' => BB_PATH_ROOT . '/data/cache',
             ],
 
             'api' => [
@@ -454,7 +454,7 @@ final class Box_Installer
 
     private function generateEmailTemplates()
     {
-        define('BB_PATH_MODS', BB_PATH_ROOT . '/bb-modules');
+        define('BB_PATH_MODS', BB_PATH_ROOT . '/modules');
 
         $emailService = new \Box\Mod\Email\Service();
         $di = $di = include BB_PATH_ROOT . '/bb-di.php';

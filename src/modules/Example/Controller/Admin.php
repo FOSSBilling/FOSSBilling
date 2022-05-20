@@ -39,7 +39,7 @@ class Admin implements \Box\InjectionAwareInterface
 
     /**
      * This method registers menu items in admin area navigation block
-     * This navigation is cached in bb-data/cache/{hash}. To see changes please
+     * This navigation is cached in data/cache/{hash}. To see changes please
      * remove the file.
      *
      * @return array

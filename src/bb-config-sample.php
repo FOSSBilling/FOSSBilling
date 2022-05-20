@@ -90,9 +90,9 @@ return [
     /**
      * Set location to store sensitive data.
      */
-    'path_data' => dirname(__FILE__).'/bb-data',
+    'path_data' => dirname(__FILE__).'/data',
 
-    'path_logs' => dirname(__FILE__).'/bb-data/log/application.log',
+    'path_logs' => dirname(__FILE__).'/data/log/application.log',
 
     'log_to_db' => true,
 
@@ -131,7 +131,7 @@ return [
     'twig' => [
         'debug' => false,
         'auto_reload' => false,
-        'cache' => dirname(__FILE__).'/bb-data/cache',
+        'cache' => dirname(__FILE__).'/data/cache',
     ],
 
     'api' => [

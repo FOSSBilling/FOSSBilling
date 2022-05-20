@@ -251,7 +251,7 @@ class Service implements InjectionAwareInterface
         if (null == $theme || !file_exists($path.$theme)) {
             $theme = $default;
         }
-        $url = $this->di['config']['url'].'bb-themes/'.$theme.'/';
+        $url = $this->di['config']['url'].'themes/'.$theme.'/';
 
         return ['code' => $theme, 'url' => $url];
     }
@@ -358,10 +358,10 @@ class Service implements InjectionAwareInterface
             $ext = trim($config['extends'], '/');
             $ext = str_replace('.', '', $ext);
 
-            $config['url'] = BB_URL.'bb-themes/'.$ext.'/';
+            $config['url'] = BB_URL.'themes/'.$ext.'/';
             array_push($paths, $this->getThemesPath().$ext.'/html');
         } else {
-            $config['url'] = BB_URL.'bb-themes/'.$theme.'/';
+            $config['url'] = BB_URL.'themes/'.$theme.'/';
         }
 
         // add installed modules paths

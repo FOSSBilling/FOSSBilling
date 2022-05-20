@@ -17,7 +17,7 @@ define('BB_DB_TYPE', $config['db']['type']);
 // Add test libraries
 set_include_path(implode(PATH_SEPARATOR, array(
     get_include_path(),
-    BB_PATH_TESTS.'/bb-library',
+    BB_PATH_TESTS.'/library',
     BB_PATH_TESTS.'/includes',
     BB_PATH_TESTS.'/includes/Vps',
 )));

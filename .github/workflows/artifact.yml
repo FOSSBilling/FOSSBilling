@@ -46,8 +46,8 @@ jobs:
 
       - name: Create temporary directories and files
         run: |
-          mkdir -p ./src/bb-data/{cache,log,uploads}
-          touch ./src/bb-data/{cache,log,uploads}/index.html
+          mkdir -p ./src/data/{cache,log,uploads}
+          touch ./src/data/{cache,log,uploads}/index.html
           mkdir -p ./build/{code-browser,code-coverage,logs,pdepend,update,distribution,source}
 
       - name: Copy mandatory files to the temporary build folder
@@ -69,7 +69,7 @@ jobs:
         run: |
           sed s/0.0.1/${GITHUB_SHA::7}/ Version.php > Version2.php
           mv Version2.php Version.php
-        working-directory: ./build/source/bb-library/Box
+        working-directory: ./build/source/library/Box
 
       - name: Create the final archive
         run: tar cvf ./build/distribution/FOSSBilling-${GITHUB_SHA::7}.tar -C ./build/source .

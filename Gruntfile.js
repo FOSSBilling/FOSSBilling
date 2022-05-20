@@ -6,9 +6,9 @@ module.exports = function(grunt) {
 
         sprite: {
             dark_icons: {
-                src: 'src/bb-themes/admin_default/images/icons/dark/*.png',
-                dest: 'src/bb-themes/admin_default/sprites/dark-icons-sprite.png',
-                destCss: 'src/bb-themes/admin_default/css/dark-icons-sprite.css',
+                src: 'src/themes/admin_default/images/icons/dark/*.png',
+                dest: 'src/themes/admin_default/sprites/dark-icons-sprite.png',
+                destCss: 'src/themes/admin_default/css/dark-icons-sprite.css',
                 cssOpts: {
                     cssSelector: function (item) {
                         return '.sprite-' + item.name;
@@ -16,9 +16,9 @@ module.exports = function(grunt) {
                 }
             },
             topnav: {
-                src: 'src/bb-themes/admin_default/images/icons/topnav/*.png',
-                dest: 'src/bb-themes/admin_default/sprites/topnav-sprite.png',
-                destCss: 'src/bb-themes/admin_default/css/topnav-sprite.css',
+                src: 'src/themes/admin_default/images/icons/topnav/*.png',
+                dest: 'src/themes/admin_default/sprites/topnav-sprite.png',
+                destCss: 'src/themes/admin_default/css/topnav-sprite.css',
                 cssOpts: {
                     cssSelector: function (item) {
                         return '.sprite-topnav-' + item.name;
@@ -26,9 +26,9 @@ module.exports = function(grunt) {
                 }
             },
             middleNav: {
-                src: 'src/bb-themes/admin_default/images/icons/middlenav/used/*.png',
-                dest: 'src/bb-themes/admin_default/sprites/dark-icons-23-sprite.png',
-                destCss: 'src/bb-themes/admin_default/css/dark-icons-23-sprite.css',
+                src: 'src/themes/admin_default/images/icons/middlenav/used/*.png',
+                dest: 'src/themes/admin_default/sprites/dark-icons-23-sprite.png',
+                destCss: 'src/themes/admin_default/css/dark-icons-23-sprite.css',
                 cssOpts: {
                     cssSelector: function (item) {
                         return '.sprite-23-' + item.name;
@@ -40,12 +40,12 @@ module.exports = function(grunt) {
         clean: {
             css: {
                 src: [
-                    "src/bb-themes/admin_default/css/min-temp.css"
+                    "src/themes/admin_default/css/min-temp.css"
                 ]
             },
             js: {
                 src: [
-                    "src/bb-themes/admin_default/js/boxbilling.js"
+                    "src/themes/admin_default/js/boxbilling.js"
                 ]
             }
         },
@@ -53,18 +53,18 @@ module.exports = function(grunt) {
         concat_css: {
             style: {
                 src: [
-                    'src/bb-themes/admin_default/css/dark-icons-sprite.css',
-                    'src/bb-themes/admin_default/css/dark-icons-23-sprite.css',
-                    'src/bb-themes/admin_default/css/topnav-sprite.css',
-                    'src/bb-themes/admin_default/css/jquery-ui.css',
-                    'src/bb-themes/admin_default/css/bb.css',
-                    'src/bb-themes/admin_default/css/reset.css',
-                    'src/bb-themes/admin_default/css/dataTable.css',
-                    'src/bb-themes/admin_default/css/ui_custom.css',
-                    'src/bb-themes/admin_default/css/icons.css.css',
-                    'src/bb-themes/admin_default/css/main.css'
+                    'src/themes/admin_default/css/dark-icons-sprite.css',
+                    'src/themes/admin_default/css/dark-icons-23-sprite.css',
+                    'src/themes/admin_default/css/topnav-sprite.css',
+                    'src/themes/admin_default/css/jquery-ui.css',
+                    'src/themes/admin_default/css/bb.css',
+                    'src/themes/admin_default/css/reset.css',
+                    'src/themes/admin_default/css/dataTable.css',
+                    'src/themes/admin_default/css/ui_custom.css',
+                    'src/themes/admin_default/css/icons.css.css',
+                    'src/themes/admin_default/css/main.css'
                 ],
-                dest: "src/bb-themes/admin_default/css/min-temp.css"
+                dest: "src/themes/admin_default/css/min-temp.css"
             }
         },
 
@@ -72,7 +72,7 @@ module.exports = function(grunt) {
             target: {
                 files: [
                     {
-                        'src/bb-themes/admin_default/css/min.css': ['src/bb-themes/admin_default/css/min-temp.css']
+                        'src/themes/admin_default/css/min.css': ['src/themes/admin_default/css/min-temp.css']
                     }
                 ]
             }
@@ -81,23 +81,23 @@ module.exports = function(grunt) {
         concat: {
             default: {
                 src: [
-                    'src/bb-themes/admin_default/js/jquery.min.js',
-                    'src/bb-themes/admin_default/js/ui/jquery.alerts.js',
-                    'src/bb-themes/admin_default/js/ui/jquery.tipsy.js',
-                    'src/bb-themes/admin_default/js/jquery.collapsible.min.js',
-                    'src/bb-themes/admin_default/js/forms/forms.js',
-                    'src/bb-themes/admin_default/js/jquery.ToTop.js',
-                    'src/bb-themes/admin_default/js/jquery.scrollTo-min.js',
-                    'src/bb-themes/admin_default/js/jquery-ui.js',
+                    'src/themes/admin_default/js/jquery.min.js',
+                    'src/themes/admin_default/js/ui/jquery.alerts.js',
+                    'src/themes/admin_default/js/ui/jquery.tipsy.js',
+                    'src/themes/admin_default/js/jquery.collapsible.min.js',
+                    'src/themes/admin_default/js/forms/forms.js',
+                    'src/themes/admin_default/js/jquery.ToTop.js',
+                    'src/themes/admin_default/js/jquery.scrollTo-min.js',
+                    'src/themes/admin_default/js/jquery-ui.js',
                 ],
-                dest: 'src/bb-themes/admin_default/js/boxbilling.js'
+                dest: 'src/themes/admin_default/js/boxbilling.js'
             },
         },
 
         uglify: {
             js: {
                 files: {
-                    'src/bb-themes/admin_default/js/boxbilling.min.js': ['src/bb-themes/admin_default/js/boxbilling.js'],
+                    'src/themes/admin_default/js/boxbilling.min.js': ['src/themes/admin_default/js/boxbilling.js'],
                 }
             }
         },

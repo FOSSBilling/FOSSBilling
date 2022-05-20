@@ -188,14 +188,14 @@ function twig_money_without_currency(Twig\Environment $env, $price, $currency = 
 
 function twig_mod_asset_url($asset, $mod)
 {
-    return BB_URL.'bb-modules/'.ucfirst($mod).'/assets/'.$asset;
+    return BB_URL.'modules/'.ucfirst($mod).'/assets/'.$asset;
 }
 
 function twig_asset_url(Twig\Environment $env, $asset)
 {
     $globals = $env->getGlobals();
 
-    return BB_URL.'bb-themes/'.$globals['current_theme'].'/assets/'.$asset;
+    return BB_URL.'themes/'.$globals['current_theme'].'/assets/'.$asset;
 }
 
 function twig_img_tag($path, $alt = null)

@@ -31,7 +31,7 @@ class Guest extends \Api_Abstract
      */
     public function readme($data)
     {
-        // $this->di['tools'] returns tools from /bb-library/Box/Tools.php
+        // $this->di['tools'] returns tools from /library/Box/Tools.php
         // We'll be using the file_get_contents from our tools to fetch the full content of the README file
         // Our example admin and client area pages will use this function to fetch the README data
         // Then, we'll tell Twig to parse and display the markdown output

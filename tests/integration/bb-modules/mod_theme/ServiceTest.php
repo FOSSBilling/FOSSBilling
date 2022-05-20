@@ -99,7 +99,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $result = $service->getCurrentAdminAreaTheme();
         $this->assertIsArray($result);
         $this->assertEquals('admin_default', $result['code']);
-        $this->assertEquals($this->di['config']['url'].'bb-themes/admin_default/', $result['url']);
+        $this->assertEquals($this->di['config']['url'].'themes/admin_default/', $result['url']);
     }
 
     public function testgetCurrentClientAreaTheme()

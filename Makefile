@@ -33,7 +33,7 @@ exec-php:       ## Enter PHP container shell
 	$(DOCKER_PHP_CONTAINER_EXEC) bash
 
 cache-flush:       ## Flush Twig cache
-	$(DOCKER_PHP_CONTAINER_EXEC) rm -fr src/bb-data/cache/*
+	$(DOCKER_PHP_CONTAINER_EXEC) rm -fr src/data/cache/*
 
 exec-db:        ## Enter DB container shell
 	$(DOCKER_DB_CONTAINER_EXEC) bash
@@ -47,11 +47,11 @@ reinstall:      ## Reinstall app
 
 test: start	## Run app tests
 	echo "Running unit tests"
-	echo > ./src/bb-data/log/application.log
-	echo > ./src/bb-data/log/php_error.log
+	echo > ./src/data/log/application.log
+	echo > ./src/data/log/php_error.log
 	rm -rf src/install
 	$(DOCKER_PHP_CONTAINER_EXEC) composer install --working-dir=src --no-progress --no-suggest --prefer-dist
-	$(DOCKER_PHP_CONTAINER_EXEC) ./src/vendor/bin/phpunit --dont-report-useless-tests ./tests/bb-modules/
+	$(DOCKER_PHP_CONTAINER_EXEC) ./src/vendor/bin/phpunit --dont-report-useless-tests ./tests/modules/
 
 build:          ## Build App with Docker CI image
 	docker run --rm \

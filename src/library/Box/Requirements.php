@@ -46,9 +46,9 @@ class Box_Requirements implements \Box\InjectionAwareInterface
                 'safe_mode'     =>  ini_get('safe_mode'),
             ),
             'writable_folders' => array(
-                $this->_app_path . '/bb-data/cache',
-                $this->_app_path . '/bb-data/log',
-                $this->_app_path . '/bb-data/uploads',
+                $this->_app_path . '/data/cache',
+                $this->_app_path . '/data/log',
+                $this->_app_path . '/data/uploads',
             ),
             'writable_files' => array(
                 $this->_app_path . '/bb-config.php',

@@ -35,7 +35,7 @@ jobs:
       id: composer-cache
       uses: actions/cache@v2
       with:
-        path: ./src/bb-vendor
+        path: ./src/vendor
         key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
         restore-keys: |
           ${{ runner.os }}-php-
@@ -51,17 +51,17 @@ jobs:
     - name: Configure environment for Tests
       run: |
         cp ./src/bb-config-sample.php ./src/bb-config.php
-        mkdir -p ./src/bb-data/cache
-        mkdir -p ./src/bb-data/log
-        echo > ./src/bb-data/log/license.log
-        echo > ./src/bb-data/log/application.log
-        echo > ./src/bb-data/log/php_error.log
+        mkdir -p ./src/data/cache
+        mkdir -p ./src/data/log
+        echo > ./src/data/log/license.log
+        echo > ./src/data/log/application.log
+        echo > ./src/data/log/php_error.log
         rm -rf ./src/install
 
-    - name: Run test suite for bb-modules
+    - name: Run test suite for modules
       run: |
-        php ./src/bb-vendor/bin/phpunit ./tests/bb-modules/
+        php ./src/vendor/bin/phpunit ./tests/modules/
 
-    - name: Run test suite for bb-library
+    - name: Run test suite for library
       run: |
-        php ./src/bb-vendor/bin/phpunit ./tests/bb-library/
+        php ./src/vendor/bin/phpunit ./tests/library/

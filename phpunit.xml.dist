@@ -5,25 +5,25 @@
       <directory suffix=".php">src</directory>
     </include>
     <exclude>
-      <directory>src/bb-data</directory>
-      <directory>src/bb-library/Registrar/includes</directory>
-      <directory>src/bb-library/Security/CSRF-Protector-PHP</directory>
-      <directory>src/bb-library/php-gettext</directory>
-      <directory>src/bb-modules/Servicecentovacast/ccapiclient</directory>
-      <directory>src/bb-themes</directory>
+      <directory>src/data</directory>
+      <directory>src/library/Registrar/includes</directory>
+      <directory>src/library/Security/CSRF-Protector-PHP</directory>
+      <directory>src/library/php-gettext</directory>
+      <directory>src/modules/Servicecentovacast/ccapiclient</directory>
+      <directory>src/themes</directory>
       <directory>src/vendor</directory>
       <directory>src/install</directory>
-      <file>src/bb-library/Box/Zip.php</file>
-      <file>src/bb-library/PDF_ImageAlpha.php</file>
-      <file>src/bb-library/PdoSessionHandler.php</file>
-      <file>src/bb-library/tfpdf.php</file>
-      <file>src/bb-modules/Spamchecker/akismet.curl.class.php</file>
+      <file>src/library/Box/Zip.php</file>
+      <file>src/library/PDF_ImageAlpha.php</file>
+      <file>src/library/PdoSessionHandler.php</file>
+      <file>src/library/tfpdf.php</file>
+      <file>src/modules/Spamchecker/akismet.curl.class.php</file>
       <file>src/rb.php</file>
     </exclude>
   </coverage>
   <testsuites>
     <testsuite name="Library">
-      <directory>tests/bb-library</directory>
+      <directory>tests/library</directory>
     </testsuite>
     <testsuite name="Integration">
       <directory>tests/integration</directory>
