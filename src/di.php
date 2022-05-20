@@ -16,7 +16,7 @@ declare(strict_types=1);
 $di = new Box_Di();
 
 $di['config'] = function () {
-    $array = include BB_PATH_ROOT.'/bb-config.php';
+    $array = include BB_PATH_ROOT.'/config.php';
 
     return new Box_Config($array);
 };

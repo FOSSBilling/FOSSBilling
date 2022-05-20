@@ -36,8 +36,8 @@ define('BB_PATH_LICENSE', BB_PATH_ROOT . '/LICENSE');
 define('BB_PATH_SQL', BB_PATH_ROOT . '/install/sql/structure.sql');
 define('BB_PATH_SQL_DATA', BB_PATH_ROOT . '/install/sql/content.sql');
 define('BB_PATH_INSTALL', BB_PATH_ROOT . '/install');
-define('BB_PATH_CONFIG', BB_PATH_ROOT . '/bb-config.php');
-define('BB_PATH_CRON', BB_PATH_ROOT . '/bb-cron.php');
+define('BB_PATH_CONFIG', BB_PATH_ROOT . '/config.php');
+define('BB_PATH_CRON', BB_PATH_ROOT . '/cron.php');
 define('BB_PATH_LANGS', BB_PATH_ROOT . '/locale');
 
 /* 
@@ -457,7 +457,7 @@ final class Box_Installer
         define('BB_PATH_MODS', BB_PATH_ROOT . '/modules');
 
         $emailService = new \Box\Mod\Email\Service();
-        $di = $di = include BB_PATH_ROOT . '/bb-di.php';
+        $di = $di = include BB_PATH_ROOT . '/di.php';
         $di['translate']();
         $emailService->setDi($di);
         return $emailService->templateBatchGenerate();

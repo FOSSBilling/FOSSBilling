@@ -12,8 +12,8 @@ all: start-recreate reinstall
 
 start:          ## Start app
 	$(DOCKER_COMPOSE) up -d
-ifeq (,$(wildcard ./src/bb-config.php))
-	cp ./src/bb-config-sample.php ./src/bb-config.php
+ifeq (,$(wildcard ./src/config.php))
+	cp ./src/config-sample.php ./src/config.php
 	$(DOCKER_PHP_CONTAINER_EXEC) $(DOCKER_PHP_EXECUTABLE_CMD) ./bin/prepare.php
 endif
 
@@ -42,7 +42,7 @@ install: start  ## Install app after start
 	$(DOCKER_PHP_CONTAINER_EXEC) composer install --working-dir=src --no-progress --no-suggest --prefer-dist --no-dev
 
 reinstall:      ## Reinstall app
-	rm -rf ./src/bb-config.php
+	rm -rf ./src/config.php
 	make install
 
 test: start	## Run app tests

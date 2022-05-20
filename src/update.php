@@ -786,8 +786,8 @@ foreach (get_declared_classes() as $class) {
     }
 }
 
-require_once dirname(__FILE__).'/bb-load.php';
-$di = include dirname(__FILE__).'/bb-di.php';
+require_once dirname(__FILE__).'/load.php';
+$di = include dirname(__FILE__).'/di.php';
 
 error_log('Executing BoxBilling update script');
 natsort($patches);

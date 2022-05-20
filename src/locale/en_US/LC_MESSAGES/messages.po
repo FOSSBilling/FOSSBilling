@@ -398,7 +398,7 @@ msgstr ""
 msgid "FTP Username/Password incorrect for :usernmae"
 msgstr ""
 
-msgid "BoxBilling license key must be defined in bb-config.php file."
+msgid "BoxBilling license key must be defined in config.php file."
 msgstr ""
 
 msgid "License is not valid"
@@ -3257,7 +3257,7 @@ msgstr ""
 msgid "Module settings"
 msgstr ""
 
-msgid "Edit bb-config.php file"
+msgid "Edit config.php file"
 msgstr ""
 
 msgid "Licensed to"

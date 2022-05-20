@@ -1,8 +1,8 @@
 <?php
 define('APPLICATION_ENV', 'testing');
 define('BB_PATH_TESTS', dirname(__FILE__));
-require_once dirname(__FILE__) . '/../src/bb-load.php';
-$config = include dirname(__FILE__) . '/../src/bb-config.php';
+require_once dirname(__FILE__) . '/../src/load.php';
+$config = include dirname(__FILE__) . '/../src/config.php';
 
 require_once dirname(__FILE__) . '/../src/vendor/autoload.php';
 require_once dirname(__FILE__) . '/../src/rb.php';
@@ -33,5 +33,5 @@ require_once 'BBModTestCase.php';
 require_once BB_PATH_TESTS.'/includes/Payment/Adapter/Dummy.php';
 require_once 'FakeTemplateWrapper.php';
 /**/
-$di = include BB_PATH_ROOT . '/bb-di.php';
+$di = include BB_PATH_ROOT . '/di.php';
 $di['translate']();

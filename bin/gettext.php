@@ -1,6 +1,6 @@
 <?php
 
-require_once dirname(__FILE__) . '/../src/bb-load.php';
+require_once dirname(__FILE__) . '/../src/load.php';
 
 echo "Caching templates".PHP_EOL;
 $dirs = glob(BB_PATH_MODS.'/*/html_admin');

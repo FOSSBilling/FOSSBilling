@@ -9,8 +9,8 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
-require_once dirname(__FILE__).'/bb-load.php';
-$di = include dirname(__FILE__).'/bb-di.php';
+require_once dirname(__FILE__).'/load.php';
+$di = include dirname(__FILE__).'/di.php';
 
 $di['translate']();
 

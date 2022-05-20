@@ -22,7 +22,7 @@ class Guest extends \Api_Abstract
      * Gives ability to create administrator account if no admins exists on
      * the system.
      * Database structure must be installed before calling this action.
-     * bb-config.php file must already be present and configured.
+     * config.php file must already be present and configured.
      * Used by automated BoxBilling installer.
      *
      * @param string $email    - admin email

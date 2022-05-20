@@ -34,8 +34,8 @@ class Service
         $service = $this->di['mod_service']('system');
 
         $result = [
-            'cron_url' => BB_URL.'bb-cron.php',
-            'cron_path' => BB_PATH_ROOT.DIRECTORY_SEPARATOR.'bb-cron.php',
+            'cron_url' => BB_URL.'cron.php',
+            'cron_path' => BB_PATH_ROOT.DIRECTORY_SEPARATOR.'cron.php',
             'last_cron_exec' => $service->getParamValue('last_cron_exec'),
         ];
 

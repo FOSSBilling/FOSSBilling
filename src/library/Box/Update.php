@@ -142,9 +142,9 @@ class Box_Update
         $ff = new Box_Zip($latest_version_archive);
         $ff->decompress(BB_PATH_ROOT);
 
-        if(file_exists(BB_PATH_ROOT.'/bb-update.php')) {
-            error_log('Calling bb-update.php script from auto-updater');
-            $this->di['tools']->file_get_contents(BB_URL.'bb-update.php');
+        if(file_exists(BB_PATH_ROOT.'/update.php')) {
+            error_log('Calling update.php script from auto-updater');
+            $this->di['tools']->file_get_contents(BB_URL.'update.php');
         }
         
         // clean up things

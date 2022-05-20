@@ -30,6 +30,6 @@ function prepend($string, $filename) {
     rename($tmpname, $filename);
 }
 
-require_once dirname(__FILE__) . '/../src/bb-load.php';
+require_once dirname(__FILE__) . '/../src/load.php';
 
 prepend(_writeHeader(), BB_PATH_LANGS.'/messages.pot');

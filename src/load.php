@@ -233,7 +233,7 @@ if (!file_exists(BB_PATH_VENDOR)) {
 
 // Multisite support. Load new configuration depending on the current hostname
 // If being run from CLI, first parameter must be the hostname
-$configPath = BB_PATH_ROOT.'/bb-config.php';
+$configPath = BB_PATH_ROOT.'/config.php';
 if ((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || ('cli' == php_sapi_name() && isset($argv[1]))) {
     if ('cli' == php_sapi_name()) {
         $host = $argv[1];

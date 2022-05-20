@@ -32,12 +32,12 @@
         <include name="uploads/**"/>
         <include name="install/**"/>
 
-        <include name="bb-config-sample.php"/>
-        <include name="bb-cron.php"/>
-        <include name="bb-di.php"/>
-        <include name="bb-ipn.php"/>
-        <include name="bb-load.php"/>
-        <include name="bb-update.php"/>
+        <include name="config-sample.php"/>
+        <include name="cron.php"/>
+        <include name="di.php"/>
+        <include name="ipn.php"/>
+        <include name="load.php"/>
+        <include name="update.php"/>
         <include name="rb.php"/>
         <include name="index.php"/>
         <include name="robots.txt"/>
@@ -84,7 +84,7 @@
     </target>
 
     <target name="config" description="Create config file">
-        <copy file="src/bb-config-sample.php" tofile="src/bb-config.php" overwrite="true"/>
+        <copy file="src/config-sample.php" tofile="src/config.php" overwrite="true"/>
     </target>
 
     <target name="test-unit">

@@ -7,7 +7,7 @@ mysql -u root boxbilling -e "INSERT INTO admin (role, name, email, pass, protect
 
 cd /var/www/src
 cp htaccess.txt .htaccess
-cp bb-config-sample.php bb-config.php
+cp config-sample.php config.php
 
 cd /var/www
 ln -s src public

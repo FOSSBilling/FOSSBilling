@@ -182,7 +182,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             'description'                => null,
             'enabled'                    => null,
             'test_mode'                  => null,
-            'callback'                   => $url.'bb-ipn.php?',
+            'callback'                   => $url.'ipn.php?',
         );
 
         $di = new \Box_Di();
