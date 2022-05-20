@@ -2334,7 +2334,7 @@ msgstr ""
 msgid "Read"
 msgstr ""
 
-msgid "BoxBilling documentation"
+msgid "FossBilling documentation"
 msgstr ""
 
 msgid "for more information."
@@ -5854,7 +5854,7 @@ msgstr ""
 msgid "Payment"
 msgstr ""
 
-msgid "Powered by BoxBilling"
+msgid "Powered by FOSSBilling"
 msgstr ""
 
 msgid "You logged in successfully"

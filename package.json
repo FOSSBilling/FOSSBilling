@@ -1,10 +1,15 @@
 {
-  "name": "BoxBilling",
-  "author": "BoxBilling Community",
-  "license": "Apache-2",
+  "name": "fossbilling",
+  "version": "0.1.0",
+  "author": "FOSSBilling Team",
+  "homepage": "https://fossbilling.org",
+  "license" : "Apache License 2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/boxbilling/boxbilling.git"
+    "url": "https://github.com/FOSSBilling/FOSSBilling.git"
+  },
+  "issues": {
+    "url" : "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
   "dependencies": {
     "@tabler/core": "^1.0.0-beta9",

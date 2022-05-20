@@ -42,7 +42,7 @@ define('BB_URL_ADMIN', BB_URL . 'index.php?_url=/bb-admin');
 
 define('BB_PATH_ROOT', realpath(dirname(__FILE__) . '/..'));
 define('BB_PATH_LIBRARY', BB_PATH_ROOT . '/bb-library');
-define('BB_PATH_VENDOR', BB_PATH_ROOT . '/bb-vendor');
+define('BB_PATH_VENDOR', BB_PATH_ROOT . '/vendor');
 define('BB_PATH_INSTALL_THEMES', BB_PATH_ROOT . '/install');
 define('BB_PATH_THEMES', BB_PATH_ROOT . '/bb-themes');
 define('BB_PATH_LICENSE', BB_PATH_ROOT . '/LICENSE');
@@ -383,8 +383,8 @@ final class Box_Installer
         $content .= 'E-mail: ' . $admin_email . PHP_EOL;
         $content .= 'Password: ' . $admin_pass . PHP_EOL . PHP_EOL;
 
-        $content .= 'Read BoxBilling documentation to get started https://docs.boxbilling.org/' . PHP_EOL;
-        $content .= 'Thank You for using BoxBilling.' . PHP_EOL;
+        $content .= "Read FOSSBilling documentation to get started https://docs.fossbilling.org/" . PHP_EOL;
+        $content .= "Thank You for using FOSSBilling." . PHP_EOL;
 
         $subject = sprintf('BoxBilling is ready at "%s"', BB_URL);
 

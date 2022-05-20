@@ -1,18 +1,18 @@
 {
-    "name": "boxbilling/boxbilling",
-    "description": "Open Source Billing Software",
-    "version": "4.22.0-beta.2",
-    "readme": "https://github.com/boxbilling/boxbilling/blob/master/README.md",
+    "name": "fossbilling/fossbilling",
+    "description": "Free and Open Source Billing System",
+    "version": "4.22.0-beta.5",
+    "support": {
+        "docs": "https://docs.fossbilling.org",
+        "source": "https://github.com/FOSSBilling/FOSSBilling",
+        "issues": "https://github.com/FOSSBilling/FOSSBilling/issues",
+        "chat": "https://fossbilling.org/discord"
+    },
+    "readme": "https://github.com/FOSSBilling/FOSSBilling/blob/master/README.md",
     "type": "project",
     "license": "Apache-2.0",
     "keywords": ["billing", "invoice", "client management"],
-    "homepage": "https://www.boxbilling.org",
-    "authors": [
-        {
-            "name": "Andrius Putna",
-            "email": "andrius@boxbilling.com"
-        }
-    ],
+    "homepage": "https://fossbilling.org",
     "require": {
         "php": ">=8.0",
         "ext-curl": "*",
@@ -41,9 +41,6 @@
     },
     "suggest": {
         "ext-gettext": "*"
-    },
-    "config": {
-        "vendor-dir": "bb-vendor"
     },
     "autoload": {
         "psr-0": {"": "bb-library"},

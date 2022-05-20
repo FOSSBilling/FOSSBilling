@@ -11,7 +11,7 @@ src/bb-data/log/*
 src/bb-data/cache/*
 src/bb-data/tmp.txt
 src/bb-test.php
-src/bb-vendor/*
+src/vendor*
 src/install/logs/*
 bb-test.php
 build
@@ -29,4 +29,6 @@ npm-debug.log
 .history/
 
 ### friendsofphp/php-cs-fixer ###
-.php-cs-fixer.cache
+src/.php-cs-fixer.cache
+
+.vscode

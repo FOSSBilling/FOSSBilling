@@ -1,4 +1,4 @@
-# Read documentation http://docs.boxbilling.com/ for more information
+# Read documentation https://docs.fossbilling.org/ for more information
 # If you are receiving "Internal Server Error" message, make sure mod_rewrite is enabled in apache
 
 Options     -Indexes    +SymLinksIfOwnerMatch
@@ -27,7 +27,7 @@ RewriteRule .* index.php [F]
 #RewriteRule (.*) http://www.yourdomain.com/$1 [R=301,L]
 
 # If you are receiving "Internal Server Error" message
-# Tune path if installing into subfolder, ie "RewriteBase /boxbilling/"
+# Tune path if installing into subfolder, ie "RewriteBase /fossbilling/"
 # RewriteBase /
 
 # This line is for Windows Environment when API is giving authorization error

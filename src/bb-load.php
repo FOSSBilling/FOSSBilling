@@ -11,7 +11,7 @@
  */
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', (getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'production'));
 define('BB_PATH_ROOT', dirname(__FILE__));
-define('BB_PATH_VENDOR', BB_PATH_ROOT.'/bb-vendor');
+define('BB_PATH_VENDOR', BB_PATH_ROOT.'/vendor');
 define('BB_PATH_LIBRARY', BB_PATH_ROOT.'/bb-library');
 define('BB_PATH_THEMES', BB_PATH_ROOT.'/bb-themes');
 define('BB_PATH_MODS', BB_PATH_ROOT.'/bb-modules');
@@ -214,8 +214,8 @@ function handler_exception($e)
             }
             echo sprintf('<p>%s</p>', $e->getMessage());
 
-            echo sprintf('<center><p><a href="http://docs.boxbilling.com/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p></center>', urlencode($e->getMessage()));
-            echo '<center><hr><p>Powered by <a href="https://github.com/boxbilling/boxbilling/">BoxBilling</a></p></center>
+            echo sprintf('<center><p><a href="https://docs.fossbilling.org/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p></center>', urlencode($e->getMessage()));
+            echo '<center><hr><p>Powered by <a href="https://fossbilling.org">FOSSBilling</a></p></center>
       </body>
       
       </html>';
