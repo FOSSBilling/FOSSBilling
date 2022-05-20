@@ -17,7 +17,7 @@ define('BB_PATH_THEMES', BB_PATH_ROOT.'/themes');
 define('BB_PATH_MODS', BB_PATH_ROOT.'/modules');
 define('BB_PATH_LANGS', BB_PATH_ROOT.'/locale');
 define('BB_PATH_UPLOADS', BB_PATH_ROOT.'/uploads');
-define('BB_PATH_DATA', BB_PATH_ROOT.'/ata');
+define('BB_PATH_DATA', BB_PATH_ROOT.'/data');
 define('isCLI', 'cli' == php_sapi_name());
 
 function handler_error(int $number, string $message, string $file, int $line)
