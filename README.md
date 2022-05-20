@@ -10,6 +10,7 @@
   
 [![PHP Composer](https://github.com/fossbilling/fossbilling/actions/workflows/php.yml/badge.svg)](https://github.com/fossbilling/fossbilling/actions/workflows/php.yml)
 [![Download Latest](https://img.shields.io/github/downloads/fossbilling/fossbilling/total)](https://github.com/fossbilling/fossbilling/releases/latest)
+[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
 [![fossbilling Issues](https://img.shields.io/github/issues/fossbilling/fossbilling.svg?style=popout)](https://github.com/fossbilling/fossbilling/issues)
 [![fossbilling Demo](https://img.shields.io/badge/fossbilling-demo-blue)](https://demo.fossbilling.org)
 ![fossbilling Size](https://img.shields.io/github/repo-size/fossbilling/fossbilling.svg?style=popout)
