@@ -1,0 +1,42 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ 'Knowledge base'|trans }}{% endblock %}
+
+{% if request.q %}
+    {% set kbcategories = guest.kb_category_get_list({ 'q': request.q }) %}
+{% else %}
+    {% set kbcategories = guest.kb_category_get_list %}
+{% endif %}
+
+{% block content_before %}
+    <h1>{{ 'Knowledge base'|trans }}</h1>
+    <p class="text-secondary">{{ category.description }}</p>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col">
+            {% for i, category in kbcategories.list %}
+                <h3 id="category-{{ category.id }}">
+                    <a href="{{ 'kb'|link }}/{{ category.slug }}">{{ category.title }}</a>
+                </h3>
+                <div class="list-group">
+                    {% for i, article in category.articles %}
+                        <a href="{{ '/kb'|link }}/{{ article.category.slug }}/{{ article.slug }}" class="list-group-item">{{ article.title }}</a>
+                    {% endfor %}
+                </div>
+                <hr>
+            {% else %}
+                <p class="text-secondary">{{ 'Try using other keyword. No matches not for keyword:'|trans }} <strong>{{ request.q }}</strong></p>
+            {% endfor %}
+        </div>
+    </div>
+    <hr>
+    <h5>{{ 'What are you looking for?'|trans }}</h5>
+    <form method="get" action="{{ 'kb'|link }}">
+        <div class="input-group my-3">
+            <input name="q" type="text" class="form-control" value="{{ request.q }}">
+            <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i></button>
+        </div>
+    </form>
+{% endblock %}

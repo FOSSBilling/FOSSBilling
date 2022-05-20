@@ -1,0 +1,60 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Support tickets'|trans }}{% endblock %}
+
+{% block content_before %}
+    <h1 class="page-header">{{ 'Support tickets'|trans }}</h1>
+    <p class="text-secondary">{{ 'Need an answer? We are here to help!'|trans }}</p>
+{% endblock %}
+
+{% block content %}
+    <div class="list-group mb-3">
+        {% set tickets = client.support_ticket_get_list({ 'per_page': 10, 'page': request.page }) %}
+
+        {% for i, ticket in tickets.list %}
+            <a href="{{ 'support/ticket'|link }}/{{ ticket.id }}" class="list-group-item {% if ticket.status == 'closed' %}list-group-item-success{% elseif ticket.status == 'on_hold' %}list-group-item-warning{% elseif ticket.status == 'open' %}list-group-item-danger{% endif %}">
+                <span class="float-end badge {% if ticket.status == 'open' %}bg-danger{% elseif ticket.status == 'on_hold' %}bg-warning{% elseif ticket.status == 'closed' %}bg-success{% else %}bg-default{% endif %}">{{ mf.status_name(ticket.status) }}</span>
+                <p class="mb-0">
+                    <span class="label label-default">{{ ticket.helpdesk.name }}</span> - {{ ticket.subject }}<br>
+                    <span class="small text-secondary">{{ ticket.created_at|date('Y-m-d h:i') }} - {{ 'Last post'|trans }} {{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
+                </p>
+            </a>
+        {% else %}
+            <p class="text-secondary text-center">{{ 'The list is empty'|trans }}</p>
+        {% endfor %}
+    </div>
+
+    <div class="text-center">
+        {% include '_pagination.html.twig' with { 'list': tickets } %}
+
+        {% if guest.extension_is_on({ 'mod': 'kb' }) %}
+            <a class="btn btn-info" data-bs-toggle="collapse" data-bs-target="#kb" aria-expanded="false" aria-controls="kb">{{ 'Knowledge base'|trans }}</a>
+        {% endif %}
+        <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#ticket-order">{{ 'Submit new ticket'|trans }}</a>
+    </div>
+
+    {% if guest.extension_is_on({ 'mod': 'kb' }) %}
+    <div class="collapse" id="kb">
+        <h4>{{ 'Knowledge base'|trans }}</h4>
+        <div class="input-group my-3">
+            <input type="text" class="form-control">
+            <button class="btn btn-primary"><i class="fa fa-search"></i></button>
+        </div>
+        <hr>
+        <div class="list-group panel" id="kb">
+        {% for i, category in guest.kb_category_get_list.list %}
+            <a href="#category-{{ category.id }}" class="list-group-item text-center" data-bs-toggle="collapse" data-bs-parent="#kb"><strong>{{ category.title }}</strong></a>
+            <div class="collapse" id="category-{{ category.id }}">
+            {% for i, article in category.articles %}
+                <a href="{{ '/kb'|link }}/{{ article.category.slug }}/{{ article.slug }}" class="list-group-item">{{ article.title }}</a>
+            {% endfor %}
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% include 'Modal/_add-ticket.html.twig' with { 'id': 'ticket-order' } %}
+{% endblock %}

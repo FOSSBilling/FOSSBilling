@@ -1,0 +1,42 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ category.title }}{% endblock %}
+
+{% block content_before %}
+    <h1 class="page-header">{{ category.title }}</h1>
+    <p class="text-secondary">{{ category.description }}</p>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ 'kb'|link }}">{{ 'Knowledge base'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active">{{ category.title }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    {% if category.articles|length > 0 %}
+        <div class="list-group">
+            {% for i, article in category.articles %}
+                <a href="{{ '/kb'|link }}/{{ article.category.slug }}/{{ article.slug }}" class="list-group-item">{{ article.title }}</a>
+            {% endfor %}
+        </div>
+        <hr>
+    {% else %}
+        <p>{{ 'Try using other keyword. No matches not for keyword:'|trans }}
+            <b>{{ request.q }}</b>
+        </p>
+    {% endif %}
+
+    <h4>{{ 'What are you looking for?'|trans }}</h4>
+    <form method="get" action="{{ 'kb'|link }}">
+        <div class="input-group my-3">
+            <input name="q" type="text" class="form-control" value="{{ request.q }}">
+            <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i></button>
+        </div>
+    </form>
+
+    <div class="text-center">
+        <a class="btn btn-default" href="{{ 'kb'|link }}">
+            <i class="fa fa-arrow-left me-2"></i>{{ 'Back to list'|trans }}</a>
+    </div>
+{% endblock %}

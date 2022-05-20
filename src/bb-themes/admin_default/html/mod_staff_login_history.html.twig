@@ -1,0 +1,75 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Staff members login history'|trans }}{% endblock %}
+
+{% set active_menu = 'activity' %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h5>{{ 'Staff members logins history'|trans }}</h5>
+    </div>
+
+    {% include '_search.html.twig' %}
+    <table class="table card-table table-vcenter table-striped text-nowrap">
+        <thead>
+            <tr>
+                <th class="w-1">
+                    <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
+                </th>
+                <th class="w-1"></th>
+                <th>{{ 'Admin'|trans }}</th>
+                <th>{{ 'IP'|trans }}</th>
+                <th>{{ 'Country'|trans }}</th>
+                <th>{{ 'Date'|trans }}</th>
+                <th class="w-1"></th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% set history = admin.staff_login_history_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+        {% for i, event in history.list %}
+        <tr>
+            <td>
+                <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ event.id }}">
+            </td>
+            <td>
+                <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
+                    <span class="avatar avatar-xs" style="background-image: url({{ event.staff.email|gravatar }}&size=24)"></span>
+                </a>
+            </td>
+            <td>
+                <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
+                    {{ event.staff.name }}
+                </a>
+            </td>
+            <td>{{ event.ip }}</td>
+            <td>{{ event.ip|ipcountryname|default('Unknown') }}</td>
+            <td>{{ event.created_at|date('Y-m-d H:i') }}</td>
+            <td>
+                <a class="btn btn-icon api-link"
+                    href="{{ 'api/admin/staff/login_history_delete'|link({ 'id': event.id }) }}"
+                    data-api-confirm="{{ 'Are you sure?'|trans }}"
+                    data-api-redirect="{{'staff/logins'|alink }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#delete" />
+                    </svg>
+                </a>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="card-footer d-flex align-items-center justify-content-between">
+        {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/staff/batch_delete_logs' } %}
+        {% include '_pagination.html.twig' with { 'list': history, 'url': 'staff/logins' } %}
+    </div>
+</div>
+{% endblock %}

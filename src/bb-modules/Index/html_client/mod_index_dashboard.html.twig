@@ -1,0 +1,223 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'Client Area'|trans }}{% endblock %}
+{% block page_header %}{{ 'Dashboard'|trans }}{% endblock %}
+
+{% block breadcrumbs %}
+    {% if not settings.hide_dashboard_breadcrumb %}
+        <ul class="breadcrumb">
+            <li><a href="{{ '/'|link }}">{{ 'Home'|trans }}</a> <span class="divider">/</span></li>
+            <li class="active">{{ 'Dashboard'|trans }}</li>
+        </ul>
+    {% endif %}
+{% endblock %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block content %}
+    {% if settings.showcase_enabled %}
+    <div class="hero-unit">
+        <h1>{{ settings.showcase_heading }}</h1>
+        <p>{{ settings.showcase_text }}</p>
+        <p><a class="btn btn-alt btn-primary btn-large" href="{{ settings.showcase_button_url }}">{{ settings.showcase_button_title }}</a></p>
+    </div>
+    {% endif %}
+
+{% if client %}
+{% set tickets = client.support_ticket_get_list({ "status": 'on_hold' }) %}
+{% if tickets.total > 0 %}
+<div class="row">
+<article class="span12 data-block">
+<div class="data-container">
+<header>
+    <h2>{{ 'Tickets waiting your reply'|trans }}</h2>
+</header>
+<section id="slimScroll1">
+    <table class="table table-striped table-bordered table-condensed table-hover">
+        <thead>
+        <tr>
+            <th>{{ 'Id'|trans }}</th>
+            <th>{{ 'Subject'|trans }}</th>
+            <th>{{ 'Help desk'|trans }}</th>
+            <th>{{ 'Status'|trans }}</th>
+            <th>{{ 'Submitted'|trans }}</th>
+            <th>{{ 'Actions'|trans }}</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for i, ticket in tickets.list %}
+        <tr class="{{ cycle(['odd', 'even'], i) }}">
+            <td>{{ ticket.id }}</td>
+            <td><a href="{{ 'support/ticket'|link }}/{{ticket.id}}">{{ ticket.subject }}</a></td>
+            <td>{{ ticket.helpdesk.name }}</td>
+            <td><span class="label">{{ mf.status_name(ticket.status) }}</span></td>
+            <td>{{ ticket.created_at|bb_date }}</td>
+            <td><a href="{{ 'support/ticket'|link }}/{{ticket.id}}" class="btn btn-small btn-inverse">{{ 'Reply'|trans }}</a></td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5">{{ 'The list is empty'|trans }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+</div>
+</article>
+</div>
+{% endif %}
+
+<div class="row">
+{% set profile = client.client_get %}
+<article class="span6 data-block decent">
+    <div class="data-container">
+        <header>
+            <h2>{{ 'Profile'|trans }}</h2>
+            <ul class="data-header-actions">
+                <li>
+                    <a class="btn btn-alt btn-inverse" href="{{ 'client/me'|link }}">{{ 'Update'|trans }}</a>
+                </li>
+            </ul>
+        </header>
+        <section>
+            <dl class="dl-horizontal">
+                <dt>{{ 'ID'|trans }}</dt>
+                <dd>#{{ profile.id }}</dd>
+                <dt>{{ 'Email'|trans }}</dt>
+                <dd>{{ profile.email }}</dd>
+                <dt>{{ 'Balance'|trans }}</dt>
+                <dd>{{ profile.balance | money(profile.currency) }}</dd>
+            </dl>
+        </section>
+    </div>
+</article>
+
+<article class="span6 data-block decent">
+    <div class="data-container">
+        <header>
+            <h2>{{ 'Invoices'|trans }}</h2>
+            <ul class="data-header-actions">
+                <li>
+                    <a class="btn btn-alt btn-inverse" href="{{ 'invoice'|link }}">{{ 'All Invoices'|trans }}</a>
+                </li>
+            </ul>
+        </header>
+        <section>
+            <dl class="dl-horizontal">
+                <dt>{{ 'Total'|trans }}</dt>
+                    <dd>{{ client.invoice_get_list().total }}</dd>
+                <dt>{{ 'Paid'|trans }}</dt>
+                    <dd>{{ client.invoice_get_list({ "status": "paid" }).total }}</dd>
+                <dt>{{ 'Unpaid'|trans }}</dt>
+                    <dd>{{ client.invoice_get_list({ "status": "unpaid" }).total }}</dd>
+            </dl>
+        </section>
+    </div>
+</article>
+</div>
+
+<div class="row">
+    <article class="span6 data-block decent">
+        <div class="data-container">
+            <header>
+                <h2>{{ 'Orders'|trans }}</h2>
+                <ul class="data-header-actions">
+                    <li>
+                        <a class="btn btn-alt btn-info order-button" href="{{ 'order'|link }}">{{ 'New order'|trans }}</a>
+                        <a class="btn btn-alt btn-inverse" href="{{ 'order/service'|link }}">{{ 'All orders'|trans }}</a>
+                    </li>
+                </ul>
+            </header>
+            <section>
+                <dl class="dl-horizontal">
+                    <dt>{{ 'Total'|trans }}</dt>
+                    <dd>{{ client.order_get_list({ "hide_addons": 1}).total }}</dd>
+                    <dt>{{ 'Active'|trans }}</dt>
+                    <dd>{{ client.order_get_list({ "hide_addons": 1, "status": "active" }).total }}</dd>
+                    <dt>{{ 'Expiring'|trans }}</dt>
+                    <dd>{{ client.order_get_list({ "expiring": 1 }).total }}</dd>
+                </dl>
+            </section>
+        </div>
+    </article>
+
+    <article class="span6 data-block decent">
+        <div class="data-container">
+            <header>
+                <h2>{{ 'Tickets'|trans }}</h2>
+                <ul class="data-header-actions">
+                    <li>
+                        <a class="btn btn-alt btn-info" href="{{ 'support'|link({ 'ticket': 1 }) }}">{{ 'New ticket'|trans }}</a>
+                        <a class="btn btn-alt btn-inverse" href="{{ 'support'|link }}">{{ 'All tickets'|trans }}</a>
+                    </li>
+                </ul>
+            </header>
+            <section>
+                <dl class="dl-horizontal">
+                    <dt>{{ 'Total'|trans }}</dt>
+                    <dd>{{ client.support_ticket_get_list().total }}</dd>
+                    <dt>{{ 'Open'|trans }}</dt>
+                    <dd>{{ client.support_ticket_get_list({ "status": 'open' }).total }}</dd>
+                    <dt>{{ 'On Hold'|trans }}</dt>
+                    <dd>{{ client.support_ticket_get_list({ "status": 'on_hold' }).total }}</dd>
+                </dl>
+            </section>
+        </div>
+    </article>
+</div>
+
+<div class="row">
+    <article class="span6 data-block decent">
+        <div class="data-container">
+            <header>
+                <h2>{{ 'Recent orders'|trans }}</h2>
+            </header>
+            <section>
+                <table class="table table-striped table-bordered table-condensed table-hover">
+                    <tbody>
+                    {% for i, order in client.order_get_list({ "per_page": 5, "page": request.page, "hide_addons": 1 }).list %}
+                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <td>
+                            <a href="{{ 'order/service/manage'|link }}/{{ order.id }}">{{ order.title|truncate(30) }}</a>
+                        </td>
+                        <td>
+                            <span class="label {% if order.status == 'active' %}label-success{% elseif order.status == 'pending_setup' %}label-warning{% endif %}">{{ mf.status_name(order.status) }}</span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </article>
+
+    <article class="span6 data-block decent">
+        <div class="data-container">
+            <header>
+                <h2>{{ 'Recent emails'|trans }}</h2>
+            </header>
+            <section>
+                <table class="table table-striped table-bordered table-condensed table-hover">
+                    <tbody>
+                    {% for i, email in client.email_get_list({ "per_page": 5 }).list %}
+                    <tr class="{{ cycle(['odd', 'even'], i) }}">
+                        <td><a href="{{ 'email'|link }}/{{ email.id }}">{{ email.subject|truncate(30) }}</a></td>
+                        <td title="{{ email.created_at|bb_date }}">{{ email.created_at|timeago }} {{ 'ago'|trans }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </article>
+</div>
+{% endif %}
+{% endblock %}

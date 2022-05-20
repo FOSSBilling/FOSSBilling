@@ -1,0 +1,255 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+{% block meta_title %}{{ 'Email'|trans }}{% endblock %}
+
+{% block breadcrumbs %}
+    <ul>
+        <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+        <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+        <li class="lastB">{{ 'Email'|trans }}</li>
+    </ul>
+{% endblock %}
+
+{% set active_menu = 'system' %}
+{% block content %}
+<div class="widget simpleTabs">
+    <ul class="tabs">
+        <li><a href="#tab-index">{{ 'Email templates'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New template'|trans }}</a></li>
+        <li><a href="#tab-email">{{ 'Email settings'|trans }}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+
+            {{ mf.table_search }}
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td style="width: 50%">{{ 'Title'|trans }}</td>
+                        <td>{{ 'Extension'|trans }}</td>
+                        <td>{{ 'Code'|trans }}</td>
+                        <td>{{ 'Enabled'|trans }}</td>
+                        <td width="13%">&nbsp;</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% set templates = admin.email_template_get_list({ "per_page": 100, "page": request.page }|merge(request)) %}
+                {% for i, template in templates.list %}
+                <tr>
+                    <td>{{ template.subject }}</td>
+                    <td>{{ template.category }}</td>
+                    <td>{{ template.action_code }}</td>
+                    <td>{{ mf.q(template.enabled) }}</td>
+                    <td class="actions">
+                        <a class="bb-button btn14" href="{{ '/email/template'|alink }}/{{ template.id }}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                        <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/email/template_delete'|link({ 'id': template.id }) }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/trash.png" alt=""></a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">
+                        {{ 'The list is empty. Depending on modules enabled email templates will be inserted after first event occurrence.'|trans }}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5">
+                            <div class="aligncenter">
+                                <a href="{{ 'api/admin/email/batch_template_generate'|link }}" title="" class="btn55 mr10 api-link" data-api-reload="1"><img src="images/icons/middlenav/power.png" alt=""><span>Generate templates</span></a>
+                                <a href="{{ 'api/admin/email/batch_template_enable'|link }}" title="" class="btn55 mr10 api-link" data-api-msg="All email templates enabled"><img src="images/icons/middlenav/play2.png" alt=""><span>Enable all</span></a>
+                                <a href="{{ 'api/admin/email/batch_template_disable'|link }}" title="" class="btn55 mr10 api-link" data-api-msg="All email templates disabled"><img src="images/icons/middlenav/stop.png" alt=""><span>Disable all</span></a>
+                            </div>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        {% set params = admin.extension_config_get({ "ext": "mod_email" }) %}
+        <div id="tab-email" class="tab_content nopadding">
+            <div class="help">
+                <h3>{{ 'Configure email options'|trans }}</h3>
+                <p>{{ 'BoxBilling sends emails using <em>sendmail</em> by default or you can configure your own SMTP server'|trans }}</p>
+            </div>
+
+            <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="Email settings updated">
+                <fieldset>
+                
+                <div class="rowElem noborder">
+                    <label class="topLabel">Queue options</label>
+                    <div class="formBottom" id="mailer">
+                        <label>{{ 'Send emails per cron run (0 = unlimited)'|trans }}</label><input type="text" name="queue_once" placeholder="0" value="{{ params.queue_once }}"/>
+                        <label>{{ 'Max email sending time in minutes (0 = unlimited, default 5 min.)'|trans }}</label><input type="text" name="time_limit" placeholder="5" value="{% if params.time_limit %}{{ params.time_limit }}{% else %}5{% endif %}"/>
+                        <label>{{ 'Cancel sending email after unsuccessful tries (0 = do not cancel)'|trans }}</label><input type="text" name="cancel_after" placeholder="0" value="{{ params.cancel_after }}"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem noborder">
+                    <label class="">{{ 'Log sent emails to database'|trans }}</label>
+                    <div class="formRight" id="mailer">
+                        <input type="radio" name="log_enabled" value="1" {% if params.log_enabled %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                        <input type="radio" name="log_enabled" value="0" {% if not params.log_enabled %}checked="checked"{% endif %} /><label>{{ 'No'|trans }}</label>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+
+                <div class="rowElem">
+                    <label class="">{{ 'Email transport'|trans }}</label>
+                    <div class="formRight" id="mailer">
+                        <input type="radio" name="mailer" value="sendmail" {% if params.mailer == 'sendmail' or not params.mailer %}checked="checked"{% endif %}/><label>{{ 'SendMail'|trans }}</label>
+                        <input type="radio" name="mailer" value="smtp" {% if params.mailer == 'smtp' %}checked="checked"{% endif %} /><label>{{ 'SMTP'|trans }}</label>
+                        <input type="radio" name="mailer" value="sendgrid" {% if params.mailer == 'sendgrid' %}checked="checked"{% endif %} /><label>{{ 'SendGrid'|trans }}</label>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                </fieldset>
+                
+                <fieldset class="sendgrid" {% if params.mailer != 'sendgrid' %}style="display:none;"{% endif %} >
+                <div class="rowElem">
+                    <label class="topLabel">{{ 'SendGrid Username'|trans }}</label>
+                    <div class="formBottom">
+                        <input type="text" name="sendgrid_username" value="{{ params.sendgrid_username }}" placeholder="username"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <div class="rowElem">
+                    <label class="topLabel">{{ 'SendGrid Password'|trans }}</label>
+                    <div class="formBottom">
+                        <input type="password" name="sendgrid_password" value="{{params.sendgrid_password}}" placeholder="password"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                </fieldset>
+                
+                <fieldset class="smtp" {% if params.mailer != 'smtp' %}style="display:none;"{% endif %} >
+                <div class="rowElem">
+                    <label class="topLabel">{{ 'SMTP Hostname'|trans }}</label>
+                    <div class="formBottom">
+                        <input type="text" name="smtp_host" value="{{params.smtp_host}}" placeholder="smtp.gmail.com"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                    
+                <div class="rowElem">
+                    <label class="topLabel">{{ 'SMTP Port'|trans }}</label>
+                    <div class="formBottom">
+                        <input type="text" name="smtp_port" value="{{params.smtp_port}}" placeholder="587"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                    
+                <div class="rowElem">
+                    <label class="topLabel">{{ 'SMTP Username'|trans }}</label>
+                    <div class="formBottom">
+                        <input type="text" name="smtp_username" value="{{params.smtp_username}}" placeholder="my.email@gmail.com"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                    
+                <div class="rowElem">
+                    <label class="topLabel">{{ 'SMTP Password'|trans }}</label>
+                    <div class="formBottom">
+                        <input type="password" name="smtp_password" value="{{params.smtp_password}}" placeholder="******"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                    
+                <div class="rowElem">
+                    <label class="">{{ 'SMTP Security'|trans }}</label>
+                    <div class="formRight">
+                        <input type="radio" name="smtp_security" value=""{% if not params.smtp_security %}checked="checked"{% endif %}/><label>None</label>
+                        <input type="radio" name="smtp_security" value="ssl"{% if params.smtp_security == 'ssl' %}checked="checked"{% endif %}/><label>SSL</label>
+                        <input type="radio" name="smtp_security" value="tls"{% if params.smtp_security == 'tls' %}checked="checked"{% endif %}/><label>TLS</label>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                </fieldset>
+                    
+                <fieldset>
+                    <input type="submit" value="{{ 'Update email settings'|trans }}" class="greyishBtn submitForm" />
+                    <input type="button" value="{{ 'Send test email to staff members'|trans }}" class="blackBtn leftBtn" id="emailTest"/>
+                    <input type="hidden" name="ext" value="mod_email"/>
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new">
+            <div class="help">
+                <h3>{{ 'Where I can use new email template?'|trans }}</h3>
+                <p>{{ 'Newly created email templates can be used in custom event hooks.'|trans }}</p>
+            </div>
+
+            <form method="post" action="{{ 'api/admin/email/template_create'|link }}" class="mainForm save api-form" data-api-reload="1">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{{ 'Enabled'|trans }}:</label>
+                        <div class="formRight noborder">
+                            <input type="radio" name="enabled" value="1"/><label>{{ 'Yes'|trans }}</label>
+                            <input type="radio" name="enabled" value="0" checked="checked"/><label>{{ 'No'|trans }}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Category'|trans }}</label>
+                        <div class="formRight">
+                            <input type="text" name="category" value="{{ requests.category }}" required="required" placeholder="General"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Action code'|trans }}</label>
+                        <div class="formRight">
+                            <input type="text" name="action_code" value="{{ requests.action_code }}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Subject'|trans }}</label>
+                        <div class="formRight">
+                            <input type="text" name="subject" value="{{ requests.subject }}" required="required"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Content'|trans }}</label>
+                        <div class="formRight">
+                            <textarea name="content" cols="5" rows="10">{{ requests.content }}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+$(function() {
+    $('#emailTest').click(function(){
+        bb.post('admin/email/send_test', null, function(result){
+            bb.msg('Email was successfully sent');
+        });
+
+        return false;
+    });
+	$("#mailer input").click( function() {
+        if ($(this).val() == 'smtp') {
+            $('fieldset.smtp').slideDown();
+        } else {
+            $('fieldset.smtp').slideUp();
+        }
+	});
+});
+</script>
+{% endblock %}

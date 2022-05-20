@@ -1,0 +1,53 @@
+{% extends "layout_default.html.twig" %}
+
+{% set active_menu = 'support' %}
+{% block meta_title %}{{ category.title }}{% endblock %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'kb'|alink }}">{{ 'Knowledge Base'|trans }}</a></li>
+    <li><a href="{{ 'kb'|alink }}#tab-categories">{{ 'Categories'|trans }}</a></li>
+    <li class="lastB">{{ category.title}}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget">
+    <div class="head">
+        <h5>{{ category.title}}</h5>
+    </div>
+    
+    <form method="post" action="{{ 'api/admin/kb/category_update'|link }}" class="mainForm save api-form" data-api-msg="{{ 'Category updated'|trans }}">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{{ 'Title'|trans }}:</label>
+                <div class="formRight">
+                    <input type="text" name="title" value="{{ category.title }}" required="required"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            <div class="rowElem">
+                <label>{{ 'Slug'|trans }}:</label>
+                <div class="formRight">
+                    <input type="text" name="slug" value="{{ category.slug }}" required="required"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{{ 'Description'|trans }}:</label>
+                <div class="formRight">
+                    <textarea name="description" cols="5" rows="20">{{ category.description }}</textarea>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
+            <input type="hidden" name="id" value="{{ category.id }}"/>
+        </fieldset>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}{{ 'SpamChecker settings'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+    <li class="lastB">{{ 'SpamChecker settings'|trans }}</li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="widget">
+    <div class="head">
+        <h5 class="iCog">{{ 'SpamChecker settings'|trans }}</h5>
+    </div>
+
+{% set params = admin.extension_config_get({ "ext": "mod_spamchecker" }) %}
+
+<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{{ 'Enable IP blocking'|trans }}</label>
+            <div class="formRight">
+                <input type="radio" name="block_ips" value="1" {% if params.block_ips == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                <input type="radio" name="block_ips" value="0" {% if params.block_ips == "0" %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+        <div class="rowElem noborder">
+            <label class="topLabel">{{ 'Blocked IPs are not allowed to login, register or open public ticket. One IP per line'|trans }}</label>
+            <div class="formBottom">
+                <textarea name="blocked_ips" cols="5" rows="5" placeholder="127.0.0.1">{{ params.blocked_ips }}</textarea>
+            </div>
+            <div class="fix"></div>
+        </div>
+    </fieldset>
+
+    <div class="help">
+        <h3>{{ 'reCAPTCHA settings'|trans }}</h3>
+        <p>{{ 'Enable captcha for client registration and contact forms'|trans }}</p>
+        <p>{{ 'Sign up for reCAPTCHA key for your domain at'|trans }} <a href="https://google.com/recaptcha" target="_blank">https://google.com/recaptcha/</a></p>
+    </div>
+
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{{ 'Enable reCAPTCHA'|trans }}</label>
+            <div class="formRight">
+                <input type="radio" name="captcha_enabled" value="1" {% if params.captcha_enabled == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                <input type="radio" name="captcha_enabled" value="0" {% if params.captcha_enabled == "0" %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{{ 'reCAPTCHA version'|trans }}</label>
+            <div class="formRight">
+                <input type="radio" name="captcha_version" value="2" {% if params.captcha_version == "2" %}checked="checked"{% endif %}/><label>{{ 'v2'|trans }}</label>
+            </div>
+            
+            <label>{{ 'reCAPTCHA Public key'|trans }}</label>
+            <div class="formRight">
+                <input type="text" name="captcha_recaptcha_publickey" value="{{ params.captcha_recaptcha_publickey }}"/>
+            </div>
+
+            <label>{{ 'reCAPTCHA Secret key'|trans }}</label>
+            <div class="formRight">
+                <input type="text" name="captcha_recaptcha_privatekey" value="{{ params.captcha_recaptcha_privatekey }}"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+    </fieldset>
+
+    <div class="help">
+        <h3>{{ 'Akismet settings'|trans }}</h3>
+        <p>{{ 'Enable forum messages checking on the <a href="https://akismet.com/" target="_blank">Akismet</a> database'|trans }}</p>
+    </div>
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{{ 'Enable check'|trans }}</label>
+            <div class="formRight">
+                <input type="radio" name="akismet_enabled" value="1" {% if params.akismet_enabled == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                <input type="radio" name="akismet_enabled" value="0" {% if params.akismet_enabled == "0" %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <div class="rowElem">
+            <label>{{ 'Akismet API key'|trans }}</label>
+            <div class="formRight">
+                <input type="text" name="akismet_api_key" value="{{params.akismet_api_key}}"/>
+            </div>
+            <div class="fix"></div>
+        </div>
+    </fieldset>
+    
+    <div class="help">
+        <h3>{{ 'StopForumSpam.com settings'|trans }}</h3>
+        <p>{{ 'If enabled, client IP will be checked on the <a href="http://www.stopforumspam.com/" target="_blank">Stop Forum Spam</a> database before registration'|trans }}</p>
+    </div>
+    <fieldset>
+        <div class="rowElem noborder">
+            <label>{{ 'Enable check'|trans }}</label>
+            <div class="formRight">
+                <input type="radio" name="sfs" value="1" {% if params.sfs == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                <input type="radio" name="sfs" value="0" {% if params.sfs == "0" %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
+            </div>
+            <div class="fix"></div>
+        </div>
+
+        <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
+        <input type="hidden" name="ext" value="mod_spamchecker" />
+    </fieldset>
+</form>
+</div>
+{% endblock %}

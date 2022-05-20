@@ -1,0 +1,64 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ email.subject }}{% endblock %}
+
+{% block content_before %}
+    <h1>{{ email.subject }}</h1>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ 'email'|link }}">{{ 'Emails we have sent you'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active">{{ email.subject }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <ul class="list-inline">
+                <li><strong>{{ 'Sent'|trans }}</strong> {{ email.created_at|date('Y-m-d h:i') }}</li>
+                <li><strong>{{ 'From'|trans }}</strong> {{ email.sender }}</li>
+                <li><strong>{{ 'To'|trans }}</strong> {{ email.recipients }}</li>
+                <li class="pull-right">
+                    <a href="{{ 'api/client/email/resend'|link({ 'id': email.id }) }}" data-api-msg="{{ 'Success'|trans %}" class="api btn btn-info btn-sm">
+                        <i class="fa fa-repeat"></i> {{ 'Resend'|trans }}</a>
+                </li>
+                <li class="pull-right">
+                    <a href="{{ 'api/client/email/delete'|link({'id' : email.id}) }}" data-api-redirect="{{ '/email'|link }}" class="api btn btn-danger btn-sm">
+                        <i class="fa fa-trash"></i> {{ 'Delete'|trans }}</a>
+                </li>
+            </ul>
+        </div>
+        <div class="panel-body">
+            {{ email.content_html|raw }}
+        </div>
+    </div>
+    <hr>
+    
+    <p class="text-center">
+        <a class="btn btn-default" href="{{ '/email'|link }}">
+            <i class="fa fa-arrow-left me-2"></i>{{ 'Back to emails'|trans }}</a>
+    </p>
+{% endblock %}
+
+{% block js %}
+{% autoescape true js %}
+<script>
+$(function() {
+    $('#email-resend').click(function(e) {
+        e.preventDefault();
+        bb.post('client/email/resend', { id: {{ email.id }} }, function(result) {
+            boxbilling.message("{{ 'Email resent'|trans }}");
+        });
+    });
+
+    $('#email-delete').click(function(e){
+        e.preventDefault();
+        bb.post('client/email/delete', { id: {{ email.id }} }, function(result) {
+                bb.redirect("{{ 'email'|link }}");
+        });
+    });
+});
+</script>
+{% endautoescape %}
+{% endblock %}

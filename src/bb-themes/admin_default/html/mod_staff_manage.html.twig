@@ -1,0 +1,200 @@
+{% extends 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Profile'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'extension/settings/staff'|alink }}">{{ 'Staff'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ staff.name }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    {% if staff.role == 'cron' %}
+    <div class="nNote nInformation hideit first">
+        <p><strong>{{ 'INFORMATION'|trans }}: </strong>{{ 'This staff member is used by BoxBilling to perform system tasks and can not be removed.'|trans }}</p>
+    </div>
+    {% endif %}
+
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-profile" data-bs-toggle="tab">{{ 'Profile'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation" data-bs-toggle="tab">
+            <a class="nav-link" href="#tab-permissions" data-bs-toggle="tab">{{ 'Permissions'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-password" data-bs-toggle="tab">{{ 'Password'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-api" data-bs-toggle="tab">{{ 'API'|trans }}</a>
+        </li>
+    </ul>
+
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-profile" role="tabpanel">
+            <div class="help">
+                <h3>{{ 'Manage staff member details'|trans }}</h3>
+
+                <form method="post" action="admin/staff/update" class="api-form" data-api-msg="{{ 'This staff member updated.'|trans }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Group'|trans }}</label>
+                        <div class="col">
+                            {{ mf.selectbox('admin_group_id', admin.staff_group_get_pairs, staff.group.id, 1) }}
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label" for="inputName">{{ 'Name'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" id="inputName" type="text" name="name" value="{{ staff.name }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label" for="inputEmail">{{ 'Email'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" id="inputEmail" type="text" name="email" value="{{ staff.email }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active"{% if staff.status == 'active' %} checked{% endif %}>
+                                <label class="form-check-label" for="radioStatusActive">{{ 'Active'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioStatusInactive" type="radio" name="status" value="inactive"{% if staff.status == 'inactive' %} checked{% endif %}>
+                                <label class="form-check-label" for="radioStatusInactive">{{ 'Inactive'|trans }}</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label" for="textareaSignature">{{ 'Signature'|trans }}</label>
+                        <div class="col">
+                            <textarea class="form-control" id="textareaSignature" name="signature" rows="2">{{staff.signature}}</textarea>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ staff.id }}">
+                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-permissions" role="tabpanel">
+            <div class="card-body">
+                {% set member_name = staff.name %}
+                <h3>{{ '{{ member_name }} permissions'|trans }}</h3>
+
+                {% if staff.role == 'admin' %}
+                <p>{{ 'Administrator account is allowed to do everything'|trans }}</p>
+                {% else %}
+            </div>
+
+            {% set prms = admin.staff_permissions_get({ 'id': staff.id }) %}
+            <form method="post" action="admin/staff/permissions_update" class="api-form" data-api-msg="{{ 'Permissions updated'|trans }}">
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <thead>
+                        <tr>
+                            <th class="w-1">
+                                <input class="form-check-input m-0 align-middle js-permission-check-master" type="checkbox">
+                            </th>
+                            <th>{{ 'Module'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mod in mods %}
+                        <tr>
+                            <td>
+                                <input class="form-check-input m-0 align-middle js-permission-check" id="input-{{ mod }}" type="checkbox" name="permissions[{{ mod }}]" value="1"{% if prms[mod] %} checked{% endif %}>
+                            </td>
+                            <td>
+                                <label for="input-{{ mod }}">{{ mod|title }}</label>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <input type="hidden" name="id" value="{{ staff.id }}">
+                <input type="hidden" name="permissions[]" value="">
+
+                <div class="card-footer">
+                    <input type="submit" value="{{ 'Save'|trans }}" class="btn btn-primary w-100">
+                </div>
+            </form>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="tab-password" role="tabpanel">
+            <div class="help">
+                <h3>{{ 'Change staff member password'|trans }}</h3>
+
+                <form method="post" action="admin/staff/change_password" class="api-form" data-api-msg="{{ 'Staff member password changed'|trans }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label" for="inputPassword">{{ 'Password'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" id="inputPassword" type="password" name="password" required>
+                        </div>
+                        </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label" for="inputPasswordConfirm">{{ 'Repeat same password'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" id="inputPasswordConfirm" type="password" name="password_confirm" required>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ staff.id }}">
+                    <input type="submit" value="{{ 'Submit'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-api" role="tabpanel">
+            <div class="card-body">
+                <h3>{{ 'API key'|trans }}</h3>
+                <p class="text-muted">{{ 'Api key is used to manage system via other interfaces.'|trans }}</p>
+
+                <form method="post" action="admin/profile/generate_api_key" class="api-form" data-api-reload="1">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'API key'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" value="{{ admin.profile_get.api_token }}">
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ staff.id }}">
+                    <input type="submit" value="{{ 'Generate new key'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js%}
+<script>
+    $(function() {
+        $('.js-permission-check-master').click(function() {
+            $('.js-permission-check').prop('checked', this.checked);
+        });
+    });
+</script>
+{% endblock %}

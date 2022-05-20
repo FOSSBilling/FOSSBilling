@@ -1,0 +1,33 @@
+<div class="row">
+    {% if settings.show_stat_pane_service %}
+        <div class="col">
+            <div class="card text-center h-100 border-info shadow shadow-sm">
+                <div class="card-body bg-gradient">
+                    <div class="fs-1">{{ client.order_get_list({ 'status': 'active' }).list|length }}</div>
+                    <div>{{ 'Active services'|trans }}</div>
+                    <hr>
+                    <div class="d-grid">
+                        <a class="btn btn-info btn-sm" href="{{ 'order'|link }}">{{ 'New'|trans }}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if settings.show_stat_pane_ballance %}
+        <div class="col">
+            <div class="card text-center h-100 border-info shadow shadow-sm">
+                <div class="card-body bg-gradient">
+                    <div class="fs-1">{{ client.client_get.balance|money(profile.currency) }}</div>
+                    <div>{{ 'Balance'|trans }}</div>
+                    <hr>
+                    <div class="d-grid">
+                        <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddFunds">{{ 'Add'|trans }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% include 'Modal/_add-funds.html.twig' %}
+    {% endif %}
+</div>
+<hr>

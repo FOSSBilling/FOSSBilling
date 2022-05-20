@@ -1,0 +1,209 @@
+{% if settings.showcase_enabled %}
+    {% include 'Index/_showcase.html.twig' %}
+{% endif %}
+
+{% if settings.stats_enabled %}
+    {% include 'Index/_statistics.html.twig' %}
+{% endif %}
+
+<div class="row g-3">
+    {% if settings.dash_services %}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fa fa-cog me-2"></i>{{ 'Services'|trans }}
+                        {% if client.order_get_list({ 'expiring': 1 }).total > 0 %}
+                            <span class="label label-primary">{{ client.order_get_list({ 'expiring': 1 }).total }} {{ 'Soon expires'|trans }}</span>
+                        {% endif %}
+                        <a class="btn btn-default btn-sm float-end" href="{{ 'order/service'|link }}">{{ 'All services'|trans }}</a>
+                    </h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% set services = client.order_get_list({ 'per_page': 10, 'page': request.page, 'hide_addons': 1, 'status': 'active' }) %}
+
+                    {% for i, service in services.list %}
+                        <a href="{{ '/order/service/manage'|link }}/{{ service.id }}" class="list-group-item">#{{ service.id }} - {{ service.title }}</a>
+                    {% endfor %}
+                    <a class="list-group-item list-group-item-success text-center" href="{{ 'order'|link }}">{{ 'New order'|trans }}</a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if settings.dash_invoices %}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fa fa-credit-card me-2"></i>{{ 'Invoices'|trans }}
+                        {% if client.invoice_get_list({ 'status': 'unpaid' }).total > 0 %}
+                            <span class="badge rounded-pill bg-danger">{{ client.invoice_get_list({ 'status': 'unpaid' }).total }} {{ 'Unpaid'|trans }}</span>
+                        {% endif %}
+                        <a class="btn btn-default btn-sm float-end" href="{{ 'invoice'|link }}">{{ 'All invoices'|trans }}</a>
+                    </h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% set unpaid_invoices = client.invoice_get_list({ 'status': 'unpaid', 'per_page': 10 }).list %}
+                    {% for i, invoice in unpaid_invoices %}
+                        <a href="{{ 'invoice'|link }}/{{ invoice.hash }}" class="list-group-item">
+                            {{ '#%05s'|format(invoice.id) }} -
+                            {{ 'Due Date'|trans }}: {{ invoice.due_at|date('d/m/Y') }} <div class="float-end text-success">{{ invoice.total | money(invoice.currency) }}</div>
+                        </a>
+                    {% endfor %}
+                    {% if client.invoice_get_list({ 'status': 'unpaid' }).total > 0 %}
+                        <a class="list-group-item list-group-item-danger text-center" href="{{ 'invoice'|link }}">{{ client.invoice_get_list({ 'status': 'unpaid' }).total }} {{ 'Unpaid'|trans }}</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if settings.dash_support %}
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fa fa-life-ring me-2"></i>{{ 'Support'|trans }}
+                    {% if client.support_ticket_get_list({ 'status': 'on_hold' }).total > 0 %}
+                        <span class="label label-warning">{{ client.support_ticket_get_list({ 'status': 'on_hold'}).total }} {{ mf.status_name('on_hold') }}</span>
+                    {% endif %}
+                    <a class="btn btn-default btn-sm float-end" href="{{ 'support'|link }}">{{ 'All tickets'|trans }}</a>
+                </h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% set tickets_on_hold = client.support_ticket_get_list({ 'status': 'on_hold' }) %}
+
+                {% for i, ticket in tickets_on_hold.list %}
+                    <a href="{{ 'support/ticket'|link }}/{{ ticket.id }}" class="list-group-item ">{{ ticket.subject }} <span class="badge bg-secondary">{{ ticket.helpdesk.name }}</span> <span class="badge bg-warning">{{ mf.status_name(ticket.status) }}</span></a>
+                {% endfor %}
+
+                {% set tickets_open = client.support_ticket_get_list({ 'status': 'open' }) %}
+
+                {% for i, ticket in tickets_open.list %}
+                    <a href="{{ 'support/ticket'|link }}/{{ ticket.id }}" class="list-group-item d-flex justify-content-between align-items-center">{{ ticket.subject }} <span class="badge bg-secondary">{{ ticket.helpdesk.name }}</span></a>
+                {% endfor %}
+                <a class="list-group-item list-group-item-info text-center" href="{{ 'support'|link({ 'ticket': 1 }) }}">{{ 'New ticket'|trans }}</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if settings.dash_news and guest.extension_is_on({ 'mod': 'news' }) %}
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fa fa-fw fa-bullhorn me-2"></i>{{ 'Announcements'|trans }}
+                    <a class="btn btn-default btn-sm float-end" href="{{ 'news'|link }}">{{ 'All news'|trans }}</a>
+                </h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% set posts = guest.news_get_list({ 'per_page': 4, 'page' : 1}) %}
+                {% for i, post in posts.list %}
+                    <a href="{{ '/news'|link }}/{{ post.slug }}" class="list-group-item">{{ post.title }}</a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if settings.dash_orders %}
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fa fa-fw fa-shopping-cart me-2"></i>{{ 'Recent orders'|trans }}
+                    <a class="btn btn-default btn-sm float-end" href="{{ 'order'|link }}">{{ 'New order'|trans }}</a>
+                </h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for i, order in client.order_get_list({ 'per_page': 5, 'page': request.page, 'hide_addons': 1 }).list %}
+                    <a href="{{ 'order/service/manage'|link }}/{{ order.id }}" class="list-group-item">
+                        {{ order.title|truncate(30) }}
+                        <span class="float-end badge {% if order.status == 'active' %}bg-success{% elseif order.status == 'pending_setup' %}bg-warning{% elseif order.status == 'failed_setup' %}bg-danger{% else %}bg-default{% endif %}">{{ mf.status_name(order.status) }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if settings.dash_messages %}
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fa fa-fw fa-envelope me-2"></i>{{ 'Recent emails'|trans }}
+                    <a class="btn btn-default btn-sm float-end" href="{{ 'email'|link }}">{{ 'All emails'|trans }}</a>
+                </h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for i, email in client.email_get_list({ 'per_page': 5 }).list %}
+                <a href="{{ 'email'|link }}/{{ email.id }}" class="list-group-item">
+                    {{ email.subject|truncate(30) }} <small>- {{ email.created_at|timeago }} {{ 'ago'|trans }}</small>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if settings.dash_kb and guest.extension_is_on({ 'mod': 'kb' }) %}
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fa fa-fw fa-graduation-cap me-2"></i>{{ 'Knowledge base'|trans }}
+                    <a class="btn btn-default btn-sm float-end" href="{{ 'kb'|link }}">{{ 'All articles'|trans }}</a>
+                </h4>
+            </div>
+            <div class="list-group" id="kb">
+                <span class="list-group-item list-group-flush">
+                    <form method="get" action="{{ 'kb'|link }}">
+                        <div class="input-group">
+                            <input name="q" type="text" class="form-control" value="{{ request.q }}" placeholder="{{ 'What are you looking for?'|trans }}">
+                            <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i></button>
+                        </div>
+                    </form>
+                </span>
+                {% for i, category in guest.kb_category_get_list.list %}
+                    <a href="#category-{{ category.id }}" class="list-group-item" data-bs-toggle="collapse" data-parent="#kb">
+                        <strong>{{category.title}}</strong>
+                    </a>
+                    <div class="collapse" id="category-{{ category.id }}">
+                    {% for i, article in category.articles %}
+                        <a href="{{ '/kb'|link }}/{{ article.category.slug }}/{{ article.slug }}" class="list-group-item">{{ article.title }}</a>
+                    {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if settings.dash_forum and guest.extension_is_on({ 'mod': 'forum' }) %}
+        {% if client.forum_favorites %}
+        <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>
+                    <i class="fa fa-fw fa-comments me-2"></i>{{ 'Favorite topics'|trans }}
+                    <a class="btn btn-default btn-sm float-end" href="{{ 'forum'|link }}">{{ 'Forum'|trans }}</a>
+                </h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for i, topic in client.forum_favorites %}
+                <a href="{{ '/forum'|link }}/{{ topic.forum.slug }}/{{ topic.slug }}#m-{{ topic.last.id }}" class="list-group-item">
+                    <h4 class="list-group-item-heading">{{ topic.title }}</h4>
+                    <p class="list-group-item-text">
+                        <i>{{ 'Last post'|trans }}:</i> <img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"> {{ topic.last.author.name }} <strong>{{ topic.last.created_at|date('Y-m-d h:i') }}</strong>
+                    </p>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        </div>
+        {% endif %}
+    {% endif %}
+</div>

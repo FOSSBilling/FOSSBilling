@@ -1,0 +1,265 @@
+{% extends "layout_default.html.twig" %}
+
+{% block meta_title %}Email template{% endblock %}
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'extension/settings/email'|alink }}">{{ 'Email'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ template.action_code }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+{# {% if template.vars|length == 0 %}
+<div class="nNote nInformation hideit first">
+    <p><strong>{{ 'INFORMATION'|trans }}: </strong>{{ 'This email template is deprecated'|trans }}</p>
+</div>
+{% endif %} #}
+
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-template" data-bs-toggle="tab">{{ 'Template'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-vars" data-bs-toggle="tab">{{ 'Variables'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-manage" data-bs-toggle="tab">{{ 'Template Settings'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-examples" data-bs-toggle="tab">{{ 'Examples'|trans }}</a>
+        </li>
+    </ul>
+
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-template" role="tabpanel">
+            <form method="post" action="admin/email/template_update" class="api-form" data-api-msg="{{ 'Template updated'|trans }}">
+                <div class="card-body">
+                    <h3>{{ 'Manage email template'|trans }}</h3>
+                    <p class="text-muted">{{ 'Most email templates receives parameters from BoxBilling. You can browse them on "Variables" tab. Copy variable name to email template and hit preview to see parsed content. Please note that values will be different when actual email is sent.'|trans }}</p>
+
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Email subject'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="subject" value="{{ template.subject }}" id="email-subject" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Email message'|trans }}</label>
+                        <div class="col">
+                            <textarea class="form-control" name="content" id="email-template" rows="10" required>{{ template.content }}</textarea>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ template.id }}">
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-secondary w-25" id="preview-button"
+                            {% if template.vars|length == 0 %}
+                                disabled
+                            {% endif %}>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <use xlink:href="#eye" />
+                            </svg>
+                            {{ 'Preview'|trans }}
+                        </button>
+
+                        <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                        <a class="btn btn-danger w-25 api-link"
+                            href="{{ 'api/admin/email/template_reset'|link }}?code={{ template.action_code }}"
+                            data-api-confirm="{{ 'Are you sure?'|trans }}"
+                            data-api-reload="1">
+                            {{ 'Reset'|trans }}
+                        </a>
+                    </div>
+
+                    <div class="mt-3" id="preview" style="display: none;">
+                        <div class="p-3 esubject mb-3" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
+                        <div class="p-3 econtent" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="tab-pane fade" id="tab-manage" role="tabpanel">
+            <div class="card-body">
+                <h3>{{ 'Template settings'|trans }}</h3>
+                <p>{{ 'Enable or disable this email template.'|trans }}</p>
+
+                <form method="post" action="admin/email/template_update" class="api-form" data-api-msg="{{ 'Template updated'|trans }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Enabled'|trans }}:</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioEnabledYes" type="radio" name="enabled" value="1"{% if template.enabled %} checked{% endif %}>
+                                <label class="form-check-label" for="radioEnabledYes">{{ 'Yes'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioEnabledNo" type="radio" name="enabled" value="0"{% if not template.enabled %} checked{% endif %}>
+                                <label class="form-check-label" for="radioEnabledNo">{{ 'No'|trans }}</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="category" value="{{ template.category }}" required placeholder="General">
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ template.id }}">
+                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-vars" role="tabpanel">
+            <div class="help">
+                <h3>{{ 'List of variables used in this email'|trans }}</h3>
+                <p class="text-muted">{{ 'These values will change when real email is sent. You can pass these variables to admin or guest API to get additional information from database.'|trans }}</p>
+            </div>
+
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Variable'|trans }}</th>
+                        <th>{{ 'Example value'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for k,var in template.vars %}
+                    {% if var is iterable %}
+                        {% for subkey,subvalue in var %}
+                            {% if subvalue is iterable %}
+                                {% for subsubkey,subsubvalue in var %}
+                                    {% if subsubvalue is not iterable %}
+                                        <tr>
+                                            <td>{{ '{{' }} {{ k }}.{{ subkey }}.{{ subsubkey }}{{ '}}' }}</td>
+                                            <td>{{ subsubvalue }}</td>
+                                        </tr>
+                                    {% else %}
+                                        <tr>
+                                            <td>{{ '{{' }} {{ k }}.{{ subkey }}.{{ subsubkey }}{{ '}}' }}</td>
+                                            <td>Array [ ]</td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td>{{ '{{' }} {{ k }}.{{ subkey }} {{ '}}' }}</td>
+                                    <td>{{ subvalue }}</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td>{{ '{{' }} {{ k }} {{ '}}' }}</td>
+                            <td>{{ var }}</td>
+                        </tr>
+                    {% endif %}
+                {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="2">{{ 'This template does not receive any parameters'|trans }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane fade" id="tab-examples" role="tabpanel">
+            <div class="card-body">
+                <h3>{{ 'Email templates examples'|trans }}</h3>
+                <p class="text-muted">{{ 'Email template playground. Use this tool to try rendering email templates.'|trans }}</p>
+
+                <div class="mb-3">
+                    <textarea class="form-control" rows="20">{% autoescape false %}{% apply markdown %}
+This is an example of markdown syntax in email template
+
+*Italic text*
+**Bolded text**
+
+Lists:
+
+* Red
+* Green
+* Blue
+
+***
+
+Link to login form: <{{ 'login'|link }}>
+
+Company signature: {{ guest.system_company.signature }}
+
+You can event use IF statements in email templates: {% if 1 == 2 %}This will never show{% else %}Of course 1 is not equal 2{% endif %}
+
+***
+
+Accessing Admin API can get information about your BoxBilling, for example how many clients you have:
+{% set stats =  admin.stats_get_summary %}
+**Total clients:** {{ stats.clients_total }}
+
+{# Comments in email templates. This text is not visible #}
+{# Uncomment the line below to see what is the output #}
+
+{#<pre>{% debug stats %}</pre>#}
+{% endapply %}{% endautoescape %}</textarea>
+                </div>
+
+                <button class="btn btn-secondary w-100 epb">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#eye" />
+                    </svg>
+                    {{ 'Preview'|trans }}
+                </button>
+                <div class="mt-3 p-3 example-preview" style="border: 1px dashed grey; overflow: auto; display: none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+$(function() {
+    $('.epb').click(function() {
+        var r = $(this).siblings('.example-preview');
+        var params = { _tpl: $(this).siblings('textarea').val(), id: '{{ template.id }}' };
+
+        bb.post('admin/email/template_render', params, function(result) {
+            r.html(result).show();
+        });
+    });
+
+    $('#preview-button').click(function() {
+        var params = { _tpl: $('#email-template').val(), id: '{{ template.id }}' };
+
+        bb.post('admin/email/template_render', params, function(result) {
+            $('#preview').show();
+            $('#preview .econtent').html(result);
+        });
+
+        var params = { _tpl: $('#email-subject').val(), id: '{{ template.id }}' };
+
+        bb.post('admin/email/template_render', params, function(result) {
+            $('#preview').show();
+            $('#preview .esubject').html(result);
+        });
+
+        return false;
+    });
+});
+</script>
+{% endblock %}

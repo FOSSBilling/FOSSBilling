@@ -1,0 +1,25 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'Thank you'|trans }}{% endblock %}
+
+{% block content %}
+<div class="h-block">
+    <div class="h-block-header">
+        <div class="icon"><span class="big-light-icon i-quote"></span></div>
+        <h2>{{ 'Thank you'|trans }}</h2>
+    </div>
+    <div class="block">
+        <div class="box">
+            <p>{{ 'Payment for invoice received'|trans }}</p>
+            <p>{{ 'Your payment is being processed right now. This takes about 5 minutes to complete.'|trans }}</p>
+            <p>{{ 'You will be automatically redirected to invoice page after 5 minutes.'|trans }}</p>
+            
+            <script>
+                setTimeout(function() {
+                    bb.redirect("{{ ('/invoice/'~invoice.hash)|link }}");
+                }, 5 * 60 * 1000);
+            </script>
+        </div>
+    </div>
+</div>
+{% endblock %}

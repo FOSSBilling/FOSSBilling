@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling
  *
@@ -9,7 +10,6 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
-
 
 class Box_Mod
 {
@@ -49,7 +49,7 @@ class Box_Mod
         'orderbutton',
         'formbuilder',
     );
-    
+
     /**
      * @param string $mod
      */
@@ -71,7 +71,7 @@ class Box_Mod
     {
         return file_exists($this->_getModPath() . 'manifest.json');
     }
-    
+
     public function getManifest()
     {
         if(!$this->hasManifest()) {
@@ -100,7 +100,7 @@ class Box_Mod
             "minimum_boxbilling_version" => NULL,
             "maximum_boxbilling_version" => NULL,
         );
-        
+
         $info = array_merge($info, $json);
         $info['id'] = $this->mod;
         $info['type'] = 'mod';
@@ -111,7 +111,7 @@ class Box_Mod
 
         return $info;
     }
-    
+
     public function hasService($sub = '')
     {
         $filename = sprintf('Service%s.php', ucfirst($sub));
@@ -130,12 +130,12 @@ class Box_Mod
         }
         return $service;
     }
-    
+
     public function hasClientController()
     {
         return file_exists($this->_getModPath() . 'Controller/Client.php');
     }
-    
+
     public function getClientController()
     {
         if(!$this->hasClientController()) {
@@ -152,14 +152,14 @@ class Box_Mod
 
     public function hasSettingsPage()
     {
-        return file_exists($this->_getModPath() . 'html_admin/mod_'.$this->mod.'_settings.phtml');
+        return file_exists($this->_getModPath() . 'html_admin/mod_'.$this->mod.'_settings.html.twig');
     }
 
     public function hasAdminController()
     {
         return file_exists($this->_getModPath() . 'Controller/Admin.php');
     }
-    
+
     public function getAdminController()
     {
         if(!$this->hasAdminController()) {
@@ -189,7 +189,7 @@ class Box_Mod
 
         return false;
     }
-    
+
     public function uninstall()
     {
         if($this->isCore()) {
@@ -205,13 +205,13 @@ class Box_Mod
         }
         return false;
     }
-    
+
     public function update()
     {
         if($this->isCore()) {
             throw new \Box_Exception('Core module can not be updated');
         }
-        
+
         if($this->hasService()) {
             $s = $this->getService();
             if(method_exists($s, 'update')) {
@@ -222,17 +222,17 @@ class Box_Mod
         }
         return false;
     }
-    
+
     public function getCoreModules()
     {
         return $this->core;
     }
-    
+
     public function isCore()
     {
         return in_array($this->mod, $this->core);
     }
-    
+
     public function getConfig()
     {
         $db = $this->di['db'];

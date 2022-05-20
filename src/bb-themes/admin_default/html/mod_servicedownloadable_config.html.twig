@@ -1,0 +1,50 @@
+<div class="card-nody">
+    <h5>{{ 'File'|trans }}</h5>
+    <form method="post" action="" class="" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
+        {% if product.config.filename  %}
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Currently uploaded file'|trans }}:</label>
+            <div class="col">
+                {{ product.config.filename  }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Upload new file'|trans }}:</label>
+            <div class="col">
+                <input class="form-control" type="file" name="file_data" id="file_data">
+            </div>
+        </div>
+
+        <input type="hidden" name="id" value="{{ product.id }}">
+        <input type="submit" value="{{ 'Upload'|trans }}" class="btn btn-primary w-100" id="bb-upload-button">
+    </form>
+</div>
+
+<script>
+$(function() {
+    $('body').append('<iframe id="uploadframe" name="uploadframe" style="display:none" />');
+
+    $('#bb-upload-form').submit(function() {
+        $(this).attr('action', bb.restUrl('admin/servicedownloadable/upload'));
+
+        iframe = $('#uploadframe').load(function() {
+            response = iframe.contents().find('body');
+            data = $.parseJSON(response.text());
+
+            if (data.error) {
+                bb.error(data.error.message, data.error.code);
+            }
+
+            if (data.result) {
+                boxbilling.message("{{ 'File was uploaded'|trans }}");
+            }
+
+            setTimeout(function() {
+                response.html('');
+            }, 1);
+        });
+    });
+});
+</script>

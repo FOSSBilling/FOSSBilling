@@ -1,0 +1,70 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ product.title }}{% endblock %}
+
+{% set periods = guest.system_periods %}
+{% set pricing = product.pricing %}
+
+{% block content_before %}
+    <h1>{{ 'Configure'|trans }}
+        <small>{{ product.title }}</small>
+    </h1>
+    {% include '_order-steps.html.twig' with { 'selected': 2, 'product': product } %}
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col">
+            <form method="post" class="api-form" data-api-url="guest/cart/add_item" data-api-redirect="{{ 'cart'|link }}">
+                <div class="row">
+                    <div class="col-md-8">
+                        {{ product.description|bbmd }}
+                        {% if product.form_id and guest.extension_is_on({ 'mod': 'formbuilder' }) %}
+                            {% include 'mod_formbuilder_build.html.twig' with product %}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            {% include 'partial_currency.html.twig' %}
+                            <hr>
+                            {% include 'partial_pricing.html.twig' with { 'product': product } %}
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        {% include 'partial_addons.html.twig' with { 'product': product } %}
+                    </div>
+                </div>
+                <input type="hidden" name="id" value="{{ product.id }}">
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    $(function() {
+        if($(".addons").length && $(".addons").is(':hidden')) {
+            $('#order-button').one('click', function() {
+                $(this).hide();
+                $('.addons').slideDown('fast');
+
+                return false;
+            });
+        }
+
+        $('#period-selector').on('change', function() {
+            $('.period').hide();
+            $('.period.' + $(this).val()).show();
+        });
+
+        $('.addon-period-selector').change(function() {
+            var r = $(this).attr('rel');
+
+            $('#' + r + ' span').hide();
+            $('#' + r + ' span.' + $(this).val()).fadeIn();
+        }).trigger('change');
+    });
+</script>
+{% endblock %}

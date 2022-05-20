@@ -1,0 +1,26 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ page.title }}{% endblock %}
+{% block meta_description %}{{ page.description }}{% endblock %}
+{% block meta_keywords %}{{ page.keywords }}{% endblock %}
+{% block breadcrumb %} <li class="active">{{ 'Example module'|trans }}</li>{% endblock %}
+
+{% block page_header %}
+<article class="page-header">
+    <h1>{{ 'Example module title'|trans }}</h1>
+</article>
+{% endblock%}
+{% block content %}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h1>{{ page.title }}</h1>
+            </header>
+            <section>
+                {{ page.content | bbmd }}
+            </section>
+        </div>
+    </article>
+</div>
+{% endblock %}

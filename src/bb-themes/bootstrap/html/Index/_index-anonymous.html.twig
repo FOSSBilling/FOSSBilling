@@ -1,0 +1,94 @@
+{% if settings.showcase_enabled %}
+    {% include 'Index/_showcase.html.twig' %}
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-md-8 col-12">
+        <div class="card shadow-sm text-center h-100">
+            <a href="{{ '/order'|link }}" class="stretched-link text-decoration-none">
+                <div class="card-img-top p-3">
+                    <span class="fa-stack fa-5x">
+                        <i class="fa fa-circle fa-stack-2x text-primary"></i>
+                        <i class="fa fa-shopping-cart fa-stack-1x fa-inverse"></i>
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ 'Order'|trans }}</h4>
+                    <p class="card-text text-secondary">{{ 'Choose products we offer for selling'|trans }}</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-md-4">
+        <div class="card shadow-sm text-center h-100">
+            <a href="#" class="stretched-link text-decoration-none" data-bs-toggle="modal" data-bs-target="#registration">
+                <div class="card-img-top p-3">
+                    <span class="fa-stack fa-5x">
+                        <i class="fa fa-circle fa-stack-2x text-primary"></i>
+                        <i class="fa fa-users fa-stack-1x fa-inverse"></i>
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ 'Register'|trans }}</h4>
+                    <p class="card-text text-secondary">{{ 'Become a member and manage services'|trans }}</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    {% if guest.extension_is_on({ 'mod': 'news' }) %}
+    <div class="col-sm-6 col-md-4">
+        <div class="card shadow-sm text-center h-100">
+            <a href="{{ '/news'|link }}" class="stretched-link text-decoration-none">
+                <div class="card-img-top p-3">
+                    <span class="fa-stack fa-5x">
+                        <i class="fa fa-circle fa-stack-2x text-primary"></i>
+                        <i class="fa fa-bullhorn fa-stack-1x fa-inverse"></i>
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ 'Announcements'|trans }}</h4>
+                    <p class="card-text text-secondary">{{ 'Track our latest posts'|trans }}</p>
+                </div>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if guest.extension_is_on({ 'mod': 'kb' }) %}
+    <div class="col-sm-6 col-md-4">
+        <div class="card shadow-sm text-center h-100">
+            <a href="{{ '/kb'|link }}" class="stretched-link text-decoration-none">
+                <div class="card-img-top p-3">
+                    <span class="fa-stack fa-5x">
+                        <i class="fa fa-circle fa-stack-2x text-primary"></i>
+                        <i class="fa fa-graduation-cap fa-stack-1x fa-inverse"></i>
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h4 card-title>{{ 'Knowledge base'|trans }}</h4>
+                    <p class="card-text text-secondary">{{ 'Browse our KB for answers and FAQs'|trans }}</p>
+                </div>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="col-sm-6 col-md-4">
+        <div class="card shadow-sm text-center h-100">
+            <a href="{{ '/support/contact-us'|link }}" class="stretched-link text-decoration-none">
+                <div class="card-img-top p-3">
+                    <span class="fa-stack fa-5x">
+                        <i class="fa fa-circle fa-stack-2x text-primary"></i>
+                        <i class="fa fa-envelope fa-stack-1x fa-inverse"></i>
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ 'Contact us'|trans }}</h4>
+                    <p class="card-text text-secondary">{{ 'Get assistance for your service'|trans }}</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>

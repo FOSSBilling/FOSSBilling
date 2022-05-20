@@ -1,0 +1,42 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'Processing payment ...'|trans }}{% endblock %}
+
+{% block content %}
+
+{#
+<pre>{% debug invoice %}</pre>
+<pre>{% debug payment %}</pre>
+#}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h1>{{ 'Processing payment ...'|trans }}</h1>
+                <p>{{ 'Thank you for your patience.'|trans }}</p>
+            </header>
+            <section>
+                {% if payment.type == 'html' %}
+                    {{ payment.result|raw }}
+                {% endif %}
+                {% if payment.type == 'form' %}
+                <h2>{{ 'Redirecting to payment gateway..'|trans }}</h2>
+                <form name="payment_form" action="{{ payment.service_url }}" method="post">
+                    {% for key, value in payment.result %}
+                    <input type="hidden" name="{{ key }}" value="{{ value }}" />
+                    {% endfor %}
+                    <input class="btn btn-primary" type="submit" value="{{ 'Please click here to continue if this page does not redirect automatically in 5 seconds'|trans }}" id="payment_button"/>
+                </form>
+
+                <script type="text/javascript">
+                    $(document).ready(function() {
+                        document.getElementById('payment_button').style.display = 'none';
+                        document.forms["payment_form"].submit();
+                    });
+                </script>
+                {% endif %}
+            </section>
+        </div>
+    </article>
+</div>
+{% endblock %}

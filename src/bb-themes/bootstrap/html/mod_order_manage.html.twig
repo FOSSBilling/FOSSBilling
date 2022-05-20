@@ -1,0 +1,149 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ order.title }}{% endblock %}
+
+{% set service_partial = 'mod_service' ~ order.service_type ~ '_manage.html.twig' %}
+{% set upgradables = client.order_upgradables({ 'id': order.id }) %}
+
+{% block content_before %}
+    <h1 class="page-header">{{ 'Service details'|trans }}</h1>
+    <p class="text-secondary">#{{ order.id }} - {{ order.title }}</p>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ 'order/service'|link }}">{{ 'Ordered Services'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active">#{{ order.id }} - {{ order.title }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    <div class="row mb-3">
+        <ul class="list-group col-md-8 mx-auto">
+            <li class="list-group-item d-flex justify-content-between align-items-center {% if order.status == 'active' %}list-group-item-success{% elseif order.status == 'pending_setup' %}list-group-item-warning{% elseif order.status == 'failed_setup' %}list-group-item-danger{% else %}bg-light{% endif %}">
+                #{{ order.id }} - {{ order.title }} <span class="float-end badge {% if order.status == 'active' %}bg-success{% elseif order.status == 'pending_setup' %}bg-warning{% elseif order.status == 'failed_setup' %}bg-danger{% else %}bg-secondary{% endif %}">{{ mf.status_name(order.status) }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <strong>{{ 'Payment amount'|trans }}:</strong> {{ order.total|money(order.currency) }}{% if order.period %} {{ order.period | period_title }}{% endif %}</li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <strong>{{ 'Order created'|trans }}:</strong> {{ order.created_at|date('Y-m-d h:i') }}</li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <strong>{{ 'Activated at'|trans }}:</strong> {% if order.activated_at %}{{ order.activated_at|date('Y-m-d h:i') }}{% else %}-{% endif %}</li>
+            {% if order.period %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <strong>{{ 'Renewal date'|trans }}:</strong> {% if order.expires_at %}{{ order.expires_at|daysleft }} {{ 'day(s)'|trans }} - {{ order.expires_at|date('Y-m-d h:i') }}{% else %}-{% endif %}</li>
+            {% endif %}
+            {% if order.notes %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <strong>{{ 'Order notes'|trans }}:</strong> {{ order.notes|bbmd }}</li>
+            {% endif %}
+            {% if order.active_tickets > 0 %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <a href="{{ 'support'|link }}">{{ 'Active support tickets'|trans }}:</a> <span class="badge bg-danger rounded-pill">{{ order.active_tickets }}</span>
+                </li>
+            {% endif %}
+
+            {% if order.group_master == 1 %}
+                {% set addons = client.order_addons({ 'id': order.id }) %}
+                {% if addons|length > 0 %}
+                    {% for i, addon in addons %}
+                        <li class="list-group-item {% if addon.status == 'active' %}list-group-item-success{% elseif addon.status == 'pending_setup' %}list-group-item-warning{% elseif addon.status == 'failed_setup' %}list-group-item-danger{% else %}bg-default{% endif %}">
+                            <a href="{{ '/order/service/manage'|link }}/{{ addon.id }}">
+                                <strong>{{ 'Addon'|trans }}:</strong> {{ addon.title }}</a> <span class="float-end badge {% if addon.status == 'active' %}bg-success{% elseif addon.status == 'pending_setup' %}bg-warning{% elseif addon.status == 'failed_setup' %}label-danger{% else %}bg-default{% endif %}">{{ mf.status_name(addon.status) }}</span><br>
+                            <strong>{{ 'Price'|trans }}:</strong> {{ addon.total|money(addon.currency) }} {{ addon.period|period_title }}<br>
+                            {% if addon.expires_at %}
+                            <strong>{{ 'Next due date'|trans }}:</strong> {{ addon.expires_at|date('Y-m-d h:i') }}<br>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                {% endif %}
+            {% endif %}
+        </ul>
+    </div>
+    <div class="text-center mb-3">
+        {% if order.period %}
+            <a class="btn btn-success" id="renewal-button">{{ 'Renew now'|trans }}</a>
+        {% endif %}
+        <a class="btn btn-info" data-bs-toggle="modal" data-bs-target="#ticket-order">{{ 'Open ticket'|trans }}</a>
+        {% if upgradables %}<a class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#upgrades">{{ 'Request upgrade'|trans }}</a>{% endif %}
+        {% if order.status == 'pending_setup' %}<a class="btn btn-danger api" href="{{ 'api/client/order/delete'|link({ 'id': order.id }) }}" data-api-redirect="{{ 'order/service'|link }}">{{ 'Cancel'|trans }}</a>{% endif %}
+        {% if order.status == 'active' %}
+            <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#tiсket-order-cancelation">{{ 'Request cancellation'|trans }}</a>
+        {% endif %}
+    </div>
+
+    {% include 'Modal/_add-ticket.html.twig' with { 'id': 'ticket-order' } %}
+
+    {% include 'Modal/_add-ticket.html.twig' with {
+        'id': 'tiсket-order-cancelation',
+        'cancelation': true,
+        'subject': order.title,
+        'message': 'I would like to cancel order'|trans ~ ' ' ~ order.title ~ '. ' ~ 'Because'|trans ~ ': ...'
+    } %}
+
+    <div class="modal fade" id="upgrades" tabindex="-1" role="dialog" aria-labelledby="{{ 'Request upgrade'|trans }}">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form method="post" class="api-form" data-api-url="client/support/ticket_create" data-api-tocreated="{{ 'support/ticket'|link }}" data-api-msg="Upgrade request received">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="myModalLabel">{{ 'Request upgrade'|trans }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label" for="selectTicketUpgradeHelpdesk">{{ 'Help desk'|trans }}:</label>
+                            {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1, false, 'selectTicketUpgradeHelpdesk') }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="inputTicketUpgradeSubject">{{ 'Subject'|trans }}:</label>
+                            <input type="text" class="form-control" id="inputTicketUpgradeSubject" name="subject" value="{{ 'I would like to upgrade'|trans }} {{ order.title }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="inputTicketUpgradeTariff">{{ 'Upgrade to'|trans }}: </label>
+                            {{ mf.selectbox('rel_new_value', upgradables, '', 1, false, 'inputTicketUpgradeTariff') }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="inputTicketUpgradeMessage">{{ 'Notes'|trans }}:</label>
+                            <textarea class="form-control p-3" id="inputTicketUpgradeMessage" name="content" rows="10" maxlength="999" style="resize:none" required>{{ 'I would like to upgrade'|trans }} {{ order.title }}</textarea>
+                        </div>
+                        <input type="hidden" name="rel_type" value="order">
+                        <input type="hidden" name="rel_id" value="{{ order.id }}">
+                        <input type="hidden" name="rel_task" value="upgrade">
+                    </div>
+                    <div class="modal-footer d-block">
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">{{ 'Submit'|trans }}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% if guest.system_template_exists({ 'file': service_partial })%}
+        {% set service = client.order_service({ 'id': order.id }) %}
+        {% include service_partial with { 'order': order, 'service': service } %}
+        <hr>
+    {% else %}
+        {# {{ 'Service does not have configuration page'|trans }} #}
+    {% endif %}
+
+    <div class="text-center">
+        <a href="{{ '/order/service'|link }}" class="btn btn-default">
+            <i class="fa fa-arrow-left me-2"></i>{{ 'Back to services'|trans }}</a>
+    </div>
+{% endblock %}
+
+{% block js %}
+{% autoescape 'js' %}
+<script>
+    document.getElementById('renewal-button').addEventListener('click', () => {
+        if (confirm("{{ 'Are you sure?'|trans }}")) {
+            bb.post('client/invoice/renewal_invoice', { order_id: {{ order.id }} }, function(result) {
+                bb.redirect("{{ 'invoice'|link }}" + '/' + result);
+            });
+        }
+    });
+</script>
+{% endautoescape %}
+{% endblock %}

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -154,7 +155,7 @@ class Guest extends \Api_Abstract
     /**
      * Check if passed file name template exists for client area.
      *
-     * @param string $file - template file name, example: mod_index_dashboard.phtml
+     * @param string $file - template file name, example: mod_index_dashboard.html.twig
      *
      * @return bool
      */

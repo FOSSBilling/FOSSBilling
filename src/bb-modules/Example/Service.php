@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -240,7 +241,7 @@ class Service
 
          $email = array();
          $email['to_client'] = $params['client_id'];
-         $email['code']      = 'mod_example_email'; //@see bb-modules/Example/html_email/mod_example_email.phtml
+         $email['code']      = 'mod_example_email'; //@see bb-modules/Example/html_email/mod_example_email.html.twig
 
          // these parameters are available in email template
          $email['order']     = $api->order_get(array('id'=>$params['id']));

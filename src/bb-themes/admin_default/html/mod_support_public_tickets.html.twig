@@ -1,0 +1,136 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}Public tickets{% endblock %}
+
+{% set active_menu = 'support' %}
+
+{% block content %}
+    {% set statuses = admin.support_public_ticket_get_statuses %}
+
+
+    <section class="row row-cards mb-3">
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-danger text-white avatar">{{ statuses.open }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Tickets waiting for staff reply'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'support/public-tickets'|alink({ 'status': 'on_hold' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-warning text-white avatar">{{ statuses.on_hold }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Tickets waiting for client reply'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'support/public-tickets'|alink({ 'status': 'closed' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-secondary text-white avatar">{{ statuses.closed }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Solved tickets'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'support/public-tickets'|alink }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-blue text-white avatar">{{ statuses.open + statuses.on_hold + statuses.closed }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Total'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </section>
+
+<div class="card">
+    <div class="card-body">
+        <h3>{{ 'Public tickets'|trans }}</h3>
+    </div>
+
+    {% include '_search.html.twig' %}
+    <table class="table card-table table-vcenter table-striped text-nowrap">
+        <thead>
+            <tr>
+                <th class="w-1">
+                    <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
+                </th>
+                <th>{{ 'Subject'|trans }}</th>
+                <th>{{ 'Email'|trans }}</th>
+                <th>{{ 'Status'|trans }}</th>
+                <th>{{ 'Date'|trans }}</th>
+                <th class="w-1"></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% set tickets = admin.support_public_ticket_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+        {% for i, ticket in tickets.list %}
+        <tr>
+            <td>
+                <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-checkbox" data-item-id="{{ ticket.id }}">
+            </td>
+            <td>
+                <a href="{{ '/support/public-ticket'|alink }}/{{ ticket.id }}">#{{ ticket.id }} - {{ ticket.subject }} ({{ ticket.messages|length }})</a>
+            </td>
+            <td>{{ ticket.author_email }}</td>
+            <td>
+                {% if ticket.status == 'open' %}
+                    <span class="badge bg-success me-1"></span>
+                {% endif %}
+                {% if ticket.status == 'on_hold' %}
+                    <span class="badge bg-warning me-1"></span>
+                {% endif %}
+                {% if ticket.status == 'closed' %}
+                    <span class="badge bg-secondary me-1"></span>
+                {% endif %}
+                {{ mf.status_name(ticket.status) }}
+            </td>
+            <td>{{ ticket.updated_at|date('Y-m-d') }}</td>
+            <td>
+                <a class="btn btn-icon" href="{{ '/support/public-ticket'|alink }}/{{ ticket.id }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#edit" />
+                    </svg>
+                </a>
+            </td>
+        </tr>
+        {% else %}
+            <tr>
+                <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+    <div class="card-footer d-flex align-items-center">
+        {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/support/batch_delete_public' } %}
+        {% include '_pagination.html.twig' with { 'list': tickets, 'url': 'support/public-tickets' } %}
+    </div>
+{% endblock %}

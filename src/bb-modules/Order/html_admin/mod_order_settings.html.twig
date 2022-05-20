@@ -1,0 +1,86 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}{{ 'Orders settings'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+    <li class="lastB">{{ 'Orders settings'|trans }}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget">
+    <div class="head">
+        <h5 class="iCog">{{ 'Orders settings'|trans }}</h5>
+    </div>
+
+    {% set params = admin.extension_config_get({"ext":"mod_order"}) %}
+    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="Settings updated">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{{ 'Expiration date'|trans }}</label>
+                <div class="formRight">
+                    <input type="radio" name="order_renewal_logic" value="from_expiration_date" {% if params.order_renewal_logic == "from_expiration_date" or not params.order_renewal_logic %}checked="checked"{% endif %}/><label>Next date is counted from last order expiration date</label>
+                    <div class="clear"></div>
+                    <input type="radio" name="order_renewal_logic" value="from_today" {% if params.order_renewal_logic == "from_today" %}checked="checked"{% endif %}/><label>Next date is counted from renewal (payment) date</label>
+                    <div class="clear"></div>
+                    <input type="radio" name="order_renewal_logic" value="from_greater" {% if params.order_renewal_logic == "from_greater" %}checked="checked"{% endif %}/><label>Next date is counted from last expiration date or renewal date whichever is greater</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{{ 'Show addon orders in orders list (if this is disabled they are shown in master order view "Addons" tab)'|trans }}</label>
+                <div class="formRight">
+                    <input type="radio" name="show_addons" value="1"{% if params.show_addons %} checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                    <input type="radio" name="show_addons" value="0"{% if not params.show_addons %} checked="checked"{% endif %} /><label>{{ 'No'|trans }}</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{{ 'Auto suspend reason'|trans }}</label>
+                <div class="formRight">
+                    <input type="text" name="batch_suspend_reason" value="{{ params.batch_suspend_reason }}" />
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{{ 'Auto Cancellation'|trans }}</label>
+                <div class="formRight moreFields">
+                    <ul>
+                        <li class="sep txt">
+                            <select name="batch_cancel_suspended">
+                                <option value="1" {{ params.batch_cancel_suspended ? 'selected' : '' }}>Cancel Suspended Orders</option>
+                                <option value="0" {{ params.batch_cancel_suspended ? '' : 'selected' }}>Do Not Cancel Suspended Orders</option>
+                            </select>
+                        </li>
+                        <li class="sep" style="width: 45px"><input type="text" name="batch_cancel_suspended_after_days" value="{{ params.batch_cancel_suspended_after_days }}" placeholder="7"/></li>
+                        <li class="sep txt"> days after order suspension with reason</li>
+                        <li class="sep" style="width: 30%"><input type="text" name="batch_cancel_suspended_reason" value="{{ params.batch_cancel_suspended_reason }}" placeholder=""/></li>
+                    </ul>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{{ 'Suspension reasons'|trans }}</label>
+                <div class="formRight">
+                    <textarea name="suspend_reason_list" rows="10">{{ params.suspend_reason_list }}</textarea>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <input type="hidden" name="ext" value="mod_order" />
+            <input type="submit" value="{{ 'Update settings'|trans }}" class="greyishBtn submitForm" />
+        </fieldset>
+    </form>
+</div>
+{% endblock %}

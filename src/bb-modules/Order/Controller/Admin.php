@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -97,7 +98,7 @@ class Admin implements \Box\InjectionAwareInterface
         $set = ['order' => $order];
 
         if (isset($order['plugin']) && !empty($order['plugin'])) {
-            $set['plugin'] = 'plugin_'.$order['plugin'].'_manage.phtml';
+            $set['plugin'] = 'plugin_'.$order['plugin'].'_manage.html.twig';
         }
 
         return $app->render('mod_order_manage', $set);

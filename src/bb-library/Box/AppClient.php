@@ -1,6 +1,7 @@
 <?php
+
 /**
- * BoxBilling
+ * BoxBilling.
  *
  * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
@@ -10,7 +11,6 @@
  * with this source code in the file LICENSE
  */
 
-
 class Box_AppClient extends Box_App
 {
     protected function init()
@@ -18,8 +18,8 @@ class Box_AppClient extends Box_App
         $m = $this->di['mod']($this->mod);
         $m->registerClientRoutes($this);
 
-        if($this->mod == 'api') {
-            define ('BB_MODE_API', TRUE);
+        if ('api' == $this->mod) {
+            define('BB_MODE_API', true);
         } else {
             $extensionService = $this->di['mod_service']('extension');
             if ($extensionService->isExtensionActive('mod', 'redirect')) {
@@ -27,14 +27,13 @@ class Box_AppClient extends Box_App
                 $m->registerClientRoutes($this);
             }
 
-            //init index module manually
+            // init index module manually
             $this->get('', 'get_index');
             $this->get('/', 'get_index');
 
-
-            //init custom methods for undefined pages
-            $this->get('/:page', 'get_custom_page', array('page' => '[a-z0-9-/.//]+'));
-            $this->post('/:page', 'get_custom_page', array('page' => '[a-z0-9-/.//]+'));
+            // init custom methods for undefined pages
+            $this->get('/:page', 'get_custom_page', ['page' => '[a-z0-9-/.//]+']);
+            $this->post('/:page', 'get_custom_page', ['page' => '[a-z0-9-/.//]+']);
         }
     }
 
@@ -46,38 +45,40 @@ class Box_AppClient extends Box_App
     public function get_custom_page($page)
     {
         $ext = $this->ext;
-        if(strpos($page, '.') !== false) {
-            $ext = substr($page, strpos($page, '.')+1);
+        if (false !== strpos($page, '.')) {
+            $ext = substr($page, strpos($page, '.') + 1);
             $page = substr($page, 0, strpos($page, '.'));
         }
         $page = str_replace('/', '_', $page);
-        $tpl = 'mod_page_'.$page;
+        $tpl = 'mod_page_' . $page;
         try {
-            return $this->render($tpl, array('post'=>$_POST), $ext);
-        } catch(Exception $e) {
-            if(BB_DEBUG){
+            return $this->render($tpl, ['post' => $_POST], $ext);
+        } catch (Exception $e) {
+            if (BB_DEBUG) {
                 error_log($e);
             }
         }
-      // throw new \Box_Exception('Page :url not found', array(':url'=>$page), 404);
-      $e = new \Box_Exception('Page :url not found', array(':url'=>$this->url), 404);
-        
-      error_log($e->getMessage());
-     header("HTTP/1.0 404 Not Found");
-     return $this->render('404', array('exception'=>$e));
+        // throw new \Box_Exception('Page :url not found', array(':url'=>$page), 404);
+        $e = new \Box_Exception('Page :url not found', [':url' => $this->url], 404);
+
+        error_log($e->getMessage());
+        header('HTTP/1.0 404 Not Found');
+
+        return $this->render('404', ['exception' => $e]);
     }
 
     /**
      * @param string $fileName
      */
-    public function render($fileName, $variableArray = array(), $ext = 'phtml')
+    public function render($fileName, $variableArray = [], $ext = 'html.twig')
     {
         try {
-            $template = $this->getTwig()->load($fileName.'.'.$ext);
+            $template = $this->getTwig()->load($fileName . '.' . $ext);
         } catch (Twig\Error\LoaderError $e) {
             error_log($e->getMessage());
             throw new \Box_Exception('Page not found', null, 404);
         }
+
         return $template->render($variableArray);
     }
 
@@ -88,11 +89,11 @@ class Box_AppClient extends Box_App
         $theme = $service->getTheme($code);
         $settings = $service->getThemeSettings($theme);
 
-        $loader = new Box_TwigLoader(array(
-                "mods" => BB_PATH_MODS,
-                "theme" => BB_PATH_THEMES.DIRECTORY_SEPARATOR.$code,
-                "type" => "client"
-            )
+        $loader = new Box_TwigLoader([
+                'mods' => BB_PATH_MODS,
+                'theme' => BB_PATH_THEMES . DIRECTORY_SEPARATOR . $code,
+                'type' => 'client',
+            ]
         );
 
         $twig = $this->di['twig'];
@@ -101,11 +102,11 @@ class Box_AppClient extends Box_App
         $twig->addGlobal('current_theme', $code);
         $twig->addGlobal('settings', $settings);
 
-        if($this->di['auth']->isClientLoggedIn()) {
+        if ($this->di['auth']->isClientLoggedIn()) {
             $twig->addGlobal('client', $this->di['api_client']);
         }
 
-        if($this->di['auth']->isAdminLoggedIn()) {
+        if ($this->di['auth']->isAdminLoggedIn()) {
             $twig->addGlobal('admin', $this->di['api_admin']);
         }
 

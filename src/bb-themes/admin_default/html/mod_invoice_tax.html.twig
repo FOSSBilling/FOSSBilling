@@ -1,0 +1,175 @@
+{% extends 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Tax'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block content %}
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Tax rules'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New tax rule'|trans }}
+            </a>
+        </li>
+        <li>
+            <a class="nav-link" href="#tab-settings" data-bs-toggle="tab">{{ 'Tax settings'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-eu-vat" data-bs-toggle="tab">{{ 'EU VAT'|trans }}</a>
+        </li>
+    </ul>
+
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th class="w-1">
+                            <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
+                        </th>
+                        <th>{{ 'Title'|trans }}</th>
+                        <th>{{ 'Country'|trans }}</th>
+                        <th>{{ 'State/Region'|trans }}</th>
+                        <th>{{ 'Tax rate'|trans }}</th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tax in admin.invoice_tax_get_list({ 'per_page': 100 }).list %}
+                    <tr>
+                        <td>
+                            <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ tax.id }}">
+                        </td>
+                        <td>
+                            <a href="{{ 'invoice/tax'|alink}}/{{ tax.id }}">{{ tax.name }}</a>
+                        </td>
+                        <td>
+                            {% if tax.country %}
+                                {{ guest.system_countries[tax.country] }}
+                            {% else %}
+                                {{ 'Applies to any country'|trans }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if tax.state %}
+                                {{ tax.state }}
+                            {% else %}
+                                {{ 'Applies to any state'|trans }}
+                            {% endif %}
+                        </td>
+                        <td>{{ tax.taxrate }}%</td>
+                        <td>
+                            <a class="btn btn-icon" href="{{ 'invoice/tax'|alink}}/{{ tax.id }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon api-link"
+                                href="{{ 'api/admin/invoice/tax_delete'|link({ 'id': tax.id }) }}"
+                                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                data-api-reload="1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <use xlink:href="#delete" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+                {% else %}
+                <tbody>
+                    <tr>
+                        <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+
+            <div class="card-footer d-flex align-items-center">
+                {% include "partial_batch_delete.html.twig" with { 'action': 'admin/invoice/batch_delete_tax' } %}
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-new" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'api/admin/invoice/tax_create'|link }}" class="api-form" data-api-reload="1">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Tax title'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="name" value="{{ request.name }}" required placeholder="{{ 'Sales TAX'|trans }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Tax rate'|trans }}:</label>
+                        <div class="col">
+                            <div class="input-group">
+                                <input class="form-control" type="text" name="taxrate" value="{{ request.taxrate }}" required placeholder="{{ '18'|trans }}">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
+                        <div class="col">
+                            {{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Apply to all countries') }}
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'State'|trans }}:</label>
+                        <div class="col">
+                            {# mf.selectbox('state', guest.system_states, request.state, 0, 'Apply to all states') #}
+                            <input class="form-control" type="text" name="state" value="{{ request.state }}" placeholder="{{ 'Leave empty to apply to all states'|trans }}">
+                        </div>
+                    </div>
+
+                    <input type="submit" value="{{ 'Create'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-settings" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Tax settings updated'|trans }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Enable tax support'|trans }}:</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioTexEnabledYes" type="radio" name="tax_enabled" value="1"{% if admin.system_param({ 'key': 'tax_enabled' }) %} checked{% endif %}>
+                                <label class="form-check-label" for="radioTexEnabledYes">{{ 'Yes'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioTexEnabledNo" type="radio" name="tax_enabled" value="0"{% if not admin.system_param({ 'key': 'tax_enabled' }) %} checked{% endif %}>
+                                <label class="form-check-label" for="radioTexEnabledNo">{{ 'No'|trans }}</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-eu-vat" role="tabpanel">
+            <div class="card-body">
+                <h3>{{ 'Automatic VAT Tax Rules Setup'|trans }}</h3>
+                <p class="text-muted">{{ 'If you would like BoxBilling to automatically setup the EU VAT tax rules for you for all EU Member States then simply enter your VAT Label & local VAT rate below and click the submit button. <strong>This action will delete any existing tax rules</strong> and configure the VAT rates for all EU countries.'|trans }}</p>
+
+                <div class="text-center">
+                    <a href="{{ 'api/admin/invoice/tax_setup_eu'|link}}" class="btn55 mr10 api-link" data-api-reload="1" data-api-confirm="{{ 'It will overwrite your existing VAT rules. Are you sure?'|trans }}">
+                        <img src="images/icons/middlenav/power.png" alt="">
+                        <span>{{ 'Generate VAT rates'|trans }}</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

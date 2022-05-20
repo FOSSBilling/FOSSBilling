@@ -1,0 +1,73 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'Example module'|trans }}{% endblock %}
+
+{% set active_menu = 'example' %}
+
+{% block content %}
+
+<div class="widget">
+    <div class="head">
+        <h5>{{ 'Example module for developers'|trans }}</h5>
+    </div>
+
+    <div class="help">
+        <h3>{{ 'This is an example extension'|trans }}</h3>
+    </div>
+    <ul>
+        <li><a href="{{ 'example'|alink }}">Example module index</a></li>
+        <li><a href="{{ 'extension/settings/example'|alink }}">Example settings page</a></li>
+        <li><a href="{{ 'example'|alink }}/test">Test link with static URL</a></li>
+        <li><a href="{{ 'example'|alink }}/user/1">Test link location with parameter 1</a></li>
+        <li><a href="{{ 'example'|alink }}/user/2">Test link location with parameter 2</a></li>
+        <li><a href="{{ 'example'|alink }}/user/3">Test link location with parameter 3</a></li>
+        <li><a href="{{ 'example'|alink }}/api">API example</a></li>
+        <li><a href="{{ 'example'|link }}" target="_blank">Client area link example</a></li>
+    </ul>
+
+    {# Check if example parameters passed to template file #}
+    {% if youparamname %}
+    <div class="help">
+        <h3>{{ 'Parameters from Controller'|trans }}</h3>
+    </div>
+    <div class="body">
+        <p>You have passed parameter youparamname: <strong>{{ youparamname }}</strong></p>
+    </div>
+    {% endif %}
+
+    {# Check if example parameters passed to template file #}
+    {% if userid %}
+    <div class="help">
+        <h3>{{ 'Parameters from URL'|trans }}</h3>
+    </div>
+    <div class="body">
+        <p>You have passed parameter userid: <strong>{{ userid }}</strong></p>
+    </div>
+    {% endif %}
+
+    {% if api_example %}
+        {# API example #}
+        <div class="help">
+            <h3>{{ 'API example'|trans }}</h3>
+        </div>
+        <div class="body">
+        <h5 class="pt12">Data from API and passed to template from controller</h5>
+        <pre>{{ dump(list_from_controller) }}</pre>
+
+        <h5 class="pt12">Data from API accessed directly from template file</h5>
+        {% set list = admin.example_get_something({"microsoft":1}) %}
+        <pre>{{ dump(list) }}</pre>
+        </div>
+    {% endif %}
+</div>
+
+<div class="widget">
+    <div class="head">
+        <h5>{{ 'README'|trans }}</h5>
+    </div>
+    
+    <div class="body list arrowBlue">
+        {{ guest.example_readme|bbmd }}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ 'Forum'|trans }}{% endblock %}
+
+{% block content_before %}
+    <h1>{{ 'Forum'|trans }}</h1>
+    <p class="text-secondary">{{ 'Welcome to our forums. If you wish to become a member and post, you have to be registered member.'|trans }}</p>
+{% endblock %}
+
+{% block content %}
+    {% for cat_name, forums in guest.forum_get_categories %}
+    <h3>{{ cat_name }}</h3>
+    <div class="list-group mb-3">
+        {%  for forum in forums %}
+        <a href="{% if forum.status != 'locked' %}{{ '/forum'|link }}/{{ forum.slug }}{% endif %}" class="list-group-item{% if forum.status == 'locked' %} disabled{% endif %}">
+            <h4 class="list-group-item-heading">{{ forum.title }}
+                <small class="pull-right"><strong>{{ forum.stats.topics_count|default(0) }} {{ 'Threads'|trans }}</strong> - {{ forum.stats.posts_count|default(0) }} {{ 'Posts'|trans }}</small>
+            </h4>
+            <div class="list-group-item-text">{{ forum.description }}</div>
+        </a>
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+    {% if client and client.forum_favorites %}
+        <p class="text-center">
+            <a class="btn btn-primary" role="button" data-bs-toggle="collapse" href="#favorites" aria-expanded="false" aria-controls="favorites">{{ 'Favorite topics'|trans }}</a>
+        </p>
+        <div class="collapse" id="favorites">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th style="width:5%">&nbsp;</th>
+                    <th style="width:5%">&nbsp;</th>
+                    <th style="width:40%">{{ 'Thread / Thread Starter'|trans }}</th>
+                    <th>{{ 'Last post'|trans }}</th>
+                    <th>{{ 'Replies'|trans }}</th>
+                    <th>{{ 'Views'|trans }}</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for i, topic in client.forum_favorites %}
+                <tr class="{{ cycle(['odd', 'even'], i) }}">
+                    <td>
+                        <span class="forum-status {{ topic.status }}"></span>
+                    </td>
+                    <td>
+                        <img src="{{ topic.first.author.email|gravatar }}?size=30" alt="{{ topic.first.author.name }}">
+                    </td>
+                    <td>
+                        <a href="{{ '/forum'|link }}/{{ topic.forum.slug }}/{{ topic.slug }}">{{ topic.title }}</a>
+                        <p style="font-size: .9em">{{ topic.first.author.name }}</p>
+                    </td>
+                    <td>
+                        {{ topic.last.created_at|bb_date }}
+                        <p style="font-size: .9em">{{ 'by'|trans }} <a href="{{ '/forum'|link }}/{{ topic.forum.slug }}/{{ topic.slug }}#m-{{ topic.last.id }}">{{ topic.last.author.name }} {#<img src="{{ topic.last.author.email|gravatar }}?size=15" alt="{{ topic.last.author.name }}"></a>#}</p>
+                    </td>
+                    <td>{{ topic.stats.posts_count }}</td>
+                    <td>{{ topic.stats.views_count }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6">{{ 'The list is empty'|trans }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% endif %}
+
+    {% if not client %}
+	<p class="text-center">
+		<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#login">{{ 'Login'|trans }}</button>
+	</p>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,228 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% set active_menu = 'support' %}
+
+{% block meta_title %}Forum{% endblock %}
+
+{% block content %}
+<div class="widget simpleTabs">
+    <ul class="tabs">
+        <li><a href="#tab-index">{{ 'Posts'|trans }}</a></li>
+        <li><a href="#tab-topics">{{ 'Topics'|trans }}</a></li>
+        <li><a href="#tab-forums">{{ 'Forums'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New topic'|trans }}</a></li>
+        <li><a href="#tab-new-forum">{{ 'New forum'|trans }}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+        {{ mf.table_search }}
+        <table class="tableStatic wide">
+            <thead>
+                <tr>
+                    <td colspan="2">{{ 'Message'|trans }}</td>
+                    <td>{{ 'Date'|trans }}</td>
+                    <td style="width: 13%">Actions</td>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% set posts = admin.forum_message_get_list({ "per_page": 30, "page": request.page }|merge(request)) %}
+            {% for i, post in posts.list %}
+            <tr class="msg-id-{{post.id}}">
+                <td style="width: 5%;"><a href="{{ 'forum/profile'|alink }}/{{ post.author.id }}"><img src="{{ post.author.gravatar }}?size=20" alt="{{post.author.id}}" /></a></td>
+                <td>
+                    <a href="{{ 'forum/topic'|alink }}/{{ post.forum_topic_id }}#msg-{{ post.id }}" target="_blank">{{post.forum_title}}</a>
+                    <br/>
+                    {{ post.message|truncate(80) }}</td>
+                <td>{{ post.created_at|timeago }} ago</td>
+                <td class="actions">
+                    <a class="bb-button btn14" href="{{ '/forum/topic'|alink }}/{{ post.forum_topic_id }}#msg-{{ post.id }}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                    <a class="bb-button btn14 bb-rm-tr api-link" href="{{ 'api/admin/forum/message_delete'|link({ 'id': post.id })}}" data-api-confirm="Are you sure?"><img src="images/icons/dark/trash.png" alt=""></a>
+                </td>
+            </tr>
+            
+            {% else %}
+                <tr>
+                    <td colspan="4">{{ 'The list is empty'|trans }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% include "partial_pagination.html.twig" with { 'list': posts, 'url': 'forum' } %}
+        </div>
+            
+        <div class="tab_content nopadding" id="tab-topics">
+            {{ mf.table_search }}
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td style="width: 60%">{{ 'Title'|trans }}</td>
+                        <td>{{ 'Replies'|trans }}</td>
+                        <td>{{ 'Views'|trans }}</td>
+                        <td>{{ 'Status'|trans }}</td>
+                        <td>{{ 'Sticky'|trans }}</td>
+                        <td style="width: 13%">Actions</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% set topics = admin.forum_topic_get_list({ "per_page": 30, "page": request.page }|merge(request)) %}
+                {% for i, topic in topics.list %}
+
+                <tr>
+                    <td>{{ topic.forum.category }} > {{ topic.forum.title }} > {{ topic.title }}</td>
+                    <td>{{ topic.stats.posts_count }}</td>
+                    <td>{{ topic.stats.views_count }}</td>
+                    <td>{{ mf.status_name(topic.status) }}</td>
+                    <td>{{ mf.q(topic.sticky) }}</td>
+                    <td class="actions">
+                        <a class="bb-button btn14" href="{{ '/forum/topic'|alink }}/{{topic.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                        <a class="bb-button btn14 bb-rm-tr api-link" href="{{'api/admin/forum/topic_delete'|link({'id' : topic.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'forum'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                    </td>
+                </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6">
+                            {{ 'The list is empty'|trans }}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% include "partial_pagination.html.twig" with { 'list': topics, 'url': 'forum' } %}
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new">
+
+            <form method="post" action="{{ 'api/admin/forum/topic_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'forum'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{{ 'Forum'|trans }}:</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('forum_id', admin.forum_get_pairs, request.forum_id, 1) }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Status'|trans }}:</label>
+                        <div class="formRight">
+                            <input type="radio" name="status" value="active" checked="checked"/><label>{{ 'Active'|trans }}</label>
+                            <input type="radio" name="status" value="locked" /><label>{{ 'Locked'|trans }}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Sticky'|trans }}:</label>
+                        <div class="formRight">
+                            <input type="radio" name="sticky" value="1" /><label>{{ 'Yes'|trans }}</label>
+                            <input type="radio" name="sticky" value="0" checked="checked"/><label>{{ 'No'|trans }}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Title'|trans }}:</label>
+                        <div class="formRight">
+                            <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    
+                    <div class="rowElem">
+                        <label>{{ 'Message'|trans }}</label>
+                        <div class="formRight">
+                            <textarea name="message" cols="5" rows="10">{{ request.message }}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="tab_content nopadding" id="tab-new-forum">
+
+            <form method="post" action="{{ 'api/admin/forum/create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'forum'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{{ 'Category'|trans }}:</label>
+                        <div class="formRight">
+                            <input type="text" name="category" value="{{ request.category }}" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Title'|trans }}:</label>
+                        <div class="formRight">
+                            <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Status'|trans }}:</label>
+                        <div class="formRight">
+                            <input type="radio" name="status" value="active" checked="checked"/><label>{{ 'Active'|trans }}</label>
+                            <input type="radio" name="status" value="locked" /><label>{{ 'Locked'|trans }}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Description'|trans }}</label>
+                        <div class="formRight">
+                            <textarea name="description" cols="5" rows="4">{{ request.description }}</textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+            <div class="fix"></div>
+        </div>
+        
+        <div class="tab_content nopadding" id="tab-forums">
+            <form method="post" action="{{ 'api/admin/forum/update_priority'|link }}" class="mainForm api-form" data-api-reload="1">
+                <fieldset>
+                    <table class="tableStatic wide">
+                        <thead>
+                            <tr>
+                                <td style="width: 5%">{{ 'Sorting'|trans }}</td>
+                                <td>{{ 'Title'|trans }}</td>
+                                <td>{{ 'Actions'|trans }}</td>
+                            </tr>
+                        </thead>
+                            
+                        <tbody>
+                        {% for category, forums in admin.forum_get_categories %}
+                        <tr class="group">
+                            <th colspan="3">{{ category }}</th>
+                        </tr>
+                        {% for forum in forums %}
+                        <tr>
+                            <td><input type="text" name="priority[{{ forum.id }}]" value="{{ forum.priority }}" style="width:30px;"></td>
+                            <td>{{forum.title}}</td>
+                            <td class="actions" style="width:13%">
+                                <a class="bb-button btn14" href="{{ '/forum/'|alink }}/{{forum.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                                <a class="bb-button btn14 bb-rm-tr api-link" href="{{'api/admin/forum/delete'|link({ 'id': forum.id }) }}" data-api-redirect="{{ 'forum'|alink }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endfor %}
+                        </tbody>
+
+                        <tfoot>
+                            <tr>
+                                <td colspan="3"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+        <div class="fix"></div>
+    </div>
+</div>
+{% endblock %}

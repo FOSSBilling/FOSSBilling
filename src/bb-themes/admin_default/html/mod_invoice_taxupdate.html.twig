@@ -1,0 +1,49 @@
+{% extends 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Tax'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-body">
+            <h3>{{ 'Update tax rule'|trans }}</h3>
+
+            <form method="post" action="{{ 'api/admin/invoice/tax_update'|link }}" data-api-redirect="{{ 'invoice/tax'|alink }}" class="api-form">
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Tax title'|trans }}:</label>
+                    <div class="col">
+                        <input class="form-control" type="text" name="name" value="{{tax.name}}" required placeholder="{{ 'sales Tax'|trans }}">
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Tax rate'|trans }}:</label>
+                    <div class="col">
+                        <div class="input-group">
+                            <input class="form-control" type="text" name="taxrate" value="{{ tax.taxrate }}" required placeholder="{{ '18'|trans }}">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
+                    <div class="col">
+                        {{ mf.selectbox('country', guest.system_countries, tax.country, 0, 'Apply to all countries') }}
+                    </div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'State'|trans }}:</label>
+                    <div class="col">
+                        {# mf.selectbox('state', guest.system_states, tax.state, 0, 'Apply to all states') #}
+                        <input class="form-control" type="text" name="state" value="{{ tax.state }}" placeholder="{{ 'Leave empty to apply to all states'|trans }}">
+                    </div>
+                </div>
+
+                <input type="hidden" name="id" value="{{ tax.id }}">
+                <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

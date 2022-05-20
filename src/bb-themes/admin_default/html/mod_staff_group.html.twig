@@ -1,0 +1,47 @@
+{% extends 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ 'Staff Group management'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'extension/settings/staff'|alink }}">{{ 'Staff'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'extension/settings/staff'|alink }}#tab-groups">{{ 'Groups'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ group.name }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h5>{{ 'Manage staff member details'|trans }}</h5>
+
+        <form method="post" action="{{ 'api/admin/staff/group_update'|link }}" class="api-form" data-api-msg="{{ 'Staff group updated'|trans }}">
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label" for="inputName">{{ 'Name'|trans }}</label>
+                <div class="col">
+                    <input class="form-control" id="inputName" type="text" name="name" value="{{ group.name }}" required>
+                </div>
+            </div>
+
+            <input type="hidden" name="id" value="{{ group.id }}">
+            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+        </form>
+    </div>
+</div>
+{% endblock %}
