@@ -70,7 +70,7 @@ return new class extends Migration
             Schema::rename('support_p_ticket', 'legacy_support_p_ticket');
         }
         if (Schema::hasTable('support_p_ticket_message')) {
-            Schema::rename('support_p_ticket_message', 'legacy_support_p_ticket');
+            Schema::rename('support_p_ticket_message', 'legacy_support_p_ticket_message');
         }
         if (Schema::hasTable('support_pr')) {
             Schema::rename('support_pr', 'legacy_support_pr');
