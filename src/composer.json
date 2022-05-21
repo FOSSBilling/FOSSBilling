@@ -1,52 +1,64 @@
 {
-    "name": "fossbilling/fossbilling",
-    "description": "Free and Open Source Billing System",
-    "version": "4.22.0-beta.5",
-    "support": {
-        "docs": "https://docs.fossbilling.org",
-        "source": "https://github.com/FOSSBilling/FOSSBilling",
-        "issues": "https://github.com/FOSSBilling/FOSSBilling/issues",
-        "chat": "https://fossbilling.org/discord"
-    },
-    "readme": "https://github.com/FOSSBilling/FOSSBilling/blob/master/README.md",
+    "name": "laravel/laravel",
     "type": "project",
-    "license": "Apache-2.0",
-    "keywords": ["billing", "invoice", "client management"],
-    "homepage": "https://fossbilling.org",
+    "description": "The Laravel Framework.",
+    "keywords": ["framework", "laravel"],
+    "license": "MIT",
     "require": {
-        "php": ">=8.0",
-        "ext-curl": "*",
-        "ext-zlib": "*",
-        "ext-PDO": "*",
-        "ext-mbstring" : "*",
-        "pimple/pimple": "^3.3",
-        "twig/twig": "^3.3.9",
-        "geoip2/geoip2": "^2.10.0",
-        "phpmailer/phpmailer": "6.6.0",
-        "mustangostang/spyc": "^0.6.3",
-        "michelf/php-markdown": "1.9.1",
-        "stripe/stripe-php": "^7.92.0",
-        "docnet/tfpdf": "^2.2",
-        "guzzlehttp/guzzle": "^7.4.2",
-        "filp/whoops": "^2.14",
-        "psr/log": "^3.0.0",
-        "symfony/translation": "^6.0",
-        "symfony/twig-bridge": "^6.0"
-     
+        "php": "^8.0.2",
+        "guzzlehttp/guzzle": "^7.2",
+        "laravel/framework": "^9.11",
+        "laravel/passport": "^10.4",
+        "laravel/sanctum": "^2.14.1",
+        "laravel/tinker": "^2.7",
+        "nwidart/laravel-modules": "^9.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.0",
-        "friendsofphp/php-cs-fixer": "^3.8",
-        "symfony/deprecation-contracts": "^3.0.0"
-    },
-    "suggest": {
-        "ext-gettext": "*"
+        "fakerphp/faker": "^1.9.1",
+        "laravel/sail": "^1.0.1",
+        "mockery/mockery": "^1.4.4",
+        "nunomaduro/collision": "^6.1",
+        "phpunit/phpunit": "^9.5.10",
+        "spatie/laravel-ignition": "^1.0"
     },
     "autoload": {
-        "psr-0": {"": "bb-library"},
-        "psr-4": {"Box\\Mod\\": "bb-modules"}
+        "psr-4": {
+            "App\\": "app/",
+            "Modules\\": "Modules/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
     },
     "autoload-dev": {
-        "psr-0": { "": "../tests/bb-library" }
-    }
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

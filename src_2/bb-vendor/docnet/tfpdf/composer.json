@@ -1,0 +1,35 @@
+{
+  "name": "docnet/tfpdf",
+  "description": "tfpdf",
+  "keywords": ["pdf"],
+  "homepage": "http://github.com/DocnetUK/tfpdf",
+  "type": "library",
+  "license": "LGPL",
+  "authors": [
+    {
+      "name": "David Wilcock",
+      "email": "dwilcock@doc-net.com"
+    },
+    {
+      "name": "Dave Blencowe",
+      "email": "dblencowe@gmail.com"
+    },
+    {
+      "name": "Ian Back",
+      "email": "ianb@bpm1.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": { "tFPDF\\": "src/tFPDF/" }
+  },
+  "scripts": {
+    "test": "phpunit"
+  },
+  "require": {
+    "php": ">= 5.5",
+    "ext-mbstring": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "5.5.*"
+  }
+}

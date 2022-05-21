@@ -1,0 +1,52 @@
+{
+    "name": "fossbilling/fossbilling",
+    "description": "Free and Open Source Billing System",
+    "version": "4.22.0-beta.5",
+    "support": {
+        "docs": "https://docs.fossbilling.org",
+        "source": "https://github.com/FOSSBilling/FOSSBilling",
+        "issues": "https://github.com/FOSSBilling/FOSSBilling/issues",
+        "chat": "https://fossbilling.org/discord"
+    },
+    "readme": "https://github.com/FOSSBilling/FOSSBilling/blob/master/README.md",
+    "type": "project",
+    "license": "Apache-2.0",
+    "keywords": ["billing", "invoice", "client management"],
+    "homepage": "https://fossbilling.org",
+    "require": {
+        "php": ">=8.0",
+        "ext-curl": "*",
+        "ext-zlib": "*",
+        "ext-PDO": "*",
+        "ext-mbstring" : "*",
+        "pimple/pimple": "^3.3",
+        "twig/twig": "^3.3.9",
+        "geoip2/geoip2": "^2.10.0",
+        "phpmailer/phpmailer": "6.6.0",
+        "mustangostang/spyc": "^0.6.3",
+        "michelf/php-markdown": "1.9.1",
+        "stripe/stripe-php": "^7.92.0",
+        "docnet/tfpdf": "^2.2",
+        "guzzlehttp/guzzle": "^7.4.2",
+        "filp/whoops": "^2.14",
+        "psr/log": "^3.0.0",
+        "symfony/translation": "^6.0",
+        "symfony/twig-bridge": "^6.0"
+     
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0",
+        "friendsofphp/php-cs-fixer": "^3.8",
+        "symfony/deprecation-contracts": "^3.0.0"
+    },
+    "suggest": {
+        "ext-gettext": "*"
+    },
+    "autoload": {
+        "psr-0": {"": "bb-library"},
+        "psr-4": {"Box\\Mod\\": "bb-modules"}
+    },
+    "autoload-dev": {
+        "psr-0": { "": "../tests/bb-library" }
+    }
+}
