@@ -400,7 +400,7 @@ class Service implements \Box\InjectionAwareInterface
             $account_password = 'admin|'.$server['secret'];
         }
 
-        require_once dirname(__FILE__).'/ccapiclient/ccapiclient.php';
+        require_once dirname(__FILE__).'/ccapiclient.php';
         $server = new CCServerAPIClient($centovacast_url);
         $server->cc_initialize($centovacast_url);
         $server->call($method, $account_username, $account_password, $arguments);
