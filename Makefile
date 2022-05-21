@@ -1,10 +1,10 @@
 .SILENT:
 
-DOCKER_COMPOSE = docker compose
-DOCKER_WEB_CONTAINER_EXEC = $(DOCKER_COMPOSE) exec web
-DOCKER_PHP_CONTAINER_EXEC = $(DOCKER_COMPOSE) exec php
-DOCKER_DB_CONTAINER_EXEC = $(DOCKER_COMPOSE) exec mariadb
-DOCKER_PHP_EXECUTABLE_CMD = php -dmemory_limit=1G
+DOCKER_COMPOSE := docker compose
+DOCKER_WEB_CONTAINER_EXEC := $(DOCKER_COMPOSE) exec web
+DOCKER_PHP_CONTAINER_EXEC := $(DOCKER_COMPOSE) exec php
+DOCKER_DB_CONTAINER_EXEC := $(DOCKER_COMPOSE) exec mariadb
+DOCKER_PHP_EXECUTABLE_CMD := php -dmemory_limit=1G
 
 help:           ## Show this help
     @fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
