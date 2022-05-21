@@ -1,18 +1,46 @@
 {
-  "name": "BoxBilling ",
+  "name": "fossbilling",
   "version": "0.1.0",
-  "author": "BoxBilling inc",
+  "author": "FOSSBilling Team",
+  "homepage": "https://fossbilling.org",
+  "license" : "Apache License 2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/boxbilling/boxbilling"
+    "url": "https://github.com/FOSSBilling/FOSSBilling.git"
+  },
+  "issues": {
+    "url" : "https://github.com/FOSSBilling/FOSSBilling/issues"
+  },
+  "dependencies": {
+    "@tabler/core": "^1.0.0-beta9",
+    "autoprefixer": "^10.4.6",
+    "postcss": "^8.4.13",
+    "sass": "^1.51.0"
   },
   "devDependencies": {
-    "grunt": "^1.5.2",
-    "grunt-concat-css": "*",
-    "grunt-contrib-clean": "*",
-    "grunt-contrib-concat": "*",
-    "grunt-contrib-cssmin": "^4.0.0",
-    "grunt-contrib-uglify": "^5.2.1",
-    "grunt-spritesmith": "^6.10.0"
+    "@fortawesome/fontawesome-free": "^6.1.1",
+    "apexcharts": "^3.35.2",
+    "babel-core": "^6.26.3",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-register": "^6.26.0",
+    "bootstrap": "^5.1.3",
+    "bootstrap-markdown": "^2.10.0",
+    "gulp": "^4.0.2",
+    "gulp-autoprefixer": "^8.0.0",
+    "gulp-chug": "^0.5.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-postcss": "^9.0.1",
+    "gulp-sass": "^5.1.0",
+    "gulp-uglify": "^3.0.2",
+    "gulp-uglifycss": "^1.1.0",
+    "gulp.spritesmith": "^6.12.1",
+    "jquery": "^3.6.0",
+    "upath": "^2.0.1",
+    "yargs": "^17.4.1"
+  },
+  "scripts": {
+    "build": "gulp build",
+    "watch": "gulp watch"
   }
 }

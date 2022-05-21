@@ -1,0 +1,641 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Invoice'|trans }} {{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}{% endblock %}
+
+{% set active_menu = 'invoice' %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'invoice'|alink }}">{{ 'Invoices'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">{{ 'Invoice'|trans }} #{{ invoice.id }}</h5>
+    </div>
+
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-info" data-bs-toggle="tab">{{ 'Details'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-manage" data-bs-toggle="tab">{{ 'Manage'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-texts" data-bs-toggle="tab">{{ 'Texts'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-buyer-credentials" data-bs-toggle="tab">{{ 'Client credentials'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-seller-credentials" data-bs-toggle="tab">{{ 'Company credentials'|trans }}</a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <tbody>
+                    <tr>
+                        <td class="w-25">{{ 'ID'|trans }}</td>
+                        <td>#{{ invoice.id }}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ 'Number'|trans }}</td>
+                        <td>{{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ 'Client'|trans }}</td>
+                        <td>
+                            <a href="{{ 'client/manage'|alink }}/{{ invoice.client.id }}">{{ invoice.client.first_name }} {{ invoice.client.last_name }}</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>{{ 'Status'|trans }}</td>
+                        <td>
+                            {% if invoice.status == 'paid' %}
+                                <span class="badge bg-suddess me-1"></span>
+                            {% endif %}
+                            {% if invoice.status == 'unpaid' %}
+                                <span class="badge bg-danger me-1"></span>
+                            {% endif %}
+                            {% if invoice.status == 'refunded' %}
+                                <span class="badge bg-warning me-1"></span>
+                            {% endif %}
+                            {% if invoice.status == 'canceled' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(invoice.status) }}
+                        </td>
+                    </tr>
+                    {% if invoice.tax %}
+                    <tr>
+                        <td>{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
+                        <td>{{ mf.currency_format(invoice.tax, invoice.currency) }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td>{{ 'Total'|trans }}</td>
+                        <td>{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ 'Currency'|trans }}</td>
+                        <td>{{ invoice.currency }}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ 'Created at'|trans }}</td>
+                        <td>{{ invoice.created_at|bb_date }}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ 'Due at'|trans }}</td>
+                        <td>{{ invoice.due_at|bb_date }}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ 'Paid at'|trans }}</td>
+                        <td>{% if invoice.paid_at %}{{ invoice.paid_at|bb_date }}{% else %}-{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ 'Reminded at'|trans }}</td>
+                        <td>{% if invoice.reminded_at %}{{ invoice.reminded_at|bb_date }} ({{ invoice.reminded_at|timeago }} ago) {% endif %}</td>
+                    </tr>
+                    {% if invoice.notes %}
+                    <tr>
+                        <td>{{ 'Notes'|trans }}</td>
+                        <td>{{ invoice.notes|bbmd }}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+
+            <div class="card-footer text-center">
+                <a href="{{ 'invoice'|link }}/{{ invoice.hash }}" class="d-inline-block mx-1 btn bg-light bg-gradient" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#eye" />
+                    </svg>
+                    <span class="d-block text-secondary">{{ 'View as client'|trans }}</span>
+                </a>
+                <a href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id }) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#delete" />
+                    </svg>
+                    <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
+                </a>
+                {% if invoice.status == 'unpaid' %}
+                <a href="{{ 'api/admin/invoice/send_reminder'|link({ 'id': invoice.id}) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-msg="Payment reminder was sent">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#mail" />
+                    </svg>
+                    <span class="d-block text-secondary">{{ 'Send reminder'|trans }}</span>
+                </a>
+                <a href="{{ 'api/admin/invoice/mark_as_paid'|link({ 'id': invoice.id, 'execute': 1 }) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-reload="Invoice marked as paid">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#check" />
+                    </svg>
+                    <span class="d-block text-secondary">{{ 'Mark as paid'|trans }}</span>
+                </a>
+                {% endif %}
+
+                {% if invoice.status == 'paid' %}
+                <a href="{{ 'api/admin/invoice/refund'|link({ 'id': invoice.id }) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#receipt-refund" />
+                    </svg>
+                    <span class="d-block text-secondary">{{ 'Refund'|trans }}</span>
+                </a>
+                {% endif %}
+                <a href="{{ 'invoice/pdf'|link }}/{{ invoice.hash }}" class="d-inline-block mx-1 btn bg-light bg-gradient" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <use xlink:href="#download" />
+                    </svg>
+                    <span class="d-block text-secondary">{{ 'PDF'|trans }}</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-manage" role="tabpanel">
+            <div class="card-body">
+                <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-reload="{{ 'Invoice updated'|trans }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioStatusPaid" type="radio" name="status" value="paid"{% if invoice.status == 'paid' %} checked{% endif %}>
+                                <label class="form-check-label" for="radioStatusPaid">{{ 'Paid'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioStatusUnpaid" type="radio" name="status" value="unpaid"{% if invoice.status == 'unpaid' %} checked{% endif %}>
+                                <label class="form-check-label" for="radioStatusUnpaid">{{ 'Unpaid'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioStatusRefunded" type="radio" name="status" value="refunded"{% if invoice.status == 'refunded' %} checked{% endif %}>
+                                <label class="form-check-label" for="radioStatusRefunded">{{ 'Refunded'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioStatusCanceled" type="radio" name="status" value="canceled"{% if invoice.status == 'canceled' %} checked{% endif %}>
+                                <label class="form-check-label" for="radioStatusCanceled">{{ 'Canceled'|trans }}</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Approved'|trans }}:</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioApprovedYes" type="radio" name="approved" value="1"{% if invoice.approved  %} checked{% endif %}>
+                                <label class="form-check-label" for="radioApprovedYes">{{ 'Yes'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioApprovedNo" type="radio" name="approved" value="0"{% if not invoice.approved %} checked{% endif %}>
+                                <label class="form-check-label" for="radioApprovedNo">{{ 'No'|trans }}</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Serie and number'|trans }}:</label>
+                        <div class="col">
+                            <div class="input-group">
+                                <input class="form-control" type="text" name="serie" value="{{ invoice.serie }}">
+                                <input class="form-control w-50" type="text" name="nr" value="{{ invoice.nr }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Tax'|trans }}:</label>
+                        <div class="col d-flex gap-2">
+                            <input class="form-control" type="text" name="taxname" value="{{ invoice.taxname }}">
+                            <div class="input-group">
+                                <input class="form-control" type="text" name="taxrate" value="{{ invoice.taxrate }}">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Payment method'|trans }}:</label>
+                        <div class="col">
+                            {{ mf.selectbox('gateway_id', guest.invoice_gateways({ "format": "pairs" }), invoice.gateway_id, 0, 'Select payment method') }}
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Created at'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="date" name="created_at" value="{{ invoice.created_at|date('Y-m-d') }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Due at'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="date" name="due_at" value="{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% endif %}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Paid at'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="date" name="paid_at" value="{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% endif %}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Notes'|trans }}:</label>
+                        <div class="col">
+                            <textarea class="form-control" name="notes" rows="6">{{ invoice.notes }}</textarea>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ invoice.id }}">
+                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-texts" role="tabpanel">
+            <div class="card-body">
+                <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-msg="{{ 'Invoice updated'|trans }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Text before invoice items table'|trans }}</label>
+                        <div class="col">
+                            <textarea class="form-control bb-textarea" name="text_1" rows="6">{{ invoice.text_1 }}</textarea>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Text after invoice items table'|trans }}</label>
+                        <div class="col">
+                            <textarea class="form-control bb-textarea" name="text_2" rows="6">{{ invoice.text_2 }}</textarea>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ invoice.id }}">
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-seller-credentials" role="tabpanel">
+            <div class="card-body">
+                <h3>{{ 'Company details at the moment of purchase'|trans }}</h3>
+
+                {% set seller = invoice.seller %}
+                <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-msg="{{ 'Invoice updated'|trans }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Company'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="seller_company" value="{{ seller.company }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Company VAT'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="seller_company_vat" value="{{ seller.company_vat }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Company Number'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="seller_company_number" value="{{ seller.company_number }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Address'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="seller_address" value="{{ seller.address }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Phone'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="seller_phone" value="{{ seller.phone }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="seller_email" value="{{ seller.email }}">
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ invoice.id }}">
+                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-buyer-credentials" role="tabpanel">
+            <div class="card-body">
+                <h3>{{ 'Client details at the moment of purchase'|trans }}</h3>
+
+                {% set buyer = invoice.buyer %}
+                <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-msg="{{ 'Invoice updated'|trans }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'First name'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="buyer_first_name" value="{{ buyer.first_name }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Last name'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="buyer_last_name" value="{{ buyer.last_name }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Company'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="buyer_company" value="{{ buyer.company }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Company VAT'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="buyer_company_vat" value="{{ buyer.company_vat }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Company Number'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="buyer_company_number" value="{{ buyer.company_number }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Address'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="buyer_address" value="{{ buyer.address }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'City'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="buyer_city" value="{{ buyer.city }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'State'|trans }}:</label>
+                        <div class="col">
+                            {# mf.selectbox('buyer_state', guest.system_states, buyer.state, 0, 'Select state') #}
+                            <input class="form-control" type="text" name="buyer_state" value="{{ buyer.state }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
+                        <div class="col">
+                            {{ mf.selectbox('buyer_country', guest.system_countries, buyer.country, 0, 'Select country') }}
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Phone'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="buyer_phone" value="{{ buyer.phone }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Zip'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="buyer_zip" value="{{ buyer.zip }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="buyer_email" value="{{ buyer.email }}">
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ invoice.id }}">
+                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5>{{ 'Invoice items'|trans }}</h5>
+    </div>
+
+    {% if not invoice.approved %}
+    <form action="{{ 'api/admin/invoice/update'|link }}" method="post" class="api-form" data-api-reload="1">
+        <table class="table card-table table-vcenter table-striped text-nowrap">
+            <thead>
+                <tr>
+                    <th>{{ 'Title'|trans }}</th>
+                    <th class="text-center w-25">{{ 'Price'|trans }}</th>
+                    <th class="w-1">{{ 'Tax'|trans }}</th>
+                    <th class="w-1"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i, item in invoice.lines %}
+                <tr>
+                    <td>
+                        <input class="form-control" type="text" name="items[{{ item.id }}][title]" value="{{ item.title }}">
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <input class="form-control" type="text" name="items[{{ item.id }}][price]" value="{{ item.price }}">
+                            <span class="input-group-text">{{ invoice.currency }}</span>
+                        </td>
+                    <td class="text-center">
+                        <input class="form-check-input m-0 align-middle" type="checkbox" name="items[{{ item.id }}][taxed]" value="1"{% if item.taxed %} checked{% endif %}>
+                    </td>
+                    <td>
+                        <a class="btn btn-icon api-link"
+                            href="{{ 'api/admin/invoice/item_delete'|link({ 'id': item.id }) }}"
+                            data-api-confirm="{{ 'Are you sure?'|trans }}"
+                            data-api-reload="1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <use xlink:href="#delete" />
+                            </svg>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td>
+                        <input class="form-control" type="text" name="new_item[title]">
+                    </td>
+                    <td class="text-center">
+                        <div class="input-group">
+                            <input class="form-control" type="text" name="new_item[price]">
+                            <span class="input-group-text">{{ invoice.currency }}</span>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <input class="form-check-input m-0 align-middle" type="checkbox" name="new_item[taxed]" value="1">
+                    </td>
+                    <td></td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" class="currency">
+                        {{ 'Subtotal'|trans }}: {{ mf.currency_format(invoice.subtotal, invoice.currency) }}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="currency">
+                        {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ mf.currency_format(invoice.tax, invoice.currency) }}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="currency">
+                        {{ 'Total'|trans }}: {{ mf.currency_format(invoice.total, invoice.currency) }}
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="card-footer d-flex gap-2">
+            {% if not invoice.approved %}
+            <a class="btn btn-success w-100 api-link"
+                href="{{ 'api/admin/invoice/approve'|link({ 'id': invoice.id }) }}"
+                data-api-reload="{{ 'invoices'|alink }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#check" />
+                </svg>
+                {{ 'Approve'|trans }}
+            </a>
+            {% endif %}
+            <input type="hidden" name="id" value="{{ invoice.id }}">
+            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-25">
+        </div>
+    </form>
+{% else %}
+    <table class="table card-table table-vcenter table-striped text-nowrap">
+        <thead>
+            <tr>
+                <th class="w-1"></th>
+                <th class="w-1"></th>
+                <th>{{ 'Title'|trans }}</th>
+                <th class="text-center">{{ 'Tax'|trans }}</th>
+                <th class="text-end w-1">{{ 'Total'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i, item in invoice.lines %}
+            <tr>
+                <td>{{ i + 1 }}</td>
+                <td class="d-flex">
+                    <div class="bull task {{ item.status }}" title="Task status: {{ mf.status_name(item.status) }}"></div>
+                    <div class="bull charge {{ item.charged ? 'yes' : 'no' }}" title="{{ item.charged ? 'Charged from client balance' : 'Not charged from client balance' }}"></div>
+                </td>
+                <td>
+                {% if item.order_id %}
+                <a href="{{ 'order/manage'|alink }}/{{ item.order_id }}">{{ item.title }} {% if item.quantity > 1 %} x {{ item.quantity }} {# item.unit #}{% endif %}</a>
+                {% else %}
+                {{ item.title }} {% if item.quantity > 1 %} x {{ item.quantity }} {# item.unit #}{% endif %}
+                {% endif %}
+                </td>
+                <td class="text-center">{{ mf.currency_format(item.tax, invoice.currency) }}</td>
+                <td class="fw-bold">{{ mf.currency_format( item.total, invoice.currency) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5" class="text-end fw-bold">
+                    Subtotal: {{ mf.currency_format(invoice.subtotal, invoice.currency) }}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="5" class="text-end fw-bold">
+                    {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ mf.currency_format(invoice.tax, invoice.currency) }}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="5" class="text-end fw-bold">
+                    Total: {{ mf.currency_format(invoice.total, invoice.currency) }}
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+{% endif %}
+</div>
+
+    {% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 100 }).list %}
+    {% if transactions|length > 0 %}
+    <div class="card">
+        <div class="card-body">
+            <h5>{{ 'Transactions'|trans }}</h5>
+        </div>
+
+        <table class="table card-table table-vcenter table-striped text-nowrap">
+            <thead>
+                <tr>
+                    <th>{{ 'ID'|trans }}</th>
+                    <th>{{ 'Type'|trans }}</th>
+                    <th>{{ 'Gateway'|trans }}</th>
+                    <th>{{ 'Amount'|trans }}</th>
+                    <th>{{ 'Status'|trans }}</th>
+                    <th>{{ 'Date'|trans }}</th>
+                    <th class="w-1"></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for i, tx in transactions %}
+                <tr>
+                    <td>{{ tx.txn_id }}</td>
+                    <td>{{ tx.type }}</td>
+                    <td>{{ tx.gateway }}</td>
+                    <td>{{ mf.currency_format( tx.amount, tx.currency) }}</td>
+                    <td>{{ mf.status_name(tx.status) }}</td>
+                    <td>{{ tx.created_at|bb_datetime }}</td>
+                    <td>
+                        <a class="btn btn-icon" href="{{ '/invoice/transaction'|alink }}/{{ tx.id }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <use xlink:href="#edit" />
+                            </svg>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block sidebar2 %}
+<div class="widget">
+    <div class="head">
+        <h2 class="dark-icon i-services">{{ 'Actions'|trans }}</h2>
+    </div>
+    <div class="block">
+        <button class="bb-button" type="button" onclick="window.print()">
+            <span class="dark-icon i-print"></span> {{ 'Print'|trans }}</button>
+        {% if invoice.status == 'unpaid' %}
+        <a class="bb-button api-link" href="{{ 'api/client/invoice/delete'|link({ 'hash': invoice.hash }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
+            <span class="dark-icon i-bin"></span> {{ 'Delete'|trans }}</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+
+{% block js %}
+{% autoescape "js" %}
+<script>
+    $(function() {
+        $('input[name=gateway]:first').attr('checked', true);
+        $('#pay-now-button').click(function() {
+            var link = $('input[name=gateway]:checked').val();
+            bb.redirect(link);
+
+            return false;
+        });
+    });
+</script>
+{% endautoescape %}
+{% endblock %}

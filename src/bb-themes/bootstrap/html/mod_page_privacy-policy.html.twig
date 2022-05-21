@@ -1,0 +1,17 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ 'Privacy Policy'|trans }}{% endblock %}
+
+{% block content_before %}
+    <h1>{{ company.name }} {{ 'Privacy Policy'|trans }}</h1>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ ''|link }}">{{ 'Home'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active">{{ company.name }} {{ 'Privacy Policy'|trans }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+	{{ company.privacy_policy|bbmd }}
+{% endblock %}

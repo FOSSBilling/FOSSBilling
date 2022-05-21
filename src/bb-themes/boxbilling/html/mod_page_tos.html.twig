@@ -1,0 +1,18 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'Terms and Conditions'|trans }}{% endblock %}
+
+{% block content %}
+<div class="h-block">
+    <div class="h-block-header">
+        <div class="icon"><span class="big-light-icon i-quote"></span></div>
+        <h2>{{ company.name }} {{ 'Terms and Conditions'|trans }}</h2>
+        <p>{{ company.signature }}</p>
+    </div>
+    <div class="block">
+        <div class="box">
+            {{ company.tos|bbmd }}
+        </div>
+    </div>
+</div>
+{% endblock %}

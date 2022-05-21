@@ -1,0 +1,68 @@
+{% extends 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% set active_menu = 'products' %}
+
+{% block meta_title %}{{ category.title }}{% endblock %}
+
+{% block breadcrumbs %}
+<ul class="breadcrumb">
+    <li class="breadcrumb-item">
+        <a href="{{ '/'|alink }}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <use xlink:href="#home" />
+            </svg>
+        </a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{{ 'product'|alink }}#tab-categories">{{ 'Categories'|trans }}</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">{{ category.title}}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <form method="post" action="{{ 'api/admin/product/category_update'|link }}" class="api-form" data-api-msg="{{ 'Category updated'|trans }}">
+        <div class="card-body">
+            <h3>{{ category.title }}</h3>
+
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="title" value="{{ category.title }}" required>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Icon'|trans }}:</label>
+                <div class="col">
+                    <div class="input-group">
+                        <input class="form-control" type="text" name="icon_url" id="bb-icon" value="{{ category.icon_url }}">
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <textarea class="bb-textarea" name="description" rows="5">{{ category.description }}</textarea>
+            </div>
+        </div>
+
+        <input type="hidden" name="id" value="{{ category.id }}">
+
+        <div class="card-footer d-flex gap-2">
+            <a href="{{ 'product'|alink }}" class="btn btn-secondary w-25">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#arrow-sm-left" />
+                </svg>
+                {{ 'Go back'|trans }}
+            </a>
+            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

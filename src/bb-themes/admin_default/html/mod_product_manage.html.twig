@@ -1,0 +1,301 @@
+{% extends 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% set active_menu = 'products' %}
+
+{% block meta_title %}{{ 'Product configuration'|trans }}{% endblock %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active">{{ product.title }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="settings-tab" data-bs-toggle="tab" data-bs-target="#tab-settings" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'General settings'|trans }}</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#tab-config" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Configuration'|trans }}</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="addons-tab" data-bs-toggle="tab" data-bs-target="#tab-addons" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Addons'|trans }}</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="upgrades-tab" data-bs-toggle="tab" data-bs-target="#tab-upgrades" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Upgrades'|trans }}</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#tab-links" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Links'|trans }}</button>
+        </li>
+    </ul>
+
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-settings" role="tabpanel">
+            <div class="card-body">
+                <h5>{{ product.type|title }} {{ 'General settings'|trans }}</h5>
+                <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}" name="form">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
+                        <div class="col">
+                            {{ mf.selectbox('product_category_id', guest.product_category_get_pairs, product.product_category_id, 0, 'None') }}
+                        </div>
+                    </div>
+                    {% if guest.extension_is_on({ 'mod': 'formbuilder' }) %}
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Order Form'|trans }}:</label>
+                        <div class="col">
+                            {% set tpl = 'mod_service' ~ product.type ~ '_order_form.html.twig' %}
+                            {% if guest.system_template_exists({ 'file': tpl }) %}
+                            <div class="nNote nInformation">
+                                <p>Please edit <strong>{{ tpl }}</strong> file in order to change order form for <strong>{{ product.type }}</strong> category products.</p>
+                            </div>
+                            <a href="{{ 'filemanager/ide'|alink }}" class="btn btn-primary">{{ 'Open Editor'|trans }}</a>
+                            {% else %}
+                                <div class="input-group">
+                                    {{ mf.selectbox('form_id', admin.formbuilder_get_pairs, product.form_id, 0, 'None') }}
+                                    <a href="{{ 'extension/settings/formbuilder'|alink }}{% if product.form_id %}?id={{ product.form_id }}{% endif %}" class="btn" id="formbuilder_btn">
+                                        {# {{ (product.form_id) ? 'Edit Form' : 'Add new form' }} #}
+                                        {% if product.form_id %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <use xlink:href="#edit" />
+                                        </svg>
+                                        {{ 'Edit'|trans }}
+                                        {% else %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <use xlink:href="#plus" />
+                                        </svg>
+                                        {{ 'Add new'|trans }}
+                                        {% endif %}
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label pt-0">{{ 'Status'|trans }}:</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="statusEnabled" name="status" value="enabled"{% if product.status == 'enabled' %} checked{% endif %}>
+                                <label class="form-check-label" for="statusEnabled">{{ 'Enabled'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="statusDisabled" name="status" value="disabled"{% if product.status == 'disabled' %} checked{% endif %}>
+                                <label class="form-check-label" for="statusDisabled">{{ 'Disabled'|trans }}</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label pt-0">{{ 'Hidden'|trans }}:</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="hidden" value="1"{% if product.hidden %} checked{% endif %} id="hidden-yes">
+                                <label class="form-check-label" for="hidden-yes">{{ 'Yes'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="hidden" value="0"{% if not product.hidden %} checked{% endif %} id="hidden-no">
+                                <label class="form-check-label" for="hidden-no">{{ 'No'|trans }}</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label pt-0">{{ 'Activation'|trans }}:</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="setup" value="after_order"{% if product.setup == 'after_order' %} checked{% endif %} id="activation-after-order">
+                                <label class="form-check-label" for="activation-after-order">{{ 'After order is placed'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="setup" value="after_payment"{% if product.setup == 'after_payment' %} checked{% endif %} id="activation-after-payment">
+                                <label class="form-check-label" for="activation-after-payment">{{ 'After payment is received'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="setup" value="manual"{% if product.setup == 'manual' %} checked{% endif %} id="activation-manual">
+                                <label class="form-check-label" for="activation-manual">{{ 'Manual activation'|trans }}</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Icon/Image URL'|trans }}:</label>
+                        <div class="col">
+                            <div class="input-group">
+                                <input class="form-control" type="text" name="icon_url" id="bb-icon" value="{{ product.icon_url }}" style="width: 80%">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="title" value="{{ product.title }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Slug'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="slug" value="{{ product.slug }}" required>
+                        </div>
+                    </div>
+
+                    {% include 'partial_pricing.html.twig' with { 'product': product } %}
+
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Description'|trans }}:</label>
+                        <div class="col">
+                            <textarea class="bb-textarea" name="description" rows="5">{{ product.description }}</textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">{{ 'Update'|trans }}</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-config" role="tabpanel" aria-labelledby="config-tab">
+            {% set service_partial = 'mod_service' ~ product.type ~ '_config.html.twig' %}
+            {% if admin.system_template_exists({ 'file': service_partial }) %}
+                {% include service_partial with { 'product': product } %}
+            {% else %}
+                <div class="help">
+                    <h5>{{ 'No additional configuration for this product is required'|trans }}</h5>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="tab-addons" role="tabpanel" aria-labelledby="addons-tab">
+            <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}">
+                <div class="card-body">
+                    <h5>{{ 'Choose which addons you would like to offer with'|trans }} {{ product.title }}</h5>
+                </div>
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <tbody>
+                        {% for addon_id, addon_title in admin.product_addon_get_pairs %}
+                        <tr>
+                            <td class="w-1">
+                                <input type="hidden" name="addons[{{ addon_id }}]" value="0">
+                                <input class="form-check-input" type="checkbox" name="addons[{{ addon_id }}]" value="1" id="addon_{{ addon_id }}"{% if addon_id in assigned_addons %} checked{% endif %}>
+                            </td>
+                            <td>
+                                <label for="addon_{{ addon_id }}">{{ addon_title }}</label>
+                            </td>
+                            <td class="w-1">
+                                <a class="btn btn-icon" href="{{ '/product/addon'|alink }}/{{ addon_id }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <use xlink:href="#edit" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3">{{ 'The list is empty'|trans }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="card-footer">
+                    <a href="{{ 'product/addons'|alink }}#tab-new" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        {{ 'Create new addon'|trans }}
+                    </a>
+
+                    <input type="hidden" name="id" value="{{ product.id }}">
+                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary">
+                </div>
+            </form>
+        </div>
+
+        <div class="tab-pane fade" id="tab-upgrades" role="tabpanel">
+            <div class="card-body">
+                <h5>{{ 'Choose which products can client upgrade to'|trans }}</h5>
+                <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}">
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Product Upgrades'|trans }}</label>
+                        <div class="col">
+                            {% set products = admin.product_get_pairs %}
+                            <input type="hidden" name="upgrades">
+                            <select name="upgrades[]" multiple="multiple" class="form-select" size="{{ products|length }}">
+                                {% for id,ptitle in products %}
+                                <option value="{{ id }}"{% if product.upgrades[id] %} selected{% endif %}>{{ ptitle }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ product.id }}">
+                    <button type="submit" class="btn btn-primary w-100">{{ 'Update'|trans }}</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-links" role="tabpanel">
+            <div class="card-body">
+                <h5>{{ 'Product links'|trans }}</h5>
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Product ID'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" value="{{ product.id }}">
+                    </div>
+                </div>
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Order page with ID'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" value="{{ 'order'|link }}/{{ product.id }}">
+                    </div>
+                </div>
+                <div class="form-group mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Order page with slug'|trans }}</label>
+                    <div class="col">
+                        <input class="form-control" type="text" value="{{ 'order'|link }}/{{ product.slug }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer text-center">
+                <a href="{{ 'order'|link }}/{{ product.slug }}" class="btn55 mr10" target="_blank">
+                    <img src="images/icons/middlenav/preview.png" alt="">
+                    <span>{{ 'View as client'|trans }}</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+
+{% block js %}
+<script>
+    $(function() {
+        $("[name='form_id']").change(function() {
+            var form_id = $(this).val();
+            var btn = $("#formbuilder_btn");
+
+            if (form_id != "") {
+                btn.html("{{ 'Edit form'|trans }}");
+                var href = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + form_id;
+                btn.attr('href', href);
+            }
+            else {
+                btn.html("{{ 'Add new form'|trans }}");
+                btn.attr("href", "{{ 'extension/settings/formbuilder'|alink }}");
+            }
+        });
+    });
+</script>
+{% endblock %}

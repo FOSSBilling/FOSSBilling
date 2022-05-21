@@ -1,0 +1,170 @@
+{% extends 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ 'Hosting management'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul class="breadcrumb">
+    <li class="breadcrumb-item">
+        <a href="{{ '/'|alink }}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <use xlink:href="#home" />
+            </svg>
+        </a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{{ 'servicehosting'|alink }}">{{ 'Hosting plans and servers'|trans }}</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">{{ server.name }}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h3>{{ 'Server management'|trans }}</h3>
+
+        <form method="post" action="{{ 'api/admin/servicehosting/server_update'|link }}" id="server-update" class="api-form" data-api-msg="{{ 'Server updated'|trans }}">
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="name" value="{{ server.name }}" required placeholder="{{ 'Unique name to identify this server'|trans }}">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Hostname'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="hostname" value="{{ server.hostname }}" placeholder="host1.domain.com">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'IP'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="ip" value="{{ server.ip }}" required placeholder="{{ 'Primary IP address of the server used to connect to it like: 127.0.0.1'|trans }}">
+                </div>
+            </div>
+            {# <div class="mb-3 row">
+                <label>{{ 'Assigned IP Addresses'|trans }}:</label>
+                <div class="col">
+                    <textarea name="assigned_ips" rows="5" placeholder="List the IP Addresses assigned to the server (One per line)">{% for v in server.assigned_ips %}{{ v }}{{constant("PHP_EOL")}}{% endfor %}</textarea>
+                </div>
+            </div> #}
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Enable/Disable'|trans }}:</label>
+                <div class="col">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="radioActiveYes" type="radio" name="active" value="1"{% if server.active %} checked{% endif %}>
+                        <label class="form-check-label" for="radioActiveYes">{{ 'Yes'|trans }}</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="radioActiveNo" type="radio" name="active" value="0"{% if not server.active %} checked{% endif %}>
+                        <label class="form-check-label" for="radioActiveNo">{{ 'No'|trans }}</label>
+                    </div>
+                </div>
+            </div>
+            <hr>
+
+            <h5>{{ 'Server manager'|trans }}</h5>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Server manager'|trans }}:</label>
+                <div class="col">
+                    <select class="form-select" name="manager">
+                        {% for code, manager in admin.servicehosting_manager_get_pairs %}
+                        <option value="{{ code }}"{% if server.manager == code %} selected{% endif %}>{{ manager.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Username'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="username" value="{{ server.username }}" placeholder="{{ 'Login username to your server: root/reseller'|trans }}">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="password" name="password" value="{{ server.password }}" placeholder="{{ 'Login password to your server'|trans }}">
+                </div>
+            </div>
+
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Access Hash (Instead of password for cPanel servers)'|trans }}:</label>
+                <div class="col">
+                    <textarea class="form-control" name="accesshash" rows="5">{{ server.accesshash }}</textarea>
+                </div>
+            </div>
+
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Connection port'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="port" value="{{ server.port }}" placeholder="{{ 'Custom port. Use blank to use default. Used to connect to API'|trans }}">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Use Secure connection'|trans }}:</label>
+                <div class="col">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="radioSecureConnectionYes" type="radio" name="secure" value="1"{% if server.secure %} checked{% endif %}>
+                        <label class="form-check-label" for="radioSecureConnectionYes">{{ 'Yes'|trans }}</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="radioSecureConnectionNo" type="radio" name="secure" value="0"{% if not server.secure %} checked{% endif %}>
+                        <label class="form-check-label" for="radioSecureConnectionNo">{{ 'No'|trans }}</label>
+                    </div>
+                </div>
+            </div>
+
+            <input class="btn btn-primary w-100" id="test-connection" type="button" value="{{ 'Update and test connection'|trans }}">
+
+            <h5>{{ 'Nameservers'|trans }}</h5>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="ns1" value="{{ server.ns1 }}" placeholder="ns1.yourdomain.com">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Nameserver 2'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="ns2" value="{{ server.ns2 }}" placeholder="ns2.yourdomain.com">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Nameserver 3'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="ns3" value="{{ server.ns3 }}" placeholder="ns3.yourdomain.com">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Nameserver 4'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="ns4" value="{{ server.ns4 }}" placeholder="ns4.yourdomain.com">
+                </div>
+            </div>
+
+            <input type="hidden" name="id" value="{{ server.id }}">
+            <input type="submit" value="{{ 'Update server'|trans }}" class="btn btn-primary w-100">
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block js%}
+<script>
+    $(function() {
+        $('#test-connection').click(function(){
+            $('#server-update').submit();
+            bb.post('admin/servicehosting/server_test_connection',
+                { id: {{ server.id }} },
+                function(result) {
+                    boxbilling.message("{{ 'Successfully connected to server'|trans }}");
+                }
+            );
+
+            return false;
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}{{ helpdesk.name }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+<ul>
+    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+    <li><a href="{{ 'extension/settings/support'|alink }}#tab-helpdesks">{{ 'Support settings'|trans }}</a></li>
+    <li class="lastB">{{ 'Helpdesk -'|trans }} {{ helpdesk.name }}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget">
+    <div class="head">
+        <h5 class="iFrames">{{ helpdesk.name }}</h5>
+    </div>
+
+    <div class="help">
+        <h3>{{ 'Support help desk'|trans }}</h3>
+        <p>{{ 'Help desk name will be visible for clients when submitting new ticket. Define very large number of hours to disable auto close ticket option'|trans }}</p>
+    </div>
+
+    <form method="post" action="{{ 'api/admin/support/helpdesk_update'|link }}" class="mainForm save api-form" data-api-msg="Help desk updated">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{{ 'Title'|trans }}</label>
+                <div class="formRight noborder">
+                    <input type="text" name="name" value="{{ helpdesk.name }}" required="required"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{{ 'Email'|trans }}</label>
+                <div class="formRight">
+                    <input type="text" name="email" value="{{ helpdesk.email }}" required="required"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{{ 'Signature'|trans }}</label>
+                <div class="formRight">
+                    <textarea name="signature" cols="5" rows="5">{{ helpdesk.signature }}</textarea>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{{ 'Close after'|trans }}</label>
+                <div class="formRight">
+                    <input type="text" name="close_after" value="{{ helpdesk.close_after }}" required="required"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+            <div class="rowElem">
+                <label>{{ 'Can reopen'|trans }}</label>
+                <div class="formRight">
+                    <input type="radio" name="can_reopen" value="1"{% if helpdesk.can_reopen == 'draft' %} checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
+                    <input type="radio" name="can_reopen" value="0"{% if not helpdesk.can_reopen == 'active' %} checked="checked"{% endif %} /><label>{{ 'No'|trans }}</label>
+                </div>
+                <div class="fix"></div>
+            </div>
+            
+            <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
+            <input type="hidden" name="id" value="{{ helpdesk.id }}"/>
+        </fieldset>
+    </form>
+</div>
+{% endblock %}

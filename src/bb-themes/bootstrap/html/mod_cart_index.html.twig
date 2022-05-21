@@ -1,0 +1,192 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Order confirm'|trans }}{% endblock %}
+
+{% set cart = guest.cart_get %}
+
+{% block content_before %}
+    <div class="row">
+        <div class="col">
+            <h1>{{ 'Shopping cart'|trans }}</h1>
+            <p class="text-secondary">{{ 'Choose products we offer for selling'|trans }}</p>
+            {% include '_order-steps.html.twig' with { 'selected': 3 } %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+{% if cart.items|length > 0 %}
+    {% if not client %}
+        <section>
+            <ul class="nav nav-pills justify-content-center mb-3" id="tabSignin" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button
+                        class="nav-link active"
+                        data-bs-toggle="modal"
+                        data-bs-target="#login">{{ 'Login'|trans }}</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button
+                        class="nav-link"
+                        data-bs-toggle="modal"
+                        data-bs-target="#registration">{{ 'Registration'|trans }}</button>
+                </li>
+            </ul>
+            <hr>
+        </section>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <table class="table mb-3">
+                {% set total_discount = 0 %}
+                {% for i, item in cart.items %}
+                    <tr>
+                        <td>{{ loop.index }}.</td>
+                        <td>{{ item.title }} {% if item.quantity > 1 %}<span class="badge bg-default"> x {{ item.quantity }}</span>{% endif %}</td>
+                        <td class="text-center">{% if item.period | period_title != '-' %}{{ item.period | period_title }}{% endif %}</td>
+                        <td>
+                            <div class="float-end">
+                                <strong>
+                                {% if item.discount_price %}
+                                    {% if item.quantity > 1 %}
+                                        {{ item.quantity }} x {{ item.price|money_convert }} =
+                                        <del>{{ (item.quantity * item.price)|money_convert }}</del>
+                                        {{ (item.quantity * (item.price - item.discount_price))|money_convert }}
+                                    {% else %}
+                                        <del>{{ item.price | money_convert }}</del>
+                                        {{ (item.price - item.discount_price) | money_convert }}
+                                    {% endif %}
+                                {% else %}
+                                    {% if item.quantity > 1 %}
+                                        {{ item.quantity }} x {{ item.price | money_convert }} = {{ (item.quantity * item.price)|money_convert }}
+                                    {% else %}
+                                        {{ item.price | money_convert }}
+                                    {% endif %}
+                                {% endif %}
+                                </strong>
+                            </div>
+                        </td>
+                    </tr>
+                    {% if item.setup_price != 0 %}
+                        <li class="list-group-item">
+                            {{ item.title }} {{ 'setup'|trans }}
+                            <span class="float-end">
+                                <strong>{% if item.discount_setup %}
+                                    <del>{{ item.setup_price | money_convert }}</del>
+                                    {{ (item.setup_price - item.discount_setup) | money_convert }}
+                                {% else %}
+                                    {{ item.setup_price | money_convert }}
+                                {% endif %}</strong>
+                            </span>
+                        </li>
+                    {% endif %}
+                    {% if item.discount_price or item.discount_setup %}
+                        {% set total_discount = total_discount + item.discount_price + item.discount_setup %}
+                    {% endif %}
+                {% endfor %}
+            </table>
+        </div>
+        <div class="col">
+            {% if client %}
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h4 class="my-0">{{ 'Total'|trans }}</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="h2 text-center text-success mb-3">
+                            {% if total_discount > 0 %}{{ 'Discount'|trans }}: -{{ total_discount | money_convert }}<br>{% endif %}
+                            {% set tax_amount = 0 %}
+                            {% if client.client_is_taxable %}
+                                {% set tax_rate = client.invoice_get_tax_rate %}
+                                {% set tax_amount = cart.total * tax_rate / 100 %}
+                                {{ 'VAT'|trans }} ({{ tax_rate }}%): {{ tax_amount|money_convert }}<br>
+                            {% endif %}
+                            {{ (cart.total + tax_amount)|money_convert }}
+                        </div>
+
+                        <div class="mb-3">
+                            {% include 'partial_currency.html.twig' %}
+                            <form action="{{ 'api/guest/cart/apply_promo'|link }}" method="post" class="api-form form-inline" data-api-reload="1">
+                                <label class="form-label" for="promocode">{{ 'Have a promo code?'|trans }}</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-sm" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" required>
+                                {% if cart.promocode %}
+                                    <a href="{{ 'api/guest/cart/remove_promo'|link }}" class="btn btn-danger api-link" data-api-reload="1">{{ 'Reset'|trans }}</a>
+                                {% else %}
+                                    <button class="btn btn-primary btn-sm" type="submit">{{ 'Apply'|trans }}</button>
+                                {% endif %}
+                                </div>
+                            </form>
+                        </div>
+
+                        <form method="post" action="{{ 'api/client/cart/checkout'|link }}" class="api-form" data-api-jsonp="onAfterCartCheckout">
+                            <div class="mb-3">
+                                {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
+                                {% if cart.total and not enough_in_balance  %}
+                                    {% for gtw in guest.invoice_gateways %}
+                                        {% if cart.currency.code in gtw.accepted_currencies %}
+                                        <div class="form-check">
+                                            <input type="radio" class="form-check-input" id="radio{{ gtw.title }}" name="gateway_id" value="{{ gtw.id }}" {{ loop.first ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="radio{{ gtw.title }}">{{ gtw.title }}
+                                                {% if gtw.title == "Custom" %}
+                                                    <i class="fa fa-university fa-2x float-end"></i>
+                                                {% elseif gtw.title == "PayPal" %}
+                                                    <i class="fa fa-paypal fa-2x float-end"></i>
+                                                {% elseif gtw.title == "Stripe" %}
+                                                    <i class="fa fa-cc-stripe fa-2x float-end"></i>
+                                                {% endif %}
+                                            </label>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                                {% if enough_in_balance %}
+                                    <p>{{ 'Total amount will be deducted from account balance'|trans }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="form-check mb-3">
+                                <input type="checkbox" class="form-check-input" id="checkboxTos" name="tos" required>
+                                <label class="form-check-label text-secondary small" for="checkboxTos">I agree to the <a href="{{ '/tos'|link }}" target="_blank">{{ 'Terms and Conditions'|trans }}</a></label>
+                            </div>
+                            <div class="d-grid">
+                                <button class="btn btn-success" type="submit">
+                                    <i class="fa fa-shopping-cart me-2"></i>{{ 'Confirm'|trans }}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h4 class="mb-0">{{ 'Total'|trans }}</h4>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="h2 text-success mb-3">{{ (cart.total + tax_amount)|money_convert }}</div>
+                        <div class="text-secondary">{{ 'No VAT' }}</div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+        <div class="text-center">
+            <p class="text-secondary">{{ 'You have not selected any product'|trans }}</p>
+            <a class="btn btn-success btn-lg" href="{{ 'order'|link }}">{{ 'Order new service'|trans }}</a>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block js %}
+<script>
+    function onAfterCartCheckout(result) {
+        if (result.invoice_hash) {
+            bb.redirect("{{ 'invoice'|link }}" + '/' + result.invoice_hash + '&auto_redirect=1');
+        } else {
+            bb.redirect("{{ 'order/service/manage'|link }}" + '/' + result.order_id );
+        }
+    }
+</script>
+{% endblock %}

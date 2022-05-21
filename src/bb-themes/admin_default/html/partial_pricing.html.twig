@@ -1,0 +1,209 @@
+{% if product.type != 'domain' %}
+<div class="form-group mb-3 row">
+    <label class="form-label col-3 col-form-label pt-0">{{ 'Payment type'|trans }}:</label>
+    <div class="col pp_type">
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="pricing[type]" value="free"{% if product.pricing.type == 'free' %} checked{% endif %} id="pricing-free">
+            <label class="form-check-label" for="pricing-free">{{ 'Free'|trans }}</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="pricing[type]" value="once"{% if product.pricing.type == 'once' %} checked{% endif %} id="pricing-once">
+            <label class="form-check-label" for="pricing-once">{{ 'One time'|trans }}</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="pricing[type]" value="recurrent"{% if product.pricing.type == 'recurrent' %} checked{% endif %} id="pricing-recurrent">
+            <label class="form-check-label" for="pricing-recurrent">{{ 'Recurrent'|trans }}</label>
+        </div>
+    </div>
+</div>
+
+<table class="pp table">
+    <tbody class="once"{% if product.pricing.type != 'once' %} style="display:none;"{% endif %}>
+        <tr>
+            <th></th>
+            <th>{{ 'Setup price'|trans }} ({{ admin.currency_get_default.code }})</th>
+            <th>{{ 'Price'|trans }} ({{ admin.currency_get_default.code }})</th>
+            <th>{{ 'Total'|trans }}</th>
+            <th class="w-1"></th>
+        </tr>
+        <tr>
+            <td>
+                <label for="">{{ 'One time'|trans }}</label>
+            </td>
+            <td>
+                <input type="text" class="form-control price setup_price" name="pricing[once][setup]" value="{{ product.pricing.once.setup }}">
+            </td>
+            <td>
+                <input type="text" class="form-control price bill_price" name="pricing[once][price]" value="{{ product.pricing.once.price }}">
+            </td>
+            <td>
+                <input type="text" class="form-control total price" readonly="readonly" disabled="disabled">
+            </td>
+            <td></td>
+        </tr>
+    </tbody>
+
+    <tbody class="recurrent"{% if product.pricing.type != 'recurrent' %} style="display:none;"{% endif %}>
+        <tr>
+            <th></th>
+            <th>{{ 'Setup price'|trans }} ({{ admin.currency_get_default.code }})</th>
+            <th>{{ 'Price for period'|trans }} ({{ admin.currency_get_default.code }})</th>
+            <th>{{ 'First payment sum'|trans }}</th>
+            <th class="w-1"></th>
+        </tr>
+        <tr>
+            <td>
+                <label for="">{{ 'Weekly'|trans }}</label>
+            </td>
+            <td>
+                <input class="form-control price setup_price" type="text" name="pricing[recurrent][1W][setup]" value="{{ product.pricing.recurrent['1W'].setup }}">
+            </td>
+            <td>
+                <input class="form-control price bill_price" type="text" name="pricing[recurrent][1W][price]" value="{{ product.pricing.recurrent['1W'].price }}">
+            </td>
+            <td>
+                <input class="form-control total price" type="text" readonly="readonly" disabled>
+            </td>
+            <td>
+                <input type="hidden" name="pricing[recurrent][1W][enabled]" value="0">
+                <input class="form-check-input" type="checkbox" name="pricing[recurrent][1W][enabled]" value="1"{% if product.pricing.recurrent['1W'].enabled %} checked{% endif %}>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="">{{ 'Monthly'|trans }}</label></td>
+            <td>
+                <input type="text" class="form-control price setup_price" name="pricing[recurrent][1M][setup]" value="{{ product.pricing.recurrent['1M'].setup }}">
+            </td>
+            <td>
+                <input type="text" class="form-control price bill_price" name="pricing[recurrent][1M][price]" value="{{ product.pricing.recurrent['1M'].price }}">
+            </td>
+            <td>
+                <input type="text" class="form-control total price" readonly="readonly" disabled="disabled">
+            </td>
+            <td>
+                <input type="hidden" name="pricing[recurrent][1M][enabled]" value="0">
+                <input class="form-check-input" type="checkbox" name="pricing[recurrent][1M][enabled]" value="1"{% if product.pricing.recurrent['1M'].enabled %} checked{% endif %}>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="">{{ 'Every 3 months'|trans }}</label>
+            </td>
+            <td>
+                <input type="text" class="form-control price setup_price" name="pricing[recurrent][3M][setup]" value="{{ product.pricing.recurrent['3M'].setup }}">
+            </td>
+            <td>
+                <input type="text" class="form-control price bill_price" name="pricing[recurrent][3M][price]" value="{{ product.pricing.recurrent['3M'].price }}">
+            </td>
+            <td>
+                <input type="text" class="form-control total price" readonly="readonly" disabled="disabled">
+            </td>
+            <td>
+                <input type="hidden" name="pricing[recurrent][3M][enabled]" value="0">
+                <input class="form-check-input" type="checkbox" name="pricing[recurrent][3M][enabled]" value="1"{% if product.pricing.recurrent['3M'].enabled %} checked{% endif %}>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="">{{ 'Every 6 months'|trans }}</label>
+            </td>
+            <td>
+                <input type="text" class="form-control price setup_price" name="pricing[recurrent][6M][setup]" value="{{ product.pricing.recurrent['6M'].setup }}">
+            </td>
+            <td>
+                <input type="text" class="form-control price bill_price" name="pricing[recurrent][6M][price]" value="{{ product.pricing.recurrent['6M'].price }}">
+            </td>
+            <td>
+                <input type="text" class="form-control total price" readonly="readonly" disabled>
+            </td>
+            <td>
+                <input type="hidden" name="pricing[recurrent][6M][enabled]" value="0">
+                <input class="form-check-input" type="checkbox" name="pricing[recurrent][6M][enabled]" value="1"{% if product.pricing.recurrent['6M'].enabled %} checked{% endif %}>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="">{{ 'Every year'|trans }}</label></td>
+            <td>
+                <input type="text" class="form-control price setup_price" name="pricing[recurrent][1Y][setup]" value="{{ product.pricing.recurrent['1Y'].setup }}">
+            </td>
+            <td>
+                <input type="text" class="form-control price bill_price" name="pricing[recurrent][1Y][price]" value="{{ product.pricing.recurrent['1Y'].price }}">
+            </td>
+            <td>
+                <input type="text" class="form-control total price" readonly="readonly" disabled>
+            </td>
+            <td>
+                <input type="hidden" name="pricing[recurrent][1Y][enabled]" value="0">
+                <input class="form-check-input" type="checkbox" name="pricing[recurrent][1Y][enabled]" value="1"{% if product.pricing.recurrent['1Y'].enabled %} checked{% endif %}>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="">{{ 'Every 2 years'|trans }}</label>
+            </td>
+            <td>
+                <input type="text" class="form-control price setup_price" name="pricing[recurrent][2Y][setup]" value="{{ product.pricing.recurrent['2Y'].setup }}">
+            </td>
+            <td>
+                <input type="text" class="form-control price bill_price" name="pricing[recurrent][2Y][price]" value="{{ product.pricing.recurrent['2Y'].price }}">
+            </td>
+            <td>
+                <input type="text" class="form-control total price" readonly="readonly" disabled>
+            </td>
+            <td>
+                <input type="hidden" name="pricing[recurrent][2Y][enabled]" value="0">
+                <input class="form-check-input" type="checkbox" name="pricing[recurrent][2Y][enabled]" value="1"{% if product.pricing.recurrent['2Y'].enabled %} checked{% endif %}>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="">{{ 'Every 3 years'|trans }}</label>
+            </td>
+            <td>
+                <input type="text" class="form-control price setup_price" name="pricing[recurrent][3Y][setup]" value="{{ product.pricing.recurrent['3Y'].setup }}">
+            </td>
+            <td>
+                <input type="text" class="form-control price bill_price" name="pricing[recurrent][3Y][price]" value="{{ product.pricing.recurrent['3Y'].price }}">
+            </td>
+            <td>
+                <input type="text" class="form-control total price" readonly="readonly" disabled>
+            </td>
+            <td>
+                <input type="hidden" name="pricing[recurrent][3Y][enabled]" value="0">
+                <input class="form-check-input"type="checkbox" name="pricing[recurrent][3Y][enabled]" value="1"{% if product.pricing.recurrent['3Y'].enabled %} checked{% endif %}>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<script>
+    $(function() {
+        $('input.price:not(:disabled)').keyup(function() {
+            var row = $(this).parents('tr:first');
+            var s = row.find('input.setup_price').val();
+            var p = row.find('input.bill_price').val();
+            var total = countTotal(p, s);
+            var elem = row.find('input.total');
+
+            elem.val(total);
+        }).trigger('keyup');
+
+        $('.pp_type input').click(function() {
+            $('table.pp tbody').hide();
+            $('table.pp tbody.' + $(this).val()).show();
+        });
+    });
+
+    function countTotal(p, s) {
+        p = parseFloat(p);
+        s = parseFloat(s);
+
+        var num = new Number(p + s);
+
+        if (!isNaN(num))
+            return num.toFixed(2);
+
+        return (0).toFixed(2);
+    }
+</script>
+{% endif %}

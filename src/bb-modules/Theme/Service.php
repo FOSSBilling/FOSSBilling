@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -218,8 +219,8 @@ class Service implements InjectionAwareInterface
     {
         $assets = $theme->getPathAssets().DIRECTORY_SEPARATOR;
 
-        $css_files = $this->di['tools']->glob($assets.'*.css.phtml');
-        $js_files = $this->di['tools']->glob($assets.'*.js.phtml');
+        $css_files = $this->di['tools']->glob($assets.'*.css.html.twig');
+        $js_files = $this->di['tools']->glob($assets.'*.js.html.twig');
         $files = array_merge($css_files, $js_files);
 
         foreach ($files as $file) {

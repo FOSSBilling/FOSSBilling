@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -42,13 +43,13 @@ class Service implements InjectionAwareInterface
         $themeService = $this->di['mod_service']('theme');
         $code = $themeService->getCurrentClientAreaThemeCode();
         $paths = [
-            BB_PATH_THEMES.DIRECTORY_SEPARATOR.$code.DIRECTORY_SEPARATOR.'html'.DIRECTORY_SEPARATOR,
-            BB_PATH_MODS.DIRECTORY_SEPARATOR.'mod_page'.DIRECTORY_SEPARATOR.'html_client'.DIRECTORY_SEPARATOR,
+            BB_PATH_THEMES . DIRECTORY_SEPARATOR . $code . DIRECTORY_SEPARATOR . 'html' . DIRECTORY_SEPARATOR,
+            BB_PATH_MODS . DIRECTORY_SEPARATOR . 'mod_page' . DIRECTORY_SEPARATOR . 'html_client' . DIRECTORY_SEPARATOR,
         ];
 
         $list = [];
         foreach ($paths as $path) {
-            foreach (glob($path.'mod_page_*.phtml') as $file) {
+            foreach (glob($path . 'mod_page_*.html.twig') as $file) {
                 $file = str_replace('mod_page_', '', pathinfo($file, PATHINFO_FILENAME));
                 $list[$file] = ucwords(strtr($file, ['-' => ' ', '_' => ' ']));
             }

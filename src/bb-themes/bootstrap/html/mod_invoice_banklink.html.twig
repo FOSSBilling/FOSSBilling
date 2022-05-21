@@ -1,0 +1,30 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Processing payment...'|trans }}{% endblock %}
+
+{% block content %}
+
+{% if payment.type == 'html' %}
+    {{ payment.result|replace({'bb-button': 'btn btn-warning'})|raw }}
+{% endif %}
+
+{% if payment.type == 'form' %}
+<h2>{{ 'Redirecting to payment gateway...'|trans }}</h2>
+<form name="payment_form" action="{{ payment.service_url }}" method="post">
+    {% for key, value in payment.result %}
+        <input type="hidden" name="{{ key }}" value="{{ value }}">
+    {% endfor %}
+    <input class="btn btn-warning" id="payment_button" type="submit" value="{{ 'Please click here to continue if this page does not redirect automatically in 5 seconds'|trans }}">
+</form>
+
+<script>
+    $(document).ready(function() {
+        document.getElementById('payment_button').style.display = 'none';
+        document.forms["payment_form"].submit();
+    });
+</script>
+{% endif %}
+
+{% endblock %}

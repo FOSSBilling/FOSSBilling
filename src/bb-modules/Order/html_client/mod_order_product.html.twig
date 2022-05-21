@@ -1,0 +1,42 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}{{ 'Order'|trans }}{% endblock %}
+
+{% set loader_nr = request.loader | default("8")%}
+{% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
+
+{% block content_before %}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <article class="span12 data-block">
+        <div class="data-container">
+            <header>
+                <h2>{{ 'Select Product'|trans }}</h2>
+                <p>{{ 'Choose products we offer for selling'|trans }}</p>
+            </header>
+            <section>
+                <img id="loader-image" src="{{ loader_url|mod_asset_url('orderbutton') }}" style="display: block; margin-left: auto; margin-right: auto; position: relative; top: 50%" />
+                <iframe style="width: 100%;" frameborder="0" allowtransparency="true" onload="javascript:resizeIframe(this);" id="popup-iframe"  src="{{ 'orderbutton'|link }}&theme_color={{ request.theme_color|default('green') }}{% if product %}&order={{ product.id }}{% endif %}{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}&loader=3" id="popup-iframe"/>
+            </section>
+        </div>
+    </article>
+</div>
+{% endblock %}
+
+{% block sidebar2 %}
+    {% include 'partial_currency.html.twig' %}
+{% endblock %}
+
+{% block js %}
+{% autoescape "js" %}
+<script>
+    function resizeIframe(obj) {
+        obj.style.height = obj.contentWindow.document.body.scrollHeight + 'px';
+        $('#loader-image').hide();
+    }
+</script>
+{% endautoescape %}
+{% endblock %}

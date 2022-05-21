@@ -1,0 +1,105 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ topic.title }}{% endblock %}
+
+{% block content_before %}
+    <h1>{{ topic.title }}</h1>
+    <p class="text-secondary">{{ forum.title }}</p>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ 'forum'|link }}">{{ 'Forum'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ '/forum'|link }}/{{ forum.slug }}">{{ forum.title }}</a>
+        </li>
+        <li class="breadcrumb-item active">{{ topic.title }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-sm-3 text-center">
+            <img src="{{ topic.first.author.email|gravatar }}&size=100" class="img-thumbnail rounded-circle" alt="{{ message.author.name }}">
+        </div>
+        <div class="col">
+            <ul class="list-inline">
+                <li>{{topic.created_at|date('Y-m-d h:i')}}</li>
+                <li><strong>{{ topic.stats.views_count }}</strong> {{ 'Views'|trans }}</li>
+                <li><strong>{{ topic.stats.posts_count }}</strong> {{ 'Messages'|trans }}</li>
+                {% if client %}
+                    {% if client.forum_is_favorite({ 'id': topic.id }) %}
+                    <li>
+                        <a href="{{ 'api/client/forum/favorite_remove'|link({ 'id': topic.id }) }}" class="api" data-api-reload="1">Remove from favorites</a>
+                    </li>
+                    {% else %}
+                    <li>
+                        <a href="{{ 'api/client/forum/favorite_add'|link({ 'id': topic.id }) }}" class="api" data-api-reload="1">Add to favorites</a>
+                    </li>
+                    {% endif %}
+                    {% if client.forum_is_subscribed({ 'id': topic.id }) %}
+                    <li>
+                        <a href="{{ 'api/client/forum/unsubscribe'|link({ 'id': topic.id }) }}" class="api" data-api-reload="1">Disable notifications for this topic</a>
+                    </li>
+                    {% else %}
+                    <li>
+                        <a href="{{ 'api/client/forum/subscribe'|link({ 'id': topic.id }) }}" class="api" data-api-reload="1">Subscribe to notifications</a>
+                    </li>
+                    {% endif %}
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+    <hr>
+
+    {% set messages = guest.forum_get_topic_message_list({ 'forum_topic_id': topic.id, 'page': request.page, 'per_page': 10 }) %}
+
+    {% for i, message in messages.list %}
+    <div class="card">
+        <div class="card-header">
+            <a class="float-start" href="#">
+                <img class="media-object rounded-circle me-2" src="{{ message.author.email|gravatar }}&size=20" alt="{{ message.author.name }}">
+            </a>
+            <div>{{ message.author.name }}
+                <small class="float-end text-secondary">{{ message.created_at|date('Y-m-d h:i') }}</small>
+            </div>
+        </div>
+        <div class="card-body">
+            <p>{{ message.message|bbmd }}</p>
+        </div>
+    </div>
+    <hr>
+    {% else %}
+        <div class="box">
+            <div class="block">{{ 'No replies in this topic'|trans }}</div>
+        </div>
+    {% endfor %}
+    {% include '_pagination.html.twig' with { 'list': messages } %}
+    <p class="text-center">
+        <a class="btn btn-default" href="{{ '/forum'|link }}/{{ forum.slug }}">
+            <i class="fa fa-arrow-left me-2"></i>{{ forum.title }}</a>
+        {% if client %}
+            {% if topic.status != 'locked' %}
+                <a class="btn btn-primary" role="button" data-bs-toggle="collapse" href="#reply" aria-expanded="false" aria-controls="reply">{{ 'Reply'|trans }}</a>
+            {% else %}
+                <button class="btn btn-danger" disabled>{{ mf.status_name(topic.status) }}</button>
+            {% endif %}
+        {% else %}
+            <a class="btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#login">{{ 'Login'|trans }}</a>
+        {% endif %}
+    </p>
+
+    <div class="collapse" id="reply">
+        <h4>{{ 'Post new message in forum'|trans }}</h4>
+        <form method="post" class="api-form" data-api-url="client/forum/post_message" data-api-reload="1">
+            <div class="mb-3">
+                <textarea class="form-control p-3" name="message" rows="10" style="resize:none" required data-provide="markdown" data-iconlibrary="fa"></textarea>
+            </div>
+            <input type="hidden" name="forum_topic_id" value="{{ topic.id }}">
+            <div class="d-grid">
+                <input class="btn btn-primary" type="submit" value="{{ 'Post'|trans }}">
+            </div>
+        </form>
+    </div>
+{% endblock %}

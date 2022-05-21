@@ -1,0 +1,186 @@
+{% extends 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ 'Staff'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block content %}
+<div class="card">
+    <ul class="tabs">
+        <li>
+            <a href="#tab-staff">{{ 'Staff members'|trans }}</a>
+        </li>
+        <li>
+            <a href="#tab-new">{{ 'New staff member'|trans }}</a>
+        </li>
+        <li>
+            <a href="#tab-groups">{{ 'Manage groups'|trans }}</a>
+        </li>
+        <li>
+            <a href="#tab-new-group">{{ 'New group'|trans }}</a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab_content nopadding" id="tab-staff">
+            {% include '_search.html.twig' %}
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <th colspan="2">{{ 'Name'|trans }}</th>
+                        <th>{{ 'Email'|trans }}</th>
+                        <th>{{ 'Group'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% set members = admin.staff_get_list({ 'per_page': 100, 'page': request.page}|merge(request)) %}
+                {% for i, member in members.list %}
+                <tr>
+                    <td>
+                        <a href="{{ 'staff/manage'|alink }}/{{ member.id }}">
+                            <img src="{{ member.email|gravatar }}?size=25" alt="{{ member.id }}">
+                        </a>
+                    </td>
+                    <td>{{ member.name }}</td>
+                    <td>{{ member.email }}</td>
+                    <td>
+                        <a href="{{ '/staff/group'|alink }}/{{ member.group.id }}">{{ member.group.name }}</a>
+                    </td>
+                    <td>{{ mf.status_name(member.status) }}</td>
+                    <td style="width: 13%" class="actions">
+                        <a class="bb-button btn14" href="{{ '/staff/manage'|alink }}/{{ member.id }}">
+                            <img src="images/icons/dark/pencil.png" alt="">
+                        </a>
+                        <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'staff'|alink }}" href="{{ 'api/admin/staff/delete'|link({ 'id': member.id }) }}">
+                            <img src="images/icons/dark/trash.png" alt="">
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+
+                {% else %}
+                <tbody>
+                    <tr>
+                        <td colspan="5">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+        </div>
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-new">
+            <form method="post" action="{{ 'api/admin/staff/create'|link }}" class="mainForm api-form" data-api-jsonp="onAfterStaffCreate">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{{ 'Group'|trans }}</label>
+                        <div class="formRight">
+                            {{ mf.selectbox('admin_group_id', admin.staff_group_get_pairs, '', 1) }}
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{{ 'Name'|trans }}</label>
+                        <div class="formRight">
+                            <input type="text" name="name" value="" required>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <div class="rowElem">
+                        <label>{{ 'Email'|trans }}</label>
+                        <div class="formRight">
+                            <input type="email" name="email" value="{{ request.email }}" required>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Password'|trans }}</label>
+                        <div class="formRight">
+                            <input type="password" name="password" required>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Signature'|trans }}</label>
+                        <div class="formRight">
+                            <textarea name="signature" rows="2"></textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Status'|trans }}:</label>
+                        <div class="formRight">
+                            <input type="radio" name="status" value="inactive" checked>
+                            <label>{{ 'Inactive'|trans }}</label>
+                            <input type="radio" name="status" value="active">
+                            <label>{{ 'Active'|trans }}</label>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm">
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-groups">
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td>{{ 'Name'|trans }}</td>
+                        <td style="width: 13%">&nbsp;</td>
+                    </tr>
+                </thead>
+                <tbody>
+                {% set groups = admin.staff_group_get_list({ 'per_page': 100, 'page': request.page }) %}
+                {% for i, group in groups.list %}
+                <tr>
+                    <td>{{ group.name }}</td>
+                    <td class="actions">
+                        <a class="bb-button btn14" href="{{ '/staff/group'|alink }}/{{ group.id }}">
+                            <img src="images/icons/dark/pencil.png" alt="">
+                        </a>
+                        <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'staff'|alink }}" href="{{ 'api/admin/staff/group_delete'|link({'id' : group.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                    </td>
+                </tr>
+                </tbody>
+                {% else %}
+                <tbody>
+                    <tr>
+                        <td colspan="5">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                </tbody>
+                {% endfor %}
+            </table>
+        </div>
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-new-group">
+            <form method="post" action="{{ 'api/admin/staff/group_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'staff'|alink }}">
+                <div class="rowElem noborder">
+                    <label>{{ 'Name'|trans }}</label>
+                    <div class="formRight">
+                        <input type="text" name="name" value="" required>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <input type="submit" value="{{ 'Create group'|trans }}" class="greyishBtn submitForm">
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    function onAfterStaffCreate(id) {
+        bb.redirect("{{ 'staff/manage/'|alink }}/" + id + '#tab-permissions');
+    }
+</script>
+{% endblock %}

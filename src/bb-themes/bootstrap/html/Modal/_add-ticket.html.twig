@@ -1,0 +1,40 @@
+{% import 'macro_functions.html.twig' as macro %}
+
+<div class="modal fade" id="{{ id }}" tabindex="-1" role="dialog" aria-labelledby="{{ 'Open new ticket'|trans }}">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" class="api-form" data-api-url="client/support/ticket_create" data-api-tocreated="{{ 'support/ticket'|link }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="myModalLabel">{{ 'Open new ticket'|trans }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="selectTicket{{ id }}Helpdesk">{{ 'Help desk'|trans }}:</label>
+                        {{ macro.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1, null, 'selectTicket' ~ id ~ 'Helpdesk') }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="inputTicket{{ id }}Subject">{{ 'Subject'|trans }}:</label>
+                        <input type="text" class="form-control" id="inputTicket{{ id }}Subject" name="subject" {% if subject %}value="{{ subject|e }}"{% endif %} required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="textareaTicket{{ id }}Message">{{ 'Reason'|trans }}:</label>
+                        <textarea class="form-control" id="textareaTicket{{ id }}Message" name="content" rows="10" maxlength="999" style="resize:none" required>{{ message|e }}</textarea>
+                    </div>
+                    {% if order %}
+                        <input type="hidden" name="rel_type" value="order">
+                        <input type="hidden" name="rel_id" value="{{ order.id }}">
+                    {% endif %}
+                    {% if cancelation %}
+                        <input type="hidden" name="rel_task" value="cancel">
+                    {% endif %}
+                </div>
+                <div class="modal-footer d-block">
+                    <div class="d-grid">
+                        <button class="btn btn-primary" type="submit">{{ 'Submit'|trans }}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,14 @@
+{% extends "layout_default.html.twig" %}
+
+{% block meta_title %}{{ 'Error'|trans }}{% endblock %}
+
+{% block content %}
+<div class="h-block">
+    <div class="h-block-header">
+        <h2>{{ 'Looks like we have a misunderstanding here'|trans }}</h2>
+    </div>
+    <div class="block">
+        <p>{{ exception.getMessage }}</p>
+    </div>
+</div>
+{% endblock %}

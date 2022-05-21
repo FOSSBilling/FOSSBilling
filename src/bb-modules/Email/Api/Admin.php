@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -389,7 +390,7 @@ class Admin extends \Api_Abstract
 
     /**
      * Send email template to email, client or staff members. If template with code does not exist,
-     * it will be created. Default email template file must exist at mod_example/html_email/mod_example_code.phtml file.
+     * it will be created. Default email template file must exist at mod_example/html_email/mod_example_code.html.twig file.
      *
      * @param string $code - Template code to send. Must be mod_%s_%s structure
      *

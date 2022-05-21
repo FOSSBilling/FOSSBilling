@@ -1,0 +1,71 @@
+{% extends 'layout_login.html.twig' %}
+
+{% block meta_title %}{{ 'Login'|trans }}{% endblock %}
+
+{% block content %}
+
+<div class="page page-center">
+    <div class="container-tight py-4">
+        <div class="text-center mb-4">
+            <a href="{{ '/'|link }}" class="navbar-brand navbar-brand-autodark">
+                <img src="{{ guest.system_company.logo_url }}" alt="Boxbilling">
+            </a>
+        </div>
+        <div class="card card-md">
+            <div class="card-body">
+                {% if create_admin %}
+                    <h2 class="card-title text-center mb-4">{{ 'Create main administrator account'|trans }}</h2>
+                    <form class="api-form" action="{{ 'api/guest/staff/create'|link }}" method="post" data-api-redirect="{{ 'index'|alink }}">
+                        <div class="mb-3">
+                            <label class="form-label" for="inputEmail">{{ 'Email'|trans }}</label>
+                            <div class="col">
+                                <input class="form-control" id="inputEmail" type="email" name="email" value="{{ request.email }}" placeholder="{{ 'Enter your email address'|trans }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="inputPassword">{{ 'Password'|trans }}</label>
+                            <div class="col">
+                                <input class="form-control" id="inputPassword" type="password" name="password" value="{{ request.password }}" placeholder="{{ 'Enter your password'|trans }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <button class="btn btn-primary w-100" type="submit">{{ 'Create administrator account'|trans }}</button>
+                        </div>
+                    </form>
+                {% else %}
+                    <form class="api-form" action="{{ 'api/guest/staff/login'|link }}" method="post" data-api-redirect="{{ 'index'|alink }}">
+                        <div class="mb-3">
+                            <label class="form-label" for="inputEmail">{{ 'Email'|trans }}</label>
+                            <input class="form-control"
+                                id="inputEmail"
+                                type="email"
+                                name="email"
+                                value="{{ request.email }}"
+                                placeholder="{{ 'Enter your email address'|trans }}"
+                                required
+                                autofocus>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="inputPassword">{{ 'Password'|trans }}</label>
+                            <input class="form-control"
+                                id="inputPassword"
+                                type="password"
+                                name="password"
+                                value="{{ request.password }}"
+                                placeholder="{{ 'Enter your password'|trans }}"
+                                required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input class="form-check-input" id="inputRemember" type="checkbox" name="remember" value="1" checked>
+                            <label class="form-check-label" for="inputRemember">{{ 'Remember me'|trans }}</label>
+                        </div>
+                        <div class="form-footer">
+                            <button class="btn btn-primary w-100" type="submit">{{ 'Sign in'|trans }}</button>
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

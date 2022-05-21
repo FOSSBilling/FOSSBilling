@@ -1,0 +1,165 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}{{ 'Centova Cast'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+    <ul>
+        <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
+        <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
+        <li class="lastB">{{ 'Centova Cast'|trans }}</li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+<div class="widget">
+    <div class="head">
+        <h5 class="iCog">{{ 'Centova Cast'|trans }}</h5>
+    </div>
+    
+    <div class="help">
+        <h3>{{ 'Centova Cast settings'|trans }}</h3>
+        <p><a href="http://www.centova.com/docs/cast/centovacast_install_guide.php" target="_blank">Go to Centova Cast Installation Guide</a></p>
+    </div>
+    
+    <table class="tableStatic wide">
+        <thead>
+            <tr>
+                <th>{{ 'Server URL'|trans }}</th>
+                <th>{{ 'Server Hostname'|trans }}</th>
+                <th>{{ 'Server IP'|trans }}</th>
+                <th width="17%">&nbsp;</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for id,server in admin.servicecentovacast_servers %}
+            <tr>
+                <td>{{ server.url }}</td>
+                <td>{{ server.hostname }}</td>
+                <td>{{ server.ip }}</td>
+                <td class="actions">
+                    <a class="bb-button btn14" href="{{ 'extension/settings/servicecentovacast'|alink({'id' : id}) }}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                    <a class="btn14 api-link" href="{{ 'api/admin/servicecentovacast/server_connection'|link({'id' : id}) }}"   data-api-msg="Succesfully connected"><img src="images/icons/dark/wifi.png" alt="" class="icon"></a>
+                    <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/servicecentovacast/server_delete'|link({'id' : id}) }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/trash.png" alt=""></a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4">
+                    {{ 'The list is empty'|trans }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        
+        <tfoot>
+            <tr>
+                <td colspan="4">
+                    <input type="button" value="{{ 'Register new server'|trans }}" class="greyishBtn" style="width: 150px; float: right;" onclick="$('#add-server').slideToggle();"/>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+
+    {% if request.id %}
+    {% set server = admin.servicecentovacast_server_get({"id":request.id}) %}
+    <div id="edit-server">
+    <div class="help">
+        <h3>{{ 'Edit server'|trans }} #{{ server.id }}</h3>
+    </div>
+    <form method="post" action="admin/servicecentovacast/server_update" class="mainForm api-form" data-api-redirect="{{ 'extension/settings/servicecentovacast'|alink }}">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{{ 'CentovaCast URL'|trans }}</label>
+                <div class="formRight">
+                    <input type="text" name="url" value="{{ server.url }}" placeholder="Enter the complete URL to your Centova Cast installation, for example: http://castdemo.centova.com"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{{ 'Hostname'|trans }}</label>
+                <div class="formRight">
+                    <input type="text" name="hostname" value="{{ server.hostname }}" placeholder="Set this to the hostname of the machine on which Centova Cast is running"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{{ 'IP Address'|trans }}</label>
+                <div class="formRight">
+                    <input type="text" name="ip" value="{{ server.ip }}" placeholder="Set this to the IP address of the machine on which Centova Cast is running"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{{ 'Administrator password'|trans }}</label>
+                <div class="formRight">
+                    <input type="password" name="secret" value="{{ server.secret }}" placeholder="Enter your Centova Cast administrator password"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
+            <input type="hidden" name="id" value="{{ server.id }}" />
+        </fieldset>
+    </form>
+        
+    </div>
+    {% endif %}
+    
+    <div id="add-server" style="display: none;">
+    <div class="help">
+        <h3>{{ 'Register Centova Cast server'|trans }}</h3>
+    </div>
+
+    <form method="post" action="{{ 'api/admin/servicecentovacast/server_add'|link }}" class="mainForm api-form" data-api-reload="{{ 'Server added'|trans }}">
+        <fieldset>
+            <div class="rowElem noborder">
+                <label>{{ 'CentovaCast URL'|trans }}</label>
+                <div class="formRight">
+                    <input type="text" name="url" value="" placeholder="Enter the complete URL to your Centova Cast installation, for example: http://castdemo.centova.com"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{{ 'Hostname'|trans }}</label>
+                <div class="formRight">
+                    <input type="text" name="hostname" value="" placeholder="Set this to the hostname of the machine on which Centova Cast is running"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{{ 'IP Address'|trans }}</label>
+                <div class="formRight">
+                    <input type="text" name="ip" value="" placeholder="Set this to the IP address of the machine on which Centova Cast is running"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <div class="rowElem">
+                <label>{{ 'Administrator password'|trans }}</label>
+                <div class="formRight">
+                    <input type="password" name="secret" value="" placeholder="Enter your Centova Cast administrator password"/>
+                </div>
+                <div class="fix"></div>
+            </div>
+
+            <input type="submit" value="{{ 'Add'|trans }}" class="greyishBtn submitForm" />
+        </fieldset>
+    </form>
+        
+    </div>
+    <div class="body">
+        <a href="{{ 'system'|alink }}"  title="" class="btnIconLeft mr10"><img src="images/icons/dark/arrowLeft.png" alt="" class="icon"><span>{{ 'Back to settings'|trans }}</span></a>
+        <a href="{{'product'|alink({'type' : 'centovacast', 'title' : 'CentovaCast Server'})}}#tab-new" target="_blank" class="btnIconLeft mr10"><img src="images/icons/dark/play.png" alt="" class="icon"><span>{{ 'Create CentovaCast product'|trans }}</span></a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% import 'macro_functions.html.twig' as macro %}
+
+<div class="row">
+    <div class="col-sm-3 text-center">
+        <img src="{{ profile.email|gravatar }}&size=100" class="img-thumbnail rounded-circle" alt="{{ 'Gravatar'|trans }}">
+    </div>
+    <div class="col">
+        <ul class="list-inline">
+            <li><strong>{{ 'Ticket'|trans }}:</strong> #{{ ticket.id }}</li>
+            {% if ticket.rel_type == 'order' and ticket.rel_id %}
+            <li>
+                <strong>{{ 'Related to'|trans }}:</strong>
+                <a href="{{ 'order/service/manage'|link }}/{{ ticket.rel_id }}">{{ 'Service'|trans }} #{{ ticket.rel_id }}</a>
+            </li>
+            {% endif %}
+            <li>
+                <strong>{{ 'Created'|trans }}:</strong> {{ ticket.created_at|date('Y-m-d h:i') }} - {{ ticket.created_at|timeago }} {{ 'ago'|trans }}</li>
+            <li>{{ 'Status'|trans }}: <span class="badge {% if ticket.status == 'open' %}bg-danger{% elseif ticket.status == 'on_hold' %}bg-warning{% elseif ticket.status == 'closed' %}bg-success{% else %}bg-default{% endif %}">{{ macro.status_name(ticket.status) }}</span></li>
+        </ul>
+        {% if ticket.status != 'closed' %}
+            <div class="d-grid">
+                <a class="btn btn-success api" type="button" href="{% if not hash %}{{ 'api/client/support/ticket_close'|link({ 'id': ticket.id }) }}{% else %}{{ 'api/guest/support/ticket_close'|link({ 'hash': ticket.hash }) }}{% endif %}" data-api-reload="1">
+                    <i class="fa fa-times me-2"></i>{{ 'Close ticket'|trans }}</a>
+            </div>
+        {% else %}
+            <div class="alert alert-success text-center">
+                <i class="fa fa-check me-2"></i>{{ macro.status_name(ticket.status)|trans }} - {{ ticket.updated_at|timeago }} {{ 'ago'|trans }}
+            </div>
+        {% endif %}
+    </div>
+</div>

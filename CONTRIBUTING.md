@@ -1,8 +1,8 @@
-# Contributing to BoxBilling
+# Contributing to FOSSBilling
 
 :+1::tada: First off, thanks for taking the time to contribute! :tada::+1:
 
-The following is a set of guidelines for contributing to BoxBilling, which are hosted in the [BoxBilling Organization](https://github.com/boxbilling) on GitHub. These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
+The following is a set of guidelines for contributing to FOSSBilling, which are hosted in the [FOSSBilling Organization](https://github.com/FOSSBilling) on GitHub. These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
 
 #### Table Of Contents
 
@@ -28,17 +28,17 @@ The following is a set of guidelines for contributing to BoxBilling, which are h
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the [BoxBilling Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the moderators on our [Discord](https://boxbilling.org/discord) and [Slack](https://boxbilling.org/slack) communities.
+This project and everyone participating in it is governed by the [FOSSBilling Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the moderators on our [Discord](https://fossbilling.org/discord) communities.
 
 ## I don't want to read this whole thing I just have a question!!!
 
-Drop a message to [Discord](https://boxbilling.org/discord) and [Slack](https://boxbilling.org/slack) communities for a question. Sometimes it takes time to respond; please be patient!
+Drop a message to [Discord](https://fossbilling.org/discord) community for a question. Sometimes it takes time to respond; please be patient!
 
 ## What should I know before I get started?
 
-### BoxBilling structure
+### FOSSBilling structure
 
-BoxBilling is an open source project &mdash; it's made up of over [50 modules](https://github.com/boxbilling/boxbilling/tree/master/src/bb-modules). When you initially consider contributing to BoxBilling, you might be unsure about which of those 50 modules implements the functionality you want to change or report a bug for. This section should help you with that.
+FOSSBilling is an open source project &mdash; it's made up of over [50 modules](https://github.com/FOSSBilling/FOSSBilling/tree/master/src/bb-modules). When you initially consider contributing to FOSSBilling, you might be unsure about which of those 50 modules implements the functionality you want to change or report a bug for. This section should help you with that.
 
 There are 2 types of modules:
 
@@ -48,13 +48,13 @@ There are 2 types of modules:
 Think of Service modules as products that you want to sell. These modules have actions related to product configuration. Lets say `Servicedownloadable` module allows you to sell Downloadable products such as e-books, images, photos, documents. Module keeps track of number of downloads, how many downloads were made.
 If you need to sell new type of product you will implement Service type module.
 
-Other modules extend whole BoxBilling API with any functionality needed. Check existing modules to get the idea of what is already shipped with default structure of BoxBilling.
+Other modules extend whole FOSSBilling API with any functionality needed. Check existing modules to get the idea of what is already shipped with default structure of FOSSBilling.
 
 ## How Can I Contribute?
 
 ### Reporting Bugs
 
-This section guides you through submitting a bug report for BoxBilling. Following these guidelines helps maintainers and the community understand your report :pencil:, reproduce the behavior :computer: :computer:, and find related reports :mag_right:.
+This section guides you through submitting a bug report for FOSSBilling. Following these guidelines helps maintainers and the community understand your report :pencil:, reproduce the behavior :computer: :computer:, and find related reports :mag_right:.
 
 Before creating bug reports, please check [this list](#before-submitting-a-bug-report) as you might find out that you don't need to create one. When you are creating a bug report, please [include as many details as possible](#how-do-i-submit-a-good-bug-report).
 
@@ -62,11 +62,11 @@ Before creating bug reports, please check [this list](#before-submitting-a-bug-r
 
 #### Before Submitting A Bug Report
 
-* **Perform a [cursory search](https://github.com/search?q=+is%3Aissue+user%3Aboxbilling)** to see if the problem has already been reported. If it has **and the issue is still open**, add a comment to the existing issue instead of opening a new one.
+* **Perform a [cursory search](https://github.com/search?q=+is%3Aissue+user%3Afossbilling)** to see if the problem has already been reported. If it has **and the issue is still open**, add a comment to the existing issue instead of opening a new one.
 
 #### How Do I Submit A (Good) Bug Report?
 
-Bugs are tracked as [GitHub issues](https://guides.github.com/features/issues/). After you've determined which module your bug is related to, create an issue and provide the following information by filling in [the template](https://github.com/atom/.github/blob/master/.github/ISSUE_TEMPLATE/bug_report.md).
+Bugs are tracked as [GitHub issues](https://guides.github.com/features/issues/). After you've determined which module your bug is related to, create an issue and provide the following information by filling in [the template](https://github.com/FOSSBilling/.github/blob/master/.github/ISSUE_TEMPLATE/bug_report.md).
 
 Explain the problem and include additional details to help maintainers reproduce the problem:
 
@@ -85,42 +85,43 @@ Provide more context by answering these questions:
 
 Include details about your configuration and environment:
 
-* **Which version of BoxBilling are you using?** You can get the exact version by running `https://<your domain>/api/guest/system/version` in your browser.
-* **What's the name and version of the server OS you're BoxBilling installation is running**?
+* **Which version of FOSSBilling are you using?** You can get the exact version by running `https://<your domain>/api/guest/system/version` in your browser.
+* **What's the name and version of the server OS you're FOSSBilling installation is running**?
 * **What's the PHP version your server is using**?
 * **What's the MySQL version your server is using**?
+* **What's the Web Server and version your using**?
 
 ### Suggesting Enhancements
 
-This section guides you through submitting an enhancement suggestion for BoxBilling, including completely new features and minor improvements to existing functionality. Following these guidelines helps maintainers and the community understand your suggestion :pencil: and find related suggestions :mag_right:.
+This section guides you through submitting an enhancement suggestion for FOSSBilling, including completely new features and minor improvements to existing functionality. Following these guidelines helps maintainers and the community understand your suggestion :pencil: and find related suggestions :mag_right:.
 
 Before creating enhancement suggestions, please check [this list](#before-submitting-an-enhancement-suggestion) as you might find out that you don't need to create one. When you are creating an enhancement suggestion, please [include as many details as possible](#how-do-i-submit-a-good-enhancement-suggestion). 
 
 ### Your First Code Contribution
 
-Unsure where to begin contributing to BoxBilling? You can start by looking through these `beginner` and `help-wanted` issues:
+Unsure where to begin contributing to FOSSBilling? You can start by looking through these `good first issue` and `help-wanted` issues:
 
-* [Beginner issues][beginner] - issues which should only require a few lines of code, and a test or two.
-* [Help wanted issues][help-wanted] - issues which should be a bit more involved than `beginner` issues.
+* [Good first issues][good first issue] - issues which should only require a few lines of code, and a test or two.
+* [Help wanted issues][help-wanted] - issues which should be a bit more involved than `good first issue` issues.
 
 Both issue lists are sorted by total number of comments. While not perfect, number of comments is a reasonable proxy for impact a given change will have.
 
 #### Local development
 
-BoxBilling and all packages can be developed localy. Instructions on how to do this are provided in [Readme](README.md):
+FOSSBilling and all packages can be developed localy. Instructions on how to do this are provided in [Readme](README.md):
 
 ### Pull Requests
 
 The process described here has several goals:
 
-- Maintain BoxBilling's quality
+- Maintain FOSSBilling's quality
 - Fix problems that are important to users
-- Engage the community in working toward the best possible BoxBilling
-- Enable a sustainable system for BoxBilling's maintainers to review contributions
+- Engage the community in working toward the best possible FOSSBilling
+- Enable a sustainable system for FOSSBilling's maintainers to review contributions
 
 Please follow these steps to have your contribution considered by the maintainers:
 
-1. Follow all instructions in [the template](PULL_REQUEST_TEMPLATE.md)
+1. Follow all instructions in [the template](https://github.com/FOSSBilling/.github/blob/master/.github/PULL_REQUEST_TEMPLATE/bug_fix.md)
 2. Follow the [styleguides](#styleguides)
 3. After you submit your pull request, verify that all [status checks](https://help.github.com/articles/about-status-checks/) are passing <details><summary>What if the status checks are failing?</summary>If a status check is failing, and you believe that the failure is unrelated to your change, please leave a comment on the pull request explaining why you believe the failure is unrelated. A maintainer will re-run the status check for you. If we conclude that the failure was a false positive, then we will open an issue to track that problem with our status check suite.</details>
 
@@ -158,7 +159,7 @@ All PHP must adhere to [PSR-2](https://www.php-fig.org/psr/psr-2/).
 
 ### Documentation Styleguide
 
-[Documentation repository can be found here](https://github.com/boxbilling/docs)
+[Documentation repository can be found here](https://github.com/FOSSBilling/wiki)
 
 * Use [Read The Docs](Read The Docs) style guide.
 * Use [Markdown](https://daringfireball.net/projects/markdown).

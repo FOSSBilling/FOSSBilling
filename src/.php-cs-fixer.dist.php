@@ -17,7 +17,7 @@ return (new PhpCsFixer\Config())
                 'bb-library',
                 'bb-locale',
                 'bb-themes',
-                'bb-vendor',
+                'vendor',
                 'install',
                 'bb-modules/Wysiwyg'
             ])

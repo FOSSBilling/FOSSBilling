@@ -1,0 +1,62 @@
+<div class="card-body">
+    <h2>{{ 'File information'|trans }}</h2>
+
+    <table class="table card-table table-vcenter table-striped text-nowrap">
+        <tbody>
+            <tr class="noborder">
+                <td>{{ 'Filename'|trans }}:</td>
+                <td>{{ service.filename  }}</td>
+            </tr>
+            <tr>
+                <td>{{ 'Location'|trans }}:</td>
+                <td>{{ service.path }}</td>
+            </tr>
+            <tr>
+                <td>{{ 'Downloads'|trans }}:</td>
+                <td>{{ service.downloads }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <hr>
+
+    <h3>{{ 'Upload new file for this order'|trans }}</h3>
+    <p class="text-muted">{{ 'Use this function to update existing order file. Client will be able to download new file from client area'|trans }}</p>
+
+    <form method="post" action="" class="mainForm" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Upload new file'|trans }}:</label>
+            <div class="col">
+                <input class="form-control" type="file" name="file_data" id="file_data">
+            </div>
+        </div>
+
+        <input type="submit" value="{{ 'Upload'|trans }}" class="greyishBtn submitForm" id="bb-upload-button">
+
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+    </form>
+</div>
+
+<script>
+$(function() {
+    $('body').append('<iframe id="uploadframe" name="uploadframe" style="display:none" />');
+
+    $('#bb-upload-form').submit(function(){
+        $(this).attr('action', bb.restUrl('admin/servicedownloadable/update'));
+
+        iframe = $('#uploadframe').load(function() {
+            response = iframe.contents().find('body');
+            data = $.parseJSON(response.text());
+
+            if (data.error) {
+                bb.error(data.error.message, data.error.code);
+            }
+
+            if (data.result) {
+                boxbilling.message("{{ 'File was uploaded'|trans }}");
+            }
+
+            setTimeout(function (){	response.html(''); }, 1);
+        });
+    });
+});
+</script>

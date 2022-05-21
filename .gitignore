@@ -1,4 +1,5 @@
 .idea
+.vscode
 ._*
 .DS_Store
 .vagrant*
@@ -10,7 +11,7 @@ src/bb-data/log/*
 src/bb-data/cache/*
 src/bb-data/tmp.txt
 src/bb-test.php
-src/bb-vendor/*
+src/vendor*
 src/install/logs/*
 bb-test.php
 build
@@ -29,3 +30,5 @@ npm-debug.log
 
 ### friendsofphp/php-cs-fixer ###
 src/.php-cs-fixer.cache
+
+.vscode

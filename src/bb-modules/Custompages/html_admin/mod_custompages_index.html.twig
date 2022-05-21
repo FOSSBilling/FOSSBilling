@@ -1,0 +1,101 @@
+{% import "macro_functions.html.twig" as mf %}
+{% extends "layout_default.html.twig" %}
+{% set active_menu = 'extensions' %}
+{% block meta_title %}{{ 'Custom Pages'|trans }}{% endblock %}
+
+{% block content %}
+<div class="widget simpleTabs">
+
+    <ul class="tabs">
+        <li><a href="#tab-index">{{ 'Custom Pages'|trans }}</a></li>
+        <li><a href="#tab-new">{{ 'New Custom Page'|trans }}</a></li>
+    </ul>
+
+    <div class="tabs_container">
+
+        <div class="fix"></div>
+        <div class="tab_content nopadding" id="tab-index">
+            {{ mf.table_search }}
+            <table class="tableStatic wide">
+                <thead>
+                    <tr>
+                        <td style="width: 2%"><input type="checkbox" class="batch-delete-master-checkbox"/></td>
+                        <td>{{ 'ID'|trans }}</td>
+                        <td>{{ 'Title'|trans }}</td>
+                        <td>{{ 'Slug'|trans }}</td>
+                        <td width="13%">&nbsp;</td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% set pages = admin.custompages_get_list({"per_page":30, "page":request.page}|merge(request)) %}
+                    {% for page in pages.list %}
+                    <tr>
+                        <td><input type="checkbox" class="batch-delete-checkbox" data-item-id="{{ page.id }}"/></td>
+                        <td>{{ page.id }}</td>
+                        <td>{{ page.title }}</td>
+                        <td>{{ page.slug }}</td>
+                        <td>
+                            <a class="btn14" href="{{ 'page'|link }}/{{ page.slug }}" title="{{ 'View'|trans }}"><img src="images/icons/dark/view.png" alt=""></a>
+                            <a class="btn14" href="{{ 'custompages'|alink }}/{{ page.id }}" title="{{ 'Edit'|trans }}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                            <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/custompages/delete'|link({ 'id': page.id }) }}" title="{{ 'Delete'|trans }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/trash.png" alt=""></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% include "partial_batch_delete.html.twig" with {'action' : 'admin/custompages/batch_delete'} %}
+            {% include "partial_pagination.html.twig" with {'list': pages, 'url':'custompages'} %}
+        </div>
+
+        <div class="fix"></div>
+
+        <div class="tab_content nopadding" id="tab-new">
+
+            <form method="post" action="{{ 'api/admin/custompages/create'|link }}" class="mainForm api-form save" data-api-redirect="{{ 'custompages'|alink }}">
+                <fieldset>
+                    <div class="rowElem noborder">
+                        <label>{{ 'Title'|trans }}:</label>
+                        <div class="formRight">
+                            <input type="text" name="title" value="{{ request.title }}" required="required" placeholder="{{ 'Enter page title here.'|trans }}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Meta Description'|trans }}:</label>
+                        <div class="formRight">
+                            <input type="text" name="description" value="{{ request.description }}" placeholder="{{ 'Enter page meta description here.'|trans }}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Meta Keywords'|trans }}:</label>
+                        <div class="formRight">
+                            <input type="text" name="keywords" value="{{ request.keywords }}" placeholder="{{ 'Enter page meta keywords here.'|trans }}"/>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <div class="rowElem">
+                        <label>{{ 'Content'|trans }}:</label>
+                        <div class="formRight">
+                            <textarea class="bb-textarea" name="content" cols="5" rows="5" required="required" placeholder="{{ 'Enter page content here.'|trans }}"></textarea>
+                        </div>
+                        <div class="fix"></div>
+                    </div>
+                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
+                </fieldset>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}{% endblock %}
+
+{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}

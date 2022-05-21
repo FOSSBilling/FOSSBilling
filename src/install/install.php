@@ -1,6 +1,19 @@
 <?php
+
+/**
+ * BoxBilling.
+ *
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
+ * @license   Apache-2.0
+ *
+ * Copyright BoxBilling, Inc
+ * This source file is subject to the Apache-2.0 License that is bundled
+ * with this source code in the file LICENSE
+ */
+
 /**
  * @return bool
+ *
  * @see http://stackoverflow.com/a/2886224/2728507
  */
 function isSSL()
@@ -19,7 +32,7 @@ ini_set('log_errors', '1');
 ini_set('error_log', dirname(__FILE__) . '/logs/php_error.log');
 
 $protocol = isSSL() ? 'https' : 'http';
-$url = $protocol . "://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+$url = $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 $current_url = pathinfo($url, PATHINFO_DIRNAME);
 $root_url = str_replace('/install', '', $current_url) . '/';
 
@@ -29,7 +42,7 @@ define('BB_URL_ADMIN', BB_URL . 'index.php?_url=/bb-admin');
 
 define('BB_PATH_ROOT', realpath(dirname(__FILE__) . '/..'));
 define('BB_PATH_LIBRARY', BB_PATH_ROOT . '/bb-library');
-define('BB_PATH_VENDOR', BB_PATH_ROOT . '/bb-vendor');
+define('BB_PATH_VENDOR', BB_PATH_ROOT . '/vendor');
 define('BB_PATH_INSTALL_THEMES', BB_PATH_ROOT . '/install');
 define('BB_PATH_THEMES', BB_PATH_ROOT . '/bb-themes');
 define('BB_PATH_LICENSE', BB_PATH_ROOT . '/LICENSE');
@@ -40,7 +53,7 @@ define('BB_PATH_CONFIG', BB_PATH_ROOT . '/bb-config.php');
 define('BB_PATH_CRON', BB_PATH_ROOT . '/bb-cron.php');
 define('BB_PATH_LANGS', BB_PATH_ROOT . '/bb-locale');
 
-/* 
+/*
   Config paths & templates
 */
 define('BB_PATH_HTACCESS', BB_PATH_ROOT . '/.htaccess');
@@ -82,13 +95,13 @@ final class Box_Installer
                 $pass = $_POST['db_pass'];
                 $name = $_POST['db_name'];
                 if (!$this->canConnectToDatabase($host, $name, $user, $pass)) {
-                    print 'Could not connect to database. Please check database details. You might need to create database first.';
+                    echo 'Could not connect to database. Please check database details. You might need to create database first.';
                 } else {
                     $this->session->set('db_host', $host);
                     $this->session->set('db_name', $name);
                     $this->session->set('db_user', $user);
                     $this->session->set('db_pass', $pass);
-                    print 'ok';
+                    echo 'ok';
                 }
 
                 break;
@@ -121,37 +134,36 @@ final class Box_Installer
                         $this->session->set('admin_name', $admin_name);
                     }
 
-                    $this->session->set('license', "BoxBilling CE");
+                    $this->session->set('license', 'BoxBilling CE');
                     $this->makeInstall($this->session);
                     $this->generateEmailTemplates();
                     session_destroy();
                     // Try to remove install folder
-                    function rmAllDir($dir) {
+                    function rmAllDir($dir)
+                    {
                         if (is_dir($dir)) {
-                          $contents = scandir($dir);
-                          foreach ($contents as $content) {
-                            if ($content != '.' && $content != '..') {
-                              if (filetype($dir.'/'.$content) == 'dir') {
-                                rmAllDir($dir.'/'.$content); 
-                              }
-                              else {
-                                unlink($dir.'/'.$content);
-                              }
+                            $contents = scandir($dir);
+                            foreach ($contents as $content) {
+                                if ('.' != $content && '..' != $content) {
+                                    if ('dir' == filetype($dir . '/' . $content)) {
+                                        rmAllDir($dir . '/' . $content);
+                                    } else {
+                                        unlink($dir . '/' . $content);
+                                    }
+                                }
                             }
-                          }
-                          reset($contents);
-                          rmdir($dir);
+                            reset($contents);
+                            rmdir($dir);
                         }
                     }
                     try {
                         rmAllDir('../install');
-                    }
-                    catch(Exception $e) {
+                    } catch (Exception $e) {
                         // do nothing
                     }
-                    print 'ok';
+                    echo 'ok';
                 } catch (Exception $e) {
-                    print $e->getMessage();
+                    echo $e->getMessage();
                 }
                 break;
 
@@ -197,7 +209,7 @@ final class Box_Installer
 
                     'domain' => pathinfo(BB_URL, PATHINFO_BASENAME),
                 ];
-                print $this->render('./assets/install.phtml', $vars);
+                echo $this->render('./assets/install.html.twig', $vars);
                 break;
         }
     }
@@ -215,9 +227,10 @@ final class Box_Installer
         ];
         $loader = new \Twig\Loader\FilesystemLoader($options['paths']);
         $twig = new Twig\Environment($loader, $options);
-        //$twig->addExtension(new Twig_Extension_Optimizer());
+        // $twig->addExtension(new Twig_Extension_Optimizer());
         $twig->addGlobal('request', $_REQUEST);
         $twig->addGlobal('version', Box_Version::VERSION);
+
         return $twig->render($name, $vars);
     }
 
@@ -225,30 +238,31 @@ final class Box_Installer
     {
         $path = BB_PATH_LICENSE;
         if (!file_exists($path)) {
-            return 'BoxBilling is licensed under the Apache License, Version 2.0.'.PHP_EOL.'Please visit https://github.com/boxbilling/boxbilling/blob/master/LICENSE for full license text.';
+            return 'BoxBilling is licensed under the Apache License, Version 2.0.' . PHP_EOL . 'Please visit https://github.com/boxbilling/boxbilling/blob/master/LICENSE for full license text.';
         }
+
         return file_get_contents($path);
     }
 
     private function getPdo($host, $db, $user, $pass)
     {
-        $pdo = new \PDO('mysql:host='.$host,
+        $pdo = new \PDO('mysql:host=' . $host,
             $user,
             $pass,
-            array(
-                \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY         => true,
-                \PDO::ATTR_ERRMODE                          => \PDO::ERRMODE_EXCEPTION,
-                \PDO::ATTR_DEFAULT_FETCH_MODE               => \PDO::FETCH_ASSOC,
-            )
+            [
+                \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+            ]
         );
 
-        $pdo->exec( 'SET NAMES "utf8"' );
-        $pdo->exec( 'SET CHARACTER SET utf8' );
-        $pdo->exec( 'SET CHARACTER_SET_CONNECTION = utf8' );
-        $pdo->exec( 'SET character_set_results = utf8' );
-        $pdo->exec( 'SET character_set_server = utf8' );
-        $pdo->exec( 'SET SESSION interactive_timeout = 28800' );
-        $pdo->exec( 'SET SESSION wait_timeout = 28800' );
+        $pdo->exec('SET NAMES "utf8"');
+        $pdo->exec('SET CHARACTER SET utf8');
+        $pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
+        $pdo->exec('SET character_set_results = utf8');
+        $pdo->exec('SET character_set_server = utf8');
+        $pdo->exec('SET SESSION interactive_timeout = 28800');
+        $pdo->exec('SET SESSION wait_timeout = 28800');
 
         // try create database if permissions allows
         try {
@@ -258,6 +272,7 @@ final class Box_Installer
         }
 
         $pdo->query("USE $db;");
+
         return $pdo;
     }
 
@@ -267,8 +282,10 @@ final class Box_Installer
             $this->getPdo($host, $db, $user, $pass);
         } catch (\Exception $e) {
             error_log($e->getMessage());
+
             return false;
         }
+
         return true;
     }
 
@@ -318,11 +335,11 @@ final class Box_Installer
 
         $passwordObject = new \Box_Password();
         $stmt = $pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', :admin_name, :admin_email, :admin_pass, 1, NOW(), NOW());");
-        $stmt->execute(array(
-            'admin_name'  => $ns->get('admin_name'),
+        $stmt->execute([
+            'admin_name' => $ns->get('admin_name'),
             'admin_email' => $ns->get('admin_email'),
-            'admin_pass'  => $passwordObject->hashIt($ns->get('admin_pass')),
-        ));
+            'admin_pass' => $passwordObject->hashIt($ns->get('admin_pass')),
+        ]);
 
         try {
             $this->_sendMail($ns);
@@ -330,26 +347,26 @@ final class Box_Installer
             // E-mail was not sent, but that is not a problem
             error_log($e->getMessage());
         }
-        
-        
+
         /*
           Copy config templates when applicable
         */
-        if(!file_exists(BB_PATH_HTACCESS) && file_exists(BB_PATH_HTACCESS_TEMPLATE)) {
+        if (!file_exists(BB_PATH_HTACCESS) && file_exists(BB_PATH_HTACCESS_TEMPLATE)) {
             rename(BB_PATH_HTACCESS_TEMPLATE, BB_PATH_HTACCESS);
         }
 
-        if(!file_exists(BB_BS_CONFIG) && file_exists(BB_BS_CONFIG_TEMPLATE)) {
+        if (!file_exists(BB_BS_CONFIG) && file_exists(BB_BS_CONFIG_TEMPLATE)) {
             rename(BB_BS_CONFIG_TEMPLATE, BB_BS_CONFIG);
         }
 
-        if(!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
+        if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
             rename(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG);
         }
 
-        if(!file_exists(BB_BBTHEME_CONFIG) && file_exists(BB_BBTHEM_CONFIG_TEMPLATE)) {
+        if (!file_exists(BB_BBTHEME_CONFIG) && file_exists(BB_BBTHEM_CONFIG_TEMPLATE)) {
             rename(BB_BBTHEM_CONFIG_TEMPLATE, BB_BBTHEME_CONFIG);
         }
+
         return true;
     }
 
@@ -360,14 +377,14 @@ final class Box_Installer
         $admin_pass = $ns->get('admin_pass');
 
         $content = "Hi $admin_name, " . PHP_EOL;
-        $content .= "You have successfully setup BoxBilling at " . BB_URL . PHP_EOL;
-        $content .= "Access client area at: " . BB_URL . PHP_EOL;
-        $content .= "Access admin area at: " . BB_URL_ADMIN . " with login details:" . PHP_EOL;
-        $content .= "E-mail: " . $admin_email . PHP_EOL;
-        $content .= "Password: " . $admin_pass . PHP_EOL . PHP_EOL;
+        $content .= 'You have successfully setup BoxBilling at ' . BB_URL . PHP_EOL;
+        $content .= 'Access client area at: ' . BB_URL . PHP_EOL;
+        $content .= 'Access admin area at: ' . BB_URL_ADMIN . ' with login details:' . PHP_EOL;
+        $content .= 'E-mail: ' . $admin_email . PHP_EOL;
+        $content .= 'Password: ' . $admin_pass . PHP_EOL . PHP_EOL;
 
-        $content .= "Read BoxBilling documentation to get started https://docs.boxbilling.org/" . PHP_EOL;
-        $content .= "Thank You for using BoxBilling." . PHP_EOL;
+        $content .= "Read FOSSBilling documentation to get started https://docs.fossbilling.org/" . PHP_EOL;
+        $content .= "Thank You for using FOSSBilling." . PHP_EOL;
 
         $subject = sprintf('BoxBilling is ready at "%s"', BB_URL);
 
@@ -393,7 +410,7 @@ final class Box_Installer
                 'allowed_urls' => [],
                 'allowed_ips' => [],
             ],
-            
+
             'salt' => md5(random_bytes(13)),
             'url' => BB_URL,
             'admin_area_prefix' => '/bb-admin',
@@ -427,7 +444,7 @@ final class Box_Installer
                 'rate_span' => 60 * 60,
                 'rate_limit' => 1000,
                 'throttle_delay' => 2,
-                'rate_span_login' =>  60,
+                'rate_span_login' => 60,
                 'rate_limit_login' => 20,
             ],
             'guzzle' => [
@@ -438,6 +455,7 @@ final class Box_Installer
         ];
         $output = '<?php ' . PHP_EOL;
         $output .= 'return ' . var_export($data, true) . ';';
+
         return $output;
     }
 
@@ -460,10 +478,11 @@ final class Box_Installer
         $di = $di = include BB_PATH_ROOT . '/bb-di.php';
         $di['translate']();
         $emailService->setDi($di);
+
         return $emailService->templateBatchGenerate();
     }
 }
 
-$action = isset($_GET['a']) ? $_GET['a'] : 'index';
-$installer = new Box_Installer;
+$action = $_GET['a'] ?? 'index';
+$installer = new Box_Installer();
 $installer->run($action);

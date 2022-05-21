@@ -1,0 +1,84 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ 'Order'|trans }}{% endblock %}
+
+{% set periods = guest.system_periods %}
+
+{% block content_before %}
+    <div class="row">
+        <div class="col">
+            <h1>{{ 'Select product'|trans }}</h1>
+            <p class="text-secondary">{{ 'Choose products we offer for selling'|trans }}</p>
+            {% include '_order-steps.html.twig' with { 'selected': 1 } %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col">
+            <div class="accordion" id="accordionProducts">
+            {% for i, category in guest.product_category_get_list.list %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-{{ category.id }}">
+                        <button class="accordion-button{% if loop.index != 1 %} collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-category-{{ category.id }}" aria-expanded="true" aria-controls="collapseOne">{{ category.title }}</button>
+                    </h2>
+                    <div class="accordion-collapse collapse{% if loop.first %} show{% endif %}" id="collapse-category-{{ category.id }}" data-bs-parent="#accordionProducts" aria-labelledby="heading-{{ category.id }}">
+                        {% set listing_template = 'mod_service' ~ category.type ~ '_listing.html.twig' %}
+                        
+                        {% if guest.system_template_exists({ 'file': listing_template }) %}
+                            <div class="mod_service{{ category.type }} panel-body">{% include listing_template %}</div>
+                        {% else %}
+                        <ul class="list-group list-group-flush">
+                        {% for product in category.products %}
+                            <li class="list-group-item">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h4 class="list-group-item-heading">{{ product.title }}</h4>
+                                        <div class="list-group-item-text">
+                                            {% if product.icon_url %}
+                                                <div class="pull-left">
+                                                    {{ product.icon_url|img_tag }}
+                                                </div>
+                                            {% endif %}
+                                            {{ product.description|bbmd }}
+                                        </div>
+                                    </div>	
+                                    <div class="col">
+                                        {% if product.pricing.type == 'recurrent' %}
+                                            <p>{{ 'Starting from'|trans }}: <strong>{{ product.price_starting_from|money_convert }}</strong></p>
+                                            <select name="period" id="period-selector" class="form-select mb-3">
+                                            {% for code, prices in product.pricing.recurrent %}
+                                                {% if prices.enabled %}<option value="{{ code }}">{{ periods[code] }} - {{ prices.price|money_convert }}</option>{% endif %}
+                                            {% endfor %}
+                                            </select>
+                                        {% else %}
+                                            <p>{{ 'Starting from'|trans }}: <strong>{{ product.price_starting_from|money_convert }}</strong></p>
+                                        {% endif %}
+                                        <div class="d-grid">
+                                            <a class="btn btn-success float-end" href="{{ '/order'|link }}/{{ product.slug }}">
+                                                <i class="fa fa-shopping-cart me-2"></i>{{ 'Order now'|trans }}</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-secondary text-center">{{ 'The list is empty'|trans }}</p>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block sidebar %}
+    <div>
+        {% include 'partial_currency.html.twig' %}
+    </div>
+{% endblock %}
