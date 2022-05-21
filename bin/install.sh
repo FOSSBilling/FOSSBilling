@@ -76,6 +76,14 @@ function change_folder_permissions() {
     print_success "Folder permissions changed."
 }
 
+# Create the configuration file
+function create_config() {
+    print_info "Creating the configuration file..."
+    cp $PATH_PREFIX/src/bb-config-sample.php $PATH_PREFIX/src/bb-config.php
+    print_success "Created the configuration file."
+    print_separator
+}
+
 # Start BoxBilling with a full rebuild
 function rebuild_and_start() {
     print_header "Starting BoxBilling with a full rebuild..."
@@ -86,7 +94,6 @@ function rebuild_and_start() {
 
     print_header "Waking up the container..."
     $DOCKER_COMPOSE up -d
-    cp $PATH_PREFIX/src/bb-config-sample.php $PATH_PREFIX/src/bb-config.php
     print_separator
     
     print_header "Running the preparation script..."
@@ -175,6 +182,7 @@ if [ -f "$PATH_PREFIX/src/bb-config.php" ]; then
     print_separator
 fi
 
+create_config
 create_directories
 change_folder_permissions
 rebuild_and_start
