@@ -10,7 +10,7 @@
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
             <a href="{{ '/'|alink }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
@@ -18,7 +18,7 @@
         <li class="breadcrumb-item">
             <a href="{{ 'invoice'|alink }}">{{ 'Invoices'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ invoice.serie }}{{ '%05s'|format(invoice.nr) }}</li>
     </ol>
 {% endblock %}
 
@@ -51,24 +51,24 @@
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <tbody>
                     <tr>
-                        <td class="w-25">{{ 'ID'|trans }}</td>
+                        <td class="w-50 text-end">{{ 'ID'|trans }}:</td>
                         <td>#{{ invoice.id }}</td>
                     </tr>
                     <tr>
-                        <td>{{ 'Number'|trans }}</td>
+                        <td class="text-end">{{ 'Number'|trans }}:</td>
                         <td>{{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}</td>
                     </tr>
                     <tr>
-                        <td>{{ 'Client'|trans }}</td>
+                        <td class="text-end">{{ 'Client'|trans }}:</td>
                         <td>
                             <a href="{{ 'client/manage'|alink }}/{{ invoice.client.id }}">{{ invoice.client.first_name }} {{ invoice.client.last_name }}</a>
                         </td>
                     </tr>
                     <tr>
-                        <td>{{ 'Status'|trans }}</td>
+                        <td class="text-end">{{ 'Status'|trans }}:</td>
                         <td>
                             {% if invoice.status == 'paid' %}
-                                <span class="badge bg-suddess me-1"></span>
+                                <span class="badge bg-success me-1"></span>
                             {% endif %}
                             {% if invoice.status == 'unpaid' %}
                                 <span class="badge bg-danger me-1"></span>
@@ -84,37 +84,37 @@
                     </tr>
                     {% if invoice.tax %}
                     <tr>
-                        <td>{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
+                        <td class="text-end">{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
                         <td>{{ mf.currency_format(invoice.tax, invoice.currency) }}</td>
                     </tr>
                     {% endif %}
                     <tr>
-                        <td>{{ 'Total'|trans }}</td>
+                        <td class="text-end">{{ 'Total'|trans }}:</td>
                         <td>{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
                     </tr>
                     <tr>
-                        <td>{{ 'Currency'|trans }}</td>
+                        <td class="text-end">{{ 'Currency'|trans }}:</td>
                         <td>{{ invoice.currency }}</td>
                     </tr>
                     <tr>
-                        <td>{{ 'Created at'|trans }}</td>
+                        <td class="text-end">{{ 'Created at'|trans }}:</td>
                         <td>{{ invoice.created_at|bb_date }}</td>
                     </tr>
                     <tr>
-                        <td>{{ 'Due at'|trans }}</td>
+                        <td class="text-end">{{ 'Due at'|trans }}:</td>
                         <td>{{ invoice.due_at|bb_date }}</td>
                     </tr>
                     <tr>
-                        <td>{{ 'Paid at'|trans }}</td>
+                        <td class="text-end">{{ 'Paid at'|trans }}:</td>
                         <td>{% if invoice.paid_at %}{{ invoice.paid_at|bb_date }}{% else %}-{% endif %}</td>
                     </tr>
                     <tr>
-                        <td>{{ 'Reminded at'|trans }}</td>
+                        <td class="text-end">{{ 'Reminded at'|trans }}:</td>
                         <td>{% if invoice.reminded_at %}{{ invoice.reminded_at|bb_date }} ({{ invoice.reminded_at|timeago }} ago) {% endif %}</td>
                     </tr>
                     {% if invoice.notes %}
                     <tr>
-                        <td>{{ 'Notes'|trans }}</td>
+                        <td class="text-end">{{ 'Notes'|trans }}:</td>
                         <td>{{ invoice.notes|bbmd }}</td>
                     </tr>
                     {% endif %}
@@ -123,26 +123,26 @@
 
             <div class="card-footer text-center">
                 <a href="{{ 'invoice'|link }}/{{ invoice.hash }}" class="d-inline-block mx-1 btn bg-light bg-gradient" target="_blank">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
                         <use xlink:href="#eye" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'View as client'|trans }}</span>
                 </a>
                 <a href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id }) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
                 </a>
                 {% if invoice.status == 'unpaid' %}
                 <a href="{{ 'api/admin/invoice/send_reminder'|link({ 'id': invoice.id}) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-msg="Payment reminder was sent">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
                         <use xlink:href="#mail" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Send reminder'|trans }}</span>
                 </a>
                 <a href="{{ 'api/admin/invoice/mark_as_paid'|link({ 'id': invoice.id, 'execute': 1 }) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-reload="Invoice marked as paid">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
                         <use xlink:href="#check" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Mark as paid'|trans }}</span>
@@ -151,14 +151,14 @@
 
                 {% if invoice.status == 'paid' %}
                 <a href="{{ 'api/admin/invoice/refund'|link({ 'id': invoice.id }) }}" class="d-inline-block mx-1 btn bg-light bg-gradient api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'invoice'|alink }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
                         <use xlink:href="#receipt-refund" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Refund'|trans }}</span>
                 </a>
                 {% endif %}
                 <a href="{{ 'invoice/pdf'|link }}/{{ invoice.hash }}" class="d-inline-block mx-1 btn bg-light bg-gradient" target="_blank">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
                         <use xlink:href="#download" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'PDF'|trans }}</span>
@@ -453,7 +453,7 @@
                             href="{{ 'api/admin/invoice/item_delete'|link({ 'id': item.id }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-reload="1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#delete" />
                             </svg>
                         </a>
@@ -500,7 +500,7 @@
             <a class="btn btn-success w-100 api-link"
                 href="{{ 'api/admin/invoice/approve'|link({ 'id': invoice.id }) }}"
                 data-api-reload="{{ 'invoices'|alink }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#check" />
                 </svg>
                 {{ 'Approve'|trans }}
@@ -593,7 +593,7 @@
                     <td>{{ tx.created_at|bb_datetime }}</td>
                     <td>
                         <a class="btn btn-icon" href="{{ '/invoice/transaction'|alink }}/{{ tx.id }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#edit" />
                             </svg>
                         </a>

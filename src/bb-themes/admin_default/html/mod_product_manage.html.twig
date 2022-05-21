@@ -10,7 +10,7 @@
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
             <a href="{{ '/'|alink }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
@@ -69,12 +69,12 @@
                                     <a href="{{ 'extension/settings/formbuilder'|alink }}{% if product.form_id %}?id={{ product.form_id }}{% endif %}" class="btn" id="formbuilder_btn">
                                         {# {{ (product.form_id) ? 'Edit Form' : 'Add new form' }} #}
                                         {% if product.form_id %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg class="icon">
                                             <use xlink:href="#edit" />
                                         </svg>
                                         {{ 'Edit'|trans }}
                                         {% else %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg class="icon">
                                             <use xlink:href="#plus" />
                                         </svg>
                                         {{ 'Add new'|trans }}
@@ -192,7 +192,7 @@
                             </td>
                             <td class="w-1">
                                 <a class="btn btn-icon" href="{{ '/product/addon'|alink }}/{{ addon_id }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
@@ -200,7 +200,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="3">{{ 'The list is empty'|trans }}</td>
+                            <td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -208,7 +208,7 @@
 
                 <div class="card-footer">
                     <a href="{{ 'product/addons'|alink }}#tab-new" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="icon">
                             <use xlink:href="#plus" />
                         </svg>
                         {{ 'Create new addon'|trans }}

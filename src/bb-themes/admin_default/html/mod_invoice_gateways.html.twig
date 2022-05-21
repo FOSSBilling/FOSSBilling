@@ -13,7 +13,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New payment gateway'|trans }}
@@ -51,12 +51,12 @@
                             href="{{ 'api/admin/invoice/gateway_copy'|link({ 'id': gateway.id }) }}"
                             title="{{ 'Copy'|trans }}"
                             data-api-redirect="{{ 'invoice/gateways'|alink }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#cog" />
                             </svg>
                         </a>
                         <a class="btn btn-icon" href="{{ '/invoice/gateway'|alink }}/{{ gateway.id }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#edit" />
                             </svg>
                         </a>
@@ -64,7 +64,7 @@
                             href="{{ 'api/admin/invoice/gateway_delete'|link({ 'id': gateway.id }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-redirect="{{ 'invoice/gateways'|alink }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#delete" />
                             </svg>
                         </a>
@@ -114,7 +114,7 @@
                             href="{{ 'api/admin/invoice/gateway_install'|link({ 'code': gtw }) }}"
                              title="{{ 'Install'|trans }}"
                             data-api-redirect="{{ 'invoice/gateways'|alink }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#cog" />
                             </svg>
                         </a>

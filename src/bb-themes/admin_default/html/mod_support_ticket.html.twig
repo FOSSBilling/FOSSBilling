@@ -8,7 +8,7 @@
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
             <a href="{{ '/'|alink }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
@@ -109,7 +109,7 @@
                     href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'support'|alink({ 'status': 'open' }) }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
                         <use xlink:href="#close" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Close'|trans }}</span>
@@ -119,7 +119,7 @@
                     href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'support'|alink }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
@@ -181,7 +181,7 @@
                             href="{{ 'api/admin/support/note_delete'|link({ 'id': note.id }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-reload="1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#delete" />
                             </svg>
                         </a>
@@ -202,7 +202,7 @@
 
                     <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
                     <button class="btn btn-primary w-100" type="submit">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="icon">
                             <use xlink:href="#plus" />
                         </svg>
                         {{ 'Add note'|trans }}
@@ -245,7 +245,7 @@
                         </td>
                         <td>
                             <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
@@ -261,7 +261,7 @@
 
             <div class="card-footer">
                 <a href="{{ 'support'|alink({ 'client_id': client.id}) }}#tab-new" class="btn btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="icon">
                         <use xlink:href="#plus" />
                     </svg>
                     {{ 'New support ticket'|trans }}
@@ -278,7 +278,7 @@
             <span class="avatar avatar-xs me-2" style="background-image: url({{ message.author.email|gravatar }}&size=24)"></span>
             {{ message.author.name }}
             <a class="ms-2" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}/message/{{ message.id }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#link" />
                 </svg>
             </a>
@@ -307,7 +307,7 @@
         </div>
         <div class="card-footer d-flex gap-2">
             <a href="#" class="btn btn-secondary w-25" id="toggleMessages">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#eye" />
                 </svg>
                 {{ 'Show/Hide messages'|trans }}
@@ -321,7 +321,7 @@
                 href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id }) }}"
                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                 data-api-redirect="{{ 'support'|alink({ 'status': 'open' }) }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#check" />
                 </svg>
                 {{ 'Close ticket'|trans }}

@@ -159,7 +159,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" href="#tab-new" data-bs-toggle="tab" role="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New client'|trans }}
@@ -170,7 +170,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" href="#tab-new-group" data-bs-toggle="tab" role="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New group'|trans }}
@@ -238,12 +238,12 @@
                                 <td>{{ client.created_at|date('Y-m-d') }}</td>
                                 <td>
                                     <a class="btn btn-icon" href="{{ 'client/manage'|alink }}/{{ client.id }}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg class="icon">
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
                                     <a class="btn btn-icon api-link" href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
                                     </a>
@@ -258,7 +258,7 @@
                     </table>
                 </div>
 
-                <div class="card-footer d-flex align-items-center">
+                <div class="card-footer d-flex align-items-center justify-content-between">
                     {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/client/batch_delete' } %}
                     {% include '_pagination.html.twig' with { 'list': clients, 'url': 'client' } %}
                 </div>
@@ -371,6 +371,7 @@
                                 <input class="form-control" type="password" name="password" value="" required>
                             </div>
                         </div>
+
                         <input type="submit" class="btn btn-primary" value="{{ 'Create'|trans }}">
                     </form>
                 </div>
@@ -392,12 +393,12 @@
                             </td>
                             <td>
                                 <a class="btn btn-icon" href="{{ 'client/group'|alink }}/{{ id }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
                                 <a class="btn btn-icon api-link" href="{{ 'api/admin/client/group_delete'|link({ 'id': id }) }}" data-api-reload="1" data-api-confirm="{{ 'Are you sure?'|trans }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
                                 </a>

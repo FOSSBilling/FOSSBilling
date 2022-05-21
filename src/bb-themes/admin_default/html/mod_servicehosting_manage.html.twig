@@ -3,67 +3,67 @@
 {% set server = service.server %}
 {% set hp = service.hosting_plan %}
 
-<div class="help">
-    <h2>{{ 'Details'|trans }}</h2>
+<div class="card-body">
+    <h3>{{ 'Details'|trans }}</h3>
 </div>
-<table class="tableStatic wide">
+<table class="table card-table table-vcenter table-striped text-nowrap">
     <tbody>
-        <tr class="noborder">
-            <td style="width: 30%;">{{ 'Status'|trans }}:</td>
+        <tr>
+            <td class="w-50 text-end">{{ 'Status'|trans }}:</td>
             <td>{{ mf.status_name(order.status) }}</td>
         </tr>
         <tr>
-            <td>{{ 'Domain'|trans }}:</td>
+            <td class="text-end">{{ 'Domain'|trans }}:</td>
             <td>
                 <a target="_blank" href="https://{{ service.domain }}">{{ service.domain }}</a>
             </td>
         </tr>
         <tr>
-            <td>{{ 'Server Name'|trans }}:</td>
+            <td class="text-end">{{ 'Server Name'|trans }}:</td>
             <td><a href="{{ 'servicehosting/server'|alink }}/{{ server.id }}">{{ server.name }}</a></td>
         </tr>
         <tr>
-            <td>{{ 'Hosting plan'|trans }}:</td>
+            <td class="text-end">{{ 'Hosting plan'|trans }}:</td>
             <td><a href="{{ 'servicehosting/plan'|alink }}/{{ hp.id }}">{{ hp.name }}</a></td>
         </tr>
         <tr>
-            <td>{{ 'Server IP'|trans }}:</td>
+            <td class="text-end">{{ 'Server IP'|trans }}:</td>
             <td>{{ server.ip }}</td>
         </tr>
         <tr>
-            <td>{{ 'Account IP'|trans }}:</td>
+            <td class="text-end">{{ 'Account IP'|trans }}:</td>
             <td>{{ service.ip }}</td>
         </tr>
         <tr>
-            <td>{{ 'Username'|trans }}:</td>
+            <td class="text-end">{{ 'Username'|trans }}:</td>
             <td>{{ service.username }}</td>
         </tr>
         <tr>
-            <td>{{ 'Nameserver 1'|trans }}:</td>
+            <td class="text-end">{{ 'Nameserver 1'|trans }}:</td>
             <td>{{ server.ns1 }}</td>
         </tr>
         <tr>
-            <td>{{ 'Nameserver 2'|trans }}:</td>
+            <td class="text-end">{{ 'Nameserver 2'|trans }}:</td>
             <td>{{ server.ns2 }}</td>
         </tr>
         {% if server.ns3 %}
         <tr>
-            <td>{{ 'Nameserver 3'|trans }}:</td>
+            <td class="text-end">{{ 'Nameserver 3'|trans }}:</td>
             <td>{{ server.ns3 }}</td>
         </tr>
         {% endif %}
         {% if server.ns4 %}
         <tr>
-            <td>{{ 'Nameserver 4'|trans }}:</td>
+            <td class="text-end">{{ 'Nameserver 4'|trans }}:</td>
             <td>{{ server.ns4 }}</td>
         </tr>
         {% endif %}
         <tr>
-            <td>{{ 'Bandwidth'|trans }}:</td>
+            <td class="text-end">{{ 'Bandwidth'|trans }}:</td>
             <td>{{ hp.bandwidth }} MB / {{ 'per month'|trans }}</td>
         </tr>
         <tr>
-            <td>{{ 'Disk quota'|trans }}:</td>
+            <td class="text-end">{{ 'Disk quota'|trans }}:</td>
             <td>{{ hp.quota }} MB</td>
         </tr>
     </tbody>
@@ -71,23 +71,29 @@
 
 <div class="card-footer text-center">
     {{ order_actions }}
-    <a class="btn55 mr10" href="{{ server.cpanel_url }}" target="_blank">
-        <img src="images/icons/middlenav/linux.png" alt="">
-        <span>{{ 'Jump to cPanel'|trans }}</span>
+    <a class="d-inline-block mx-1 btn bg-light bg-gradient" href="{{ server.cpanel_url }}" target="_blank">
+        <svg class="mb-2 text-secondary" width="24" height="24">
+            <use xlink:href="#server" />
+        </svg>
+        <span class="d-block text-secondary">{{ 'Jump to control panel'|trans }}</span>
     </a>
     {% if service.reseller %}
-    <a class="btn55 mr10" href="{{ server.reseller_cpanel_url }}" target="_blank">
-        <img src="images/icons/middlenav/linux.png" alt="">
-        <span>{{ 'Reseller control panel'|trans }}</span>
+    <a class="d-inline-block mx-1 btn bg-light bg-gradient" href="{{ server.reseller_cpanel_url }}" target="_blank">
+        <svg class="mb-2 text-secondary" width="24" height="24">
+            <use xlink:href="#server" />
+        </svg>
+        <span class="d-block text-secondary">{{ 'Reseller control panel'|trans }}</span>
     </a>
     {% endif %}
 
-    <a class="btn55 mr10 api-link"
+    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
         href="{{ 'api/admin/servicehosting/sync'|link({ 'order_id': order.id }) }}"
         data-api-confirm="{{ 'Are you sure?'|trans }}"
         data-api-msg="{{ 'Account was synced'|trans }}">
-        <img src="images/icons/middlenav/transfer.png" alt="">
-        <span>{{ 'Sync with server'|trans }}</span>
+        <svg class="mb-2 text-secondary" width="24" height="24">
+            <use xlink:href="#refresh" />
+        </svg>
+        <span class="d-block text-secondary">{{ 'Sync with server'|trans }}</span>
     </a>
 </div>
 

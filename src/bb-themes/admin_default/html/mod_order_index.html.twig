@@ -143,7 +143,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="new-tab" data-bs-toggle="tab" data-bs-target="#tab-new" type="button" role="tab" aria-controls="index" aria-selected="true">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New order'|trans }}
@@ -210,12 +210,12 @@
                                 </td>
                                 <td>
                                     <a class="btn btn-icon" href="{{ '/order/manage'|alink }}/{{ order.id }}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg class="icon">
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
                                     <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }} " href="{{ 'api/admin/order/delete'|link({ 'id': order.id }) }}" data-api-redirect="{{ 'order'|alink }}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
                                     </a>

@@ -41,28 +41,19 @@
             <header class="navbar">
                 <div class="container-xl">
                     <a class="btn btn-link" href="{{ '/'|link }}" target="_blank">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-arrow-back-up"
-                            width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                            fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                            <path d="M9 13l-4 -4l4 -4m-4 4h11a4 4 0 0 1 0 8h-1"></path>
+                        <svg class="icon icon-tabler icon-tabler-arrow-back-up">
+                            <use xlink:href="#arrow-back-up" />
                         </svg>
                         <span class="ml-2">{{ 'Visit site'|trans }}</span>
                     </a>
                     <div class="navbar-nav flex-row order-md-last">
                         <div class="nav-item d-none d-md-flex me-3">
                             <div class="btn-list">
-                                <a href="https://github.com/boxbilling/boxbilling" class="btn" target="_blank"
-                                    rel="noreferrer">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <path
-                                            d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5">
-                                        </path>
+                                <a href="https://github.com/boxbilling/boxbilling" class="btn" target="_blank" rel="noreferrer">
+                                    <svg class="icon icon-tabler icon-tabler-arrow-back-up">
+                                        <use xlink:href="#brand-github" />
                                     </svg>
-                                    Source code
+                                    {{ 'Source code'|trans }}
                                 </a>
                             </div>
                         </div>
@@ -72,7 +63,7 @@
                                 data-bs-toggle="tooltip"
                                 data-bs-placement="bottom"
                                 data-bs-original-title="{{ 'Enable dark mode'|trans }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#moon" />
                                 </svg>
                             </a>
@@ -81,13 +72,17 @@
                                 data-bs-toggle="tooltip"
                                 data-bs-placement="bottom"
                                 data-bs-original-title="{{ 'Enable light mode'|trans }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#sun" />
                                 </svg>
                             </a>
                         </div>
                         <div class="nav-item dropdown">
-                            <a class="nav-link d-flex lh-1 text-reset p-0" href="{{ 'staff/profile'|alink }}" data-bs-toggle="dropdown" aria-label="Open user menu" aria-expanded="false">
+                            <a class="nav-link d-flex lh-1 text-reset p-0"
+                                href="{{ 'staff/profile'|alink }}"
+                                data-bs-toggle="dropdown"
+                                aria-label="Open user menu"
+                                aria-expanded="false">
                                 <span class="avatar avatar-sm" style="background-image: url({{ profile.email|gravatar }}&size=32)"></span>
                                 <div class="d-none d-xl-block ps-2">
                                     <div>{{ profile.name }}</div>
@@ -123,10 +118,10 @@
                     <div class="ms-auto mt-4 mb-3 d-flex gap-3">
                         {% if admin.system_is_allowed({ 'mod': 'client' }) %}
                             <a href="{{ 'client'|alink }}" class="btn position-relative">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#contacts" />
                                 </svg>
-                                <span>{{ 'Clients'|trans }}</span>
+                                {{ 'Clients'|trans }}
                             </a>
                         {% endif %}
 
@@ -143,10 +138,10 @@
                         {% if admin.system_is_allowed({ 'mod': 'order' }) %}
                             {% set count_orders = admin.order_get_statuses.failed_setup %}
                             <a href="{{ 'order'|alink({ 'status': 'failed_setup' }) }}" class="btn position-relative">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#orders" />
                                 </svg>
-                                <span class="d-block font-weight-medium">{{ 'Orders'|trans }}</span>
+                                {{ 'Orders'|trans }}
                                 {% if count_orders %}
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_orders }}</span>
                                 {% endif %}
@@ -156,10 +151,10 @@
                         {% if admin.system_is_allowed({ 'mod': 'invoice' }) %}
                             {% set count_invoices = admin.invoice_get_statuses.unpaid %}
                             <a href="{{ 'invoice'|alink({ 'status': 'unpaid' }) }}" class="btn position-relative">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#invoices" />
                                 </svg>
-                                <span>{{ 'Invoices'|trans }}</span>
+                                {{ 'Invoices'|trans }}
                                 {% if count_invoices %}
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_invoices }}</span>
                                 {% endif %}
@@ -170,19 +165,19 @@
                             {% set count_tickets = admin.support_ticket_get_statuses.open %}
                             {% set count_ptickets = admin.support_public_ticket_get_statuses.open %}
                             <a href="{{ 'support'|alink({ 'status': 'open' }) }}" class="btn position-relative">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#support" />
                                 </svg>
-                                <span>{{ 'Tickets'|trans }}</span>
+                                {{ 'Tickets'|trans }}
                                 {% if count_tickets %}
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_tickets }}</span>
                                 {% endif %}
                             </a>
                             <a href="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}" class="btn position-relative">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#chat" />
                                 </svg>
-                                <span>{{ 'Inquiries'|trans }}</span>
+                                {{ 'Inquiries'|trans }}
                                 {% if count_ptickets %}
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_ptickets }}</span>
                                 {% endif %}
@@ -199,7 +194,7 @@
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item">
                                 <a href="{{ '/'|alink }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="icon">
                                         <use xlink:href="#home" />
                                     </svg>
                                 </a>
@@ -224,166 +219,9 @@
 
     <div class="loading dim"></div>
 
-    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-        <symbol id="home">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </symbol>
-
-        <symbol id="login">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-        </symbol>
-
-        <symbol id="contacts">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </symbol>
-
-        <symbol id="orders">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-        </symbol>
-
-        <symbol id="invoices">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-        </symbol>
-
-        <symbol id="pic">
-            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-            <rect x="4" y="4" width="6" height="6" rx="1"></rect>
-            <rect x="4" y="14" width="6" height="6" rx="1"></rect>
-            <rect x="14" y="14" width="6" height="6" rx="1"></rect>
-            <line x1="14" y1="7" x2="20" y2="7"></line>
-            <line x1="17" y1="4" x2="17" y2="10"></line>
-        </symbol>
-
-        <symbol id="support">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-        </symbol>
-
-        <symbol id="chat">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </symbol>
-
-        <symbol id="info">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </symbol>
-
-        <symbol id="settings">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </symbol>
-
-        <symbol id="cog">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </symbol>
-
-        <symbol id="iPlugin">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
-        </symbol>
-
-        <symbol id="graphs">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-        </symbol>
-
-        <symbol id="edit">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </symbol>
-
-        <symbol id="delete">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </symbol>
-
-        <symbol id="close">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </symbol>
-
-        <symbol id="play">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </symbol>
-
-        <symbol id="pause">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </symbol>
-
-        <symbol id="chevron-right">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-        </symbol>
-
-        <symbol id="chevron-left">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-        </symbol>
-
-        <symbol id="plus">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </symbol>
-
-        <symbol id="refresh">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </symbol>
-
-        <symbol id="check">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-        </symbol>
-
-        <symbol id="link">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-        </symbol>
-
-        <symbol id="wifi">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-        </symbol>
-
-        <symbol id="eye">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-        </symbol>
-
-        <symbol id="eye-off">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-        </symbol>
-
-        <symbol id="mail">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </symbol>
-
-        <symbol id="download">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-        </symbol>
-
-        <symbol id="receipt-refund">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
-        </symbol>
-
-        <symbol id="dots-vertical">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-        </symbol>
-
-        <symbol id="moon">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </symbol>
-
-        <symbol id="sun">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-        </symbol>
-
-        <symbol id="arrow-sm-left">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-        </symbol>
-
-        <symbol id="key">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-        </symbol>
-
-        <symbol id="lock-closed">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-        </symbol>
-
-        <symbol id="lock-open">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-        </symbol>
-    </svg>
+    <div class="d-none">
+        {% include '../build/symbol/icons-sprite.svg' %}
+    </div>
 
     <script>
         // Switch light/dark theme
