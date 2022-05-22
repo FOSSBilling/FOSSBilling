@@ -7,9 +7,11 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use App\Models\User;
 use App\Models\Setting;
+use App\Models\Currency;
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class SetUp extends Command
 {
@@ -51,19 +53,33 @@ class SetUp extends Command
                     });
                     Schema::drop('setting');
                 }
+                if (Schema::hasTable('currency')) {
+
+                    DB::table('currency')
+                    ->lazyById()->each(function ($currency) {
+                        $row = Currency::firstOrCreate(['code'=>$currency->code],[
+                            'title'=>$currency->title,
+                            'code'=>$currency->code,
+                            'is_default'=>$currency->is_default,
+                            'conversion_rate'=>$currency->conversion_rate
+                        ]);
+                        $row->save();
+                    });
+                    Schema::drop('currency');
+                }
             }
         );
 
         // Model User
         $this->askStep(
-            'Add Alice User',
+            'Add Super Admin User',
             function () {
                 $user = User::create(
                     [
                         'id' => 1,
-                        'name' => 'Alice Hunter',
-                        'email' => 'alice@localhost',
-                        'password' => 'password'
+                        'name' => 'Admin',
+                        'email' => 'admin@localhost',
+                        'password' => Hash::make('password')
                     ]
                 );
             }
