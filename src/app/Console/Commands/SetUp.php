@@ -8,6 +8,7 @@ use Spatie\Permission\Models\Permission;
 use App\Models\User;
 use App\Models\Setting;
 use App\Models\Currency;
+use App\Models\Tax;
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
@@ -66,6 +67,21 @@ class SetUp extends Command
                         $row->save();
                     });
                     Schema::drop('currency');
+                }
+                if (Schema::hasTable('tax')) {
+
+                    DB::table('tax')
+                    ->lazyById()->each(function ($tax) {
+                        $row = Tax::firstOrCreate(['level'=>$tax->level,'country'=>$tax->country,'state'=>$tax->state],[
+                            'level'=>($tax->level === null ? 0: $tax->level),
+                            'name'=>$tax->name,
+                            'country'=>$tax->country,
+                            'state'=>$tax->state,
+                            'taxrate'=>$tax->taxrate
+                        ]);
+                        $row->save();
+                    });
+                    Schema::drop('tax');
                 }
             }
         );
