@@ -10,6 +10,7 @@ use App\Models\Setting;
 use App\Models\Currency;
 use App\Models\Tax;
 use App\Models\Pay_gateway;
+use App\Models\Product_category;
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
@@ -106,6 +107,20 @@ class SetUp extends Command
                         $row->save();
                     });
                     Schema::drop('pay_gateway');
+                }
+                //product_category table
+                if (Schema::hasTable('product_category')) {
+
+                    DB::table('product_category')
+                      ->lazyById()->each(function ($product_category) {
+                        $row = Product_category::firstOrCreate(['title'=>$product_category->title,'description'=>$product_category->description],[
+                            'title'=>$product_category->title,
+                            'description'=>$product_category->description,
+                            'icon_url'=>$product_category->icon_url
+                        ]);
+                        $row->save();
+                    });
+                    Schema::drop('product_category');
                 }
             }
         );
