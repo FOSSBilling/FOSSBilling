@@ -16,7 +16,6 @@ src/install/logs/*
 bb-test.php
 build
 composer.phar
-public
 report/*
 data/db
 
