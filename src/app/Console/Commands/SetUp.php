@@ -9,8 +9,8 @@ use App\Models\User;
 use App\Models\Setting;
 use App\Models\Currency;
 use App\Models\Tax;
-use App\Models\Pay_gateway;
-use App\Models\Product_category;
+use App\Models\PaymentGateway;
+use App\Models\ProductCategory;
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
@@ -94,7 +94,7 @@ class SetUp extends Command
 
                     DB::table('pay_gateway')
                       ->lazyById()->each(function ($pay_gateways) {
-                        $row = Pay_gateway::firstOrCreate(['name'=>$pay_gateways->name,'gateway'=>$pay_gateways->gateway,'accepted_currencies'=>$pay_gateways->accepted_currencies],[
+                        $row = PaymentGateway::firstOrCreate(['name'=>$pay_gateways->name,'gateway'=>$pay_gateways->gateway,'accepted_currencies'=>$pay_gateways->accepted_currencies],[
                             'name'=>$pay_gateways->name,
                             'gateway'=>$pay_gateways->gateway,
                             'accepted_currencies'=>$pay_gateways->accepted_currencies,
@@ -113,7 +113,7 @@ class SetUp extends Command
 
                     DB::table('product_category')
                       ->lazyById()->each(function ($product_category) {
-                        $row = Product_category::firstOrCreate(['title'=>$product_category->title,'description'=>$product_category->description],[
+                        $row = ProductCategory::firstOrCreate(['title'=>$product_category->title,'description'=>$product_category->description],[
                             'title'=>$product_category->title,
                             'description'=>$product_category->description,
                             'icon_url'=>$product_category->icon_url
