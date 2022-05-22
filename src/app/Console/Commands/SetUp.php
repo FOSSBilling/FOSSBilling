@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Setting;
 use App\Models\Currency;
 use App\Models\Tax;
+use App\Models\Pay_gateway;
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
@@ -42,6 +43,8 @@ class SetUp extends Command
             __("Would you like to migrate the database."),
             function () {
                 $this->call('migrate');
+
+                //settings table
                 if (Schema::hasTable('setting')) {
 
                     DB::table('setting')
@@ -54,6 +57,7 @@ class SetUp extends Command
                     });
                     Schema::drop('setting');
                 }
+                //currency table
                 if (Schema::hasTable('currency')) {
 
                     DB::table('currency')
@@ -68,6 +72,7 @@ class SetUp extends Command
                     });
                     Schema::drop('currency');
                 }
+                //tax table
                 if (Schema::hasTable('tax')) {
 
                     DB::table('tax')
@@ -82,6 +87,25 @@ class SetUp extends Command
                         $row->save();
                     });
                     Schema::drop('tax');
+                }
+                //pay_gateway table
+                if (Schema::hasTable('pay_gateway')) {
+
+                    DB::table('pay_gateway')
+                      ->lazyById()->each(function ($pay_gateways) {
+                        $row = Pay_gateway::firstOrCreate(['name'=>$pay_gateways->name,'gateway'=>$pay_gateways->gateway,'accepted_currencies'=>$pay_gateways->accepted_currencies],[
+                            'name'=>$pay_gateways->name,
+                            'gateway'=>$pay_gateways->gateway,
+                            'accepted_currencies'=>$pay_gateways->accepted_currencies,
+                            'enabled'=>$pay_gateways->enabled,
+                            'allow_single'=>$pay_gateways->allow_single,
+                            'allow_recurrent'=>$pay_gateways->allow_recurrent,
+                            'test_mode'=>$pay_gateways->test_mode,
+                            'config'=>$pay_gateways->config
+                        ]);
+                        $row->save();
+                    });
+                    Schema::drop('pay_gateway');
                 }
             }
         );
