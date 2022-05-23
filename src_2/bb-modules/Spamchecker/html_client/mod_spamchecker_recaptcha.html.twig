@@ -1,9 +1,0 @@
-{% if guest.extension_is_on({"mod":"spamchecker"}) %}
-{% set rc = guest.spamchecker_recaptcha %}
-    {% if rc.enabled %}
-        {% if rc.version == 2 %}
-            <script src='https://www.google.com/recaptcha/api.js' async defer></script>
-            <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
-        {% endif %}
-    {% endif %}
-{% endif %}

@@ -11,6 +11,8 @@ use App\Models\Currency;
 use App\Models\Tax;
 use App\Models\PaymentGateway;
 use App\Models\ProductCategory;
+use App\Models\Admin_group;
+use App\Models\Admin;
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +32,7 @@ class SetUp extends Command
      *
      * @var string
      */
-    protected $description = 'Install FossBilling';
+    protected $description = 'Install FOSSBilling';
 
     /**
      * Execute the console command.
@@ -45,6 +47,35 @@ class SetUp extends Command
             function () {
                 $this->call('migrate');
 
+                        // Model User
+        $this->askStep(
+            'Add Super Admin User',
+             function () {
+                 $user = User::create(
+                 [
+                     'id' => 5,
+                     'name' => 'Admin',
+                     'email' => 'admin@localhost',
+                     'password' => Hash::make('password')
+                 ]);
+             }
+         );
+         //Create the roles now so we can use the min the migration
+         $superadmin = Role::firstOrCreate(['name' => 'Super Admin']);
+         if (isset($user)){
+             $user = User::first();
+             $user->assignRole($superadmin);
+         }
+ 
+         $admin = Role::firstOrCreate(['name' => 'admin']);
+         $permission = Permission::firstOrCreate(['name' => 'view admin']);
+         $admin->givePermissionTo($permission);
+         $permission = Permission::firstOrCreate(['name' => 'edit settings']);
+         $admin->givePermissionTo($permission);
+ 
+         $staff = Role::firstOrCreate(['name' => 'staff']);
+        
+         $this->info("Created roles");
                 //settings table
                 if (Schema::hasTable('setting')) {
 
@@ -122,36 +153,58 @@ class SetUp extends Command
                     });
                     Schema::drop('product_category');
                 }
-            }
-        );
+                //admin_group table
+                if (Schema::hasTable('admin_group')) {
 
-        // Model User
-        $this->askStep(
-            'Add Super Admin User',
-            function () {
-                $user = User::create(
-                    [
-                        'id' => 1,
-                        'name' => 'Admin',
-                        'email' => 'admin@localhost',
-                        'password' => Hash::make('password')
-                    ]
-                );
-            }
-        );
+                    DB::table('admin_group')
+                      ->lazyById()->each(function ($admin_group) {
+                        $row = Admin_group::firstOrCreate(['name'=>$admin_group->name],[
+                            'name'=>$admin_group->name
+                        ]);
+                        $row->save();
+                    });
+                    Schema::drop('admin_group');
+                }
+                //admin table
+                $this->warn("Migrating admin and staff accounts");
+                if (Schema::hasTable('admin')) {
 
-        $this->askStep(
-            __("Add Roles"),
-            function () {
-                $superadmin = Role::firstOrCreate(['name' => 'Super Admin']);
-                $user = User::first();
-                $user->assignRole($superadmin);
+                    DB::table('admin')
+                      ->lazyById()->each(function ($admin) {
+                        $user = User::create(
+                            [
+                                'id' => $admin->id,
+                                'name' => $admin->name,
+                                'email' => $admin->email,
+                                'role' => $admin->role,
+                                'password' => $admin->pass
+                            ]);
+                        $role = Role::firstOrCreate(['name' => $admin->role]);
+                        $this->info("Migraded user $user->name with the role of $admin->role");
+                        $user->assignRole($role);
+                    });
+                    Schema::drop('admin');
+                }
+                //client table
+                $this->warn("Migrating client accounts");
+                if (Schema::hasTable('client')) {
 
-                $admin = Role::firstOrCreate(['name' => 'Admin']);
-                $permission = Permission::firstOrCreate(['name' => 'view admin']);
-                $admin->givePermissionTo($permission);
-                $permission = Permission::firstOrCreate(['name' => 'edit settings']);
-                $admin->givePermissionTo($permission);
+                    DB::table('client')
+                      ->lazyById()->each(function ($client) {
+                        $user = User::create(
+                            [
+                                'id' => $client->id,
+                                'name' => "$client->first_name $client->last_name",
+                                'email' => $client->email,
+                                'role' => $client->role,
+                                'password' => $client->pass
+                            ]);
+                        $role = Role::firstOrCreate(['name' => $client->role]);
+                        $this->info("Migraded user $user->name with the role of $client->role");
+                        $user->assignRole($role);
+                    });
+                    Schema::drop('client');
+                }
             }
         );
         return 0;
