@@ -141,6 +141,11 @@ We have a set of guidelines for those wishing to contribute to FOSSBilling, and 
 
 Your [pull requests](https://github.com/fossbilling/fossbilling/pulls) will be highly welcomed. If you're looking for something to start with, you can check the [open issues](https://github.com/fossbilling/fossbilling/issues) on our GitHub repository.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=FOSSBilling/FOSSBilling&type=Date)](https://star-history.com/#FOSSBilling%2FFOSSBilling=&Date=)
+
+
 **Got questions? Found a bug? Ideas for improvements?**
 
 Don't hesitate to create an [issue](https://github.com/fossbilling/fossbilling/issues), or join us on [Discord](https://fossbilling.org/discord) to say hi.
