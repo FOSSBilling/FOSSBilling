@@ -11,7 +11,7 @@ use App\Models\Currency;
 use App\Models\Tax;
 use App\Models\PaymentGateway;
 use App\Models\ProductCategory;
-use App\Models\Admin_group;
+use App\Models\AdminGroup;
 use App\Models\Admin;
 
 use Illuminate\Support\Facades\Schema;
@@ -158,7 +158,7 @@ class SetUp extends Command
 
                     DB::table('admin_group')
                       ->lazyById()->each(function ($admin_group) {
-                        $row = Admin_group::firstOrCreate(['name'=>$admin_group->name],[
+                        $row = AdminGroup::firstOrCreate(['name'=>$admin_group->name],[
                             'name'=>$admin_group->name
                         ]);
                         $row->save();
