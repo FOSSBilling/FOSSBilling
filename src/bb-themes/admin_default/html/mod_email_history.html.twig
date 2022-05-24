@@ -11,7 +11,7 @@
     {% if config.log_enabled is not defined or config.log_enabled != 1 %}
         <div class="alert alert-primary alert-dismissible fade show mb-3" role="alert">
             <strong>{{ 'Information'|trans }}:</strong> {{ 'Email logging is not enabled. If you want to log sent mails to database, enable it in'|trans }}
-                <a href="{{'extension/settings/email'|alink}}"> {{ 'email settings.'|trans }}</a>
+                <a href="{{ 'extension/settings/email'|alink }}"> {{ 'email settings.'|trans }}</a>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     {% endif %}
@@ -50,7 +50,7 @@
             <td>{{ email.created_at|date('Y-m-d') }}</td>
             <td>
                 <a class="btn btn-icon" href="{{ '/email'|alink }}/{{ email.id }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="icon">
                         <use xlink:href="#edit" />
                     </svg>
                 </a>
@@ -58,7 +58,7 @@
                     href="{{ 'api/admin/email/email_delete'|link({ 'id': email.id }) }}"
                     data-api-redirect="{{ 'email/history'|alink }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="icon">
                         <use xlink:href="#delete" />
                     </svg>
                 </a>
@@ -72,7 +72,7 @@
         </tbody>
     </table>
 
-    <div class="card-footer d-flex align-items-center">
+    <div class="card-footer d-flex align-items-center justify-content-between">
         {% include "partial_batch_delete.html.twig" with { 'action': 'admin/email/batch_delete' } %}
         {% include "_pagination.html.twig" with { 'list': emails, 'url': 'email/history' } %}
     </div>

@@ -1,13 +1,11 @@
 {% if list.pages > 1 %}
-{% set currentPage = request.page|default(1) %}
-{% set paginator = guest.system_paginator({ 'total': list.total, 'page': currentPage, 'per_page': list.per_page }) %}
-
-{# <div class="pagination"> #}
+    {% set currentPage = request.page|default(1) %}
+    {% set paginator = guest.system_paginator({ 'total': list.total, 'page': currentPage, 'per_page': list.per_page }) %}
     <ul class="pagination m-0">
         {% if paginator.currentpage != 1 %}
         <li class="page-item">
             <a class="page-link" href="{{ url|alink({}|merge(request)|slice(1,request|length)|merge({ 'page': currentPage-1 })) }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#chevron-left" />
                 </svg>
             </a>
@@ -44,7 +42,7 @@
         {% if paginator.currentpage != paginator.numpages %}
         <li class="page-item">
             <a class="page-link" href="{{ url|alink({}|merge(request)|slice(1,request|length)|merge({ 'page': currentPage + 1 })) }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#chevron-right" />
                 </svg>
             </a>

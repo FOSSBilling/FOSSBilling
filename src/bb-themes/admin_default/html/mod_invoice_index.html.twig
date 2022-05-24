@@ -165,7 +165,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-new" role="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New Invoice'|trans }}
@@ -216,7 +216,7 @@
                             <td class="text-center">{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
                             <td>
                                 {% if invoice.status == 'paid' %}
-                                    <span class="badge bg-suddess me-1"></span>
+                                    <span class="badge bg-success me-1"></span>
                                 {% endif %}
                                 {% if invoice.status == 'unpaid' %}
                                     <span class="badge bg-danger me-1"></span>
@@ -231,7 +231,7 @@
                             </td>
                             <td>
                                 <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
@@ -239,7 +239,7 @@
                                     href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id }) }}"
                                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                                     data-api-reload="1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
                                 </a>
@@ -253,7 +253,7 @@
                     </tbody>
                 </table>
 
-                <div class="card-footer d-flex align-items-center">
+                <div class="card-footer d-flex align-items-center justify-content-between">
                     {% include "partial_batch_delete.html.twig" with { 'action': 'admin/invoice/batch_delete' } %}
                     {% include "_pagination.html.twig" with { 'list': invoices, 'url': 'invoice' } %}
                 </div>

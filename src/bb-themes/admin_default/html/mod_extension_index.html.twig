@@ -40,63 +40,59 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for ext in admin.extension_get_list %}
-                <tr>
-                    <td>
-                        <img src="{{ ext.icon_url|default('images/icons/middlenav/cog.png') }}" alt="{{ ext.name }}" style="width: 32px; height: 32px;"/>
-                    </td>
-                    <td>
-                        <strong>{{ ext.name }}</strong> {{ ext.version }}<br />by <a href="{{ ext.author_url }}" target="_blank">{{ ext.author }}</a>
-                    </td>
-                    <td>
-                        {{ ext.description|bbmd }}
-                        <a href="{{ ext.project_url }}" target="_blank" title="Project details">{{ 'Learn more'|trans }}</a>
-                    </td>
-                    <td>
-                        {% if ext.type == 'mod' %}
-                            {% if ext.status == 'installed' %}
-                            <a class="btn btn-icon api-link" href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="Module was deactivated" title="{{ 'Deactivate'|trans }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <use xlink:href="#close" />
-                                </svg>
-                            </a>
+                    {% for ext in admin.extension_get_list %}
+                    <tr>
+                        <td>
+                            <img src="{{ ext.icon_url|default('images/icons/middlenav/cog.png') }}" alt="{{ ext.name }}" style="width: 32px; height: 32px;">
+                        </td>
+                        <td>
+                            <strong>{{ ext.name }}</strong> {{ ext.version }}<br>
+                            <span>by <a href="{{ ext.author_url }}" target="_blank">{{ ext.author }}</a></span>
+                        </td>
+                        <td>
+                            {{ ext.description }}<br>
+                            <a href="{{ ext.project_url }}" target="_blank" title="Project details">{{ 'Learn more'|trans }}</a>
+                        </td>
+                        <td>
+                            {% if ext.type == 'mod' %}
+                                {% if ext.status == 'installed' %}
+                                <a class="btn btn-icon api-link" href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="Module was deactivated" title="{{ 'Deactivate'|trans }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#close" />
+                                    </svg>
+                                </a>
+                                {% else %}
+                                <a class="btn btn-icon api-link" href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-jsonp="onAfterModuleActivated">
+                                    <svg class="icon">
+                                        <use xlink:href="#play" />
+                                    </svg>
+                                </a>
+                                {% endif %}
                             {% else %}
-                            <a class="btn btn-icon api-link" href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-jsonp="onAfterModuleActivated">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <use xlink:href="#play" />
-                                </svg>
-                            </a>
+                                &nbsp;
                             {% endif %}
-                        {% else %}
-                        &nbsp;
-                        {% endif %}
 
-                        {% if ext.has_settings %}
-                            <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <use xlink:href="#edit" />
-                                </svg>
-                            </a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="4">{{ 'The list is empty'|trans }}</td>
+                            {% if ext.has_settings %}
+                                <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#edit" />
+                                    </svg>
+                                </a>
+                            {% endif %}
+                        </td>
                     </tr>
-                {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                        </tr>
+                    {% endfor %}
                 </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="4"></td>
-                    </tr>
-                </tfoot>
             </table>
 
-            <div class="help">
+            <div class="card-body">
                 <h5>BoxBilling modules on extension site</h5>
             </div>
-            {% include "partial_extensions.html.twig" %}
+            {% include 'partial_extensions.html.twig' %}
         </div>
 
         <div class="tab-pane fade" id="tab-core" role="tabpanel">
@@ -106,10 +102,10 @@
 
                 {{ admin.system_release_notes|bbmd }}
                 <a href="{{ 'api/admin/extension/update_core'|link }}" class="btn btn-primary api-link" data-api-confirm="Make sure that you have made database and files backups before proceeding with automatic update. Click OK when you are ready to continue." data-api-msg="Update complete">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="icon">
                         <use xlink:href="#refresh" />
                     </svg>
-                    <span>Update BoxBilling</span>
+                    {{ 'Update BoxBilling'|trans }}
                 </a>
                 <hr>
 
