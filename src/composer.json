@@ -25,7 +25,7 @@
         "phpmailer/phpmailer": "6.6.0",
         "mustangostang/spyc": "^0.6.3",
         "michelf/php-markdown": "1.9.1",
-        "stripe/stripe-php": "^7.92.0",
+        "stripe/stripe-php": "^8.3.0",
         "docnet/tfpdf": "^2.2",
         "guzzlehttp/guzzle": "^7.4.2",
         "filp/whoops": "^2.14",
