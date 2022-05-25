@@ -6,7 +6,7 @@
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
             <a href="{{ '/'|alink }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon" width="24">
                     <use xlink:href="#home" />
                 </svg>
             </a>
@@ -28,7 +28,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New response'|trans }}
@@ -39,7 +39,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new-category" data-bs-toggle="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New category'|trans }}
@@ -71,12 +71,12 @@
                     </td>
                     <td>
                         <a class="btn btn-icon" href="{{ '/support/canned'|alink }}/{{ response.id }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#edit" />
                             </svg>
                         </a>
                         <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/support/canned_delete'|link({ 'id': response.id }) }}" data-api-redirect="{{ 'support/canned-responses'|alink }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#delete" />
                             </svg>
                         </a>
@@ -136,7 +136,7 @@
                         </td>
                         <td>
                             <a class="btn btn-icon" href="{{ '/support/canned-category'|alink }}/{{ cat_id }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
@@ -144,7 +144,7 @@
                                 href="{{ 'api/admin/support/canned_category_delete'|link({ 'id': cat_id }) }}"
                                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                                 data-api-redirect="{{ 'support/canned-responses'|alink }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
                             </a>

@@ -23,7 +23,7 @@
                     <div class="row align-items-center">
                         <div class="col-auto">
                             <span class="bg-blue text-white avatar">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#contacts" />
                                 </svg>
                             </span>
@@ -42,7 +42,9 @@
                     <div class="row align-items-center">
                         <div class="col-auto">
                         <span class="bg-green text-white avatar">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="6" cy="19" r="2"></circle><circle cx="17" cy="19" r="2"></circle><path d="M17 17h-11v-14h-2"></path><path d="M6 5l14 1l-1 7h-13"></path></svg>
+                            <svg class="icon">
+                                <use xlink:href="#orders" />
+                            </svg>
                         </span>
                         </div>
                         <div class="col">
@@ -59,7 +61,9 @@
                     <div class="row align-items-center">
                         <div class="col-auto">
                             <span class="bg-danger text-white avatar">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M16.7 8a3 3 0 0 0 -2.7 -2h-4a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6h-4a3 3 0 0 1 -2.7 -2"></path><path d="M12 3v3m0 12v3"></path></svg>
+                                <svg class="icon">
+                                    <use xlink:href="#currency-dollar" />
+                                </svg>
                             </span>
                         </div>
                         <div class="col">
@@ -76,7 +80,7 @@
                     <div class="row align-items-center">
                         <div class="col-auto">
                         <span class="bg-warning text-white avatar">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#support" />
                             </svg>
                         </span>
@@ -205,55 +209,57 @@
 
     {% set invoicesUnpaid = admin.invoice_get_list({ 'status': 'unpaid' }) %}
     {% if invoicesUnpaid.list|length > 0 %}
-    <div class="col-6">
+    <div class="col-lg-6">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">{{ 'Invoices'|trans }}</h3>
                 <div class="card-actions">
                     <a href="{{ '/invoice'|alink }}" class="btn-action">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="icon">
                             <use xlink:href="#dots-vertical" />
                         </svg>
                     </a>
                 </div>
             </div>
 
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <tbody>
-                    {% for invoice in invoicesUnpaid.list %}
-                    <tr>
-                        <td class="w-1">
-                            <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
-                        </td>
-                        <td class="w-1">
-                            <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">
-                                <span class="avatar avatar-xs" style="background-image: url({{ invoice.buyer.email|gravatar }}&size=24"></span>
-                            </a>
-                        </td>
-                        <td>
-                            <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
-                        </td>
-                        <td class="text-center">{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
-                        <td class="text-center">{{ invoice.created_at|date('Y-m-d') }}</td>
-                        <td>
-                            {% if invoice.status == 'paid' %}
-                                <span class="badge bg-suddess me-1"></span>
-                            {% endif %}
-                            {% if invoice.status == 'unpaid' %}
-                                <span class="badge bg-danger me-1"></span>
-                            {% endif %}
-                            {% if invoice.status == 'refunded' %}
-                                <span class="badge bg-warning me-1"></span>
-                            {% endif %}
-                            {% if invoice.status == 'canceled' %}
-                                <span class="badge bg-secondary me-1"></span>
-                            {% endif %}
-                            {{ mf.status_name(invoice.status) }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <tbody>
+                        {% for invoice in invoicesUnpaid.list %}
+                        <tr>
+                            <td class="w-1">
+                                <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
+                            </td>
+                            <td class="w-1">
+                                <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">
+                                    <span class="avatar avatar-xs" style="background-image: url({{ invoice.buyer.email|gravatar }}&size=24"></span>
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
+                            </td>
+                            <td class="text-center">{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
+                            <td class="text-center">{{ invoice.created_at|date('Y-m-d') }}</td>
+                            <td>
+                                {% if invoice.status == 'paid' %}
+                                    <span class="badge bg-success me-1"></span>
+                                {% endif %}
+                                {% if invoice.status == 'unpaid' %}
+                                    <span class="badge bg-danger me-1"></span>
+                                {% endif %}
+                                {% if invoice.status == 'refunded' %}
+                                    <span class="badge bg-warning me-1"></span>
+                                {% endif %}
+                                {% if invoice.status == 'canceled' %}
+                                    <span class="badge bg-secondary me-1"></span>
+                                {% endif %}
+                                {{ mf.status_name(invoice.status) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
     {% endif %}
@@ -269,31 +275,33 @@
                     </span>
                     <div class="card-actions">
                         <a href="{{ '/order'|alink }}" class="btn-action">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#dots-vertical" />
                             </svg>
                         </a>
                     </div>
                 </div>
 
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <tbody>
-                    {% for order in orders.list %}
-                        <tr title="{{ order.created_at|timeago }} {{ 'ago'|trans }}">
-                            <td>
-                                <a href="{{ 'client/manage'|alink }}/{{ order.client_id }}">{{ order.client.first_name }} {{ order.client.last_name }}</a>
-                            </td>
-                            <td>
-                                <a href="{{ 'order/manage'|alink }}/{{ order.id }}">{{ order.title|truncate(35) }}</a>
-                            </td>
+                <div class="table-responsive">
+                    <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <tbody>
+                        {% for order in orders.list %}
+                            <tr title="{{ order.created_at|timeago }} {{ 'ago'|trans }}">
+                                <td>
+                                    <a href="{{ 'client/manage'|alink }}/{{ order.client_id }}">{{ order.client.first_name }} {{ order.client.last_name }}</a>
+                                </td>
+                                <td>
+                                    <a href="{{ 'order/manage'|alink }}/{{ order.id }}">{{ order.title|truncate(35) }}</a>
+                                </td>
+                            </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="2" align="center">{{ 'The list is empty'|trans }}</td>
                         </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="2" align="center">{{ 'The list is empty'|trans }}</td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -407,10 +415,10 @@
 
         <div class="card">
             <div class="tab-content" id="tabs">
-                <div class="tab-pane show active" id="tab-index" role="tabpanel">
+                <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                     <table class="table table-vcenter card-table table-striped">
                         <tbody>
-                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'only_clients': 1}) %}
+                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'only_clients': 1 }) %}
                             {% for i, event in events.list %}
                             <tr>
                                 <td class="w-1">
@@ -434,7 +442,7 @@
                     </table>
                 </div>
 
-                <div class="tab-pane" id="tab-staff" role="tabpanel">
+                <div class="tab-pane fade" id="tab-staff" role="tabpanel">
                     <table class="table table-vcenter card-table table-striped">
                         <tbody>
                             {% set events = admin.activity_log_get_list({ 'per_page': 10, 'only_staff': 1 }) %}

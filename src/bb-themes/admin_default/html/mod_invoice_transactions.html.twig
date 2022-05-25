@@ -144,17 +144,17 @@
                 <td>{{ tx.created_at|date('Y-m-d H:i') }}</td>
                 <td>
                     <a class="btn btn-icon" href="{{ 'invoice/transaction'|alink }}/{{ tx.id }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="icon">
                             <use xlink:href="#edit" />
                         </svg>
                     </a>
                     <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': tx.id }) }}" data-api-msg="Processed" title="Process again">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="icon">
                             <use xlink:href="#refresh" />
                         </svg>
                     </a>
                     <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': tx.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="icon">
                             <use xlink:href="#delete" />
                         </svg>
                     </a>
@@ -168,7 +168,7 @@
         </tbody>
     </table>
 
-    <div class="card-footer d-flex align-items-center">
+    <div class="card-footer d-flex align-items-center justify-content-between">
         {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/invoice/batch_delete_transaction '} %}
         {% include '_pagination.html.twig' with { 'list': transactions, 'url': 'invoice/transactions' } %}
     </div>
