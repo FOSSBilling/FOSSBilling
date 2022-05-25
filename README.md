@@ -12,14 +12,12 @@
 [![Download Latest](https://img.shields.io/github/downloads/fossbilling/fossbilling/total)](https://github.com/fossbilling/fossbilling/releases/latest)
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
 [![Discord](https://img.shields.io/discord/747432407757488179?color=%237289FA&logo=discord&logoColor=%23FFF)](https://fossbilling.org/discord)
-[![fossbilling Issues](https://img.shields.io/github/issues/fossbilling/fossbilling.svg?style=popout)](https://github.com/fossbilling/fossbilling/issues)
-[![fossbilling Demo](https://img.shields.io/badge/fossbilling-demo-blue)](https://demo.fossbilling.org)
-![fossbilling Size](https://img.shields.io/github/repo-size/fossbilling/fossbilling.svg?style=popout)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
 [![CodeFactor](https://www.codefactor.io/repository/github/fossbilling/fossbilling/badge)](https://www.codefactor.io/repository/github/fossbilling/fossbilling)
-
+<img alt="open collective badge" src="https://opencollective.com/fossbilling/tiers/badge.svg?color=brightgreen" />
 </div>
+
 
 **FOSSBilling** is a free open source, billing and client management solution. Whatever the size of your online services business, whether a startup or established, FOSSBilling can help you to automate your invoicing, incoming payments, and client management and communication.
 
