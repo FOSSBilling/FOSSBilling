@@ -141,7 +141,7 @@ Your [pull requests](https://github.com/fossbilling/fossbilling/pulls) will be h
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=FOSSBilling/FOSSBilling&type=Date)](https://star-history.com/#FOSSBilling%2FFOSSBilling=&Date=)
+[![Star History Chart](https://api.star-history.com/svg?repos=FOSSBilling/FOSSBilling&type=Date)](https://star-history.com/#FOSSBilling/FOSSBilling&Date)
 
 
 **Got questions? Found a bug? Ideas for improvements?**
