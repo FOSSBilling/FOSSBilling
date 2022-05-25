@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "author": "FOSSBilling Team",
   "homepage": "https://fossbilling.org",
-  "license" : "Apache License 2.0",
+  "license": "Apache License 2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/FOSSBilling/FOSSBilling.git"
   },
   "issues": {
-    "url" : "https://github.com/FOSSBilling/FOSSBilling/issues"
+    "url": "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
   "dependencies": {
     "@tabler/core": "^1.0.0-beta9",
@@ -28,13 +28,14 @@
     "bootstrap-markdown": "^2.10.0",
     "gulp": "^4.0.2",
     "gulp-autoprefixer": "^8.0.0",
+    "gulp-cheerio": "^1.0.0",
     "gulp-chug": "^0.5.1",
     "gulp-concat": "^2.6.1",
     "gulp-postcss": "^9.0.1",
     "gulp-sass": "^5.1.0",
+    "gulp-svg-sprite": "^1.5.0",
     "gulp-uglify": "^3.0.2",
     "gulp-uglifycss": "^1.1.0",
-    "gulp.spritesmith": "^6.12.1",
     "jquery": "^3.6.0",
     "upath": "^2.0.1",
     "yargs": "^17.4.1"

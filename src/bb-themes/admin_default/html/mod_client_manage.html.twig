@@ -9,8 +9,8 @@
 {% block breadcrumbs %}
 <ul class="breadcrumb">
     <li class="breadcrumb-item">
-        <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        <svg class="icon">
+            <use xlink:href="#home" />
         </svg>
     </li>
     <li class="breadcrumb-item">
@@ -23,31 +23,31 @@
 {% block content %}
     <ul class="nav nav-tabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-info" role="tab" aria-controls="index" aria-selected="true">{{ 'Profile'|trans }}</button>
+            <a class="nav-link active" href="#tab-info" data-bs-toggle="tab" role="tab">{{ 'Profile'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-profile" role="tab" aria-controls="profile" aria-selected="false">{{ 'Edit'|trans }}</button>
+            <a class="nav-link" href="#tab-profile" data-bs-toggle="tab" role="tab">{{ 'Edit'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-orders" role="tab" aria-controls="orders" aria-selected="false">{{ 'Orders'|trans }}</button>
+            <a class="nav-link" href="#tab-orders" data-bs-toggle="tab" role="tab">{{ 'Orders'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-invoice" role="tab" aria-controls="orders" aria-selected="false">{{ 'Invoices'|trans }}</button>
+            <a class="nav-link" href="#tab-invoice" data-bs-toggle="tab" role="tab">{{ 'Invoices'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-support" role="tab" aria-controls="orders" aria-selected="false">{{ 'Tickets'|trans }}</button>
+            <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Tickets'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-balance" role="tab" aria-controls="orders" aria-selected="false">{{ 'Payments'|trans }}</button>
+            <a class="nav-link" href="#tab-balance" data-bs-toggle="tab" role="tab">{{ 'Payments'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-history" role="tab" aria-controls="orders" aria-selected="false">{{ 'Logins'|trans }}</button>
+            <a class="nav-link" href="#tab-history" data-bs-toggle="tab" role="tab">{{ 'Logins'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-emails" role="tab" aria-controls="orders" aria-selected="false">{{ 'Emails'|trans }}</button>
+            <a class="nav-link" href="#tab-emails" data-bs-toggle="tab" role="tab">{{ 'Emails'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-transactions" role="tab" aria-controls="transactions" aria-selected="false">{{ 'Transactions'|trans }}</button>
+            <a class="nav-link" href="#tab-transactions" data-bs-toggle="tab" role="tab">{{ 'Transactions'|trans }}</a>
         </li>
     </ul>
 
@@ -60,23 +60,23 @@
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <tbody>
                         <tr>
-                            <td>{{ 'ID'|trans }}:</td>
+                            <td class="w-50 text-end">{{ 'ID'|trans }}:</td>
                             <td>{{ client.id }}</td>
                         </tr>
                         <tr>
-                            <td>{{ 'Name'|trans }}:</td>
-                            <td><strong class="red">{{ client.first_name }} {{ client.last_name }}</strong></td>
+                            <td class="text-end">{{ 'Name'|trans }}:</td>
+                            <td><strong class="text-danger">{{ client.first_name }} {{ client.last_name }}</strong></td>
                         </tr>
                         <tr>
-                            <td>{{ 'Company'|trans }}:</td>
-                            <td><strong class="green">{{ client.company|default('-') }}</strong></td>
+                            <td class="text-end">{{ 'Company'|trans }}:</td>
+                            <td><strong class="text-success">{{ client.company|default('-') }}</strong></td>
                         </tr>
                         <tr>
-                            <td>{{ 'Email'|trans }}:</td>
+                            <td class="text-end">{{ 'Email'|trans }}:</td>
                             <td>{{ client.email }}</td>
                         </tr>
                         <tr>
-                            <td>{{ 'Status'|trans }}:</td>
+                            <td class="text-end">{{ 'Status'|trans }}:</td>
                             <td>
                                 {% if client.status == 'active' %}
                                     <span class="badge bg-success me-1"></span>
@@ -87,21 +87,26 @@
                                 {% if client.status == 'canceled' %}
                                     <span class="badge bg-secondary me-1"></span>
                                 {% endif %}
-                                {{ mf.status_name(client.status) }}</td>
+                                {{ mf.status_name(client.status) }}
+                            </td>
                         </tr>
                         <tr>
-                            <td>{{ 'Group'|trans }}:</td>
+                            <td class="text-end">{{ 'Group'|trans }}:</td>
                             <td>{{ client.group|default('-') }}</td>
                         </tr>
                         <tr>
-                            <td>{{ 'Currency'|trans }}:</td>
+                            <td class="text-end">{{ 'Currency'|trans }}:</td>
                             <td>{{ client.currency|default('-') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-end">{{ 'Fund balance'|trans }}:</td>
+                            <td class="text-danger fw-bold">{{ mf.currency_format(client.balance, client.currency) }}</td>
                         </tr>
                         {% if client.notes %}
                         <tr>
-                            <td>{{ 'Notes'|trans }}:</td>
+                            <td class="text-end">{{ 'Notes'|trans }}:</td>
                             <td>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#support" />
                                 </svg>
                                 <a href="#tab-profile" data-bs-toggle="tab" role="button">{{ client.notes }}</a>
@@ -109,22 +114,22 @@
                         </tr>
                         {% endif %}
                         <tr>
-                            <td>IP:</td>
+                            <td class="text-end">IP:</td>
                             <td>{{ client.ip|default('-') }} {{ client.ip|ipcountryname|default('Unknown') }}</td>
                         </tr>
                         <tr>
-                            <td>{{ 'API Key'|trans }}:</td>
+                            <td class="text-end">{{ 'API Key'|trans }}:</td>
                             <td>{{ client.api_token|default('-') }}</td>
                         </tr>
                         <tr>
-                            <td>{{ 'Address'|trans }}:</td>
+                            <td class="text-end">{{ 'Address'|trans }}:</td>
                             <td>
                                 <span class="flag flag-{{ client.country }}" title="{{ guest.system_countries[client.country] }}"></span>
                                 {{ guest.system_countries[client.country] }} {{ client.state }} {{ client.address_1 }} {{ client.address_2 }} {{ client.city }} {{ client.postcode }}
                             </td>
                         </tr>
                         <tr>
-                            <td>{{ 'Registered at'|trans }}:</td>
+                            <td class="text-end">{{ 'Registered at'|trans }}:</td>
                             <td>{{ client.created_at|date('M d, Y') }}</td>
                         </tr>
                     </tbody>
@@ -133,7 +138,7 @@
 
             <div class="card-footer text-center">
                 <a href="{{ 'client/login'|alink }}/{{ client.id }}" class="d-inline-block mx-1 btn bg-light bg-gradient" target="_blank">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
                         <use xlink:href="#login" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Login to client area'|trans }}</span>
@@ -142,7 +147,7 @@
                     href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'client'|alink }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
                         <use xlink:href="#delete" />
                     </svg>
                     <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
@@ -437,8 +442,8 @@
                             </td>
                             <td>
                                 <a class="btn btn-icon" href="{{ '/order/manage'|alink }}/{{ order.id }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                                    <svg class="icon">
+                                        <use xlink:href="#settings" />
                                     </svg>
                                 </a>
                             </td>
@@ -454,8 +459,8 @@
 
             <div class="card-body">
                 <a href="{{ 'order'|alink({ 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <svg class="icon">
+                        <use xlink:href="#plus" />
                     </svg>
                     {{ 'New order'|trans }}
                 </a>
@@ -491,7 +496,7 @@
                             <td>{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
                             <td>
                                 {% if invoice.status == 'paid' %}
-                                    <span class="badge bg-suddess me-1"></span>
+                                    <span class="badge bg-success me-1"></span>
                                 {% endif %}
                                 {% if invoice.status == 'unpaid' %}
                                     <span class="badge bg-danger me-1"></span>
@@ -506,7 +511,7 @@
                             </td>
                             <td>
                                 <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
@@ -524,7 +529,7 @@
                     <a class="btn btn-primary api-link"
                         href="{{ 'api/admin/invoice/prepare'|link({ 'client_id': client.id }) }}"
                         data-api-jsonp="onAfterInvoicePrepared">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="icon">
                             <use xlink:href="#plus" />
                         </svg>
                         {{ 'New invoice'|trans }}
@@ -572,8 +577,8 @@
                             </td>
                             <td>
                                 <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    <svg class="icon">
+                                        <use xlink:href="#edit" />
                                     </svg>
                                 </a>
                             </td>
@@ -589,8 +594,8 @@
 
             <div class="card-body">
                 <a href="{{ 'support'|alink({ 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    <svg class="icon">
+                        <use xlink:href="#plus" />
                     </svg>
                     {{ 'New support ticket'|trans }}
                 </a>
@@ -612,7 +617,6 @@
                             <th class="w-1"></th>
                         </tr>
                     </thead>
-
                     <tbody>
                         {% set payments = admin.client_balance_get_list({ 'per_page': 20, 'client_id': client.id }) %}
                         {% for i, tx in payments.list %}
@@ -624,7 +628,7 @@
                                 <a class="btn btn-icon api-link"
                                     href="{{ 'api/admin/client/balance_delete'|link({ 'id': tx.id }) }}"
                                     data-api-confirm="{{ 'Are you sure?'|trans }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
                                 </a>
@@ -636,19 +640,13 @@
                         </tr>
                         {% endfor %}
                     </tbody>
-
-                    <tfoot>
-                        <tr>
-                            <th class="currency" colspan="4">{{ 'Balance'|trans }}: {{ mf.currency_format(client.balance, client.currency) }}</th>
-                        </tr>
-                    </tfoot>
                 </table>
             </div>
+            <hr>
 
             <div class="card-body">
                 <h5>{{ 'Add funds for client'|trans }}</h5>
-                <form
-                    class="api-form save"
+                <form class="api-form"
                     method="post"
                     action="{{ 'api/admin/client/balance_add_funds'|link }}"
                     data-api-msg="{{ 'Funds added'|trans }}">
@@ -668,10 +666,11 @@
                     </div>
 
                     <input type="hidden" name="id" value="{{ client.id }}">
+
                     <div class="text-end">
                         <button class="btn btn-primary" type="submit">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                            <svg class="icon">
+                                <use xlink:href="#plus" />
                             </svg>
                             {{ 'Add funds'|trans }}
                         </button>
@@ -782,8 +781,8 @@
                             <td>{{ mf.status_name(tx.status) }}</td>
                             <td>{{ tx.created_at|bb_datetime }}</td>
                             <td>
-                                <a class="bb-button btn14" href="{{ '/invoice/transaction'|alink }}/{{ tx.id }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <a class="btn btn-icon" href="{{ '/invoice/transaction'|alink }}/{{ tx.id }}">
+                                    <svg class="icon">
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
@@ -796,6 +795,7 @@
                     {% endfor %}
                     </tbody>
                 </table>
+            </div>
         </div>
     </div>
 </div>

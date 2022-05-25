@@ -73,31 +73,31 @@
     {{ order_actions }}
     {% if order.status == 'active' %}
     <a class="d-inline-block mx-1 btn bg-light bg-gradient" type="button" id="get-epp">
-        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="mb-2 text-secondary" width="24" height="24">
             <use xlink:href="#key" />
         </svg>
         <span class="d-block text-secondary">{{ 'Get EPP'|trans }}</span>
     </a>
     <a class="d-inline-block mx-1 btn btn-danger bg-gradient" type="button" id="domain-unlock">
-        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="mb-2" width="24" height="24">
             <use xlink:href="#lock-open" />
         </svg>
         <span class="d-block">{{ 'Unlock'|trans }}</span>
     </a>
     <a class="d-inline-block mx-1 btn bg-light bg-gradient" type="button" id="domain-lock">
-        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="mb-2 text-secondary" width="24" height="24">
             <use xlink:href="#lock-closed" />
         </svg>
         <span class="d-block text-secondary">{{ 'Lock'|trans }}</span>
     </a>
     <a class="d-inline-block mx-1 btn btn-danger bg-gradient" type="button" id="domain-disable-pp">
-        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="mb-2" width="24" height="24">
             <use xlink:href="#eye" />
         </svg>
         <span class="d-block">{{ 'Disable privacy'|trans }}</span>
     </a>
     <a class="d-inline-block mx-1 btn bg-light bg-gradient" type="button" id="domain-enable-pp">
-        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="mb-2 text-secondary" width="24" height="24">
             <use xlink:href="#eye-off" />
         </svg>
         <span class="d-block text-secondary">{{ 'Enable privacy'|trans }}</span>

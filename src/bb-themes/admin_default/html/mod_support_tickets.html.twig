@@ -145,7 +145,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New ticket'|trans }}
@@ -153,7 +153,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-email" data-bs-toggle="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New email'|trans }}
@@ -223,7 +223,7 @@
                         <td>{{ ticket.helpdesk.name }}</td>
                         <td>
                             <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}#reply-box">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
@@ -231,7 +231,7 @@
                                 href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}"
                                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                                 data-api-redirect="{{ 'support'|alink }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
                             </a>
@@ -245,7 +245,7 @@
                 </tbody>
             </table>
 
-            <div class="card-footer d-flex align-items-center">
+            <div class="card-footer d-flex align-items-center justify-content-between">
                 {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/support/batch_delete' } %}
                 {% include '_pagination.html.twig' with { 'list': tickets, 'url': 'support' } %}
             </div>

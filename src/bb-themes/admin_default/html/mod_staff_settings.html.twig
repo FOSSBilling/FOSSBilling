@@ -10,7 +10,7 @@
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
             <a href="{{ '/'|alink }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
@@ -32,7 +32,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New staff member'|trans }}
@@ -43,7 +43,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new-group" data-bs-toggle="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New group'|trans }}
@@ -92,12 +92,12 @@
                         </td>
                         <td>
                             <a class="btn btn-icon" href="{{ '/staff/manage'|alink }}/{{ member.id }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'extension/settings/staff'|alink }}" href="{{ 'api/admin/staff/delete'|link({ 'id': member.id }) }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
                             </a>
@@ -211,12 +211,12 @@
                         </td>
                         <td>
                             <a class="btn btn-icon" href="{{ '/staff/group'|alink }}/{{ group.id }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'extension/settings/staff'|alink }}" href="{{ 'api/admin/staff/group_delete'|link({ 'id': group.id }) }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
                             </a>

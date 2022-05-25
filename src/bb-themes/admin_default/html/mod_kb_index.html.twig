@@ -13,7 +13,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new-article" data-bs-toggle="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New article'|trans }}
@@ -24,7 +24,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new-category" data-bs-toggle="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New category'|trans }}
@@ -67,12 +67,12 @@
                         <td class="text-center">{{ post.views }}</td>
                         <td>
                             <a class="btn btn-icon" href="{{ '/kb/article'|alink }}/{{ post.id }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{'kb'|alink}}" href="{{ 'api/admin/kb/article_delete'|link({ 'id': post.id }) }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
                             </a>
@@ -139,7 +139,7 @@
                         </td>
                         <td class="w-1">
                             <a class="btn btn-icon" href="{{ '/kb/category'|alink }}/{{ cat_id }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
@@ -147,7 +147,7 @@
                                 href="{{ 'api/admin/kb/category_delete'|link({ 'id': cat_id }) }}"
                                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                                 data-api-redirect="{{ 'kb/new'|alink }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
                             </a>

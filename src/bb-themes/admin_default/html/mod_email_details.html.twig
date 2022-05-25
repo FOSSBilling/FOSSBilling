@@ -8,7 +8,7 @@
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
             <a href="{{ '/'|alink }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
@@ -26,39 +26,42 @@
         <h5>{{ email.subject }}</h5>
     </div>
 
-    <table class="tableStatic wide">
+    <table class="table card-table table-vcenter table-striped text-nowrap">
         <tbody>
-            <tr class="noborder">
-                <td>{{ 'From'|trans }}</td>
+            <tr>
+                <td class="w-50 text-end">{{ 'From'|trans }}:</td>
                 <td>{{ email.sender }}</td>
             </tr>
 
             <tr>
-                <td>{{ 'To'|trans }}</td>
+                <td class="text-end">{{ 'To'|trans }}:</td>
                 <td>{{ email.recipients }}</td>
             </tr>
 
             <tr>
-                <td>{{ 'Sent'|trans }}</td>
+                <td class="text-end">{{ 'Sent'|trans }}:</td>
                 <td>{{ email.created_at|date('l, d F Y') }}</td>
             </tr>
          </tbody>
     </table>
 
-    <div class="card-footer d-flex justify-content-center gap-3">
-        <a class="card card-link px-3 py-2 text-center bg-white bg-gradient api-link" href="{{'api/admin/email/email_resend'|link({ 'id': email.id }) }}" data-api-msg="{{ 'Email resent'|trans }}">
-            <div>
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                    <use xlink:href="#refresh" />
-                </svg>
-            </div>
-            <div class="card-title mt-2 mb-0">{{ 'Resend'|trans }}</div>
+    <div class="card-footer text-center">
+        <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+            href="{{'api/admin/email/email_resend'|link({ 'id': email.id }) }}"
+            data-api-msg="{{ 'Email resent'|trans }}">
+            <svg class="mb-2 text-secondary" width="24" height="24">
+                <use xlink:href="#refresh" />
+            </svg>
+            <span class="d-block text-secondary">{{ 'Resend'|trans }}</span>
         </a>
-        <a class="card card-link px-3 py-2 text-center bg-white bg-gradient api-link" href="{{'api/admin/email/email_delete'|link({ 'id': email.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'email/history'|alink }}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+            href="{{'api/admin/email/email_delete'|link({ 'id': email.id }) }}"
+            data-api-confirm="{{ 'Are you sure?'|trans }}"
+            data-api-redirect="{{ 'email/history'|alink }}">
+            <svg class="mb-2 text-secondary" width="24" height="24">
                 <use xlink:href="#delete" />
             </svg>
-            <div class="card-title mt-2 mb-0">{{ 'Delete'|trans }}</div>
+            <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
         </a>
     </div>
 

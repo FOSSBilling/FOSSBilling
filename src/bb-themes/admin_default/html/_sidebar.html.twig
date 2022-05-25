@@ -12,62 +12,53 @@
             <ul class="navbar-nav pt-lg-3" id="menu">
                 {% set navigation = admin.extension_get_navigation({ 'url': guest.system_current_url }) %}
                 {% for location, group in navigation %}
-                {% if group.subpages %}
-                <li class="nav-item dropdown {{ group.class }}" data-nav-index="{{ group.index }}" data-nav-location="{{ location }}">
+                    {% if group.subpages %}
+                    <li class="nav-item dropdown {{ group.class }}" data-nav-index="{{ group.index }}" data-nav-location="{{ location }}">
+                        <a class="nav-link dropdown-toggle"
+                            {% if group.active or active_menu == location %} id="current" {%endif %}
+                            href="#"
+                            data-bs-toggle="dropdown"
+                            data-bs-auto-close="false"
+                            role="button"
+                            aria-expanded="false">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                <svg class="icon">
+                                    <use xlink:href="#{{ group.class }}" />
+                                </svg>
+                            </span>
+                            <span class="nav-link-title">{{ group.label|trans }}</span>
+                        </a>
+                        <div class="dropdown-menu" data-bs-popper="none">
+                            <div class="dropdown-menu-columns">
+                                <div class="dropdown-menu-column">
+                                    {% for subpage in group.subpages %}
+                                    <a class="dropdown-item" href="{{ subpage.uri }}">{{ subpage.label|trans }}</a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle"
-                        {% if group.active or active_menu == location %} id="current" {%endif %}
-                        href="#"
+                        href="#navbar-help"
                         data-bs-toggle="dropdown"
                         data-bs-auto-close="false"
                         role="button"
-                        aria-expanded="false"
-                    >
+                        aria-expanded="false">
                         <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <use xlink:href="#{{ group.class }}" />
+                            <svg class="icon">
+                                <use xlink:href="#help" />
                             </svg>
                         </span>
-                        <span class="nav-link-title">{{ group.label|trans }}</span>
-                    </a>
-                    <div class="dropdown-menu" data-bs-popper="none">
-                        <div class="dropdown-menu-columns">
-                            <div class="dropdown-menu-column">
-                                {% for subpage in group.subpages %}
-                                <a class="dropdown-item" href="{{ subpage.uri }}">{{ subpage.label|trans }}</a>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </li>
-                {% endif %}
-                {% endfor %}
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown"
-                        data-bs-auto-close="false" role="button" aria-expanded="false">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <circle cx="12" cy="12" r="4"></circle>
-                                <circle cx="12" cy="12" r="9"></circle>
-                                <line x1="15" y1="15" x2="18.35" y2="18.35"></line>
-                                <line x1="9" y1="15" x2="5.65" y2="18.35"></line>
-                                <line x1="5.65" y1="5.65" x2="9" y2="9"></line>
-                                <line x1="18.35" y1="5.65" x2="15" y2="9"></line>
-                            </svg>
-                        </span>
-                        <span class="nav-link-title">
-                            Help
-                        </span>
+                        <span class="nav-link-title">{{ 'Help'|trans }}</span>
                     </a>
                     <div class="dropdown-menu" data-bs-popper="none">
                         <a class="dropdown-item" href="https://docs.boxbilling.org/" target="_blank"
-                            rel="noopener">Documentation</a>
+                            rel="noopener">{{ 'Documentation'|trans }}</a>
                         <a class="dropdown-item" href="https://github.com/boxbilling/boxbilling" target="_blank"
-                            rel="noopener">Source code</a>
+                            rel="noopener">{{ 'Source code'|trans }}</a>
                         <a class="dropdown-item" href="https://github.com/boxbilling/boxbilling/issues" target="_blank"
                             rel="noopener">{{ 'Report bug'|trans }}</a>
                     </div>

@@ -8,7 +8,7 @@
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
             <a href="{{ '/'|alink }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
@@ -27,7 +27,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="new-tab" data-bs-toggle="tab" data-bs-target="#tab-new" type="button" role="tab" aria-controls="index" aria-selected="true">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#plus" />
                 </svg>
                 <span class="ms-2">{{ 'New addon'|trans }}</span>
@@ -59,12 +59,12 @@
                         <td><!-- TODO: show addon status --></td>
                         <td class="w-1">
                             <a class="btn btn-icon" href="{{ '/product/addon'|alink }}/{{ addon_id }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'product/addons'|alink }}" href="{{ 'api/admin/product/delete'|link({ 'id': addon_id }) }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
                             </a>
