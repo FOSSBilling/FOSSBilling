@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -23,8 +24,18 @@ class Service
 
     public function install()
     {
-        $db = $this->di['db'];
-        $db->exec('CREATE TABLE IF NOT EXISTS `custom_pages` (`id` int(11) NOT NULL AUTO_INCREMENT, `title` varchar(255) NOT NULL, `description` varchar(555) NOT NULL, `keywords` varchar(555) NOT NULL, `content` text NOT NULL, `slug` varchar(255) NOT NULL, `created_at` timestamp NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (`id`)) ENGINE=MyISAM DEFAULT CHARSET=utf8');
+        $sql = '
+            CREATE TABLE IF NOT EXISTS `custom_pages` (
+                `id` int(11) NOT NULL AUTO_INCREMENT,
+                `title` varchar(255) NOT NULL,
+                `description` varchar(555) NOT NULL,
+                `keywords` varchar(555) NOT NULL,
+                `content` text NOT NULL,
+                `slug` varchar(255) NOT NULL,
+                `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+                PRIMARY KEY (`id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8';
+        $this->di['db']->exec($sql);
 
         return true;
     }
@@ -48,7 +59,7 @@ class Service
             foreach ($id as $i => $x) {
                 $id[$i] = (int) $x;
             }
-            $this->di['pdo']->query('DELETE from custom_pages WHERE id in ('.join(', ', $id).')');
+            $this->di['pdo']->query('DELETE from custom_pages WHERE id in (' . join(', ', $id) . ')');
         } else {
             $this->di['pdo']->prepare('DELETE from custom_pages WHERE id = ?')->execute([$id]);
         }
@@ -56,7 +67,7 @@ class Service
 
     public function getPage($id, $type = 'id')
     {
-        $q = $this->di['pdo']->prepare('SELECT * from custom_pages WHERE '.$type.' = ?');
+        $q = $this->di['pdo']->prepare('SELECT * from custom_pages WHERE ' . $type . ' = ?');
         $q->execute([$id]);
 
         return $q->fetch();
@@ -70,7 +81,7 @@ class Service
         $ex->execute([$slug]);
         $ex = $ex->rowCount();
         while ($ex > 0) {
-            $slug = $this->di['tools']->slug($title).'-'.++$i;
+            $slug = $this->di['tools']->slug($title) . '-' . ++$i;
             $ex = $this->di['pdo']->prepare('SELECT id from custom_pages WHERE slug = ?');
             $ex->execute([$slug]);
             $ex = $ex->rowCount();
