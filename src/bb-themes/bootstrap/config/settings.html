@@ -477,8 +477,7 @@
 </fieldset>
 
 <fieldset>
-    <legend>Analytics</legend>
-
+    <legend>Custom code</legend>
     <div class="mb-3 row">
         <label class="form-label col-3 col-form-label">Google Tag Manager</label>
         <div class="col">
@@ -490,40 +489,22 @@
                 <input class="form-check-input" id="inputGtmEnabledNo" type="radio" name="gtm_enabled" value="0">
                 <label class="form-check-label" for="inputGtmEnabledNo">Disabled</label>
             </div>
+            <div class="mt-3 input-group">
+                <span class="input-group-text">Container ID</span>
+                <input class="form-control ps-3" type="text" name="gtm_container_id">
+            </div>
         </div>
     </div>
-
     <div class="mb-3 row">
-        <label class="form-label col-3 col-form-label" for="inputGtmContainerId">Container ID</label>
+        <label class="form-label col-3 col-form-label" for="inject_javascript">Custom Javascript code</label>
         <div class="col">
-            <input class="form-control" id="inputGtmContainerId" type="text" name="gtm_container_id">
+            <textarea class="form-control" name="inject_javascript" id="inject_javascript" rows="10"></textarea>
         </div>
     </div>
-</fieldset>
-
-<fieldset>
-    <legend>Custom code</legend>
-    <h3>Javascript</h3>
-    <table>
-        <tr>
-            <td>
-                <label for="inject_javascript">Add custom Javascript code</label>
-            </td>
-            <td>
-                <textarea name="inject_javascript" id="inject_javascript" class="long" rows="30" cols="50"></textarea>
-            </td>
-        </tr>
-    </table>
-
-    <h3>CSS</h3>
-    <table>
-        <tr>
-            <td>
-                <label for="inject_css">Add custom CSS code</label>
-            </td>
-            <td>
-                <textarea name="inject_css" id="inject_css" class="long" rows="30" cols="50"></textarea>
-            </td>
-        </tr>
-    </table>
+    <div class="mb-3 row">
+        <label class="form-label col-3 col-form-label" for="inject_css">Custom CSS code</label>
+        <div class="col">
+            <textarea class="form-control" name="inject_css" id="inject_css" rows="10"></textarea>
+        </div>
+    </div>
 </fieldset>
