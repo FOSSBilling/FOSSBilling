@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -9,6 +10,84 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
+
+/**
+ * main.
+ */
+class BBPatch_25 extends BBPatchAbstract
+{
+    public function patch()
+    {
+        // Change table data storage engine
+        $query = 'ALTER TABLE `activity_admin_history` ENGINE = INNODB;
+            ALTER TABLE `activity_client_email` ENGINE = INNODB;
+            ALTER TABLE `activity_client_history` ENGINE = INNODB;
+            ALTER TABLE `activity_system` ENGINE = INNODB;
+            ALTER TABLE `admin` ENGINE = INNODB;
+            ALTER TABLE `admin_group` ENGINE = INNODB;
+            ALTER TABLE `api_request` ENGINE = INNODB;
+            ALTER TABLE `cart` ENGINE = INNODB;
+            ALTER TABLE `cart_product` ENGINE = INNODB;
+            ALTER TABLE `client` ENGINE = INNODB;
+            ALTER TABLE `client_balance` ENGINE = INNODB;
+            ALTER TABLE `client_group` ENGINE = INNODB;
+            ALTER TABLE `client_order` ENGINE = INNODB;
+            ALTER TABLE `client_order_meta` ENGINE = INNODB;
+            ALTER TABLE `client_order_status` ENGINE = INNODB;
+            ALTER TABLE `client_password_reset` ENGINE = INNODB;
+            ALTER TABLE `currency` ENGINE = INNODB;
+            ALTER TABLE `custom_pages` ENGINE = INNODB;
+            ALTER TABLE `email_template` ENGINE = INNODB;
+            ALTER TABLE `extension` ENGINE = INNODB;
+            ALTER TABLE `extension_meta` ENGINE = INNODB;
+            ALTER TABLE `form` ENGINE = INNODB;
+            ALTER TABLE `form_field` ENGINE = INNODB;
+            ALTER TABLE `forum` ENGINE = INNODB;
+            ALTER TABLE `forum_topic` ENGINE = INNODB;
+            ALTER TABLE `forum_topic_message` ENGINE = INNODB;
+            ALTER TABLE `invoice` ENGINE = INNODB;
+            ALTER TABLE `invoice_item` ENGINE = INNODB;
+            ALTER TABLE `kb_article` ENGINE = INNODB;
+            ALTER TABLE `kb_article_category` ENGINE = INNODB;
+            ALTER TABLE `mod_email_queue` ENGINE = INNODB;
+            ALTER TABLE `mod_massmailer` ENGINE = INNODB;
+            ALTER TABLE `pay_gateway` ENGINE = INNODB;
+            ALTER TABLE `post` ENGINE = INNODB;
+            ALTER TABLE `product` ENGINE = INNODB;
+            ALTER TABLE `product_category` ENGINE = INNODB;
+            ALTER TABLE `product_payment` ENGINE = INNODB;
+            ALTER TABLE `promo` ENGINE = INNODB;
+            ALTER TABLE `queue` ENGINE = INNODB;
+            ALTER TABLE `queue_message` ENGINE = INNODB;
+            ALTER TABLE `service_custom` ENGINE = INNODB;
+            ALTER TABLE `service_domain` ENGINE = INNODB;
+            ALTER TABLE `service_downloadable` ENGINE = INNODB;
+            ALTER TABLE `service_hosting` ENGINE = INNODB;
+            ALTER TABLE `service_hosting_hp` ENGINE = INNODB;
+            ALTER TABLE `service_hosting_server` ENGINE = INNODB;
+            ALTER TABLE `service_license` ENGINE = INNODB;
+            ALTER TABLE `service_membership` ENGINE = INNODB;
+            ALTER TABLE `service_solusvm` ENGINE = INNODB;
+            ALTER TABLE `session` ENGINE = INNODB;
+            ALTER TABLE `setting` ENGINE = INNODB;
+            ALTER TABLE `subscription` ENGINE = INNODB;
+            ALTER TABLE `support_helpdesk` ENGINE = INNODB;
+            ALTER TABLE `support_p_ticket` ENGINE = INNODB;
+            ALTER TABLE `support_p_ticket_message` ENGINE = INNODB;
+            ALTER TABLE `support_pr` ENGINE = INNODB;
+            ALTER TABLE `support_pr_category` ENGINE = INNODB;
+            ALTER TABLE `support_ticket` ENGINE = INNODB;
+            ALTER TABLE `support_ticket_message` ENGINE = INNODB;
+            ALTER TABLE `support_ticket_note` ENGINE = INNODB;
+            ALTER TABLE `tax` ENGINE = INNODB;
+            ALTER TABLE `tld` ENGINE = INNODB;
+            ALTER TABLE `tld_registrar` ENGINE = INNODB;
+            ALTER TABLE `transaction` ENGINE = INNODB;
+        ';
+
+        $this->execSql($query);
+    }
+}
 
 /**
  * 4.22 betas.
@@ -384,7 +463,7 @@ class BBPatch_11 extends BBPatchAbstract
         try {
             $this->di['api_admin']->extension_activate(['id' => 'queue', 'type' => 'mod']);
         } catch (Exception $e) {
-            error_log('Error enabling queue extension '.$e->getMessage());
+            error_log('Error enabling queue extension ' . $e->getMessage());
         }
     }
 }
@@ -465,7 +544,7 @@ class BBPatch_7 extends BBPatchAbstract
             ];
             $api->extension_config_save($config);
         } catch (Exception $e) {
-            error_log('Error migrating email settings '.$e->getMessage());
+            error_log('Error migrating email settings ' . $e->getMessage());
         }
     }
 }
@@ -786,25 +865,25 @@ foreach (get_declared_classes() as $class) {
     }
 }
 
-require_once dirname(__FILE__).'/bb-load.php';
-$di = include dirname(__FILE__).'/bb-di.php';
+require_once dirname(__FILE__) . '/bb-load.php';
+$di = include dirname(__FILE__) . '/bb-di.php';
 
 error_log('Executing BoxBilling update script');
 natsort($patches);
 foreach ($patches as $class) {
     $p = new $class($di);
     if (!$p->isPatched()) {
-        $msg = 'BoxBilling patch #'.$p->getVersion().' executing...';
+        $msg = 'BoxBilling patch #' . $p->getVersion() . ' executing...';
         error_log($msg);
         $p->patch();
         $p->donePatching();
-        $msg = 'BoxBilling patch #'.$p->getVersion().' was executed';
+        $msg = 'BoxBilling patch #' . $p->getVersion() . ' was executed';
         error_log($msg);
-        echo $msg.PHP_EOL;
+        echo $msg . PHP_EOL;
     } else {
-        error_log('Skipped patch '.$p->getVersion());
+        error_log('Skipped patch ' . $p->getVersion());
     }
 }
 error_log('BoxBilling update completed');
 
-echo 'Update completed. You are using BoxBilling '.Box_Version::VERSION.PHP_EOL;
+echo 'Update completed. You are using BoxBilling ' . Box_Version::VERSION . PHP_EOL;
