@@ -20,7 +20,7 @@ class Admin extends \Api_Abstract
     /**
      * Update domain service.
      * Does not send actions to domain registrar. Used to sync domain details
-     * on BoxBilling.
+     * on FOSSBilling.
      *
      * @param int $order_id - domain order id
      *

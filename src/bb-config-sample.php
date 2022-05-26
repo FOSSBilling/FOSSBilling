@@ -1,6 +1,6 @@
 <?php
 /**
- * BoxBilling configuration file example.
+ * FOSSBilling configuration file example.
  *
  * If you are not using the web installer, you can rename this file
  * to "bb-config.php" and fill in the values.
@@ -14,7 +14,7 @@ return [
     'salt' => '',
 
     /**
-     * Full URL where BoxBilling is installed with trailing slash.
+     * Full URL where FOSSBilling is installed with trailing slash.
      */
     'url' => 'http://localhost/',
 
@@ -69,7 +69,7 @@ return [
     'timezone' => 'UTC',
 
     /**
-     * BoxBilling locale.
+     * FOSSBilling locale.
      */
     'locale' => 'en_US',
 
@@ -108,7 +108,7 @@ return [
         'host' => getenv('DB_HOST') ?: '127.0.0.1',
 
         /**
-         * The name of the database for BoxBilling.
+         * The name of the database for FOSSBilling.
          */
         'name' => getenv('DB_NAME') ?: 'boxbilling',
 
@@ -135,7 +135,7 @@ return [
     ],
 
     'api' => [
-        // All requests made to the API must have referrer request header with the same URL as the BoxBilling installation
+        // All requests made to the API must have referrer request header with the same URL as the FOSSBilling installation
         'require_referrer_header' => false,
 
         // Empty array will allow all IPs to access the API
@@ -174,7 +174,7 @@ return [
          * @since 4.22.0
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
          */
-        'user_agent' => 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; BoxBilling; +http://boxbilling.org) Gecko/20100101 Firefox/93.0',
+        'user_agent' => 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; FOSSBilling; +http://boxbilling.org) Gecko/20100101 Firefox/93.0',
 
         /**
          * Default request timeout

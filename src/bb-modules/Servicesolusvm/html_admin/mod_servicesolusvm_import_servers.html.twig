@@ -11,9 +11,9 @@
     <div class="head"><h5 class="iFrames">{{ 'Import SolusVM servers'|trans }}</h5></div>
 <div class="help">
     <h5>{{ 'Read before importing servers'|trans }}</h5>
-    <p>SolusVM products must be configured before importing servers to BoxBilling</p>
+    <p>SolusVM products must be configured before importing servers to FOSSBilling</p>
     <p>SolusVM clients must already be imported</p>
-    <p>SolusVM API does not return plan name. BoxBilling is not able to guess which product assign to imported servers</p>
+    <p>SolusVM API does not return plan name. FOSSBilling is not able to guess which product assign to imported servers</p>
     {% for node in admin.servicesolusvm_get_nodes({ "by": "id" }) %}
     <a href="{{ 'servicesolusvm/import/servers'|alink({'node_id' : node}) }}" class="btnIconLeft mr10 mt10"><span>Node: {{ node }}</span></a>
     {% endfor %}
@@ -62,7 +62,7 @@
         </tr>
         <tr>
             <td colspan="7">
-                <input type="submit" value="{{ 'Import selected SolusVM virtual server to BoxBilling'|trans }}" class="greyishBtn" />
+                <input type="submit" value="{{ 'Import selected SolusVM virtual server to FOSSBilling'|trans }}" class="greyishBtn" />
             </td>
         </tr>
     </tfoot>

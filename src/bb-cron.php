@@ -16,7 +16,7 @@ $di['translate']();
 
 try {
     if ('cli' == php_sapi_name()) {
-        echo "\e[33m- Welcome to BoxBilling.\n";
+        echo "\e[33m- Welcome to FOSSBilling.\n";
     }
     $interval = $argv[1] ?? null;
     $service = $di['mod_service']('cron');

@@ -134,7 +134,7 @@ final class Box_Installer
                         $this->session->set('admin_name', $admin_name);
                     }
 
-                    $this->session->set('license', 'BoxBilling CE');
+                    $this->session->set('license', 'FOSSBilling CE');
                     $this->makeInstall($this->session);
                     $this->generateEmailTemplates();
                     session_destroy();

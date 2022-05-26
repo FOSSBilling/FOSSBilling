@@ -210,7 +210,7 @@
 
             <footer class="footer footer-transparent d-print-none">
                 <div class="container-xl">
-                    <div>Copyright &copy; {{ now|date('Y') }}. All rights reserved. Powered by <a href="https://boxbilling.org" title="Billing system" target="_blank" rel="noopener">BoxBilling {{ guest.system_version }}</a></div>
+                    <div>Copyright &copy; {{ now|date('Y') }}. All rights reserved. Powered by <a href="https://boxbilling.org" title="Billing system" target="_blank" rel="noopener">FOSSBilling {{ guest.system_version }}</a></div>
                 </div>
             </footer>
         </div>
@@ -245,7 +245,7 @@
     {% block js %}{% endblock %}
 
     <noscript id="noscript">
-        <div class="msg error">NOTE: Many features on BoxBilling require Javascript and cookies. You can enable both via your browser's preference settings.</div>
+        <div class="msg error">NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's preference settings.</div>
     </noscript>
     {% endif %}
 </body>

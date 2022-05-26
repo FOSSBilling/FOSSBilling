@@ -393,11 +393,11 @@ class Admin extends \Api_Abstract
      * @optional int $invoice_id - new invoice id
      * @optional string $txn_id - transaction id on payment gateway
      * @optional string $txn_status - transaction status on payment gateway
-     * @optional int $gateway_id - Payment gateway ID on BoxBilling
+     * @optional int $gateway_id - Payment gateway ID on FOSSBilling
      * @optional float $amount - Transaction amount
-     * @optional string $currency - Currency code. Must be available on BoxBilling
-     * @optional string $type - Currency code. Must be available on BoxBilling
-     * @optional string $status - Transaction status on BoxBilling
+     * @optional string $currency - Currency code. Must be available on FOSSBilling
+     * @optional string $type - Currency code. Must be available on FOSSBilling
+     * @optional string $status - Transaction status on FOSSBilling
      * @optional bool $validate_ipn - Flag to enable and disable IPN validation for this transaction
      * @optional string $note - Custom note
      *
@@ -419,8 +419,8 @@ class Admin extends \Api_Abstract
     /**
      * Create custom transaction.
      *
-     * @param int $bb_invoice_id - BoxBilling invoice id
-     * @param int $bb_gateway_id - BoxBilling gateway id
+     * @param int $bb_invoice_id - FOSSBilling invoice id
+     * @param int $bb_gateway_id - FOSSBilling gateway id
      *
      * @optional array $get - $_GET data
      * @optional array $post - $_POST data

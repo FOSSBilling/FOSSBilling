@@ -16,8 +16,8 @@ final class Box_Version
     const VERSION = '0.0.1';
 
     /**
-     * Compare the specified BoxBilling version string $version
-     * with the current Box_Version::VERSION of BoxBilling.
+     * Compare the specified FOSSBilling version string $version
+     * with the current Box_Version::VERSION of FOSSBilling.
      *
      * @param  string  $version  A version string (e.g. "0.7.1").
      * @return integer           -1 if the $version is older,

@@ -11,7 +11,7 @@
  */
 
 /**
- * This file connects BoxBilling client area interface and API.
+ * This file connects FOSSBilling client area interface and API.
  */
 
 namespace Box\Mod\Api\Controller;
@@ -123,7 +123,7 @@ class Client implements InjectionAwareInterface
 
     private function checkHttpReferer()
     {
-        // snake oil: check request is from the same domain as BoxBilling is installed if present
+        // snake oil: check request is from the same domain as FOSSBilling is installed if present
         $check_referer_header = isset($this->_api_config['require_referrer_header']) ? (bool) $this->_api_config['require_referrer_header'] : false;
         if ($check_referer_header) {
             $url = strtolower(BB_URL);
@@ -265,7 +265,7 @@ class Client implements InjectionAwareInterface
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
         header('Content-type: application/json; charset=utf-8');
-        header('X-BoxBilling-Version: '.\Box_Version::VERSION);
+        header('X-FOSSBilling-Version: '.\Box_Version::VERSION);
         header('X-RateLimit-Span: '.$this->_api_config['rate_span']);
         header('X-RateLimit-Limit: '.$this->_api_config['rate_limit']);
         header('X-RateLimit-Remaining: '.$this->_requests_left);

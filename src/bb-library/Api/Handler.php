@@ -69,7 +69,7 @@ final class Api_Handler implements InjectionAwareInterface
         $service = $this->di['mod']('extension')->getService();
 
         if(!$service->isExtensionActive('mod',$mod)) {
-            throw new \Box_Exception('BoxBilling module :mod is not installed/activated',array(':mod'=>$mod), 715);
+            throw new \Box_Exception('FOSSBilling module :mod is not installed/activated',array(':mod'=>$mod), 715);
         }
 
         // permissions check

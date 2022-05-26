@@ -4,7 +4,7 @@
     "name":         "Custom Pages",
     "description":  "This module allows you to create custom pages.",
     "homepage_url": "https://github.com/boxbilling/",
-    "author":       "BoxBilling",
+    "author":       "FOSSBilling",
     "icon_url":     "icon.png",
     "author_url":   "https://github.com/boxbilling/",
     "license":      "GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html",

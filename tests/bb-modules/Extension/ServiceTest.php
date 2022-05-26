@@ -511,7 +511,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('BoxBilling core modules can not be managed');
+        $this->expectExceptionMessage('FOSSBilling core modules can not be managed');
         $this->service->deactivate($ext);
     }
 

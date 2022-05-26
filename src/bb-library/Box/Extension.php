@@ -87,7 +87,7 @@
             $json = json_decode($response, 1);
 
             if(is_null($json)) {
-                throw new \Box_Exception('Unable to connect to BoxBilling extensions site.', null, 1545);
+                throw new \Box_Exception('Unable to connect to FOSSBilling extensions site.', null, 1545);
             }
 
             if(isset($json['error']) && is_array($json['error'])) {

@@ -129,7 +129,7 @@ class Server_Manager_CWP extends Server_Manager
 	}
     
     /**
-     * Package name must match on both CWP and BoxBilling!
+     * Package name must match on both CWP and FOSSBilling!
      */
 	public function createAccount(Server_Account $a)
 	{

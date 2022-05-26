@@ -90,7 +90,7 @@ class Box_Mod
             'name'          => $this->mod,
             'description'   => NULL,
             'homepage_url'  => 'https://github.com/boxbilling/',
-            'author'        => 'BoxBilling',
+            'author'        => 'FOSSBilling',
             'author_url'    => 'https://extensions.boxbilling.org/',
             'license'       => 'N/A',
             'version'       => '1.0',

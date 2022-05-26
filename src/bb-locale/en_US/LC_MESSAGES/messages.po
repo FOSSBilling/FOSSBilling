@@ -1,12 +1,12 @@
-# en_US translation of BoxBilling Application
-# Copyright 2011-2021 BoxBilling <info@boxbilling.org>
+# en_US translation of FOSSBilling Application
+# Copyright 2011-2021 FOSSBilling <info@boxbilling.org>
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: 4\n"
 "POT-Creation-Date: 2015-02-27 08:07+0000\n"
 "PO-Revision-Date: 2021-08-10 09:00+0300\n"
-"Language-Team: BoxBilling TM <info@boxbilling.org>\n"
+"Language-Team: FOSSBilling TM <info@boxbilling.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -348,7 +348,7 @@ msgstr ""
 msgid "Invalid module name"
 msgstr ""
 
-msgid "BoxBilling module :mod is not installed/activated"
+msgid "FOSSBilling module :mod is not installed/activated"
 msgstr ""
 
 msgid "You do not have access to :mod module"
@@ -372,7 +372,7 @@ msgstr ""
 msgid "CURL extension is not enabled"
 msgstr ""
 
-msgid "Unable to connect to BoxBilling extensions site."
+msgid "Unable to connect to FOSSBilling extensions site."
 msgstr ""
 
 msgid ""
@@ -398,7 +398,7 @@ msgstr ""
 msgid "FTP Username/Password incorrect for :usernmae"
 msgstr ""
 
-msgid "BoxBilling license key must be defined in bb-config.php file."
+msgid "FOSSBilling license key must be defined in bb-config.php file."
 msgstr ""
 
 msgid "License is not valid"
@@ -1032,7 +1032,7 @@ msgstr ""
 msgid "You have failed to login too many times. Contact support."
 msgstr ""
 
-msgid "You have latest version of BoxBilling. You do not need to update."
+msgid "You have latest version of FOSSBilling. You do not need to update."
 msgstr ""
 
 msgid "Extension id was not passed"
@@ -1062,7 +1062,7 @@ msgstr ""
 msgid "Visit extension site for update information."
 msgstr ""
 
-msgid "BoxBilling core modules can not be managed"
+msgid "FOSSBilling core modules can not be managed"
 msgstr ""
 
 msgid "Could not extract extension zip file"
@@ -1091,12 +1091,12 @@ msgid ""
 "manually"
 msgstr ""
 
-msgid "BoxBilling core modules can not be installed or removed"
+msgid "FOSSBilling core modules can not be installed or removed"
 msgstr ""
 
 msgid ""
 "Module can not be installed. It requires at least :min version of "
-"BoxBilling. You are using :v"
+"FOSSBilling. You are using :v"
 msgstr ""
 
 msgid "path parameter is missing"
@@ -1550,7 +1550,7 @@ msgstr ""
 msgid "Only pending and failed setup orders can be deleted."
 msgstr ""
 
-msgid "This feature is available in BoxBilling PRO version."
+msgid "This feature is available in FOSSBilling PRO version."
 msgstr ""
 
 msgid "Currency could not be determined for order"
@@ -1661,7 +1661,7 @@ msgstr ""
 msgid "Order id is required"
 msgstr ""
 
-msgid "BoxBilling license order not found"
+msgid "FOSSBilling license order not found"
 msgstr ""
 
 msgid "Order is not activated"
@@ -2172,7 +2172,7 @@ msgid "Country :code phone code is not registered"
 msgstr ""
 
 msgid ""
-"You have reached free version limit. Upgrade to PRO version of BoxBilling if "
+"You have reached free version limit. Upgrade to PRO version of FOSSBilling if "
 "you want this limit removed."
 msgstr ""
 
@@ -2315,7 +2315,7 @@ msgid "License plugins"
 msgstr ""
 
 msgid ""
-"BoxBilling gives you ability to provide your own license generation script. "
+"FOSSBilling gives you ability to provide your own license generation script. "
 "Follow instructions bellow to install new license plugin"
 msgstr ""
 
@@ -2328,7 +2328,7 @@ msgstr ""
 msgid "Create your plugin and place it to"
 msgstr ""
 
-msgid "BoxBilling will automatically detect new plugin"
+msgid "FOSSBilling will automatically detect new plugin"
 msgstr ""
 
 msgid "Read"
@@ -2799,7 +2799,7 @@ msgid "Configure email options"
 msgstr ""
 
 msgid ""
-"BoxBilling sends emails using <em>sendmail</em> by default or you can "
+"FOSSBilling sends emails using <em>sendmail</em> by default or you can "
 "configure your own SMTP server"
 msgstr ""
 
@@ -3137,7 +3137,7 @@ msgid "Automatic VAT Tax Rules Setup"
 msgstr ""
 
 msgid ""
-"If you would like BoxBilling to automatically setup the EU VAT tax rules for "
+"If you would like FOSSBilling to automatically setup the EU VAT tax rules for "
 "you for all EU Member States then simply enter your VAT Label & local VAT "
 "rate below and click the submit button. <strong>This action will delete any "
 "existing tax rules</strong> and configure the VAT rates for all EU countries."
@@ -3500,7 +3500,7 @@ msgid ""
 msgstr ""
 
 msgid ""
-"External application can control every aspect of BoxBilling using this API "
+"External application can control every aspect of FOSSBilling using this API "
 "key."
 msgstr ""
 
@@ -3588,7 +3588,7 @@ msgid "Node"
 msgstr ""
 
 msgid ""
-"Make sure BoxBilling can connect to SolusVM master server and check if nodes "
+"Make sure FOSSBilling can connect to SolusVM master server and check if nodes "
 "are configured for selected virtualizator type. Refresh page if you have "
 "changed virtualization type to see new nodes."
 msgstr ""
@@ -3597,7 +3597,7 @@ msgid "Plan"
 msgstr ""
 
 msgid ""
-"Make sure BoxBilling can connect to SolusVM master server and check if plans "
+"Make sure FOSSBilling can connect to SolusVM master server and check if plans "
 "are configured for selected virtualizator type."
 msgstr ""
 
@@ -3928,7 +3928,7 @@ msgid "Adding new payment gateway"
 msgstr ""
 
 msgid ""
-"Although BoxBilling ships with most popular payment gateways, you can "
+"Although FOSSBilling ships with most popular payment gateways, you can "
 "install other gateways."
 msgstr ""
 
@@ -3951,7 +3951,7 @@ msgid "Select uploaded file name and click on install."
 msgstr ""
 
 msgid ""
-"Payment gateway will be installed in BoxBilling and can be configured in "
+"Payment gateway will be installed in FOSSBilling and can be configured in "
 "\"Payment gateways\" tab."
 msgstr ""
 
@@ -4084,7 +4084,7 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-msgid "BoxBilling license management"
+msgid "FOSSBilling license management"
 msgstr ""
 
 msgid "License order ID"
@@ -4226,7 +4226,7 @@ msgid "Loading ..."
 msgstr ""
 
 msgid ""
-"This staff member is used by BoxBilling to perform system tasks and can not "
+"This staff member is used by FOSSBilling to perform system tasks and can not "
 "be removed."
 msgstr ""
 
@@ -4305,7 +4305,7 @@ msgstr ""
 msgid "Created"
 msgstr ""
 
-msgid "Import selected SolusVM clients to BoxBilling"
+msgid "Import selected SolusVM clients to FOSSBilling"
 msgstr ""
 
 msgid "Connection port"
@@ -4358,11 +4358,11 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
-msgid "BoxBilling in your language"
+msgid "FOSSBilling in your language"
 msgstr ""
 
 msgid ""
-"Although BoxBilling displays in U.S. English by default, the software has "
+"Although FOSSBilling displays in U.S. English by default, the software has "
 "the built-in capability to be used in any language. Follow instructions "
 "bellow to install new language."
 msgstr ""
@@ -4370,7 +4370,7 @@ msgstr ""
 msgid "Check if your language translation file is available at"
 msgstr ""
 
-msgid "BoxBilling extensions site"
+msgid "FOSSBilling extensions site"
 msgstr ""
 
 msgid "Download language files and place them to"
@@ -4380,11 +4380,11 @@ msgid ""
 "Language will be automatically available and can be changed in client area"
 msgstr ""
 
-msgid "Installing BoxBilling in Your Language"
+msgid "Installing FOSSBilling in Your Language"
 msgstr ""
 
 msgid ""
-"to learn how to install files that will transform BoxBilling so it displays "
+"to learn how to install files that will transform FOSSBilling so it displays "
 "in your language."
 msgstr ""
 
@@ -4404,7 +4404,7 @@ msgid "Removing language"
 msgstr ""
 
 msgid ""
-"Removing languages from BoxBilling is really simple. Just delete language "
+"Removing languages from FOSSBilling is really simple. Just delete language "
 "folder you wish from"
 msgstr ""
 
@@ -4606,7 +4606,7 @@ msgid "Manage email template"
 msgstr ""
 
 msgid ""
-"Most email templates receives parameters from BoxBilling. You can browse "
+"Most email templates receives parameters from FOSSBilling. You can browse "
 "them on \"Variables\" tab. Copy variable name to email template and hit "
 "preview to see parsed content. Please note that values will be different "
 "when actual email is sent."
@@ -5080,10 +5080,10 @@ msgstr ""
 msgid "Invalidate cache"
 msgstr ""
 
-msgid "FTP layer for BoxBilling"
+msgid "FTP layer for FOSSBilling"
 msgstr ""
 
-msgid "FTP is used to manage BoxBilling modules and updates."
+msgid "FTP is used to manage FOSSBilling modules and updates."
 msgstr ""
 
 msgid "FTP settings updated"
@@ -5119,10 +5119,10 @@ msgstr ""
 
 msgid ""
 "<strong>FTP root</strong> - This is generally the directory in which "
-"BoxBilling is installed. This setting is very important to be setup "
+"FOSSBilling is installed. This setting is very important to be setup "
 "correctly as it very specifically depends on the Host server settings. In "
 "can be just / BUT it might be htdocs/boxbilling, public_html/, /public_html/"
-"boxbilling or other. It is a variable that BoxBilling has absolutely no "
+"boxbilling or other. It is a variable that FOSSBilling has absolutely no "
 "control over. You will need to clarify this with your host."
 msgstr ""
 
@@ -5153,7 +5153,7 @@ msgstr ""
 msgid "Extensions"
 msgstr ""
 
-msgid "Update BoxBilling"
+msgid "Update FOSSBilling"
 msgstr ""
 
 msgid "Learn more about extensions"
@@ -5175,7 +5175,7 @@ msgid "Automatic update"
 msgstr ""
 
 msgid ""
-"Automatic updater is a tool to update BoxBilling to latest version in one "
+"Automatic updater is a tool to update FOSSBilling to latest version in one "
 "click. Works on these hosting environments where PHP has permissions to "
 "overwrite files uploaded via FTP."
 msgstr ""
@@ -5188,11 +5188,11 @@ msgid ""
 "installation environment"
 msgstr ""
 
-msgid "Extending BoxBilling"
+msgid "Extending FOSSBilling"
 msgstr ""
 
 msgid ""
-"BoxBilling gives developers all the capabilities to customize, integrate & "
+"FOSSBilling gives developers all the capabilities to customize, integrate & "
 "extend the core system into your own website & applications."
 msgstr ""
 
@@ -5252,7 +5252,7 @@ msgstr ""
 
 msgid ""
 "This guide will help you to get started selling SolusVM virtual servers with "
-"BoxBilling."
+"FOSSBilling."
 msgstr ""
 
 msgid "1. Configure your SolusVm server"
@@ -5805,7 +5805,7 @@ msgstr ""
 msgid "Client ID"
 msgstr ""
 
-msgid "Import selected SolusVM virtual server to BoxBilling"
+msgid "Import selected SolusVM virtual server to FOSSBilling"
 msgstr ""
 
 msgid "Vps hostname"
@@ -6078,7 +6078,7 @@ msgstr ""
 msgid "Print"
 msgstr ""
 
-msgid "BoxBilling license"
+msgid "FOSSBilling license"
 msgstr ""
 
 msgid "1. Configure API"
