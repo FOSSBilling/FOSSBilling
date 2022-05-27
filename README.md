@@ -1,10 +1,21 @@
-<h1 align="center">
+<p align="center">
   <br>
   <a href="https://fossbilling.org/"><img src="https://fossbilling.org/logo.png" alt="fossbilling" width="175"></a>
   <br>
-  FOSSBilling
+  Free and open source billing and client management software
   <br>
-</h1>
+</p>
+
+<p align="center">
+  <a href="https://heroku.com/deploy?template=https://github.com/fossbilling/fossbilling/tree/master" alt="Deploy to Heroku">
+     <img width="150" alt="Deploy" src="https://www.herokucdn.com/deploy/button.svg"/>
+  </a>
+  <a href="https://marketplace.digitalocean.com/apps/fossbilling?refcode=REF_CODE" alt="Deploy to DigitalOcean">
+     <img width="200" alt="Deploy to DO" src="https://www.deploytodo.com/do-btn-blue.svg"/>
+  </a>
+</p>
+
+___
 
 <div align="center">
   
