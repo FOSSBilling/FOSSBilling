@@ -1550,9 +1550,6 @@ msgstr ""
 msgid "Only pending and failed setup orders can be deleted."
 msgstr ""
 
-msgid "This feature is available in FOSSBilling PRO version."
-msgstr ""
-
 msgid "Currency could not be determined for order"
 msgstr ""
 
@@ -2169,11 +2166,6 @@ msgid "Parameter :param does not exist"
 msgstr ""
 
 msgid "Country :code phone code is not registered"
-msgstr ""
-
-msgid ""
-"You have reached free version limit. Upgrade to PRO version of FOSSBilling if "
-"you want this limit removed."
 msgstr ""
 
 msgid "Theme code is missing"
