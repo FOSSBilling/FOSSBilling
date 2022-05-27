@@ -1,5 +1,5 @@
-# en_US translation of FOSSBilling Application
-# Copyright 2011-2021 FOSSBilling <info@fossbilling.org>
+# en_US translation of BoxBilling Application
+# Copyright 2011-2021 BoxBilling <info@boxbilling.org>
 #
 msgid ""
 msgstr ""
