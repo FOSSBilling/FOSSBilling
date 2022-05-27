@@ -1187,7 +1187,7 @@ class Service implements InjectionAwareInterface
         $r = ($subscribe) ? $adapter->recurrentPayment($mpi) : $adapter->singlePayment($mpi);
         $this->di['logger']->info('Went to pay for invoice #%s via %s', $invoice->id, $gtw->gateway);
 
-        // @bug https://github.com/boxbilling/FOSSBilling/issues/108
+        // @bug https://github.com/boxbilling/boxbilling/issues/108
         if ('html' != $adapter->getType()) {
             $r = (array) $r;
         }

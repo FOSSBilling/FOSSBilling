@@ -599,7 +599,7 @@ LOCK TABLES `support_helpdesk` WRITE;
 
 INSERT INTO `support_helpdesk` (`id`, `name`, `email`, `close_after`, `can_reopen`, `signature`, `created_at`, `updated_at`)
 VALUES
-	(1,'General','info@boxbilling.org',24,0,'It is always a pleasure to help.\nHave a Nice Day !','2021-01-01 12:00:00','2021-01-01 12:00:00');
+	(1,'General','info@fossbilling.org',24,0,'It is always a pleasure to help.\nHave a Nice Day !','2021-01-01 12:00:00','2021-01-01 12:00:00');
 
 /*!40000 ALTER TABLE `support_helpdesk` ENABLE KEYS */;
 UNLOCK TABLES;

@@ -8,7 +8,7 @@ class Payment_Adapter_PayPalTest extends PHPUnit\Framework\TestCase {
     public function setup(): void
     {
         $this->defaultConfig = array(
-            'email' => 'info@boxbilling.org',
+            'email' => 'info@fossbilling.org',
         );
     }
 

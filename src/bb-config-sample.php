@@ -110,7 +110,7 @@ return [
         /**
          * The name of the database for FOSSBilling.
          */
-        'name' => getenv('DB_NAME') ?: 'boxbilling',
+        'name' => getenv('DB_NAME') ?: 'fossbilling',
 
         /**
          * Database username.
@@ -174,7 +174,7 @@ return [
          * @since 4.22.0
          * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
          */
-        'user_agent' => 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; FOSSBilling; +http://boxbilling.org) Gecko/20100101 Firefox/93.0',
+        'user_agent' => 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; FOSSBilling; +https://fossbilling.org) Gecko/20100101 Firefox/93.0',
 
         /**
          * Default request timeout
