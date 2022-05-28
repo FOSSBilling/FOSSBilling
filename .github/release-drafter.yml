@@ -29,3 +29,5 @@ template: |
   ## Changes
 
   $CHANGES
+exclude-labels:
+  - 'skip-changelog'
