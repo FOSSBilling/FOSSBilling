@@ -18,31 +18,23 @@
         <link rel="icon" href="{{ settings.favicon }}">
     {% endif %}
 
-    <!-- Bootstrap Core CSS -->
     {% if settings.theme != 'default' %}
         <link href="{{ 'css/themes/theme-'|asset_url }}{{ settings.theme }}.min.css" rel="stylesheet">
     {% else %}
         <link href="{{ 'css/boxbilling-bundle.min.css'|asset_url }}" rel="stylesheet">
     {% endif %}
 
-    {% if settings.inject_css|default %}
-        <!-- Custom CSS -->
-        <style>
-            {{ settings.inject_css|raw }}
-        </style>
-    {% endif %}
-
     {% block opengraph %}{% endblock %}
     {% block head %}{% endblock %}
 
-    {% if settings.gtm_enabled and settings.gtm_container_id %}
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ settings.gtm_container_id }}');</script>
+    {% if settings.inject_custom_code_head|default %}
+        {{ settings.inject_custom_code_head|raw }}
     {% endif %}
 </head>
 
 <body class="bg-light">
-    {% if settings.gtm_enabled and settings.gtm_container_id %}
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ settings.gtm_container_id }}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    {% if settings.inject_custom_code_body_start|default %}
+        {{ settings.inject_custom_code_body_start|raw }}
     {% endif %}
 
     {% if guest.extension_is_on({ 'mod': 'cookieconsent' }) %}
@@ -282,14 +274,11 @@
 
     <script src="{{ 'js/boxbilling-bundle.min.js'|asset_url }}"></script>
 
-    {% if settings.inject_javascript|default %}
-        <!-- Custom Javascript -->
-        <script>
-            {{ settings.inject_javascript|raw }}
-        </script>
-    {% endif %}
-
     {% block js %}{% endblock %}
+
+    {% if settings.inject_custom_code_body_end|default %}
+        {{ settings.inject_custom_code_body_end|raw }}
+    {% endif %}
 
     <noscript>NOTE: Many features on BoxBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
 </body>

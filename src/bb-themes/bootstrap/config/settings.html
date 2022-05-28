@@ -479,32 +479,24 @@
 <fieldset>
     <legend>Custom code</legend>
     <div class="mb-3 row">
-        <label class="form-label col-3 col-form-label">Google Tag Manager</label>
+        <label class="form-label col-3 col-form-label" for="textareaInjectCustomCodeHead">Inject code in head</label>
         <div class="col">
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" id="inputGtmEnabledYes" type="radio" name="gtm_enabled" value="1" checked>
-                <label class="form-check-label" for="inputGtmEnabledYes">Enabled</label>
-            </div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" id="inputGtmEnabledNo" type="radio" name="gtm_enabled" value="0">
-                <label class="form-check-label" for="inputGtmEnabledNo">Disabled</label>
-            </div>
-            <div class="mt-3 input-group">
-                <span class="input-group-text">Container ID</span>
-                <input class="form-control ps-3" type="text" name="gtm_container_id">
-            </div>
+            <textarea class="form-control" name="inject_custom_code_head" id="textareaInjectCustomCodeHead" rows="2"></textarea>
+            <small class="form-hint">Inject custom JS/CSS code in each page header.</small>
         </div>
     </div>
     <div class="mb-3 row">
-        <label class="form-label col-3 col-form-label" for="inject_javascript">Custom Javascript code</label>
+        <label class="form-label col-3 col-form-label" for="textareaInjectCustomCodeBodyStart">Inject code after body start</label>
         <div class="col">
-            <textarea class="form-control" name="inject_javascript" id="inject_javascript" rows="10"></textarea>
+            <textarea class="form-control" name="inject_custom_code_body_start" id="textareaInjectCustomCodeBodyStart" rows="2"></textarea>
+            <small class="form-hint">Inject custom JS/CSS code after start body tag on each page.</small>
         </div>
     </div>
     <div class="mb-3 row">
-        <label class="form-label col-3 col-form-label" for="inject_css">Custom CSS code</label>
+        <label class="form-label col-3 col-form-label" for="textareaInjectCustomCodeBodyEnd">Inject code before body end</label>
         <div class="col">
-            <textarea class="form-control" name="inject_css" id="inject_css" rows="10"></textarea>
+            <textarea class="form-control" name="inject_custom_code_body_end" id="textareaInjectCustomCodeBodyEnd" rows="2"></textarea>
+            <small class="form-hint">Inject custom JS/CSS code before close body tag on each page.</small>
         </div>
     </div>
 </fieldset>
