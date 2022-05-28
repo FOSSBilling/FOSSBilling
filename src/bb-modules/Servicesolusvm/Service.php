@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -63,7 +64,7 @@ class Service implements InjectionAwareInterface
             `updated_at` varchar(35) DEFAULT NULL,
             PRIMARY KEY (`id`),
             KEY `client_id_idx` (`client_id`)
-            ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;';
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;';
         $this->di['db']->exec($sql);
     }
 
@@ -120,10 +121,10 @@ class Service implements InjectionAwareInterface
         }
 
         $sql = "
-            UPDATE extension_meta 
+            UPDATE extension_meta
             SET meta_value = :config
             WHERE rel_type = 'cluster'
-            AND extension = 'mod_servicesolusvm' 
+            AND extension = 'mod_servicesolusvm'
             AND rel_id = :cluster_id
             AND meta_key = 'config'
         ";
@@ -149,9 +150,9 @@ class Service implements InjectionAwareInterface
     public function getMasterConfig($cluster_id)
     {
         $sql = "
-            SELECT meta_value 
-            FROM extension_meta 
-            WHERE extension = 'mod_servicesolusvm' 
+            SELECT meta_value
+            FROM extension_meta
+            WHERE extension = 'mod_servicesolusvm'
             AND rel_type = 'cluster'
             AND rel_id = :cluster_id
             AND meta_key = 'config'
@@ -205,10 +206,10 @@ class Service implements InjectionAwareInterface
     public function getSolusUserPassword($client)
     {
         $sql = "
-            SELECT meta_value 
-            FROM extension_meta 
-            WHERE client_id = :cid 
-            AND extension = 'mod_servicesolusvm' 
+            SELECT meta_value
+            FROM extension_meta
+            WHERE client_id = :cid
+            AND extension = 'mod_servicesolusvm'
             AND meta_key = :key
         ";
         $username = $this->di['db']->getCell($sql, ['cid' => $client->id, 'key' => 'solusvm_username']);
@@ -543,10 +544,10 @@ class Service implements InjectionAwareInterface
         $this->_getApi()->client_updatepassword($model->username, $params['password']);
 
         $sql = "
-            UPDATE extension_meta 
+            UPDATE extension_meta
             SET meta_value = :pass
-            WHERE client_id = :cid 
-            AND extension = 'mod_servicesolusvm' 
+            WHERE client_id = :cid
+            AND extension = 'mod_servicesolusvm'
             AND meta_key = :key
         ";
         $this->di['db']->exec($sql, ['cid' => $model->client_id, 'key' => 'solusvm_password', 'pass' => $params['password']]);
@@ -637,14 +638,14 @@ class Service implements InjectionAwareInterface
             } else {
                 $cport = '5656';
             }
-            $url = 'https://'.$c['ipaddress'].':'.$cport;
+            $url = 'https://' . $c['ipaddress'] . ':' . $cport;
         } else {
             if ($c['port']) {
                 $cport = $c['port'];
             } else {
                 $cport = '5353';
             }
-            $url = 'http://'.$c['ipaddress'].':'.$cport;
+            $url = 'http://' . $c['ipaddress'] . ':' . $cport;
         }
 
         $client = $this->di['db']->load('client', $model->client_id);
