@@ -10,7 +10,7 @@
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
     <meta name="robots" content="{{ settings.meta_robots }}">
     <meta name="author" content="{{ settings.meta_author }}">
-    <meta name="generator" content="BoxBilling {{ guest.system_version }}">
+    <meta name="generator" content="FOSSBilling {{ guest.system_version }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     {% block opengraph %}{% endblock %}
@@ -266,7 +266,7 @@
         <img src="{{ 'img/loader.gif'|asset_url}}" style="position: absolute; display: block; margin-left: auto; margin-right: auto; position: relative; top: 50%; opacity: 1; filter: alpha(opacity=100); z-index: 1003">
     </div>
 </div>
-<noscript>NOTE: Many features on BoxBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
+<noscript>NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
 
 {% endif %}
 {% endblock %}

@@ -186,7 +186,7 @@
                         </li>
                         {% if guest.extension_is_on({"mod":'branding'}) %}
                         <li>
-                            <a href="http://www.boxbilling.org" title="Billing Software" target="_blank">Billing software</a>
+                            <a href="https://www.fossbilling.org" title="Billing Software" target="_blank">Billing software</a>
                         </li>
                         {% endif %}
                     </ul>
@@ -197,7 +197,7 @@
         <div class="grid_4">
             {% if guest.extension_is_on({"mod":'branding'}) %}
             <p class="logo">
-                <a class="boxbilling" href="http://www.boxbilling.org" title="Invoicing software" target="_blank">{{ 'images/boxbilling-logo.png' | asset_url | img_tag('Business software') }}</a>
+                <a class="boxbilling" href="https://www.fossbilling.org" title="Invoicing software" target="_blank">{{ 'images/boxbilling-logo.png' | asset_url | img_tag('Business software') }}</a>
             </p>
             {% endif %}
         </div>
@@ -222,7 +222,7 @@
 </div>
 <div class="loading dim" style="display:none"><div class="popup_block"><h3>{{ 'Loading ..'|trans }}</h3></div></div>
     {% block js %}{% endblock %}
-    <noscript>NOTE: Many features on BoxBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
+    <noscript>NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
 {% include 'partial_pending_messages.html.twig' ignore missing %}
 </body>
 </html>

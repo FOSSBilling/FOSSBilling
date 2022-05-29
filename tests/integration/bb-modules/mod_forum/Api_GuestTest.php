@@ -62,7 +62,7 @@ class Api_Guest_ForumTest extends BBDbApiTestCase
         $this->assertIsArray($array['list']);
 
         $data = array(
-            'q' => 'BoxBilling'
+            'q' => 'FOSSBilling'
         );
         $array = $this->api_guest->forum_search($data);
         $this->assertIsArray($array);

@@ -12,7 +12,7 @@
 
 class Server_Package
 {
-    private $name                   = 'BoxBilling';
+    private $name                   = 'FOSSBilling';
     private $quota                  = NULL;
     private $bandwidth              = NULL;
     

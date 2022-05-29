@@ -464,7 +464,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Import selected servers to BoxBilling.
+     * Import selected servers to FOSSBilling.
      *
      * @return string - log information regarding import process
      */
@@ -529,7 +529,7 @@ class Admin extends \Api_Abstract
 
                 // create service
                 $model = $this->di['db']->dispense('service_solusvm');
-                $model->cluster_id = 1; // for future if ever BoxBilling supports multiple master servers
+                $model->cluster_id = 1; // for future if ever FOSSBilling supports multiple master servers
                 $model->client_id = $client->id;
                 $model->hostname = $server['hostname'];
                 $model->template = $server['template'];
@@ -561,13 +561,13 @@ class Admin extends \Api_Abstract
             }
         }
 
-        $this->di['logger']->info('Imported VPS from SolusVM to BoxBilling');
+        $this->di['logger']->info('Imported VPS from SolusVM to FOSSBilling');
 
         return $log;
     }
 
     /**
-     * Import selected clients to BoxBilling.
+     * Import selected clients to FOSSBilling.
      *
      * @return string - log information regarding import process
      */
@@ -609,7 +609,7 @@ class Admin extends \Api_Abstract
             }
         }
 
-        $this->di['logger']->info('Imported clients from SolusVM to BoxBilling');
+        $this->di['logger']->info('Imported clients from SolusVM to FOSSBilling');
 
         return $log;
     }

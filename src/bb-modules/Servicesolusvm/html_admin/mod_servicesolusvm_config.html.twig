@@ -35,7 +35,7 @@
             {% if nodes %}
             {{ mf.selectbox('config[node]', nodes, product.config.node, 0, 'Select node') }}
             {% else %}
-            {{ 'Make sure BoxBilling can connect to SolusVM master server and check if nodes are configured for selected virtualizator type. Refresh page if you have changed virtualization type to see new nodes.'|trans }}
+            {{ 'Make sure FOSSBilling can connect to SolusVM master server and check if nodes are configured for selected virtualizator type. Refresh page if you have changed virtualization type to see new nodes.'|trans }}
             {% endif %}
         </div>
         <div class="fix"></div>
@@ -48,7 +48,7 @@
             {% if plans %}
             {{ mf.selectbox('config[plan]', plans, product.config.plan, 0, 'Select plan') }}
             {% else %}
-            {{ 'Make sure BoxBilling can connect to SolusVM master server and check if plans are configured for selected virtualizator type.'|trans }}
+            {{ 'Make sure FOSSBilling can connect to SolusVM master server and check if plans are configured for selected virtualizator type.'|trans }}
             {% endif %}
         </div>
         <div class="fix"></div>

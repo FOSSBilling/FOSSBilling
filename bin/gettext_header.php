@@ -1,8 +1,8 @@
 <?php
 
 function _writeHeader() {
-    $output = "# en_US translation of BoxBilling Application\n";
-    $output .= sprintf("# Copyright %s BoxBilling <info@boxbilling.org>\n", '2011 - '. date('Y'));
+    $output = "# en_US translation of FOSSBilling Application\n";
+    $output .= sprintf("# Copyright %s FOSSBilling <info@fossbilling.org>\n", '2011 - '. date('Y'));
     $output .= "#\n";
     $output .= "#, fuzzy\n";
     $output .= "msgid \"\"\n";
@@ -10,8 +10,8 @@ function _writeHeader() {
     $output .= "\"Project-Id-Version: 4\\n\"\n";
     $output .= "\"POT-Creation-Date: " . date("Y-m-d H:iO") . "\\n\"\n";
     $output .= "\"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\\n\"\n";
-    $output .= "\"Last-Translator: BoxBilling TM <info@boxbilling.org>\\n\"\n";
-    $output .= "\"Language-Team: BoxBilling TM <info@boxbilling.org>\\n\"\n";
+    $output .= "\"Last-Translator: FOSSBilling TM <info@fossbilling.org>\\n\"\n";
+    $output .= "\"Language-Team: FOSSBilling TM <info@fossbilling.org>\\n\"\n";
     $output .= "\"MIME-Version: 1.0\\n\"\n";
     $output .= "\"Content-Type: text/plain; charset=utf-8\\n\"\n";
     $output .= "\"Content-Transfer-Encoding: 8bit\\n\"\n";

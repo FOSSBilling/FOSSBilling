@@ -14,9 +14,9 @@ class Server_Client
 {
     private $id         = NULL;
     private $email      = NULL;
-    private $full_name  = 'BoxBilling Client';
-    private $company    = 'BoxBilling';
-    private $www        = 'www.boxbilling.org';
+    private $full_name  = 'FOSSBilling Client';
+    private $company    = 'FOSSBilling';
+    private $www        = 'www.fossbilling.org';
     private $address_1  = NULL;
     private $address_2  = NULL;
     private $street     = NULL;

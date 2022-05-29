@@ -344,8 +344,8 @@ class Service implements InjectionAwareInterface
                 'name' => $theme,
                 'version' => '1.0',
                 'description' => 'Theme',
-                'author' => 'BoxBilling',
-                'author_url' => 'http://www.boxbilling.org',
+                'author' => 'FOSSBilling',
+                'author_url' => 'https://www.fossbilling.org',
             ];
         }
 

@@ -26,7 +26,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetCompany()
     {
-        $config = array('url' => 'www.boxbilling.org');
+        $config = array('url' => 'www.fossbilling.org');
         $expected = array(
             'www'               => $config['url'],
             'name'              => 'Inc. Test',

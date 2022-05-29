@@ -121,7 +121,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
     }
 
     /**
-     * What extensions must be loaded for BoxBilling to function correctly
+     * What extensions must be loaded for FOSSBilling to function correctly
      */
     public function extensions()
     {

@@ -409,8 +409,8 @@ ZW=Zimbabwe
 
         <div id="tab-ftp" class="tab_content nopadding">
             <div class="help">
-                <h3>{{ 'FTP layer for BoxBilling'|trans }}</h3>
-                <p>{{ 'FTP is used to manage BoxBilling modules and updates.'|trans }}</p>
+                <h3>{{ 'FTP layer for FOSSBilling'|trans }}</h3>
+                <p>{{ 'FTP is used to manage FOSSBilling modules and updates.'|trans }}</p>
             </div>
 
             <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="mainForm api-form" data-api-msg="{{ 'FTP settings updated'|trans }}">
@@ -448,7 +448,7 @@ ZW=Zimbabwe
                 </div>
 
                 <div class="rowElem">
-                    <label class="topLabel">{{ '<strong>FTP root</strong> - This is generally the directory in which BoxBilling is installed. This setting is very important to be setup correctly as it very specifically depends on the Host server settings. In can be just / BUT it might be htdocs/boxbilling, public_html/, /public_html/boxbilling or other. It is a variable that BoxBilling has absolutely no control over. You will need to clarify this with your host.'|trans }}</label>
+                    <label class="topLabel">{{ '<strong>FTP root</strong> - This is generally the directory in which FOSSBilling is installed. This setting is very important to be setup correctly as it very specifically depends on the Host server settings. In can be just / BUT it might be htdocs/boxbilling, public_html/, /public_html/boxbilling or other. It is a variable that FOSSBilling has absolutely no control over. You will need to clarify this with your host.'|trans }}</label>
                     <div class="formBottom">
                         <input type="text" name="ftp_root" value="{{ params.ftp_root }}"/>
                     </div>
