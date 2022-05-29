@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -42,8 +43,7 @@ class Service implements \Box\InjectionAwareInterface
         PRIMARY KEY (`id`),
         UNIQUE KEY `username` (`username`),
         KEY `client_id_idx` (`client_id`)
-        ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
-        ';
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;';
         $this->di['db']->exec($sql);
     }
 
@@ -200,7 +200,7 @@ class Service implements \Box\InjectionAwareInterface
         $sql = 'SELECT id FROM service_centovacast WHERE username = :u';
         $exists = $this->di['db']->getCell($sql, ['u' => $u]);
         if ($exists) {
-            $u = $u.rand(1, 100);
+            $u = $u . rand(1, 100);
         }
 
         return $u;
@@ -397,10 +397,10 @@ class Service implements \Box\InjectionAwareInterface
         $centovacast_url = $server['url'];
 
         if ($admin) {
-            $account_password = 'admin|'.$server['secret'];
+            $account_password = 'admin|' . $server['secret'];
         }
 
-        require_once dirname(__FILE__).'/ccapiclient.php';
+        require_once dirname(__FILE__) . '/ccapiclient.php';
         $server = new CCServerAPIClient($centovacast_url);
         $server->cc_initialize($centovacast_url);
         $server->call($method, $account_username, $account_password, $arguments);
@@ -417,7 +417,7 @@ class Service implements \Box\InjectionAwareInterface
      */
     private function _apiSystemCall($server, $method, $params = [])
     {
-        require_once dirname(__FILE__).'/ccapiclient.php';
+        require_once dirname(__FILE__) . '/ccapiclient.php';
         $centovacast_url = $server['url'];
         $admin_password = $server['secret'];
         $system = new CCSystemAPIClient($centovacast_url);
