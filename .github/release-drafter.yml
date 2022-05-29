@@ -11,6 +11,9 @@ categories:
   - title: '🐛 Bug Fixes'
     labels:
       - 'bug'
+  - title: '🛡️ Security'
+    labels:
+      - 'security'
   - title: '🧰 Maintenance'
     labels:
       - 'task'
