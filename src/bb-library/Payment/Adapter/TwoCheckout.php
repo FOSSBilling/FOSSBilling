@@ -72,7 +72,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
      * @param int $invoice_id
      * @param bool $subscription
      * 
-     * @since BoxBilling v2.9.11
+     * @since FOSSBilling v2.9.11
      * 
      * @return string - html form with auto submit javascript
      */
@@ -102,11 +102,11 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
     /**
      * Process transaction received from payment gateway
      * 
-     * @since BoxBilling v2.9.11
+     * @since FOSSBilling v2.9.11
      * 
      * @param Api_Admin $api_admin
      * @param int $id - transaction id to process
-     * @param int $gateway_id - payment gateway id on BoxBilling
+     * @param int $gateway_id - payment gateway id on FOSSBilling
      * 
      * @return mixed
      */

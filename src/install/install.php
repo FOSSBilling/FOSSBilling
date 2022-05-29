@@ -134,7 +134,7 @@ final class Box_Installer
                         $this->session->set('admin_name', $admin_name);
                     }
 
-                    $this->session->set('license', 'BoxBilling CE');
+                    $this->session->set('license', 'FOSSBilling CE');
                     $this->makeInstall($this->session);
                     $this->generateEmailTemplates();
                     session_destroy();
@@ -238,7 +238,7 @@ final class Box_Installer
     {
         $path = BB_PATH_LICENSE;
         if (!file_exists($path)) {
-            return 'BoxBilling is licensed under the Apache License, Version 2.0.' . PHP_EOL . 'Please visit https://github.com/boxbilling/boxbilling/blob/master/LICENSE for full license text.';
+            return 'FOSSBilling is licensed under the Apache License, Version 2.0.' . PHP_EOL . 'Please visit https://github.com/FOSSBilling/FOSSBilling/blob/master/LICENSE for full license text.';
         }
 
         return file_get_contents($path);
@@ -377,7 +377,7 @@ final class Box_Installer
         $admin_pass = $ns->get('admin_pass');
 
         $content = "Hi $admin_name, " . PHP_EOL;
-        $content .= 'You have successfully setup BoxBilling at ' . BB_URL . PHP_EOL;
+        $content .= 'You have successfully setup FOSSBilling at ' . BB_URL . PHP_EOL;
         $content .= 'Access client area at: ' . BB_URL . PHP_EOL;
         $content .= 'Access admin area at: ' . BB_URL_ADMIN . ' with login details:' . PHP_EOL;
         $content .= 'E-mail: ' . $admin_email . PHP_EOL;
@@ -386,7 +386,7 @@ final class Box_Installer
         $content .= "Read FOSSBilling documentation to get started https://docs.fossbilling.org/" . PHP_EOL;
         $content .= "Thank You for using FOSSBilling." . PHP_EOL;
 
-        $subject = sprintf('BoxBilling is ready at "%s"', BB_URL);
+        $subject = sprintf('FOSSBilling is ready at "%s"', BB_URL);
 
         @mail($admin_email, $subject, $content);
     }
@@ -448,7 +448,7 @@ final class Box_Installer
                 'rate_limit_login' => 20,
             ],
             'guzzle' => [
-                'user_agent' => 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; BoxBilling; +http://boxbilling.org) Gecko/20100101 Firefox/93.0',
+                'user_agent' => 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; FOSSBilling; +http://fossbilling.org) Gecko/20100101 Firefox/93.0',
                 'timeout' => 0,
                 'upgrade_insecure_requests' => 0,
             ],

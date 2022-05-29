@@ -14,7 +14,7 @@
  * Notifications center management.
  *
  * Notifications are important messages for staff messages to get informed
- * about important events on BoxBilling.
+ * about important events on FOSSBilling.
  *
  * For example cron job can inform staff members
  */

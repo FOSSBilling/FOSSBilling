@@ -64,7 +64,7 @@ function handler_exception($e)
             $whoops = new \Whoops\Run();
             $prettyPage = new \Whoops\Handler\PrettyPageHandler();
             $prettyPage->setPageTitle('An error ocurred');
-            $prettyPage->addDataTable('BoxBilling environment', [
+            $prettyPage->addDataTable('FOSSBilling environment', [
         'PHP Version' => phpversion(),
         'Error code' => $e->getCode(),
       ]);
@@ -228,7 +228,7 @@ set_error_handler('handler_error');
 
 // Check for Composer packages
 if (!file_exists(BB_PATH_VENDOR)) {
-    throw new Exception("It seems like Composer packages are missing. You have to run \"<code>composer install</code>\" in order to install them. For detailed instruction, you can see <a href=\"https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies\">Composer's getting started guide</a>.<br /><br />If you have downloaded BoxBilling from <a href=\"https://github.com/boxbilling/boxbilling/releases\">GitHub releases</a>, this shouldn't happen.", 110);
+    throw new Exception("It seems like Composer packages are missing. You have to run \"<code>composer install</code>\" in order to install them. For detailed instruction, you can see <a href=\"https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies\">Composer's getting started guide</a>.<br /><br />If you have downloaded FOSSBilling from <a href=\"https://github.com/FOSSBilling/FOSSBilling/releases\">GitHub releases</a>, this shouldn't happen.", 110);
 }
 
 // Multisite support. Load new configuration depending on the current hostname
@@ -261,13 +261,13 @@ if (!file_exists($configPath) || 0 == filesize($configPath)) {
     }
 
     $configFile = pathinfo($configPath, PATHINFO_BASENAME);
-    $msg = sprintf("Your <b><em>$configFile</em></b> file seems to be invalid. It's possible that your preexisting configuration file may not contain the required configuration parameters or have become corrupted. BoxBilling needs to have a valid configuration file present in order to function properly.</p> <p>Please use the example config as reference <a target='_blank' href='https://raw.githubusercontent.com/boxbilling/boxbilling/master/src/bb-config-sample.php'>here</a>. You may need to manually restore a old config file or fix your existing one.</p>");
+    $msg = sprintf("Your <b><em>$configFile</em></b> file seems to be invalid. It's possible that your preexisting configuration file may not contain the required configuration parameters or have become corrupted. FOSSBilling needs to have a valid configuration file present in order to function properly.</p> <p>Please use the example config as reference <a target='_blank' href='https://raw.githubusercontent.com/FOSSBilling/FOSSBilling/master/src/bb-config-sample.php'>here</a>. You may need to manually restore a old config file or fix your existing one.</p>");
     throw new Exception($msg, 101);
 }
 
 // Try to check if /install directory still exists, even after the installation was completed
 if (file_exists($configPath) && 0 !== filesize($configPath) && file_exists(BB_PATH_ROOT.'/install/index.php')) {
-    throw new Exception('For safety reasons, you have to delete the <b><em>/install</em></b> directory to start using BoxBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.', 102);
+    throw new Exception('For safety reasons, you have to delete the <b><em>/install</em></b> directory to start using FOSSBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.', 102);
 }
 
 $config = require_once $configPath;

@@ -80,7 +80,7 @@ class Box_Update
     }
 
     /**
-     * Check if we need to update current BoxBilling version
+     * Check if we need to update current FOSSBilling version
      * @return bool
      */
     public function getCanUpdate()
@@ -123,10 +123,10 @@ class Box_Update
     public function performUpdate()
     {
         if(!$this->getCanUpdate()) {
-            throw new LogicException('You have latest version of BoxBilling. You do not need to update.');
+            throw new LogicException('You have latest version of FOSSBilling. You do not need to update.');
         }
 
-        error_log('Started BoxBilling auto-update script');
+        error_log('Started FOSSBilling auto-update script');
         $latest_version = $this->getLatestVersion();
         $latest_version_archive = BB_PATH_CACHE.DIRECTORY_SEPARATOR.$latest_version.'.zip';
 
