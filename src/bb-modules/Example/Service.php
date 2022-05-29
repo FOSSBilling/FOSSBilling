@@ -125,7 +125,7 @@ class Service
     }
 
     /**
-     * Example event hook. Any module can hook to any BoxBilling event and perform actions.
+     * Example event hook. Any module can hook to any FOSSBilling event and perform actions.
      *
      * Make sure extension is enabled before testing this event.
      *
@@ -156,7 +156,7 @@ class Service
         // @note To debug parameters by throwing an exception
         // throw new Exception(print_r($params, 1));
 
-        // Use RedBean ORM in any place of BoxBilling where API call is not enough
+        // Use RedBean ORM in any place of FOSSBilling where API call is not enough
         // First we need to find if we already have a counter for this IP
         // We will use extension_meta table to store this data.
         $values = [

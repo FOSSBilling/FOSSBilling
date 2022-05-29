@@ -23,7 +23,7 @@ class Guest extends \Api_Abstract
      * the system.
      * Database structure must be installed before calling this action.
      * bb-config.php file must already be present and configured.
-     * Used by automated BoxBilling installer.
+     * Used by automated FOSSBilling installer.
      *
      * @param string $email    - admin email
      * @param string $password - admin password

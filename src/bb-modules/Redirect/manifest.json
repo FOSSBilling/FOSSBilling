@@ -4,7 +4,7 @@
     "name":         "Redirect",
     "icon_url":     "icon.png",
     "description":  "Manage redirects",
-    "author":       "BoxBilling",
-    "author_url":   "http://www.boxbilling.org",
+    "author":       "FOSSBilling",
+    "author_url":   "https://www.fossbilling.org",
     "version":      "1.0.0"
 }

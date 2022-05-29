@@ -50,7 +50,7 @@
             <form method="post" action="admin/email/template_update" class="api-form" data-api-msg="{{ 'Template updated'|trans }}">
                 <div class="card-body">
                     <h3>{{ 'Manage email template'|trans }}</h3>
-                    <p class="text-muted">{{ 'Most email templates receives parameters from BoxBilling. You can browse them on "Variables" tab. Copy variable name to email template and hit preview to see parsed content. Please note that values will be different when actual email is sent.'|trans }}</p>
+                    <p class="text-muted">{{ 'Most email templates receives parameters from FOSSBilling. You can browse them on "Variables" tab. Copy variable name to email template and hit preview to see parsed content. Please note that values will be different when actual email is sent.'|trans }}</p>
 
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Email subject'|trans }}</label>
@@ -207,7 +207,7 @@ You can event use IF statements in email templates: {% if 1 == 2 %}This will nev
 
 ***
 
-Accessing Admin API can get information about your BoxBilling, for example how many clients you have:
+Accessing Admin API can get information about your FOSSBilling, for example how many clients you have:
 {% set stats =  admin.stats_get_summary %}
 **Total clients:** {{ stats.clients_total }}
 

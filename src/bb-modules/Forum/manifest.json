@@ -2,11 +2,11 @@
     "id":           "forum",
 	"type":         "mod",
     "name":         "Forum",
-    "description":  "Forum for BoxBilling",
+    "description":  "Forum for FOSSBilling",
     "icon_url":     "icon.png",
     "homepage_url": "http://github.com/boxbilling/",
-    "author":       "BoxBilling",
+    "author":       "FOSSBilling",
     "author_url":   "http://extensions.boxbilling.org/",
-    "license":      "http://www.boxbilling.org/license.txt",
+    "license":      "https://www.fossbilling.org/license.txt",
     "version":      "1.2.0"
 }

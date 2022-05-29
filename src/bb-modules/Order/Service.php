@@ -643,7 +643,7 @@ class Service implements InjectionAwareInterface
     /**
      * activate all addons on initial activation.
      *
-     * @see https://github.com/boxbilling/BoxBilling/issues/54
+     * @see https://github.com/boxbilling/boxbilling/issues/54
      */
     public function activateOrderAddons(\Model_ClientOrder $order)
     {
@@ -904,7 +904,7 @@ class Service implements InjectionAwareInterface
         $this->renewFromOrder($order);
 
         // activate all addons on initial activation
-        // @see https://github.com/boxbilling/BoxBilling/issues/54
+        // @see https://github.com/boxbilling/boxbilling/issues/54
         if ($order->group_master && \Model_ClientOrder::STATUS_PENDING_SETUP == $order->status) {
             $list = $this->getOrderAddonsList($order);
             foreach ($list as $addon) {

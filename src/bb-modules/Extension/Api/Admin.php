@@ -34,7 +34,7 @@ class Admin extends \Api_Abstract
 
     /**
      * Get list of extensions from extensions.boxbilling.org
-     * which can be installed on current version of BoxBilling.
+     * which can be installed on current version of FOSSBilling.
      *
      * @param string $type - mod, gateway ...
      *
@@ -84,7 +84,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Update BoxBilling core.
+     * Update FOSSBilling core.
      *
      * @return bool
      *
@@ -95,13 +95,13 @@ class Admin extends \Api_Abstract
     {
         $updater = $this->di['updater'];
         if (!$updater->getCanUpdate()) {
-            throw new \Box_Exception('You have latest version of BoxBilling. You do not need to update.', null, 930);
+            throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.', null, 930);
         }
 
         $new_version = $updater->getLatestVersion();
         $updater->performUpdate();
 
-        $this->di['logger']->info('Updated BoxBilling from %s to %s', \Box_Version::VERSION, $new_version);
+        $this->di['logger']->info('Updated FOSSBilling from %s to %s', \Box_Version::VERSION, $new_version);
 
         return true;
     }
@@ -178,7 +178,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Completely remove extension from BoxBilling.
+     * Completely remove extension from FOSSBilling.
      *
      * @param string $type - extensions type: mod, theme, gateway ...
      * @param string $id   - extension id
@@ -236,7 +236,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Universal method for BoxBilling extensions
+     * Universal method for FOSSBilling extensions
      * to retrieve configuration from database
      * It is recommended to store your extension configuration
      * using this method. Automatic decryption is available
@@ -262,7 +262,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Universal method for BoxBilling extensions
+     * Universal method for FOSSBilling extensions
      * to update or save extension configuration to database
      * Always pass all configuration parameters to this method.
      *
