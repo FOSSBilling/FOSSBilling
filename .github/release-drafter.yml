@@ -18,6 +18,8 @@ categories:
     labels:
       - 'task'
       - 'tests/CI'
+  - title: '📦 Dependencies'
+    labels:
       - 'dependencies'
 exclude-labels:
   - 'skip-changelog'
