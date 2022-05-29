@@ -9,7 +9,7 @@ return [
     |
     */
 
-    'dashboard' => 'Panel',
-    'logout' => 'Çıkış yap'
+    'dashboard' => 'Dashboard',
+    'logout' => 'Log out'
 
 ];
