@@ -121,7 +121,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Update account information on BoxBilling database.
+     * Update account information on FOSSBilling database.
      * This does not send actions to real account on hosting server.
      *
      * @param int $order_id - Hosting account order id

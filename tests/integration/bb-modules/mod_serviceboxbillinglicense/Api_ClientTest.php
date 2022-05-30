@@ -60,7 +60,7 @@ class Api_Client_ServiceBoxBillinglicenseTest extends BBDbApiTestCase
         $clientApi->setIdentity($client);
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('BoxBilling license order not found');
+        $this->expectExceptionMessage('FOSSBilling license order not found');
 
         $bool = $clientApi->reset($data);
     }

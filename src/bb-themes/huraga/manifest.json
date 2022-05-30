@@ -1,8 +1,8 @@
 {
-    "name": "BoxBilling Huraga",
+    "name": "FOSSBilling Huraga",
     "version": "1.0.0",
     "description": "Default client area theme",
     "icon": "screenshot.jpg",
-    "author": "BoxBilling",
-    "author_url": "http://www.boxbilling.org/"
+    "author": "FOSSBilling",
+    "author_url": "https://www.fossbilling.org/"
 }

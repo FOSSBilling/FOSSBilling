@@ -868,22 +868,22 @@ foreach (get_declared_classes() as $class) {
 require_once dirname(__FILE__) . '/bb-load.php';
 $di = include dirname(__FILE__) . '/bb-di.php';
 
-error_log('Executing BoxBilling update script');
+error_log('Executing FOSSBilling update script');
 natsort($patches);
 foreach ($patches as $class) {
     $p = new $class($di);
     if (!$p->isPatched()) {
-        $msg = 'BoxBilling patch #' . $p->getVersion() . ' executing...';
+        $msg = 'FOSSBilling patch #' . $p->getVersion() . ' executing...';
         error_log($msg);
         $p->patch();
         $p->donePatching();
-        $msg = 'BoxBilling patch #' . $p->getVersion() . ' was executed';
+        $msg = 'FOSSBilling patch #' . $p->getVersion() .' was executed';
         error_log($msg);
         echo $msg . PHP_EOL;
     } else {
         error_log('Skipped patch ' . $p->getVersion());
     }
 }
-error_log('BoxBilling update completed');
+error_log('FOSSBilling update completed');
 
-echo 'Update completed. You are using BoxBilling ' . Box_Version::VERSION . PHP_EOL;
+echo 'Update completed. You are using FOSSBilling ' . Box_Version::VERSION . PHP_EOL;

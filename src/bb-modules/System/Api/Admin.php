@@ -92,7 +92,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Parse string like BoxBilling template.
+     * Parse string like FOSSBilling template.
      *
      * @param string $_tpl - Template text to be parsed
      *

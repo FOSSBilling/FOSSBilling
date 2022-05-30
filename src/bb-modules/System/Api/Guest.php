@@ -20,7 +20,7 @@ namespace Box\Mod\System\Api;
 class Guest extends \Api_Abstract
 {
     /**
-     * Get BoxBilling version.
+     * Get FOSSBilling version.
      *
      * @return string
      */

@@ -2,6 +2,6 @@
     "id":           "servicelicense",
 	"type":         "mod",
     "name":         "License product",
-    "description":  "BoxBilling core module",
+    "description":  "FOSSBilling core module",
     "version":      "1.0.0"
 }

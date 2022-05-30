@@ -2,17 +2,17 @@
 
 {% block left %}
         <div class="widget nomargin step step-1">
-            <div class="head"><h5 class="iAlert">BoxBilling installation</h5></div>
+            <div class="head"><h5 class="iAlert">FOSSBilling installation</h5></div>
             <div class="body">
-                <p>This setup will guide you through installation process of BoxBilling.</p>
-                <p>Check if your system meets minimum requirements to install and run BoxBilling.</p>
+                <p>This setup will guide you through installation process of FOSSBilling.</p>
+                <p>Check if your system meets minimum requirements to install and run FOSSBilling.</p>
             </div>
         </div>
 
         <div class="widget nomargin step step-2">
             <div class="head"><h5 class="iAlert">Database configuration</h5></div>
             <div class="body">
-                <p>BoxBilling stores data in a SQL database. You should already have an existing database before this step. If you do not have database prepared, you should do that now.</p>
+                <p>FOSSBilling stores data in a SQL database. You should already have an existing database before this step. If you do not have database prepared, you should do that now.</p>
                 <p>Installer will create all required tables in your database after correct connection details are provided.</p>
                 <h4 class="pt10">How to create a database?</h4>
                 <p>Depending on your hosting provider database can be created in different ways.</p>
@@ -23,7 +23,7 @@
         <div class="widget nomargin step step-3">
             <div class="head"><h5 class="iAlert">Administrator account</h5></div>
             <div class="body">
-                <p>This is the main user account to control all aspects of BoxBilling.</p>
+                <p>This is the main user account to control all aspects of FOSSBilling.</p>
                 <p>Email will be used to login to admin area.</p>
                 <p>Make sure password is strong.</p>
             </div>
@@ -32,15 +32,15 @@
         <div class="widget nomargin step step-4">
             <div class="head"><h5 class="iAlert">Well done!</h5></div>
             <div class="body aligncenter">
-                <p>Thank you for choosing BoxBilling</p>
+                <p>Thank you for choosing FOSSBilling</p>
                 <a href="{{ live_site }}" title="" class="btnIconLeft mr10 mt10" target="_blank"><img src="./assets/images/user.png" alt="" class="icon"><span>Client area</span></a>
                 <a href="{{ admin_site }}" title="" class="btnIconLeft mr10 mt10" target="_blank"><img src="./assets/images/adminUser.png" alt="" class="icon"><span>Admin area</span></a>
             </div>
         </div>
 
         <div class="widget step step-4">
-            <div class="head"><h5 class="iAlert">Find us on Facebook</h5></div>
-            <iframe src="//www.facebook.com/plugins/likebox.php?href=http%3A%2F%2Fwww.facebook.com%2Fboxbilling&amp;width=209&amp;height=258&amp;colorscheme=light&amp;show_faces=true&amp;border_color=%23ffffff&amp;stream=false&amp;header=false" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:209px; height:258px;" allowTransparency="true"></iframe>
+            <div class="head"><h5 class="iAlert">Join our Discord Server</h5></div>
+            <iframe src="https://discord.com/widget?id=747432407757488179&amp;theme=light" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:100%; height:500px;" allowTransparency="true"></iframe>
         </div>
 
 {% endblock %}
@@ -53,13 +53,13 @@
                     <div class="wizard swMain">
                         <noscript>
                             <div style="border:red solid 5px; padding: 10px">
-                                <p> For full functionality of this installer and most of BoxBilling features it is
+                                <p> For full functionality of this installer and most of FOSSBilling features it is
                                     necessary to enable JavaScript.<br/>
                                     Here are the <a href="http://www.enable-javascript.com/" target="_blank">
                                         instructions how to enable JavaScript in your web browser</a>. </p>
                                 <p>
                                     If you can not enable JavaScript for some reason you can follow these steps in
-                                    order to setup BoxBilling: <br/>
+                                    order to setup FOSSBilling: <br/>
                                     * Rename "bb-config-sample.php" file to "bb-config.php", fill in the values and change this file permissions to read only (CHMOD 644).<br/>
                                     * Import /install/sql/structure.sql to your database<br/>
                                     * Import /install/sql/content.sql to your database<br/>
@@ -82,13 +82,13 @@
                                     <tr class="noborder">
                                         <td>Operating system</td>
                                         <td><strong class="{{ os_ok ? 'green' : 'red'}}">{{ os }}</strong></td>
-                                        <td>{% if not os_ok %}BoxBilling might not work properly on your operating system{% endif %}</td>
+                                        <td>{% if not os_ok %}FOSSBilling might not work properly on your operating system{% endif %}</td>
                                     </tr>
 
                                     <tr>
-                                        <td>BoxBilling version</td>
+                                        <td>FOSSBilling version</td>
                                         <td><strong class="{{ box_ver_ok ? 'green' : 'red'}}">{{ box_ver }}</strong></td>
-					<td>{% if not box_ver_ok %}BoxBilling couldn't find valid version information. This is okay if you downloaded BoxBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.{% endif %}</td>                                    </tr>
+					<td>{% if not box_ver_ok %}FOSSBilling couldn't find valid version information. This is okay if you downloaded FOSSBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.{% endif %}</td>                                    </tr>
 
                                     <tr>
                                         <td>PHP version</td>
@@ -162,7 +162,7 @@
                             <div class="rowElem">
                                 <label>Database name:</label>
                                 <div class="formRight">
-                                    <input type="text" id="db_name" name="db_name" value="{{ request.db_name|default(db_name) }}" required="required" placeholder="boxbilling"/>
+                                    <input type="text" id="db_name" name="db_name" value="{{ request.db_name|default(db_name) }}" required="required" placeholder="fossbilling"/>
                                 </div>
                                 <div class="fix"></div>
                             </div>
@@ -213,9 +213,9 @@
                         </div>
                         <div id="step-4">
                             <div class="body">
-                                <h1 class="pt10">Congratulations! BoxBilling was successfully installed.</h1>
+                                <h1 class="pt10">Congratulations! FOSSBilling was successfully installed.</h1>
 
-                                <p>Even though BoxBilling was installed successfully, you must take a few more actions.</p>
+                                <p>Even though FOSSBilling was installed successfully, you must take a few more actions.</p>
 
                                 <h2 class="pt20">Remove installation module</h2>
                                 <p>Normally, <b>install</b> folder should be automatically deleted. But if it still exists, you <b>have to</b> delete the installer from your web server before getting started.</p>
@@ -320,7 +320,7 @@ $(function() {
             if(isEmpty('admin_name')) return false;
             if(isEmpty('admin_email')) return false;
             if(isEmpty('admin_pass')) return false;
-            if(confirm('BoxBilling installer will create database. It may take some time. Do not close this window. Continue?')) {
+            if(confirm('FOSSBilling installer will create database. It may take some time. Do not close this window. Continue?')) {
                 $.ajax({
                     async: false,
                     type: "POST",

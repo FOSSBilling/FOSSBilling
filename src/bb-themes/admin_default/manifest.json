@@ -1,8 +1,8 @@
 {
-    "name": "Admin area BoxBilling Theme",
+    "name": "Admin area FOSSBilling Theme",
     "version": "1.0.0",
     "description": "Copy this theme and create your own admin area theme",
     "icon": "screenshot.jpg",
-    "author": "BoxBilling",
+    "author": "FOSSBilling",
     "author_url": "http://boxbilling.github.com/extensions/bb-themes"
 }

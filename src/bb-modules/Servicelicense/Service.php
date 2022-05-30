@@ -450,7 +450,7 @@ class Service implements InjectionAwareInterface
 
         /**
          * Return error code in result field if related to license error
-         * If error comes from BoxBilling core use $result['error'] field.
+         * If error comes from FOSSBilling core use $result['error'] field.
          *
          * @since v2.7.1
          */

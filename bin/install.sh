@@ -1,6 +1,6 @@
 #!/bin/sh
 
-URLBASE="http://www.boxbilling.org/version/latest.zip"
+URLBASE="https://www.fossbilling.org/version/latest.zip"
 
 wget -O latest.zip $URLBASE
 unzip -o latest.zip
