@@ -97,7 +97,7 @@ class Service
         $query = "SELECT param, value
                 FROM setting
                 WHERE param IN('".implode("', '", $params)."')
-               ";
+                ";
         $rows = $this->di['db']->getAll($query);
         $result = [];
         foreach ($rows as $row) {
@@ -128,13 +128,19 @@ class Service
         ];
         $results = $this->_getMultipleParams($c);
 
+        $baseurl = $this->di['config']['url'];
+        $logo_url = $this->di['array_get']($results, 'company_logo', null);
+        if (null !== $logo_url && false === strpos($logo_url, 'http')) {
+            $logo_url = $baseurl.$logo_url;
+        }
+
         return [
-            'www' => $this->di['config']['url'],
+            'www' => $baseurl,
             'name' => $this->di['array_get']($results, 'company_name', null),
             'email' => $this->di['array_get']($results, 'company_email', null),
             'tel' => $this->di['array_get']($results, 'company_tel', null),
             'signature' => $this->di['array_get']($results, 'company_signature', null),
-            'logo_url' => $this->di['array_get']($results, 'company_logo', null),
+            'logo_url' => $logo_url,
             'address_1' => $this->di['array_get']($results, 'company_address_1', null),
             'address_2' => $this->di['array_get']($results, 'company_address_2', null),
             'address_3' => $this->di['array_get']($results, 'company_address_3', null),
