@@ -55,7 +55,7 @@ class Payment_Adapter_Custom
      * @param int $invoice_id
      * @param bool $subscription
      * 
-     * @since BoxBilling v2.9.15
+     * @since FOSSBilling v2.9.15
      * 
      * @return string - html form with auto submit javascript
      */

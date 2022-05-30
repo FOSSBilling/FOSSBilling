@@ -2,9 +2,9 @@
     "id":           "embed",
 	"type":         "mod",
     "name":         "Embed parts",
-    "description":  "Provides ability to embed parts of BoxBilling to other websites",
+    "description":  "Provides ability to embed parts of FOSSBilling to other websites",
     "homepage_url": "http://github.com/boxbilling/",
-    "author":       "BoxBilling",
+    "author":       "FOSSBilling",
     "author_url":   "http://extensions.boxbilling.org/",
     "license":      "GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
     "version":      "1.0.1"

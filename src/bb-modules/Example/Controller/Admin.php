@@ -11,7 +11,7 @@
  */
 
 /**
- * This file connects BoxBilling admin area interface and API
+ * This file connects FOSSBilling admin area interface and API
  * Class does not extend any other class.
  */
 

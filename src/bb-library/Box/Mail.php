@@ -190,7 +190,7 @@ class Box_Mail
             $this->addHeader('Return-Path', $this->_from);
             $this->addHeader('Content-type', 'text/html;charset=utf-8');
             $this->addHeader('Content-Transfer-Encoding', '8bit');
-            $this->addHeader('X-mailer', 'BoxBilling/'.Box_Version::VERSION);
+            $this->addHeader('X-mailer', 'FOSSBilling/'.Box_Version::VERSION);
             mail($this->_to,$subject,$this->_bodyHtml,$this->_headers);
         }
     }

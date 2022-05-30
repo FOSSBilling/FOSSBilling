@@ -2,6 +2,6 @@
     "id":           "page",
 	"type":         "mod",
     "name":         "Page",
-    "description":  "BoxBilling core module",
+    "description":  "FOSSBilling core module",
     "version":      "1.0.0"
 }

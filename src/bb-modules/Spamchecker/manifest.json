@@ -6,7 +6,7 @@
     "icon_url":     "icon.png",
     "project_url":  "https://boxbilling.org/",
     "homepage_url": "https://boxbilling.org/",
-    "author":       "BoxBilling",
+    "author":       "FOSSBilling",
     "author_url":   "https://boxbilling.org/",
     "license":      "Free for commercial and non-commercial use (Apache License or GPL 2)",
     "version":      "4.22.0"

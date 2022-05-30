@@ -7,13 +7,13 @@
  * This source file is subject to the license that is bundled
  * with this package in the file LICENSE.txt
  * It is also available through the world-wide-web at this URL:
- * http://www.boxbilling.org/LICENSE.txt
+ * https://www.fossbilling.org/LICENSE.txt
  * If you did not receive a copy of the license and are unable to
  * obtain it through the world-wide-web, please send an email
  * to license@boxbilling.org so we can send you a copy immediately.
  *
- * @copyright Copyright (c) 2010-2020 BoxBilling (https://www.boxbilling.org)
- * @license   http://www.boxbilling.org/LICENSE.txt
+ * @copyright Copyright (c) 2010-2020 BoxBilling (https://www.fossbilling.org)
+ * @license   https://www.fossbilling.org/LICENSE.txt
  * @version   $Id$
  * Created by bayamsoftware.com & @timothygwebb
  * For free hosting please visit host.bayamsoftware.com
@@ -61,7 +61,7 @@ class Registrar_Adapter_srsx extends Registrar_Adapter_Resellerclub
         public static function getConfig()
     {
         return array(
-            'label'     =>  'Manages domains on SRSX via API. ResellerClub requires your server IP in order to work. Login to the ResellerClub control panel (the url will be in the email you received when you signed up with them) and then go to Settings > API and enter the IP address of the server where BoxBilling is installed to authorize it for API access.',
+            'label'     =>  'Manages domains on SRSX via API. ResellerClub requires your server IP in order to work. Login to the ResellerClub control panel (the url will be in the email you received when you signed up with them) and then go to Settings > API and enter the IP address of the server where FOSSBilling is installed to authorize it for API access.',
             'form'  => array(
  
                 'resellerId' => array('text', array(

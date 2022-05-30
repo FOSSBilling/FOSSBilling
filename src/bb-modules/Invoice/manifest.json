@@ -2,7 +2,7 @@
     "id":           "invoice",
 	"type":         "mod",
     "name":         "Invoices",
-    "description":  "BoxBilling core module",
+    "description":  "FOSSBilling core module",
     "icon_url":     "icon.png",
     "version":      "1.0.0"
 }

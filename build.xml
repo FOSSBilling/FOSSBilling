@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<project name="BoxBilling" default="build" basedir=".">
+<project name="FOSSBilling" default="build" basedir=".">
     <property environment="env" />
     <property name="build.dir" value="${basedir}/build" />
     <property name="dist.dir" value="${build.dir}/distribution" />

@@ -242,7 +242,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
 			($post_contents ? 'POST' : 'GET')." $path HTTP/1.1",
 			"Host: $host",
             'Connection: Close',
-            'User-Agent: BoxBilling'
+            'User-Agent: FOSSBilling'
 		);
 		if (!empty($phd)) {
 			if (!is_array($phd)) {
@@ -385,7 +385,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         $data['last_name']			= $buyer['last_name'];
         $data['zip']				= $buyer['zip'];
         $data['state']				= $buyer['state'];
-        $data['bn']                             = "BoxBilling_SP";
+        $data['bn']                             = "FOSSBilling_SP";
         return $data;
     }
 
@@ -405,7 +405,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         $data['cmd']                = '_xclick';
         $data['amount']             = $this->moneyFormat($invoice['subtotal'], $invoice['currency']);
         $data['tax']                = $this->moneyFormat($invoice['tax'], $invoice['currency']);
-        $data['bn']                 = "BoxBilling_SP";
+        $data['bn']                 = "FOSSBilling_SP";
         $data['charset']            = "utf-8";
         return $data;
     }
