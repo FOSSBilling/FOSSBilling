@@ -1263,7 +1263,7 @@ class Service implements InjectionAwareInterface
         $invoiceInfo = sprintf("%s: %s\n", __('Invoice number'), $invoice['serie_nr']);
         $invoiceInfo .= sprintf("%s: %s\n", __('Invoice date'), $invoiceDate);
         $invoiceInfo .= sprintf("%s: %s\n", __('Due date'), strftime($localeDateFormat, strtotime($invoice['due_at'])));
-        $invoiceInfo .= sprintf("%s: %s\n", __('Invoice status'), ucfirst($invoice['status']));
+        $invoiceInfo .= sprintf("%s: %s\n", __('Invoice status'), __(ucfirst($invoice['status'])));
 
         $pdf->SetXY($pdf->GetPageWidth() / 2, $pdf->GetY());
         $pdf->SetFont('DejaVu', '', $fontSize);
@@ -1278,8 +1278,10 @@ class Service implements InjectionAwareInterface
 
         $companyInfo = sprintf("%s: %s\n", __('Name'), $invoice['seller']['company']);
         $companyInfo .= sprintf("%s: %s\n", __('Address'), $invoice['seller']['address']);
-        $companyInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['seller']['company_vat']);
         $companyInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['seller']['company_number']);
+        if ($invoice['seller']['company_vat']) {
+            $companyInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['seller']['company_vat']);
+        }
         $companyInfo .= sprintf("%s: %s\n", __('Account'), $invoice['seller']['account_number']);
         $companyInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['seller']['phone']);
         $companyInfo .= sprintf("%s: %s\n", __('Email'), $invoice['seller']['email']);
@@ -1294,8 +1296,8 @@ class Service implements InjectionAwareInterface
         $buyerInfo = sprintf("%s: %s %s\n", __('Name'), $invoice['buyer']['first_name'], $invoice['buyer']['last_name']);
         $buyerInfo .= sprintf("%s: %s\n", __('Company'), $invoice['buyer']['company']);
         $buyerInfo .= sprintf("%s: %s\n", __('Address'), $invoice['buyer']['address']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['seller']['company_vat']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['seller']['company_number']);
+        $buyerInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['buyer']['company_number']);
+        $buyerInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['buyer']['company_vat']);
         $buyerInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['buyer']['phone']);
 
         $pdf->SetXY($pdf->GetPageWidth() / 2, 75);
