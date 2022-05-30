@@ -90,7 +90,7 @@ class Service
     /**
      * @param string[] $params
      */
-    private function _getMultipleParams($params)
+    public function _getMultipleParams($params)
     {
         if (!is_array($params)) {
             return [];
