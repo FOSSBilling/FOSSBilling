@@ -77,24 +77,28 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Client'|trans }}:</td>
-                            <td><a href="{{ 'client/manage'|alink }}/{{order.client.id}}">{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
+                            <td>
+                                <a href="{{ 'client/manage'|alink }}/{{ order.client.id }}">{{ order.client.first_name }} {{ order.client.last_name }}</a>
+                            </td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Title'|trans }}:</td>
-                            <td><a href="{{ 'product/manage'|alink }}/{{ order.product_id }}"><strong>{{ order.title }}</strong></a></td>
+                            <td>
+                                <a href="{{ 'product/manage'|alink }}/{{ order.product_id }}">{{ order.title }}</a>
+                            </td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Payment amount'|trans }}:</td>
-                            <td>{{ mf.currency_format( order.total, order.currency) }} {% if order.period %}{{mf.period_name(order.period)}}{% endif %} {% if order.quantity > 1 %}({{ order.quantity }} x {{ mf.currency_format( order.price, order.currency) }}){% endif %}</td>
+                            <td>{{ mf.currency_format(order.total, order.currency) }} {% if order.period %}{{ mf.period_name(order.period) }}{% endif %} {% if order.quantity > 1 %}({{ order.quantity }} x {{ mf.currency_format( order.price, order.currency) }}){% endif %}</td>
                         </tr>
                         {% if order.discount and order.discount > 0%}
                         <tr>
                             <td class="text-end">{{ 'Order discount'|trans }}:</td>
-                            <td>-{{ mf.currency_format( order.discount, order.currency) }} </td>
+                            <td>-{{ mf.currency_format( order.discount, order.currency) }}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Payment amount after discount'|trans }}:</td>
-                            <td>{{ mf.currency_format( order.total - order.discount, order.currency) }} </td>
+                            <td>{{ mf.currency_format(order.total - order.discount, order.currency) }}</td>
                         </tr>
                         {% endif %}
                         <tr>
@@ -132,11 +136,11 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Activated'|trans }} {% if order.activated_at %} {{ order.activated_at|timeago }} {{ 'ago'|trans }}{% endif %}:</td>
-                            <td>{% if order.activated_at %}{{ order.activated_at|date('l, d F Y')}} {% else %}-{% endif %}</td>
+                            <td>{% if order.activated_at %}{{ order.activated_at|date('l, d F Y') }}{% else %}-{% endif %}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Renewal date'|trans }} {% if order.expires_at %} in {{ order.expires_at|daysleft }} {{ 'day(s)'|trans }}{% endif %}:</td>
-                            <td>{% if order.expires_at %}{{ order.expires_at|date('l, d F Y')}}{% else %}-{% endif %}</td>
+                            <td>{% if order.expires_at %}{{ order.expires_at|date('l, d F Y') }}{% else %}-{% endif %}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Order group ID'|trans }}:</td>
@@ -147,7 +151,7 @@
                             <td class="text-end">{{ 'Order promo code'|trans }}:</td>
                             <td>
                                 {% set promo = admin.product_promo_get({ 'id': order.promo_id }) %}
-                                {{ promo.code }}
+                                <a href="{{ 'product/promo'|alink }}/{{ order.promo_id }}">{{ promo.code }}</a>
                             </td>
                         </tr>
                         {% endif %}
@@ -533,6 +537,14 @@
                             <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon api-link"
+                                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id }) }}"
+                                data-api-reload="1">
+                                <svg class="icon">
+                                    <use xlink:href="#delete" />
                                 </svg>
                             </a>
                         </td>

@@ -1,7 +1,8 @@
-Master
+Main
 ------------------------------------------------------------------------------
 
 **General:**
+* Fix issue: https://github.com/boxbilling/boxbilling/issues/1306
 * Rafactoring admin template with Tabler.io
 * Templates extensions .phtml ranamed to .html.twig
 * Updated bb-themes/bootstrap to Bootstrap 5

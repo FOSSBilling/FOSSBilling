@@ -61,7 +61,7 @@
 {% endmacro %}
 
 {% macro currency_format(price, currency) %}
-    {% set c = guest.currency_get({"code":currency}) %}
+    {% set c = guest.currency_get({ 'code': currency }) %}
     {% set p = (price)|number %}
     {% if c.price_format == 1 %}
         {% set p = p|number('2', '.', '') %}
@@ -81,7 +81,7 @@
     {% if currency == NULL %}
         {% set c = guest.cart_get_currency %}
     {% else %}
-        {% set c = guest.currency_get({"code":currency}) %}
+        {% set c = guest.currency_get({ 'code': currency }) %}
     {% endif %}
 
     {% set p = (price * c.conversion_rate) %}
@@ -98,13 +98,13 @@
         {% set p = p|number(0, '', '') %}
     {% endif %}
 
-    {{ c.format|replace({'{{price}}': p }) }}
+    {{ c.format|replace({'{{ price }}': p }) }}
 {% endmacro %}
 
 {% macro status_name(status) %}{% if status %}{{ status|replace({'_': " "})|title|trans }}{% else %}-{% endif %}{% endmacro %}
 
 {% macro period_name(period) %}
-    {{ guest.system_period_title({"code":period}) }}
+    {{ guest.system_period_title({ 'code': period }) }}
 {% endmacro %}
 
 {% macro markdown_quote(text) %}
@@ -115,8 +115,8 @@
 {% endmacro %}
 
 {% macro bb_editor(selector) %}
-{% if guest.extension_is_on({"mod":"wysiwyg"}) %}
-{% include "mod_wysiwyg_js.html.twig" with {"class":selector|trim('.#')} %}
+{% if guest.extension_is_on({ 'mod': 'wysiwyg' }) %}
+{% include "mod_wysiwyg_js.html.twig" with { 'class': selector|trim('.#') } %}
 {% else %}
 <!-- No WYSIWYG, no fancy stuff. Enable the WYSIWYG extension for a better management experience. -->
 {% endif %}

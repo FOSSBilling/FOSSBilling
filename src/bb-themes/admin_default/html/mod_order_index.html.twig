@@ -169,6 +169,7 @@
                                 <th class="text-center">{{ 'Period'|trans }}</th>
                                 <th class="text-center">{{ 'Amount'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
+                                <th>{{ 'Renewal date'|trans }}</th>
                                 <th class="w-1"></th>
                             </tr>
                         </thead>
@@ -192,7 +193,7 @@
                                     <a href="{{ '/order/manage'|alink }}/{{ order.id }}">{{ order.title }}</a>
                                 </td>
                                 <td class="text-center">{{ mf.period_name(order.period) }}</td>
-                                <td class="text-center">{{ mf.currency_format( order.total, order.currency) }}</td>
+                                <td class="text-center">{{ mf.currency_format(order.total, order.currency) }}</td>
                                 <td>
                                     {% if order.status == 'pending_setup' %}
                                         <span class="badge bg-warning me-1"></span>
@@ -207,6 +208,9 @@
                                         <span class="badge bg-secondary me-1"></span>
                                     {% endif %}
                                     {{ mf.status_name(order.status) }}
+                                </td>
+                                <td>
+                                    {% if order.expires_at %}{{ order.expires_at|date('l, d F Y') }}{% else %}-{% endif %}
                                 </td>
                                 <td>
                                     <a class="btn btn-icon" href="{{ '/order/manage'|alink }}/{{ order.id }}">

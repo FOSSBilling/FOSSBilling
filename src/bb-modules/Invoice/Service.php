@@ -958,7 +958,19 @@ class Service implements InjectionAwareInterface
 
         $this->setInvoiceDefaults($proforma);
 
-        $price = $order->price;
+        // $price = $order->price;
+
+        // Get price based on product price
+        $client = $this->di['db']->load('Client', $order->client_id);
+
+        $currencyService = $this->di['mod_service']('currency');
+        $currency = $currencyService->getByCode($client->currency);
+
+        $rate = $currencyService->getRateByCode($currency->code);
+
+        $product = $this->di['db']->load('Product', $order->product_id);
+        $repository = $product->getTable($product->type);
+        $price = $repository->getProductPrice($product, json_decode($order->config, true)) * $rate;
 
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         $invoiceItemService->generateFromOrder($proforma, $order, \Model_InvoiceItem::TASK_RENEW, $price);

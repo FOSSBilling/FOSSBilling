@@ -412,6 +412,7 @@
                             <th>{{ 'Amount'|trans }}</th>
                             <th>{{ 'Period'|trans }}</th>
                             <th>{{ 'Status'|trans }}</th>
+                            <th>{{ 'Renewal date'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
                     </thead>
@@ -439,6 +440,9 @@
                                     <span class="badge bg-secondary me-1"></span>
                                 {% endif %}
                                 {{ mf.status_name(order.status) }}
+                            </td>
+                            <td>
+                                {% if order.expires_at %}{{ order.expires_at|date('l, d F Y') }}{% else %}-{% endif %}
                             </td>
                             <td>
                                 <a class="btn btn-icon" href="{{ '/order/manage'|alink }}/{{ order.id }}">
@@ -513,6 +517,14 @@
                                 <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
                                     <svg class="icon">
                                         <use xlink:href="#edit" />
+                                    </svg>
+                                </a>
+                                <a class="btn btn-icon api-link"
+                                    data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                    href="{{ 'api/admin/invoice/delete'|link({ 'id': invoice.id }) }}"
+                                    data-api-reload="1">
+                                    <svg class="icon">
+                                        <use xlink:href="#delete" />
                                     </svg>
                                 </a>
                             </td>
