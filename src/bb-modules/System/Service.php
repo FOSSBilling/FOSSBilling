@@ -90,20 +90,26 @@ class Service
     /**
      * @param string[] $params
      */
-    public function _getMultipleParams($params)
+    private function _getMultipleParams($params)
     {
         if (!is_array($params)) {
             return [];
+        }
+        foreach ($params as $param) {
+            if (!preg_match('/^[a-z0-9_]+$/', $param)) {
+                throw new \Box_Exception('Invalid parameter name, received: param_', ['param_' => $param]);
+
+                return [];
+            }
         }
         $query = "SELECT param, value
                 FROM setting
                 WHERE param IN('" . implode("', '", $params) . "')
                 ";
         $result = [];
-        $pdo = $this->di['pdo'];
-        $stmt = $pdo->prepare($query);
-        $stmt->execute();
-        while ($row = $stmt->fetch()) {
+        $rows = $this->di['db']->getAll($query);
+        $result = [];
+        foreach ($rows as $row) {
             $result[$row['param']] = $row['value'];
         }
 
