@@ -98,8 +98,6 @@ class Service
         foreach ($params as $param) {
             if (!preg_match('/^[a-z0-9_]+$/', $param)) {
                 throw new \Box_Exception('Invalid parameter name, received: param_', ['param_' => $param]);
-
-                return [];
             }
         }
         $query = "SELECT param, value
