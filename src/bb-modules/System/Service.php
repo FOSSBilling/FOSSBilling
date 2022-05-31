@@ -222,7 +222,7 @@ class Service
             $updater = $this->di['updater'];
             if ($updater->getCanUpdate()) {
                 $version = $updater->getLatestVersion();
-                $msgs['info'][] = sprintf('BoxBilling %s is available for download.', $version);
+                $msgs['info'][] = sprintf('FOSSBilling %s is available for download.', $version);
             }
         } catch (\Exception $e) {
             error_log($e->getMessage());
@@ -238,11 +238,11 @@ class Service
         }
 
         if ('0.0.1' == $this->getVersion()) {
-            $msgs['info'][] = 'BoxBilling couldn\'t find valid version information. This is okay if you downloaded BoxBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.';
+            $msgs['info'][] = 'FOSSBilling couldn\'t find valid version information. This is okay if you downloaded FOSSBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.';
         }
 
         if (!extension_loaded('openssl')) {
-            $msgs['info'][] = sprintf('BoxBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl');
+            $msgs['info'][] = sprintf('FOSSBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl');
         }
 
         return $this->di['array_get']($msgs, $type, []);

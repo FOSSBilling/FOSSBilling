@@ -69,7 +69,7 @@ abstract class Payment_AdapterAbstract
 
         /**
          * IPN notification url. Payment gateway posts data to this URL
-         * to inform BoxBilling about payment
+         * to inform FOSSBilling about payment
          */
         if(!$this->getParam('notify_url')) {
             throw new Payment_Exception('IPN Notification URL for payment gateway was not set', array(), 6003);

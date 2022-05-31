@@ -6,7 +6,8 @@ import uglify from 'gulp-uglify';
 import uglifycss from 'gulp-uglifycss';
 import yargs from 'yargs';
 import upath from 'upath';
-import spritesmith from 'gulp.spritesmith';
+import cheerio from 'gulp-cheerio';
+import svgSprite from 'gulp-svg-sprite';
 import dartSass from 'sass';
 import gulpSass from 'gulp-sass';
 import postcss from 'gulp-postcss';
@@ -26,65 +27,25 @@ const { argv } = yargs
 
 const nodeModulesPath = upath.normalizeSafe(argv.nodeModulesPath);
 
-export const buildThemeAdminSpriteDark = function buildThemeAdminSpriteDark() {
-  const sprite = gulp.src('images/icons/dark/*.png')
-    .pipe(spritesmith({
-      imgName: 'dark-icons-sprite.png',
-      imgPath: '../sprites/dark-icons-sprite.png',
-      cssName: 'dark-icons-sprite.css',
-      cssOpts: {
-        cssSelector: image => {
-          return '.sprite-' + image.name;
-        }
+export const buildThemeAdminSvgSprite = function buildThemeAdminSvgSprite() {
+  return gulp.src('assets/icons/*.svg')
+    .pipe(cheerio({
+      run: function ($) {
+        $('[class]').removeAttr('class');
+      },
+      parserOptions: { xmlMode: true }
+    }))
+
+    .pipe(svgSprite({
+      mode: {
+        symbol: {
+          sprite: "icons-sprite.svg"
+        },
       }
-    }));
-
-  sprite.img.pipe(gulp.dest('build/sprites'));
-  sprite.css.pipe(gulp.dest('build/css'));
-
-  return sprite;
+    }))
+    .pipe(gulp.dest('build/'));
 }
-buildThemeAdminSpriteDark.description = 'Build theme Admin sprite assets.';
-
-export const buildThemeAdminSpriteTop = function buildThemeAdminSpriteTop() {
-  const sprite = gulp.src('images/icons/topnav/*.png')
-    .pipe(spritesmith({
-      imgName: 'topnav-sprite.png',
-      imgPath: '../sprites/topnav-sprite.png',
-      cssName: 'topnav-sprite.css',
-      cssOpts: {
-        cssSelector: image => {
-          return '.sprite-topnav-' + image.name;
-        }
-      }
-    }));
-
-  sprite.img.pipe(gulp.dest('build/sprites'));
-  sprite.css.pipe(gulp.dest('build/css'));
-
-  return sprite;
-}
-buildThemeAdminSpriteTop.description = 'Build theme Admin sprite assets.';
-
-export const buildThemeAdminSpriteMiddle = function buildThemeAdminSpriteMiddle() {
-  const sprite = gulp.src('images/icons/middlenav/used/*.png')
-    .pipe(spritesmith({
-      imgName: 'dark-icons-23-sprite.png',
-      imgPath: '../sprites/dark-icons-23-sprite.png',
-      cssName: 'dark-icons-23-sprite.css',
-      cssOpts: {
-        cssSelector: image => {
-          return '.sprite-23-' + image.name;
-        }
-      }
-    }));
-
-  sprite.img.pipe(gulp.dest('build/sprites'));
-  sprite.css.pipe(gulp.dest('build/css'));
-
-  return sprite;
-}
-buildThemeAdminSpriteTop.description = 'Build theme Admin sprite assets.';
+buildThemeAdminSvgSprite.description = 'Build theme Admin SVG sprite assets.';
 
 export const buildThemeAdminJs = function buildThemeAdminJs() {
   const files = [
@@ -113,8 +74,8 @@ export const buildThemeAdminCSS = function buildThemeAdminCSS() {
     upath.joinSafe(nodeModulesPath, '@tabler/core/dist/css/tabler.css'),
     'assets/scss/**/*.scss',
     // 'build/css/dark-icons-sprite.css',
-    'build/css/dark-icons-23-sprite.css',
-    'build/css/topnav-sprite.css',
+    // 'build/css/dark-icons-23-sprite.css',
+    // 'build/css/topnav-sprite.css',
   ];
 
   return gulp.src(files)
@@ -128,7 +89,7 @@ export const buildThemeAdminCSS = function buildThemeAdminCSS() {
 }
 buildThemeAdminCSS.description = 'Build Bootstrap theme CSS assets.';
 
-export const buildThemeAdminSprite = gulp.parallel(buildThemeAdminSpriteDark, buildThemeAdminSpriteTop, buildThemeAdminSpriteMiddle);
+export const buildThemeAdminSprite = gulp.parallel(buildThemeAdminSvgSprite);
 buildThemeAdminSprite.description = 'Build sprites.';
 
 export const build = gulp.series(buildThemeAdminSprite, buildThemeAdminJs, buildThemeAdminCSS);

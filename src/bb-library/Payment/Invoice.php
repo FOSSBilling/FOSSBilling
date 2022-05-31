@@ -12,7 +12,7 @@
 
 class Payment_Invoice
 {
-    private $id             = NULL; // BoxBilling Invoice Id
+    private $id             = NULL; // FOSSBilling Invoice Id
     private $number         = NULL; // Invoice number for accounting
     private $currency       = 'USD';
     private $items          = array();

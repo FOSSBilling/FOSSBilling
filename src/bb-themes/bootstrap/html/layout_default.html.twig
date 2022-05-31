@@ -18,25 +18,25 @@
         <link rel="icon" href="{{ settings.favicon }}">
     {% endif %}
 
-    <!-- Bootstrap Core CSS -->
     {% if settings.theme != 'default' %}
         <link href="{{ 'css/themes/theme-'|asset_url }}{{ settings.theme }}.min.css" rel="stylesheet">
     {% else %}
         <link href="{{ 'css/boxbilling-bundle.min.css'|asset_url }}" rel="stylesheet">
     {% endif %}
 
-    {% if settings.inject_css|default %}
-        <!-- Custom CSS -->
-        <style>
-            {{ settings.inject_css|raw }}
-        </style>
-    {% endif %}
-
     {% block opengraph %}{% endblock %}
     {% block head %}{% endblock %}
+
+    {% if settings.inject_custom_code_head|default %}
+        {{ settings.inject_custom_code_head|raw }}
+    {% endif %}
 </head>
 
 <body class="bg-light">
+    {% if settings.inject_custom_code_body_start|default %}
+        {{ settings.inject_custom_code_body_start|raw }}
+    {% endif %}
+
     {% if guest.extension_is_on({ 'mod': 'cookieconsent' }) %}
         {% include 'mod_cookieconsent_index.html.twig' ignore missing %}
     {% endif %}
@@ -274,15 +274,12 @@
 
     <script src="{{ 'js/boxbilling-bundle.min.js'|asset_url }}"></script>
 
-    {% if settings.inject_javascript|default %}
-        <!-- Custom Javascript -->
-        <script>
-            {{ settings.inject_javascript|raw }}
-        </script>
-    {% endif %}
-
     {% block js %}{% endblock %}
 
-    <noscript>NOTE: Many features on BoxBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
+    {% if settings.inject_custom_code_body_end|default %}
+        {{ settings.inject_custom_code_body_end|raw }}
+    {% endif %}
+
+    <noscript>NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
 </body>
 </html>

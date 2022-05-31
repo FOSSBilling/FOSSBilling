@@ -2,6 +2,6 @@
     "id":           "api",
 	"type":         "mod",
     "name":         "API",
-    "description":  "BoxBilling core module",
+    "description":  "FOSSBilling core module",
     "version":      "1.0.0"
 }

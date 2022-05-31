@@ -13,7 +13,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#plus" />
                 </svg>
                 <span class="ms-2">{{ 'New subscription'|trans }}</span>
@@ -31,14 +31,15 @@
                         <th class="w-1">
                             <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                         </th>
-                        <th colspan="2">{{ 'ID'|trans }}</th>
-                        <th>{{ 'Status'|trans }}</th>
-                        <th>{{ 'Gateway'|trans }}</th>
+                        <th class="w-1"></th>
+                        <th>{{ 'Name'|trans }}</th>
+                        <th class="w-1">{{ 'ID'|trans }}</th>
                         <th>{{ 'Amount'|trans }}</th>
+                        <th>{{ 'Gateway'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
                         <th class="w-1"></th>
                     </tr>
                 </thead>
-
                 <tbody>
                     {% set subscriptions = admin.invoice_subscription_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
                     {% for i, subscription in subscriptions.list %}
@@ -48,21 +49,32 @@
                         </td>
                         <td>
                             <a href="{{ 'client/manage'|alink }}/{{ subscription.client.id }}">
-                                <img src="{{ subscription.client.email|gravatar }}?size=20" alt="{{ subscription.client.email }}" title="{{ subscription.client.first_name }} {{ subscription.client.last_name }}">
+                                <span class="avatar avatar-xs" style="background-image: url({{ subscription.client.email|gravatar }}&size=24"></span>
                             </a>
                         </td>
+                        <td>
+                            <a href="{{ 'client/manage'|alink }}/{{ subscription.client.id }}">{{ subscription.client.first_name }} {{ subscription.client.last_name }}</a>
+                        </td>
                         <td>{{ subscription.sid }}</td>
-                        <td>{{ mf.status_name(subscription.status) }}</td>
-                        <td>{{ subscription.gateway.title }}</td>
                         <td>{{ mf.currency_format( subscription.amount, subscription.currency) }} {{ mf.period_name(subscription.period) }}</td>
+                        <td>{{ subscription.gateway.title }}</td>
+                        <td>
+                            {% if subscription.status == 'active' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if subscription.status == 'canceled' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(subscription.status) }}
+                        </td>
                         <td>
                             <a class="btn btn-icon" href="{{ 'invoice/subscription'|alink }}/{{ subscription.id }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
                             </a>
@@ -76,7 +88,7 @@
                 </tbody>
             </table>
 
-            <div class="card-footer d-flex align-items-center">
+            <div class="card-footer d-flex align-items-center justify-content-between">
                 {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/invoice/batch_delete_subscription' } %}
                 {% include '_pagination.html.twig' with { 'list': subscriptions, 'url': 'invoice/subscriptions' } %}
             </div>

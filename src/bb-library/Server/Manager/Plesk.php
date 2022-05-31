@@ -25,7 +25,7 @@ class Server_Manager_Plesk extends Server_Manager
 		if (!$this->_config['secure']) {
             $protocol = 'http://';
         }
-        return $protocol.$this->_config['host'] . ':8443/enterprise/control/agent.php';
+        return $protocol.$this->_config['host'] . ':8443';
 	}
 
     public function getResellerLoginUrl()

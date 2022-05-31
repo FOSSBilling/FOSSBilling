@@ -2,10 +2,10 @@
     "id":           "branding",
     "type":         "mod",
     "name":         "Branding",
-    "description":  "Show your support by voluntarily displaying references to BoxBilling.",
+    "description":  "Show your support by voluntarily displaying references to FOSSBilling.",
     "homepage_url": "https://boxbilling.org",
-    "author":       "BoxBilling",
+    "author":       "FOSSBilling",
     "author_url":   "https://boxbilling.org",
-    "license":      "https://www.boxbilling.org/license.txt",
+    "license":      "https://www.fossbilling.org/license.txt",
     "version":      "4.22.0"
 }

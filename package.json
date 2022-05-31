@@ -3,23 +3,23 @@
   "version": "0.1.0",
   "author": "FOSSBilling Team",
   "homepage": "https://fossbilling.org",
-  "license" : "Apache License 2.0",
+  "license": "Apache License 2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/FOSSBilling/FOSSBilling.git"
   },
   "issues": {
-    "url" : "https://github.com/FOSSBilling/FOSSBilling/issues"
+    "url": "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
   "dependencies": {
     "@tabler/core": "^1.0.0-beta9",
     "autoprefixer": "^10.4.6",
     "postcss": "^8.4.13",
-    "sass": "^1.51.0"
+    "sass": "^1.52.1"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^6.1.1",
-    "apexcharts": "^3.35.2",
+    "apexcharts": "^3.35.3",
     "babel-core": "^6.26.3",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.7.0",
@@ -28,13 +28,14 @@
     "bootstrap-markdown": "^2.10.0",
     "gulp": "^4.0.2",
     "gulp-autoprefixer": "^8.0.0",
+    "gulp-cheerio": "^1.0.0",
     "gulp-chug": "^0.5.1",
     "gulp-concat": "^2.6.1",
     "gulp-postcss": "^9.0.1",
     "gulp-sass": "^5.1.0",
+    "gulp-svg-sprite": "^1.5.0",
     "gulp-uglify": "^3.0.2",
     "gulp-uglifycss": "^1.1.0",
-    "gulp.spritesmith": "^6.12.1",
     "jquery": "^3.6.0",
     "upath": "^2.0.1",
     "yargs": "^17.4.1"

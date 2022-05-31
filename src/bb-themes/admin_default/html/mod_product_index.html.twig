@@ -13,10 +13,10 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="new-tab" data-bs-toggle="tab" data-bs-target="#tab-new" type="button" role="tab" aria-controls="index" aria-selected="true">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
-                <span class="ms-2">{{ 'New product'|trans }}</span>
+                {{ 'New product'|trans }}
             </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -24,10 +24,10 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="new-category-tab" data-bs-toggle="tab" data-bs-target="#tab-new-category" type="button" role="tab" aria-controls="index" aria-selected="true">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
-                <span class="ms-2">{{ 'New category'|trans }}</span>
+                {{ 'New category'|trans }}
             </button>
         </li>
     </ul>
@@ -71,12 +71,12 @@
                                 </td>
                                 <td>
                                     <a class="btn btn-icon" href="{{ '/product/manage'|alink }}/{{ product.id }}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg class="icon">
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
                                     <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/delete'|link({'id' : product.id}) }}" data-api-redirect="{{ 'product'|alink }}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
                                     </a>
@@ -84,7 +84,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="6">{{ 'The list is empty'|trans }}</td>
+                                <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -94,7 +94,7 @@
 
                     <div class="card-footer text-end">
                         <button type="submit" class="btn btn-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#refresh" />
                             </svg>
                             {{ 'Update priority'|trans }}
@@ -149,12 +149,12 @@
                         </td>
                         <td>
                             <a class="btn btn-icon" href="{{ '/product/category'|alink }}/{{ cat_id }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/category_delete'|link({ 'id': cat_id }) }}" data-api-redirect="{{ 'product'|alink }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
                             </a>

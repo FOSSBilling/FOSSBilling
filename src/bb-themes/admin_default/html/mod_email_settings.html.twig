@@ -7,7 +7,7 @@
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
             <a href="{{ '/'|alink }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
@@ -27,7 +27,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New template'|trans }}
@@ -72,7 +72,7 @@
                         {{ mf.q(template.enabled) }}</td>
                     <td>
                         <a class="btn btn-icon" href="{{ '/email/template'|alink }}/{{ template.id }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#edit" />
                             </svg>
                         </a>
@@ -80,7 +80,7 @@
                             href="{{ 'api/admin/email/template_delete'|link({ 'id': template.id }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-reload="1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#delete" />
                             </svg>
                         </a>
@@ -164,7 +164,7 @@
             <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Email settings updated'|trans }}">
                 <div class="card-body">
                     <h3>{{ 'Configure email options'|trans }}</h3>
-                    <p class="text-muted">{{ 'BoxBilling sends emails using <em>sendmail</em> by default or you can configure your own SMTP server'|trans|raw }}</p>
+                    <p class="text-muted">{{ 'FOSSBilling sends emails using <em>sendmail</em> by default or you can configure your own SMTP server'|trans|raw }}</p>
 
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">Queue options</label>
@@ -271,7 +271,7 @@
                 <div class="card-footer d-flex gap-2">
                     <input type="hidden" name="ext" value="mod_email">
                     <button class="btn btn-secondary w-25" id="emailTest">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="icon">
                             <use xlink:href="#wifi" />
                         </svg>
                         {{ 'Send test email to staff members'|trans }}

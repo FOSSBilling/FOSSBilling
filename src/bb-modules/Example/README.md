@@ -1,10 +1,10 @@
 # Example module README file
 
-This module provides a starting point for the developers on creating their BoxBilling module.
+This module provides a starting point for the developers on creating their FOSSBilling module.
 
 Explore the files and comments in the code to understand the structure of the module better. See the social links on [our website](https://boxbilling.org) if you need further information.
 
-In general, we use modules to extend the functionality of BoxBilling.
+In general, we use modules to extend the functionality of FOSSBilling.
 
 All modules can communicate with the other modules using their API endpoints.
 

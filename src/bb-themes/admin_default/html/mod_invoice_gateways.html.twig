@@ -13,7 +13,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New payment gateway'|trans }}
@@ -51,12 +51,12 @@
                             href="{{ 'api/admin/invoice/gateway_copy'|link({ 'id': gateway.id }) }}"
                             title="{{ 'Copy'|trans }}"
                             data-api-redirect="{{ 'invoice/gateways'|alink }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#cog" />
                             </svg>
                         </a>
                         <a class="btn btn-icon" href="{{ '/invoice/gateway'|alink }}/{{ gateway.id }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#edit" />
                             </svg>
                         </a>
@@ -64,7 +64,7 @@
                             href="{{ 'api/admin/invoice/gateway_delete'|link({ 'id': gateway.id }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-redirect="{{ 'invoice/gateways'|alink }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#delete" />
                             </svg>
                         </a>
@@ -85,15 +85,15 @@
             {% include "partial_extensions.html.twig" with {'type': 'payment-gateway', 'header':"List of payment gateways on extensions site"} only %}
             <div class="card-body">
                 <h1>{{ 'Adding new payment gateway'|trans }}</h1>
-                <p class="text-muted">{{ 'Although BoxBilling ships with most popular payment gateways, you can install other gateways.'|trans }}</p>
+                <p class="text-muted">{{ 'Although FOSSBilling ships with most popular payment gateways, you can install other gateways.'|trans }}</p>
                 <p>{{ 'Follow these instructions to install new payment gateway.'|trans }}</p>
                 <ul>
-                    <li>{{ 'Check for payment gateway at'|trans }} <a href="http://extensions.boxbilling.org/" target="_blank">BoxBilling extensions site</a> {{ 'for more payment gateways'|trans }}</li>
+                    <li>{{ 'Check for payment gateway at'|trans }} <a href="http://extensions.boxbilling.org/" target="_blank">FOSSBilling extensions site</a> {{ 'for more payment gateways'|trans }}</li>
                     <li>{{ 'Download payment gateway extension file and place it to'|trans }}<strong>{{ constant('BB_PATH_LIBRARY') }}/Payment/Adapter</strong></li>
                     <li>{{ 'After file is uploaded in place, reload this page.'|trans }}</li>
                     <li>{{ 'Select uploaded file name and click on install.'|trans }}</li>
-                    <li>{{ 'Payment gateway will be installed in BoxBilling and can be configured in \"Payment gateways\" tab.'|trans }}</li>
-                    <li>{{ 'For developers. Read'|trans }} <a href="http://docs.boxbilling.org/en/latest/reference/extension.html#payment-gateway" target="_blank">BoxBilling documentation</a> {{ 'to learn how to create your own payment gateway and share it with community'|trans }}</li>
+                    <li>{{ 'Payment gateway will be installed in FOSSBilling and can be configured in \"Payment gateways\" tab.'|trans }}</li>
+                    <li>{{ 'For developers. Read'|trans }} <a href="https://docs.fossbilling.org/en/latest/reference/extension.html#payment-gateway" target="_blank">FOSSBilling documentation</a> {{ 'to learn how to create your own payment gateway and share it with community'|trans }}</li>
                 </ul>
             </div>
 
@@ -114,7 +114,7 @@
                             href="{{ 'api/admin/invoice/gateway_install'|link({ 'code': gtw }) }}"
                              title="{{ 'Install'|trans }}"
                             data-api-redirect="{{ 'invoice/gateways'|alink }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="icon">
                                 <use xlink:href="#cog" />
                             </svg>
                         </a>

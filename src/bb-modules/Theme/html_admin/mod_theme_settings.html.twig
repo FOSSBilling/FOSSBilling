@@ -1,27 +1,35 @@
-{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
 {% block meta_title %}{{ 'Themes'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
 {% block breadcrumbs %}
-<ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
-    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
-    <li class="lastB">{{ 'Themes'|trans }}</li>
-</ul>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Themes'|trans }}</li>
+    </ol>
 {% endblock %}
 
 {% block content %}
-<div class="widget">
-    <div class="head">
-        <h5 class="iPaintBrush">{{ 'Client area themes'|trans }}</h5>
+<div class="card">
+    <div class="card-body">
+        <h5>{{ 'Client area themes'|trans }}</h5>
     </div>
-    <table class="tableStatic wide">
+    <table class="table card-table table-vcenter table-striped text-nowrap">
         <thead>
             <tr>
-                <td>{{ 'Name'|trans }}</td>
-                <td>{{ 'Actions'|trans }}</td>
+                <th>{{ 'Name'|trans }}</th>
+                <th class="w-1"></th>
             </tr>
         </thead>
         <tbody>
@@ -29,13 +37,19 @@
             {% for i, theme in themes.list %}
             <tr>
                 <td>{% if guest.extension_theme(true).code == theme.code %}<strong>{{ theme.code }}</strong>{% else %}{{ theme.code }}{% endif %}</td>
-                <td class="actions">
-                    <a class="btnIconLeft mr10" href="{{ 'theme'|alink }}/{{theme.code}}">
-                        <img src="images/icons/dark/cog.png" alt="" class="icon"><span>{{ 'Settings'|trans }}</span>
+                <td>
+                    <a class="btn btn-primary" href="{{ 'theme'|alink }}/{{theme.code}}">
+                        <svg class="icon">
+                            <use xlink:href="#settings" />
+                        </svg>
+                        {{ 'Settings'|trans }}
                     </a>
                     {% if guest.extension_theme(true).code != theme.code %}
-                    <a class="btnIconLeft mr10 api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}" href="{{ 'api/admin/theme/select'|link({ 'code': theme.code }) }}">
-                        <img src="images/icons/dark/star.png" alt="" class="icon"><span>{{ 'Set as default'|trans }}</span>
+                    <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}" href="{{ 'api/admin/theme/select'|link({ 'code': theme.code }) }}">
+                        <svg class="icon">
+                            <use xlink:href="#check" />
+                        </svg>
+                        {{ 'Set as default'|trans }}
                     </a>
                     {% endif %}
                 </td>
@@ -44,36 +58,46 @@
         {% else %}
         <tbody>
             <tr>
-                <td colspan="5">
-                    {{ 'The list is empty'|trans }}
-                </td>
+                <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
             </tr>
         </tbody>
         {% endfor %}
     </table>
-</div>
 
-<div class="widget">
-    <div class="head">
-        <h5 class="iPaintBrush">{{ 'Admin area themes'|trans }}</h5>
+    <div class="card-body">
+        <h5>{{ 'Admin area themes'|trans }}</h5>
     </div>
-    <table class="tableStatic wide">
+    <table class="table card-table table-vcenter table-striped text-nowrap">
         <thead>
             <tr>
-                <td>{{ 'Name'|trans }}</td>
-                <td>{{ 'Actions'|trans }}</td>
+                <th>{{ 'Name'|trans }}</th>
+                <th class="w-1"></th>
             </tr>
         </thead>
         <tbody>
-            {% set themes = admin.theme_get_admin_list({ "per_page": 100 }) %}
+            {% set themes = admin.theme_get_admin_list({ 'per_page': 100 }) %}
             {% for i, theme in themes.list %}
             <tr>
-                <td>{% if guest.extension_theme(false).code == theme.code %}<strong>{{ theme.code|replace({ 'admin_': '' }) }}</strong>{% else %}{{ theme.code|replace({ 'admin_': '' })  }}{% endif %}</td>
-                <td class="actions">
-                    <a class="btnIconLeft mr10" href="{{ 'theme'|alink }}/{{theme.code}}"><img src="images/icons/dark/cog.png" alt="" class="icon"><span>{{ 'Settings'|trans }}</span></a>
+                <td>
+                    {% if guest.extension_theme(false).code == theme.code %}
+                    <strong>{{ theme.code|replace({ 'admin_': '' }) }}</strong>
+                    {% else %}
+                    {{ theme.code|replace({ 'admin_': '' }) }}
+                    {% endif %}
+                </td>
+                <td>
+                    <a class="btn btn-primary" href="{{ 'theme'|alink }}/{{theme.code}}">
+                        <svg class="icon">
+                            <use xlink:href="#settings" />
+                        </svg>
+                        {{ 'Settings'|trans }}
+                    </a>
                     {% if guest.extension_theme(false).code != theme.code %}
-                    <a class="btnIconLeft mr10 api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}" href="{{ 'api/admin/theme/select'|link({'code' : theme.code}) }}">
-                        <img src="images/icons/dark/star.png" alt="" class="icon"><span>{{ 'Set as default'|trans }}</span>
+                    <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}" href="{{ 'api/admin/theme/select'|link({'code' : theme.code}) }}">
+                        <svg class="icon">
+                            <use xlink:href="#check" />
+                        </svg>
+                        {{ 'Set as default'|trans }}
                     </a>
                     {% endif %}
                 </td>
@@ -82,9 +106,7 @@
         {% else %}
         <tbody>
             <tr>
-                <td colspan="5">
-                    {{ 'The list is empty'|trans }}
-                </td>
+                <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
             </tr>
         </tbody>
         {% endfor %}

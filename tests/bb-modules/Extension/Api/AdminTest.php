@@ -158,7 +158,7 @@ class AdminTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('You have latest version of BoxBilling. You do not need to update', 930);
+        $this->expectExceptionMessage('You have latest version of FOSSBilling. You do not need to update', 930);
         $result = $this->api->update_core(array());
         $this->assertTrue($result);
     }

@@ -8,7 +8,7 @@
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
             <a href="{{ '/'|alink }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
@@ -119,7 +119,7 @@
                         <tr>
                             <td class="text-end">{{ 'Order notes'|trans }}:</td>
                             <td>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#support" />
                                 </svg>
                                 <a>{{ order.notes }}</a>
@@ -168,11 +168,11 @@
             <div class="card-footer text-center">
                 {% set order_actions %}
                     {% if order.status == 'pending_setup' or order.status == 'failed_setup' %}
-                    <a  class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
                         href="{{ 'api/admin/order/activate'|link({ 'id': order.id }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="{{ 'Order activated'|trans }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="mb-2 text-secondary" width="24" height="24">
                             <use xlink:href="#play" />
                         </svg>
                         <span class="d-block text-secondary">{{ 'Activate'|trans }}</span>
@@ -185,7 +185,7 @@
                         href="{{ 'api/admin/order/renew'|link({ 'id': order.id }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="{{ 'Order renewed'|trans }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="mb-2 text-secondary" width="24" height="24">
                             <use xlink:href="#refresh" />
                         </svg>
                         <span class="d-block text-secondary">{{ 'Renew'|trans }}</span>
@@ -199,7 +199,7 @@
                         data-api-prompt-text="{{ 'Reason of suspension'|trans }}"
                         data-api-prompt-title="{{ 'Suspension reason'|trans }}"
                         data-api-reload="{{ 'Order suspended'|trans }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="mb-2 text-secondary" width="24" height="24">
                             <use xlink:href="#pause" />
                         </svg>
                         <span class="d-block text-secondary">{{ 'Suspend'|trans }}</span>
@@ -240,7 +240,7 @@
                         data-api-prompt-text="{{ 'Reason of cancelation'|trans }}"
                         data-api-prompt-title="{{ 'Cancelation reason'|trans }}"
                         data-api-reload="{{ 'Order canceled'|trans }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="mb-2 text-secondary" width="24" height="24">
                             <use xlink:href="#close" />
                         </svg>
                         <span class="d-block text-secondary">{{ 'Cancel'|trans }}</span>
@@ -252,7 +252,7 @@
                         href="{{ 'api/admin/order/unsuspend'|link({ 'id': order.id }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="{{ 'Order activated'|trans }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="mb-2 text-secondary" width="24" height="24">
                             <use xlink:href="#play" />
                         </svg>
                         <span class="d-block text-secondary">{{ 'Unsuspend'|trans }}</span>
@@ -270,7 +270,7 @@
                         href="{{ 'api/admin/order/delete'|link({ 'id': order.id }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-redirect="{{ 'order'|alink }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="mb-2 text-secondary" width="24" height="24">
                             <use xlink:href="#delete" />
                         </svg>
                         <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
@@ -281,7 +281,7 @@
                         href="{{ 'api/admin/invoice/renewal_invoice'|link({ 'id': order.id }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="mb-2 text-secondary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="mb-2 text-secondary" width="24" height="24">
                             <use xlink:href="#plus" />
                         </svg>
                         <span class="d-block text-secondary">{{ 'Issue invoice'|trans }}</span>
@@ -406,7 +406,7 @@
         <div class="tab-pane fade" id="tab-config" role="tabpanel">
             <div class="card-body">
                 <h5>{{ 'Order config management'|trans }}</h5>
-                <p class="text-muted">{{ 'Please be cautious and make sure you know what you are doing when editing order config! BoxBilling relies on these parameters and you might get unexpected results if you change some of them.'|trans }}</p>
+                <p class="text-muted">{{ 'Please be cautious and make sure you know what you are doing when editing order config! FOSSBilling relies on these parameters and you might get unexpected results if you change some of them.'|trans }}</p>
 
                 <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="api-form" data-api-reload="1">
                     {% for key, config in order.config %}
@@ -434,29 +434,48 @@
             <div class="help">
                 <h3>{{ 'Addons you have ordered with this service'|trans }}</h3>
             </div>
-            <table class="tableStatic wide">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
-                        <td>{{ 'Product/Service'|trans }}</td>
-                        <td>{{ 'Price'|trans }}</td>
-                        <td>{{ 'Billing Cycle'|trans }}</td>
-                        <td>{{ 'Next due date'|trans }}</td>
-                        <td>{{ 'Status'|trans }}</td>
-                        <td>&nbsp</td>
+                        <th>{{ 'Product/Service'|trans }}</th>
+                        <th>{{ 'Billing Cycle'|trans }}</th>
+                        <th>{{ 'Price'|trans }}</th>
+                        <th>{{ 'Next due date'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                        <th class="w-1"></th>
                     </tr>
                 </thead>
-
                 <tbody>
-                {% for i, addon in addons %}
-                <tr>
-                    <td>{{addon.title}}</td>
-                    <td>{{ mf.currency_format( addon.total, addon.currency) }}</td>
-                    <td>{{ mf.period_name(addon.period) }}</td>
-                    <td>{% if addon.expires_at %}{{addon.expires_at|date('l, d F Y')}}{% else %}-{% endif %}</td>
-                    <td>{{ mf.status_name(addon.status) }}</td>
-                    <td class="actions"><a class="bb-button btn14" href="{{ '/order/manage'|alink }}/{{addon.id}}"><img src="images/icons/dark/pencil.png" alt=""></a></td>
-                </tr>
-                {% endfor %}
+                    {% for i, addon in addons %}
+                    <tr>
+                        <td>{{ addon.title }}</td>
+                        <td>{{ mf.period_name(addon.period) }}</td>
+                        <td>{{ mf.currency_format( addon.total, addon.currency) }}</td>
+                        <td>{% if addon.expires_at %}{{ addon.expires_at|date('l, d F Y') }}{% else %}-{% endif %}</td>
+                        <td>
+                            {% if addon.status == 'pending_setup' %}
+                                <span class="badge bg-warning me-1"></span>
+                            {% endif %}
+                            {% if addon.status == 'active' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if addon.status == 'suspended' %}
+                                <span class="badge bg-danger me-1"></span>
+                            {% endif %}
+                            {% if addon.status == 'canceled' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(addon.status) }}
+                        </td>
+                        <td>
+                            <a class="btn btn-icon" href="{{ '/order/manage'|alink }}/{{ addon.id }}">
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -497,7 +516,7 @@
                         <td>{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
                         <td>
                             {% if invoice.status == 'paid' %}
-                                <span class="badge bg-suddess me-1"></span>
+                                <span class="badge bg-success me-1"></span>
                             {% endif %}
                             {% if invoice.status == 'unpaid' %}
                                 <span class="badge bg-danger me-1"></span>
@@ -512,7 +531,7 @@
                         </td>
                         <td>
                             <a class="btn btn-icon" href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
@@ -563,7 +582,7 @@
                         <td>{{ sh.notes }}</td>
                         <td>
                             <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'support'|alink }}" href="{{ 'api/admin/order/status_history_delete'|link({ 'id': sh.id }) }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
                             </a>
@@ -618,7 +637,7 @@
                         </td>
                         <td>
                             <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>

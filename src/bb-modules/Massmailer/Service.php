@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -44,7 +45,7 @@ class Service implements \Box\InjectionAwareInterface
         `created_at` varchar(35) DEFAULT NULL,
         `updated_at` varchar(35) DEFAULT NULL,
         PRIMARY KEY (`id`)
-        ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
         ';
         $this->di['db']->exec($sql);
 
@@ -70,7 +71,7 @@ class Service implements \Box\InjectionAwareInterface
 
         if (null !== $search) {
             $sql .= ' AND (subject LIKE :search OR content LIKE :search OR from_email LIKE :search OR from_name LIKE :search)';
-            $params[':search'] = '%'.$search.'%';
+            $params[':search'] = '%' . $search . '%';
         }
 
         $sql .= ' ORDER BY created_at DESC';
@@ -83,7 +84,7 @@ class Service implements \Box\InjectionAwareInterface
         $row = $this->toApiArray($model);
         $filter = $row['filter'];
 
-        $sql = 'SELECT c.id, c.first_name, c.last_name 
+        $sql = 'SELECT c.id, c.first_name, c.last_name
             FROM client c
             LEFT JOIN client_order co ON (co.client_id = c.id)
             WHERE 1
@@ -111,7 +112,7 @@ class Service implements \Box\InjectionAwareInterface
         $sql .= ' ORDER BY c.id DESC';
 
         if (isset($data['debug']) && $data['debug']) {
-            throw new \Exception($sql.' '.print_r($values, 1));
+            throw new \Exception($sql . ' ' . print_r($values, 1));
         }
 
         return $this->di['db']->getAll($sql, $values);
@@ -148,7 +149,7 @@ class Service implements \Box\InjectionAwareInterface
 
         $data = [
             'to' => $client->email,
-            'to_name' => $client->first_name.' '.$client->last_name,
+            'to_name' => $client->first_name . ' ' . $client->last_name,
             'from' => $model->from_email,
             'from_name' => $model->from_name,
             'subject' => $ps,
@@ -164,7 +165,7 @@ class Service implements \Box\InjectionAwareInterface
 
         if (APPLICATION_ENV != 'production') {
             if ($this->di['config']['debug']) {
-                error_log('Skip email sending. Application ENV: '.APPLICATION_ENV);
+                error_log('Skip email sending. Application ENV: ' . APPLICATION_ENV);
             }
 
             return true;
@@ -207,7 +208,7 @@ class Service implements \Box\InjectionAwareInterface
             $di = $event->getDi();
             $di['api_admin']->queue_execute(['queue' => 'massmailer']);
         } catch (\Exception $e) {
-            error_log('Error executing massmailer queue: '.$e->getMessage());
+            error_log('Error executing massmailer queue: ' . $e->getMessage());
         }
     }
 

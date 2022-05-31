@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -50,7 +51,7 @@ class Service implements \Box\InjectionAwareInterface
         `created_at` varchar(35) DEFAULT NULL,
         `updated_at` varchar(35) DEFAULT NULL,
         PRIMARY KEY (`id`)
-        ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
         ';
         $this->di['db']->exec($sql);
 
@@ -69,7 +70,7 @@ class Service implements \Box\InjectionAwareInterface
         `updated_at` varchar(35) DEFAULT NULL,
         PRIMARY KEY (`id`),
         KEY `queue_id_idx` (`queue_id`)
-        ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
         ';
 
         $this->di['db']->exec($sql);
@@ -116,7 +117,7 @@ class Service implements \Box\InjectionAwareInterface
 
         if ($search) {
             $sql .= ' AND (name LIKE :search)';
-            $params['search'] = '%'.$search.'%';
+            $params['search'] = '%' . $search . '%';
         }
 
         $sql .= ' ORDER BY id DESC';
@@ -139,6 +140,6 @@ class Service implements \Box\InjectionAwareInterface
 
     public static function dummy($params)
     {
-        throw new \Exception('Received params: '.var_export($params, 1));
+        throw new \Exception('Received params: ' . var_export($params, 1));
     }
 }

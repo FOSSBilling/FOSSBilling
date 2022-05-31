@@ -40,7 +40,7 @@ class Payment_Adapter_AuthorizeNet extends Payment_AdapterAbstract
         return array(
             'supports_one_time_payments'   =>  true,
             'supports_subscriptions'     =>  false,
-            'description'     =>  'To setup Authorize.net merchant account in BoxBilling you need to go to <i>Account &gt; Settinggs &gt; MD5-Hash</i> and enter your own secret hash values. To receive instant payment notifications, copy "IPN callback URL" to Authorize.net "Account->Silent Post URL"',
+            'description'     =>  'To setup Authorize.net merchant account in FOSSBilling you need to go to <i>Account &gt; Settinggs &gt; MD5-Hash</i> and enter your own secret hash values. To receive instant payment notifications, copy "IPN callback URL" to Authorize.net "Account->Silent Post URL"',
             'form'  => array(
                 'apiLoginId' => array('text', array(
                             'label' 		=> 'API Login ID', 
