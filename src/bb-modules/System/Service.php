@@ -1,4 +1,5 @@
 <?php
+
 /**
  * BoxBilling.
  *
@@ -37,7 +38,7 @@ class Service
         $query = 'SELECT value
                 FROM setting
                 WHERE param = :param
-               ';
+                ';
         $pdo = $this->di['pdo'];
         $stmt = $pdo->prepare($query);
         $stmt->execute(['param' => $param]);
@@ -94,10 +95,16 @@ class Service
         if (!is_array($params)) {
             return [];
         }
+        foreach ($params as $param) {
+            if (!preg_match('/^[a-z0-9_]+$/', $param)) {
+                throw new \Box_Exception('Invalid parameter name, received: param_', ['param_' => $param]);
+            }
+        }
         $query = "SELECT param, value
                 FROM setting
-                WHERE param IN('".implode("', '", $params)."')
-               ";
+                WHERE param IN('" . implode("', '", $params) . "')
+                ";
+        $result = [];
         $rows = $this->di['db']->getAll($query);
         $result = [];
         foreach ($rows as $row) {
@@ -128,13 +135,19 @@ class Service
         ];
         $results = $this->_getMultipleParams($c);
 
+        $baseUrl = $this->di['config']['url'];
+        $logoUrl = $this->di['array_get']($results, 'company_logo', null);
+        if (null !== $logoUrl && false === strpos($logoUrl, 'http')) {
+            $logoUrl = $baseUrl . $logoUrl;
+        }
+
         return [
-            'www' => $this->di['config']['url'],
+            'www' => $baseUrl,
             'name' => $this->di['array_get']($results, 'company_name', null),
             'email' => $this->di['array_get']($results, 'company_email', null),
             'tel' => $this->di['array_get']($results, 'company_tel', null),
             'signature' => $this->di['array_get']($results, 'company_signature', null),
-            'logo_url' => $this->di['array_get']($results, 'company_logo', null),
+            'logo_url' => $logoUrl,
             'address_1' => $this->di['array_get']($results, 'company_address_1', null),
             'address_2' => $this->di['array_get']($results, 'company_address_2', null),
             'address_3' => $this->di['array_get']($results, 'company_address_3', null),
@@ -153,7 +166,7 @@ class Service
         $locales = [];
         if ($handle = opendir($path)) {
             while (false !== ($entry = readdir($handle))) {
-                if ('.svn' != $entry && '.' != $entry && '..' != $entry && is_dir($path.DIRECTORY_SEPARATOR.$entry)) {
+                if ('.svn' != $entry && '.' != $entry && '..' != $entry && is_dir($path . DIRECTORY_SEPARATOR . $entry)) {
                     $locales[] = $entry;
                 }
             }
@@ -167,7 +180,7 @@ class Service
         $details = [];
 
         foreach ($locales as $locale) {
-            $file = $path.'/'.$locale.'/LC_MESSAGES/messages.po';
+            $file = $path . '/' . $locale . '/LC_MESSAGES/messages.po';
 
             if (file_exists($file)) {
                 $lNames = $this->getLocales();
@@ -232,8 +245,8 @@ class Service
             $msgs['info'][] = 'Cron was never executed. Make sure you have setup cron job.';
         }
 
-        $install = BB_PATH_ROOT.'/install';
-        if ($this->di['tools']->fileExists(BB_PATH_ROOT.'/install')) {
+        $install = BB_PATH_ROOT . '/install';
+        if ($this->di['tools']->fileExists(BB_PATH_ROOT . '/install')) {
             $msgs['info'][] = sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install);
         }
 
@@ -258,7 +271,7 @@ class Service
         $themeService = $this->di['mod_service']('theme');
         $theme = $themeService->getThemeConfig($client);
         foreach ($theme['paths'] as $path) {
-            if ($this->di['tools']->fileExists($path.DIRECTORY_SEPARATOR.$file)) {
+            if ($this->di['tools']->fileExists($path . DIRECTORY_SEPARATOR . $file)) {
                 return true;
             }
         }
@@ -276,7 +289,7 @@ class Service
                 try {
                     $twig->addGlobal('client', $this->di['api_client']);
                 } catch (\Exception $e) {
-                    error_log('api_client could not be added to template: '.$e->getMessage());
+                    error_log('api_client could not be added to template: ' . $e->getMessage());
                 }
             }
         } else {
@@ -351,7 +364,7 @@ class Service
 
         $serverPort = $request->getServer('SERVER_PORT');
         if (isset($serverPort) && '80' != $serverPort && '443' != $serverPort) {
-            $pageURL .= $request->getServer('SERVER_NAME').':'.$request->getServer('SERVER_PORT');
+            $pageURL .= $request->getServer('SERVER_NAME') . ':' . $request->getServer('SERVER_PORT');
         } else {
             $pageURL .= $request->getServer('SERVER_NAME');
         }
@@ -362,7 +375,7 @@ class Service
             $this_page = reset($a);
         }
 
-        return $pageURL.$this_page;
+        return $pageURL . $this_page;
     }
 
     public function getPeriod($code)
