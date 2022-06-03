@@ -187,8 +187,9 @@
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright 2020 Boxbilling, Inc
-   Copyright 2022 FOSSBilling Org
+   Copyright 2022 FOSSBilling
+   This software may contain code inherited from the BoxBilling project.
+   Copyright 2011-2021 Boxbilling, Inc
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
