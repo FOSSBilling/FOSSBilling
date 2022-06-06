@@ -15,7 +15,7 @@ Enter https://github.com/FOSSBilling/FOSSBilling as the repository and then go f
 Their website should give you a idea good on how to make a good vulnerability report.
 It's important to make the submission there as it keeps the vulnerability private which helps ensure it can't be exploited while a patch is in the works. 
 
-If you have a suggestion that is related to security, then [creating an issue](https://github.com/FOSSBilling/FOSSBilling/issues/new/choose) on GitHub is a suitable place.
+If you have a suggestion that is related to security but not an actual exploit, then [creating an issue](https://github.com/FOSSBilling/FOSSBilling/issues/new/choose) on GitHub is a suitable place.
 
 Usually a good report should include which file(s) has the exploit, how the vulnerability could be exploited, the potential ramifications of the vulnerability, a proof of concept exploit, and if possible insight into a solution. 
 A proper vulnerability report is awarded with a cash reward, if you provide a patch there is usually a reward with that as well.  
