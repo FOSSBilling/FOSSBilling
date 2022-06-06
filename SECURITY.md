@@ -11,7 +11,7 @@ currently being supported with security updates.
 
 ## Reporting Vulnerabilities 
 To report a vulnerability, please make a submission on [Huntr.dev](https://huntr.dev/bounties/disclose/?target=https://github.com/FOSSBilling/FOSSBilling).
-Their website should give you a idea good on how to make a good vulnerability report.
+Their website should give you a good idea on how to make a good vulnerability report.
 It's important to make the submission there as it keeps the vulnerability private which helps ensure it can't be exploited while a patch is in the works. 
 
 If you have a suggestion that is related to security but not an actual exploit, then [creating an issue](https://github.com/FOSSBilling/FOSSBilling/issues/new/choose) on GitHub is a suitable place.
