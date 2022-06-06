@@ -10,8 +10,7 @@ currently being supported with security updates.
 | 4.22.x   | :white_check_mark: |
 
 ## Reporting Vulnerabilities 
-To report a vulnerability, please make a submission on [Huntr.dev](https://huntr.dev/bounties/disclose/?target=https://github.com/FOSSBilling/FOSSBilling). 
-Enter https://github.com/FOSSBilling/FOSSBilling as the repository and then go from there. 
+To report a vulnerability, please make a submission on [Huntr.dev](https://huntr.dev/bounties/disclose/?target=https://github.com/FOSSBilling/FOSSBilling).
 Their website should give you a idea good on how to make a good vulnerability report.
 It's important to make the submission there as it keeps the vulnerability private which helps ensure it can't be exploited while a patch is in the works. 
 
@@ -34,4 +33,4 @@ Before Submitting A Bug Report
 Perform a cursory search to see if the problem has already been reported. If it has and the issue is still open, add a comment to the existing issue instead of opening a new one.
 
 ### How Do I Submit A (Good) Bug Report?
-A Detailed guide can be found in out [CONTRIBUTING](CONTRIBUTING.md#reporting-bugs) however if you're still unsure or it's too much to read drop a message on [Discord](https://fossbilling.org/discord). Sometimes it takes time to respond; please be patient!
+A detailed guide can be found here: [CONTRIBUTING](CONTRIBUTING.md#reporting-bugs). However if you're still unsure or it's too much to read drop a message on [Discord](https://fossbilling.org/discord). Sometimes it takes time to respond; please be patient!
