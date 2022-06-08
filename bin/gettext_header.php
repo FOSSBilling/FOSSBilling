@@ -2,7 +2,7 @@
 
 function _writeHeader() {
     $output = "# en_US translation of FOSSBilling Application\n";
-    $output .= sprintf("# Copyright %s FOSSBilling <info@fossbilling.org>\n", '2011 - '. date('Y'));
+    $output .= sprintf("# Copyright %s FOSSBilling <info@fossbilling.org>\n", '2022 - '. date('Y'));
     $output .= "#\n";
     $output .= "#, fuzzy\n";
     $output .= "msgid \"\"\n";
