@@ -14,7 +14,7 @@ services:
       - php
 
   php:
-    image: chialab/php:8.0-fpm
+    build: './data/docker/php'
     volumes:
       - ${PWD}/:/var/www/html
     environment:
