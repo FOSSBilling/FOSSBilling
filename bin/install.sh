@@ -109,6 +109,14 @@ function install_composer_dependencies() {
     print_separator
 }
 
+# Build the admin theme using Gulp
+function build_gulp() {
+    print_header "Building the admin theme..."
+    docker run -it --rm -v "$PWD":/usr/src/app -w /usr/src/app node:18 npm install --include=dev && gulp
+    print_success "Successfully built the admin theme."
+    print_separator
+}
+
 # Remove installation leftovers
 function remove_installation_leftovers() {
     print_header "Remove the leftover install folder now? [Y/n]"
@@ -185,6 +193,7 @@ fi
 create_config
 create_directories
 change_folder_permissions
+build_gulp
 rebuild_and_start
 install_composer_dependencies
 remove_installation_leftovers

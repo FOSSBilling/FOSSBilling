@@ -26,6 +26,8 @@ services:
     networks:
       - back-tier
     restart: always
+    stdin_open: true
+    tty: true
 
   mariadb:
     image: mariadb:10.6

@@ -34,7 +34,7 @@ class Guest extends \Api_Abstract
      */
     public function create($data)
     {
-        $allow = (0 == count($this->di['db']->findOne('Admin', '1=1')));
+        $allow = (!is_countable($this->di['db']->findOne('Admin', '1=1')) || 0 == count($this->di['db']->findOne('Admin', '1=1')));
         if (!$allow) {
             throw new \Box_Exception('Administrator account already exists', null, 55);
         }
