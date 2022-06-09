@@ -34,7 +34,7 @@ class Box_Update
     {
         return $this->di;
     }
-    private $_url = 'https://api.github.com/repos/boxbilling/boxbilling/releases/latest';
+    private $_url = 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/latest';
 
 
     /**
