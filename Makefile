@@ -10,11 +10,9 @@ help: ## Show this help
 addx:
 	chmod +x ./bin/install.sh
 	
-all:
-	make docker
+all: docker
 
-docker: ## Will migrate other tasks to the bash script too
-	make addx
+docker: addx ## Will migrate other tasks to the bash script too
 	./bin/install.sh
 
 start:	## Start app
