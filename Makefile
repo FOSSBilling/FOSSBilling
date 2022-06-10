@@ -1,4 +1,8 @@
-DOCKER_COMPOSE := docker-compose
+ifeq ($(wildcard docker-compose),) 
+    DOCKER_COMPOSE := docker-compose
+else 
+    DOCKER_COMPOSE := docker compose
+endif
 DOCKER_WEB_CONTAINER_EXEC := $(DOCKER_COMPOSE) exec web
 DOCKER_PHP_CONTAINER_EXEC := $(DOCKER_COMPOSE) exec php
 DOCKER_DB_CONTAINER_EXEC := $(DOCKER_COMPOSE) exec mariadb

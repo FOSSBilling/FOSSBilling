@@ -25,6 +25,11 @@ INSTALLER_VERSION="v0.0.1"
 FOSSBILLING_VERSION="latest"
 
 DOCKER_COMPOSE="docker-compose"
+
+if ! [ -x "$(command -v docker-compose)" ]; then
+    DOCKER_COMPOSE="docker compose"
+fi
+
 DOCKER_WEB_CONTAINER_EXEC="$DOCKER_COMPOSE exec web"
 DOCKER_PHP_CONTAINER_EXEC="$DOCKER_COMPOSE exec php"
 DOCKER_DB_CONTAINER_EXEC="$DOCKER_COMPOSE exec mariadb"
@@ -168,13 +173,6 @@ if ! [ -x "$(command -v docker)" ]; then
     exit
 fi
 
-# Check for Docker Compose
-if ! [ -x "$(command -v docker-compose)" ]; then
-    print_error "Docker Compose is not installed. Please install it and try again."
-    print_info "For more information, see https://docs.docker.com/compose/install/."
-    exit
-fi
-
 # In the future, we'll want to let the user choose what individual tasks to run.
 if [ $# -eq 0 ]; then
     print_info "No arguments supplied. Continuing with the installation as default."
@@ -217,3 +215,6 @@ remove_installation_leftovers
 
 print_success "\e[1mInstallation complete.\e[0m"
 print_header "To create your administrator account, please visit the following URL: http://localhost/bb-admin"
+print_separator
+print_success "\e[1mFOSSBilling needs funding!\e[0m We're working hard to maintain FOSSBilling in the long run. If you'd like to support us, please consider donating to our project. We'd really appreciate it! See https://github.com/sponsors/FOSSBilling for more information."
+print_success "You can also join the FOSSBilling Discord server at https://fossbilling.org/discord."
