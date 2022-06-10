@@ -53,7 +53,7 @@ At this moment the Steering Committee includes six members - identified here by 
 
 Members of the steering committee may recommend and appoint new members from the community at any time. A nomination for a new member will result in a discussion and a vote by the existing committee members. 
 
-Members may be removed from the committee if they resign, or if they do not participate in the community or contribute to the project for 6 months. 
+Members may be removed from the committee if they demonstrate disruptive behaviour, if they resign, or if they do not participate in the community or contribute to the project for 6 months.
 
 ## Decision-making process
 
