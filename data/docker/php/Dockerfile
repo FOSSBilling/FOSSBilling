@@ -1,4 +1,5 @@
 FROM php:8.0-fpm
+FROM composer:2 as composer
 
 RUN apt-get update \
     && docker-php-ext-install \
@@ -10,4 +11,4 @@ RUN apt-get install -y --no-install-recommends git zip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+COPY --from=composer /usr/bin/composer /usr/local/bin/composer
