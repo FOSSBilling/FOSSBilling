@@ -43,5 +43,10 @@
   "scripts": {
     "build": "gulp build",
     "watch": "gulp watch"
+  },
+  "config": {
+    "platform": {
+      "php": "8.0"
+    }
   }
 }
