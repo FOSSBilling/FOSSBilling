@@ -1,17 +1,17 @@
 #!/bin/bash
 
-# BoxBilling installer
-# This script installs BoxBilling using Docker Compose
+# FOSSBilling installer
+# This script installs FOSSBilling using Docker Compose
 #
-# Copyright BoxBilling
+# Copyright FOSSBilling
 # This source file is subject to the Apache-2.0 License that is bundled
 # with this source code in the file LICENSE
 #
-# https://github.com/boxbilling/boxbilling/blob/master/LICENSE
+# https://github.com/fossbilling/fossbilling/blob/master/LICENSE
 
 # @TODO: Let the user change database name, username and password (or randomize the password if they want)
 # @TODO: Detect permission errors and attempt to fix them automatically
-# @TODO: Automatically download BoxBilling and let the script run even if the files don't already exist
+# @TODO: Automatically download FOSSBilling and let the script run even if the files don't already exist
 # @TODO: SSL certificate generation
 # @TODO: Automatically install Docker Engine and Compose
 # @TODO: Handle start, down etc. commands too. This would make the script a lot more useful and possibly fill the need for a command-line interface. But it seems like a big task for now.
@@ -22,7 +22,7 @@
 # ^ Also see https://docs.bitnami.com/tutorials/why-non-root-containers-are-important-for-security
 
 INSTALLER_VERSION="v0.0.1"
-BOXBILLING_VERSION="latest"
+FOSSBILLING_VERSION="latest"
 
 DOCKER_COMPOSE="docker compose"
 DOCKER_WEB_CONTAINER_EXEC="$DOCKER_COMPOSE exec web"
@@ -30,7 +30,7 @@ DOCKER_PHP_CONTAINER_EXEC="$DOCKER_COMPOSE exec php"
 DOCKER_DB_CONTAINER_EXEC="$DOCKER_COMPOSE exec mariadb"
 DOCKER_PHP_EXECUTABLE_CMD="php -dmemory_limit=1G"
 
-LOG_PATH="/var/log/boxbilling-installer.log"
+LOG_PATH="/var/log/fossbilling-installer.log"
 PATH_PREFIX=$PWD
 
 # Print errors
@@ -84,9 +84,9 @@ function create_config() {
     print_separator
 }
 
-# Start BoxBilling with a full rebuild
+# Start FOSSBilling with a full rebuild
 function rebuild_and_start() {
-    print_header "Starting BoxBilling with a full rebuild..."
+    print_header "Starting FOSSBilling with a full rebuild..."
     $DOCKER_COMPOSE up -d --build --force-recreate --remove-orphans
     print_success "Successfully rebuilt."
 
@@ -131,10 +131,10 @@ function remove_installation_leftovers() {
     fi
 }
 
-print_header "BoxBilling installer $INSTALLER_VERSION"
+print_header "FOSSBilling installer $INSTALLER_VERSION"
 print_separator
-print_header "Welcome to the BoxBilling installer for Linux. This script will guide you through the installation of BoxBilling.
-We will utilize Docker Compose in this script. If you want to install BoxBilling manually, please refer to the documentation."
+print_header "Welcome to the FOSSBilling installer for Linux. This script will guide you through the installation of FOSSBilling.
+We will utilize Docker Compose in this script. If you want to install FOSSBilling manually, please refer to the documentation."
 print_separator
 print_info "Working directory: $PWD"
 print_separator
@@ -168,13 +168,13 @@ fi
 
 # Check if the installation directory exists
 if [ ! -d "$PATH_PREFIX/src/install" ]; then
-    print_error "The installation folder must exist before installing BoxBilling... Download a new copy of BoxBilling and try again."
+    print_error "The installation folder must exist before installing FOSSBilling... Download a new copy of FOSSBilling and try again."
     exit
 fi
 
 # Check and delete the config file if it already exists
 if [ -f "$PATH_PREFIX/src/bb-config.php" ]; then
-    print_warning "The config file already exists. If BoxBilling is already installed and you ran the script as a mistake, answer no to the next prompt to quit safely."
+    print_warning "The config file already exists. If FOSSBilling is already installed and you ran the script as a mistake, answer no to the next prompt to quit safely."
     print_header "To continue, the installer will need to delete the existing configuration file first.\nKeep in mind that you will lose your existing configuration if you have an active installation."
     echo # new line
     

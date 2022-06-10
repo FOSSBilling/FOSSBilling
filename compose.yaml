@@ -19,7 +19,7 @@ services:
       - ${PWD}/:/var/www/html
     environment:
       DB_HOST: mariadb
-      DB_NAME: boxbilling
+      DB_NAME: fossbilling
       DB_USER: root
       DB_PASS: default_mariadb_password
       PROD   : 'true'
