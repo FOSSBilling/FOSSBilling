@@ -27,7 +27,7 @@ If you do want to be more involved in the community then the project [GitHub](ht
 
 Contributors who show a history of valid and high-quality contributions for more than three months may be granted the status of Maintainer.
 
-Although there is no concrete expectation of participation contributions are what enable the FOSSBilling project to move forward and progress. Participation can take many forms, for example:
+Although there is no concrete expectation of participation, contributions are what enable the FOSSBilling project to move forward and progress. Participation can take many forms, for example:
 
 * Participate in a discussion on the GitHub issues and pull requests.
 * Submit fixes and new features to FOSSBilling code repositories.
@@ -73,7 +73,7 @@ Decision-making normally passes through these steps:
 1. Discussion (informed by the result of the vote)
 1. Decision
 
-Any member of the FOSSBilling community is free to make proposals for consideration. You can make a new proposal by raising it by starting an issue on the project [GitHub page](https://github.com/FOSSBilling/FOSSBilling). Feel free to discuss and share ideas in the official [Discord chat](https://fossbilling.org/discord), but only issues created on GitHub will be considered as active proposals.
+Any member of the FOSSBilling community is free to make proposals for consideration. You can make a new proposal by starting an issue on the project [GitHub page](https://github.com/FOSSBilling/FOSSBilling). Feel free to discuss and share ideas in the official [Discord chat](https://fossbilling.org/discord), but only issues created on GitHub will be considered as active proposals.
 
 In general, if nobody explicitly opposes a proposal, it is recognised as having the support of the community. This is the principle of lazy consensus, meaning that anyone who has not explicitly stated their opinion has implicitly supported the proposal. 
 
