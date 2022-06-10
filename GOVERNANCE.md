@@ -10,7 +10,7 @@ FOSSBilling is an open source project which builds and maintains a free, open so
 
 Anybody with an interest can join the community, contribute to the project, and be a part of the decision making process. 
 
-If you have dev skills, opinions, or the ability to support the project financially, then please do contribute. There are no barriers to entry and there are many different ways to be a part of the future of FOSSBilling. See the [Contribution Guidelines(https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md). 
+If you have dev skills, opinions, or the ability to support the project financially, then please do contribute. There are no barriers to entry and there are many different ways to be a part of the future of FOSSBilling. See the [Contribution Guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md). 
 
 In the next few paragraphs we will explain how project roles are assigned and how the decision making process takes place.
 
@@ -37,7 +37,7 @@ Although there is no concrete expectation of participation contributions are wha
 * Submit documentation improvements to help others use FOSSBilling.
 * Create quality content for FOSSBilling communications: web site improvements, newsletter articles, etc.
 
-There are no specific skill requirements and no formal selection process. A contributors elevation to the role of maintainer will be done after discussion by, and at the discretion of the steering committee. 
+There are no specific skill requirements and no formal selection process. A contributors elevation to the role of maintainer will be done after discussion by, and at the discretion of, the steering committee. 
 
 ## Steering Committee
 
