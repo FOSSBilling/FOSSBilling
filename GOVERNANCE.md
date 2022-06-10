@@ -47,7 +47,7 @@ At this moment the Steering Committee includes six members - identified here by 
 * [0x6b.dev](https://github.com/0x6b-dev)
 * [andpavlenko](https://github.com/andpavlenko)
 * [BelleNottelling](https://github.com/BelleNottelling)
-* [Evrifaessa](https://github.com/evrifaessa)
+* [evrifaessa](https://github.com/evrifaessa)
 * [HunterNyan](https://github.com/HunterNyan)
 * [jaapmarcus](https://github.com/jaapmarcus)
 
