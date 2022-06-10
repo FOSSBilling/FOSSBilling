@@ -1,6 +1,3 @@
-https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md
-
-
 # Project Governance
 *Last updated June 9, 2022*
 
@@ -24,7 +21,7 @@ Anybody is free to use the core FOSSBilling software within the terms of the [li
 
 We really appreciate user contributions but if you just want to download, install, and go, then that is also fine.
 
-If you do want to be more involved in the community then the project [GitHub](https://github.com/FOSSBilling/FOSSBilling) page, the [Contribution Guidelines](In the next few paragraphs we will explain how that process takes place.), and [Discord](https://fossbilling.org/discord) are great places to start. You can also sponsor the project on [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or with [Open Collective](https://opencollective.com/fossbilling).
+If you do want to be more involved in the community then the project [GitHub](https://github.com/FOSSBilling/FOSSBilling) page, the [Contribution Guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md), and [Discord](https://fossbilling.org/discord) are great places to start. You can also sponsor the project on [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or with [Open Collective](https://opencollective.com/fossbilling).
 
 ## Maintainers
 
