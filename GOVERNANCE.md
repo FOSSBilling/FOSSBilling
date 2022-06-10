@@ -1,3 +1,6 @@
+https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md
+
+
 # Project Governance
 *Last updated June 9, 2022*
 
@@ -5,7 +8,11 @@
 
 FOSSBilling is an open source project which builds and maintains a free, open source billing and client management solution. 
 
-Anybody with an interest can join the community, contribute to the project, and be a part of the decision making process. In the next few paragraphs we will explain how that process takes place. 
+Anybody with an interest can join the community, contribute to the project, and be a part of the decision making process. 
+
+If you have dev skills, opinions, or the ability to support the project financially, then please do contribute. There are no barriers to entry and there are many different ways to be a part of the future of FOSSBilling. See the [Contribution Guidelines(https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md). 
+
+In the next few paragraphs we will explain how project roles are assigned and how the decision making process takes place.
 
 __TLDR; Project decisions are made by a consensus of the projects steering committee and informed by community discussion.__
 
@@ -13,9 +20,24 @@ __TLDR; Project decisions are made by a consensus of the projects steering commi
 
 The FOSSBilling community is made up of individuals, companies, or groups who use and/or contribute to the FOSSBilling software.
 
-Anybody can use the core FOSSBilling software within the terms of the [license](https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE). There are not and never will be any fees for usage, and no special requirements.
+Anybody is free to use the core FOSSBilling software within the terms of the [license](https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE). There are not and never will be any fees for usage, and no special requirements.
 
-We really appreciate user contributions but if you just want to download, install, and go, then that is also fine. If you do want to be more involved in the community then [GitHub](https://github.com/FOSSBilling/FOSSBilling) and [Discord](https://fossbilling.org/discord) are good places to start. 
+We really appreciate user contributions but if you just want to download, install, and go, then that is also fine.
+
+If you do want to be more involved in the community then the project [GitHub](https://github.com/FOSSBilling/FOSSBilling) page, the [Contribution Guidelines](In the next few paragraphs we will explain how that process takes place.), and [Discord](https://fossbilling.org/discord) are great places to start. You can also sponsor the project on [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or with [Open Collective](https://opencollective.com/fossbilling).
+
+## Maintaners
+
+Contributors who show a history of valid and high quality contribution over a period of more than three months may be granted the status of Maintainer.
+
+Although there is no concrete expectation of participation contributions are what enables the FOSSBilling project to move forward and progress. Participation can take many forms, for example:
+
+* Participate in discussion on the GitHub issues and pull requests.
+* Submit fixes and new features to FOSSBilling code repositories.
+* Submit documentation improvements to help others use FOSSBilling.
+* Create quality content for FOSSBilling communications: web site improvements, newsletter articles, etc.
+
+There are no specific skill requirements and no formal selection process. A contributors elevation to the role of maintainer will be done after discussion by, and at the discretion of the steering committee. 
 
 ## Steering Committee
 
