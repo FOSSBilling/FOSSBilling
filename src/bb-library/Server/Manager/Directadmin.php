@@ -42,8 +42,11 @@ class Server_Manager_Directadmin extends Server_Manager
     
     public function getLoginUrl()
     {
-        $host = $this->_config['host'];
-        return 'http://' . $host . ':2222';
+        $protocol = 'https://';
+        if (!$this->_config['secure']) {
+            $protocol = 'http://';
+        }
+        return $protocol.$this->_config['host'] . ':2222';
     }
     
     public function getResellerLoginUrl()
