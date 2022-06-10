@@ -5,7 +5,9 @@ RUN apt-get update \
         pdo_mysql
 
 # Some more stuff we need
-RUN apt-get install -y git zip unzip
+RUN apt-get install -y --no-install-recommends git zip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
