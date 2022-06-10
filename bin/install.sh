@@ -24,7 +24,7 @@
 INSTALLER_VERSION="v0.0.1"
 FOSSBILLING_VERSION="latest"
 
-DOCKER_COMPOSE="docker compose"
+DOCKER_COMPOSE="docker-compose"
 DOCKER_WEB_CONTAINER_EXEC="$DOCKER_COMPOSE exec web"
 DOCKER_PHP_CONTAINER_EXEC="$DOCKER_COMPOSE exec php"
 DOCKER_DB_CONTAINER_EXEC="$DOCKER_COMPOSE exec mariadb"
@@ -157,6 +157,13 @@ fi
 if ! [ -x "$(command -v docker)" ]; then
     print_error "Docker Engine is not installed. Please install the Docker Engine and try again."
     print_info "For more information, see https://docs.docker.com/engine/install/. You'll likely want to install Docker Compose as well, so please opt-in to install that if the Docker installer asks you to do so."
+    exit
+fi
+
+# Check for Docker Compose
+if ! [ -x "$(command -v docker-compose)" ]; then
+    print_error "Docker Compose is not installed. Please install it and try again."
+    print_info "For more information, see https://docs.docker.com/compose/install/."
     exit
 fi
 
