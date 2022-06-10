@@ -104,7 +104,9 @@ function rebuild_and_start() {
 # Install Composer dependencies
 function install_composer_dependencies() {
     print_header "Installing Composer dependencies..."
-    $DOCKER_PHP_CONTAINER_EXEC composer install --working-dir=src --no-interaction --prefer-dist --no-dev
+    docker run -it --rm \
+        --volume $PWD:/app \
+        composer install --working-dir=src --no-interaction --prefer-dist --no-dev
     print_success "Successfully installed the Composer dependencies."
     print_separator
 }
