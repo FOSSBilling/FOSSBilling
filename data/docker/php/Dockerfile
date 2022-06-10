@@ -5,7 +5,7 @@ RUN apt-get update \
         pdo_mysql
 
 # Cron jobs
-RUN apt-get update && apt-get install -y cron
+RUN apt-get install -y cron
 COPY fossbilling-crontab /etc/cron.d/fossbilling-crontab
 RUN chmod 0644 /etc/cron.d/fossbilling-crontab && \
     crontab /etc/cron.d/fossbilling-crontab
