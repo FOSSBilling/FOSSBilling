@@ -111,11 +111,11 @@ function install_composer_dependencies() {
     print_separator
 }
 
-# Build the admin theme using Gulp
+# Build the themes using Gulp
 function build_gulp() {
-    print_header "Building the admin theme..."
+    print_header "Building themes..."
     docker run -it --rm -v "$PWD":/usr/src/app -w /usr/src/app node:18 npm install --include=dev && ./node_modules/.bin/gulp
-    print_success "Successfully built the admin theme."
+    print_success "Successfully built the themes."
     print_separator
 }
 
