@@ -131,6 +131,14 @@ function remove_installation_leftovers() {
     fi
 }
 
+# Remove installation leftovers
+function remove_installation_leftovers() {
+    print_header "Removing installation leftovers..."
+    rm -rf $PATH_PREFIX/src/install
+    print_success "Successfully removed \e[1m./src/install/\e[0m."
+    print_separator
+}
+
 print_header "FOSSBilling installer $INSTALLER_VERSION"
 print_separator
 print_header "Welcome to the FOSSBilling installer for Linux. This script will guide you through the installation of FOSSBilling.
