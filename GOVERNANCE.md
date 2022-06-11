@@ -25,7 +25,7 @@ If you do want to be more involved in the community then the project [GitHub](ht
 
 ## Maintainers
 
-Contributors who show a history of valid and high-quality contributions for more than three months m*ay be granted the status of Maintainer.
+Contributors who show a history of valid and high-quality contributions for more than three months may be granted the status of Maintainer.
 
 Although there is no concrete expectation of participation, contributions are what enable the FOSSBilling project to move forward and progress. Participation can take many forms, for example:
 
