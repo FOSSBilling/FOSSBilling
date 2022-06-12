@@ -1,5 +1,5 @@
 # Project Governance
-*Last updated June 11, 2022*
+*Last updated June 12, 2022*
 
 ## Overview
 
@@ -19,7 +19,7 @@ The FOSSBilling community is made up of individuals, companies, or groups who us
 
 Anybody is free to use the core FOSSBilling software within the terms of the [license](https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE). There are not and never will be any fees for usage, and no special requirements.
 
-We really appreciate user contributions but if you just want to download, install, and go, then that is also fine.
+We really appreciate user contributions but if you just want to download, install, and go, then you have the complee freedom to do that.
 
 If you do want to be more involved in the community then the project [GitHub](https://github.com/FOSSBilling/FOSSBilling) page, the [Contribution Guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md), and [Discord](https://fossbilling.org/discord) are great places to start. You can also sponsor the project on [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or with [Open Collective](https://opencollective.com/fossbilling).
 
@@ -52,6 +52,7 @@ At this moment the Steering Committee includes six members - identified here by 
 * [evrifaessa](https://github.com/evrifaessa)
 * [HunterNyan](https://github.com/HunterNyan)
 * [jaapmarcus](https://github.com/jaapmarcus)
+* [John-S4](https://github.com/John-S4)
 
 Members of the steering committee may recommend and appoint new members from the community at any time. A nomination for a new member will result in a discussion and a vote by the existing committee members. 
 
@@ -63,9 +64,11 @@ Major decisions about the future of FOSSBilling will be made after community dis
 
 We aim to resolve all issues and proposals through discussion, debate and collaboration. We are not saying that we will never resort to polls or votes but we will use them with care. Poll results will be used to help inform debate and consensus but they will not be taken as binding and definitive, and will not be the sole deciding factors.
 
+Because we aim to be transparent in our decision-making, all discussion on any issues and propsals, with the exception of security and sensitive governance issues, will take place in public on GitHub and Discord.
+
 Ideologically it would be great to involve all community members in every decision, but in practical terms, it is simply not possible if we want to be able to move forward at a reasonable speed.
 
-For the same reasons, to allow faster decision-making and development, the project operates a policy of ‘lazy consensus' which allows for much faster decision-making within the community and means that most decisions can be made without the need for a formal vote.
+For the same reasons, to allow faster decision-making and development, the project operates a policy of **‘lazy consensus'** which allows for much faster decision-making within the community and means that most decisions can be made without the need for a formal vote.
 
 Decision-making normally passes through these steps:
 
@@ -81,4 +84,6 @@ In general, if nobody explicitly opposes a proposal, it is recognised as having 
 
 ## Changes to this governance policy
 
-Any community member is free to propose changes to this governance policy by submitting a proposed change to this document. The steering committee will discuss any proposed changes and aim to reject or accept the changes by consensus. If the committee is unable to agree on the proposal then the wider community will be asked to vote on the changes, with a clear majority vote needed for the governance changes to take effect.
+Any community member is free to propose changes to this governance policy by submitting a proposed change to this document. The steering committee will discuss any proposed changes and aim to reject or accept the changes by consensus.
+
+If the committee is unable to agree on the proposal then the wider community will be asked to vote on the changes, with a clear majority vote needed for the governance changes to take effect.
