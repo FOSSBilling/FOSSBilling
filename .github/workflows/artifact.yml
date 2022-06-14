@@ -53,6 +53,7 @@ jobs:
       - name: Copy mandatory files to the temporary build folder
         run: |
           cp -r ./src/* ./build/source/
+          cp ./src/.htaccess.txt ./build/source/htaccess.txt
           cp README.md ./build/source/
           cp LICENSE ./build/source/
           cp CHANGELOG.md ./build/source/
