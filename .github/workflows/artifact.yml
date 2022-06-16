@@ -74,5 +74,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: FOSSBilling Preview Archive
-          path: ./build/distribution/
+          path: ./build/distribution/FOSSBilling-${GITHUB_SHA::7}.tar
           if-no-files-found: error
