@@ -1,14 +1,20 @@
 <?php
 
+/**
+ * BoxBilling.
+ *
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
+ * @license   Apache-2.0
+ *
+ * Copyright BoxBilling, Inc
+ * This source file is subject to the Apache-2.0 License that is bundled
+ * with this source code in the file LICENSE
+ */
 
 namespace Box\Mod\Invoice;
 
-
-use Symfony\Component\Yaml\Tests\B;
-
 class ServiceTest extends \BBTestCase
 {
-
     /**
      * @var \Box\Mod\Invoice\Service
      */
@@ -29,111 +35,111 @@ class ServiceTest extends \BBTestCase
 
     public function dataForSearchQuery()
     {
-        return array(
-            array(array(), 'FROM invoice p', array()),
-            array(
-                array('order_id' => '1'),
+        return [
+            [[], 'FROM invoice p', []],
+            [
+                ['order_id' => '1'],
                 'AND pi.type = :item_type AND pi.rel_id = :order_id',
-                array(
+                [
                     'item_type' => \Model_InvoiceItem::TYPE_ORDER,
-                    'order_id'  => 1,
-                )
-            ),
-            array(
-                array('id' => 1),
+                    'order_id' => 1,
+                ],
+            ],
+            [
+                ['id' => 1],
                 'AND p.id = :id',
-                array(
+                [
                     'id' => 1,
-                )
-            ),
-            array(
-                array('nr' => 1),
+                ],
+            ],
+            [
+                ['nr' => 1],
                 'AND (p.id = :id_nr OR p.nr = :id_nr)',
-                array(
+                [
                     'id_nr' => 1,
-                )
-            ),
-            array(
-                array('approved' => true),
+                ],
+            ],
+            [
+                ['approved' => true],
                 'AND p.approved = :approved',
-                array(
+                [
                     'approved' => true,
-                )
-            ),
-            array(
-                array('status' => 'unpaid'),
+                ],
+            ],
+            [
+                ['status' => 'unpaid'],
                 'AND p.status = :status',
-                array(
+                [
                     'status' => 'unpaid',
-                )
-            ),
-            array(
-                array('currency' => 'usd'),
+                ],
+            ],
+            [
+                ['currency' => 'usd'],
                 'AND p.currency = :currency',
-                array(
+                [
                     'currency' => 'usd',
-                )
-            ),
-            array(
-                array('client_id' => 1),
+                ],
+            ],
+            [
+                ['client_id' => 1],
                 'AND p.client_id = :client_id',
-                array(
+                [
                     'client_id' => 1,
-                )
-            ),
-            array(
-                array('client' => 'John'),
+                ],
+            ],
+            [
+                ['client' => 'John'],
                 'AND (cl.first_name LIKE :client_search OR cl.last_name LIKE :client_search OR cl.id = :client OR cl.email = :client)',
-                array(
+                [
                     'client_search' => 'John%',
-                    'client'        => 'John',
-                )
-            ),
-            array(
-                array('id' => 1),
+                    'client' => 'John',
+                ],
+            ],
+            [
+                ['id' => 1],
                 'AND p.id = :id',
-                array(
+                [
                     'id' => 1,
-                )
-            ),
-            array(
-                array('created_at' => '1353715200'),
+                ],
+            ],
+            [
+                ['created_at' => '1353715200'],
                 "AND DATE_FORMAT(p.created_at, '%Y-%m-%d') = :created_at",
-                array(
+                [
                     'created_at' => '1353715200',
-                )
-            ),
-            array(
-                array('date_from' => '1353715200'),
+                ],
+            ],
+            [
+                ['date_from' => '1353715200'],
                 'AND UNIX_TIMESTAMP(p.created_at) >= :date_from',
-                array(
+                [
                     'date_from' => '1353715200',
-                )
-            ),
-            array(
-                array('date_to' => '1353715200'),
+                ],
+            ],
+            [
+                ['date_to' => '1353715200'],
                 'AND UNIX_TIMESTAMP(p.created_at) <= :date_to',
-                array(
+                [
                     'date_to' => '1353715200',
-                )
-            ),
-            array(
-                array('paid_at' => 1353715200),
+                ],
+            ],
+            [
+                ['paid_at' => 1353715200],
                 "AND DATE_FORMAT(p.paid_at, '%Y-%m-%d') = :paid_at",
-                array(
+                [
                     'paid_at' => 1353715200,
-                )
-            ),
-            array(
-                array('search' => 'trend'),
+                ],
+            ],
+            [
+                ['search' => 'trend'],
                 'AND (p.id = :int OR p.nr LIKE :search_like OR p.id LIKE :search OR pi.title LIKE :search_like)',
-                array(
-                    'search'      => 'trend',
+                [
+                    'search' => 'trend',
                     'search_like' => '%trend%',
-                    'int'         => 0,
-                )
-            ),
-        );
+                    'int' => 0,
+                ],
+            ],
+        ];
     }
 
     /**
@@ -142,16 +148,16 @@ class ServiceTest extends \BBTestCase
     public function testgetSearchQuery($data, $expectedStr, $expectedParams)
     {
         $di = new \Box_Di();
-        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) {
+            return $array[$key] ?? $default;
         });
         $this->service->setDi($di);
         $result = $this->service->getSearchQuery($data);
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
 
-        $this->assertTrue(strpos($result[0], $expectedStr) !== false, $result[0]);
-        $this->assertTrue(array_diff_key($result[1], $expectedParams) == array());
+        $this->assertTrue(false !== strpos($result[0], $expectedStr), $result[0]);
+        $this->assertTrue([] == array_diff_key($result[1], $expectedParams));
     }
 
     public function testtoApiArray()
@@ -174,48 +180,48 @@ class ServiceTest extends \BBTestCase
         $subscriptionServiceMock->expects($this->atLeastOnce())
             ->method('isSubscribable')
             ->will($this->returnValue(true));
-        $modelToArrayResult = array(
-            'id'                    => 1,
-            'serie'                 => 'BB',
-            'nr'                    => '0001',
-            'serie_nr'              => 'BB0001',
-            'hash'                  => 'hashedValue',
-            'gateway_id'            => '',
-            'taxname'               => '',
-            'taxrate'               => '',
-            'currency'              => '',
-            'currency_rate'         => '',
-            'status'                => '',
-            'notes'                 => '',
-            'text_1'                => '',
-            'text_2'                => '',
-            'due_at'                => '',
-            'paid_at'               => '',
-            'created_at'            => '',
-            'updated_at'            => '',
-            'buyer_first_name'      => '',
-            'buyer_last_name'       => '',
-            'buyer_company'         => '',
-            'buyer_company_vat'     => '',
-            'buyer_company_number'  => '',
-            'buyer_address'         => '',
-            'buyer_city'            => '',
-            'buyer_state'           => '',
-            'buyer_country'         => '',
-            'buyer_phone'           => '',
-            'buyer_phone_cc'        => '',
-            'buyer_email'           => '',
-            'buyer_zip'             => '',
-            'seller_company_vat'    => '',
+        $modelToArrayResult = [
+            'id' => 1,
+            'serie' => 'BB',
+            'nr' => '0001',
+            'serie_nr' => 'BB0001',
+            'hash' => 'hashedValue',
+            'gateway_id' => '',
+            'taxname' => '',
+            'taxrate' => '',
+            'currency' => '',
+            'currency_rate' => '',
+            'status' => '',
+            'notes' => '',
+            'text_1' => '',
+            'text_2' => '',
+            'due_at' => '',
+            'paid_at' => '',
+            'created_at' => '',
+            'updated_at' => '',
+            'buyer_first_name' => '',
+            'buyer_last_name' => '',
+            'buyer_company' => '',
+            'buyer_company_vat' => '',
+            'buyer_company_number' => '',
+            'buyer_address' => '',
+            'buyer_city' => '',
+            'buyer_state' => '',
+            'buyer_country' => '',
+            'buyer_phone' => '',
+            'buyer_phone_cc' => '',
+            'buyer_email' => '',
+            'buyer_zip' => '',
+            'seller_company_vat' => '',
             'seller_company_number' => '',
-        );
-        $dbMock             = $this->getMockBuilder('\Box_Database')->getMock();
+        ];
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
             ->will($this->returnValue($modelToArrayResult));
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($invoiceItemModel)));
+            ->will($this->returnValue([$invoiceItemModel]));
         $dbMock->expects($this->atLeastOnce())
             ->method('getCell')
             ->will($this->returnValue('1W'));
@@ -228,23 +234,23 @@ class ServiceTest extends \BBTestCase
         $periodMock->expects($this->atLeastOnce())
             ->method('getQty');
 
-        $di                = new \Box_Di();
-        $di['db']          = $dbMock;
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($itemInvoiceServiceMock, $systemService, $subscriptionServiceMock) {
             $service = null;
-            if ($sub == 'InvoiceItem') {
+            if ('InvoiceItem' == $sub) {
                 $service = $itemInvoiceServiceMock;
             }
-            if ($serviceName == 'system') {
+            if ('system' == $serviceName) {
                 $service = $systemService;
             }
-            if ($sub == 'Subscription') {
+            if ('Subscription' == $sub) {
                 $service = $subscriptionServiceMock;
             }
 
             return $service;
         });
-        $di['period']      = $di->protect(function () use ($periodMock) { return $periodMock; });
+        $di['period'] = $di->protect(function () use ($periodMock) { return $periodMock; });
 
         $this->service->setDi($di);
 
@@ -255,14 +261,14 @@ class ServiceTest extends \BBTestCase
     public function testonAfterAdminInvoicePaymentReceived()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('toApiArray'))
+            ->setMethods(['toApiArray'])
             ->getMock();
-        $arr         = array(
-            'total'  => 1,
-            'client' => array(
+        $arr = [
+            'total' => 1,
+            'client' => [
                 'id' => 0,
-            ),
-        );
+            ],
+        ];
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->will($this->returnValue($arr));
@@ -284,16 +290,16 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue($invoiceModel));
 
-        $di                = new \Box_Di();
+        $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
-            if ($serviceName == 'invoice') {
+            if ('invoice' == $serviceName) {
                 return $serviceMock;
             }
-            if ($serviceName == 'email') {
+            if ('email' == $serviceName) {
                 return $emailService;
             }
         });
-        $di['db']          = $dbMock;
+        $di['db'] = $dbMock;
 
         $this->service->setDi($di);
         $eventMock->expects($this->atLeastOnce())
@@ -308,14 +314,14 @@ class ServiceTest extends \BBTestCase
     public function testonAfterAdminInvoiceReminderSent()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('toApiArray'))
+            ->setMethods(['toApiArray'])
             ->getMock();
-        $arr         = array(
-            'total'  => 1,
-            'client' => array(
+        $arr = [
+            'total' => 1,
+            'client' => [
                 'id' => 1,
-            ),
-        );
+            ],
+        ];
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->will($this->returnValue($arr));
@@ -337,23 +343,22 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue($invoiceModel));
 
-        $di                = new \Box_Di();
+        $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
-            if ($serviceName == 'invoice') {
+            if ('invoice' == $serviceName) {
                 return $serviceMock;
             }
-            if ($serviceName == 'email') {
+            if ('email' == $serviceName) {
                 return $emailService;
             }
         });
-        $di['db']          = $dbMock;
+        $di['db'] = $dbMock;
 
         $this->service->setDi($di);
         $this->service->setDi($di);
         $eventMock->expects($this->atLeastOnce())
             ->method('getDi')
             ->will($this->returnValue($di));
-
 
         $result = $this->service->onAfterAdminInvoicePaymentReceived($eventMock);
         $this->assertIsBool($result);
@@ -377,11 +382,11 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('exec');
 
-        $di                = new \Box_Di();
+        $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($systemServiceMock) {
             return $systemServiceMock;
         });
-        $di['db']          = $dbMock;
+        $di['db'] = $dbMock;
 
         $this->service->setDi($di);
         $eventMock->expects($this->atLeastOnce())
@@ -394,14 +399,14 @@ class ServiceTest extends \BBTestCase
     public function testonEventAfterInvoiceIsDue()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('toApiArray'))
+            ->setMethods(['toApiArray'])
             ->getMock();
-        $arr         = array(
-            'total'  => 1,
-            'client' => array(
+        $arr = [
+            'total' => 1,
+            'client' => [
                 'id' => 1,
-            ),
-        );
+            ],
+        ];
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->will($this->returnValue($arr));
@@ -409,7 +414,7 @@ class ServiceTest extends \BBTestCase
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
             ->getMock();
-        $params    = array('days_passed' => 5, 'id' => 1);
+        $params = ['days_passed' => 5, 'id' => 1];
         $eventMock->expects($this->atLeastOnce())
             ->method('getParameters')
             ->will($this->returnValue($params));
@@ -425,16 +430,16 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue($invoiceModel));
 
-        $di                = new \Box_Di();
+        $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
-            if ($serviceName == 'invoice') {
+            if ('invoice' == $serviceName) {
                 return $serviceMock;
             }
-            if ($serviceName == 'email') {
+            if ('email' == $serviceName) {
                 return $emailService;
             }
         });
-        $di['db']          = $dbMock;
+        $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
         $eventMock->expects($this->atLeastOnce())
@@ -446,7 +451,7 @@ class ServiceTest extends \BBTestCase
     public function testmarkAsPaid()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('countIncome', 'getNextInvoiceNumber'))
+            ->setMethods(['countIncome', 'getNextInvoiceNumber'])
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -482,25 +487,25 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($invoiceItemModel)));
+            ->will($this->returnValue([$invoiceItemModel]));
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di                   = new \Box_Di();
-        $di['mod_service']    = $di->protect(function ($serviceName, $sub = '') use ($systemService, $itemInvoiceServiceMock, $currencyService) {
-            if ($serviceName == 'system') {
+        $di = new \Box_Di();
+        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $itemInvoiceServiceMock, $currencyService) {
+            if ('system' == $serviceName) {
                 return $systemService;
             }
-            if ($sub == 'InvoiceItem') {
+            if ('InvoiceItem' == $sub) {
                 return $itemInvoiceServiceMock;
             }
-            if ($serviceName == 'Currency') {
+            if ('Currency' == $serviceName) {
                 return $currencyService;
             }
         });
-        $di['db']             = $dbMock;
+        $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
-        $di['logger']         = new \Box_Log();
+        $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
         $result = $serviceMock->markAsPaid($invoiceModel, true, true);
@@ -528,8 +533,8 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($invoiceModel));
 
-        $di                = new \Box_Di();
-        $di['db']          = $dbMock;
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($systemService) {
             return $systemService;
         });
@@ -544,7 +549,7 @@ class ServiceTest extends \BBTestCase
     public function testcountIncome()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('getTotal'))
+            ->setMethods(['getTotal'])
             ->getMock();
 
         $invoiceModel = new \Model_Invoice();
@@ -557,8 +562,8 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di                = new \Box_Di();
-        $di['db']          = $dbMock;
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($currencyService) {
             return $currencyService;
         });
@@ -570,24 +575,23 @@ class ServiceTest extends \BBTestCase
     public function testprepareInvoiceCurrencyWasNotDefined()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('setInvoiceDefaults'))
+            ->setMethods(['setInvoiceDefaults'])
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('setInvoiceDefaults');
 
-
-        $data = array(
+        $data = [
             'gateway_id' => '',
-            'text_1'     => '',
-            'text_2'     => '',
-            'items'      => array(
-                array(
-                    'id' => 1
-                )
-            ),
-            'approve'
-        );
+            'text_1' => '',
+            'text_2' => '',
+            'items' => [
+                [
+                    'id' => 1,
+                ],
+            ],
+            'approve',
+        ];
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -608,7 +612,7 @@ class ServiceTest extends \BBTestCase
             ->method('addNew');
 
         $newRecordId = 1;
-        $dbMock      = $this->getMockBuilder('\Box_Database')->getMock();
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->will($this->returnValue($newRecordId));
@@ -617,19 +621,19 @@ class ServiceTest extends \BBTestCase
             ->method('dispense')
             ->will($this->returnValue($invoiceModel));
 
-        $di                = new \Box_Di();
-        $di['db']          = $dbMock;
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyService, $itemInvoiceServiceMock) {
-            if ($serviceName == 'Currency') {
+            if ('Currency' == $serviceName) {
                 return $currencyService;
             }
-            if ($sub == 'InvoiceItem') {
+            if ('InvoiceItem' == $sub) {
                 return $itemInvoiceServiceMock;
             }
         });
-        $di['logger']      = new \Box_Log();
-        $di['array_get']   = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
+        $di['logger'] = new \Box_Log();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) {
+            return $array[$key] ?? $default;
         });
 
         $serviceMock->setDi($di);
@@ -645,38 +649,38 @@ class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $buyer         = array(
-            'first_name'     => '',
-            'last_name'      => '',
-            'company'        => '',
-            'company_vat'    => '',
+        $buyer = [
+            'first_name' => '',
+            'last_name' => '',
+            'company' => '',
+            'company_vat' => '',
             'company_number' => '',
-            'address_1'      => '',
-            'address_2'      => '',
-            'city'           => '',
-            'state'          => '',
-            'country'        => '',
-            'phone_cc'       => '',
-            'phone'          => '',
-            'email'          => '',
-            'postcode'       => '',
-        );
+            'address_1' => '',
+            'address_2' => '',
+            'city' => '',
+            'state' => '',
+            'country' => '',
+            'phone_cc' => '',
+            'phone' => '',
+            'email' => '',
+            'postcode' => '',
+        ];
         $clientService = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $clientService->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->will($this->returnValue($buyer));
 
         $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $seller        = array(
-            'name'       => '',
+        $seller = [
+            'name' => '',
             'vat_number' => '',
-            'number'     => '',
-            'address_1'  => '',
-            'address_2'  => '',
-            'address_3'  => '',
-            'tel'        => '',
-            'email'      => '',
-        );
+            'number' => '',
+            'address_1' => '',
+            'address_2' => '',
+            'address_3' => '',
+            'tel' => '',
+            'email' => '',
+        ];
         $systemService->expects($this->atLeastOnce())
             ->method('getCompany')
             ->will($this->returnValue($seller));
@@ -695,16 +699,16 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di                = new \Box_Di();
-        $di['db']          = $dbMock;
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($clientService, $systemService, $serviceTaxMock) {
-            if ($serviceName == 'Client') {
+            if ('Client' == $serviceName) {
                 return $clientService;
             }
-            if ($serviceName == 'system') {
+            if ('system' == $serviceName) {
                 return $systemService;
             }
-            if ($sub == 'Tax') {
+            if ('Tax' == $sub) {
                 return $serviceTaxMock;
             }
         });
@@ -717,7 +721,7 @@ class ServiceTest extends \BBTestCase
     public function testapproveInvoice()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('tryPayWithCredits'))
+            ->setMethods(['tryPayWithCredits'])
             ->getMock();
 
         $serviceMock->expects($this->atLeastOnce())
@@ -736,10 +740,10 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di                   = new \Box_Di();
-        $di['db']             = $dbMock;
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
-        $di['logger']         = new \Box_Log();
+        $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
 
@@ -749,11 +753,11 @@ class ServiceTest extends \BBTestCase
 
     public function testgetTotalWithTax()
     {
-        $total       = 10;
-        $tax         = 2.2;
-        $expected    = $total + $tax;
+        $total = 10;
+        $tax = 2.2;
+        $expected = $total + $tax;
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('getTotal', 'getTax'))
+            ->setMethods(['getTotal', 'getTax'])
             ->getMock();
 
         $serviceMock->expects($this->once())
@@ -782,7 +786,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($invoiceItemModel)));
+            ->will($this->returnValue([$invoiceItemModel]));
 
         $itemInvoiceServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')->getMock();
 
@@ -791,8 +795,8 @@ class ServiceTest extends \BBTestCase
             ->method('getTotal')
             ->will($this->returnValue($itemTotal));
 
-        $di                = new \Box_Di();
-        $di['db']          = $dbMock;
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($itemInvoiceServiceMock) { return $itemInvoiceServiceMock; });
 
         $this->service->setDi($di);
@@ -803,11 +807,11 @@ class ServiceTest extends \BBTestCase
 
     public function testrefundInvoiceWithNegativeInvoiceLogic()
     {
-        $newId       = 1;
-        $total       = 10;
-        $tax         = 2.2;
+        $newId = 1;
+        $total = 10;
+        $tax = 2.2;
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('getTotal', 'getTax', 'countIncome', 'addNote', 'getNextInvoiceNumber'))
+            ->setMethods(['getTotal', 'getTax', 'countIncome', 'addNote', 'getNextInvoiceNumber'])
             ->getMock();
 
         $serviceMock->expects($this->once())
@@ -834,7 +838,6 @@ class ServiceTest extends \BBTestCase
         $eventManagerMock->expects($this->atLeastOnce())
             ->method('fire');
 
-
         $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue')
@@ -848,13 +851,13 @@ class ServiceTest extends \BBTestCase
             ->method('store');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($invoiceItemModel)));
+            ->will($this->returnValue([$invoiceItemModel]));
 
-        $di                   = new \Box_Di();
-        $di['db']             = $dbMock;
-        $di['mod_service']    = $di->protect(function () use ($systemService) { return $systemService; });
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function () use ($systemService) { return $systemService; });
         $di['events_manager'] = $eventManagerMock;
-        $di['logger']         = new \Box_Log();
+        $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
         $result = $serviceMock->refundInvoice($invoiceModel, 'custonNote');
@@ -864,38 +867,38 @@ class ServiceTest extends \BBTestCase
 
     public function testupdateInvoice()
     {
-        $data         = array(
-            'gateway_id'            => '',
-            'taxname'               => '',
-            'taxrate'               => '',
-            'status'                => '',
-            'notes'                 => '',
-            'text_1'                => '',
-            'text_2'                => '',
-            'due_at'                => '',
-            'paid_at'               => '',
-            'buyer_first_name'      => '',
-            'buyer_last_name'       => '',
-            'buyer_company'         => '',
-            'buyer_company_vat'     => '',
-            'buyer_company_number'  => '',
-            'buyer_address'         => '',
-            'buyer_city'            => '',
-            'buyer_state'           => '',
-            'buyer_country'         => '',
-            'buyer_phone'           => '',
-            'buyer_email'           => '',
-            'buyer_zip'             => '',
-            'seller_company'        => '',
-            'seller_address'        => '',
-            'seller_phone'          => '',
-            'seller_email'          => '',
-            'seller_company_vat'    => '',
+        $data = [
+            'gateway_id' => '',
+            'taxname' => '',
+            'taxrate' => '',
+            'status' => '',
+            'notes' => '',
+            'text_1' => '',
+            'text_2' => '',
+            'due_at' => '',
+            'paid_at' => '',
+            'buyer_first_name' => '',
+            'buyer_last_name' => '',
+            'buyer_company' => '',
+            'buyer_company_vat' => '',
+            'buyer_company_number' => '',
+            'buyer_address' => '',
+            'buyer_city' => '',
+            'buyer_state' => '',
+            'buyer_country' => '',
+            'buyer_phone' => '',
+            'buyer_email' => '',
+            'buyer_zip' => '',
+            'seller_company' => '',
+            'seller_address' => '',
+            'seller_phone' => '',
+            'seller_email' => '',
+            'seller_company_vat' => '',
             'seller_company_number' => '',
-            'approved'              => '',
-            'items'                 => array(0 => array()),
-            'new_item'              => array('title' => 'new Item'),
-        );
+            'approved' => '',
+            'items' => [0 => []],
+            'new_item' => ['title' => 'new Item'],
+        ];
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
 
@@ -919,13 +922,13 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue($invoiceItemModel));
 
-        $di                   = new \Box_Di();
-        $di['db']             = $dbMock;
-        $di['mod_service']    = $di->protect(function () use ($itemInvoiceServiceMock) { return $itemInvoiceServiceMock; });
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function () use ($itemInvoiceServiceMock) { return $itemInvoiceServiceMock; });
         $di['events_manager'] = $eventManagerMock;
-        $di['logger']         = new \Box_Log();
-        $di['array_get']      = $di->protect(function (array $array, $key, $default = null) use ($di) {
-            return isset ($array[$key]) ? $array[$key] : $default;
+        $di['logger'] = new \Box_Log();
+        $di['array_get'] = $di->protect(function (array $array, $key, $default = null) {
+            return $array[$key] ?? $default;
         });
 
         $this->service->setDi($di);
@@ -942,17 +945,16 @@ class ServiceTest extends \BBTestCase
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
 
-
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('exec');
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($invoiceItemModel)));
+            ->will($this->returnValue([$invoiceItemModel]));
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
-        $di       = new \Box_Di();
+        $di = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -964,7 +966,7 @@ class ServiceTest extends \BBTestCase
     public function testdeleteInvoiceByAdmin()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('rmInvoice'))
+            ->setMethods(['rmInvoice'])
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('rmInvoice');
@@ -976,9 +978,9 @@ class ServiceTest extends \BBTestCase
         $eventManagerMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di                   = new \Box_Di();
+        $di = new \Box_Di();
         $di['events_manager'] = $eventManagerMock;
-        $di['logger']         = new \Box_Log();
+        $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
 
@@ -992,7 +994,7 @@ class ServiceTest extends \BBTestCase
         $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('rmInvoice'))
+            ->setMethods(['rmInvoice'])
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('rmInvoice');
@@ -1007,12 +1009,12 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($invoiceItemModel)));
+            ->will($this->returnValue([$invoiceItemModel]));
 
-        $di                   = new \Box_Di();
-        $di['db']             = $dbMock;
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
-        $di['logger']         = new \Box_Log();
+        $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
 
@@ -1024,8 +1026,8 @@ class ServiceTest extends \BBTestCase
     {
         $invoiceItemModel = new \Model_InvoiceItem();
         $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
-        $invoiceItemModel->type   = \Model_InvoiceItem::TYPE_ORDER;
-        $rel_id                   = 1;
+        $invoiceItemModel->type = \Model_InvoiceItem::TYPE_ORDER;
+        $rel_id = 1;
         $invoiceItemModel->rel_id = $rel_id;
 
         $invoiceModel = new \Model_Invoice();
@@ -1038,22 +1040,22 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($invoiceItemModel)));
+            ->will($this->returnValue([$invoiceItemModel]));
 
-        $di                   = new \Box_Di();
-        $di['db']             = $dbMock;
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
 
         $this->service->setDi($di);
 
         $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage(sprintf("Invoice is related to order #%d. Please cancel order first.", $rel_id));
+        $this->expectExceptionMessage(sprintf('Invoice is related to order #%d. Please cancel order first.', $rel_id));
         $this->service->deleteInvoiceByClient($invoiceModel);
     }
 
     public function testrenewInvoice()
     {
-        $newId        = 2;
+        $newId = 2;
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
         $invoiceModel->id = $newId;
@@ -1062,7 +1064,7 @@ class ServiceTest extends \BBTestCase
         $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('generateForOrder', 'approveInvoice'))
+            ->setMethods(['generateForOrder', 'approveInvoice'])
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('approveInvoice');
@@ -1074,12 +1076,12 @@ class ServiceTest extends \BBTestCase
         $eventManagerMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di                   = new \Box_Di();
+        $di = new \Box_Di();
         $di['events_manager'] = $eventManagerMock;
-        $di['logger']         = new \Box_Log();
+        $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
-        $result = $serviceMock->renewInvoice($clientOrder, array());
+        $result = $serviceMock->renewInvoice($clientOrder, []);
         $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
     }
@@ -1090,11 +1092,11 @@ class ServiceTest extends \BBTestCase
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('findAllUnpaid', 'tryPayWithCredits'))
+            ->setMethods(['findAllUnpaid', 'tryPayWithCredits'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('findAllUnpaid')
-            ->will($this->returnValue(array(array())));
+            ->will($this->returnValue([[]]));
         $serviceMock->expects($this->atLeastOnce())
             ->method('tryPayWithCredits');
 
@@ -1103,12 +1105,12 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($invoiceModel));
 
-        $di           = new \Box_Di();
+        $di = new \Box_Di();
         $di['logger'] = new \Box_Log();
-        $di['db']     = $dbMock;
+        $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
-        $result = $serviceMock->doBatchPayWithCredits(array());
+        $result = $serviceMock->doBatchPayWithCredits([]);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
@@ -1119,12 +1121,12 @@ class ServiceTest extends \BBTestCase
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('tryPayWithCredits'))
+            ->setMethods(['tryPayWithCredits'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('tryPayWithCredits');
 
-        $di           = new \Box_Di();
+        $di = new \Box_Di();
         $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
@@ -1147,7 +1149,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->will($this->returnValue($invoiceModel));
 
-        $di       = new \Box_Di();
+        $di = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -1158,18 +1160,25 @@ class ServiceTest extends \BBTestCase
     public function testgenerateForOrder()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('setInvoiceDefaults'))
+            ->setMethods(['setInvoiceDefaults'])
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('setInvoiceDefaults');
 
         $orderModel = new \Model_ClientOrder();
         $orderModel->loadBean(new \RedBeanPHP\OODBBean());
-        $orderModel->price           = 10;
+        $orderModel->price = 10;
+        $orderModel->product_id = 1;
         $orderModel->promo_recurring = true;
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+
+        // $productModel = new \Model_Product();
+        // $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        // $productModel->id = 1;
+        // $productModel->type = 'domain';
+        // $productModel->price = 10;
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -1178,21 +1187,30 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($clientModel));
+        // $dbMock->expects($this->atLeastOnce())
+        //     ->method('getExistingModelById')
+        //     ->will($this->returnValue($productModel));
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->will($this->returnValue($invoiceModel));
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
+        $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')
+            ->getMock();
+
         $invoiceItemServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
             ->getMock();
         $invoiceItemServiceMock->expects($this->atLeastOnce())
             ->method('generateFromOrder');
 
-        $di                = new \Box_Di();
-        $di['db']          = $dbMock;
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function () use ($invoiceItemServiceMock) {
             return $invoiceItemServiceMock;
+        });
+        $di['mod_service'] = $di->protect(function () use ($currencyServiceMock) {
+            return $currencyServiceMock;
         });
 
         $serviceMock->setDi($di);
@@ -1216,9 +1234,9 @@ class ServiceTest extends \BBTestCase
         $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getSoonExpiringActiveOrders')
-            ->will($this->returnValue(array()));
+            ->will($this->returnValue([]));
 
-        $di                = new \Box_Di();
+        $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($orderService) { return $orderService; });
 
         $this->service->setDi($di);
@@ -1235,11 +1253,11 @@ class ServiceTest extends \BBTestCase
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $newId            = 4;
+        $newId = 4;
         $invoiceModel->id = $newId;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('generateForOrder', 'approveInvoice'))
+            ->setMethods(['generateForOrder', 'approveInvoice'])
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('approveInvoice');
@@ -1250,17 +1268,17 @@ class ServiceTest extends \BBTestCase
         $orderService = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
         $orderService->expects($this->atLeastOnce())
             ->method('getSoonExpiringActiveOrders')
-            ->will($this->returnValue(array(array())));
+            ->will($this->returnValue([[]]));
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($clientOrder));
 
-        $di                = new \Box_Di();
+        $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($orderService) { return $orderService; });
-        $di['logger']      = new \Box_Log();
-        $di['db']          = $dbMock;
+        $di['logger'] = new \Box_Log();
+        $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
         $result = $serviceMock->generateInvoicesForExpiringOrders();
@@ -1279,17 +1297,17 @@ class ServiceTest extends \BBTestCase
             ->with($invoiceItemModel);
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
             ->method('getAllNotExecutePaidItems')
-            ->willReturn(array(array()));
+            ->willReturn([[]]);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($invoiceItemModel));
 
-        $di                = new \Box_Di();
+        $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($itemInvoiceServiceMock) { return $itemInvoiceServiceMock; });
-        $di['logger']      = new \Box_Log();
-        $di['db']          = $dbMock;
+        $di['logger'] = new \Box_Log();
+        $di['db'] = $dbMock;
 
         $this->service->setDi($di);
         $result = $this->service->doBatchPaidInvoiceActivation();
@@ -1309,17 +1327,17 @@ class ServiceTest extends \BBTestCase
             ->willThrowException(new \Box_Exception('tesitng exception..'));
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
             ->method('getAllNotExecutePaidItems')
-            ->willReturn(array(array()));
+            ->willReturn([[]]);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($invoiceItemModel));
 
-        $di                = new \Box_Di();
+        $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($itemInvoiceServiceMock) { return $itemInvoiceServiceMock; });
-        $di['logger']      = new \Box_Log();
-        $di['db']          = $dbMock;
+        $di['logger'] = new \Box_Log();
+        $di['db'] = $dbMock;
 
         $this->service->setDi($di);
         $result = $this->service->doBatchPaidInvoiceActivation();
@@ -1333,21 +1351,21 @@ class ServiceTest extends \BBTestCase
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('getUnpaidInvoicesLateFor', 'sendInvoiceReminder'))
+            ->setMethods(['getUnpaidInvoicesLateFor', 'sendInvoiceReminder'])
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('sendInvoiceReminder');
         $serviceMock->expects($this->once())
             ->method('getUnpaidInvoicesLateFor')
-            ->will($this->returnValue(array($invoiceModel)));
+            ->will($this->returnValue([$invoiceModel]));
 
         $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di                   = new \Box_Di();
+        $di = new \Box_Di();
         $di['events_manager'] = $eventManagerMock;
-        $di['logger']         = new \Box_Log();
+        $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
         $result = $serviceMock->doBatchRemindersSend();
@@ -1357,7 +1375,6 @@ class ServiceTest extends \BBTestCase
 
     public function testdoBatchInvokeDueEvent()
     {
-
         $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue');
@@ -1367,21 +1384,21 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->will($this->returnValue(array(array())));
+            ->will($this->returnValue([[]]));
 
         $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $di                   = new \Box_Di();
-        $di['db']             = $dbMock;
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
-        $di['mod_service']    = $di->protect(function () use ($systemService) { return $systemService; });
-        $di['logger']         = new \Box_Log();
+        $di['mod_service'] = $di->protect(function () use ($systemService) { return $systemService; });
+        $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
 
-        $result = $this->service->doBatchInvokeDueEvent(array());
+        $result = $this->service->doBatchInvokeDueEvent([]);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
@@ -1410,10 +1427,10 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di                   = new \Box_Di();
-        $di['db']             = $dbMock;
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
-        $di['logger']         = new \Box_Log();
+        $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
 
@@ -1424,16 +1441,16 @@ class ServiceTest extends \BBTestCase
 
     public function testcounter()
     {
-        $sqlResult = array(
-            array('status'  => \Model_Invoice::STATUS_PAID,
-                  'counter' => 2),
-        );
-        $dbMock    = $this->getMockBuilder('\Box_Database')->getMock();
+        $sqlResult = [
+            ['status' => \Model_Invoice::STATUS_PAID,
+                  'counter' => 2, ],
+        ];
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->will($this->returnValue($sqlResult));
 
-        $di       = new \Box_Di();
+        $di = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -1456,16 +1473,16 @@ class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
         $clientModel->currency = 'EUR';
-        $fundsAmount           = 2;
+        $fundsAmount = 2;
 
-        $minAmount     = 10;
-        $maxAmount     = 50;
+        $minAmount = 10;
+        $maxAmount = 50;
         $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->will($this->onConsecutiveCalls($minAmount, $maxAmount));
 
-        $di                = new \Box_Di();
+        $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($systemService) { return $systemService; });
 
         $this->service->setDi($di);
@@ -1481,16 +1498,16 @@ class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
         $clientModel->currency = 'EUR';
-        $fundsAmount           = 200;
+        $fundsAmount = 200;
 
-        $minAmount     = 10;
-        $maxAmount     = 50;
+        $minAmount = 10;
+        $maxAmount = 50;
         $systemService = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue')
             ->will($this->onConsecutiveCalls($minAmount, $maxAmount));
 
-        $di                = new \Box_Di();
+        $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($systemService) { return $systemService; });
 
         $this->service->setDi($di);
@@ -1509,13 +1526,13 @@ class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
         $clientModel->currency = 'EUR';
-        $fundsAmount           = 20;
+        $fundsAmount = 20;
 
         $minAmount = 10;
         $maxAmount = 50;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('setInvoiceDefaults'))
+            ->setMethods(['setInvoiceDefaults'])
             ->getMock();
         $serviceMock->expects($this->once())
             ->method('setInvoiceDefaults');
@@ -1536,7 +1553,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di                = new \Box_Di();
+        $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $itemInvoiceServiceMock) {
             if ('system' == $serviceName) {
                 return $systemService;
@@ -1545,7 +1562,7 @@ class ServiceTest extends \BBTestCase
                 return $itemInvoiceServiceMock;
             }
         });
-        $di['db']          = $dbMock;
+        $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
 
@@ -1555,17 +1572,17 @@ class ServiceTest extends \BBTestCase
 
     public function testprocessInvoiceInvoiceNotFound()
     {
-        $data = array(
-            'hash'       => 'hashString',
-            'gateway_id' => 2
-        );
+        $data = [
+            'hash' => 'hashString',
+            'gateway_id' => 2,
+        ];
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(null);
 
-        $di       = new \Box_Di();
+        $di = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -1578,10 +1595,10 @@ class ServiceTest extends \BBTestCase
 
     public function testprocessInvoicePayGatewayNotFound()
     {
-        $data = array(
-            'hash'       => 'hashString',
-            'gateway_id' => 2
-        );
+        $data = [
+            'hash' => 'hashString',
+            'gateway_id' => 2,
+        ];
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -1594,7 +1611,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->willReturn(null);
 
-        $di       = new \Box_Di();
+        $di = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -1607,10 +1624,10 @@ class ServiceTest extends \BBTestCase
 
     public function testprocessInvoicePayGatewayNotEnabled()
     {
-        $data = array(
-            'hash'       => 'hashString',
-            'gateway_id' => 2
-        );
+        $data = [
+            'hash' => 'hashString',
+            'gateway_id' => 2,
+        ];
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -1626,7 +1643,7 @@ class ServiceTest extends \BBTestCase
             ->method('load')
             ->willReturn($payGatewayModel);
 
-        $di       = new \Box_Di();
+        $di = new \Box_Di();
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
@@ -1640,19 +1657,18 @@ class ServiceTest extends \BBTestCase
     public function testprocessInvoice()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
-            ->setMethods(array('getPaymentInvoice'))
+            ->setMethods(['getPaymentInvoice'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getPaymentInvoice')
             ->willReturn(new \Payment_Invoice());
-        $data = array(
-            'hash'       => 'hashString',
-            'gateway_id' => 2
-        );
+        $data = [
+            'hash' => 'hashString',
+            'gateway_id' => 2,
+        ];
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
-
 
         $payGatewayModel = new \Model_PayGateway();
         $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -1676,7 +1692,6 @@ class ServiceTest extends \BBTestCase
             ->method('canPerformRecurrentPayment')
             ->will($this->returnValue(true));
 
-
         $adapterMock = $this->getMockBuilder('\Payment_Adapter_Dummy')
             ->disableOriginalConstructor()
             ->getMock();
@@ -1685,24 +1700,24 @@ class ServiceTest extends \BBTestCase
             ->method('setDi');
         $adapterMock->expects($this->atLeastOnce())
             ->method('getConfig')
-            ->willReturn(array());
+            ->willReturn([]);
 
         $payGatewayService->expects($this->atLeastOnce())
             ->method('getPaymentAdapter')
             ->will($this->returnValue($adapterMock));
 
-        $di                = new \Box_Di();
-        $di['db']          = $dbMock;
+        $di = new \Box_Di();
+        $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($payGatewayService, $subcribeService) {
-            if ($sub == 'PayGateway') {
+            if ('PayGateway' == $sub) {
                 return $payGatewayService;
             }
-            if ($sub == 'Subscription') {
+            if ('Subscription' == $sub) {
                 return $subcribeService;
             }
         });
-        $di['api_admin']   = new \Api_Handler(new \Model_Admin());
-        $di['logger']      = new \Box_Log();
+        $di['api_admin'] = new \Api_Handler(new \Model_Admin());
+        $di['logger'] = new \Box_Log();
 
         $serviceMock->setDi($di);
         $result = $serviceMock->processInvoice($data);
@@ -1725,7 +1740,7 @@ class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
-        $di       = new \Box_Di();
+        $di = new \Box_Di();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1738,20 +1753,20 @@ class ServiceTest extends \BBTestCase
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $dbMock       = $this->getMockBuilder('\Box_Database')->getMock();
-        $getAllResult = array(
-            array(
-                'id'        => 1,
+        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
+        $getAllResult = [
+            [
+                'id' => 1,
                 'client_id' => 1,
-                'serie'     => 'BB',
-                'nr'        => '00',
-            ),
-        );
+                'serie' => 'BB',
+                'nr' => '00',
+            ],
+        ];
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->will($this->returnValue($getAllResult));
 
-        $di       = new \Box_Di();
+        $di = new \Box_Di();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1767,9 +1782,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($invoiceModel)));
+            ->will($this->returnValue([$invoiceModel]));
 
-        $di       = new \Box_Di();
+        $di = new \Box_Di();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1777,7 +1792,6 @@ class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
         $this->assertInstanceOf('\Model_Invoice', $result[0]);
     }
-
 
     public function testgetUnpaidInvoicesLateFor()
     {
@@ -1787,9 +1801,9 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->will($this->returnValue(array($invoiceModel)));
+            ->will($this->returnValue([$invoiceModel]));
 
-        $di       = new \Box_Di();
+        $di = new \Box_Di();
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
@@ -1803,19 +1817,19 @@ class ServiceTest extends \BBTestCase
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
 
-        $expected = array(
+        $expected = [
             'first_name' => '',
-            'last_name'  => '',
-            'company'    => '',
-            'address'    => '',
-            'city'       => '',
-            'state'      => '',
-            'country'    => '',
-            'phone'      => '',
-            'phone_cc'   => '',
-            'email'      => '',
-            'zip'        => '',
-        );
+            'last_name' => '',
+            'company' => '',
+            'address' => '',
+            'city' => '',
+            'state' => '',
+            'country' => '',
+            'phone' => '',
+            'phone_cc' => '',
+            'email' => '',
+            'zip' => '',
+        ];
 
         $result = $this->service->getBuyer($invoiceModel);
         $this->assertIsArray($result);
@@ -1830,7 +1844,7 @@ class ServiceTest extends \BBTestCase
         $modelInvoiceItem->loadBean(new \RedBeanPHP\OODBBean());
         $modelInvoiceItem->type = \Model_InvoiceItem::TYPE_DEPOSIT;
 
-        $invoiceItems = array($modelInvoiceItem);
+        $invoiceItems = [$modelInvoiceItem];
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1848,7 +1862,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testisInvoiceTypeDeposit_TypeIsNotDeposit()
+    public function testisInvoiceTypeDepositTypeIsNotDeposit()
     {
         $di = new \Box_Di();
 
@@ -1856,7 +1870,7 @@ class ServiceTest extends \BBTestCase
         $modelInvoiceItem->loadBean(new \RedBeanPHP\OODBBean());
         $modelInvoiceItem->type = \Model_InvoiceItem::TYPE_ORDER;
 
-        $invoiceItems = array($modelInvoiceItem);
+        $invoiceItems = [$modelInvoiceItem];
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1874,11 +1888,11 @@ class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testisInvoiceTypeDeposit_EmptyArray()
+    public function testisInvoiceTypeDepositEmptyArray()
     {
         $di = new \Box_Di();
 
-        $invoiceItems = array();
+        $invoiceItems = [];
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
