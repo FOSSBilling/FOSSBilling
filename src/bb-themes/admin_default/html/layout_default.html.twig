@@ -47,6 +47,16 @@
                         <span class="ml-2">{{ 'Visit site'|trans }}</span>
                     </a>
                     <div class="navbar-nav flex-row order-md-last">
+                        {% set languages = guest.extension_languages %}
+                        {% if languages|length > 1 %}
+                        <div class="nav-item me-3">
+                            <select name="lang" class="form-select js-language-selector">
+                                {% for lang in languages %}
+                                <option value="{{ lang }}" class="lang_{{ lang }}">{{ lang|trans }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
                         <div class="nav-item d-none d-md-flex me-3">
                             <div class="btn-list">
                                 <a href="https://github.com/FOSSBilling/FOSSBilling" class="btn" target="_blank" rel="noreferrer">
@@ -100,17 +110,6 @@
                                     data-api-redirect="{{ 'staff/login'|alink }}">{{ 'Logout'|trans }}</a>
                             </div>
                         </div>
-                        {% set languages = guest.extension_languages %}
-                        {% if languages|length > 1 %}
-                        <span>
-                            <select name="lang" class="language_selector"
-                                style="background-color: #262b2f; color:white;">
-                                {% for lang in languages %}
-                                <option value="{{ lang }}" class="lang_{{ lang }}">{{ lang|trans }}</option>
-                                {% endfor %}
-                            </select>
-                        </span>
-                        {% endif %}
                     </div>
                 </div>
 
