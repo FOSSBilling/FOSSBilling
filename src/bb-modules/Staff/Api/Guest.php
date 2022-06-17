@@ -1,11 +1,13 @@
 <?php
 /**
- * BoxBilling.
+ * FOSSBilling
  *
- * @copyright BoxBilling, Inc (https://www.boxbilling.org)
+ * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * Copyright BoxBilling, Inc
+ * This file may contain code previously used in the BoxBilling project.
+ * Copyright BoxBilling, Inc 2011-2021
+ *
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
@@ -32,7 +34,7 @@ class Guest extends \Api_Abstract
      */
     public function create($data)
     {
-        $allow = (0 == count($this->di['db']->findOne('Admin', '1=1')));
+        $allow = (!is_countable($this->di['db']->findOne('Admin', '1=1')) || 0 == count($this->di['db']->findOne('Admin', '1=1')));
         if (!$allow) {
             throw new \Box_Exception('Administrator account already exists', null, 55);
         }

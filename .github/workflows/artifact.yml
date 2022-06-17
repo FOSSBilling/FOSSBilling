@@ -47,16 +47,15 @@ jobs:
           touch ./src/bb-data/{cache,log,uploads}/index.html
           mkdir -p ./build/{code-browser,code-coverage,logs,pdepend,update,distribution,source}
 
+      - name: Build assets
+        run: gulp build
+
       - name: Copy mandatory files to the temporary build folder
         run: |
           cp -r ./src/* ./build/source/
           cp README.md ./build/source/
           cp LICENSE ./build/source/
           cp CHANGELOG.md ./build/source/
-
-      - name: Building assets
-        run: gulp build
-        working-directory: ./build/source
 
       - name: Installing Composer dependencies
         run: composer install --prefer-dist --no-progress --no-suggest --no-dev --optimize-autoloader

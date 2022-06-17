@@ -1,11 +1,13 @@
 <?php
 /**
- * BoxBilling
+ * FOSSBilling
  *
- * @copyright BoxBilling, Inc (https://www.boxbilling.org)
+ * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * Copyright BoxBilling, Inc
+ * This file may contain code previously used in the BoxBilling project.
+ * Copyright BoxBilling, Inc 2011-2021
+ *
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
@@ -40,8 +42,11 @@ class Server_Manager_Directadmin extends Server_Manager
     
     public function getLoginUrl()
     {
-        $host = $this->_config['host'];
-        return 'http://' . $host . ':2222';
+        $protocol = 'https://';
+        if (!$this->_config['secure']) {
+            $protocol = 'http://';
+        }
+        return $protocol.$this->_config['host'] . ':2222';
     }
     
     public function getResellerLoginUrl()

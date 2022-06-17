@@ -1,12 +1,14 @@
 <?php
 
 /**
- * BoxBilling.
+ * FOSSBilling
  *
- * @copyright BoxBilling, Inc (https://www.boxbilling.org)
+ * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * Copyright BoxBilling, Inc
+ * This file may contain code previously used in the BoxBilling project.
+ * Copyright BoxBilling, Inc 2011-2021
+ *
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
@@ -57,7 +59,7 @@ define('BB_PATH_LANGS', BB_PATH_ROOT . '/bb-locale');
   Config paths & templates
 */
 define('BB_PATH_HTACCESS', BB_PATH_ROOT . '/.htaccess');
-define('BB_PATH_HTACCESS_TEMPLATE', BB_PATH_ROOT . '/.htaccess.txt');
+define('BB_PATH_HTACCESS_TEMPLATE', BB_PATH_ROOT . '/htaccess.txt');
 
 define('BB_BS_CONFIG', BB_PATH_THEMES . '/bootstrap/config/settings_data.json');
 define('BB_BS_CONFIG_TEMPLATE', BB_PATH_THEMES . '/bootstrap/config/settings_data.json.txt');
