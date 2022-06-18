@@ -72,7 +72,11 @@
             <h3>{{ 'Public tickets'|trans }}</h3>
         </div>
 
-        {% include '_search.html.twig' %}
+        <div class="d-flex card-body">
+            <div class="ms-auto">
+                {% include '_search.html.twig' %}
+            </div>
+        </div>
         <table class="table card-table table-vcenter table-striped text-nowrap">
             <thead>
                 <tr>

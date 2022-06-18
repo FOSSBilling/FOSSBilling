@@ -17,7 +17,11 @@
     <div class="card">
         <div class="tabs_container">
             <div id="tab-index" class="tab_content nopadding">
-                {% include '_search.html.twig' %}
+                <div class="d-flex card-body">
+                    <div class="ms-auto">
+                        {% include '_search.html.twig' %}
+                    </div>
+                </div>
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <tbody>
                         {% for ext in admin.extension_get_list({ 'active': 1, 'has_settings': 1 }|merge(request)) %}

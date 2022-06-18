@@ -70,37 +70,74 @@
 </section>
 {% else %}
     {% set statuses = admin.invoice_transaction_get_statuses %}
-    <div class="stats">
-        <ul>
-            <li>
-                <a href="{{ 'invoice/transactions'|alink({ 'status': 'processed' }) }}" class="count green">{{ statuses.processed }}</a>
-                <span>{{ 'Processed'|trans }}</span>
-            </li>
-            <li>
-                <a href="{{ 'invoice/transactions'|alink({ 'status': 'approved' }) }}" class="count blue">{{ statuses.approved }}</a>
-                <span>{{ 'Approved'|trans }}</span>
-            </li>
-            <li>
-                <a href="{{ 'invoice/transactions'|alink({ 'status': 'error' }) }}" class="count red">{{ statuses.error }}</a>
-                <span>{{ 'Error'|trans }}</span>
-            </li>
-            <li class="last">
-                <a href="{{ 'invoice/transactions'|alink }}" class="count grey">{{ statuses.received + statuses.approved + statuses.processed + statuses.error }}</a>
-                <span>{{ 'Total'|trans }}</span>
-            </li>
-        </ul>
-        <div class="fix"></div>
-    </div>
+    <section class="row row-cards mb-3">
+        <div class="col-sm-6 col-lg-3">
+            <a href="{{ 'invoice/transactions'|alink({ 'status': 'processed' }) }}" class="card card-sm card-link">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-danger text-white avatar">{{ statuses.processed }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Processed'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a href="{{ 'invoice/transactions'|alink({ 'status': 'approved' }) }}" class="card card-sm card-link">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-green text-white avatar">{{ statuses.approved }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Approved'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a href="{{ 'invoice/transactions'|alink({ 'status': 'error' }) }}" class="card card-sm card-link">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-secondary text-white avatar">{{ statuses.error }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Error'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a href="{{ 'invoice/transactions'|alink }}" class="card card-sm card-link">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-blue text-white avatar">{{ statuses.received + statuses.approved + statuses.processed + statuses.error }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Total'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </section>
 {% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="card">
-    <div class="card-header">
-        <h5 class="mb-0">{{ 'Transactions'|trans }}</h5>
+    <div class="d-flex card-body">
+        <div class="ms-auto">
+            {% include '_search.html.twig' %}
+        </div>
     </div>
-
-    {% include '_search.html.twig' %}
     <table class="table card-table table-vcenter table-striped text-nowrap">
         <thead>
             <tr>

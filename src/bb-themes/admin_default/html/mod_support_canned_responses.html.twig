@@ -27,30 +27,24 @@
             <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Canned responses'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'New response'|trans }}
-            </a>
-        </li>
-        <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Categories'|trans }}</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-new-category" data-bs-toggle="tab">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'New category'|trans }}
-            </a>
         </li>
     </ul>
 
 <div class="card">
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            {% include '_search.html.twig' %}
+            <div class="d-flex card-body">
+                <div class="ms-auto">
+                    {% include '_search.html.twig' %}
+                    <a class="ms-2 btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#canned-response-new-response">
+                        <svg class="icon me-2">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        {{ 'New response'|trans }}
+                    </a>
+                </div>
+            </div>
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
@@ -92,35 +86,18 @@
             {% include '_pagination.html.twig' with { 'list': responses, 'url': 'support/canned-responses' } %}
         </div>
 
-        <div class="tab-pane fade" id="tab-new" role="tabpanel">
-            <div class="card-body">
-                <form method="post" action="{{ 'api/admin/support/canned_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
-                        <div class="col">
-                            {{ mf.selectbox('category_id', admin.support_canned_category_pairs, '', 1) }}
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="title" value="{{ request.title }}" required>
-                        </div>
-                    </div>
-
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}</label>
-                        <div class="col">
-                            <textarea class="form-control" name="content" rows="10">{{ request.content }}</textarea>
-                        </div>
-                    </div>
-
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
-                </form>
-            </div>
-        </div>
-
         <div class="tab-pane fade" id="tab-categories" role="tabpanel">
+            <div class="d-flex card-body">
+                <div class="ms-auto">
+                    <a class="btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#canned-response-new-category">
+                        <svg class="icon me-2">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        {{ 'New category'|trans }}
+                    </a>
+                </div>
+            </div>
+
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
@@ -158,21 +135,9 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="tab-pane fade" id="tab-new-category" role="tabpanel">
-            <div class="card-body">
-                <form method="post" action="{{ 'api/admin/support/canned_category_create'|link }}" class="api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="title" value="{{ request.title }}" required>
-                        </div>
-                    </div>
-
-                    <input type="submit" value="{{ 'Create'|trans }}" class="btn btn-primary w-100">
-                </form>
-            </div>
-        </div>
     </div>
 </div>
+
+{% include 'Modal/_canned-response-new-response.html.twig' %}
+{% include 'Modal/_canned-response-new-category.html.twig' %}
 {% endblock %}
