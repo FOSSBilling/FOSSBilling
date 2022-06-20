@@ -18,6 +18,7 @@
 [![Financial Contributors](https://opencollective.com/fossbilling/tiers/badge.svg?color=brightgreen)](https://opencollective.com/fossbilling)
 </div>
 
+⚠️ **IMPORTANT NOTE: FOSSBilling is under active development but is currenly very much beta software, there may be stability or security issues and it is not recommended for use in active production environments yet!** ⚠️
 
 **FOSSBilling** is a free open source, billing and client management solution. Whatever the size of your online services business, whether a startup or established, FOSSBilling can help you to automate your invoicing, incoming payments, and client management and communication.
 
@@ -27,14 +28,11 @@ FOSSBilling is designed to be extensible and to integrate easily with your favou
 
 📥 This is self-hosted software that is free for anyone to install — All you need is a web server, running PHP and a MySQL database. For more details, check the [requirements](#requirements) section.
 
-⚠️ **IMPORTANT NOTE: FOSSBilling is under active development but is currenly very much beta software, there may be stability or security issues and it is not recommended for use in active production environments yet!** ⚠️
-
-
 ## Contents
 
 - [Requirements](#requirements)
 - [Installation](#installation)
-    - [Install the latest stable version](#download-the-latest-stable-version)
+    - [Install the latest preview build](#download-the-latest-version)
     - [Install from latest source code](#install-from-latest-source-code)
     - [Installing with Docker](#installing-with-docker)
 - [Contributing](#contributing)
@@ -63,12 +61,12 @@ The following environment is highly recommended for running FOSSBilling. It *may
 ## Installation
 Installing FOSSBilling is pretty easy. Depending on how you plan to use it there are three different ways to install it:
 
-1. If you are using shared hosting, or are installing FOSSBilling to use on a live production site (whhich is not currently recommended and with comes with no guarantees, then you should probably download and install the **[latest version](#download-the-latest-version)**.
+1. If you are using shared hosting, or are installing FOSSBilling to use on a live production site (whhich is not currently recommended and with comes with no guarantees, then you should probably download and install the latext preview build.
 2. If you're planning to contribute to FOSSBilling's development, and wanting to make pull requests in the future, please directly **[install from latest source code](#install-from-latest-source-code)** instead.
 3. If you are familiar with Docker, you can also choose to install **[FOSSBilling in a Docker container](#installing-with-docker)**.
 
 ### Download the latest version
-If you're planning to use FOSSBilling in a production environment (see disclaimers) then this will likely be the best option for you, as the preview builds are the most secure and stable currently available.
+If you're planning to use FOSSBilling in a production environment (see disclaimers) then this will likely be the best option for you, as the preview builds are the most secure and stable versions currently available.
 
 First, you should download the latest preview build from our GitHub repository. Each release has a file called "fossbilling.zip" attached to it, and that's exactly what you need to download. Unlike the source code itself, releases already include the Composer packages, so you won't need to run Composer to install PHP packages. This is perfect if you are using shared hosting as you might not have the ability to run Composer yourself.
 
