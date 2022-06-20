@@ -22,7 +22,7 @@
         "pimple/pimple": "^3.3",
         "twig/twig": "^3.3.9",
         "geoip2/geoip2": "^2.10.0",
-        "phpmailer/phpmailer": "6.6.2",
+        "phpmailer/phpmailer": "6.6.3",
         "mustangostang/spyc": "^0.6.3",
         "michelf/php-markdown": "1.9.1",
         "stripe/stripe-php": "^7.92.0",
