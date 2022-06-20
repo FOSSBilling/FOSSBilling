@@ -63,7 +63,10 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'product/addons'|alink }}" href="{{ 'api/admin/product/delete'|link({ 'id': addon_id }) }}">
+                            <a class="btn btn-icon api-link"
+                                href="{{ 'api/admin/product/delete'|link({ 'id': addon_id }) }}"
+                                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                data-api-redirect="{{ 'product/addons'|alink }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>

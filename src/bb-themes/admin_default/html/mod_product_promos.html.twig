@@ -23,6 +23,10 @@
 {% endblock %}
 
 {% block content %}
+    <div class="page-header mb-3">
+        <h1 class="page-title">{{ 'Product promotions'|trans }}</h1>
+    </div>
+
     <ul class="nav nav-tabs" role="tablist">
         <li class="nav-item" role="presentation">
             <a class="nav-link active" href="#tab-promos" data-bs-toggle="tab">{{ 'Promo'|trans }}</a>
@@ -98,7 +102,10 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/promo_delete'|link({ 'id': promo.id }) }}" data-api-redirect="{{ 'product/promos'|alink }}">
+                            <a class="btn btn-icon api-link"
+                                href="{{ 'api/admin/product/promo_delete'|link({ 'id': promo.id }) }}"
+                                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                data-api-redirect="{{ 'product/promos'|alink }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -181,7 +188,7 @@
                             </div>
                         </div>
 
-                        <h3>{{ 'Promo code limitations'|trans }}</h3>
+                        <h5>{{ 'Promo code limitations'|trans }}</h5>
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Once per client'|trans }}</label>
                             <div class="col">
@@ -197,25 +204,25 @@
                         </div>
 
                         <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Max uses (zero for unlimited)'|trans }}</label>
+                            <label class="form-label col-3 col-form-label">{{ 'Max uses'|trans }}</label>
                             <div class="col">
-                                <input class="form-control" type="text" name="maxuses" value="" class="dirRight" title="{{ 'Leave blank for unlimited uses'|trans }}" placeholder="0">
+                                <input class="form-control" type="text" name="maxuses" value="" placeholder="0">
+                                <small class="form-hint">{{ 'How many times you can use this coupon. 0 - for unlimited.'|trans }}</small>
                             </div>
                         </div>
                         <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Valid time (Leave blank for undefined time)'|trans }}</label>
+                            <label class="form-label col-3 col-form-label">{{ 'Valid time'|trans }}</label>
                             <div class="col">
                                 <div class="input-group">
-                                    {# <input class="form-control" type="date" name="start_at" value="" placeholder="{{ now|date('Y-m-d') }}" class="datepicker"> #}
                                     <input class="form-control" type="date" name="start_at">
                                     <span class="input-group-text">-</span>
-                                    {# <input class="form-control" type="date" name="end_at" value="" placeholder="{{ now|date('Y-m-d') }}"> #}
                                     <input class="form-control" type="date" name="end_at">
                                 </div>
+                                <small class="form-hint">{{ 'Select period when code is valid. Leave blank for undefined time.'|trans }}</small>
                             </div>
                         </div>
                         <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Products (Select none to apply to all products)'|trans }}</label>
+                            <label class="form-label col-3 col-form-label">{{ 'Products'|trans }}</label>
                             <div class="col">
                                 {% set products = admin.product_get_pairs %}
                                 <select class="form-select" name="products[]" multiple="multiple" size="{{ products|length }}">
@@ -223,10 +230,11 @@
                                     <option value="{{ id }}">{{ product }}</option>
                                     {% endfor %}
                                 </select>
+                                <small class="form-hint">{{ 'Select none to apply to all products.'|trans }}</small>
                             </div>
                         </div>
                         <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Periods (Select none to apply to all periods)'|trans }}</label>
+                            <label class="form-label col-3 col-form-label">{{ 'Periods'|trans }}</label>
                             <div class="col">
                                 {% set periods = guest.system_periods %}
                                 <select class="form-select" name="periods[]" multiple="multiple" size="{{ periods|length }}">
@@ -234,10 +242,11 @@
                                     <option value="{{ id }}">{{ period }}</option>
                                     {% endfor %}
                                 </select>
+                                <small class="form-hint">{{ 'Select none to apply to all periods.'|trans }}</small>
                             </div>
                         </div>
                         <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Client Groups (Select none to apply to all client groups)'|trans }}</label>
+                            <label class="form-label col-3 col-form-label">{{ 'Client groups'|trans }}</label>
                             <div class="col">
                                 {% set client_groups = admin.client_group_get_pairs %}
                                 <select class="form-select" name="client_groups[]" multiple="multiple" size="{{ groups|length }}">
@@ -245,6 +254,7 @@
                                     <option value="{{ id }}">{{ client_group }}</option>
                                     {% endfor %}
                                 </select>
+                                <small class="form-hint">{{ 'Select none to apply to all client groups.'|trans }}</small>
                             </div>
                         </div>
                         {# <div class="mb-3 row">

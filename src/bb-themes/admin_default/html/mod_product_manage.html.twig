@@ -44,9 +44,15 @@
 <div class="card">
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-settings" role="tabpanel">
-            <div class="card-body">
-                <h5>{{ product.type|title }} {{ 'General settings'|trans }}</h5>
-                <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}" name="form">
+            <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}" name="form">
+                <div class="card-body">
+                    <h5>{{ product.type|title }} {{ 'General settings'|trans }}</h5>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="title" value="{{ product.title }}" required>
+                        </div>
+                    </div>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
                         <div class="col">
@@ -137,12 +143,6 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="title" value="{{ product.title }}" required>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Slug'|trans }}:</label>
                         <div class="col">
                             <input class="form-control" type="text" name="slug" value="{{ product.slug }}" required>
@@ -151,17 +151,34 @@
 
                     {% include 'partial_pricing.html.twig' with { 'product': product } %}
 
-                    <div class="form-group mb-3 row">
+                    <div class="row">
                         <label class="form-label col-3 col-form-label">{{ 'Description'|trans }}:</label>
                         <div class="col">
                             <textarea class="bb-textarea" name="description" rows="5">{{ product.description }}</textarea>
                         </div>
                     </div>
+                </div>
 
-                    <input type="hidden" name="id" value="{{ product.id }}">
+                <input type="hidden" name="id" value="{{ product.id }}">
+
+                <div class="card-footer d-flex gap-2">
+                    <a href="{{ 'product'|alink }}" class="btn btn-secondary w-25">
+                        <svg class="icon">
+                            <use xlink:href="#arrow-sm-left" />
+                        </svg>
+                        {{ 'Go back'|trans }}
+                    </a>
                     <button type="submit" class="btn btn-primary w-100">{{ 'Update'|trans }}</button>
-                </form>
-            </div>
+                    <a class="btn btn-danger w-25 api-link"
+                        href="{{ 'api/admin/product/delete'|link({ 'id' : product.id }) }}"
+                        data-api-confirm="{{ 'Are you sure?'|trans }}"
+                        data-api-redirect="{{ 'product'|alink }}">
+                        <svg class="icon">
+                            <use xlink:href="#delete" />
+                        </svg>
+                    </a>
+                </div>
+            </form>
         </div>
 
         <div class="tab-pane fade" id="tab-config" role="tabpanel" aria-labelledby="config-tab">
@@ -268,9 +285,11 @@
             </div>
 
             <div class="card-footer text-center">
-                <a href="{{ 'order'|link }}/{{ product.slug }}" class="btn55 mr10" target="_blank">
-                    <img src="images/icons/middlenav/preview.png" alt="">
-                    <span>{{ 'View as client'|trans }}</span>
+                <a href="{{ 'order'|link }}/{{ product.slug }}" class="d-inline-block mx-1 btn bg-light bg-gradient" target="_blank">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
+                        <use xlink:href="#eye" />
+                    </svg>
+                    <span class="d-block text-secondary">{{ 'View as client'|trans }}</span>
                 </a>
             </div>
         </div>

@@ -4,7 +4,7 @@
 
 {% set active_menu = 'support' %}
 
-{% block meta_title %}Canned category{% endblock %}
+{% block meta_title %}{{ 'Canned category'|trans }}{% endblock %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">
@@ -24,7 +24,7 @@
         <li class="breadcrumb-item">
             <a href="{{ 'support/canned-responses'|alink }}#tab-categories">{{ 'Categories'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{category.title}}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ category.title }}</li>
     </ol>
 {% endblock %}
 

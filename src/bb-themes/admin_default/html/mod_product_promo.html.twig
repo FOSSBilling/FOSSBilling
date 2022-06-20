@@ -24,10 +24,13 @@
 {% endblock %}
 
 {% block content %}
+<div class="page-header mb-3">
+    <h1 class="page-title">{{ 'Manage coupon code'|trans }} - {{ promo.code }}</h1>
+</div>
+
 <div class="card">
-    <div class="card-body">
-        <h5>{{ 'Manage coupon code'|trans }}</h5>
-        <form method="post" action="{{ 'api/admin/product/promo_update'|link }}" class="api-form" data-api-redirect="{{ 'product/promos'|alink }}">
+    <form method="post" action="{{ 'api/admin/product/promo_update'|link }}" class="api-form" data-api-redirect="{{ 'product/promos'|alink }}">
+        <div class="card-body">
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Code'|trans }}</label>
                 <div class="col">
@@ -103,25 +106,27 @@
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Max uses (zero for unlimited)'|trans }}</label>
+                <label class="form-label col-3 col-form-label">{{ 'Max uses'|trans }}</label>
                 <div class="col">
-                    <input class="form-control" type="text" name="maxuses" value="{{ promo.maxuses }}" class="dirRight" title="{{ 'Leave blank for unlimited uses'|trans }}"  placeholder="0">
+                    <input class="form-control" type="text" name="maxuses" value="{{ promo.maxuses }}" placeholder="0">
+                    <small class="form-hint">{{ 'How many times you can use this coupon. 0 - for unlimited.'|trans }}</small>
                 </div>
             </div>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Used'|trans }}</label>
                 <div class="col">
-                    <input class="form-control" type="text" name="used" value="{{ promo.used }}" class="dirRight" title="{{ 'How many times promo code was used'|trans }}" placeholder="0">
+                    <input class="form-control" type="text" name="used" value="{{ promo.used }}" title="{{ 'How many times promo code was used'|trans }}" placeholder="0">
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Period when code is valid'|trans }}</label>
+                <label class="form-label col-3 col-form-label">{{ 'Valid time'|trans }}</label>
                 <div class="col">
                     <div class="input-group">
                         <input class="form-control" type="date" name="start_at" value="{% if promo.start_at %}{{ promo.start_at|date('Y-m-d') }}{% endif %}" pattern="\d{4}-\d{2}-\d{2}">
                         <span class="input-group-text">-</span>
                         <input class="form-control" type="date" name="end_at" value="{% if promo.end_at %}{{ promo.end_at|date('Y-m-d') }}{% endif %}" pattern="\d{4}-\d{2}-\d{2}">
                     </div>
+                    <small class="form-hint">{{ 'Select period when code is valid. Leave blank for undefined time.'|trans }}</small>
                 </div>
             </div>
             <div class="mb-3 row">
@@ -134,10 +139,11 @@
                         <option value="{{ id }}"{% if id in promo.products %} selected{% endif %}>{{ product }}</option>
                         {% endfor %}
                     </select>
+                    <small class="form-hint">{{ 'Select none to apply to all products.'|trans }}</small>
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Periods (Select none to apply to all periods)'|trans }}</label>
+                <label class="form-label col-3 col-form-label">{{ 'Periods'|trans }}</label>
                 <div class="col">
                     {% set periods = guest.system_periods %}
                     <input type="hidden" name="periods" value="">
@@ -146,10 +152,11 @@
                         <option value="{{ id }}"{% if id in promo.periods %} selected{% endif %}>{{ period }}</option>
                         {% endfor %}
                     </select>
+                    <small class="form-hint">{{ 'Select none to apply to all periods.'|trans }}</small>
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Client Groups (Select none to apply to all client groups)'|trans }}</label>
+                <label class="form-label col-3 col-form-label">{{ 'Client groups'|trans }}</label>
                 <div class="col">
                     {% set client_groups = admin.client_group_get_pairs %}
                     <input type="hidden" name="client_groups" value="">
@@ -158,12 +165,30 @@
                         <option value="{{ id }}"{% if id in promo.client_groups %} selected{% endif %}>{{ client_group }}</option>
                         {% endfor %}
                     </select>
+                    <small class="form-hint">{{ 'Select none to apply to all client groups.'|trans }}</small>
                 </div>
             </div>
+        </div>
 
-            <input type="hidden" name="id" value="{{ promo.id }}">
-            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
-        </form>
-    </div>
+        <input type="hidden" name="id" value="{{ promo.id }}">
+
+        <div class="card-footer d-flex gap-2">
+            <a href="{{ 'product/promos'|alink }}" class="btn btn-secondary w-25">
+                <svg class="icon">
+                    <use xlink:href="#arrow-sm-left" />
+                </svg>
+                {{ 'Go back'|trans }}
+            </a>
+            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+            <a class="btn btn-danger w-25 api-link"
+                href="{{ 'api/admin/product/promo_delete'|link({ 'id': promo.id }) }}"
+                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                data-api-redirect="{{ 'product/promos'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#delete" />
+                </svg>
+            </a>
+        </div>
+    </form>
 </div>
 {% endblock %}

@@ -23,11 +23,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-body">
-        <h3>{{ tld.tld }} {{ 'Top level domain management'|trans }}</h3>
+<div class="page-header mb-3">
+    <h1 class="page-title">{{ 'Top level domain management'|trans }} - {{ tld.tld }}</h1>
+</div>
 
-        <form method="post" action="{{ 'api/admin/servicedomain/tld_update'|link }}" class="api-form" data-api-msg="{{ 'Top level domain settings updated.'|trans }}">
+<div class="card">
+    <form method="post" action="{{ 'api/admin/servicedomain/tld_update'|link }}" class="api-form" data-api-msg="{{ 'Top level domain settings updated.'|trans }}">
+        <div class="card-body">
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Registrar'|trans }}:</label>
                 <div class="col">
@@ -101,10 +103,27 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <input type="hidden" name="tld" value="{{ tld.tld }}">
-            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
-        </form>
-    </div>
+        <input type="hidden" name="tld" value="{{ tld.tld }}">
+
+        <div class="card-footer d-flex gap-2">
+            <a href="{{ 'servicedomain'|alink }}" class="btn btn-secondary w-25">
+                <svg class="icon">
+                    <use xlink:href="#arrow-sm-left" />
+                </svg>
+                {{ 'Go back'|trans }}
+            </a>
+            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+            <a class="btn btn-danger w-25 api-link"
+                href="{{ 'api/admin/servicedomain/tld_delete'|link({ 'tld': tld.tld }) }}"
+                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                data-api-redirect="{{ 'servicedomain'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#delete" />
+                </svg>
+            </a>
+        </div>
+    </form>
 </div>
 {% endblock %}

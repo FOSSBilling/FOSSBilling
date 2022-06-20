@@ -24,10 +24,19 @@
 {% endblock %}
 
 {% block content %}
+<div class="page-header mb-3">
+    <h1 class="page-title">{{ 'Edit product addon'|trans }} - {{ product.title }}</h1>
+</div>
+
 <div class="card">
-    <div class="card-body">
-        <h5>{{ 'Edit product addon'|trans }}</h5>
-        <form method="post" action="{{ 'api/admin/product/addon_update'|link }}" class="api-form save" data-api-msg="{{ 'Addon updated'|trans }}">
+    <form method="post" action="{{ 'api/admin/product/addon_update'|link }}" class="api-form" data-api-msg="{{ 'Addon updated'|trans }}">
+        <div class="card-body">
+            <div class="form-group mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="title" value="{{ product.title }}" required>
+                </div>
+            </div>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                 <div class="col">
@@ -65,23 +74,34 @@
                 </div>
             </div>
             <div class="form-group mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="title" value="{{ product.title }}" required>
-                </div>
-            </div>
-            <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Description'|trans }}:</label>
                 <div class="col">
                     <textarea class="form-control" name="description" rows="5">{{ product.description }}</textarea>
                 </div>
             </div>
 
-            {% include "partial_pricing.html.twig" with { 'product': product } %}
+            {% include 'partial_pricing.html.twig' with { 'product': product } %}
+        </div>
 
-            <input type="hidden" name="id" value="{{ product.id }}">
+        <input type="hidden" name="id" value="{{ product.id }}">
+
+        <div class="card-footer d-flex gap-2">
+            <a href="{{ 'product/addons'|alink }}" class="btn btn-secondary w-25">
+                <svg class="icon">
+                    <use xlink:href="#arrow-sm-left" />
+                </svg>
+                {{ 'Go back'|trans }}
+            </a>
             <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
-        </form>
-    </div>
+            <a class="btn btn-danger w-25 api-link"
+                href="{{ 'api/admin/product/delete'|link({ 'id': product.id }) }}"
+                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                data-api-redirect="{{ 'product/addons'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#delete" />
+                </svg>
+            </a>
+        </div>
+    </form>
 </div>
 {% endblock %}

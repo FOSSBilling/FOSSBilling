@@ -7,30 +7,32 @@
 {% block meta_title %}{{ category.title }}{% endblock %}
 
 {% block breadcrumbs %}
-<ul class="breadcrumb">
-    <li class="breadcrumb-item">
-        <a href="{{ '/'|alink }}">
-            <svg class="icon">
-                <use xlink:href="#home" />
-            </svg>
-        </a>
-    </li>
-    <li class="breadcrumb-item">
-        <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
-    </li>
-    <li class="breadcrumb-item">
-        <a href="{{ 'product'|alink }}#tab-categories">{{ 'Categories'|trans }}</a>
-    </li>
-    <li class="breadcrumb-item active" aria-current="page">{{ category.title}}</li>
-</ul>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'product'|alink }}#tab-categories">{{ 'Categories'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ category.title}}</li>
+    </ol>
 {% endblock %}
 
 {% block content %}
+<div class="page-header mb-3">
+    <h1 class="page-title">{{ 'Edit category'|trans }} - {{ category.title }}</h1>
+</div>
+
 <div class="card">
     <form method="post" action="{{ 'api/admin/product/category_update'|link }}" class="api-form" data-api-msg="{{ 'Category updated'|trans }}">
         <div class="card-body">
-            <h3>{{ category.title }}</h3>
-
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                 <div class="col">
@@ -45,8 +47,11 @@
                     </div>
                 </div>
             </div>
-            <div class="mb-3">
-                <textarea class="bb-textarea" name="description" rows="5">{{ category.description }}</textarea>
+            <div class="row">
+                <label class="form-label col-3 col-form-label">{{ 'Description'|trans }}:</label>
+                <div class="col">
+                    <textarea class="bb-textarea" name="description" rows="5">{{ category.description }}</textarea>
+                </div>
             </div>
         </div>
 
@@ -60,6 +65,14 @@
                 {{ 'Go back'|trans }}
             </a>
             <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+            <a class="btn btn-danger w-25 api-link"
+                href="{{ 'api/admin/product/category_delete'|link({ 'id': category.id }) }}"
+                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                data-api-redirect="{{ 'product'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#delete" />
+                </svg>
+            </a>
         </div>
     </form>
 </div>

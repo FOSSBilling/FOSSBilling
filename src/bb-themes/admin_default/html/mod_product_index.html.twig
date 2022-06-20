@@ -22,14 +22,6 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#tab-categories" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Categories'|trans }}</button>
         </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="new-category-tab" data-bs-toggle="tab" data-bs-target="#tab-new-category" type="button" role="tab" aria-controls="index" aria-selected="true">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'New category'|trans }}
-            </button>
-        </li>
     </ul>
 
 <div class="card">
@@ -38,6 +30,12 @@
             <div class="d-flex card-body">
                 <div class="ms-auto">
                     {% include '_search.html.twig' %}
+                    <a class="ms-2 btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#product-new-category">
+                        <svg class="icon me-2">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        {{ 'New category'|trans }}
+                    </a>
                 </div>
             </div>
             <div class="table-responsive">
@@ -46,8 +44,8 @@
                         <thead>
                             <tr>
                                 <th>{{ 'Type'|trans }}</th>
-                                <th>{{ 'Category'|trans }}</th>
                                 <th>{{ 'Title'|trans }}</th>
+                                <th>{{ 'Category'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
                                 <th class="w-1 text-center">{{ 'Priority'|trans }}</th>
                                 <th class="w-1"></th>
@@ -58,10 +56,10 @@
                             {% for product in products.list %}
                             <tr>
                                 <td>{{ mf.status_name(product.type) }}</td>
+                                <td><a href="{{ '/product/manage'|alink }}/{{ product.id }}">{{ product.title }}</a></td>
                                 <td>
                                     <a href="{{ '/product/category'|alink }}/{{ product.category.id }}">{{ product.category.title }}</a>
                                 </td>
-                                <td><a href="{{ '/product/manage'|alink }}/{{ product.id }}">{{ product.title }}</a></td>
                                 <td>
                                     {% if product.status == 'enabled' %}
                                         <span class="badge bg-success me-1"></span>
@@ -79,7 +77,10 @@
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/delete'|link({'id' : product.id}) }}" data-api-redirect="{{ 'product'|alink }}">
+                                    <a class="btn btn-icon api-link"
+                                        href="{{ 'api/admin/product/delete'|link({ 'id' : product.id }) }}"
+                                        data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                        data-api-redirect="{{ 'product'|alink }}">
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -111,19 +112,19 @@
         <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/product/prepare'|link }}" class="mainForm" id="prepare-product">
-                    <div class="form-group mb-3 row">
+                    <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Type'|trans }}:</label>
                         <div class="col">
                             {{ mf.selectbox('type', admin.product_get_types, request.type, 1) }}
                         </div>
                     </div>
-                    <div class="form-group mb-3 row">
+                    <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
                         <div class="col">
                             {{ mf.selectbox('product_category_id', admin.product_category_get_pairs, request.product_category_id, 1) }}
                         </div>
                     </div>
-                    <div class="form-group mb-3 row">
+                    <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                         <div class="col">
                             <input type="text" class="form-control" name="title" value="{{ request.title }}" required>
@@ -157,7 +158,10 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/category_delete'|link({ 'id': cat_id }) }}" data-api-redirect="{{ 'product'|alink }}">
+                            <a class="btn btn-icon api-link"
+                                href="{{ 'api/admin/product/category_delete'|link({ 'id': cat_id }) }}"
+                                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                data-api-redirect="{{ 'product'|alink }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -172,37 +176,10 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="tab-pane fade" id="tab-new-category" role="tabpanel" aria-labelledby="new-category-tab">
-            <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/category_create'|link }}" class="save api-form" data-api-redirect="{{ 'product'|alink }}">
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                        <div class="col">
-                            <input type="text" class="form-control" name="title" value="{{ request.cat_title }}" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Icon URL'|trans }}:</label>
-                        <div class="col">
-                            <input type="text" class="form-control" name="icon_url" value="">
-                        </div>
-                    </div>
-
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Description'|trans }}:</label>
-                        <div class="col">
-                            <textarea class="form-control" name="description" rows="5">{{ request.cat_description }}</textarea>
-                        </div>
-                    </div>
-
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
-                </form>
-            </div>
-        </div>
     </div>
 </div>
+
+{% include 'Modal/_product-new-category.html.twig' %}
 {% endblock %}
 
 {% block js %}

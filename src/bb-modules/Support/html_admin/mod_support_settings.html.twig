@@ -30,14 +30,6 @@
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-helpdesks" data-bs-toggle="tab" role="tab">{{ 'Help desks'|trans }}</a>
         </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-new-helpdesk" data-bs-toggle="tab" role="tab">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'New help desk'|trans }}
-            </a>
-        </li>
     </ul>
 
 <div class="card">
@@ -123,10 +115,21 @@
         </div>
 
         <div class="tab-pane fade" id="tab-helpdesks">
-            {% include '_search.html.twig' %}
+            <div class="d-flex card-body">
+                <div class="ms-auto">
+                    {% include '_search.html.twig' %}
+                    <a class="ms-2 btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#extension-support-new-helpdesk">
+                        <svg class="icon me-2">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        {{ 'New helpdesk'|trans }}
+                    </a>
+                </div>
+            </div>
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
+                        <th class="w-1">#</th>
                         <th>{{ 'Title'|trans }}</th>
                         <th>{{ 'Email'|trans }}</th>
                         <th>{{ 'Close tickets after'|trans }}</th>
@@ -136,6 +139,7 @@
                 <tbody>
                     {% for helpdesk in admin.support_helpdesk_get_list({ 'per_page': 50, 'page': request.page }|merge(request)).list %}
                     <tr>
+                        <td>{{ loop.index }}</td>
                         <td>
                             <a href="{{ '/support/helpdesk'|alink }}/{{ helpdesk.id }}">{{ helpdesk.name }}</a>
                         </td>
@@ -147,7 +151,10 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'extension/settings/support'|alink }}" href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id }) }}">
+                            <a class="btn btn-icon api-link"
+                                href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id }) }}"
+                                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                data-api-redirect="{{ 'extension/settings/support'|alink }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -162,55 +169,10 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="tab-pane fade" id="tab-new-helpdesk" role="tabpanel">
-            <div class="card-body">
-                <form method="post" action="{{ 'api/admin/support/helpdesk_create'|link }}" class="api-form" data-api-redirect="{{ 'extension/settings/support'|alink }}">
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="name" value="{{ helpdesk.name }}" required>
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="email" value="{{ helpdesk.email }}" required>
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Signature'|trans }}</label>
-                        <div class="col">
-                            <textarea class="form-control" name="signature" cols="2">{{ helpdesk.signature }}</textarea>
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Close after'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="close_after" value="{{ helpdesk.close_after|default('48') }}" required>
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Can reopen'|trans }}</label>
-                        <div class="col">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioCanReopenYes" type="radio" name="can_reopen" value="1" checked>
-                                <label class="form-check-label" for="radioCanReopenYes">{{ 'Yes'|trans }}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioCanReopenNo" type="radio" name="can_reopen" value="0">
-                                <label class="form-check-label" for="radioCanReopenNo">{{ 'No'|trans }}</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <input type="hidden" name="id" value="{{ helpdesk.id }}">
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
-                </form>
-            </div>
-        </div>
     </div>
 </div>
+
+{% include 'Modal/_extension-support-new-helpdesk.html.twig' %}
 {% endblock %}
 
 {% block js %}

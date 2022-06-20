@@ -28,9 +28,8 @@
 {% endif %}
 
 {% block content %}
-<div class="card">
-    <div class="card-body">
-        <h5>{{ 'Order management'|trans }}</h5>
+    <div class="pahe-header mb-3">
+        <h1 class="page-title">{{ 'Order management'|trans }}</h1>
     </div>
 
     <ul class="nav nav-tabs" role="tablist">
@@ -64,6 +63,7 @@
         </li>
     </ul>
 
+<div class="card">
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
             <div class="card-body">
@@ -502,7 +502,7 @@
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th class="w-1">#</th>
                         <th>{{ 'Amount'|trans }}</th>
                         <th>{{ 'Issued at'|trans }}</th>
                         <th>{{ 'Paid at'|trans }}</th>
@@ -514,7 +514,9 @@
                     {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id }) %}
                     {% for invoice in invoices.list %}
                     <tr>
-                        <td>{{ invoice.id }}</td>
+                        <td>
+                            <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
+                        </td>
                         <td>{{ mf.currency_format( invoice.total, invoice.currency, 1) }}</td>
                         <td>{{ invoice.created_at|date('Y-m-d') }}</td>
                         <td>{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>

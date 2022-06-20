@@ -8,44 +8,44 @@
 {% set params = admin.system_get_params %}
 
 {% block content %}
-    <ul class="tabs">
-        <li>
-            <a href="#tab-index">{{ 'Settings'|trans }}</a>
-        </li>
-    </ul>
+    <div class="page-header mb-3">
+        <h1 class="page-title">{{ 'System settings'|trans }}</h1>
+    </div>
 
     <div class="card">
-        <div class="tabs_container">
-            <div id="tab-index" class="tab_content nopadding">
-                <div class="d-flex card-body">
-                    <div class="ms-auto">
-                        {% include '_search.html.twig' %}
-                    </div>
-                </div>
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <tbody>
-                        {% for ext in admin.extension_get_list({ 'active': 1, 'has_settings': 1 }|merge(request)) %}
-                        <tr>
-                            <td class="w-5">
-                                <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}">
-                                    <img src="{{ ext.icon_url }}" alt="{{ ext.name }}" style="width: 32px; height: 32px;">
-                                </a>
-                            </td>
-                            <td>
-                                <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}">{{ ext.name }}</a>
-                            </td>
-                            <td class="w-1">
-                                <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}">
-                                    <svg class="icon">
-                                        <use xlink:href="#play" />
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div class="d-flex card-body">
+            <div class="ms-auto">
+                {% include '_search.html.twig' %}
             </div>
         </div>
+        <table class="table card-table table-vcenter table-striped text-nowrap">
+            <tbody>
+                {% for ext in admin.extension_get_list({ 'active': 1, 'has_settings': 1 }|merge(request)) %}
+                <tr>
+                    <td class="w-5 text-center">
+                        <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}">
+                            {% if ext.icon_url == 'images/icons/middlenav/cog.png' %}
+                                <svg class="icon">
+                                    <use xlink:href="#cog" />
+                                </svg>
+                            {% else %}
+                            <img src="{{ ext.icon_url }}" alt="{{ ext.name }}" style="width: 32px; height: 32px;">
+                            {% endif %}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}">{{ ext.name }}</a>
+                    </td>
+                    <td class="w-1">
+                        <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}">
+                            <svg class="icon">
+                                <use xlink:href="#play" />
+                            </svg>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 {% endblock %}

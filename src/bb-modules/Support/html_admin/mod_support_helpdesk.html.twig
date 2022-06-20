@@ -26,53 +26,72 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-body">
-        <h3>{{ 'Support help desk'|trans }} - {{ helpdesk.name }}</h3>
-        <p class="text-muted">{{ 'Help desk name will be visible for clients when submitting new ticket. Define very large number of hours to disable auto close ticket option.'|trans }}</p>
+<div class="page-header mb-3">
+    <h1 class="page-title">{{ 'Support help desk'|trans }} - {{ helpdesk.name }}</h1>
+    <p class="text-muted">{{ 'Help desk name will be visible for clients when submitting new ticket. Define very large number of hours to disable auto close ticket option.'|trans }}</p>
+</div>
 
-        <form method="post" action="{{ 'api/admin/support/helpdesk_update'|link }}" class="api-form" data-api-msg="{{ 'Help desk updated'|trans }}">
-            <div class="form-group mb-3 row">
+<div class="card">
+    <form method="post" action="{{ 'api/admin/support/helpdesk_update'|link }}" class="api-form" data-api-msg="{{ 'Help desk updated'|trans }}">
+        <div class="card-body">
+            <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
                 <div class="col">
                     <input class="form-control" type="text" name="name" value="{{ helpdesk.name }}" required>
                 </div>
             </div>
-            <div class="form-group mb-3 row">
+            <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}</label>
                 <div class="col">
                     <input class="form-control" type="email" name="email" value="{{ helpdesk.email }}" required>
                 </div>
             </div>
-            <div class="form-group mb-3 row">
+            <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Signature'|trans }}</label>
                 <div class="col">
                     <textarea class="form-control" name="signature" rows="2">{{ helpdesk.signature }}</textarea>
                 </div>
             </div>
-            <div class="form-group mb-3 row">
+            <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Close after'|trans }}</label>
                 <div class="col">
                     <input class="form-control" type="text" name="close_after" value="{{ helpdesk.close_after }}" required>
                 </div>
             </div>
-            <div class="form-group mb-3 row">
+            <div class="row">
                 <label class="form-label col-3 col-form-label">{{ 'Can reopen'|trans }}</label>
                 <div class="col">
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioCanReopenYes" type="radio" name="can_reopen" value="1"{% if helpdesk.can_reopen == 'draft' %} checked{% endif %}>
+                        <input class="form-check-input" id="radioCanReopenYes" type="radio" name="can_reopen" value="1"{% if helpdesk.can_reopen %} checked{% endif %}>
                         <label class="form-check-label" for="radioCanReopenYes">{{ 'Yes'|trans }}</label>
                     </div>
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioCanReopenNo" type="radio" name="can_reopen" value="0"{% if not helpdesk.can_reopen == 'active' %} checked{% endif %}>
+                        <input class="form-check-input" id="radioCanReopenNo" type="radio" name="can_reopen" value="0"{% if not helpdesk.can_reopen %} checked{% endif %}>
                         <label class="form-check-label" for="radioCanReopenNo">{{ 'No'|trans }}</label>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <input type="hidden" name="id" value="{{ helpdesk.id }}">
+        <input type="hidden" name="id" value="{{ helpdesk.id }}">
+
+        <div class="card-footer d-flex gap-2">
+            <a href="{{ 'extension/settings/support'|alink }}" class="btn btn-secondary w-25">
+                <svg class="icon">
+                    <use xlink:href="#arrow-sm-left" />
+                </svg>
+                {{ 'Go back'|trans }}
+            </a>
             <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
-        </form>
-    </div>
+            <a class="btn btn-danger w-25 api-link"
+                href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id }) }}"
+                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                data-api-redirect="{{ 'extension/settings/support'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#delete" />
+                </svg>
+            </a>
+        </div>
+    </form>
 </div>
 {% endblock %}
