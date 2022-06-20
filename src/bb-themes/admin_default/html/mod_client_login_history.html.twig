@@ -7,11 +7,10 @@
 {% set active_menu = 'activity' %}
 
 {% block content %}
+<div class="page-header mb-3">
+    <h1 class="page-title">{{ 'Clients logins history'|trans }}</h1>
+</div>
 <div class="card">
-    <div class="card-body">
-        <h5>{{ 'Clients logins history'|trans }}</h5>
-    </div>
-
     <div class="d-flex card-body">
         <div class="ms-auto">
             {% include '_search.html.twig' %}

@@ -7,7 +7,6 @@
 {% set active_menu = 'support' %}
 
 {% block top_content %}
-
 {% if request.show_filter %}
     <section class="card mb-3">
         <div class="card-body">
@@ -139,158 +138,115 @@
 {% endblock %}
 
 {% block content %}
-    <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Support tickets'|trans }}</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-email" data-bs-toggle="tab">
+<div class="page-header mb-3">
+    <h1 class="page-title">{{ 'Client tickets'|trans }}</h1>
+</div>
+<div class="card">
+    <div class="d-flex card-body">
+        <div class="ms-auto">
+            {% include '_search.html.twig' %}
+            <a class="ms-2 btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#support-ticket-new-ticket">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New ticket'|trans }}
+            </a>
+            <a class="ms-2 btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#support-ticket-new-email">
                 <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
                 {{ 'New email'|trans }}
             </a>
-        </li>
-    </ul>
-
-<div class="card">
-    <div class="tab-content">
-        <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
-            <div class="d-flex card-body">
-                <div class="ms-auto">
-                    {% include '_search.html.twig' %}
-                    <a class="ms-2 btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#support-ticket-new-ticket">
-                        <svg class="icon me-2">
-                            <use xlink:href="#plus" />
+        </div>
+    </div>
+    <table class="table card-table table-vcenter table-striped text-nowrap">
+        <thead>
+            <tr>
+                <th class="w-1">
+                    <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
+                </th>
+                <th>{{ 'Client'|trans }}</th>
+                <th>{{ 'Subject'|trans }}</th>
+                <th>{{ 'Status'|trans }}</th>
+                <th>{{ 'Helpdesk'|trans }}</th>
+                <th class="w-1"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set tickets = admin.support_ticket_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+            {% for i, ticket in tickets.list %}
+            <tr class="priority_{{ ticket.priority }}">
+                <td>
+                    <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ ticket.id }}">
+                </td>
+                <td>
+                    <div class="d-flex py-1 align-items-center">
+                        <a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}">
+                            <span class="avatar me-2" style="background-image: url({{ ticket.client.email|gravatar }}?size=40)"></span>
+                        </a>
+                        <div class="flex-fill">
+                            <div class="font-weight-medium">
+                                <a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}">{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a>
+                            </div>
+                            <div class="text-muted">{{ ticket.client.email }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div>
+                        <a href="{{ 'support/ticket'|alink }}/{{ ticket.id }}#reply-box">#{{ ticket.id }} - {{ ticket.subject|truncate(50) }} ({{ ticket.replies }})</a>
+                    </div>
+                    {% if ticket.notes|length %}
+                        <a href="#" rel="{{ ticket.id }}" title="{{ ticket.notes|length }}" class="show-notes">
+                            <img src="images/icons/dark/notebook.png" alt="" />
+                        </a>
+                    {% endif %}
+                    <span class="text-muted">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
+                </td>
+                <td>
+                    {% if ticket.status == 'open' %}
+                        <span class="badge bg-success me-1"></span>
+                    {% endif %}
+                    {% if ticket.status == 'on_hold' %}
+                        <span class="badge bg-warning me-1"></span>
+                    {% endif %}
+                    {% if ticket.status == 'closed' %}
+                        <span class="badge bg-secondary me-1"></span>
+                    {% endif %}
+                    {{ mf.status_name(ticket.status) }}</td>
+                <td>{{ ticket.helpdesk.name }}</td>
+                <td>
+                    <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}#reply-box">
+                        <svg class="icon">
+                            <use xlink:href="#edit" />
                         </svg>
-                        {{ 'New ticket'|trans }}
                     </a>
-                </div>
-            </div>
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <thead>
-                    <tr>
-                        <th class="w-1">
-                            <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
-                        </th>
-                        <th>{{ 'Client'|trans }}</th>
-                        <th>{{ 'Subject'|trans }}</th>
-                        <th>{{ 'Status'|trans }}</th>
-                        <th>{{ 'Helpdesk'|trans }}</th>
-                        <th class="w-1"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% set tickets = admin.support_ticket_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
-                    {% for i, ticket in tickets.list %}
-                    <tr class="priority_{{ ticket.priority }}">
-                        <td>
-                            <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ ticket.id }}">
-                        </td>
-                        <td>
-                            <div class="d-flex py-1 align-items-center">
-                                <a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}">
-                                    <span class="avatar me-2" style="background-image: url({{ ticket.client.email|gravatar }}?size=40)"></span>
-                                </a>
-                                <div class="flex-fill">
-                                    <div class="font-weight-medium">
-                                        <a href="{{ 'client/manage'|alink }}/{{ ticket.client_id }}">{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a>
-                                    </div>
-                                    <div class="text-muted">{{ ticket.client.email }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div>
-                                <a href="{{ 'support/ticket'|alink }}/{{ ticket.id }}#reply-box">#{{ ticket.id }} - {{ ticket.subject|truncate(50) }} ({{ ticket.replies }})</a>
-                            </div>
-                            {% if ticket.notes|length %}
-                                <a href="#" rel="{{ ticket.id }}" title="{{ ticket.notes|length }}" class="show-notes">
-                                    <img src="images/icons/dark/notebook.png" alt="" />
-                                </a>
-                            {% endif %}
-                            <span class="text-muted">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
-                        </td>
-                        <td>
-                            {% if ticket.status == 'open' %}
-                                <span class="badge bg-success me-1"></span>
-                            {% endif %}
-                            {% if ticket.status == 'on_hold' %}
-                                <span class="badge bg-warning me-1"></span>
-                            {% endif %}
-                            {% if ticket.status == 'closed' %}
-                                <span class="badge bg-secondary me-1"></span>
-                            {% endif %}
-                            {{ mf.status_name(ticket.status) }}</td>
-                        <td>{{ ticket.helpdesk.name }}</td>
-                        <td>
-                            <a class="btn btn-icon" href="{{ '/support/ticket'|alink }}/{{ ticket.id }}#reply-box">
-                                <svg class="icon">
-                                    <use xlink:href="#edit" />
-                                </svg>
-                            </a>
-                            <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}"
-                                data-api-confirm="{{ 'Are you sure?'|trans }}"
-                                data-api-redirect="{{ 'support'|alink }}">
-                                <svg class="icon">
-                                    <use xlink:href="#delete" />
-                                </svg>
-                            </a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    <a class="btn btn-icon api-link"
+                        href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}"
+                        data-api-confirm="{{ 'Are you sure?'|trans }}"
+                        data-api-redirect="{{ 'support'|alink }}">
+                        <svg class="icon">
+                            <use xlink:href="#delete" />
+                        </svg>
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/support/batch_delete' } %}
-                {% include '_pagination.html.twig' with { 'list': tickets, 'url': 'support' } %}
-            </div>
-        </div>
-
-        <div class="tab-pane fade" id="tab-email" role="tabpanel" aria-labelledby="email-tab">
-            <div class="card-body">
-                <h5>{{ 'Open public ticket for non client'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" class="api-form" data-api-jsonp="onAfterPublicTicketCreate">
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Receivers name'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="name" required placeholder="{{ 'John Smith'|trans }}">
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="email" required placeholder="{{ 'user@domail.com'|trans }}">
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="subject" value="{{ ticket.subject }}" required placeholder="{{ 'Email subject'|trans }}">
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Message'|trans }}</label>
-                        <div class="col">
-                            <textarea class="form-control" name="message" rows="10" required>{{ profile.signature }}</textarea>
-                        </div>
-                    </div>
-
-                    <input type="hidden" name="client_id" value="{{ request.client_id }}" id="client_id">
-                    <button type="submit" class="btn btn-primary w-100">{{ 'Create'|trans }}</button>
-                </form>
-            </div>
-        </div>
+    <div class="card-footer d-flex align-items-center justify-content-between">
+        {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/support/batch_delete' } %}
+        {% include '_pagination.html.twig' with { 'list': tickets, 'url': 'support' } %}
     </div>
 </div>
 
 {% include 'Modal/_support-ticket-new-ticket.html.twig' %}
+{% include 'Modal/_support-ticket-new-email.html.twig' %}
 {% endblock %}
 
 {% block js %}
