@@ -144,14 +144,6 @@
             <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Support tickets'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'New ticket'|trans }}
-            </a>
-        </li>
-        <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-email" data-bs-toggle="tab">
                 <svg class="icon me-2">
                     <use xlink:href="#plus" />
@@ -167,6 +159,12 @@
             <div class="d-flex card-body">
                 <div class="ms-auto">
                     {% include '_search.html.twig' %}
+                    <a class="ms-2 btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#support-ticket-new-ticket">
+                        <svg class="icon me-2">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        {{ 'New ticket'|trans }}
+                    </a>
                 </div>
             </div>
             <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -255,47 +253,10 @@
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
-            <div class="card-body">
-                <h5>{{ 'Open ticket for existing client'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" class="api-form" data-api-redirect="{{ 'support'|alink }}">
-                    {% if not request.client_id %}
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Client'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control js-autocomplete" type="text" placeholder="{{ 'Start typing clients name, email or ID'|trans }}">
-                        </div>
-                    </div>
-                    {% endif %}
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Help desk'|trans }}</label>
-                        <div class="col">
-                            {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, '', 1) }}
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="subject" value="{{ ticket.subject }}" required>
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Message'|trans }}</label>
-                        <div class="col">
-                            <textarea class="form-control" name="content" rows="10" required id="msg-area-{{ message.id }}">{{ profile.signature }}</textarea>
-                        </div>
-                    </div>
-
-                    <input type="hidden" name="client_id" value="{{ request.client_id }}" id="client_id">
-                    <button type="submit" class="btn btn-primary w-100">{{ 'Create'|trans }}</button>
-                </form>
-            </div>
-        </div>
-
         <div class="tab-pane fade" id="tab-email" role="tabpanel" aria-labelledby="email-tab">
             <div class="card-body">
                 <h5>{{ 'Open public ticket for non client'|trans }}</h5>
-                <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" class="mainForm api-form" data-api-jsonp="onAfterPublicTicketCreate">
+                <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" class="api-form" data-api-jsonp="onAfterPublicTicketCreate">
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Receivers name'|trans }}</label>
                         <div class="col">
@@ -328,13 +289,15 @@
         </div>
     </div>
 </div>
+
+{% include 'Modal/_support-ticket-new-ticket.html.twig' %}
 {% endblock %}
 
 {% block js %}
 <script>
 $(function() {
 	$('.js-autocomplete').autocomplete({
-        source: function( request, response ) {
+        source: function(request, response) {
             $.ajax({
                 url: bb.restUrl('admin/client/get_pairs'),
                 dataType: "json",
@@ -343,7 +306,7 @@ $(function() {
                     search: request.term
                 },
                 success: function( data ) {
-                    response( $.map( data.result, function( name, id) {
+                    response($.map(data.result, function(name, id) {
                         return {
                             label: name,
                             value: id
@@ -353,21 +316,23 @@ $(function() {
             });
         },
         minLength: 1,
-        select: function( event, ui ) {
-            $(".js-autocomplete").val(ui.item.label);
-            $("#client_id").val(ui.item.value);
+        select: function(event, ui) {
+            this.value = ui.item.label;
+            this.closest('form').querySelector('#client_id').value = ui.item.value;
 
             return false;
         }
     });
 
     $('a.show-notes').click(function() {
-        bb.post('admin/support/ticket_get', { id: $(this).attr('rel') }, function(result){
+        bb.post('admin/support/ticket_get', { id: $(this).attr('rel') }, function(result) {
             var html = $('<div>');
+
             $.each(result.notes, function(i, v){
                 html.append($('<div>').html(v.note));
                 html.append($('<hr>'));
             });
+
             jAlert(html, "{{ 'Notes'|trans }}");
         });
 
