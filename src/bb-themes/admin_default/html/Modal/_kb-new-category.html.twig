@@ -1,0 +1,31 @@
+{% import 'macro_functions.html.twig' as macro %}
+
+<div class="modal fade" id="kb-new-category" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ 'api/admin/kb/category_create'|link }}" class="api-form" data-api-reload="{{ 'Category created'|trans }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ 'Create new knowledge base category'|trans }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="title" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Description'|trans }}:</label>
+                        <div class="col">
+                            <textarea class="form-control" name="description" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
