@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.operating-system }}
+    
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
@@ -18,6 +19,7 @@ jobs:
 
     name: Create a downloadable preview build
     steps:
+
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -68,11 +70,23 @@ jobs:
         working-directory: ./build/source/bb-library/Box
 
       - name: Create the final archive
-        run: tar cvf ./build/distribution/FOSSBilling-${GITHUB_SHA::7}.tar -C ./build/source .
+        run: tar cvf ./build/distribution/FOSSBilling-preview.tar -C ./build/source .
 
-      - name: Upload the final artifact
+      - name: Upload the final artifact to GitHub
         uses: actions/upload-artifact@v3
         with:
           name: FOSSBilling Preview Archive
-          path: ./build/distribution/FOSSBilling-${GITHUB_SHA::7}.tar
+          path: ./build/distribution/
           if-no-files-found: error
+
+      - name: Upload the final artifact to Amazon S3
+        if: github.ref == 'refs/heads/main'
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl public-read --follow-symlinks --delete
+        env:
+          AWS_S3_BUCKET: fossbilling-public
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: 'eu-central-1'
+          SOURCE_DIR: './build/distribution'
