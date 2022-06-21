@@ -207,7 +207,7 @@
         </div>
     {% endif %}
 
-    {% set invoicesUnpaid = admin.invoice_get_list({ 'status': 'unpaid' }) %}
+    {% set invoicesUnpaid = admin.invoice_get_list({ 'status': 'unpaid', 'per_page': 10 }) %}
     {% if invoicesUnpaid.list|length > 0 %}
     <div class="col-lg-6">
         <div class="card">
@@ -264,7 +264,7 @@
     </div>
     {% endif %}
 
-    {% set orders = admin.order_get_list({ 'per_page': '5', 'status': 'active' }) %}
+    {% set orders = admin.order_get_list({ 'status': 'active', 'per_page': '10' }) %}
     {% if orders.list|length > 0 %}
         <div class="col-lg-6">
             <div class="card">
