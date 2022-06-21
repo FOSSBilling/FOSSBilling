@@ -23,9 +23,8 @@
 {% set active_menu = 'support' %}
 
 {% block content %}
-<div class="card mb-3">
-    <div class="card-body">
-        <h3>{{ ticket.subject }}</h3>
+    <div class="page-header mb-3">
+        <h1 class="page-title">{{ 'Support ticket'|trans }} - #{{ ticket.id }}</h1>
     </div>
 
     <ul class="nav nav-tabs" role="tablist">
@@ -43,61 +42,65 @@
         </li>
     </ul>
 
+<div class="card mb-3">
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <tbody>
                     <tr>
-                        <td class=="w-25">{{ 'Ticket ID'|trans }}</td>
+                        <td class="w-50 text-end">{{ 'Ticket ID'|trans }}:</td>
                         <td>#{{ ticket.id }}</td>
                     </tr>
                     <tr>
-                        <td>{{ 'Client'|trans }}</td>
+                        <td class="text-end">{{ 'Subject'|trans }}:</td>
+                        <td>{{ ticket.subject }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-end">{{ 'Client'|trans }}:</td>
                         <td>#{{ ticket.client.id }} <a href="{{ 'client/manage'|alink }}/{{ ticket.client.id }}">{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a></td>
                     </tr>
                     <tr>
-                        <td>{{ 'Help desk'|trans }}</td>
-                        <td class="shd">
+                        <td class="text-end">{{ 'Help desk'|trans }}:</td>
+                        <td class="text-end js-helpdesk-change">
                             {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, ticket.support_helpdesk_id, 1) }}
                         </td>
                     </tr>
                     <tr>
-                        <td>{{ 'Status'|trans }}</td>
+                        <td class="text-end">{{ 'Status'|trans }}:</td>
                         <td>
                             {% for tcode, tstatus in admin.support_ticket_get_statuses({ 'titles': 1 }) %}
                                 <div class="form-check form-check-inline mb-0">
-                                    <input class="form-check-input" id="radioStatus{{ tcode }}" class="tst" type="radio" name="status" value="{{ tcode }}"{% if ticket.status == tcode %} checked{% endif %}>
+                                    <input class="form-check-input js-status-change" id="radioStatus{{ tcode }}" type="radio" name="status" value="{{ tcode }}"{% if ticket.status == tcode %} checked{% endif %}>
                                     <label class="form-check-label" for="radioStatus{{ tcode }}">{{ tstatus|trans }}</label>
                                 </div>
                             {% endfor %}
                         </td>
                     </tr>
                     <tr>
-                        <td>{{ 'Time opened'|trans }}</td>
+                        <td class="text-end">{{ 'Time opened'|trans }}:</td>
                         <td>{{ ticket.created_at|date('l, d F Y') }}</td>
                     </tr>
-                 </tbody>
-
-                {% set task = ticket.rel %}
-                <tbody>
+                    {% set task = ticket.rel %}
                     {% if task.task %}
                     <tr>
-                        <td><label>{{ 'Task'|trans }}</label></td>
+                        <td class="text-end">{{ 'Task'|trans }}:</td>
                         <td><strong>{{ mf.status_name(task.task) }}</strong></td>
                     </tr>
                     {% endif %}
 
                     {% if task.type == 'order' %}
                     <tr>
-                        <td><label>{{ 'Related to'|trans }}</label></td>
+                        <td class="text-end">{{ 'Related to'|trans }}:</td>
                         <td><a href="{{ 'order/manage'|alink }}/{{ task.id }}">Order #{{ task.id }}</a></td>
                     </tr>
                     {% endif %}
 
                     {% if task.task == 'upgrade' %}
                     <tr>
-                        <td><label>{{ 'Upgrade to'|trans }}</label></td>
-                        <td><a href="{{ 'product/manage'|alink }}/{{ task.new_value }}">{{ admin.product_get_pairs[task.new_value] }}</a></td>
+                        <td class="text-end">{{ 'Upgrade to'|trans }}:</td>
+                        <td>
+                            <a href="{{ 'product/manage'|alink }}/{{ task.new_value }}">{{ admin.product_get_pairs[task.new_value] }}</a>
+                        </td>
                     </tr>
                     {% endif %}
                 </tbody>
@@ -124,11 +127,14 @@
                     </svg>
                     <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
                 </a>
-
                 {% if task.status == 'pending' %}
-                <a href="{{ 'api/admin/support/task_complete'|link({ 'id': ticket.id }) }}" class="btn55 mr10 api-link" data-api-reload="1">
-                    <img src="images/icons/middlenav/check.png" alt="" data-api-reload="1">
-                    <span>{{ 'Set Task complete'|trans }}</span>
+                <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+                    href="{{ 'api/admin/support/task_complete'|link({ 'id': ticket.id }) }}"
+                    data-api-reload="1">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
+                        <use xlink:href="#check" />
+                    </svg>
+                    <span class="d-block text-secondary">{{ 'Complete'|trans }}</span>
                 </a>
                 {% endif %}
             </div>
@@ -215,7 +221,7 @@
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
-                        <th>{{ 'ID'|trans }}</th>
+                        <th class="w-1">#</th>
                         <th>{{ 'Help desk'|trans }}</th>
                         <th>{{ 'Subject'|trans }}</th>
                         <th>{{ 'Status'|trans }}</th>
@@ -356,17 +362,19 @@
 
         setSelRange(ta, pos, pos);
 
-        $('.shd select').change(function(){
+        document.querySelector('.js-helpdesk-change select').addEventListener('change', event => {
             bb.get('admin/support/ticket_update', {
                 id: {{ ticket.id }},
-                support_helpdesk_id: $(this).val()
+                support_helpdesk_id: event.target.value
             });
         });
 
-        $('input.tst').click(function(){
-            bb.get('admin/support/ticket_update', {
-                id: {{ ticket.id }},
-                status: $(this).val()
+        document.querySelectorAll('input.js-status-change').forEach(element => {
+            element.addEventListener('click', event => {
+                bb.get('admin/support/ticket_update', {
+                    id: {{ ticket.id }},
+                    status: event.target.value
+                });
             });
         });
 

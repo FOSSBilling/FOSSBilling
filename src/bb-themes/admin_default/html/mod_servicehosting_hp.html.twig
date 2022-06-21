@@ -21,9 +21,12 @@
 {% endblock %}
 
 {% block content %}
+<div class="page-header mb-3">
+    <h1 class="page-title">{{ 'Manage hosting plan'|trans }}</h1>
+</div>
+
 <div class="card">
     <div class="card-body">
-        <h5>{{ 'Manage hosting plan'|trans }}</h5>
         <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" class="api-form" data-api-msg="{{ 'Hosting plan updated'|trans }}">
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
@@ -34,13 +37,19 @@
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Disk quota'|trans }}:</label>
                 <div class="col">
-                    <input class="form-control" type="text" name="quota" value="{{ hp.quota }}">
+                    <div class="input-group">
+                        <input class="form-control" type="text" name="quota" value="{{ hp.quota }}">
+                        <span class="input-group-text">MB</span>
+                    </div>
                 </div>
             </div>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Bandwidth'|trans }}:</label>
                 <div class="col">
-                    <input class="form-control" type="text" name="bandwidth" value="{{ hp.bandwidth }}">
+                    <div class="input-group">
+                        <input class="form-control" type="text" name="bandwidth" value="{{ hp.bandwidth }}">
+                        <span class="input-group-text">MB</span>
+                    </div>
                 </div>
             </div>
             <div class="mb-3 row">
@@ -96,7 +105,7 @@
         </form>
         <hr>
 
-        <h3>{{ 'Hosting plan additional parameters'|trans }}</h3>
+        <h5>{{ 'Hosting plan additional parameters'|trans }}</h5>
         <p class="text-muted">{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters. List of parameters server managers requires you can find on extensions page.'|trans }}</p>
 
         <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" class="api-form" data-api-reload="1">

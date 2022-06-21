@@ -168,14 +168,6 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link" href="#tab-groups" data-bs-toggle="tab" role="tab">{{ 'Groups'|trans }}</button>
         </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" href="#tab-new-group" data-bs-toggle="tab" role="tab">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'New group'|trans }}
-            </button>
-        </li>
     </ul>
 
     <div class="card">
@@ -184,6 +176,12 @@
                 <div class="d-flex card-body">
                     <div class="ms-auto">
                         {% include '_search.html.twig' %}
+                        <a class="ms-2 btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#client-new-group">
+                            <svg class="icon me-2">
+                                <use xlink:href="#plus" />
+                            </svg>
+                            {{ 'New group'|trans }}
+                        </a>
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -400,7 +398,10 @@
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
-                                <a class="btn btn-icon api-link" href="{{ 'api/admin/client/group_delete'|link({ 'id': id }) }}" data-api-reload="1" data-api-confirm="{{ 'Are you sure?'|trans }}">
+                                <a class="btn btn-icon api-link"
+                                    href="{{ 'api/admin/client/group_delete'|link({ 'id': id }) }}"
+                                    data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                    data-api-reload="1">
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
@@ -415,23 +416,10 @@
                     </tbody>
                 </table>
             </div>
-
-            <div class="tab-pane fade" id="tab-new-group" role="tabpanel">
-                <div class="card-body">
-                    <form method="post" action="{{ 'api/admin/client/group_create'|link }}" class="api-form" data-api-redirect="{{ 'client'|alink }}">
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                            <div class="col">
-                                <input class="form-control" type="text" name="title" value="{{ request.title }}" required>
-                            </div>
-                        </div>
-
-                        <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
-                    </form>
-                </div>
-            </div>
         </div>
     </div>
+
+{% include 'Modal/_client-new-group.html.twig' %}
 {% endblock %}
 
 {% block js %}{% endblock %}
