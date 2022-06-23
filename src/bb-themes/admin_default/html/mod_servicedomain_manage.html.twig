@@ -1,3 +1,5 @@
+{% import 'macro_functions.html.twig' as mf %}
+
 <div class="help">
     <h2>{{ 'Domain details'|trans }}</h2>
 </div>
@@ -22,14 +24,18 @@
             <td class="text-end">{{ 'Nameserver 2'|trans }}:</td>
             <td>{{ service.ns2 }}</td>
         </tr>
+        {% if service.ns3 %}
         <tr>
             <td class="text-end">{{ 'Nameserver 3'|trans }}:</td>
             <td>{{ service.ns3 }}</td>
         </tr>
+        {% endif %}
+        {% if service.ns4 %}
         <tr>
             <td class="text-end">{{ 'Nameserver 4'|trans }}:</td>
             <td>{{ service.ns4 }}</td>
         </tr>
+        {% endif %}
         <tr>
             <td class="text-end">{{ 'Transfer code'|trans }}:</td>
             <td>{{ service.transfer_code }}</td>
@@ -55,8 +61,8 @@
             </td>
         </tr>
         <tr>
-            <td class="text-end">{{ 'Registration/Renewal years'|trans }}:</td>
-            <td>{{ service.period }}</td>
+            <td class="text-end">{{ 'Registration/Renewal period'|trans }}:</td>
+            <td>{{ service.period }} {{ 'years'|trans }}</td>
         </tr>
         <tr>
             <td class="text-end">{{ 'Registration date'|trans }}:</td>
@@ -135,7 +141,7 @@
         </div>
 
         <input type="hidden" name="order_id" value="{{ order.id }}">
-        <input class="btn btn-primary w-100" type="submit" value="{{ 'Update'|trans }}">
+        <button class="btn btn-primary w-100" type="submit" >{{ 'Update'|trans }}</button>
     </form>
     <hr>
 
@@ -148,94 +154,96 @@
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Period'|trans }}: </label>
+            <label class="form-label col-3 col-form-label">{{ 'Registration/Renewal period'|trans }}: </label>
             <div class="col">
-                <input class="form-control" type="text" name="period" value="{{ request.period|default(service.period) }}">
+                <div class="input-group">
+                    <input class="form-control" type="text" name="period" value="{{ request.period|default(service.period) }}">
+                    <span class="input-group-text">{{ 'years'|trans }}</span>
+                </div>
             </div>
         </div>
 
         <input type="hidden" name="order_id" value="{{ order.id }}">
-        <input class="btn btn-primary w-100" type="submit" value="{{ 'Update'|trans }}">
+        <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
     </form>
     <hr>
 
     <h3>{{ 'Update domain contact details'|trans }}</h3>
     <form method="post" action="{{ 'api/admin/servicedomain/update_contacts'|link }}" class="api-form" data-api-msg="{{ 'Domain contact details updated'|trans }}">
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'First Name'|trans }}: </label>
+            <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
             <div class="col">
-                <input class="form-control" type="text" name="contact[first_name]" value="{{ request.first_name|default(service.contact.first_name) }}" required>
+                <div class="row">
+                    <div class="col">
+                        <input class="form-control" type="text" name="contact[first_name]" value="{{ request.first_name|default(service.contact.first_name) }}" required>
+                    </div>
+                    <div class="col">
+                        <input class="form-control" type="text" name="contact[last_name]" value="{{ request.last_name|default(service.contact.last_name) }}" required>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Last Name'|trans }}: </label>
+            <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}:</label>
             <div class="col">
-                <input class="form-control" type="text" name="contact[last_name]" value="{{ request.last_name|default(service.contact.last_name) }}" required>
+                <input class="form-control" type="email" name="contact[email]" value="{{ request.email|default(service.contact.email) }}" required>
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}: </label>
+            <label class="form-label col-3 col-form-label">{{ 'Company'|trans }}:</label>
             <div class="col">
-                <input class="form-control" type="text" name="contact[email]" value="{{ request.email|default(service.contact.email) }}" required>
+                <input class="form-control" type="text" name="contact[company]" value="{{ request.company|default(service.contact.company) }}">
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Company'|trans }}: </label>
+            <label class="form-label col-3 col-form-label">{{ 'Phone number'|trans }}:</label>
             <div class="col">
-                <input class="form-control" type="text" name="contact[company]" value="{{ request.company|default(service.contact.company) }}" required>
+                <div class="input-group">
+                    <span class="input-group-text">+</span>
+                    <input class="form-control" type="text" name="contact[phone_cc]" value="{{ request.phone_cc|default(service.contact.phone_cc) }}" required>
+                    <input class="form-control w-50" type="text" name="contact[phone]" value="{{ request.phone|default(service.contact.phone) }}" required>
+                </div>
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Address Line 1'|trans }}: </label>
+            <label class="form-label col-3 col-form-label">{{ 'Address Line 1'|trans }}:</label>
             <div class="col">
                 <input class="form-control" type="text" name="contact[address1]" value="{{ request.address1|default(service.contact.address1) }}" required>
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Address Line 2'|trans }}: </label>
+            <label class="form-label col-3 col-form-label">{{ 'Address Line 2'|trans }}:</label>
             <div class="col">
-                <input class="form-control" type="text" name="contact[address2]" value="{{ request.address2|default(service.contact.address2) }}" required>
+                <input class="form-control" type="text" name="contact[address2]" value="{{ request.address2|default(service.contact.address2) }}">
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}: </label>
+            <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
             <div class="col">
-                <input class="form-control" type="text" name="contact[country]" value="{{ request.country|default(service.contact.country) }}" required>
+                {{ mf.selectbox('contact[country]', guest.system_countries, request.country|default(service.contact.country), 1, 'Select country') }}
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'City'|trans }}: </label>
+            <label class="form-label col-3 col-form-label">{{ 'City'|trans }}:</label>
             <div class="col">
                 <input class="form-control" type="text" name="contact[city]" value="{{ request.city|default(service.contact.city) }}" required>
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'State'|trans }}: </label>
+            <label class="form-label col-3 col-form-label">{{ 'State'|trans }}:</label>
             <div class="col">
-                <input class="form-control" type="text" name="contact[state]" value="{{ request.state|default(service.contact.state) }}" required>
+                <input class="form-control" type="text" name="contact[state]" value="{{ request.state|default(service.contact.state) }}">
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Zip'|trans }}: </label>
+            <label class="form-label col-3 col-form-label">{{ 'Zip'|trans }}:</label>
             <div class="col">
-                <input class="form-control" type="text" name="contact[postcode]" value="{{ request.postcode|default(service.contact.postcode) }}" required>
-            </div>
-        </div>
-        <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Phone Country Code'|trans }}: </label>
-            <div class="col">
-                <input class="form-control" type="text" name="contact[phone_cc]" value="{{ request.phone_cc|default(service.contact.phone_cc) }}" required>
-            </div>
-        </div>
-        <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Phone number'|trans }}: </label>
-            <div class="col">
-                <input class="form-control" type="text" name="contact[phone]" value="{{ request.phone|default(service.contact.phone) }}" required>
+                <input class="form-control" type="text" name="contact[postcode]" value="{{ request.postcode|default(service.contact.postcode) }}">
             </div>
         </div>
 
         <input type="hidden" name="order_id" value="{{ order.id }}">
-        <input class="btn btn-primary w-100" type="submit" value="{{ 'Update'|trans }}">
+        <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
     </form>
 </div>
 {% endif %}

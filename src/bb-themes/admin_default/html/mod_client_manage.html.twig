@@ -124,8 +124,13 @@
                         <tr>
                             <td class="text-end">{{ 'Address'|trans }}:</td>
                             <td>
-                                <span class="flag flag-{{ client.country }}" title="{{ guest.system_countries[client.country] }}"></span>
-                                {{ guest.system_countries[client.country] }} {{ client.state }} {{ client.address_1 }} {{ client.address_2 }} {{ client.city }} {{ client.postcode }}
+                                <span class="flag flag-{{ client.country }} me-2"></span>
+                                {{- guest.system_countries[client.country]|trans -}}
+                                {%- if client.city %}, {{ client.city }}{% endif %}
+                                {%- if client.state %}, {{ client.state }}{% endif %}
+                                {%- if client.address_1 %}, {{ client.address_1 }}{% endif %}
+                                {%- if client.address_2 %}, {{ client.address_2 }}{% endif %}
+                                {%- if client.postcode %}, {{ client.postcode }}{% endif %}
                             </td>
                         </tr>
                         <tr>

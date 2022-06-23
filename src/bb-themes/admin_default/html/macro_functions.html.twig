@@ -10,7 +10,7 @@
     <select class="form-select" name="{{ name }}" id="{{ name }}"{% if required %} required{% endif%}>
         {% if nullOption %}<option value="">-- {{ nullOption }} --</option>{% endif %}
         {% for val, label in options %}
-        <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
+        <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %} selected{% endif %}>{{ label|e }}</option>
         {% endfor %}
     </select>
 {% endmacro %}
