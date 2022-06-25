@@ -26,7 +26,7 @@ If you run a web hosting business and are looking for an open-source alternative
 
 FOSSBilling is designed to be extensible and to integrate easily with your favourite server management software and payment gateways.
 
-📥 This is self-hosted software that is free for anyone to install — All you need is a web server, running PHP and a MySQL database. For more details, check the [requirements](#requirements) section.
+📥 This is self-hosted software that is free for anyone to install — All you need is a some basic knowledge, a web server, running PHP and a MySQL database. For more details, check the [requirements](#requirements) section.
 
 ## Contents
 
@@ -61,16 +61,16 @@ The following environment is highly recommended for running FOSSBilling. It *may
 ## Installation
 Installing FOSSBilling is pretty easy. Depending on how you plan to use it there are three different ways to install it:
 
-1. If you are using shared hosting, or are installing FOSSBilling to use on a live production site (whhich is not currently recommended and with comes with no guarantees, then you should probably download and install the latext preview build.
-2. If you're planning to contribute to FOSSBilling's development, and wanting to make pull requests in the future, please directly **[install from latest source code](#install-from-latest-source-code)** instead.
-3. If you are familiar with Docker, you can also choose to install **[FOSSBilling in a Docker container](#installing-with-docker)**.
+1. If you are using shared hosting, or are installing FOSSBilling to use on a live production site (which is not currently recommended and comes with absolutely no guarantees, then you should probably download and install the **[latext preview build](#download-the-latest-preview-build).
+3. If you're planning to contribute to FOSSBilling's development, and wanting to make pull requests in the future, please directly **[install from latest source code](#install-from-latest-source-code)** instead.
+4. If you are familiar with Docker, you can also choose to install **[FOSSBilling in a Docker container](#installing-with-docker)**.
 
-### Download the latest version
-If you're planning to use FOSSBilling in a production environment (see disclaimers) then this will likely be the best option for you, as the preview builds are the most secure and stable versions currently available.
+### Download the latest preview build
+If you're planning to use FOSSBilling in a production environment (see the disclaimers above) then this will likely be the best option for you. They are not actual releases, but the preview builds are the most secure and stable versions currently available.
 
-First, you should download the latest preview build from our GitHub repository. Each release has a file called "fossbilling.zip" attached to it, and that's exactly what you need to download. Unlike the source code itself, releases already include the Composer packages, so you won't need to run Composer to install PHP packages. This is perfect if you are using shared hosting as you might not have the ability to run Composer yourself.
+First, you should download the [latest preview build](https://fossbilling.org/downloads/preview). Unlike the source code, these preview builds already include the Composer packages, so you won't need to run Composer to install PHP packages. This is perfect if you are using shared hosting as you might not have the ability to run Composer yourself.
 
-You can either download the .zip file to your local computer and then upload it to your server using FTP, or download it directly to your web server using wget or git clone. In either case, you will need to unzip it and make sure that the files contained in the archive are in the public folder of your site (usually, that's called **"htdocs"** or **"public_html"**).
+You can either downnload the .tar file to your local computer and then upload it to your server using FTP, or download it directly to your web server using wget or git clone. In either case, you will need to extract the contents into the public folder of your site (usually, that's called **"htdocs"** or **"public_html"**).
 
 Your web directory's structure should now look like this:
 - htdocs
