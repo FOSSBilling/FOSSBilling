@@ -61,7 +61,7 @@ The following environment is highly recommended for running FOSSBilling. It *may
 ## Installation
 Installing FOSSBilling is pretty easy. Depending on how you plan to use it there are three different ways to install it:
 
-1. If you are using shared hosting, or are installing FOSSBilling to use on a live production site (which is not currently recommended and comes with absolutely no guarantees, then you should probably download and install the **[latest preview build](#download-the-latest-preview-build)**.
+1. If you are using shared hosting, or are installing FOSSBilling to use on a live production site (which is not currently recommended and comes with absolutely no guarantees), then you should probably download and install the **[latest preview build](#download-the-latest-preview-build)**.
 3. If you're planning to contribute to FOSSBilling's development, and wanting to make pull requests in the future, please directly **[install from latest source code](#install-from-latest-source-code)** instead.
 4. If you are familiar with Docker, you can also choose to install **[FOSSBilling in a Docker container](#installing-with-docker)**.
 
