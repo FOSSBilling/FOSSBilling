@@ -41,12 +41,12 @@ FOSSBilling is designed to be extensible and to integrate easily with your favou
 
 ## Requirements
 
-The following environment is highly recommended for running FOSSBilling. It *may* be possible to install and run the software in other environments, but it will be untested and unsupported. 
+The following environment is highly recommended for running FOSSBilling. It *may* be possible to install and run the software in other environments, but it will be untested and unsupported.
 
 - A suitable web server (Apache/nginx/LSWS/Lighttpd)
 - PHP 8.0
   - *PHP 8.1 hasn't been tested yet, and we strongly recommend you to go with PHP 8.0.x for the time being.*
-- MySQL 8, or higher. *MariaDB and other direct MySQL compatible DBs also work.*
+- MySQL 8 (or higher), or MariaDB .3 (or higher) *Other direct MySQL compatible DBs should also work but are not supported.*
 - The Following PHP extensions:
     - pdo_mysql
     - curl
@@ -99,7 +99,7 @@ Next, you will also need to create a new empty MySQL database using the command 
 
 We do not store the Composer packages in our GitHub repository, we use [Composer](https://getcomposer.org/) for that. Composer is a dependency manager for PHP, just like the NPM of Node.js, or PIP of Python.
 
-If you don't have Composer installed, or it's your first time with Composer, you probably may want to read Composer's [getting started guide](https://getcomposer.org/doc/00-intro.md).
+If you don't have Composer installed, or it's your first time using it, you probably should read Composer's [getting started guide](https://getcomposer.org/doc/00-intro.md).
 
 If you've already installed Composer, head over to the folder where you copied the content of the **"src"** folder, and run the following command to download the required packages to your web server:
 
@@ -107,9 +107,9 @@ If you've already installed Composer, head over to the folder where you copied t
 $ composer install
 ```
 
-For the same reason as with Composer above we do not store the final artifacts in our repo. To build them make sure you have both [NodeJs](https://nodejs.org/en/download/) and [Gulp](https://gulpjs.com/docs/en/getting-started/quick-start/) are installed. 
+Just as with Composer (see above) we do not store the final artifacts in our source repo. To build them make sure you have both [NodeJs](https://nodejs.org/en/download/) and [Gulp](https://gulpjs.com/docs/en/getting-started/quick-start/) installed. 
 
-Head over to root directory and run 
+Head over to your root directory and run 
 
 ```bash
 $ gulp
