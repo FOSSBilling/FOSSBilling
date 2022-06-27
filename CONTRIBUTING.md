@@ -36,7 +36,7 @@ In one simple sentence, every contribution means not just that you give somethin
 
 If you need more reasons than that though, then because...
 
-* __Shape the project future__ There are a lot of open issues in our GitHub repo, by taking part in a discussion and submitting code contributions to work on the ones that are most important to you, you get to shape the future of the project.
+* __Shape the project's future__ There are a lot of open issues in our GitHub repo, by taking part in a discussion and submitting code contributions to work on the ones that are most important to you, you get to shape the future of the project.
 * __Develop your skills__ Whether you are writing PHP or writing documentation, being a part of a collaborative project with others actively reviewing your work helps you to build your skills.
 * __It's fun__ We are transforming an outdated piece of software and building something modern and exciting, there are going to be a lot of challenges along the way, and taking part in solving them is fun and satisfying.
 
