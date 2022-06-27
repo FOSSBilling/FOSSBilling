@@ -166,7 +166,7 @@ We would like FOSSBilling to be available to as many people in as many languages
 
 The software is primarily written in English. If you are a native or fluent speaker of another language then we could use your help with the translations.
 
-We use Crowdin to manage translations. You can take a look at the [getting started guide](https://support.crowdin.com/crowdin-intro/)), and then get involved in translating at [https://translate.fossbilling.org](https://translate.fossbilling.org).
+We use Crowdin to manage translations. You can take a look at the [getting started guide](https://support.crowdin.com/crowdin-intro/), and then get involved in translating at [https://translate.fossbilling.org](https://translate.fossbilling.org).
 
 ### Sponsoring the project
 
