@@ -75,7 +75,7 @@ There are a lot of different ways that you can get involved in the FOSSBilling p
 
 ### Reporting bugs
 
-If you found a bug in FOSSBilling, please report it. Following these guidelines helps maintainers and the community understand your report :pencil:, reproduce the behaviour:computer:, and find related reports :mag_right:.
+If you find a bug in FOSSBilling, please report it. Following these guidelines helps maintainers and the community understand your report :pencil:, reproduce the behaviour:computer:, and find related reports :mag_right:.
 
 #### Before submitting a bug report
 
@@ -166,6 +166,8 @@ We would like FOSSBilling to be available to as many people in as many languages
 
 The software is primarily written in English. If you are a native or fluent speaker of another language then we could use your help with the translations.
 
+We use Crowdin to manage translations. You can take a look at the [getting started guide](https://support.crowdin.com/crowdin-intro/)), and then get involved in translating at [https://translate.fossbilling.org](https://translate.fossbilling.org).
+
 ### Sponsoring the project
 
 If you do not have the time or necessary skills to actively take part in the development or documentation of the project then you can still play a part by making a financial contribution to the project. This could be a one-time contribution or a recurring monthly donation.
@@ -191,6 +193,7 @@ Please be as clear and descriptive as possible in your commit messages, it makes
     * 🐛 when fixing a bug
     * 🔒 when dealing with security
     * ⬆️ when upgrading dependencies
+    * :sparkles: when it is a new feature
     
 ### PHP Styleguide
 
