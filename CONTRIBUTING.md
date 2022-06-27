@@ -36,7 +36,7 @@ In one simple sentence, every contribution means not just that you give somethin
 
 If you need more reasons than that though, then because...
 
-* __Shape the project's future__. There are a lot of open issues in our GitHub repo, by taking part in a discussion and submitting code contributions to work on the ones that are most important to you, you get to shape the future of the project.
+* __Shape the project's future__. There are a lot of open issues in our GitHub repo, by taking part in the discussion and submitting code contributions to work on the ones that are most important to you, you get to shape the future of the project.
 * __Develop your skills__. Whether you are writing PHP or writing documentation, being a part of a collaborative project with others actively reviewing your work helps you to build your skills.
 * __It's fun__. We are transforming an outdated piece of software and building something modern and exciting, there are going to be a lot of challenges along the way, and taking part in solving them is fun and satisfying.
 
@@ -96,7 +96,7 @@ Explain the problem and include additional details to help maintainers reproduce
 * **Provide specific examples to demonstrate the steps**. Include links to files or GitHub projects, or copy/pasteable snippets, which you use in those examples. If you're providing snippets in the issue, use [Markdown code blocks](https://help.github.com/articles/markdown-basics/#multiple-lines).
 * **Describe the behaviour you observed after following the steps** and point out what exactly is the problem with that behaviour.
 * **Explain which behaviour you expected to see instead and why.**
-* **Include screenshots and animated GIFs** which show you following the described steps and demonstrate the problem. If you use the keyboard while following the steps, **record the GIF**. You can use [this tool](https://www.cockos.com/licecap/) to record GIFs on macOS and Windows, and [this tool](https://github.com/colinkeenan/silentcast) or [this tool](https://github.com/GNOME/byzanz) on Linux.
+* **Include screenshots and animated GIFs** which show you following the described steps and demonstrate the problem. 
 * **If the problem wasn't triggered by a specific action**, describe what you were doing before the problem happened and share more information using the guidelines below.
 
 Provide more context by answering these questions:
