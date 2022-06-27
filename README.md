@@ -115,7 +115,7 @@ Head over to your root directory and run
 $ gulp
 ```
 
-Now, you have everything ready to start the installation of FOSSBilling, navigate to your domain using a web browser, and simply follow the on-screen instructions to complete the installation using the web installer. Ta-da, you've done it! 🎉
+Now, you have everything ready to start the installation of FOSSBilling,. Navigate to your domain using a web browser, and simply follow the on-screen instructions to complete the installation using the web installer. Ta-da, you've done it! 🎉
 
 ### Installing with Docker
 <a href="https://www.docker.com/"><img align="right" src="https://www.docker.com/wp-content/uploads/2022/03/horizontal-logo-monochromatic-white.png" alt="Docker logo" width="125"></a>
