@@ -133,7 +133,7 @@ If you're planning to go ahead and work on something, please leave a comment in 
 
 FOSSBilling and all packages can be developed localy. Instructions on how to do this are provided in [Readme](README.md):
 
-### Making a pull Requests
+#### Making a Pull Request
 
 The process described here has several goals:
 
