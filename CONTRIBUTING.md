@@ -23,7 +23,7 @@ We've tried to keep this document as short as possible but there is a lot of inf
  * [Contributing Code](#contributing-code)
  * [Writing Documentation](#writing-documentation)
  * [Translating FOSSBilling](#translating-fossbilling)
- * [Sponsor the project](#sponsor-the-project)
+ * [Sponsor the project](#sponsoring-the-project)
 
 [Styleguides](#styleguides)
 
@@ -36,9 +36,9 @@ In one simple sentence, every contribution means not just that you give somethin
 
 If you need more reasons than that though, then because...
 
-* __Shape the project's future__ There are a lot of open issues in our GitHub repo, by taking part in a discussion and submitting code contributions to work on the ones that are most important to you, you get to shape the future of the project.
-* __Develop your skills__ Whether you are writing PHP or writing documentation, being a part of a collaborative project with others actively reviewing your work helps you to build your skills.
-* __It's fun__ We are transforming an outdated piece of software and building something modern and exciting, there are going to be a lot of challenges along the way, and taking part in solving them is fun and satisfying.
+* __Shape the project's future__. There are a lot of open issues in our GitHub repo, by taking part in a discussion and submitting code contributions to work on the ones that are most important to you, you get to shape the future of the project.
+* __Develop your skills__. Whether you are writing PHP or writing documentation, being a part of a collaborative project with others actively reviewing your work helps you to build your skills.
+* __It's fun__. We are transforming an outdated piece of software and building something modern and exciting, there are going to be a lot of challenges along the way, and taking part in solving them is fun and satisfying.
 
 ## Before you get started
 
@@ -46,7 +46,7 @@ If you need more reasons than that though, then because...
 
 First off, no matter how you plan to take part, please take a couple of minutes to read our code of conduct before contributing anything.
 
-This project and everyone participating in it are governed by the [FOSSBilling Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behaviour to the moderators on our [Discord](https://fossbilling.org/discord) communities.
+This project and everyone participating in it are governed by the [FOSSBilling Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behaviour to the moderators on our [Discord](https://fossbilling.org/discord) server.
 
 ### Which 'branch' should I contribute to?
 
@@ -73,11 +73,11 @@ Other modules extend the whole FOSSBilling API with any functionality needed. Ch
 
 There are a lot of different ways that you can get involved in the FOSSBilling project. Let's take a look at some of the main ones:
 
-### Reporting Bugs
+### Reporting bugs
 
-If you find a bug in FOSSBilling, then please report it. Following these guidelines helps maintainers and the community understand your report :pencil:, reproduce the behaviour:computer:, and find related reports :mag_right:.
+If you found a bug in FOSSBilling, please report it. Following these guidelines helps maintainers and the community understand your report :pencil:, reproduce the behaviour:computer:, and find related reports :mag_right:.
 
-#### Before Submitting A Bug Report
+#### Before submitting a bug report
 
 ⚠️ If your report is for a potential security exploit, please do not make it public by creating an Issue, but instead, follow the instructions in our [Security Policy](https://github.com/FOSSBilling/FOSSBilling/security/policy).
 
@@ -85,7 +85,7 @@ Firstly, **Do a [search](https://github.com/search?q=+is%3Aissue+user%3Afossbill
 
 > **Note:** If you find a **Closed** issue that seems like it is the same thing that you're experiencing, open a new issue and include a link to the original issue in the body of your new one.
 
-#### How Do I Submit A (Good) Bug Report?
+#### How do I submit a (good) bug report?
 
 Bugs are tracked as [GitHub issues](https://guides.github.com/features/issues/). After you've determined which module your bug is related to, create an issue and provide the following information by filling in [the template](https://github.com/FOSSBilling/.github/blob/master/.github/ISSUE_TEMPLATE/bug_report.md).
 
@@ -112,7 +112,7 @@ Include details about your configuration and environment:
 * **What's the MySQL version your server is using**?
 * **What's the Web Server and version you're using**?
 
-### Suggesting Improvements or Features
+### Suggesting improvements or new features
 
 ⚠️ Please note the title is __*Suggesting*__, not __*Demanding*__. Be polite, appreciate other people's time, and explain in detail, and you are far more likely to get what you want!
 
@@ -120,11 +120,11 @@ FOSSBilling is not designed to be all things to all people, but we do want it to
 
 Before creating enhancement suggestions, please check through the [existing Issues](https://github.com/FOSSBilling/FOSSBilling/issues) and see if somebody has already made the same suggestion. If they have then please don't create a new issue, but instead, add your thoughts and comments to the existing one. 
 
-### Contributing Code
+### Contributing code
 
 The source code is the heart of FOSSBilling, and we are always interested in quality contributions to improve it, squash bugs, and close open issues. Please follow these guidelines to make things easier for yourself and other contributors.
 
-#### What to Work On
+#### What to work on
 Check out our upcoming Milestones for an overview of what needs to be done. See the Good first issue label for a list of issues that should be relatively easy to get started with. If there's anything you're unsure of, don't hesitate to ask! All of us were just starting once.
 
 If you're planning to go ahead and work on something, please leave a comment on the relevant issue or create a new one explaining what you are doing. This helps us divide our efforts more sensibly by ensuring that we are not all doing the same thing at the same time.
@@ -133,7 +133,7 @@ If you're planning to go ahead and work on something, please leave a comment on 
 
 FOSSBilling and all packages can be developed locally. Instructions on how to do this are provided in [Readme](README.md):
 
-#### Making a Pull Request
+#### Making a pull request
 
 The process described here has several goals:
 
@@ -150,7 +150,7 @@ Please follow these steps to have your contribution considered by the maintainer
 
 Before a PR can be merged it must pass all of the automated tests and also be reviewed by two maintainers. All of the above requirements must be met before your pull request will be reviewed. Please be aware that the reviewers may ask you to complete additional design work, tests, or other changes before your pull request can be ultimately accepted.
 
-### Writing Documentation
+### Writing documentation
 
 Great code is only one-half of any successful project, and great documentation is just as important. The reality is that open source projects can stand or fall based on the quality of their documentation.
 
@@ -166,7 +166,7 @@ We would like FOSSBilling to be available to as many people in as many languages
 
 The software is primarily written in English. If you are a native or fluent speaker of another language then we could use your help with the translations.
 
-### Sponsor the project
+### Sponsoring the project
 
 If you do not have the time or necessary skills to actively take part in the development or documentation of the project then you can still play a part by making a financial contribution to the project. This could be a one-time contribution or a recurring monthly donation.
 
