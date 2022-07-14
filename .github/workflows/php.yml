@@ -35,7 +35,7 @@ jobs:
       id: composer-cache
       uses: actions/cache@v3
       with:
-        path: ./src/bb-vendor
+        path: ./src/vendor
         key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
         restore-keys: |
           ${{ runner.os }}-php-
@@ -60,8 +60,8 @@ jobs:
 
     - name: Run test suite for bb-modules
       run: |
-        php ./src/bb-vendor/bin/phpunit ./tests/bb-modules/
+        php ./src/vendor/bin/phpunit ./tests/bb-modules/
 
     - name: Run test suite for bb-library
       run: |
-        php ./src/bb-vendor/bin/phpunit ./tests/bb-library/
+        php ./src/vendor/bin/phpunit ./tests/bb-library/

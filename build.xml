@@ -24,7 +24,7 @@
         <exclude name="bb-data/cache/*"/>
         <exclude name="bb-data/uploads/*"/>
 
-        <include name="bb-vendor/**"/>
+        <include name="vendor/**"/>
         <include name="bb-library/**"/>
         <include name="bb-modules/**"/>
         <include name="bb-locale/**"/>
@@ -66,9 +66,9 @@
         <mkdir dir="${source}"/>
     </target>
 
-    <target name="clean-vendors" description="Clean up bb-vendors dir for dev dependencies">
-        <delete dir="src/bb-vendor"/>
-        <mkdir dir="src/bb-vendor"/>
+    <target name="clean-vendors" description="Clean up vendors dir for dev dependencies">
+        <delete dir="src/vendor"/>
+        <mkdir dir="src/vendor"/>
     </target>
 
     <target name="composer" description="Update composer dependencies" depends="clean-vendors">
