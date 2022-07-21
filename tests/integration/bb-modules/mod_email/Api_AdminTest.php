@@ -78,7 +78,7 @@ class Api_AdminTest extends BBDbApiTestCase
         $data = array(
             'to'    =>  'demo@boxbiling.com',
             'to_name'    =>  'Client name',
-            'from'    =>  'admin@boxbilling.org',
+            'from'    =>  'admin@fossbilling.org',
             'from_name'    =>  'Admin',
             'subject'    =>  'This is subject',
             'content'    =>  'This is message',
@@ -140,7 +140,7 @@ class Api_AdminTest extends BBDbApiTestCase
     public function testTemplateGeneralSend()
     {
         $params = array();
-        $params['to'] = 'client@boxbilling.org';
+        $params['to'] = 'client@fossbilling.org';
         $params['to_name'] = 'Client PHPUnit';
         
         $params['code'] = 'mod_client_signup';
@@ -158,7 +158,7 @@ class Api_AdminTest extends BBDbApiTestCase
     public function testTemplate_populateVariables()
     {
         $params = array();
-        $params['to'] = 'client@boxbilling.org';
+        $params['to'] = 'client@fossbilling.org';
         $params['to_name'] = 'Client PHPUnit';
 
         $params['code'] = 'mod_client_signup';

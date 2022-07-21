@@ -9,7 +9,7 @@ class Api_Guest_StaffTest extends BBDbApiTestCase
     public function testCreate()
     {
         $data = array(
-            'email'    => 'admin@boxbilling.org',
+            'email'    => 'admin@fossbilling.org',
             'password' => 'adminPa55word',
         );
 
@@ -31,7 +31,7 @@ class Api_Guest_StaffTest extends BBDbApiTestCase
     public function testLogin()
     {
         $data  = array(
-            'email'    => 'admin@boxbilling.org',
+            'email'    => 'admin@fossbilling.org',
             'password' => 'demo',
         );
         $array = $this->api_guest->staff_login($data);

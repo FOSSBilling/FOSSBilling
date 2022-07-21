@@ -1144,7 +1144,7 @@ class ServiceTest extends \BBTestCase {
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
-        $email = 'client@boxbilling.org';
+        $email = 'client@fossbilling.org';
 
         $config = array(
             'allow_change_email' => true,
@@ -1165,7 +1165,7 @@ class ServiceTest extends \BBTestCase {
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
-        $email = 'client@boxbilling.org';
+        $email = 'client@fossbilling.org';
 
         $clientModel->email = $email;
 
@@ -1188,7 +1188,7 @@ class ServiceTest extends \BBTestCase {
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
-        $email = 'client@boxbilling.org';
+        $email = 'client@fossbilling.org';
 
         $config = array();
 
@@ -1207,7 +1207,7 @@ class ServiceTest extends \BBTestCase {
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
-        $email = 'client@boxbilling.org';
+        $email = 'client@fossbilling.org';
 
         $config = array(
             'allow_change_email' => false,

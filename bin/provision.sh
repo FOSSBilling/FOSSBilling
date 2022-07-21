@@ -3,7 +3,7 @@
 mysql -u root -e "DROP DATABASE IF EXISTS boxbilling"
 mysql -u root -e "CREATE DATABASE boxbilling"
 mysql -u root boxbilling < /var/www/src/install/structure.sql
-mysql -u root boxbilling -e "INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', 'Admin', 'admin@boxbilling.org', SHA1('admin'), 1, NOW(), NOW());"
+mysql -u root boxbilling -e "INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', 'Admin', 'admin@fossbilling.org', SHA1('admin'), 1, NOW(), NOW());"
 
 cd /var/www/src
 cp htaccess.txt .htaccess
