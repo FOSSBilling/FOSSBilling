@@ -127,7 +127,10 @@ class Admin extends \Api_Abstract
         $ext = $this->_getExtension($data);
         $service = $this->getService();
 
-        return $service->update($ext);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateExtension', 'params' => $ext]);
+        $ext2 = $service->update($ext);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateExtension', 'params' => $ext2]);
+        return $ext2;
     }
 
     /**
