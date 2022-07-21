@@ -185,7 +185,15 @@ class AdminTest extends \BBTestCase {
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
+
+        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+            $eventMock->expects($this->atLeastOnce())->
+            method('fire');
+        
+        $di = new \Box_Di();
         $di['validator'] = $validatorMock;
+        $di['events_manager'] = $eventMock;
+
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
