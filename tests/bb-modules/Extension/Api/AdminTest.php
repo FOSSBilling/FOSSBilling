@@ -132,11 +132,14 @@ class AdminTest extends \BBTestCase {
         $updaterMock->expects($this->atLeastOnce())
             ->method('performUpdate');
 
-
+        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock->expects($this->atLeastOnce())->
+        method('fire');
 
         $di = new \Box_Di();
         $di['updater'] = $updaterMock;
         $di['logger'] = new \Box_Log();
+        $di['events_manager'] = $eventMock;
 
         $this->api->setDi($di);
 
@@ -465,4 +468,3 @@ class AdminTest extends \BBTestCase {
 
 
 }
- 
