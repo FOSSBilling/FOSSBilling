@@ -151,12 +151,17 @@ class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->
         method('adminCreateClient')->will($this->returnValue(1));
 
+        $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
+        $eventMock->expects($this->atLeastOnce())->
+        method('fire');
+
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
+        $di['events_manager'] = $eventMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
