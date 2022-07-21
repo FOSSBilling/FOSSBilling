@@ -25,7 +25,7 @@ class Guest extends \Api_Abstract
      * the system.
      * Database structure must be installed before calling this action.
      * bb-config.php file must already be present and configured.
-     * Used by automated FOSSBilling installer.
+     * Used by the automated FOSSBilling installer.
      *
      * @param string $email    - admin email
      * @param string $password - admin password
@@ -51,6 +51,11 @@ class Guest extends \Api_Abstract
         if ($result) {
             $this->login($data);
         }
+
+        // Connect hooks right after the initial user is created
+        // Related: https://github.com/FOSSBilling/FOSSBilling/issues/170
+        $hookService = $this->di['mod_service']('hook');
+        $hookService->batchConnect();
 
         return true;
     }
