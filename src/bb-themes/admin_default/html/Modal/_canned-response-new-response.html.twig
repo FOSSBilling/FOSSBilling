@@ -1,0 +1,38 @@
+{% import 'macro_functions.html.twig' as macro %}
+
+<div class="modal fade" id="canned-response-new-response" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ 'api/admin/support/canned_create'|link }}" class="api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ 'Create new response'|trans }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
+                        <div class="col">
+                            {{ macro.selectbox('category_id', admin.support_canned_category_pairs, '', 1) }}
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="title" value="{{ request.title }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}</label>
+                        <div class="col">
+                            <textarea class="form-control" name="content" rows="10">{{ request.content }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

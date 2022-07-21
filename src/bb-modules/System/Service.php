@@ -1,12 +1,13 @@
 <?php
 
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -932,7 +933,7 @@ class Service
         if (isset($config['countries'])) {
             preg_match_all('#([A-Z]{2})=(.+)#', $config['countries'], $matches);
             if (isset($matches[1]) && !empty($matches[1]) && isset($matches[2]) && !empty($matches[2])) {
-                if (count($matches[1] == count($matches[2]))) {
+                if (count($matches[1]) == count($matches[2])) {
                     $countries = array_combine($matches[1], $matches[2]);
                 }
             }

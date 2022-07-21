@@ -54,7 +54,11 @@
 <div class="card">
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-staff" role="tabpanel">
-            {% include '_search.html.twig' %}
+            <div class="d-flex card-body">
+                <div class="ms-auto">
+                    {% include '_search.html.twig' %}
+                </div>
+            </div>
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>

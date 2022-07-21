@@ -69,7 +69,8 @@
 
             <input type="hidden" name="client_id" value="{{ client.id }}">
             <input type="hidden" name="product_id" value="{{ product.id }}">
-            <input type="submit" value="{{ 'Place new order'|trans }}" class="btn btn-primary">
+            {# <input type="submit" value="{{ 'Place new order'|trans }}" class="btn btn-primary w-100"> #}
+            <button class="btn btn-primary w-100" type="submit">{{ 'Place new order'|trans }}</button>
         </form>
     </div>
 </div>

@@ -23,9 +23,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="card mb-3">
-    <div class="card-header">
-        <h5 class="mb-0">{{ 'Invoice'|trans }} #{{ invoice.id }}</h5>
+    <div class="page-header mb-3">
+        <h1 class="page-title">{{ 'Invoice'|trans }} #{{ invoice.id }}</h1>
     </div>
 
     <ul class="nav nav-tabs" role="tablist">
@@ -46,6 +45,7 @@
         </li>
     </ul>
 
+<div class="card mb-3">
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
             <table class="table card-table table-vcenter table-striped text-nowrap">

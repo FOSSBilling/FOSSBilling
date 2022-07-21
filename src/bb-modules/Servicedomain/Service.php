@@ -416,16 +416,16 @@ class Service implements \Box\InjectionAwareInterface
             'first_name' => 'Required field first_name is missing',
             'last_name' => 'Required field last_name is missing',
             'email' => 'Required field email is missing',
-            'company' => 'Required field company is missing',
+            // 'company' => 'Required field company is missing',
             'address1' => 'Required field address1 is missing',
-            'address2' => 'Required field address2 is missing',
+            // 'address2' => 'Required field address2 is missing',
             'country' => 'Required field country is missing',
             'city' => 'Required field city is missing',
-            'state' => 'Required field state is missing',
-            'postcode' => 'Required field postcode is missing',
+            // 'state' => 'Required field state is missing',
+            // 'postcode' => 'Required field postcode is missing',
             'phone_cc' => 'Required field phone_cc is missing',
             'phone' => 'Required field phone is missing',
-            ];
+        ];
         $this->di['validator']->checkRequiredParamsForArray($required, $contact);
 
         $model->contact_first_name = $contact['first_name'];

@@ -1,0 +1,46 @@
+{% import 'macro_functions.html.twig' as macro %}
+
+<div class="modal fade" id="support-ticket-new-ticket" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" class="api-form" data-api-redirect="{{ 'support'|alink }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ 'Open ticket for existing client'|trans }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {% if not request.client_id %}
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Client'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control js-autocomplete" type="text" placeholder="{{ 'Start typing clients name, email or ID'|trans }}">
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Help desk'|trans }}</label>
+                        <div class="col">
+                            {{ macro.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, '', 1) }}
+                        </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="subject" value="{{ ticket.subject }}" required>
+                        </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Message'|trans }}</label>
+                        <div class="col">
+                            <textarea class="form-control" name="content" rows="10" required id="msg-area-{{ message.id }}">{{ profile.signature }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" name="client_id" value="{{ request.client_id }}" id="client_id">
+                    <button type="submit" class="btn btn-primary w-100">{{ 'Create'|trans }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

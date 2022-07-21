@@ -1,0 +1,43 @@
+{% import 'macro_functions.html.twig' as macro %}
+
+<div class="modal fade" id="support-ticket-new-email" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" class="api-form" data-api-jsonp="onAfterPublicTicketCreate">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ 'Open public ticket for non client'|trans }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Receivers name'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="name" required placeholder="{{ 'John Smith'|trans }}">
+                        </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="email" name="email" required placeholder="{{ 'user@domail.com'|trans }}">
+                        </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="subject" value="{{ ticket.subject }}" required placeholder="{{ 'Email subject'|trans }}">
+                        </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Message'|trans }}</label>
+                        <div class="col">
+                            <textarea class="form-control" name="message" rows="10" required>{{ profile.signature }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary w-100">{{ 'Create'|trans }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

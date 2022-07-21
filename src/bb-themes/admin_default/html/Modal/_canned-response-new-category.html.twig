@@ -1,0 +1,23 @@
+<div class="modal fade" id="canned-response-new-category" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ 'api/admin/support/canned_category_create'|link }}" class="api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ 'Create new category'|trans }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="title" value="{{ request.title }}" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

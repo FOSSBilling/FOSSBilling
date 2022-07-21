@@ -54,7 +54,13 @@
                         </td>
                         <td>{{ server.ip }}</td>
                         <td>{{ mf.status_name(server.manager) }}</td>
-                        <td>{{ mf.q(server.active) }}</td>
+                        <td>
+                            {% if server.active == true %}
+                                <span class="badge bg-success me-1"></span>
+                            {% else %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.q(server.active) }}</td>
                         <td>
                             <a class="btn btn-icon" href="{{ server.cpanel_url }}" target="_blank">
                                 <svg class="icon">
@@ -155,9 +161,10 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Assigned IP Addresses'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Assigned IP addresses'|trans }}:</label>
                         <div class="col">
-                            <textarea class="form-control" name="assigned_ips" rows="5" placeholder="{{ 'List the IP Addresses assigned to the server (One per line)'|trans }}"></textarea>
+                            <textarea class="form-control" name="assigned_ips" rows="2"></textarea>
+                            <small class="form-hint">{{ 'List the IP addresses assigned to the server. One per line.'|trans }}</small>
                         </div>
                     </div>
                     <div class="mb-3 row">
@@ -173,6 +180,7 @@
                             </div>
                         </div>
                     </div>
+                    <hr>
 
                     <h5>{{ 'Nameservers'|trans }}</h5>
                     <div class="mb-3 row">
@@ -199,6 +207,7 @@
                             <input class="form-control" type="text" name="ns4" value="" placeholder="{{ 'ns4.yourdomain.com'|trans }}">
                         </div>
                     </div>
+                    <hr>
 
                     <h5>{{ 'Server manager'|trans }}</h5>
                     <div class="mb-3 row">
@@ -242,7 +251,7 @@
                             </div>
                         </div>
                     </div>
-                    <input type="submit" value="{{ 'Add server'|trans }}" class="btn btn-primary">
+                    <input type="submit" value="{{ 'Add server'|trans }}" class="btn btn-primary w-100">
                 </form>
             </div>
         </div>
@@ -260,15 +269,21 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Disk quota (MB)'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Disk quota'|trans }}:</label>
                         <div class="col">
-                            <input class="form-control" type="text" name="quota" value="1024">
+                            <div class="input-group">
+                                <input class="form-control" type="text" name="quota" value="1024">
+                                <span class="input-group-text">MB</span>
+                            </div>
                         </div>
                     </div>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Bandwidth (MB)'|trans }}:</label>
                         <div class="col">
-                            <input class="form-control" type="text" name="bandwidth" value="1024">
+                            <div class="input-group">
+                                <input class="form-control" type="text" name="bandwidth" value="1024">
+                                <span class="input-group-text">MB</span>
+                            </div>
                         </div>
                     </div>
 

@@ -16,12 +16,15 @@
         </div>
     {% endif %}
 
+<div class="page-header mb-3">
+    <h1 class="page-title">{{ 'Email history'|trans }}</h1>
+</div>
 <div class="card">
-    <div class="card-body">
-        <h3>{{ 'Email history'|trans }}</h3>
+    <div class="d-flex card-body">
+        <div class="ms-auto">
+            {% include '_search.html.twig' %}
+        </div>
     </div>
-
-    {% include '_search.html.twig' %}
     <table class="table card-table table-vcenter table-striped text-nowrap">
         <thead>
             <tr>

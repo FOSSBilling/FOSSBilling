@@ -21,10 +21,12 @@
 {% endblock %}
 
 {% block content %}
+<div class="page-header mb-3">
+    <h1 class="page-title">{{ 'Server management'|trans }}</h1>
+</div>
+
 <div class="card">
     <div class="card-body">
-        <h3>{{ 'Server management'|trans }}</h3>
-
         <form method="post" action="{{ 'api/admin/servicehosting/server_update'|link }}" id="server-update" class="api-form" data-api-msg="{{ 'Server updated'|trans }}">
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
@@ -117,6 +119,7 @@
             </div>
 
             <input class="btn btn-primary w-100" id="test-connection" type="button" value="{{ 'Update and test connection'|trans }}">
+            <hr>
 
             <h5>{{ 'Nameservers'|trans }}</h5>
             <div class="mb-3 row">

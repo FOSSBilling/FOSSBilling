@@ -941,11 +941,20 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if ($order->price <= 0) {
+        $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
+
+        // Get price based on product price
+        $currencyService = $this->di['mod_service']('currency');
+        $currency = $currencyService->getByCode($client->currency);
+        $rate = $currencyService->getRateByCode($currency->code);
+
+        $product = $this->di['db']->load('Product', $order->product_id);
+        $repository = $product->getTable($product->type);
+        $price = $repository->getProductPrice($product, json_decode($order->config, true)) * $rate;
+
+        if ($price <= 0) {
             throw new \Box_Exception('Invoices are not generated for 0 amount orders');
         }
-
-        $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
 
         // generate proforma
         $proforma = $this->di['db']->dispense('Invoice');
@@ -959,7 +968,7 @@ class Service implements InjectionAwareInterface
 
         $this->setInvoiceDefaults($proforma);
 
-        $price = $order->price;
+        // $price = $order->price;
 
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         $invoiceItemService->generateFromOrder($proforma, $order, \Model_InvoiceItem::TASK_RENEW, $price);
@@ -1252,7 +1261,7 @@ class Service implements InjectionAwareInterface
         $invoiceInfo = sprintf("%s: %s\n", __('Invoice number'), $invoice['serie_nr']);
         $invoiceInfo .= sprintf("%s: %s\n", __('Invoice date'), $invoiceDate);
         $invoiceInfo .= sprintf("%s: %s\n", __('Due date'), strftime($localeDateFormat, strtotime($invoice['due_at'])));
-        $invoiceInfo .= sprintf("%s: %s\n", __('Invoice status'), ucfirst($invoice['status']));
+        $invoiceInfo .= sprintf("%s: %s\n", __('Invoice status'), __(ucfirst($invoice['status'])));
 
         $pdf->SetXY($pdf->GetPageWidth() / 2, $pdf->GetY());
         $pdf->SetFont('DejaVu', '', $fontSize);
@@ -1267,8 +1276,10 @@ class Service implements InjectionAwareInterface
 
         $companyInfo = sprintf("%s: %s\n", __('Name'), $invoice['seller']['company']);
         $companyInfo .= sprintf("%s: %s\n", __('Address'), $invoice['seller']['address']);
-        $companyInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['seller']['company_vat']);
         $companyInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['seller']['company_number']);
+        if ($invoice['seller']['company_vat']) {
+            $companyInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['seller']['company_vat']);
+        }
         $companyInfo .= sprintf("%s: %s\n", __('Account'), $invoice['seller']['account_number']);
         $companyInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['seller']['phone']);
         $companyInfo .= sprintf("%s: %s\n", __('Email'), $invoice['seller']['email']);
@@ -1283,8 +1294,8 @@ class Service implements InjectionAwareInterface
         $buyerInfo = sprintf("%s: %s %s\n", __('Name'), $invoice['buyer']['first_name'], $invoice['buyer']['last_name']);
         $buyerInfo .= sprintf("%s: %s\n", __('Company'), $invoice['buyer']['company']);
         $buyerInfo .= sprintf("%s: %s\n", __('Address'), $invoice['buyer']['address']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['seller']['company_vat']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['seller']['company_number']);
+        $buyerInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['buyer']['company_number']);
+        $buyerInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['buyer']['company_vat']);
         $buyerInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['buyer']['phone']);
 
         $pdf->SetXY($pdf->GetPageWidth() / 2, 75);

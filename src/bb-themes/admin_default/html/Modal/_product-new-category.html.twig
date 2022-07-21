@@ -1,0 +1,37 @@
+<div class="modal fade" id="product-new-category" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ 'api/admin/product/category_create'|link }}" class="save api-form" data-api-redirect="{{ 'product'|alink }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ 'Create new knowledge base category'|trans }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                        <div class="col">
+                            <input type="text" class="form-control" name="title" value="{{ request.cat_title }}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Icon URL'|trans }}:</label>
+                        <div class="col">
+                            <input type="text" class="form-control" name="icon_url" value="">
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Description'|trans }}:</label>
+                        <div class="col">
+                            <textarea class="form-control" name="description" rows="5">{{ request.cat_description }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
