@@ -159,10 +159,9 @@ class Admin extends \Api_Abstract
         }
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
-        $service->adminCreateClient($data);
+        $result = $service->adminCreateClient($data);
         $this->di['events_manager']->fire(['event' => 'onAfterAdminClientCreate', 'params' => $data]);
-
-        return true;
+        return $result;
     }
 
     /**
