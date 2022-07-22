@@ -129,8 +129,9 @@ function handler_exception($e)
               display: inline-block;
               width: 140px;
               height: 140px;
-              background-image: url('/bb-themes/boxbilling/assets/images/box.png');
-              background-size: cover;
+              background-image: url('/bb-themes/boxbilling/assets/images/fb_wallet.png');
+              background-repeat: no-repeat;
+              background-size: 117.12px 138.24px;
             }
             
             .error .error-container:before {
