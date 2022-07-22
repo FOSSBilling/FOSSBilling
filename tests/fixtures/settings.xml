@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <dataset>
     <admin_group id="1" name="Administrators" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
-    <admin id="1" role="admin" admin_group_id="1" email="admin@boxbilling.org" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" status="active" name="Admin" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
+    <admin id="1" role="admin" admin_group_id="1" email="admin@fossbilling.org" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" status="active" name="Admin" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 
     <activity_system id="1" priority="1" message="test" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
     <activity_system id="2" priority="1" message="test" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>

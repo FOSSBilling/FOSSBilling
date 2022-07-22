@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <dataset>
-    <client id="1" aid="1" role="client" email="client@boxbilling.org" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" tax_exempt="0" status="active" first_name="Demo" last_name="Client" phone_cc="1" phone="646-123-4567" company="FOSSBilling" address_1="Wall Street 45" city="New York" state="NY" country="US" currency="USD" postcode="123456" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
+    <client id="1" aid="1" role="client" email="client@fossbilling.org" pass="89e495e7941cf9e40e6980d14a16bf023ccd4c91" tax_exempt="0" status="active" first_name="Demo" last_name="Client" phone_cc="1" phone="646-123-4567" company="FOSSBilling" address_1="Wall Street 45" city="New York" state="NY" country="US" currency="USD" postcode="123456" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     <client_balance />
     <subscription id="1" client_id="1" pay_gateway_id="2" sid="12123" rel_type="invoice" rel_id="4" period="1Y" amount="14.99" currency="USD" status="active" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
 
@@ -45,5 +45,5 @@
     <tax id="3" name="USA global" country="US" state="" taxrate="15" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     <tax id="4" name="USA New York" country="US" state="NY" taxrate="25" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 
-    <setting id="1" param="company_email" value="admin@boxbilling.org" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
+    <setting id="1" param="company_email" value="admin@fossbilling.org" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 </dataset>
