@@ -127,11 +127,11 @@ function handler_exception($e)
               left: 0;
               top: 0;
               display: inline-block;
-              width: 140px;
-              height: 140px;
+              width: 150px;
+              height: 150px;
               background-image: url('/bb-themes/boxbilling/assets/images/fb_wallet.png');
               background-repeat: no-repeat;
-              background-size: 117.12px 138.24px;
+              background-size: 124px 144px;
             }
             
             .error .error-container:before {
