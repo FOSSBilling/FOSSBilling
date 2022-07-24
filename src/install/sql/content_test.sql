@@ -541,7 +541,7 @@ VALUES
 	(2,'company_name','FOSSBilling demo',0,NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
 	(3,'company_email','demo@fossbilling.org',0,NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoice and Support Software',0,NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(5,'company_logo','bb-themes/boxbilling/assets/images/logo.png',0,NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(5,'company_logo','bb-themes/boxbilling/assets/images/logo.svg',0,NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
 	(6,'company_address_1','Demo address line 1',0,NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
 	(7,'company_address_2','Demo address line 2',0,NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
 	(8,'company_address_3','Demo address line 3',0,NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
