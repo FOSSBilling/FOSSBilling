@@ -101,8 +101,11 @@ class Admin extends \Api_Abstract
         }
 
         $new_version = $updater->getLatestVersion();
-        $updater->performUpdate();
 
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
+        $updater->performUpdate();
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
+        
         $this->di['logger']->info('Updated FOSSBilling from %s to %s', \Box_Version::VERSION, $new_version);
 
         return true;
@@ -124,7 +127,10 @@ class Admin extends \Api_Abstract
         $ext = $this->_getExtension($data);
         $service = $this->getService();
 
-        return $service->update($ext);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateExtension', 'params' => $ext]);
+        $ext2 = $service->update($ext);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateExtension', 'params' => $ext2]);
+        return $ext2;
     }
 
     /**
