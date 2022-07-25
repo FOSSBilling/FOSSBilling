@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Client\HomeController;
+use App\Http\Controllers\Client\Home;
 use App\Http\Controllers\Admin\Settings as AdminSettings;
 /*
 |--------------------------------------------------------------------------
@@ -17,7 +17,7 @@ use App\Http\Controllers\Admin\Settings as AdminSettings;
 
 
 // Client Route
-Route::get('/', [HomeController::class, 'index']);
+Route::get('/', [Home::class, 'index']);
 
 Route::get('/dashboard', function () {
     return view('dashboard');
