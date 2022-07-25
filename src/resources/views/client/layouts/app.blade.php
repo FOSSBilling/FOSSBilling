@@ -25,26 +25,28 @@
                 <div class="flex justify-between h-20">
                     <div class="flex">
                         <div class="flex-shrink-0 flex items-center">
-                            <x-fossbilling-logo class="block h-[40px]" />
+                            <a href="<?= url('/');?>">
+                                <x-fossbilling-logo class="block h-[40px]" />
+                            </a>
                         </div>
                         <div class="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
                         </div>
                     </div>
                     <div class="hidden sm:ml-6 sm:flex sm:items-center">
                         <!-- Client Login -->
-                        <button type="button"
-                            class="inline-flex items-center px-4 py-2 border border-foss text-base font-medium rounded-md shadow-sm text-foss bg-white hover:border-b-4 focus:outline-none">Sign
-                            In</button>
+                        <a href=""
+                            class="block px-4 py-2 mx-1 text-sm font-medium text-foss transition duration-300 border border-foss rounded whitespace-nowrap hover:-mb-[3px] hover:border-b-4 lg:px-6 lg:text-base mr-3 lg:mr-0">Sign
+                            In</a>
                     </div>
                     <div class="-mr-2 flex items-center sm:hidden">
                         <!-- Client Login -->
                         <button type="button"
-                            class="inline-flex items-center px-4 py-2 border border-foss text-base font-medium rounded-md shadow-sm text-foss bg-white hover:border-b-4 focus:outline-none">Sign
+                            class="mr-4 block px-4 py-2 mx-1 text-sm font-medium text-foss transition duration-300 border border-foss rounded whitespace-nowrap hover:-mb-[3px] hover:border-b-4 lg:px-6 lg:text-base mr-3 lg:mr-0">Sign
                             In</button>
 
                         <!-- Mobile menu button -->
                         <button type="button"
-                            class="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            class="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
                             aria-controls="mobile-menu" @click="open = !open" aria-expanded="false"
                             x-bind:aria-expanded="open.toString()">
                             <span class="sr-only">Open main menu</span>
