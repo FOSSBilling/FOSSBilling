@@ -186,7 +186,7 @@
                         </li>
                         {% if guest.extension_is_on({"mod":'branding'}) %}
                         <li>
-                            <a href="https://www.fossbilling.org" title="Billing Software" target="_blank">Billing software</a>
+                            <a href="https://fossbilling.org" title="FOSSBilling" target="_blank">FOSSBilling</a>
                         </li>
                         {% endif %}
                     </ul>
@@ -197,7 +197,7 @@
         <div class="grid_4">
             {% if guest.extension_is_on({"mod":'branding'}) %}
             <p class="logo">
-                <a class="boxbilling" href="https://www.fossbilling.org" title="Invoicing software" target="_blank">{{ 'images/boxbilling-logo.png' | asset_url | img_tag('Business software') }}</a>
+                <a class="boxbilling" href="https://fossbilling.org" title="Invoicing software" target="_blank"><img style="filter: grayscale(1); opacity: 0.5;" width="59" height="69" src="{{ 'images/fb_wallet.svg' | asset_url }}"/></a>
             </p>
             {% endif %}
         </div>
