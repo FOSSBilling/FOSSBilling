@@ -273,7 +273,7 @@ final class Box_Installer
             error_log($e->getMessage());
         }
 
-        $pdo->query("USE $db;");
+        $pdo->query("USE `$db`;");
 
         return $pdo;
     }

@@ -14,7 +14,6 @@
             <div class="body">
                 <p>FOSSBilling stores data in a SQL database. You should already have an existing database before this step. If you do not have a database prepared, you should do that now.</p>
                 <p>The installer will create all the required tables in your database after correct connection details are provided.</p>
-                <p><strong>NOTE:</strong> Please make sure your database name does not include a hyphen '-' as this will create an error.</p>
                 <h4 class="pt10">How to create a database?</h4>
                 <p>Depending on your hosting provider a database can be created in different ways.</p>
                 <p>Best way is to check the documentation available with your webhosting account. You can contact their support if you really get stuck.</p>
@@ -40,8 +39,7 @@
         </div>
 
         <div class="widget step step-4">
-            <div class="head"><h5 class="iAlert">Join our Discord Server</h5></div>
-            <iframe src="https://discord.com/widget?id=747432407757488179&amp;theme=light" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:100%; height:500px;" allowTransparency="true"></iframe>
+            <div class="head"><h5 class="iAlert"><a href="https://fossbilling.org/discord/">Join our Discord Server</a</h5></div>
         </div>
 
 {% endblock %}
@@ -76,7 +74,7 @@
                             <li><a href="#step-3"><h5 class="stepDesc iAdminUser">3. Administrator</h5></a></li>
                             <li><a href="#step-4" class="bordRight"><h5 class="stepDesc iFlag">4. Finish</h5></a></li>
                         </ul>
-                        
+
                         <div id="step-1">
                             <table cellpadding="0" cellspacing="0" width="100%" class="tableStatic">
                                 <tbody>
@@ -102,7 +100,7 @@
                                         <td><strong class="{{ php_safe_mode ? 'red' : 'green'}}">{{ php_safe_mode ? 'ON' : 'OFF'}}</strong></td>
                                         <td>{% if php_safe_mode %}PHP safe mode should be OFF{% endif %}</td>
                                     </tr>
-                                    
+
                                     {% for ext, loaded in extensions %}
                                     <tr>
                                         <td>PHP extension: <strong>{{ ext }}</strong></td>
@@ -126,10 +124,10 @@
                                         <td>{% if not writable %}Please make sure that directory exists and is writable.{%endif%}</td>
                                     </tr>
                                     {% endfor %}
-                                    
+
                                 </tbody>
                             </table>
-    
+
                             {% if tos %}
                             <div class="rowElem">
                                 <label class="topLabel">Terms of service:</label>
@@ -138,14 +136,14 @@
                                 </div>
                                 <div class="formBottom">
                                     <input type="hidden" name="agree" value="0"/>
-                                    <input id="agree" type="checkbox" name="agree" value="1"{% if agree %} checked="checked"{% endif %}/> I agree 
+                                    <input id="agree" type="checkbox" name="agree" value="1"{% if agree %} checked="checked"{% endif %}/> I agree
                                 </div>
                             </div>
                             {% endif %}
                             <div class="fix"></div>
-                        </div>                     
+                        </div>
 
-                        <div id="step-2">	
+                        <div id="step-2">
                             <div class="rowElem nobg">
                                 <label>Database hostname:</label>
                                 <div class="formRight">
@@ -181,10 +179,10 @@
                                 </div>
                                 <div class="fix"></div>
                             </div>
-                            
+
                             <div class="fix"></div>
                         </div>
-                        
+
                         <div id="step-3">
                             <div class="rowElem nobg">
                                 <label>Administrator name:</label>
@@ -193,7 +191,7 @@
                                 </div>
                                 <div class="fix"></div>
                             </div>
-                            
+
                             <div class="rowElem">
                                 <label>E-mail:</label>
                                 <div class="formRight">
@@ -201,7 +199,7 @@
                                 </div>
                                 <div class="fix"></div>
                             </div>
-                            
+
                             <div class="rowElem">
                                 <label>Password:</label>
                                 <div class="formRight">
@@ -256,7 +254,7 @@ $(function() {
 		errorSteps:[],    // array of step numbers to highlighting as error steps
 		labelNext:'Next', // label for Next button
 		labelPrevious:'Previous', // label for Previous button
-		labelFinish:'Finish',  // label for Finish button        
+		labelFinish:'Finish',  // label for Finish button
 	  // Events
 		onLeaveStep: function(o, c){ if(c.fromStep < c.toStep) { return validateSteps(c.fromStep); } else { return true; } }, // triggers when leaving a step
 		onShowStep: function(o, c){ return showStep(c.toStep); },  // triggers when showing a step
@@ -279,12 +277,12 @@ $(function() {
         //$('.leftNav').css('width', '980px');
         return false;
     }
-    
+
     function showStep(stepnumber){
         $('.step').hide();
         $('.step.step-'+stepnumber).fadeIn();
     }
-    
+
     function validateSteps(stepnumber){
         var url = '{{constant("BB_URL_INSTALL")}}install.php?a=';
         var data = $('#installer').serialize();
@@ -296,12 +294,12 @@ $(function() {
                 return false;
             }
         }
-        
+
         if(stepnumber == 2){
             if(isEmpty('db_host')) return false;
             if(isEmpty('db_name')) return false;
             if(isEmpty('db_user')) return false;
-            
+
             $.ajax({
                 async: false,
                 type: "POST",
@@ -316,7 +314,7 @@ $(function() {
             });
             return ok;
         }
-        
+
         if(stepnumber == 3){
             if(isEmpty('admin_name')) return false;
             if(isEmpty('admin_email')) return false;
@@ -343,7 +341,7 @@ $(function() {
         }
         return true;
     }
-    
+
     function isEmpty(id)
     {
         if(!$('#'+id).val()) {
@@ -354,6 +352,6 @@ $(function() {
             return false;
         }
     }
-    
+
 </script>
 {% endblock %}
