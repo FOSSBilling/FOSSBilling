@@ -3,9 +3,9 @@
     "type":         "mod",
     "name":         "Branding",
     "description":  "Show your support by voluntarily displaying references to FOSSBilling.",
-    "homepage_url": "https://boxbilling.org",
+    "homepage_url": "https://fossbilling.org",
     "author":       "FOSSBilling",
-    "author_url":   "https://boxbilling.org",
-    "license":      "https://www.fossbilling.org/license.txt",
-    "version":      "4.22.0"
+    "author_url":   "https://fossbilling.org",
+    "license":      "https://fossbilling.org/license.txt",
+    "version":      "0.0.1"
 }
