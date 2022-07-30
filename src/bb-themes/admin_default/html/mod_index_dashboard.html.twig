@@ -16,6 +16,10 @@
     {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
         {% set stats = admin.stats_get_summary %}
         {% set income = admin.stats_get_summary_income %}
+        {% set client_statuses = admin.client_get_statuses %}
+        {% set order_statuses = admin.order_get_statuses %}
+        {% set invoice_statuses = admin.invoice_get_statuses %}
+        {% set support_statuses = admin.support_ticket_get_statuses %}
 
         <div class="col-sm-6 col-lg-3">
             <div class="card card-sm">
@@ -30,7 +34,7 @@
                         </div>
                         <div class="col">
                             <div class="font-weight-medium">{{ stats.clients_total }} {{ 'Clients'|trans }}</div>
-                            <div class="text-muted">12 {{ 'suspended'|trans }} <!-- TODO: Get suspended user from the base --></div>
+                            <div class="text-muted">{{ client_statuses.suspended }} {{ 'suspended'|trans }}</div>
                         </div>
                     </div>
                 </div>
@@ -49,7 +53,7 @@
                         </div>
                         <div class="col">
                             <div class="font-weight-medium">{{ stats.orders_total }} {{ 'Orders'|trans }}</div>
-                            <div class="text-muted">32 {{ 'suspended'|trans }} <!-- TODO: Get suspended user from the base --></div>
+                            <div class="text-muted">{{ order_statuses.suspended }} {{ 'suspended'|trans }}</div>
                         </div>
                     </div>
                 </div>
@@ -68,7 +72,7 @@
                         </div>
                         <div class="col">
                             <div class="font-weight-medium">{{ stats.invoices_total }} {{ 'Invoices'|trans }}</div>
-                            <div class="text-muted">12 {{ 'unpaid'|trans }} <!-- TODO: Get suspended user from the base --></div>
+                            <div class="text-muted">{{ invoice_statuses.unpaid }} {{ 'unpaid'|trans }}</div>
                         </div>
                     </div>
                 </div>
@@ -87,7 +91,7 @@
                         </div>
                         <div class="col">
                             <div class="font-weight-medium">{{ stats.tickets_total }} {{ 'Tickets'|trans }}</div>
-                            <div class="text-muted">32 {{ 'on hold'|trans }} <!-- TODO: Get suspended user from the base --></div>
+                            <div class="text-muted">{{ support_statuses.open }} {{ 'waiting for staff reply'|trans }}</div>
                         </div>
                     </div>
                 </div>
