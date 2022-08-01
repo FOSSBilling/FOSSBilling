@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@tabler/core": "^1.0.0-beta9",
-    "autoprefixer": "^10.4.6",
+    "autoprefixer": "^10.4.8",
     "postcss": "^8.4.13",
     "sass": "^1.54.0"
   },
