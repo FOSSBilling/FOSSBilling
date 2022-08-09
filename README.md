@@ -23,7 +23,8 @@
 [![Financial Contributors](https://opencollective.com/fossbilling/tiers/badge.svg?color=brightgreen)](https://opencollective.com/fossbilling)
 </div>
 
-⚠️ **IMPORTANT NOTE: FOSSBilling is under active development but is currenly very much beta software, there may be stability or security issues and it is not recommended for use in active production environments yet!** ⚠️
+> **Warning**
+> FOSSBilling is under active development but is currenly very much beta software, there may be stability or security issues and it is not recommended for use in active production environments yet!
 
 **FOSSBilling** is a free open source, billing and client management solution. Whatever the size of your online services business, whether a startup or established, FOSSBilling can help you to automate your invoicing, incoming payments, and client management and communication.
 
