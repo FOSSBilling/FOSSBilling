@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7f2769c08e6a1a737eabb9bb99c1b365",
+    "content-hash": "d59a36f0e0ab3ead6e8c2a08d5fe961a",
     "packages": [
         {
             "name": "composer/ca-bundle",
@@ -1245,16 +1245,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v7.128.0",
+            "version": "v9.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "c704949c49b72985c76cc61063aa26fefbd2724e"
+                "reference": "a759cccb477ed8acad7c379d45fc8be5bc69636e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/c704949c49b72985c76cc61063aa26fefbd2724e",
-                "reference": "c704949c49b72985c76cc61063aa26fefbd2724e",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/a759cccb477ed8acad7c379d45fc8be5bc69636e",
+                "reference": "a759cccb477ed8acad7c379d45fc8be5bc69636e",
                 "shasum": ""
             },
             "require": {
@@ -1265,6 +1265,7 @@
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "3.5.0",
+                "php-coveralls/php-coveralls": "^2.5",
                 "phpstan/phpstan": "^1.2",
                 "phpunit/phpunit": "^5.7 || ^9.0",
                 "squizlabs/php_codesniffer": "^3.3"
@@ -1299,9 +1300,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v7.128.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v9.4.0"
             },
-            "time": "2022-05-05T17:18:02+00:00"
+            "time": "2022-08-26T17:25:01+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
