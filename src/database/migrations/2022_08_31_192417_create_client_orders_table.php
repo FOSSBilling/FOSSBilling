@@ -30,7 +30,7 @@ return new class extends Migration
             $table->bigInteger("service_id");
             $table->string("service_type");
             $table->string("period");
-            $table->bigInteger("quantity",1);
+            $table->bigInteger("quantity");
             $table->string("unit");
             $table->decimal("price", 18,2);
             $table->decimal("discount");
