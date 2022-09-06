@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table("admins",function (Blueprint $table){
-            $table->dropColumn("roles");
+            $table->dropColumn("role");
             $table->dropColumn("permissions");
         });
     }
