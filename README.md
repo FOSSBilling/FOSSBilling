@@ -52,6 +52,12 @@ As our team's experience varies on Laravel, we'll be needing a lot of help from 
 
 While it might be confusing to have the issues for the main branch and the rewrite taking place in the same repository, we label anything related to the rewrite with [the "rewrite" label](https://github.com/FOSSBilling/FOSSBilling/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3Arewrite). If you aren't sure where to start, or just want to take place in the community, [join our Discord server](https://fossbilling.org/discord).
 
+The source code for the ongoing rewrite lies on this branch, the ["lara"](https://github.com/FOSSBilling/FOSSBilling/tree/lara) branch. We also will need help with these in the long-term:
+
+* API wrappers for different languages
+* Possibly a [command-line interface](https://github.com/FOSSBilling/cli)
+* [Our website](https://github.com/FOSSBilling/website)
+
 ### Spread the word
 Do you know someone who could help with the project? Invite them to contribute. New people will bring fresh perspectives to the project.
 
