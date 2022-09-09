@@ -76,6 +76,7 @@ FOSSBilling is open-source software and is released under the Apache v2.0 licens
 ## Links
 
 * [Website](https://www.fossbilling.org/)
-* [Documentation](https://docs.fossbilling.org/)
+* [FOSSBilling Documentation](https://docs.fossbilling.org/)
+* [Laravel Documentation](https://laravel.com/docs/9.x/readme)
 * [Twitter](https://twitter.com/fossbilling/)
 * [Discord](https://fossbilling.org/discord)
