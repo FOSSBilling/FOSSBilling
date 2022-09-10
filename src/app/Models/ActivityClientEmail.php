@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class activityClientEmail extends Model
+class ActivityClientEmail extends Model
 {
     use HasFactory;
 }

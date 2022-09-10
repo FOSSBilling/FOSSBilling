@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Setting;
 
-class Settings extends Controller
+class SettingController extends Controller
 {
     //
     public function show(Request $request)
@@ -25,5 +25,5 @@ class Settings extends Controller
 
         return view('admin.settings.show',['settings'=>$settings]);
     }
-    
+
 }

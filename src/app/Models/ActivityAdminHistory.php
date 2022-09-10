@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class activityAdminHistory extends Model
+class ActivityAdminHistory extends Model
 {
     use HasFactory;
 }
