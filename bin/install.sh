@@ -100,7 +100,7 @@ function rebuild_and_start() {
     print_header "Waking up the container..."
     $DOCKER_COMPOSE up -d
     print_separator
-    
+
     print_header "Running the preparation script..."
 	$DOCKER_PHP_CONTAINER_EXEC $DOCKER_PHP_EXECUTABLE_CMD ./bin/prepare.php
     print_separator
@@ -119,7 +119,7 @@ function install_composer_dependencies() {
 # Build the themes using Gulp
 function build_gulp() {
     print_header "Building themes..."
-    docker run -it --rm -v "$PWD":/usr/src/app -w /usr/src/app node:18 npm install --include=dev && ./node_modules/.bin/gulp
+    docker run -it --rm -v "$PWD":/usr/src/app -w /usr/src/app node:18 /bin/bash -c "npm install --include=dev && ./node_modules/.bin/gulp"
     print_success "Successfully built the themes."
     print_separator
 }
@@ -132,7 +132,7 @@ function remove_installation_leftovers() {
         print_header "Removing installation leftovers..."
         rm -rf $PATH_PREFIX/src/install
         print_success "Successfully removed \e[1m./src/install/\e[0m."
-        print_separator  
+        print_separator
     fi
 }
 
@@ -190,13 +190,13 @@ if [ -f "$PATH_PREFIX/src/bb-config.php" ]; then
     print_warning "The config file already exists. If FOSSBilling is already installed and you ran the script as a mistake, answer no to the next prompt to quit safely."
     print_header "To continue, the installer will need to delete the existing configuration file first.\nKeep in mind that you will lose your existing configuration if you have an active installation."
     echo # new line
-    
+
     read -p "Would you like to continue? [y/N] " -n 1 -r
     if [[ ! $REPLY =~ ^[Yy]$ ]]
     then
         [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
     fi
-    
+
     echo # new line
 
     rm -f $PATH_PREFIX/src/bb-config.php
