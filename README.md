@@ -44,7 +44,7 @@ We need designers. Join our [Discord server](https://fossbilling.org/discord) if
 * A new layout for [our website](https://fossbilling.org) ([source repository](https://github.com/FOSSBilling/website))
 * Infographics and branding assets for our socials
 
-We'll be using [Tailwind CSS](https://tailwindcss.com/) wherever we can. [Our website](https://fossbilling.org) is now live and built using Tailwind CSS. While the admin and client themes aren't ready yet, we're planning to stick to one framework everywhere and that'll likely be Tailwind CSS.
+We'll be using [Tailwind CSS](https://tailwindcss.com/) wherever we can. [Our website](https://fossbilling.org) is now live and built using Tailwind CSS. While the admin and client themes aren't ready yet, we're planning to make things simpler and stick to one framework everywhere and going forward that will be Tailwind CSS.
 
 ### Develop
 We need developers.
