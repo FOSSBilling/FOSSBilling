@@ -13,18 +13,18 @@
   },
   "dependencies": {
     "@tabler/core": "^1.0.0-beta11",
-    "autoprefixer": "^10.4.8",
+    "autoprefixer": "^10.4.9",
     "postcss": "^8.4.16",
-    "sass": "^1.54.3"
+    "sass": "^1.54.9"
   },
   "devDependencies": {
-    "@fortawesome/fontawesome-free": "^6.1.2",
-    "apexcharts": "^3.35.4",
+    "@fortawesome/fontawesome-free": "^6.2.0",
+    "apexcharts": "^3.35.5",
     "babel-core": "^6.26.3",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.7.0",
     "babel-register": "^6.26.0",
-    "bootstrap": "^5.2.0",
+    "bootstrap": "^5.2.1",
     "bootstrap-markdown": "^2.10.0",
     "gulp": "^4.0.2",
     "gulp-autoprefixer": "^8.0.0",
@@ -36,7 +36,7 @@
     "gulp-svg-sprite": "^1.5.0",
     "gulp-uglify": "^3.0.2",
     "gulp-uglifycss": "^1.1.0",
-    "jquery": "^3.6.0",
+    "jquery": "^3.6.1",
     "upath": "^2.0.1",
     "yargs": "^17.4.1"
   },
