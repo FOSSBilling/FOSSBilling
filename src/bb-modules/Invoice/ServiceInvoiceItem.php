@@ -121,16 +121,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         if (\Model_InvoiceItem::TYPE_DEPOSIT == $item->type) {
-            $clientService = $this->di['mod_service']('Client');
-
-            $invoice = $this->di['db']->getExistingModelById('Invoice', $item->invoice_id);
-            $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id);
-            $data = [
-                'type' => 'invoice',
-                'rel_id' => $item->invoice_id,
-            ];
-            $clientService->addFunds($client, $this->getTotal($item), $item->title, $data);
-
+            // do not request to add funds to client balance
+            // associated invoice will have already been marked with a valid transaction and funds added
             $this->markAsExecuted($item);
         }
 

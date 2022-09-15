@@ -137,18 +137,10 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $clientModel->loadBean(new \RedBeanPHP\OODBBean());
 
         $di = new \Box_Di();
-
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->withConsecutive(array('Invoice'), array('Client'))
-            ->willReturnOnConsecutiveCalls($invoiceModel, $clientModel);
         $di['db'] = $dbMock;
 
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
-        $clientServiceMock->expects($this->atLeastOnce())
-            ->method('addFunds')
-            ->with($clientModel);
         $di['mod_service'] = $di->protect(function ($serviceName) use ($clientServiceMock){
             if ($serviceName == 'Client'){
                 return $clientServiceMock;
@@ -156,13 +148,10 @@ class ServiceInvoiceItemTest extends \BBTestCase
         });
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
-            ->setMethods(array('markAsExecuted', 'getTotal'))
+            ->setMethods(array('markAsExecuted'))
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('markAsExecuted');
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getTotal')
-            ->willReturn('1.00');
         $serviceMock->setDi($di);
 
         $serviceMock->executeTask($invoiceItemModel);
