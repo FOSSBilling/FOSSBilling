@@ -94,12 +94,15 @@ final class Box_Installer
             case 'check-db':
                 $user = $_POST['db_user'];
                 $host = $_POST['db_host'];
+                $port = $_POST['db_port'];
                 $pass = $_POST['db_pass'];
                 $name = $_POST['db_name'];
-                if (!$this->canConnectToDatabase($host, $name, $user, $pass)) {
+
+                if (!$this->canConnectToDatabase($host.';'.$port, $name, $user, $pass)) {
                     echo 'Could not connect to database. Please check database details. You might need to create database first.';
                 } else {
                     $this->session->set('db_host', $host);
+                    $this->session->set('db_port', $port);
                     $this->session->set('db_name', $name);
                     $this->session->set('db_user', $user);
                     $this->session->set('db_pass', $pass);
@@ -113,12 +116,14 @@ final class Box_Installer
                     // Initializing database connection
                     $user = $_POST['db_user'];
                     $host = $_POST['db_host'];
+                    $port = $_POST['db_port'];
                     $pass = $_POST['db_pass'];
                     $name = $_POST['db_name'];
-                    if (!$this->canConnectToDatabase($host, $name, $user, $pass)) {
+                    if (!$this->canConnectToDatabase($host.';'.$port, $name, $user, $pass)) {
                         throw new Exception('Could not connect to the database, or the database does not exist');
                     } else {
                         $this->session->set('db_host', $host);
+                        $this->session->set('db_port', $port);
                         $this->session->set('db_name', $name);
                         $this->session->set('db_user', $user);
                         $this->session->set('db_pass', $pass);
@@ -313,7 +318,7 @@ final class Box_Installer
         $this->_isValidInstallData($ns);
         $this->_createConfigurationFile($ns);
 
-        $pdo = $this->getPdo($ns->get('db_host'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'));
+        $pdo = $this->getPdo($ns->get('db_host').';'.$ns->get('db_port'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'));
 
         $sql = file_get_contents(BB_PATH_SQL);
         $sql_content = file_get_contents(BB_PATH_SQL_DATA);
@@ -429,6 +434,7 @@ final class Box_Installer
             'db' => [
                 'type' => 'mysql',
                 'host' => $ns->get('db_host'),
+                'port' => $ns->get('db_port'),
                 'name' => $ns->get('db_name'),
                 'user' => $ns->get('db_user'),
                 'password' => $ns->get('db_pass'),
