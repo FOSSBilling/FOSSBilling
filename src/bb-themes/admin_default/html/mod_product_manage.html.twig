@@ -62,7 +62,6 @@
                             <div class="nNote nInformation">
                                 <p>Please edit <strong>{{ tpl }}</strong> file in order to change order form for <strong>{{ product.type }}</strong> category products.</p>
                             </div>
-                            <a href="{{ 'filemanager/ide'|alink }}" class="btn btn-primary">{{ 'Open Editor'|trans }}</a>
                             {% else %}
                                 <div class="input-group">
                                     {{ mf.selectbox('form_id', admin.formbuilder_get_pairs, product.form_id, 0, 'None') }}
