@@ -12,7 +12,7 @@
     "url": "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
   "dependencies": {
-    "@tabler/core": "^1.0.0-beta11",
+    "@tabler/core": "^1.0.0-beta12",
     "autoprefixer": "^10.4.11",
     "postcss": "^8.4.16",
     "sass": "^1.54.9"
