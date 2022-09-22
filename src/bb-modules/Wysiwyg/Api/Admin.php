@@ -1,13 +1,11 @@
 <?php
 /**
- * FOSSBilling
+ * BoxBilling
  *
- * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @copyright BoxBilling, Inc (https://www.boxbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
- * Copyright BoxBilling, Inc 2011-2021
- *
+ * Copyright BoxBilling, Inc
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
@@ -20,16 +18,13 @@ class Admin extends \Api_Abstract
     {
         $mod = $this->di['mod']('wysiwyg');
         $config = $mod->getConfig();
-        if (empty($this->di['array_get']($config, 'editor', 'CKEditor')) || !(defined($this->di['array_get']($config, 'editor', 'CKEditor')))) {
-            return 'ckeditor';
-        } else {
-            return $this->di['array_get']($config, 'editor', 'CKEditor');
-        }
+        return $this->di['array_get']($config, 'editor', 'markitup');
     }
 
     public function editors()
     {
         return array(
+            'markitup'  =>  'markItUp',
             'ckeditor'  =>  'CKEditor',
         );
     }
