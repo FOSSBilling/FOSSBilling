@@ -1,19 +1,20 @@
 {% set bb_editor = admin.wysiwyg_editor %}
 
+{% if bb_editor == 'markitup' %}
+{{ 'markitup/skins/boxbilling/style.css' | mod_asset_url('wysiwyg') | stylesheet_tag }}
+{{ 'markitup/sets/markdown/style.css' | mod_asset_url('wysiwyg') | stylesheet_tag }}
+{{ 'markitup/jquery.markitup.js' | mod_asset_url('wysiwyg') | script_tag }}
+{{ 'markitup/sets/markdown/set.js' | mod_asset_url('wysiwyg') | script_tag }}
+<script type="text/javascript" >
+    $(document).ready(function() {
+        $(".{{class}}").markItUp(mySettings);
+    });
+</script>
+{% endif %}
+
 {% if bb_editor == 'ckeditor' %}
 {{ 'ckeditor/ckeditor.js' | mod_asset_url('wysiwyg') | script_tag }}
 <script type="text/javascript" >
-    $(document).ready(function() {
-        CKEDITOR.replaceAll( '{{class}}' );    
-    })
-
-    CKEDITOR.on('instanceReady', function(){
-    $.each( CKEDITOR.instances, function(instance) {
-        CKEDITOR.instances[instance].on("change", function(e) {
-            for ( instance in CKEDITOR.instances )
-            CKEDITOR.instances[instance].updateElement();
-        });
-   });
-});
+    CKEDITOR.replaceClass = '{{class}}';
 </script>
 {% endif %}
