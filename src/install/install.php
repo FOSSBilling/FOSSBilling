@@ -356,16 +356,8 @@ final class Box_Installer
             rename(BB_PATH_HTACCESS_TEMPLATE, BB_PATH_HTACCESS);
         }
 
-        if (!file_exists(BB_BS_CONFIG) && file_exists(BB_BS_CONFIG_TEMPLATE)) {
-            rename(BB_BS_CONFIG_TEMPLATE, BB_BS_CONFIG);
-        }
-
         if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
             rename(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG);
-        }
-
-        if (!file_exists(BB_BBTHEME_CONFIG) && file_exists(BB_BBTHEM_CONFIG_TEMPLATE)) {
-            rename(BB_BBTHEM_CONFIG_TEMPLATE, BB_BBTHEME_CONFIG);
         }
 
         return true;
