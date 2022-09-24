@@ -1,7 +1,0 @@
-{% if order.status == 'active' %}
-    <h2>{{ service.title }}</h2>
-    <div class="text-center">
-        <a class="btn btn-success btn-lg" href="{{ 'servicedownloadable/get-file'|link }}/{{ order.id }}">
-            <i class="fa fa-download me-2"></i>{{ 'Download file'|trans }}</a>
-    </div>
-{% endif %}
