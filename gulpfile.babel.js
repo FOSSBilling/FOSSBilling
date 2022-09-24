@@ -25,16 +25,9 @@ export const buildThemeAdmin = function buildThemeAdmin() {
 }
 buildThemeAdmin.description = 'Build theme Admin assets.';
 
-export const buildThemeBootstrap = function buildThemeBootstrap() {
-  return gulp.src('src/bb-themes/bootstrap/gulpfile.babel.js', { read: false })
-    .pipe(chug({ args: config, tasks: 'build' }));
-}
-buildThemeBootstrap.description = 'Build theme Bootstrap assets.';
-
-export const build = gulp.parallel(buildThemeAdmin, buildThemeBootstrap);
+export const build = gulp.parallel(buildThemeAdmin);
 build.description = 'Build assets.';
 
-gulp.task('bootstrap', buildThemeAdmin);
-gulp.task('bootstrap', buildThemeBootstrap);
+gulp.task('admin_default', buildThemeAdmin);
 
 export default build;
