@@ -26,7 +26,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetTheme()
     {
-        $result = $this->service->getTheme('boxbilling');
+        $result = $this->service->getTheme('huraga');
         $this->assertInstanceOf('\Box\Mod\Theme\Model\Theme', $result);
     }
 

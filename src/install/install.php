@@ -61,14 +61,8 @@ define('BB_PATH_LANGS', BB_PATH_ROOT . '/bb-locale');
 define('BB_PATH_HTACCESS', BB_PATH_ROOT . '/.htaccess');
 define('BB_PATH_HTACCESS_TEMPLATE', BB_PATH_ROOT . '/htaccess.txt');
 
-define('BB_BS_CONFIG', BB_PATH_THEMES . '/bootstrap/config/settings_data.json');
-define('BB_BS_CONFIG_TEMPLATE', BB_PATH_THEMES . '/bootstrap/config/settings_data.json.txt');
-
 define('BB_HURAGA_CONFIG', BB_PATH_THEMES . '/huraga/config/settings_data.json');
 define('BB_HURAGA_CONFIG_TEMPLATE', BB_PATH_THEMES . '/huraga/config/settings_data.json.txt');
-
-define('BB_BBTHEME_CONFIG', BB_PATH_THEMES . '/boxbilling/config/settings_data.json');
-define('BB_BBTHEM_CONFIG_TEMPLATE', BB_PATH_THEMES . '/boxbilling/config/settings_data.json.txt');
 
 // Ensure library/ is on include_path
 set_include_path(implode(PATH_SEPARATOR, [
@@ -362,16 +356,8 @@ final class Box_Installer
             rename(BB_PATH_HTACCESS_TEMPLATE, BB_PATH_HTACCESS);
         }
 
-        if (!file_exists(BB_BS_CONFIG) && file_exists(BB_BS_CONFIG_TEMPLATE)) {
-            rename(BB_BS_CONFIG_TEMPLATE, BB_BS_CONFIG);
-        }
-
         if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
             rename(BB_HURAGA_CONFIG_TEMPLATE, BB_HURAGA_CONFIG);
-        }
-
-        if (!file_exists(BB_BBTHEME_CONFIG) && file_exists(BB_BBTHEM_CONFIG_TEMPLATE)) {
-            rename(BB_BBTHEM_CONFIG_TEMPLATE, BB_BBTHEME_CONFIG);
         }
 
         return true;

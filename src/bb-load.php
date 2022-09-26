@@ -129,7 +129,7 @@ function handler_exception($e)
               display: inline-block;
               width: 150px;
               height: 150px;
-              background-image: url('/bb-themes/boxbilling/assets/images/fb_wallet.svg');
+              background-image: url('/bb-themes/huraga/assets/img/fb_wallet.svg');
               background-repeat: no-repeat;
               background-size: 124px 144px;
             }

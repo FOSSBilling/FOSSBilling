@@ -45,7 +45,7 @@ export const buildThemeAdminSvgSprite = function buildThemeAdminSvgSprite() {
     }))
     .pipe(gulp.dest('build/'));
 }
-buildThemeAdminSvgSprite.description = 'Build theme Admin SVG sprite assets.';
+buildThemeAdminSvgSprite.description = 'Build admin_default theme SVG sprite assets.';
 
 export const buildThemeAdminJs = function buildThemeAdminJs() {
   const files = [
@@ -67,7 +67,7 @@ export const buildThemeAdminJs = function buildThemeAdminJs() {
     .pipe(uglify())
     .pipe(gulp.dest('build/js'));
 }
-buildThemeAdminJs.description = 'Build Admin theme JS assets.';
+buildThemeAdminJs.description = 'Build admin_default theme JS assets.';
 
 export const buildThemeAdminCSS = function buildThemeAdminCSS() {
   const files = [
@@ -87,7 +87,7 @@ export const buildThemeAdminCSS = function buildThemeAdminCSS() {
     .pipe(uglifycss())
     .pipe(gulp.dest('build/css'));
 }
-buildThemeAdminCSS.description = 'Build Bootstrap theme CSS assets.';
+buildThemeAdminCSS.description = 'Build admin_default theme CSS assets.';
 
 export const buildThemeAdminSprite = gulp.parallel(buildThemeAdminSvgSprite);
 buildThemeAdminSprite.description = 'Build sprites.';

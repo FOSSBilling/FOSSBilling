@@ -144,6 +144,26 @@ function remove_installation_leftovers() {
     print_separator
 }
 
+# Copy configuration for Huraga if it doesn't exist
+function copy_huraga_config() {
+    if [ ! -f $PATH_PREFIX/src/bb-themes/huraga/config/settings_data.json ]; then
+        print_header "Copying Huraga configuration..."
+        cp $PATH_PREFIX/src/bb-themes/huraga/config/settings_data.json.example $PATH_PREFIX/src/bb-themes/huraga/config/settings_data.json
+        print_success "Successfully copied Huraga configuration."
+        print_separator
+    fi
+}
+
+# Copy .htaccess if it doesn't exist
+function copy_htaccess() {
+    if [ ! -f $PATH_PREFIX/src/.htaccess ]; then
+        print_header "Copying .htaccess..."
+        cp $PATH_PREFIX/src/htaccess.txt $PATH_PREFIX/src/.htaccess
+        print_success "Successfully copied .htaccess."
+        print_separator
+    fi
+}
+
 print_header "FOSSBilling installer $INSTALLER_VERSION"
 print_separator
 print_header "Welcome to the FOSSBilling installer for Linux. This script will guide you through the installation of FOSSBilling.
@@ -211,6 +231,8 @@ change_folder_permissions
 build_gulp
 rebuild_and_start
 install_composer_dependencies
+copy_huraga_config
+copy_htaccess
 remove_installation_leftovers
 
 print_success "\e[1mInstallation complete.\e[0m"

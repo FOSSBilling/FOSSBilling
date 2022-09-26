@@ -9,7 +9,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
     {
         $service = new \Box\Mod\Theme\Service();
         $service->setDi($this->di);
-        $themeModel = $service->getTheme('boxbilling');
+        $themeModel = $service->getTheme('huraga');
         $result = $service->getCurrentThemePreset($themeModel);
         $this->assertIsString($result);
         $this->assertNotEmpty($result);
@@ -19,7 +19,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
     {
         $service = new \Box\Mod\Theme\Service();
         $service->setDi($this->di);
-        $themeModel = $service->getTheme('boxbilling');
+        $themeModel = $service->getTheme('huraga');
         $result = $service->getThemePresets($themeModel);
         $this->assertIsArray($result);
         $this->assertNotEmpty($result);
@@ -29,7 +29,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
     {
         $service = new \Box\Mod\Theme\Service();
         $service->setDi($this->di);
-        $themeModel = $service->getTheme('boxbilling');
+        $themeModel = $service->getTheme('huraga');
         $result = $service->getThemeSettings($themeModel);
         $this->assertIsArray($result);
     }
@@ -50,7 +50,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $service = new \Box\Mod\Theme\Service();
         $service->setDi($this->di);
 
-        $themeModel = $service->getTheme('boxbilling');
+        $themeModel = $service->getTheme('huraga');
         $service->uploadAssets($themeModel, $files);
     }
 
@@ -59,7 +59,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $service = new \Box\Mod\Theme\Service();
         $service->setDi($this->di);
 
-        $themeModel = $service->getTheme('boxbilling');
+        $themeModel = $service->getTheme('huraga');
 
         $preset = 'phpUnit';
         $params = array();
@@ -73,7 +73,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $service = new \Box\Mod\Theme\Service();
         $service->setDi($this->di);
 
-        $themeModel = $service->getTheme('boxbilling');
+        $themeModel = $service->getTheme('huraga');
 
         $result = $service->regenerateThemeSettingsDataFile($themeModel);
         $this->assertTrue($result);
@@ -84,7 +84,7 @@ class Box_Mod_Theme_ServiceTest extends BBDbApiTestCase
         $service = new \Box\Mod\Theme\Service();
         $service->setDi($this->di);
 
-        $themeModel = $service->getTheme('boxbilling');
+        $themeModel = $service->getTheme('huraga');
 
         $preset = 'phpUnit';
         $result = $service->regenerateThemeCssAndJsFiles($themeModel, $preset, $this->di['api_admin']);
