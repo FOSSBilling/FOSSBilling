@@ -1225,7 +1225,7 @@ class Service implements InjectionAwareInterface
         $fontSize = 12;
 
         if (isset($company['logo_url']) && !empty($company['logo_url'])) {
-            $url = $company['logo_url'];
+            $url = parse_url($company['logo_url'], PHP_URL_PATH);
             if ('.png' === substr($url, -4)) {
                 $pdf->ImagePngWithAlpha($_SERVER['DOCUMENT_ROOT'] . $url, $left + 15, 15, 50);
             } else {
