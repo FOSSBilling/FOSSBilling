@@ -52,7 +52,7 @@ The following environment is highly recommended for running FOSSBilling. It *may
 - A suitable web server (Apache/nginx/LSWS/Lighttpd)
 - PHP 8.0
   - *PHP 8.1 hasn't been tested yet, and we strongly recommend you to go with PHP 8.0.x for the time being.*
-- MySQL 8 (or higher), or MariaDB .3 (or higher) *Other direct MySQL compatible DBs should also work but are not supported.*
+- MySQL 8 (or higher), or MariaDB 10.3 (or higher) *Other direct MySQL compatible DBs should also work but are not supported.*
 - The Following PHP extensions:
     - pdo_mysql
     - curl
