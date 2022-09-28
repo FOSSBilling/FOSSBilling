@@ -79,14 +79,14 @@ jobs:
           path: ./build/distribution/
           if-no-files-found: error
 
-      - name: Upload the final artifact to Amazon S3
+      - name: Upload the final artifact to our S3 bucket
         if: github.ref == 'refs/heads/main'
         uses: jakejarvis/s3-sync-action@master
         with:
-          args: --acl public-read --follow-symlinks --delete
+          args: --acl public-read --follow-symlinks
         env:
-          AWS_S3_BUCKET: fossbilling-public
+          AWS_S3_BUCKET: 'releases'
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: 'eu-central-1'
+          AWS_S3_ENDPOINT: 's4-ams-fossbilling.nl-ams1.upcloudobjects.com'
           SOURCE_DIR: './build/distribution'
