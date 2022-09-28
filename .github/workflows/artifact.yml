@@ -79,7 +79,7 @@ jobs:
           path: ./build/distribution/
           if-no-files-found: error
 
-      - name: Upload the final artifact to Amazon S3
+      - name: Upload the final artifact to our S3 bucket
         if: github.ref == 'refs/heads/main'
         uses: jakejarvis/s3-sync-action@master
         with:
