@@ -274,7 +274,7 @@ class Service implements InjectionAwareInterface
             $theme = $this->di['db']->getCell("SELECT value FROM setting WHERE param = 'theme' ");
         }
 
-        return !empty($theme) ? $theme : 'boxbilling';
+        return !empty($theme) ? $theme : 'huraga';
     }
 
     public function getThemes($client = true)

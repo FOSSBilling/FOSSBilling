@@ -167,7 +167,7 @@ class ServicePayGatewayTest extends \BBTestCase {
         $serviceMock->expects($this->atLeastOnce())
             ->method('getDescription');
 
-        $url = 'http://boxbilling.vm/';
+        $url = 'http://fossbilling.vm/';
         $expected = array(
             'id'                         => null,
             'code'                       => null,
@@ -331,7 +331,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('link');
 
         $di = new \Box_Di();
-        $di['config'] = array('url' => 'http://boxbilling.vm/', 'debug' => true);
+        $di['config'] = array('url' => 'http://fossbilling.vm/', 'debug' => true);
         $di['tools'] = $toolsMock;
         $di['url'] = $urlMock;
         $serviceMock->setDi($di);
@@ -367,7 +367,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->method('link');
 
         $di = new \Box_Di();
-        $di['config'] = array('url' => 'http://boxbilling.vm/', 'debug' => true);
+        $di['config'] = array('url' => 'http://fossbilling.vm/', 'debug' => true);
         $di['tools'] = $toolsMock;
         $di['url'] = $urlMock;
         $serviceMock->setDi($di);

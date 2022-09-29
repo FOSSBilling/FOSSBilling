@@ -274,7 +274,7 @@ class ServiceTest extends \BBTestCase {
         $urlMock = $this->getMockBuilder('Box_Url')->getMock();
         $urlMock->expects($this->atLeastOnce())
             ->method('adminLink')
-            ->willReturn('http://boxbilling.org/index.php?_url=/' . $link);
+            ->willReturn('http://fossbilling.org/index.php?_url=/' . $link);
         $di['url'] = $urlMock;
 
         $di = new \Box_Di();

@@ -6,6 +6,6 @@
     "homepage_url": "https://fossbilling.org",
     "author":       "FOSSBilling",
     "author_url":   "https://fossbilling.org",
-    "license":      "https://fossbilling.org/license.txt",
+    "license":      "https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE",
     "version":      "0.0.1"
 }

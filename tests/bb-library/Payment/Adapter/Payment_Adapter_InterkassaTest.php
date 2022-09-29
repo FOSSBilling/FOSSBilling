@@ -8,11 +8,11 @@ class Payment_Adapter_InterkassaTest extends PHPUnit\Framework\TestCase {
     public function setup(): void
     {
         $this->defaultConfig = array(
-            'url' => 'boxbilling.test',
-            'return_url' => 'boxbilling.test',
-            'notify_url' => 'boxbilling.test',
-            'cancel_url' => 'boxbilling.test',
-            'redirect_url' => 'boxbilling.test',
+            'url' => 'fossbilling.test',
+            'return_url' => 'fossbilling.test',
+            'notify_url' => 'fossbilling.test',
+            'cancel_url' => 'fossbilling.test',
+            'redirect_url' => 'fossbilling.test',
 
             'ik_co_id' => '64C18529-4B94-0B5D-7405-F2752F2B716C',
             'ik_secret_key' => 'RhAAaJ2AwydMbKzN',

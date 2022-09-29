@@ -19,7 +19,7 @@
             </header>
             <section>
                 <img id="loader-image" src="{{ loader_url | mod_asset_url('orderbutton')}}" style="display: block; margin-left: auto; margin-right: auto; position: relative; top: 50%" />
-                <iframe style="width: 100%;" frameborder="0" allowtransparency="true" onload='javascript:resizeIframe(this);' id="popup-iframe"  src="{{ "orderbutton" | link }}&theme_color={{request.theme_color | default('green')}}{% if request.product_id %}&order={{ request.product_id}}{% endif %}{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}&loader=3" id="popup-iframe"/>
+                <iframe style="width: 100%;" frameborder="0" allowtransparency="true" onload='javascript:resizeIframe(this);' id="popup-iframe"  src="{{ "orderbutton" | link }}&theme_color={{settings.color_scheme | default('green')}}{% if request.product_id %}&order={{ request.product_id}}{% endif %}{% if request.show_custom_form_values %}&show_custom_form_values=1{% endif %}&loader=3" id="popup-iframe"/>
             </section>
         </div>
     </article>
