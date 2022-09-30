@@ -38,7 +38,7 @@
                         <td>
                             <a class="btn14" href="{{ 'page'|link }}/{{ page.slug }}" title="{{ 'View'|trans }}"><img src="images/icons/dark/view.png" alt=""></a>
                             <a class="btn14" href="{{ 'custompages'|alink }}/{{ page.id }}" title="{{ 'Edit'|trans }}"><img src="images/icons/dark/pencil.png" alt=""></a>
-                            <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/custompages/delete'|link({ 'id': page.id }) }}" title="{{ 'Delete'|trans }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/trash.png" alt=""></a>
+                            <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/custompages/delete'|link({ 'id': page.id }) }}" title="{{ 'Delete'|trans }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="assets/icons/delete.svg" alt=""></a>
                         </td>
                     </tr>
                     {% else %}

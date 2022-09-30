@@ -36,7 +36,7 @@
                     <td><a href="{{ r.path | link }}" target="_blank">{{ r.path | link }}</a></td>
                     <td>{% if '://' in r.target %}<a href="{{ r.target }}" target="_blank">{{ r.target }}</a>{% else %}<a href="{{ r.target|link }}" target="_blank">{{ r.target | link }}</a>{% endif %}</td>
                     <td class="actions">
-                        <a class="bb-button btn14 bb-rm-tr api-link" href="{{ 'api/admin/redirect/delete'|link({ 'id': r.id }) }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/trash.png" alt=""></a>
+                        <a class="bb-button btn14 bb-rm-tr api-link" href="{{ 'api/admin/redirect/delete'|link({ 'id': r.id }) }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="assets/icons/delete.svg" alt=""></a>
                     </td>
                 </tr>
                 {% else %}
