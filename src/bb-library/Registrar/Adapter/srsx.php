@@ -6,17 +6,17 @@
  *
  * This source file is subject to the license that is bundled
  * with this package in the file LICENSE
- * It is also available through the world-wide-web at this URL:
+ * It is also available online at this URL:
  * https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@boxbilling.org so we can send you a copy immediately.
+ * 
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @copyright 2010-2020 BoxBilling (https://www.boxbilling.org)
  *
- * @copyright Copyright (c) 2010-2020 BoxBilling (https://www.fossbilling.org)
  * @license   https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE
  * @version   $Id$
- * Created by bayamsoftware.com & @timothygwebb
- * For free hosting please visit host.bayamsoftware.com
+ *
+ * This file may contain code previously used in the BoxBilling project.
+ * Copyright BoxBilling, Inc 2011-2021
  */
  
 /**
