@@ -17,9 +17,6 @@ class Api_Guest_ExtensionTest extends BBDbApiTestCase
         $bool = $this->api_guest->extension_is_on(array('mod'=>'system'));
         $this->assertTrue($bool);
 
-        $bool = $this->api_guest->extension_is_on(array('mod'=>'forum'));
-        $this->assertTrue($bool);
-
         $arr = $this->api_guest->extension_settings(array('ext'=>'mod_email'));
         $this->assertIsArray($arr);
     }

@@ -56,20 +56,6 @@ class Service implements InjectionAwareInterface
         $spamCheckerService->isBlockedIp($event);
     }
 
-    public static function onBeforeClientCreateForumTopic(\Box_Event $event)
-    {
-        $di = $event->getDi();
-        $spamCheckerService = $di['mod_service']('Spamchecker');
-        $spamCheckerService->forumSpamChecker($event);
-    }
-
-    public static function onBeforeClientRepliedInForum(\Box_Event $event)
-    {
-        $di = $event->getDi();
-        $spamCheckerService = $di['mod_service']('Spamchecker');
-        $spamCheckerService->forumSpamChecker($event);
-    }
-
     public static function onBeforeClientSignUp(\Box_Event $event)
     {
         $di = $event->getDi();

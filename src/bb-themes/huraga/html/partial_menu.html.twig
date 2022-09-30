@@ -53,12 +53,6 @@
         <a href="{{ '/kb'|link }}"><span class="awe-book"></span>{{ 'Knowledge Base'|trans }}</a>
     </li>
     {% endif %}
-
-    {% if guest.extension_is_on({"mod":"forum"}) %}
-    <li class="main-menu">
-        <a href="{{ '/forum'|link }}"><span class="awe-comments"></span>{{ 'Forum'|trans }}</a>
-    </li>
-    {% endif %}
 </ul>
 
 <script type="text/javascript">

@@ -587,9 +587,6 @@ class Service implements InjectionAwareInterface
         $service = $this->di['mod_service']('Activity');
         $service->rmByClient($model);
 
-        $table = $this->di['table']('ForumTopicMessage');
-        $table->rmByClient($model);
-
         $table = $this->di['table']('ClientPasswordReset');
         $table->rmByClient($model);
 

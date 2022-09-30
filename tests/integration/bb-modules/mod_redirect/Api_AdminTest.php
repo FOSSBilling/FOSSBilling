@@ -13,7 +13,7 @@ class Box_Mod_Redirect_Api_AdminTest extends BBModTestCase
         $array = $this->api_admin->redirect_get_list();
         $this->assertIsArray($array);
         
-        $int = $this->api_admin->redirect_create(array('path'=>'/forum', 'target'=>'new-forum'));
+        $int = $this->api_admin->redirect_create(array('path'=>'/knowledgebase', 'target'=>'kb'));
         $this->assertIsInt($int);
         
         $r = $this->api_admin->redirect_get(array('id'=>$int));

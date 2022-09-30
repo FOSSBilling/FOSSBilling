@@ -63,47 +63,6 @@ class ServiceTest extends \BBTestCase {
         $this->service->forumSpamChecker($boxEventMock);
     }
 
-    public function testonBeforeClientCreateForumTopic()
-    {
-        $spamCheckerService = $this->getMockBuilder('\Box\Mod\Spamchecker\Service')->getMock();
-        $spamCheckerService->expects($this->atLeastOnce())
-            ->method('forumSpamChecker');
-
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function () use ($spamCheckerService){
-            return $spamCheckerService;
-        });
-        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-
-        $this->service->onBeforeClientCreateForumTopic($boxEventMock);
-
-        //TODO maybe we can write better test here?
-        $this->assertTrue(true);
-    }
-
-    public function testonBeforeClientRepliedInForum()
-    {
-        $spamCheckerService = $this->getMockBuilder('\Box\Mod\Spamchecker\Service')->getMock();
-        $spamCheckerService->expects($this->atLeastOnce())
-            ->method('forumSpamChecker');
-
-        $di = new \Box_Di();
-        $di['mod_service'] = $di->protect(function () use ($spamCheckerService){
-            return $spamCheckerService;
-        });
-        $boxEventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()
-            ->getMock();
-        $boxEventMock->expects($this->atLeastOnce())
-            ->method('getDi')
-            ->willReturn($di);
-
-        $this->service->onBeforeClientRepliedInForum($boxEventMock);
-    }
-
     public function testonBeforeClientSignUp()
     {
         $spamCheckerService = $this->getMockBuilder('\Box\Mod\Spamchecker\Service')->getMock();
