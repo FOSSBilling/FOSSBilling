@@ -4,7 +4,7 @@
 {% set width = request.width | default("600")%}
 {% set height = request.height | default("700")%}
 {% set background_color = request.background_color | default("black")%}
-{% set theme_color = request.theme_color | default('green')%}
+{% set theme_color = settings.color_scheme | default('green')%}
 {% set loader_nr = request.loader | default("8")%}
 {% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
 {% set border_radius = request.border_radius | default(0) %}
@@ -55,7 +55,7 @@
 
     orderbutton.prototype.srclink = function(){
         var params = [
-            { name: "theme_color", value: "{{request.theme_color | default('green')}}" },
+            { name: "theme_color", value: "{{settings.color_scheme | default('green')}}" },
             { name: "loader", value: "1" }
         ];
         var product_id = this.getDataProductId();

@@ -66,7 +66,7 @@ class ServiceTest extends \BBTestCase {
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('url')
-            ->will($this->returnValue('boxbilling.org/index.php/client/confirm-email/'));
+            ->will($this->returnValue('fossbilling.org/index.php/client/confirm-email/'));
 
         $di = new \Box_Di();
         $di['db'] = $database;
@@ -1016,7 +1016,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testauthorizeClient_DidntFoundEmail()
     {
-        $email = 'example@boxbilling.vm';
+        $email = 'example@fossbilling.vm';
         $password = '123456';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -1037,7 +1037,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testauthorizeClient()
     {
-        $email = 'example@boxbilling.vm';
+        $email = 'example@fossbilling.vm';
         $password = '123456';
 
         $clientModel = new \Model_Client();
@@ -1070,7 +1070,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testauthorizeClientEmailRequiredNotConfirmed()
     {
-        $email    = 'example@boxbilling.vm';
+        $email    = 'example@fossbilling.vm';
         $password = '123456';
 
         $clientModel = new \Model_Client();
@@ -1108,7 +1108,7 @@ class ServiceTest extends \BBTestCase {
 
     public function testauthorizeClientEmailRequiredConfirmed()
     {
-        $email    = 'example@boxbilling.vm';
+        $email    = 'example@fossbilling.vm';
         $password = '123456';
 
         $clientModel = new \Model_Client();

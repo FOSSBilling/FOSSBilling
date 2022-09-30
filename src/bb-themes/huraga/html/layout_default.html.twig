@@ -1,3 +1,9 @@
+{% if settings.color_scheme %}
+    {% set theme_color = 'css/huraga-'~settings.color_scheme~'.css' %}
+{% else %}
+    {% set theme_color = 'css/huraga-green.css' %}
+{% endif %}
+
 <!DOCTYPE html>
 <html class="no-js" lang="en">
 <head>
@@ -15,7 +21,7 @@
 
     {% block opengraph %}{% endblock %}
 
-    <link rel='stylesheet' type='text/css' href="{{ ('css/huraga-' ~ settings.color_scheme ~ '.css') | asset_url }}">
+    <link rel='stylesheet' type='text/css' href="{{ theme_color | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ 'css/plugins/jquery.jgrowl.css' | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ 'css/logos.css' | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ 'css/flags16.css' | asset_url }}">

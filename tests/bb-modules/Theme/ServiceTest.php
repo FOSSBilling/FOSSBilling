@@ -369,7 +369,7 @@ class ServiceTest extends \BBTestCase {
     public function testgetCurrentAdminAreaTheme()
     {
         $configMock = array(
-            'url' => 'boxbilling.org/'
+            'url' => 'fossbilling.org/'
         );
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -418,7 +418,7 @@ class ServiceTest extends \BBTestCase {
 
         $result = $this->service->getCurrentClientAreaThemeCode();
         $this->assertIsString($result);
-        $this->assertEquals('boxbilling', $result);
+        $this->assertEquals('huraga', $result);
     }
 
     public function testuploadAssets()

@@ -61,7 +61,7 @@ class Box_MailTest extends PHPUnit\Framework\TestCase
 
     public function testsetFrom()
     {
-        $context = 'jobs@boxbilling.org';
+        $context = 'jobs@fossbilling.org';
         $mail = new Box_Mail();
 
         $result = $mail->setFrom($context);
@@ -83,7 +83,7 @@ class Box_MailTest extends PHPUnit\Framework\TestCase
 
     public function testsetReplyTo()
     {
-        $context = 'do-not-reply@boxbilling.org';
+        $context = 'do-not-reply@fossbilling.org';
         $mail = new Box_Mail();
 
         $result = $mail->setReplyTo($context);
@@ -92,7 +92,7 @@ class Box_MailTest extends PHPUnit\Framework\TestCase
 
     public function testaddTo()
     {
-        $context = 'bcc@boxbilling.org';
+        $context = 'bcc@fossbilling.org';
         $mail = new Box_Mail();
 
         $result = $mail->addTo($context);

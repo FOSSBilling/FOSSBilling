@@ -464,7 +464,7 @@ class ServiceTest extends \BBTestCase
                     'list' => array(
                         0 => array(
                             'id'    => 1,
-                            'email' => 'staff@boxbilling.org',
+                            'email' => 'staff@fossbilling.org',
                             'name'  => 'George'
                         )
                     )
@@ -480,7 +480,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($clientModel));
         $clientApiArray = array(
             'id'         => 1,
-            'email'      => 'staff@boxbilling.org',
+            'email'      => 'staff@fossbilling.org',
             'first_name' => 'John',
             'last_name'  => 'Smith'
         );

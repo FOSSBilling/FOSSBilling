@@ -27,7 +27,7 @@ class AdminTest extends \BBTestCase {
         $urlMock = $this->getMockBuilder('Box_Url')->getMock();
         $urlMock->expects($this->atLeastOnce())
             ->method('adminLink')
-            ->willReturn('http://boxbilling.org/index.php?_url=/' . $link);
+            ->willReturn('https://fossbilling.org/index.php?_url=/' . $link);
         $di['url'] = $urlMock;
 
         $controllerAdmin = new \Box\Mod\Activity\Controller\Admin();

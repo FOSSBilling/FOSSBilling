@@ -1,5 +1,5 @@
-{% if request.theme_color %}
-    {% set theme_color = 'css/huraga-'~request.theme_color~'.css' %}
+{% if settings.color_scheme %}
+    {% set theme_color = 'css/huraga-'~settings.color_scheme~'.css' %}
 {% else %}
     {% set theme_color = 'css/huraga-green.css' %}
 {% endif %}

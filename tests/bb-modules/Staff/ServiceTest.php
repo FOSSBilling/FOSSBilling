@@ -1585,7 +1585,7 @@ class ServiceTest extends \BBTestCase
 
     public function testauthorizeAdmin_DidntFoundEmail()
     {
-        $email    = 'example@boxbilling.vm';
+        $email    = 'example@fossbilling.vm';
         $password = '123456';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -1606,7 +1606,7 @@ class ServiceTest extends \BBTestCase
 
     public function testauthorizeAdmin()
     {
-        $email    = 'example@boxbilling.vm';
+        $email    = 'example@fossbilling.vm';
         $password = '123456';
 
         $model = new \Model_Admin();

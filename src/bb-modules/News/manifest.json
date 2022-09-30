@@ -6,6 +6,6 @@
     "homepage_url": "http://github.com/boxbilling/",
     "author":       "FOSSBilling",
     "author_url":   "http://extensions.boxbilling.org/",
-    "license":      "https://www.fossbilling.org/license.txt",
+    "license":      "https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE",
     "version":      "1.0.0"
 }

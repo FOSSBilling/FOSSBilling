@@ -54,7 +54,7 @@ class GuestTest extends \BBTestCase
         $apiMock->setService($serviceMock);
 
         $data = array(
-            'email' => 'example@boxbilling.org',
+            'email' => 'example@fossbilling.org',
             'password' => 'EasyToGuess',
         );
         $result = $apiMock->create($data);
@@ -74,7 +74,7 @@ class GuestTest extends \BBTestCase
         $this->api->setDi($di);
 
         $data = array(
-            'email' => 'example@boxbilling.org',
+            'email' => 'example@fossbilling.org',
             'password' => 'EasyToGuess',
         );
 

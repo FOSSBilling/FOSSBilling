@@ -1,3 +1,9 @@
+{% if settings.color_scheme %}
+    {% set theme_color = 'css/huraga-'~settings.color_scheme~'.css' %}
+{% else %}
+    {% set theme_color = 'css/huraga-green.css' %}
+{% endif %}
+
 <!DOCTYPE html>
 <html class="no-js" lang="en">
 <head>
@@ -13,7 +19,7 @@
     <meta name="generator" content="FOSSBilling {{ guest.system_version }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel='stylesheet' type='text/css' href="{{ ('css/huraga-' ~ settings.color_scheme ~ '.css') | asset_url }}">
+    <link rel='stylesheet' type='text/css' href="{{ theme_color | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ 'css/plugins/jquery.jgrowl.css' | asset_url }}">
 
     <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}">

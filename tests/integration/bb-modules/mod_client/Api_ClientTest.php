@@ -13,7 +13,7 @@ class Api_ClientTest extends BBDbApiTestCase
         $this->assertIsArray($array);
 
         $data = array(
-            'email' => 'newEmail@boxbilling.org',
+            'email' => 'newEmail@fossbilling.org',
             'first_name' => 'John',
             'last_name' => 'Doe',
             'gender' => 'male',
