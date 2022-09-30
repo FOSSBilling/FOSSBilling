@@ -10,13 +10,16 @@
  * https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE
  * If you did not receive a copy of the license and are unable to
  * obtain it through the world-wide-web, please send an email
- * to license@boxbilling.org so we can send you a copy immediately.
+ * to license@fossbilling.org so we can send you a copy immediately.
  *
- * @copyright Copyright (c) 2010-2020 BoxBilling (https://www.fossbilling.org)
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @copyright 2010-2020 BoxBilling (https://www.boxbilling.org)
+ *
  * @license   https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE
  * @version   $Id$
- * Created by bayamsoftware.com & @timothygwebb
- * For free hosting please visit host.bayamsoftware.com
+ *
+ * This file may contain code previously used in the BoxBilling project.
+ * Copyright BoxBilling, Inc 2011-2021
  */
  
 /**
