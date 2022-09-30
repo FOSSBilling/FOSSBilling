@@ -15,9 +15,9 @@
 
     {% block opengraph %}{% endblock %}
     {% if 'https://' in app.request.uri %}
-        <link rel='stylesheet' type='text/css' href="https://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold">
+        <link rel='stylesheet' href="https://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold">
     {% else %}
-        <link rel='stylesheet' type='text/css' href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold">
+        <link rel='stylesheet' href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold">
     {% endif %}
     <link rel='stylesheet' type='text/css' href="{{ ('css/huraga-' ~ settings.color_scheme ~ '.css') | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ 'css/plugins/jquery.jgrowl.css' | asset_url }}">
