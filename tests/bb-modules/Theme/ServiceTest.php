@@ -418,7 +418,7 @@ class ServiceTest extends \BBTestCase {
 
         $result = $this->service->getCurrentClientAreaThemeCode();
         $this->assertIsString($result);
-        $this->assertEquals('boxbilling', $result);
+        $this->assertEquals('huraga', $result);
     }
 
     public function testuploadAssets()
