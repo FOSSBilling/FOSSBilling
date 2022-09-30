@@ -40,7 +40,7 @@
                     {{ post.message|truncate(80) }}</td>
                 <td>{{ post.created_at|timeago }} ago</td>
                 <td class="actions">
-                    <a class="bb-button btn14" href="{{ '/forum/topic'|alink }}/{{ post.forum_topic_id }}#msg-{{ post.id }}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                    <a class="bb-button btn14" href="{{ '/forum/topic'|alink }}/{{ post.forum_topic_id }}#msg-{{ post.id }}"><img src="assets/icons/edit.svg" alt=""></a>
                     <a class="bb-button btn14 bb-rm-tr api-link" href="{{ 'api/admin/forum/message_delete'|link({ 'id': post.id })}}" data-api-confirm="Are you sure?"><img src="assets/icons/delete.svg" alt=""></a>
                 </td>
             </tr>
@@ -80,7 +80,7 @@
                     <td>{{ mf.status_name(topic.status) }}</td>
                     <td>{{ mf.q(topic.sticky) }}</td>
                     <td class="actions">
-                        <a class="bb-button btn14" href="{{ '/forum/topic'|alink }}/{{topic.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                        <a class="bb-button btn14" href="{{ '/forum/topic'|alink }}/{{topic.id}}"><img src="assets/icons/edit.svg" alt=""></a>
                         <a class="bb-button btn14 bb-rm-tr api-link" href="{{'api/admin/forum/topic_delete'|link({'id' : topic.id}) }}" data-api-confirm="Are you sure?" data-api-redirect="{{ 'forum'|alink }}"><img src="assets/icons/delete.svg" alt=""></a>
                     </td>
                 </tr>
@@ -204,7 +204,7 @@
                             <td><input type="text" name="priority[{{ forum.id }}]" value="{{ forum.priority }}" style="width:30px;"></td>
                             <td>{{forum.title}}</td>
                             <td class="actions" style="width:13%">
-                                <a class="bb-button btn14" href="{{ '/forum/'|alink }}/{{forum.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                                <a class="bb-button btn14" href="{{ '/forum/'|alink }}/{{forum.id}}"><img src="assets/icons/edit.svg" alt=""></a>
                                 <a class="bb-button btn14 bb-rm-tr api-link" href="{{'api/admin/forum/delete'|link({ 'id': forum.id }) }}" data-api-redirect="{{ 'forum'|alink }}"><img src="assets/icons/delete.svg" alt=""></a>
                             </td>
                         </tr>

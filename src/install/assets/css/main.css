@@ -344,7 +344,7 @@ input[type=submit], input[type=reset], input[type=button], button, .button { fon
 
 .leftNav ul li.dash a span { background: url(../images/icons/dark/download.png) no-repeat 10px; }
 .leftNav ul li.graphs span { background: url(../images/icons/dark/graph.png) no-repeat 10px; }
-.leftNav ul li.forms a span { background: url(../images/icons/dark/pencil.png) no-repeat 10px; }
+.leftNav ul li.forms a span { background: url(../assets/icons/edit.svg) no-repeat 10px; }
 .leftNav ul li.gallery a span { background: url(../images/icons/dark/preview.png) no-repeat 10px; }
 .leftNav ul li.typo span { background: url(../images/icons/dark/create.png) no-repeat 10px; }
 .leftNav ul li.tables a span { background: url(../images/icons/dark/frames.png) no-repeat 10px; }

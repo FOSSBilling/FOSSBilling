@@ -39,7 +39,7 @@
                 <td>{{ mf.status_name(msg.status) }}</td>
                 <td class="actions">
                     <a class="bb-button btn14 api-link" href="{{ 'api/admin/massmailer/copy'|link({'id' : msg.id}) }}" data-api-redirect="{{ 'massmailer'|alink }}" title="Copy"><img src="images/icons/dark/baloons.png" alt=""></a>
-                    <a class="bb-button btn14" href="{{ '/massmailer/message'|alink }}/{{msg.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                    <a class="bb-button btn14" href="{{ '/massmailer/message'|alink }}/{{msg.id}}"><img src="assets/icons/edit.svg" alt=""></a>
                     <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/massmailer/delete'|link({'id' : msg.id}) }}" data-api-redirect="{{ 'massmailer'|alink }}"><img src="assets/icons/delete.svg" alt=""></a>
                 </td>
             </tr>
