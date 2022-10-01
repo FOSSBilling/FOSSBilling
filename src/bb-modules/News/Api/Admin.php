@@ -77,7 +77,6 @@ class Admin extends \Api_Abstract
      * @param int $id - news item ID
      *
      * @optional string $title - news item title
-     * @optional string $description - news item description
      * @optional string $slug - news item slug
      * @optional string $content - news item content
      * @optional string $status - news item status
