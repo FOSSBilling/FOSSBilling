@@ -160,7 +160,6 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->dispense('Post');
         $model->admin_id = $this->getIdentity()->id;
         $model->title = $data['title'];
-        $model->description = null;
         $model->slug = $this->di['tools']->slug($data['title']);
         $model->status = $this->di['array_get']($data, 'status', null);
         $model->content = $this->di['array_get']($data, 'content', null);
