@@ -133,12 +133,11 @@ LOCK TABLES `extension` WRITE;
 
 INSERT INTO `extension` (`id`, `type`, `name`, `status`, `version`, `manifest`)
 VALUES
-	(1,'mod','forum','installed','1.0.0','{\"id\":\"forum\",\"type\":\"mod\",\"name\":\"Forum\",\"description\":\"Forum for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
-	(2,'mod','kb','installed','1.0.0','{\"id\":\"kb\",\"type\":\"mod\",\"name\":\"Knowledge base\",\"description\":\"Knowledge base module for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
-	(3,'mod','news','installed','1.0.0','{\"id\":\"news\",\"type\":\"mod\",\"name\":\"News\",\"description\":\"News module for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
-	(4,'mod','branding','installed','1.0.0','{\"id\":\"branding\",\"type\":\"mod\",\"name\":\"Branding\",\"description\":\"FOSSBilling branding module.\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
-	(5,'mod','redirect','installed','1.0.0','{\"id\":\"redirect\",\"type\":\"mod\",\"name\":\"Redirect\",\"description\":\"Manage redirects\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/www.fossbilling.org\",\"license\":\"GPL version 2 or later - https:\\/\\/www.gnu.org\\/licenses\\/old-licenses\\/gpl-2.0.html\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
-	(6,'mod','wysiwyg','installed','4.22','{\"id\":\"wysiwyg\",\"type\":\"mod\",\"name\":\"WYSIWYG\",\"description\":\"Integrates a What You See Is What You Get (WYSIWYG) editor to your admin panel.\",\"homepage_url\":\"https:\/\/github.com\/FOSSBilling\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\/\/fossbilling.org\/\",\"license\":\"GPL version 2 or later - https:\/\/www.gnu.org\/licenses\/old-licenses\/gpl-2.0.html\",\"version\":\"4.22\",\"icon_url\":\"\/bb-modules\/Wysiwyg\/icon.png\",\"download_url\":null,\"project_url\":\"https:\/\/fossbilling.org\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}');
+	(1,'mod','kb','installed','1.0.0','{\"id\":\"kb\",\"type\":\"mod\",\"name\":\"Knowledge base\",\"description\":\"Knowledge base module for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
+	(2,'mod','news','installed','1.0.0','{\"id\":\"news\",\"type\":\"mod\",\"name\":\"News\",\"description\":\"News module for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
+	(3,'mod','branding','installed','1.0.0','{\"id\":\"branding\",\"type\":\"mod\",\"name\":\"Branding\",\"description\":\"FOSSBilling branding module.\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
+	(4,'mod','redirect','installed','1.0.0','{\"id\":\"redirect\",\"type\":\"mod\",\"name\":\"Redirect\",\"description\":\"Manage redirects\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/www.fossbilling.org\",\"license\":\"GPL version 2 or later - https:\\/\\/www.gnu.org\\/licenses\\/old-licenses\\/gpl-2.0.html\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
+	(5,'mod','wysiwyg','installed','4.22','{\"id\":\"wysiwyg\",\"type\":\"mod\",\"name\":\"WYSIWYG\",\"description\":\"Integrates a What You See Is What You Get (WYSIWYG) editor to your admin panel.\",\"homepage_url\":\"https:\/\/github.com\/FOSSBilling\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\/\/fossbilling.org\/\",\"license\":\"GPL version 2 or later - https:\/\/www.gnu.org\/licenses\/old-licenses\/gpl-2.0.html\",\"version\":\"4.22\",\"icon_url\":\"\/bb-modules\/Wysiwyg\/icon.png\",\"download_url\":null,\"project_url\":\"https:\/\/fossbilling.org\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}');
 
 /*!40000 ALTER TABLE `extension` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -155,30 +154,6 @@ UNLOCK TABLES;
 
 
 # Dump of table form_field
-# ------------------------------------------------------------
-
-
-
-# Dump of table forum
-# ------------------------------------------------------------
-
-LOCK TABLES `forum` WRITE;
-/*!40000 ALTER TABLE `forum` DISABLE KEYS */;
-
-INSERT INTO `forum` (`id`, `category`, `title`, `description`, `slug`, `status`, `priority`, `created_at`, `updated_at`)
-VALUES
-	(1,'General','Discussions Rules','Please read our forum rules before posting to our forums','forum-rules','active',1,'2021-01-01 12:00:00','2021-01-01 12:00:00');
-
-/*!40000 ALTER TABLE `forum` ENABLE KEYS */;
-UNLOCK TABLES;
-
-
-# Dump of table forum_topic
-# ------------------------------------------------------------
-
-
-
-# Dump of table forum_topic_message
 # ------------------------------------------------------------
 
 

@@ -84,15 +84,6 @@ class Box_Mod_Client_ServiceTest extends ApiTestCase
         $systemEntry->updated_at      = date('Y-m-d H:i:s');
         $this->di['db']->store($systemEntry);
 
-        //Client has forum topic message
-        $msg                 = $this->di['db']->dispense('ForumTopicMessage');
-        $msg->client_id      = $id;
-        $msg->message        = 'PHP UNIT MESSAGE';
-        $msg->ip             = '10.0.0.1';
-        $msg->created_at     = date('Y-m-d H:i:s');
-        $msg->updated_at     = date('Y-m-d H:i:s');
-        $this->di['db']->store($msg);
-
         //Client has passwordReset record
         $r = $this->di['db']->dispense('ClientPasswordReset');
         $r->client_id   = $id;
@@ -122,8 +113,6 @@ class Box_Mod_Client_ServiceTest extends ApiTestCase
         $this->assertNull($model);
         $model = $this->di['db']->load('ActivitySystem', $systemEntry->id);
         $this->assertNull($model);
-        $model = $this->di['db']->find('ForumTopicMessage', 'client_id = ?', array($msg->client_id));
-        $this->assertEmpty($model);
         $model = $this->di['db']->load('ClientPasswordReset', $r->id);
         $this->assertNull($model);
         $model = $this->di['db']->find('ClientBalance', 'client_id = ?', array($clientModel->id));

@@ -162,12 +162,11 @@ LOCK TABLES `extension` WRITE;
 
 INSERT INTO `extension` (`id`, `type`, `name`, `status`, `version`, `manifest`)
 VALUES
-	(1,'mod','forum','installed','1.0.0','{\"id\":\"forum\",\"type\":\"mod\",\"name\":\"Forum\",\"description\":\"Forum for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
-	(2,'mod','kb','installed','1.0.0','{\"id\":\"kb\",\"type\":\"mod\",\"name\":\"Knowledge base\",\"description\":\"Knowledge base module for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
-	(3,'mod','news','installed','1.0.0','{\"id\":\"news\",\"type\":\"mod\",\"name\":\"News\",\"description\":\"News module for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
-	(4,'mod','branding','installed','1.0.0','{\"id\":\"branding\",\"type\":\"mod\",\"name\":\"Branding\",\"description\":\"FOSSBilling branding module. Can be deactivated.\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
-	(5,'mod','redirect','installed','1.0.0','{\"id\":\"redirect\",\"type\":\"mod\",\"name\":\"Redirect\",\"description\":\"Manage redirects\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/www.fossbilling.org\",\"license\":\"GPL version 2 or later - https:\\/\\/www.gnu.org\\/licenses\\/old-licenses\\/gpl-2.0.html\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
-	(6,'mod','wysiwyg','installed','4.22','{\"id\":\"wysiwyg\",\"type\":\"mod\",\"name\":\"Wysiwyg\",\"description\":\"Integrates a What You See Is What You Get (WYSIWYG) editor to your admin panel.\",\"homepage_url\":\"https:\/\/github.com\/FOSSBilling\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\/\/fossbilling.org\/\",\"license\":\"GPL version 2 or later - https:\/\/www.gnu.org\/licenses\/old-licenses\/gpl-2.0.html\",\"version\":\"4.22\",\"icon_url\":\"\/bb-modules\/Wysiwyg\/icon.png\",\"download_url\":null,\"project_url\":\"https:\/\/fossbilling.org\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}');
+	(1,'mod','kb','installed','1.0.0','{\"id\":\"kb\",\"type\":\"mod\",\"name\":\"Knowledge base\",\"description\":\"Knowledge base module for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
+	(2,'mod','news','installed','1.0.0','{\"id\":\"news\",\"type\":\"mod\",\"name\":\"News\",\"description\":\"News module for FOSSBilling\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
+	(3,'mod','branding','installed','1.0.0','{\"id\":\"branding\",\"type\":\"mod\",\"name\":\"Branding\",\"description\":\"FOSSBilling branding module. Can be deactivated.\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/fossbilling.org\\/\",\"license\":\"https:\\/\\/www.fossbilling.org\\/license.txt\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
+	(4,'mod','redirect','installed','1.0.0','{\"id\":\"redirect\",\"type\":\"mod\",\"name\":\"Redirect\",\"description\":\"Manage redirects\",\"homepage_url\":\"https:\\/\\/github.com\\/FOSSBilling\\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\\/\\/www.fossbilling.org\",\"license\":\"GPL version 2 or later - https:\\/\\/www.gnu.org\\/licenses\\/old-licenses\\/gpl-2.0.html\",\"version\":\"1.0.0\",\"icon_url\":null,\"download_url\":null,\"project_url\":\"https:\\/\\/fossbilling.org\\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}\n'),
+	(5,'mod','wysiwyg','installed','4.22','{\"id\":\"wysiwyg\",\"type\":\"mod\",\"name\":\"Wysiwyg\",\"description\":\"Integrates a What You See Is What You Get (WYSIWYG) editor to your admin panel.\",\"homepage_url\":\"https:\/\/github.com\/FOSSBilling\/\",\"author\":\"FOSSBilling\",\"author_url\":\"https:\/\/fossbilling.org\/\",\"license\":\"GPL version 2 or later - https:\/\/www.gnu.org\/licenses\/old-licenses\/gpl-2.0.html\",\"version\":\"4.22\",\"icon_url\":\"\/bb-modules\/Wysiwyg\/icon.png\",\"download_url\":null,\"project_url\":\"https:\/\/fossbilling.org\/\",\"minimum_boxbilling_version\":null,\"maximum_boxbilling_version\":null}');
 
 /*!40000 ALTER TABLE `extension` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -185,42 +184,39 @@ VALUES
 	(2,NULL,'mod_hook','mod','activity','listener','onAfterAdminLogin','2022-01-01 12:00:00','2022-01-01 12:00:00'),
 	(3,NULL,'mod_hook','mod','client','listener','onAfterClientSignUp','2022-01-01 12:00:00','2022-01-01 12:00:00'),
 	(4,NULL,'mod_hook','mod','extension','listener','onBeforeAdminCronRun','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(5,NULL,'mod_hook','mod','forum','listener','onAfterClientCreateForumTopic','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(6,NULL,'mod_hook','mod','forum','listener','onAfterAdminRepliedInForum','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(7,NULL,'mod_hook','mod','forum','listener','onAfterClientRepliedInForum','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(8,NULL,'mod_hook','mod','hook','listener','onAfterAdminActivateExtension','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(9,NULL,'mod_hook','mod','hook','listener','onAfterAdminDeactivateExtension','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(10,NULL,'mod_hook','mod','invoice','listener','onAfterAdminInvoicePaymentReceived','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(11,NULL,'mod_hook','mod','invoice','listener','onAfterAdminInvoiceApprove','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(12,NULL,'mod_hook','mod','invoice','listener','onAfterAdminInvoiceReminderSent','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(13,NULL,'mod_hook','mod','invoice','listener','onAfterAdminCronRun','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(14,NULL,'mod_hook','mod','invoice','listener','onEventAfterInvoiceIsDue','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(15,NULL,'mod_hook','mod','order','listener','onAfterAdminOrderActivate','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(16,NULL,'mod_hook','mod','order','listener','onAfterAdminOrderRenew','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(17,NULL,'mod_hook','mod','order','listener','onAfterAdminOrderSuspend','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(18,NULL,'mod_hook','mod','order','listener','onAfterAdminOrderUnsuspend','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(19,NULL,'mod_hook','mod','order','listener','onAfterAdminOrderCancel','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(20,NULL,'mod_hook','mod','order','listener','onAfterAdminOrderUncancel','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(21,NULL,'mod_hook','mod','servicedomain','listener','onBeforeAdminCronRun','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(22,NULL,'mod_hook','mod','staff','listener','onAfterClientOrderCreate','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(23,NULL,'mod_hook','mod','staff','listener','onAfterClientOpenTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(24,NULL,'mod_hook','mod','staff','listener','onAfterClientReplyTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(25,NULL,'mod_hook','mod','staff','listener','onAfterClientCloseTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(26,NULL,'mod_hook','mod','staff','listener','onAfterGuestPublicTicketOpen','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(27,NULL,'mod_hook','mod','staff','listener','onAfterClientSignUp','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(28,NULL,'mod_hook','mod','staff','listener','onAfterGuestPublicTicketReply','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(29,NULL,'mod_hook','mod','staff','listener','onAfterGuestPublicTicketClose','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(30,NULL,'mod_hook','mod','support','listener','onAfterClientOpenTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(31,NULL,'mod_hook','mod','support','listener','onAfterAdminOpenTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(32,NULL,'mod_hook','mod','support','listener','onAfterAdminCloseTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(33,NULL,'mod_hook','mod','support','listener','onAfterAdminReplyTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(34,NULL,'mod_hook','mod','support','listener','onAfterGuestPublicTicketOpen','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(35,NULL,'mod_hook','mod','support','listener','onAfterAdminPublicTicketOpen','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(36,NULL,'mod_hook','mod','support','listener','onAfterAdminPublicTicketReply','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(37,NULL,'mod_hook','mod','support','listener','onAfterAdminPublicTicketClose','2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(38,NULL,'mod_order',NULL,NULL,'config',NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(39,NULL,'mod_email',NULL,NULL,'config',NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(40,NULL,'mod_invoice',NULL,NULL,'config',NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00');
+	(5,NULL,'mod_hook','mod','hook','listener','onAfterAdminActivateExtension','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(6,NULL,'mod_hook','mod','hook','listener','onAfterAdminDeactivateExtension','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(7,NULL,'mod_hook','mod','invoice','listener','onAfterAdminInvoicePaymentReceived','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(8,NULL,'mod_hook','mod','invoice','listener','onAfterAdminInvoiceApprove','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(9,NULL,'mod_hook','mod','invoice','listener','onAfterAdminInvoiceReminderSent','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(10,NULL,'mod_hook','mod','invoice','listener','onAfterAdminCronRun','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(11,NULL,'mod_hook','mod','invoice','listener','onEventAfterInvoiceIsDue','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(12,NULL,'mod_hook','mod','order','listener','onAfterAdminOrderActivate','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(13,NULL,'mod_hook','mod','order','listener','onAfterAdminOrderRenew','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(14,NULL,'mod_hook','mod','order','listener','onAfterAdminOrderSuspend','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(15,NULL,'mod_hook','mod','order','listener','onAfterAdminOrderUnsuspend','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(16,NULL,'mod_hook','mod','order','listener','onAfterAdminOrderCancel','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(17,NULL,'mod_hook','mod','order','listener','onAfterAdminOrderUncancel','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(18,NULL,'mod_hook','mod','servicedomain','listener','onBeforeAdminCronRun','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(19,NULL,'mod_hook','mod','staff','listener','onAfterClientOrderCreate','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(20,NULL,'mod_hook','mod','staff','listener','onAfterClientOpenTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(21,NULL,'mod_hook','mod','staff','listener','onAfterClientReplyTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(22,NULL,'mod_hook','mod','staff','listener','onAfterClientCloseTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(23,NULL,'mod_hook','mod','staff','listener','onAfterGuestPublicTicketOpen','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(24,NULL,'mod_hook','mod','staff','listener','onAfterClientSignUp','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(25,NULL,'mod_hook','mod','staff','listener','onAfterGuestPublicTicketReply','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(26,NULL,'mod_hook','mod','staff','listener','onAfterGuestPublicTicketClose','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(27,NULL,'mod_hook','mod','support','listener','onAfterClientOpenTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(28,NULL,'mod_hook','mod','support','listener','onAfterAdminOpenTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(29,NULL,'mod_hook','mod','support','listener','onAfterAdminCloseTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(30,NULL,'mod_hook','mod','support','listener','onAfterAdminReplyTicket','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(31,NULL,'mod_hook','mod','support','listener','onAfterGuestPublicTicketOpen','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(32,NULL,'mod_hook','mod','support','listener','onAfterAdminPublicTicketOpen','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(33,NULL,'mod_hook','mod','support','listener','onAfterAdminPublicTicketReply','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(34,NULL,'mod_hook','mod','support','listener','onAfterAdminPublicTicketClose','2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(35,NULL,'mod_order',NULL,NULL,'config',NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(36,NULL,'mod_email',NULL,NULL,'config',NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(37,NULL,'mod_invoice',NULL,NULL,'config',NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00');
 
 /*!40000 ALTER TABLE `extension_meta` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -258,53 +254,6 @@ VALUES
 /*!40000 ALTER TABLE `form_field` ENABLE KEYS */;
 UNLOCK TABLES;
 
-
-# Dump of table forum
-# ------------------------------------------------------------
-
-LOCK TABLES `forum` WRITE;
-/*!40000 ALTER TABLE `forum` DISABLE KEYS */;
-
-INSERT INTO `forum` (`id`, `category`, `title`, `description`, `slug`, `status`, `priority`, `created_at`, `updated_at`)
-VALUES
-	(1,'General','Discussions Rules','Rules about discussions','forum-rules','active',1,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(2,'General','General Discussions','Discuss about everything','discuss-about-everything','active',2,'2022-01-01 12:00:00','2022-01-01 12:00:00');
-
-/*!40000 ALTER TABLE `forum` ENABLE KEYS */;
-UNLOCK TABLES;
-
-
-# Dump of table forum_topic
-# ------------------------------------------------------------
-
-LOCK TABLES `forum_topic` WRITE;
-/*!40000 ALTER TABLE `forum_topic` DISABLE KEYS */;
-
-INSERT INTO `forum_topic` (`id`, `forum_id`, `title`, `slug`, `status`, `sticky`, `views`, `created_at`, `updated_at`)
-VALUES
-	(1,1,'What about Installation','what-about-installation','active',0,2,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(2,1,'Read before posting','read-before-posting','active',0,3,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(3,2,'How to install FOSSBilling','how-to-install-boxbilling','active',0,20,'2022-01-01 12:00:00','2022-01-01 12:00:00');
-
-/*!40000 ALTER TABLE `forum_topic` ENABLE KEYS */;
-UNLOCK TABLES;
-
-
-# Dump of table forum_topic_message
-# ------------------------------------------------------------
-
-LOCK TABLES `forum_topic_message` WRITE;
-/*!40000 ALTER TABLE `forum_topic_message` DISABLE KEYS */;
-
-INSERT INTO `forum_topic_message` (`id`, `forum_topic_id`, `client_id`, `admin_id`, `message`, `ip`, `points`, `created_at`, `updated_at`)
-VALUES
-	(1,1,1,NULL,'Its is cool',NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(2,1,1,NULL,'Some other message',NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(3,2,1,NULL,'Some other message',NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
-	(4,3,2,NULL,'I have some question on how to install FOSSBilling?',NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00');
-
-/*!40000 ALTER TABLE `forum_topic_message` ENABLE KEYS */;
-UNLOCK TABLES;
 
 
 # Dump of table invoice

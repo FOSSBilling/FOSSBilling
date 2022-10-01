@@ -26,8 +26,4 @@
     {% if guest.extension_is_on({ 'mod': 'news' }) and admin.system_is_allowed({ 'mod': 'news'}) %}
     <li><a href="{{ 'news#tab-new'|alink }}">{{ 'Announcement'|trans }}</a></li>
     {% endif %}
-
-    {% if guest.extension_is_on({ 'mod': 'forum' }) and admin.system_is_allowed({ 'mod': 'forum'}) %}
-    <li><a href="{{ 'forum#tab-new'|alink }}">{{ 'Forum topic'|trans }}</a></li>
-    {% endif %}
 </ul>
