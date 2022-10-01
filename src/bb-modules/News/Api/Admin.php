@@ -101,7 +101,6 @@ class Admin extends \Api_Abstract
 
         $model->content = $this->di['array_get']($data, 'content', $model->content);
         $model->title = $this->di['array_get']($data, 'title', $model->title);
-        $model->description = $description;
         $model->slug = $this->di['array_get']($data, 'slug', $model->slug);
         $model->image = $this->di['array_get']($data, 'image', $model->image);
         $model->section = $this->di['array_get']($data, 'section', $model->section);
@@ -160,7 +159,6 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->dispense('Post');
         $model->admin_id = $this->getIdentity()->id;
         $model->title = $data['title'];
-        $model->description = null;
         $model->slug = $this->di['tools']->slug($data['title']);
         $model->status = $this->di['array_get']($data, 'status', null);
         $model->content = $this->di['array_get']($data, 'content', null);
