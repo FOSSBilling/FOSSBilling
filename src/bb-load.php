@@ -11,16 +11,20 @@
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
-defined('APPLICATION_ENV') || define('APPLICATION_ENV', (getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'production'));
-define('BB_PATH_ROOT', dirname(__FILE__));
-define('BB_PATH_VENDOR', BB_PATH_ROOT.'/vendor');
-define('BB_PATH_LIBRARY', BB_PATH_ROOT.'/bb-library');
-define('BB_PATH_THEMES', BB_PATH_ROOT.'/bb-themes');
-define('BB_PATH_MODS', BB_PATH_ROOT.'/bb-modules');
-define('BB_PATH_LANGS', BB_PATH_ROOT.'/bb-locale');
-define('BB_PATH_UPLOADS', BB_PATH_ROOT.'/bb-uploads');
-define('BB_PATH_DATA', BB_PATH_ROOT.'/bb-data');
-define('isCLI', 'cli' == php_sapi_name());
+
+use Whoops\Handler\PrettyPageHandler;
+use Whoops\Run;
+
+defined('APPLICATION_ENV') || define('APPLICATION_ENV', (getenv('APPLICATION_ENV') ?: 'production'));
+const BB_PATH_ROOT = __DIR__;
+const BB_PATH_VENDOR = BB_PATH_ROOT . '/vendor';
+const BB_PATH_LIBRARY = BB_PATH_ROOT . '/bb-library';
+const BB_PATH_THEMES = BB_PATH_ROOT . '/bb-themes';
+const BB_PATH_MODS = BB_PATH_ROOT . '/bb-modules';
+const BB_PATH_LANGS = BB_PATH_ROOT . '/bb-locale';
+const BB_PATH_UPLOADS = BB_PATH_ROOT . '/bb-uploads';
+const BB_PATH_DATA = BB_PATH_ROOT . '/bb-data';
+const isCLI = 'cli' === PHP_SAPI;
 
 function handler_error(int $number, string $message, string $file, int $line)
 {
@@ -43,7 +47,7 @@ function handler_exception($e)
     if (isCLI) {
         echo 'Error #['.$e->getCode().'] occurred in ['.$e->getFile().'] at line ['.$e->getLine().']: ['.trim(strip_tags($e->getMessage())).']';
     } else {
-        if (APPLICATION_ENV == 'testing') {
+        if (APPLICATION_ENV === 'testing') {
             echo $e->getMessage().PHP_EOL;
 
             return;
@@ -51,7 +55,7 @@ function handler_exception($e)
         error_log($e->getMessage());
 
         if (defined('BB_MODE_API')) {
-            $code = $e->getCode() ? $e->getCode() : 9998;
+            $code = $e->getCode() ?: 9998;
             $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
             echo json_encode($result);
 
@@ -63,11 +67,11 @@ function handler_exception($e)
              * If advanced debugging is enabled, print Whoops instead of our error page.
              * flip/whoops documentation: https://github.com/filp/whoops/blob/master/docs/API%20Documentation.md.
              */
-            $whoops = new \Whoops\Run();
-            $prettyPage = new \Whoops\Handler\PrettyPageHandler();
+            $whoops = new Run();
+            $prettyPage = new PrettyPageHandler();
             $prettyPage->setPageTitle('An error ocurred');
             $prettyPage->addDataTable('FOSSBilling environment', [
-        'PHP Version' => phpversion(),
+        'PHP Version' => PHP_VERSION,
         'Error code' => $e->getCode(),
       ]);
             $whoops->pushHandler($prettyPage);
@@ -78,15 +82,15 @@ function handler_exception($e)
         } else {
             $page = "<!DOCTYPE html>
       <html lang=\"en\">
-      
+
       <head>
           <meta charset=\"utf-8\">
           <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
           <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
           <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-      
+
           <title>An error ocurred</title>
-      
+
           <!-- Google font -->
           <link href=\"https://fonts.googleapis.com/css?family=Nunito:400,700\" rel=\"stylesheet\">
 
@@ -95,17 +99,17 @@ function handler_exception($e)
               -webkit-box-sizing: border-box;
                       box-sizing: border-box;
             }
-            
+
             body {
               padding: 0;
               margin: 0;
             }
-            
+
             #error {
               position: relative;
               height: 100vh;
             }
-            
+
             #error .error {
               position: absolute;
               left: 50%;
@@ -114,14 +118,14 @@ function handler_exception($e)
                   -ms-transform: translate(-50%, -50%);
                       transform: translate(-50%, -50%);
             }
-            
+
             .error {
               max-width: 560px;
               width: 100%;
               padding-left: 160px;
               line-height: 1.1;
             }
-            
+
             .error .error-container {
               position: absolute;
               left: 0;
@@ -133,7 +137,7 @@ function handler_exception($e)
               background-repeat: no-repeat;
               background-size: 124px 144px;
             }
-            
+
             .error .error-container:before {
               content: '';
               position: absolute;
@@ -146,7 +150,7 @@ function handler_exception($e)
               background-color: #f2f5f8;
               z-index: -1;
             }
-            
+
             .error h1 {
               font-family: 'Nunito', sans-serif;
               font-size: 65px;
@@ -156,7 +160,7 @@ function handler_exception($e)
               color: #151723;
               text-transform: uppercase;
             }
-            
+
             .error h2 {
               font-family: 'Nunito', sans-serif;
               font-size: 21px;
@@ -165,13 +169,13 @@ function handler_exception($e)
               text-transform: uppercase;
               color: #151723;
             }
-            
+
             .error p {
               font-family: 'Nunito', sans-serif;
               color: #999fa5;
               font-weight: 400;
             }
-            
+
             .error a {
               font-family: 'Nunito', sans-serif;
               display: inline-block;
@@ -180,7 +184,7 @@ function handler_exception($e)
               text-decoration: none;
               color: #388dbc;
             }
-            
+
             @media only screen and (max-width: 767px) {
               .error .error-container {
                 width: 110px;
@@ -200,7 +204,7 @@ function handler_exception($e)
               padding: 2px;
               font-size: 90%;
             }
-            
+
           </style>
       </head>
       <body>
@@ -220,7 +224,7 @@ function handler_exception($e)
             echo sprintf('<center><p><a href="https://docs.fossbilling.org/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p></center>', urlencode($e->getMessage()));
             echo '<center><hr><p>Powered by <a href="https://fossbilling.org">FOSSBilling</a></p></center>
       </body>
-      
+
       </html>';
         }
     }
@@ -237,8 +241,8 @@ if (!file_exists(BB_PATH_VENDOR)) {
 // Multisite support. Load new configuration depending on the current hostname
 // If being run from CLI, first parameter must be the hostname
 $configPath = BB_PATH_ROOT.'/bb-config.php';
-if ((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || ('cli' == php_sapi_name() && isset($argv[1]))) {
-    if ('cli' == php_sapi_name()) {
+if ((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || ('cli' === PHP_SAPI && isset($argv[1]))) {
+    if ('cli' === PHP_SAPI) {
         $host = $argv[1];
     } else {
         $host = $_SERVER['HTTP_HOST'];
@@ -251,12 +255,12 @@ if ((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || ('cli' == php_sap
 }
 
 // Try to check if configuration is available
-if (!file_exists($configPath) || 0 == filesize($configPath)) {
+if (!file_exists($configPath) || 0 === filesize($configPath)) {
     // Try to create an empty configuration file
     @file_put_contents($configPath, '');
 
-    $base_url = 'http'.(isset($_SERVER['HTTPS']) && ('on' == $_SERVER['HTTPS'] || 1 == $_SERVER['HTTPS']) || isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && 'https' == $_SERVER['HTTP_X_FORWARDED_PROTO'] ? 's' : '').'://'.$_SERVER['HTTP_HOST'];
-    $base_url .= preg_replace('@/+$@', '', dirname($_SERVER['SCRIPT_NAME']));
+    $base_url = 'http'.((isset($_SERVER['HTTPS']) && ('on' === $_SERVER['HTTPS'] || 1 == $_SERVER['HTTPS'])) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && 'https' === $_SERVER['HTTP_X_FORWARDED_PROTO']) ? 's' : '').'://'.$_SERVER['HTTP_HOST'];
+    $base_url .= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
     $url = $base_url.'/install/index.php';
 
     if (file_exists(BB_PATH_ROOT.'/install/index.php')) {
@@ -264,7 +268,7 @@ if (!file_exists($configPath) || 0 == filesize($configPath)) {
     }
 
     $configFile = pathinfo($configPath, PATHINFO_BASENAME);
-    $msg = sprintf("Your <b><em>$configFile</em></b> file seems to be invalid. It's possible that your preexisting configuration file may not contain the required configuration parameters or have become corrupted. FOSSBilling needs to have a valid configuration file present in order to function properly.</p> <p>Please use the example config as reference <a target='_blank' href='https://raw.githubusercontent.com/FOSSBilling/FOSSBilling/master/src/bb-config-sample.php'>here</a>. You may need to manually restore a old config file or fix your existing one.</p>");
+    $msg = "Your <b><em>$configFile</em></b> file seems to be invalid. It's possible that your preexisting configuration file may not contain the required configuration parameters or have become corrupted. FOSSBilling needs to have a valid configuration file present in order to function properly.</p> <p>Please use the example config as reference <a target='_blank' href='https://raw.githubusercontent.com/FOSSBilling/FOSSBilling/master/src/bb-config-sample.php'>here</a>. You may need to manually restore a old config file or fix your existing one.</p>";
     throw new Exception($msg, 101);
 }
 
@@ -273,7 +277,7 @@ if (file_exists($configPath) && 0 !== filesize($configPath) && file_exists(BB_PA
     throw new Exception('For safety reasons, you have to delete the <b><em>/install</em></b> directory to start using FOSSBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.', 102);
 }
 
-$config = require_once $configPath;
+$config = require $configPath;
 require BB_PATH_VENDOR.'/autoload.php';
 
 date_default_timezone_set($config['timezone']);
@@ -283,7 +287,7 @@ define('BB_URL', $config['url']);
 define('BB_SEF_URLS', $config['sef_urls']);
 define('BB_PATH_CACHE', $config['path_data'].'/cache');
 define('BB_PATH_LOG', $config['path_data'].'/log');
-define('BB_SSL', ('https' === substr($config['url'], 0, 5)));
+define('BB_SSL', (str_starts_with($config['url'], 'https')));
 
 if ($config['sef_urls']) {
     define('BB_URL_API', $config['url'].'api/');

@@ -12,18 +12,17 @@
  * with this source code in the file LICENSE
  */
 
-require_once dirname(__FILE__).'/bb-load.php';
-$di = include dirname(__FILE__).'/bb-di.php';
+require_once __DIR__ .'/bb-load.php';
+$di = include __DIR__ .'/bb-di.php';
 $url = $di['request']->getQuery('_url');
 $admin_prefix = $di['config']['admin_area_prefix'];
 if (0 === strncasecmp($url, $admin_prefix, strlen($admin_prefix))) {
     $url = str_replace($admin_prefix, '', preg_replace('/\?.+/', '', $url));
     $app = new Box_AppAdmin();
-    $app->setUrl($url);
 } else {
     $app = new Box_AppClient();
-    $app->setUrl($url);
 }
+$app->setUrl($url);
 $di['translate']();
 $app->setDi($di);
 echo $app->run();

@@ -15,6 +15,8 @@
 
 declare(strict_types=1);
 
+use RedBeanPHP\Facade;
+
 $di = new Box_Di();
 
 $di['config'] = function () {
@@ -75,7 +77,7 @@ $di['pdo'] = function () use ($di) {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
     }
 
-    if ('mysql' == $c['type']) {
+    if ('mysql' === $c['type']) {
         $pdo->exec('SET NAMES "utf8"');
         $pdo->exec('SET CHARACTER SET utf8');
         $pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
@@ -89,14 +91,14 @@ $di['pdo'] = function () use ($di) {
 };
 
 $di['db'] = function () use ($di) {
-    require_once dirname(__FILE__).DIRECTORY_SEPARATOR.'rb.php';
+    require_once __DIR__ .DIRECTORY_SEPARATOR.'rb.php';
     R::setup($di['pdo']);
     \RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
 
     $helper = new Box_BeanHelper();
     $helper->setDi($di);
 
-    $mapper = new \RedBeanPHP\Facade();
+    $mapper = new Facade();
     $mapper->getRedBean()->setBeanHelper($helper);
     $freeze = isset($di['config']['db']['freeze']) ? (bool) $di['config']['db']['freeze'] : true;
     $mapper->freeze($freeze);
@@ -190,7 +192,7 @@ $di['twig'] = $di->factory(function () use ($di) {
         ->setTimezone($config['timezone']);
 
     // add globals
-    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 'XMLHttpRequest' == $_SERVER['HTTP_X_REQUESTED_WITH']) {
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 'XMLHttpRequest' === $_SERVER['HTTP_X_REQUESTED_WITH']) {
         $_GET['ajax'] = true;
     }
 
@@ -243,7 +245,7 @@ $di['loggedin_client'] = function () use ($di) {
 };
 
 $di['loggedin_admin'] = function () use ($di) {
-    if ('cli' == php_sapi_name() || 'cgi' == substr(php_sapi_name(), 0, 3)) {
+    if ('cli' === php_sapi_name() || 'cgi' === substr(php_sapi_name(), 0, 3)) {
         return $di['mod_service']('staff')->getCronAdmin();
     }
 
@@ -411,7 +413,7 @@ $di['password'] = function () { return new Box_Password(); };
 
 $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
     $tr = new Box_Translate();
-    
+
     if (!empty($textDomain)) {
         $tr->setDomain($textDomain);
     }

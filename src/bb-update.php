@@ -18,7 +18,7 @@
  */
 class BBPatch_25 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         // Change table data storage engine
         $query = 'ALTER TABLE `activity_admin_history` ENGINE = INNODB;
@@ -96,7 +96,7 @@ class BBPatch_25 extends BBPatchAbstract
  */
 class BBPatch_24 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         // Initializing meta description support for announcements
         $q = 'ALTER TABLE `post` ADD `description` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NULL  AFTER `title`';
@@ -114,7 +114,7 @@ class BBPatch_24 extends BBPatchAbstract
 
 class BBPatch_23 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE mod_email_queue CHANGE `from` sender varchar(255) ;';
         $this->execSql($q);
@@ -129,7 +129,7 @@ class BBPatch_23 extends BBPatchAbstract
 
 class BBPatch_22 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE  `client_balance` CHANGE  `rel_id`  `rel_id` VARCHAR(20) NULL DEFAULT NULL;';
         $this->execSql($q);
@@ -141,7 +141,7 @@ class BBPatch_22 extends BBPatchAbstract
  */
 class BBPatch_21 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'CREATE TABLE IF NOT EXISTS `mod_email_queue` (
           `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -168,7 +168,7 @@ class BBPatch_21 extends BBPatchAbstract
  */
 class BBPatch_20 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $tables = [
             'activity_admin_history' => ['created_at', 'updated_at'],
@@ -246,7 +246,7 @@ class BBPatch_20 extends BBPatchAbstract
  */
 class BBPatch_19 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE `client` MODIFY  `birthday` date;';
         $this->execSql($q);
@@ -258,7 +258,7 @@ class BBPatch_19 extends BBPatchAbstract
  */
 class BBPatch_18 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE `promo` ADD  `client_groups` TEXT NULL AFTER  `products`;';
         $this->execSql($q);
@@ -270,7 +270,7 @@ class BBPatch_18 extends BBPatchAbstract
  */
 class BBPatch_17 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = "CREATE TABLE IF NOT EXISTS `session` (
               `id` varchar(32) NOT NULL DEFAULT '',
@@ -287,7 +287,7 @@ class BBPatch_17 extends BBPatchAbstract
  */
 class BBPatch_16 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'CREATE TABLE IF NOT EXISTS `form` (
               `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -339,7 +339,7 @@ class BBPatch_16 extends BBPatchAbstract
  */
 class BBPatch_15 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'CREATE TABLE IF NOT EXISTS `client_order_meta` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -385,7 +385,7 @@ class BBPatch_15 extends BBPatchAbstract
  */
 class BBPatch_14 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE  `service_license` ADD  `checked_at` VARCHAR( 35 ) DEFAULT NULL AFTER  `plugin`;';
         $this->execSql($q);
@@ -397,7 +397,7 @@ class BBPatch_14 extends BBPatchAbstract
  */
 class BBPatch_13 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE  `forum` ADD  `category` VARCHAR( 255 ) NOT NULL AFTER  `id`;';
         $this->execSql($q);
@@ -415,7 +415,7 @@ class BBPatch_13 extends BBPatchAbstract
  */
 class BBPatch_12 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE  `admin` ADD  `permissions` TEXT NULL DEFAULT NULL AFTER  `api_token`;';
         $this->execSql($q);
@@ -427,7 +427,7 @@ class BBPatch_12 extends BBPatchAbstract
  */
 class BBPatch_11 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE  `client_order` ADD  `referred_by` VARCHAR( 255 ) NULL AFTER  `config`;';
         $this->execSql($q);
@@ -475,7 +475,7 @@ class BBPatch_11 extends BBPatchAbstract
  */
 class BBPatch_10 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE  `client` ADD  `auth_type` VARCHAR( 255 ) NULL AFTER  `role`;';
         $this->execSql($q);
@@ -489,7 +489,7 @@ class BBPatch_10 extends BBPatchAbstract
  */
 class BBPatch_9 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = "UPDATE currency SET format = REPLACE(format, '%price%' , '{{price}}' ) WHERE 1;";
         $this->execSql($q);
@@ -501,7 +501,7 @@ class BBPatch_9 extends BBPatchAbstract
  */
 class BBPatch_8 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE  `client` ADD  `salt` VARCHAR(255) NULL AFTER  `pass`;';
         $this->execSql($q);
@@ -516,7 +516,7 @@ class BBPatch_8 extends BBPatchAbstract
  */
 class BBPatch_7 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE  `email_template` ADD  `description` TEXT NULL AFTER  `content`;';
         $this->execSql($q);
@@ -556,7 +556,7 @@ class BBPatch_7 extends BBPatchAbstract
  */
 class BBPatch_6 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE  `transaction` CHANGE  `amount`  `amount` VARCHAR( 255 ) NULL DEFAULT NULL;';
         $this->execSql($q);
@@ -594,7 +594,7 @@ class BBPatch_6 extends BBPatchAbstract
  */
 class BBPatch_5 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE  `extension_meta` ADD  `client_id` INT NULL DEFAULT NULL AFTER  `id`;';
         $this->execSql($q);
@@ -663,7 +663,7 @@ class BBPatch_5 extends BBPatchAbstract
 
 class BBPatch_4 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = "INSERT INTO `email_template` (`action_code`, `category`, `enabled`, `subject`, `content`) VALUES ('support_ticket_admin_close', 'support', 1, 'Support Ticket Closed', '<p>Ticket ID: #{{ticket.id}}<br/> closed</p>\n<hr/>\n<p>{{company.signature}}</p>');";
         $this->execSql($q);
@@ -720,7 +720,7 @@ class BBPatch_4 extends BBPatchAbstract
 
 class BBPatch_3 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = "INSERT INTO `extension` (`type`, `name`, `status`, `version`) VALUES
             ('mod', 'branding', 'installed', '1.0.0');";
@@ -743,7 +743,7 @@ class BBPatch_3 extends BBPatchAbstract
 
 class BBPatch_2 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $q = 'ALTER TABLE  `client_order` CHANGE  `group_id`  `group_id` VARCHAR( 255 ) NULL DEFAULT NULL;';
         $this->execSql($q);
@@ -776,7 +776,7 @@ class BBPatch_2 extends BBPatchAbstract
 
 class BBPatch_1 extends BBPatchAbstract
 {
-    public function patch()
+    public function patch(): void
     {
         $query = "
         INSERT INTO `email_template` (`action_code`, `category`, `enabled`, `subject`, `content`) VALUES
@@ -791,9 +791,9 @@ class BBPatch_1 extends BBPatchAbstract
 
 abstract class BBPatchAbstract
 {
-    protected $pdo = null;
-    private $version = 0;
-    private $k = 'last_patch';
+    protected mixed $pdo;
+    private int $version;
+    private string $k = 'last_patch';
 
     public function __construct($di)
     {
@@ -805,12 +805,12 @@ abstract class BBPatchAbstract
 
     abstract public function patch();
 
-    public function donePatching()
+    public function donePatching(): void
     {
         $this->setParamValue($this->k, $this->version);
     }
 
-    protected function execSql($sql)
+    protected function execSql($sql): void
     {
         $stmt = $this->pdo->prepare($sql);
         try {
@@ -820,17 +820,17 @@ abstract class BBPatchAbstract
         }
     }
 
-    public function getVersion()
+    public function getVersion(): int
     {
         return $this->version;
     }
 
-    public function isPatched()
+    public function isPatched(): bool
     {
         return $this->getParamValue($this->k, 0) >= $this->version;
     }
 
-    private function setParamValue($param, $value)
+    private function setParamValue($param, $value): void
     {
         if (is_null($this->getParamValue($param))) {
             $query = 'INSERT INTO setting (param, value, public, updated_at, created_at) VALUES (:param, :value, 1, :u, :c)';
@@ -862,13 +862,13 @@ abstract class BBPatchAbstract
 
 $patches = [];
 foreach (get_declared_classes() as $class) {
-    if (false !== strpos($class, 'BBPatch_')) {
+    if (str_contains($class, 'BBPatch_')) {
         $patches[] = $class;
     }
 }
 
-require_once dirname(__FILE__) . '/bb-load.php';
-$di = include dirname(__FILE__) . '/bb-di.php';
+require_once __DIR__ . '/bb-load.php';
+$di = include __DIR__ . '/bb-di.php';
 
 error_log('Executing FOSSBilling update script');
 natsort($patches);
