@@ -5,7 +5,7 @@
  * Green color
  * 
  */
-@import url("http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold");
+@import url("./ibm-plex-sans.css");
 article,
 aside,
 details,
@@ -204,7 +204,7 @@ textarea {
 }
 body {
   margin: 0;
-  font-family: "PT Sans", Arial, sans-serif;
+  font-family: "IBM Plex Sans", Arial, sans-serif;
   font-size: 13px;
   line-height: 18px;
   color: #939699;
@@ -891,7 +891,7 @@ input,
 button,
 select,
 textarea {
-  font-family: "PT Sans", Arial, sans-serif;
+  font-family: "IBM Plex Sans", Arial, sans-serif;
 }
 label {
   display: block;
