@@ -13,16 +13,19 @@
  * with this source code in the file LICENSE
  */
 
+use Box\Mod\Email\Service;
+use Twig\Loader\FilesystemLoader;
+
 /**
  * @return bool
  *
  * @see http://stackoverflow.com/a/2886224/2728507
  */
-function isSSL()
+function isSSL(): bool
 {
     return
         (!empty($_SERVER['HTTPS']) && 'off' !== $_SERVER['HTTPS'])
-        || 443 == $_SERVER['SERVER_PORT'];
+        || 443 === $_SERVER['SERVER_PORT'];
 }
 
 date_default_timezone_set('UTC');
@@ -31,7 +34,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 1);
 ini_set('log_errors', '1');
-ini_set('error_log', dirname(__FILE__) . '/logs/php_error.log');
+ini_set('error_log', __DIR__ . '/logs/php_error.log');
 
 $protocol = isSSL() ? 'https' : 'http';
 $url = $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
@@ -39,30 +42,30 @@ $current_url = pathinfo($url, PATHINFO_DIRNAME);
 $root_url = str_replace('/install', '', $current_url) . '/';
 
 define('BB_URL', $root_url);
-define('BB_URL_INSTALL', BB_URL . 'install/');
-define('BB_URL_ADMIN', BB_URL . 'index.php?_url=/bb-admin');
+const BB_URL_INSTALL = BB_URL . 'install/';
+const BB_URL_ADMIN = BB_URL . 'index.php?_url=/bb-admin';
 
-define('BB_PATH_ROOT', realpath(dirname(__FILE__) . '/..'));
-define('BB_PATH_LIBRARY', BB_PATH_ROOT . '/bb-library');
-define('BB_PATH_VENDOR', BB_PATH_ROOT . '/vendor');
-define('BB_PATH_INSTALL_THEMES', BB_PATH_ROOT . '/install');
-define('BB_PATH_THEMES', BB_PATH_ROOT . '/bb-themes');
-define('BB_PATH_LICENSE', BB_PATH_ROOT . '/LICENSE');
-define('BB_PATH_SQL', BB_PATH_ROOT . '/install/sql/structure.sql');
-define('BB_PATH_SQL_DATA', BB_PATH_ROOT . '/install/sql/content.sql');
-define('BB_PATH_INSTALL', BB_PATH_ROOT . '/install');
-define('BB_PATH_CONFIG', BB_PATH_ROOT . '/bb-config.php');
-define('BB_PATH_CRON', BB_PATH_ROOT . '/bb-cron.php');
-define('BB_PATH_LANGS', BB_PATH_ROOT . '/bb-locale');
+define('BB_PATH_ROOT', dirname(__DIR__));
+const BB_PATH_LIBRARY = BB_PATH_ROOT . '/bb-library';
+const BB_PATH_VENDOR = BB_PATH_ROOT . '/vendor';
+const BB_PATH_INSTALL_THEMES = BB_PATH_ROOT . '/install';
+const BB_PATH_THEMES = BB_PATH_ROOT . '/bb-themes';
+const BB_PATH_LICENSE = BB_PATH_ROOT . '/LICENSE';
+const BB_PATH_SQL = BB_PATH_ROOT . '/install/sql/structure.sql';
+const BB_PATH_SQL_DATA = BB_PATH_ROOT . '/install/sql/content.sql';
+const BB_PATH_INSTALL = BB_PATH_ROOT . '/install';
+const BB_PATH_CONFIG = BB_PATH_ROOT . '/bb-config.php';
+const BB_PATH_CRON = BB_PATH_ROOT . '/bb-cron.php';
+const BB_PATH_LANGS = BB_PATH_ROOT . '/bb-locale';
 
 /*
   Config paths & templates
 */
-define('BB_PATH_HTACCESS', BB_PATH_ROOT . '/.htaccess');
-define('BB_PATH_HTACCESS_TEMPLATE', BB_PATH_ROOT . '/htaccess.txt');
+const BB_PATH_HTACCESS = BB_PATH_ROOT . '/.htaccess';
+const BB_PATH_HTACCESS_TEMPLATE = BB_PATH_ROOT . '/htaccess.txt';
 
-define('BB_HURAGA_CONFIG', BB_PATH_THEMES . '/huraga/config/settings_data.json');
-define('BB_HURAGA_CONFIG_TEMPLATE', BB_PATH_THEMES . '/huraga/config/settings_data.json.txt');
+const BB_HURAGA_CONFIG = BB_PATH_THEMES . '/huraga/config/settings_data.json';
+const BB_HURAGA_CONFIG_TEMPLATE = BB_PATH_THEMES . '/huraga/config/settings_data.json.txt';
 
 // Ensure library/ is on include_path
 set_include_path(implode(PATH_SEPARATOR, [
@@ -74,7 +77,7 @@ require BB_PATH_VENDOR . '/autoload.php';
 
 final class Box_Installer
 {
-    private $session;
+    private Session $session;
 
     public function __construct()
     {
@@ -82,7 +85,7 @@ final class Box_Installer
         $this->session = new Session();
     }
 
-    public function run($action)
+    public function run($action): void
     {
         switch ($action) {
             case 'check-db':
@@ -115,13 +118,13 @@ final class Box_Installer
                     $name = $_POST['db_name'];
                     if (!$this->canConnectToDatabase($host.';'.$port, $name, $user, $pass)) {
                         throw new Exception('Could not connect to the database, or the database does not exist');
-                    } else {
-                        $this->session->set('db_host', $host);
-                        $this->session->set('db_port', $port);
-                        $this->session->set('db_name', $name);
-                        $this->session->set('db_user', $user);
-                        $this->session->set('db_pass', $pass);
                     }
+
+                    $this->session->set('db_host', $host);
+                    $this->session->set('db_port', $port);
+                    $this->session->set('db_name', $name);
+                    $this->session->set('db_user', $user);
+                    $this->session->set('db_pass', $pass);
 
                     // Configuring administrator's account
                     $admin_email = $_POST['admin_email'];
@@ -129,11 +132,11 @@ final class Box_Installer
                     $admin_name = $_POST['admin_name'];
                     if (!$this->isValidAdmin($admin_email, $admin_pass, $admin_name)) {
                         throw new Exception('Administrator\'s account is not valid');
-                    } else {
-                        $this->session->set('admin_email', $admin_email);
-                        $this->session->set('admin_pass', $admin_pass);
-                        $this->session->set('admin_name', $admin_name);
                     }
+
+                    $this->session->set('admin_email', $admin_email);
+                    $this->session->set('admin_pass', $admin_pass);
+                    $this->session->set('admin_name', $admin_name);
 
                     $this->session->set('license', 'FOSSBilling CE');
                     $this->makeInstall($this->session);
@@ -145,8 +148,8 @@ final class Box_Installer
                         if (is_dir($dir)) {
                             $contents = scandir($dir);
                             foreach ($contents as $content) {
-                                if ('.' != $content && '..' != $content) {
-                                    if ('dir' == filetype($dir . '/' . $content)) {
+                                if ('.' !== $content && '..' !== $content) {
+                                    if ('dir' === filetype($dir . '/' . $content)) {
                                         rmAllDir($dir . '/' . $content);
                                     } else {
                                         unlink($dir . '/' . $content);
@@ -159,7 +162,7 @@ final class Box_Installer
                     }
                     try {
                         rmAllDir('../install');
-                    } catch (Exception $e) {
+                    } catch (Exception) {
                         // do nothing
                     }
                     echo 'ok';
@@ -215,7 +218,7 @@ final class Box_Installer
         }
     }
 
-    private function render($name, $vars = [])
+    private function render($name, $vars = []): string
     {
         $options = [
             'paths' => [BB_PATH_INSTALL_THEMES],
@@ -226,7 +229,7 @@ final class Box_Installer
             'auto_reload' => true,
             'cache' => false,
         ];
-        $loader = new \Twig\Loader\FilesystemLoader($options['paths']);
+        $loader = new FilesystemLoader($options['paths']);
         $twig = new Twig\Environment($loader, $options);
         // $twig->addExtension(new Twig_Extension_Optimizer());
         $twig->addGlobal('request', $_REQUEST);
@@ -235,7 +238,7 @@ final class Box_Installer
         return $twig->render($name, $vars);
     }
 
-    private function getLicense()
+    private function getLicense(): bool|string
     {
         $path = BB_PATH_LICENSE;
         if (!file_exists($path)) {
@@ -245,15 +248,15 @@ final class Box_Installer
         return file_get_contents($path);
     }
 
-    private function getPdo($host, $db, $user, $pass)
+    private function getPdo($host, $db, $user, $pass): PDO
     {
-        $pdo = new \PDO('mysql:host=' . $host,
+        $pdo = new PDO('mysql:host=' . $host,
             $user,
             $pass,
             [
-                \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+                PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             ]
         );
 
@@ -277,11 +280,11 @@ final class Box_Installer
         return $pdo;
     }
 
-    private function canConnectToDatabase($host, $db, $user, $pass)
+    private function canConnectToDatabase($host, $db, $user, $pass): bool
     {
         try {
             $this->getPdo($host, $db, $user, $pass);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             error_log($e->getMessage());
 
             return false;
@@ -290,7 +293,7 @@ final class Box_Installer
         return true;
     }
 
-    private function isValidAdmin($email, $pass, $name)
+    private function isValidAdmin($email, $pass, $name): bool
     {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return false;
@@ -307,7 +310,7 @@ final class Box_Installer
         return true;
     }
 
-    private function makeInstall($ns)
+    private function makeInstall($ns): bool
     {
         $this->_isValidInstallData($ns);
         $this->_createConfigurationFile($ns);
@@ -325,16 +328,15 @@ final class Box_Installer
 
         $sql = preg_split('/\;[\r]*\n/ism', $sql);
         $sql = array_map('trim', $sql);
-        $err = '';
         foreach ($sql as $query) {
             if (!trim($query)) {
                 continue;
             }
 
-            $res = $pdo->query($query);
+            $pdo->query($query);
         }
 
-        $passwordObject = new \Box_Password();
+        $passwordObject = new Box_Password();
         $stmt = $pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at) VALUES('admin', :admin_name, :admin_email, :admin_pass, 1, NOW(), NOW());");
         $stmt->execute([
             'admin_name' => $ns->get('admin_name'),
@@ -363,7 +365,7 @@ final class Box_Installer
         return true;
     }
 
-    private function _sendMail($ns)
+    private function _sendMail($ns): void
     {
         $admin_name = $ns->get('admin_name');
         $admin_email = $ns->get('admin_email');
@@ -384,7 +386,7 @@ final class Box_Installer
         @mail($admin_email, $subject, $content);
     }
 
-    private function _createConfigurationFile($data)
+    private function _createConfigurationFile($data): void
     {
         $output = $this->_getConfigOutput($data);
         if (!@file_put_contents(BB_PATH_CONFIG, $output)) {
@@ -392,7 +394,7 @@ final class Box_Installer
         }
     }
 
-    private function _getConfigOutput($ns)
+    private function _getConfigOutput($ns): string
     {
         // TODO: Why not just take the defaults from the bb.config.example.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
         $data = [
@@ -453,7 +455,7 @@ final class Box_Installer
         return $output;
     }
 
-    private function _isValidInstallData($ns)
+    private function _isValidInstallData($ns): void
     {
         if (!$this->canConnectToDatabase($ns->get('db_host'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'))) {
             throw new Exception('Can not connect to database');
@@ -464,12 +466,12 @@ final class Box_Installer
         }
     }
 
-    private function generateEmailTemplates()
+    private function generateEmailTemplates(): bool
     {
         define('BB_PATH_MODS', BB_PATH_ROOT . '/bb-modules');
 
-        $emailService = new \Box\Mod\Email\Service();
-        $di = $di = include BB_PATH_ROOT . '/bb-di.php';
+        $emailService = new Service();
+        $di = include BB_PATH_ROOT . '/bb-di.php';
         $di['translate']();
         $emailService->setDi($di);
 
