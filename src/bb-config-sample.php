@@ -6,7 +6,7 @@
  * to "bb-config.php" and fill in the values.
  * Import /install/sql/structure.sql to your database
  * Import /install/sql/content.sql to your database
- * Open browser http://www.yourdomain.com/index.php?_url=/bb-admin to create a new admin account.
+ * Open browser https://www.yourdomain.com/index.php?_url=/bb-admin to create a new admin account.
  * Remove /install directory
  */
 

@@ -419,7 +419,7 @@ class Box_Request implements \Box\InjectionAwareInterface
     }
 
     /**
-     * Gets web page that refers active request. ie: http://www.google.com
+     * Gets the web page that refers the active request. ie: https://www.google.com
      * @return string
      */
     public function getHTTPReferer()

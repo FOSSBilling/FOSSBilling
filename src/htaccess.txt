@@ -24,7 +24,7 @@ RewriteRule .* index.php [F]
 
 ### Redirect to www
 #RewriteCond %{HTTP_HOST} ^yourdomain.com
-#RewriteRule (.*) http://www.yourdomain.com/$1 [R=301,L]
+#RewriteRule (.*) https://www.yourdomain.com/$1 [R=301,L]
 
 # If you are receiving "Internal Server Error" message
 # Tune path if installing into subfolder, ie "RewriteBase /fossbilling/"

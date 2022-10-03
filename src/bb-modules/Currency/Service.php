@@ -541,14 +541,14 @@ class Service implements InjectionAwareInterface
         $to_Currency = urlencode($to);
 
         if ('EUR' == $from_Currency) {
-            $XML = simplexml_load_file('http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml');
+            $XML = simplexml_load_file('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml');
             foreach ($XML->Cube->Cube->Cube as $rate) {
                 if ($rate['currency'] == $to_Currency) {
                     return (float) $rate['rate'];
                 }
             }
         } elseif ('USD' == $from_Currency) {
-            $res = $this->di['guzzle_client']->get('http://api.currencylayer.com/live?access_key='.$this->getKey().'&currencies='.$to_Currency.'&format=1');
+            $res = $this->di['guzzle_client']->get('https://api.currencylayer.com/live?access_key='.$this->getKey().'&currencies='.$to_Currency.'&format=1');
             $array = json_decode($res->getBody(), true);
             if (true !== $array['success']) {
                 throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />'.$array['error']['info']);
