@@ -7,12 +7,16 @@ front-end:
 admin-panel:
 - src/bb-themes/admin_*
 
+huraga:
+- src/bb-themes/huraga/*
+
 composer:
 - src/composer.json
 - src/composer.lock
 
 installer:
 - src/install/*
+- bin/install.sh
 
 payments:
 - src/bb-library/Payment*
@@ -25,3 +29,8 @@ github-config:
 
 hosting:
 - src/bb-library/Server/Manager/*
+
+docker:
+- docker-compose.yaml
+- bin/install.sh
+- data/docker*
