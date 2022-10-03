@@ -385,7 +385,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Returns currently loggen in staff member information.
+     * Returns currently logged in staff member information.
      *
      * @return array
      *
