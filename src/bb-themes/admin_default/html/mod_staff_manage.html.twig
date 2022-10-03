@@ -100,13 +100,12 @@
 
         <div class="tab-pane fade" id="tab-permissions" role="tabpanel">
             <div class="card-body">
-                {% set member_name = staff.name %}
-                <h3>{{ '{{ member_name }} permissions'|trans }}</h3>
+                <h3>{{ staff.name }} {{ 'permissions'|trans }}</h3>
 
                 {% if staff.role == 'admin' %}
-                <p>{{ 'Administrator account is allowed to do everything'|trans }}</p>
+                <p>{{ 'This administrator is allowed to do everything'|trans }}</p>
+                </div>
                 {% else %}
-            </div>
 
             {% set prms = admin.staff_permissions_get({ 'id': staff.id }) %}
             <form method="post" action="admin/staff/permissions_update" class="api-form" data-api-msg="{{ 'Permissions updated'|trans }}">
@@ -140,6 +139,7 @@
                     <input type="submit" value="{{ 'Save'|trans }}" class="btn btn-primary w-100">
                 </div>
             </form>
+            </div>
             {% endif %}
         </div>
 
@@ -170,7 +170,7 @@
         <div class="tab-pane fade" id="tab-api" role="tabpanel">
             <div class="card-body">
                 <h3>{{ 'API key'|trans }}</h3>
-                <p class="text-muted">{{ 'Api key is used to manage system via other interfaces.'|trans }}</p>
+                <p class="text-muted">{{ 'API keys are used to manage the system via other interfaces.'|trans }}</p>
 
                 <form method="post" action="admin/profile/generate_api_key" class="api-form" data-api-reload="1">
                     <div class="mb-3 row">
