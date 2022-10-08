@@ -41,8 +41,8 @@ jobs:
     - name: Install NPM dependencies
       run: npm install
       
-    - name: Start Vite server
-      run: npm run dev
+    - name: Build Vite assets
+      run: npm run build
     
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       env:
