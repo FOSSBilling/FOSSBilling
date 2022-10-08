@@ -1,12 +1,10 @@
 <?php
 /**
- * BoxBilling
+ * FOSSBilling
  *
- * @copyright BoxBilling, Inc (http://www.boxbilling.org)
+ * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * Copyright BoxBilling, Inc
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
-
