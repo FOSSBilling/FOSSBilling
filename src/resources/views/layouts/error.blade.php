@@ -65,7 +65,7 @@
         <!-- Footer -->
         <div class="flex flex-col justify-center items-center mt-10">
             <div class="mb-3">
-                <a href="https://fossbilling.org" target="_blank" rel="noopener"><img src="./img/logo-white.svg" width="402" height="86" /></a>
+                <a href="https://fossbilling.org" target="_blank" rel="noopener"><img src="/img/logo-white.svg" width="402" height="86" /></a>
             </div>
             <div>
                 <p class="text-gray-200">
