@@ -67,7 +67,34 @@ We collect donations and manage them transparently. All of our income and expens
 You can sponsor the project over [GitHub Sponsors](https://github.com/sponsors/FOSSBilling). Thank you so much.
 
 ## How to set up a development environment
-**(...)**
+We will publish more detailed guides in the future, but until then, here are the basic instructions to run a development install using [Laravel Sail](https://laravel.com/docs/9.x/sail):
+```
+$ git clone -b lara https://github.com/FOSSBilling/FOSSBilling.git laravel
+
+$ cd laravel/src
+
+$ composer install
+
+# Move the example environment file to its correct location
+$ mv .env.example .env
+
+# Generate the application key
+$ php artisan key:generate
+
+# Initialize Laravel Sail. Only selecting mysql should be fine.
+$ php artisan sail:install
+
+# Install NPM dependencies
+$ ./vendor/bin/sail npm install
+
+# Start the Vite development server (you should keep this process running while you're doing your development work)
+$ ./vendor/bin/sail npm run dev
+
+# Start the Sail server
+$ ./vendor/bin/sail up
+```
+
+FOSSBilling Laravel should now be live in [localhost](http://localhost).
 
 ## Licensing
 
