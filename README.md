@@ -87,11 +87,11 @@ $ php artisan sail:install
 # Install NPM dependencies
 $ ./vendor/bin/sail npm install
 
-# Start the Vite development server (you should keep this process running while you're doing your development work)
-$ ./vendor/bin/sail npm run dev
-
 # Start the Sail server
 $ ./vendor/bin/sail up
+
+# Start the Vite development server (you should keep this process running while you're doing your development work)
+$ ./vendor/bin/sail npm run dev
 ```
 
 FOSSBilling Laravel should now be live in [localhost](http://localhost).
