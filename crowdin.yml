@@ -1,6 +1,6 @@
 files:
-  - source: /src/lang/en/*.php
-    translation: /src/lang/%two_letters_code%/%original_file_name%
+  - source: /lang/en/*.php
+    translation: /lang/%two_letters_code%/%original_file_name%
 "pull_request_title": "[Automated] Crowdin synchronization"
 "pull_request_labels": [
   "crowdin",
