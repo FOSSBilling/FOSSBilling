@@ -41,10 +41,10 @@ We're still in the very early phase of the software. Now is the best time to mak
 We need designers. Join our [Discord server](https://fossbilling.org/discord) if you're interested. Some of the things we need:
 * A new admin theme
 * A new client theme
-* A new layout for [our website](https://fossbilling.org) ([source repository](https://github.com/FOSSBilling/website))
+* A new layout for [our website](https://fossbilling.org) ([source repository](https://github.com/FOSSBilling/fossbilling.org))
 * Infographics and branding assets for our socials
 
-We'll be using [Tailwind CSS](https://tailwindcss.com/) wherever we can. [Our website](https://fossbilling.org) is now live and built using Tailwind CSS. While the admin and client themes aren't ready yet, we're planning to make things simpler and stick to one framework everywhere and going forward that will be Tailwind CSS.
+We'll be using [Tailwind CSS](https://tailwindcss.com/) wherever we can. While the admin and client themes aren't ready yet, we're planning to make things simpler and stick to one framework everywhere and going forward that will be Tailwind CSS.
 
 ### Develop
 We need developers.
@@ -56,7 +56,7 @@ The source code for the ongoing rewrite lies on this branch, the ["lara"](https:
 
 * API wrappers for different languages
 * Possibly a [command-line interface](https://github.com/FOSSBilling/cli)
-* [Our website](https://github.com/FOSSBilling/website)
+* [Our website and documentation](https://github.com/FOSSBilling/fossbilling.org)
 
 ### Spread the word
 Do you know someone who could help with the project? Invite them to contribute. New people will bring fresh perspectives to the project.
@@ -76,7 +76,7 @@ FOSSBilling is open-source software and is released under the Apache v2.0 licens
 ## Links
 
 * [Website](https://www.fossbilling.org/)
-* [FOSSBilling Documentation](https://docs.fossbilling.org/)
+* [FOSSBilling Documentation](https://fossbilling.org/docs)
 * [Laravel Documentation](https://laravel.com/docs/9.x/readme)
 * [Twitter](https://twitter.com/fossbilling/)
 * [Discord](https://fossbilling.org/discord)
