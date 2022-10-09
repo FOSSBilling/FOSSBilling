@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [ "lara" ]
 
-defaults:
-  run:
-    working-directory: src
-
 jobs:
   laravel-tests:
     strategy:
