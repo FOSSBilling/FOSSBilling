@@ -71,7 +71,7 @@ We will publish more detailed guides in the future, but until then, here are the
 ```
 $ git clone -b lara https://github.com/FOSSBilling/FOSSBilling.git laravel
 
-$ cd laravel/src
+$ cd laravel
 
 $ composer install
 
