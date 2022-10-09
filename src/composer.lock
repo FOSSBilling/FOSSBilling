@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c55a55ed028720c8ee9b9a3bc598720c",
+    "content-hash": "21b44b23106153dd586459cceac97653",
     "packages": [
         {
             "name": "brick/math",
@@ -1551,46 +1551,46 @@
         },
         {
             "name": "laravel/passport",
-            "version": "v10.4.1",
+            "version": "v11.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/passport.git",
-                "reference": "b62b418a6d9e9aca231a587be0fc14dc55cd8d77"
+                "reference": "5a26d6cbf56544c9f56994c6978f8fbe4d82bb33"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/passport/zipball/b62b418a6d9e9aca231a587be0fc14dc55cd8d77",
-                "reference": "b62b418a6d9e9aca231a587be0fc14dc55cd8d77",
+                "url": "https://api.github.com/repos/laravel/passport/zipball/5a26d6cbf56544c9f56994c6978f8fbe4d82bb33",
+                "reference": "5a26d6cbf56544c9f56994c6978f8fbe4d82bb33",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
                 "firebase/php-jwt": "^6.0",
-                "illuminate/auth": "^8.37|^9.0",
-                "illuminate/console": "^8.37|^9.0",
-                "illuminate/container": "^8.37|^9.0",
-                "illuminate/contracts": "^8.37|^9.0",
-                "illuminate/cookie": "^8.37|^9.0",
-                "illuminate/database": "^8.37|^9.0",
-                "illuminate/encryption": "^8.37|^9.0",
-                "illuminate/http": "^8.37|^9.0",
-                "illuminate/support": "^8.37|^9.0",
+                "illuminate/auth": "^9.0",
+                "illuminate/console": "^9.0",
+                "illuminate/container": "^9.0",
+                "illuminate/contracts": "^9.0",
+                "illuminate/cookie": "^9.0",
+                "illuminate/database": "^9.0",
+                "illuminate/encryption": "^9.0",
+                "illuminate/http": "^9.0",
+                "illuminate/support": "^9.0",
                 "lcobucci/jwt": "^3.4|^4.0",
                 "league/oauth2-server": "^8.2",
                 "nyholm/psr7": "^1.3",
-                "php": "^7.3|^8.0",
+                "php": "^8.0",
                 "phpseclib/phpseclib": "^2.0|^3.0",
                 "symfony/psr-http-message-bridge": "^2.0"
             },
             "require-dev": {
                 "mockery/mockery": "^1.0",
-                "orchestra/testbench": "^6.0|^7.0",
+                "orchestra/testbench": "^7.0",
                 "phpunit/phpunit": "^9.3"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "10.x-dev"
+                    "dev-master": "11.x-dev"
                 },
                 "laravel": {
                     "providers": [
@@ -1624,39 +1624,39 @@
                 "issues": "https://github.com/laravel/passport/issues",
                 "source": "https://github.com/laravel/passport"
             },
-            "time": "2022-04-16T13:38:08+00:00"
+            "time": "2022-09-29T15:52:25+00:00"
         },
         {
             "name": "laravel/sanctum",
-            "version": "v2.15.1",
+            "version": "v3.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/sanctum.git",
-                "reference": "31fbe6f85aee080c4dc2f9b03dc6dd5d0ee72473"
+                "reference": "b71e80a3a8e8029e2ec8c1aa814b999609ce16dc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/sanctum/zipball/31fbe6f85aee080c4dc2f9b03dc6dd5d0ee72473",
-                "reference": "31fbe6f85aee080c4dc2f9b03dc6dd5d0ee72473",
+                "url": "https://api.github.com/repos/laravel/sanctum/zipball/b71e80a3a8e8029e2ec8c1aa814b999609ce16dc",
+                "reference": "b71e80a3a8e8029e2ec8c1aa814b999609ce16dc",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "illuminate/console": "^6.9|^7.0|^8.0|^9.0",
-                "illuminate/contracts": "^6.9|^7.0|^8.0|^9.0",
-                "illuminate/database": "^6.9|^7.0|^8.0|^9.0",
-                "illuminate/support": "^6.9|^7.0|^8.0|^9.0",
-                "php": "^7.2|^8.0"
+                "illuminate/console": "^9.21",
+                "illuminate/contracts": "^9.21",
+                "illuminate/database": "^9.21",
+                "illuminate/support": "^9.21",
+                "php": "^8.0.2"
             },
             "require-dev": {
                 "mockery/mockery": "^1.0",
-                "orchestra/testbench": "^4.0|^5.0|^6.0|^7.0",
-                "phpunit/phpunit": "^8.0|^9.3"
+                "orchestra/testbench": "^7.0",
+                "phpunit/phpunit": "^9.3"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.x-dev"
+                    "dev-master": "3.x-dev"
                 },
                 "laravel": {
                     "providers": [
@@ -1689,7 +1689,7 @@
                 "issues": "https://github.com/laravel/sanctum/issues",
                 "source": "https://github.com/laravel/sanctum"
             },
-            "time": "2022-04-08T13:39:49+00:00"
+            "time": "2022-07-29T21:33:30+00:00"
         },
         {
             "name": "laravel/serializable-closure",
