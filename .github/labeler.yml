@@ -1,3 +1,6 @@
+Laravel:
+- '*'
+
 tests/CI:
 - tests/*
 
