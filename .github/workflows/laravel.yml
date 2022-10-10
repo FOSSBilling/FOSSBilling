@@ -26,7 +26,7 @@ jobs:
                     -   php-version: 8.1
                         name: Unit
                         skip-web-check: 1
-                        database: mariadb:8.0
+                        database: mysql:8.0
         services:
             database:
                 image: ${{ matrix.database }}
