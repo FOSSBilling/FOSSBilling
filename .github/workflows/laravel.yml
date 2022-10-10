@@ -63,11 +63,11 @@ jobs:
                     mysqladmin -h"127.0.0.1" -P 3306 --user=fossbilling --password=fossbilling ping --wait=5
             -   name: Execute unit tests
                 env:
-                    APP_KEY:base64:KMULExU1bLNesmDqPZAFzDJXF3gC0N7s/U2CVggxkr8
-                    APP_ENV:testing
-                    DB_HOST:127.0.0.1
-                    DB_DATABASE:fossbilling_gittest
-                    DB_USERNAME:fossbilling
-                    DB_PASSWORD:fossbilling
+                    APP_KEY: 'base64:KMULExU1bLNesmDqPZAFzDJXF3gC0N7s/U2CVggxkr8'
+                    APP_ENV: testing
+                    DB_HOST: 127.0.0.1
+                    DB_DATABASE: fossbilling_gittest
+                    DB_USERNAME: fossbilling
+                    DB_PASSWORD: fossbilling
                 run: |
                     php artisan test 
