@@ -12,3 +12,12 @@ github-config:
 
 javascript:
 - package.*
+
+localization:
+- lang/*
+
+databases:
+- database/*
+
+front-end:
+- resources/*
