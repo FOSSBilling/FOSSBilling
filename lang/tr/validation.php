@@ -98,7 +98,7 @@ return [
     ],
     'multiple_of' => 'The :attribute must be a multiple of :value.',
     'not_in' => 'The selected :attribute is invalid.',
-    'not_regex' => 'The :attribute format is invalid.',
+    'not_regex' => ':attribute formatı geçersiz.',
     'numeric' => 'The :attribute must be a number.',
     'password' => [
         'letters' => 'The :attribute must contain at least one letter.',
