@@ -18,7 +18,7 @@ jobs:
                     -   php-version: 8.1
                         name: Unit
                         skip-web-check: 1
-                        database: mariadb:10.5
+                        database: mariadb:10.6
                     -   php-version: 8.1
                         name: Unit
                         skip-web-check: 1
@@ -66,7 +66,7 @@ jobs:
                     APP_KEY: 'base64:KMULExU1bLNesmDqPZAFzDJXF3gC0N7s/U2CVggxkr8'
                     APP_ENV: testing
                     DB_HOST: 127.0.0.1
-                    DB_DATABASE: fossbilling_gittest
+                    DB_DATABASE: testing
                     DB_USERNAME: fossbilling
                     DB_PASSWORD: fossbilling
                 run: |
