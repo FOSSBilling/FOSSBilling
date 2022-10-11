@@ -50,7 +50,7 @@
                             <input type="checkbox" name="helpdesk[{{ id }}]" value="1" id="helpdesk_{{ id }}" {% if params.helpdesk[id] == 1 %}checked="checked"{% endif %}/>
                         </td>
                         <td><label for="helpdesk_{{ id }}">{{title}}</label></td>
-                        <td style="width:5%"><a class="bb-button btn14" href="{{ '/support/helpdesk'|alink }}/{{ id }}"><img src="images/icons/dark/pencil.png" alt=""></a></td>
+                        <td style="width:5%"><a class="bb-button btn14" href="{{ '/support/helpdesk'|alink }}/{{ id }}"><img src="assets/icons/edit.svg" alt=""></a></td>
                     </tr>
                     {% else %}
                     <tr>

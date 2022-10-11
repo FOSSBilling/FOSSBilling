@@ -49,8 +49,8 @@
                       <td>{{ currency.conversion_rate }}</td>
                       <td>{{ mf.currency_format(1) }} = {{ mf.currency(1, currency.code) }}</td>
                       <td class="actions">
-                          <a class="bb-button btn14" href="{{ '/currency/manage'|alink }}/{{currency.code}}"><img src="images/icons/dark/pencil.png" alt=""></a>
-                          <a class="bb-button btn14 bb-rm-tr api-link" data-api-redirect="{{'extension/settings/currency'|alink}}" data-api-confirm="Are you sure?" href="{{'api/admin/currency/delete'|link({'code' : currency.code})}}"><img src="images/icons/dark/trash.png" alt=""></a>
+                          <a class="bb-button btn14" href="{{ '/currency/manage'|alink }}/{{currency.code}}"><img src="assets/icons/edit.svg" alt=""></a>
+                          <a class="bb-button btn14 bb-rm-tr api-link" data-api-redirect="{{'extension/settings/currency'|alink}}" data-api-confirm="Are you sure?" href="{{'api/admin/currency/delete'|link({'code' : currency.code})}}"><img src="assets/icons/delete.svg" alt=""></a>
                           {% if not currency.default %}
                           <a class="bb-button btn14 api-link" data-api-redirect="{{'extension/settings/currency'|alink}}" href="{{'api/admin/currency/set_default' | link({'code' : currency.code})}}" title="Set as default" class="rightDir"><img src="images/icons/dark/star.png" alt=""></a>
                           {% endif %}
@@ -69,7 +69,7 @@
                     <tr>
                         <td colspan="5">
                             <div class="aligncenter">
-                                <a href="{{ 'api/admin/currency/update_rates'|link }}" data-api-redirect="{{ 'extension/settings/currency'|alink }}" class="btn55 mr10 api-link"><img src="images/icons/middlenav/refresh4.png" alt=""><span>{{ 'Update Rates'|trans }}</span></a>
+                                <a href="{{ 'api/admin/currency/update_rates'|link }}" data-api-redirect="{{ 'extension/settings/currency'|alink }}" class="btn55 mr10 api-link"><img src="assets/icons/refresh.svg" alt=""><span>{{ 'Update Rates'|trans }}</span></a>
                             </div>
                         </td>
                     </tr>

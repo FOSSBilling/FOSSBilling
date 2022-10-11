@@ -42,9 +42,9 @@
                 <td>{{ server.hostname }}</td>
                 <td>{{ server.ip }}</td>
                 <td class="actions">
-                    <a class="bb-button btn14" href="{{ 'extension/settings/servicecentovacast'|alink({'id' : id}) }}"><img src="images/icons/dark/pencil.png" alt=""></a>
+                    <a class="bb-button btn14" href="{{ 'extension/settings/servicecentovacast'|alink({'id' : id}) }}"><img src="assets/icons/edit.svg" alt=""></a>
                     <a class="btn14 api-link" href="{{ 'api/admin/servicecentovacast/server_connection'|link({'id' : id}) }}"   data-api-msg="Succesfully connected"><img src="images/icons/dark/wifi.png" alt="" class="icon"></a>
-                    <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/servicecentovacast/server_delete'|link({'id' : id}) }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="images/icons/dark/trash.png" alt=""></a>
+                    <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/servicecentovacast/server_delete'|link({'id' : id}) }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="assets/icons/delete.svg" alt=""></a>
                 </td>
             </tr>
             {% else %}

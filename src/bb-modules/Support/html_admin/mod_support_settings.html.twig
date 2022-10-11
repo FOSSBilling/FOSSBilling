@@ -124,8 +124,8 @@
                     <td>{{ helpdesk.email }}</td>
                     <td>{{ helpdesk.close_after }} hour(s)</td>
                     <td class="actions">
-                        <a class="bb-button btn14" href="{{ '/support/helpdesk'|alink }}/{{helpdesk.id}}"><img src="images/icons/dark/pencil.png" alt=""></a>
-                        <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" data-api-redirect="{{ 'extension/settings/support'|alink }}" href="{{ 'api/admin/support/helpdesk_delete'|link({'id' : helpdesk.id}) }}"><img src="images/icons/dark/trash.png" alt=""></a>
+                        <a class="bb-button btn14" href="{{ '/support/helpdesk'|alink }}/{{helpdesk.id}}"><img src="assets/icons/edit.svg" alt=""></a>
+                        <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" data-api-redirect="{{ 'extension/settings/support'|alink }}" href="{{ 'api/admin/support/helpdesk_delete'|link({'id' : helpdesk.id}) }}"><img src="assets/icons/delete.svg" alt=""></a>
                     </td>
                 </tr>
                 </tbody>

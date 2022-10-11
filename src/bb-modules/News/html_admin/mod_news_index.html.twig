@@ -40,10 +40,10 @@
                 <td>{{ post.created_at|bb_datetime }}</td>
                 <td class="actions">
                     <a class="bb-button btn14" href="{{ '/news/post'|alink }}/{{ post.id }}">
-                        <img src="images/icons/dark/pencil.png" alt="">
+                        <img src="assets/icons/edit.svg" alt="">
                     </a>
                     <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/news/delete'|link({ 'id': post.id }) }}" data-api-redirect="{{ 'news'|alink }}">
-                        <img src="images/icons/dark/trash.png" alt="">
+                        <img src="assets/icons/delete.svg" alt="">
                     </a>
                 </td>
             </tr>

@@ -43,7 +43,7 @@
                     {% for ext in admin.extension_get_list %}
                     <tr>
                         <td>
-                            <img src="{{ ext.icon_url|default('images/icons/middlenav/cog.png') }}" alt="{{ ext.name }}" style="width: 32px; height: 32px;">
+                            <img src="{{ ext.icon_url|default('assets/icons/cog.svg') }}" alt="{{ ext.name }}" style="width: 32px; height: 32px;">
                         </td>
                         <td>
                             <strong>{{ ext.name }}</strong> {{ ext.version }}<br>
