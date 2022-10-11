@@ -1226,9 +1226,9 @@ class Service implements InjectionAwareInterface
 
         if (isset($company['logo_url']) && !empty($company['logo_url'])) {
             $url = parse_url($company['logo_url'], PHP_URL_PATH);
-            if(!file_exists($url){
+            if(!file_exists($url)){
                 $url = $_SERVER['DOCUMENT_ROOT'] . $url;
-                if(!file_exists($url){
+                if(!file_exists($url)){
                     // Assume the URL points to an image not hosted on this server
                     $url = $company['logo_url'];
                 }
@@ -1245,7 +1245,7 @@ class Service implements InjectionAwareInterface
                         unlink($filename);
                     }
                 } else {
-                    throw new \Box_Exception('Error converting image to .png');
+                    throw new \Box_Exception('Error converting logo to PNG. Please ensure company logo is of the JPEG, PNG, GIF, BMP, WBMP, GD2, or WEBP type.');
                 }
             }
         }
