@@ -2,12 +2,12 @@
 
 namespace App\Listeners;
 
-use App\Events\AfterClientLogin;
+use App\Events\ClientLoginFailed;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
 
-class SendSuccessfulLoginEmail
+class LogFailedLogin
 {
     /**
      * Create the event listener.
@@ -22,12 +22,12 @@ class SendSuccessfulLoginEmail
     /**
      * Handle the event.
      *
-     * @param  \App\Events\AfterClientLogin $event
+     * @param  \App\Events\ClientLoginFailed $event
      * @return void
      */
-    public function handle(AfterClientLogin $event)
+    public function handle(ClientLoginFailed $event)
     {
         // Pretend like we've sent an e-mail here.
-        Log::info("User " . $event->user['name'] . " (" . $event->user['email'] . ") has logged in.");
+        Log::warning("This is a test. Somebody failed to log in.");
     }
 }
