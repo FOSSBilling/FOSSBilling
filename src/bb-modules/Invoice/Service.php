@@ -1226,8 +1226,15 @@ class Service implements InjectionAwareInterface
 
         if (isset($company['logo_url']) && !empty($company['logo_url'])) {
             $url = parse_url($company['logo_url'], PHP_URL_PATH);
+            if(!file_exists($url)){
+                $url = $_SERVER['DOCUMENT_ROOT'] . $url;
+                if(!file_exists($url)){
+                    // Assume the URL points to an image not hosted on this server
+                    $url = $company['logo_url'];
+                }
+			}
             if ('.png' === substr($url, -4)) {
-                $pdf->ImagePngWithAlpha($_SERVER['DOCUMENT_ROOT'] . $url, $left + 15, 15, 50);
+                $pdf->ImagePngWithAlpha($url, $left + 15, 15, 50);
             } else {
                 // Converting to .png
                 $img = imagecreatefromstring(file_get_contents($url));
@@ -1238,7 +1245,7 @@ class Service implements InjectionAwareInterface
                         unlink($filename);
                     }
                 } else {
-                    throw new \Box_Exception('Error converting image to .png');
+                    throw new \Box_Exception('Error converting logo to PNG. Please ensure company logo is of the JPEG, PNG, GIF, BMP, WBMP, GD2, or WEBP type.');
                 }
             }
         }
