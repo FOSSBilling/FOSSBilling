@@ -43,7 +43,7 @@ $root_url = str_replace('/install', '', $current_url) . '/';
 
 define('BB_URL', $root_url);
 const BB_URL_INSTALL = BB_URL . 'install/';
-const BB_URL_ADMIN = BB_URL . 'index.php?_url=/billing-admin';
+const BB_URL_ADMIN = BB_URL . 'index.php?_url=/admin';
 
 define('BB_PATH_ROOT', dirname(__DIR__));
 const BB_PATH_LIBRARY = BB_PATH_ROOT . '/bb-library';
