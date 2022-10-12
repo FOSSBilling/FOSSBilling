@@ -408,7 +408,7 @@ final class Box_Installer
 
             'salt' => md5(random_bytes(13)),
             'url' => BB_URL,
-            'admin_area_prefix' => '/billing-admin',
+            'admin_area_prefix' => '/admin',
             'sef_urls' => true,
             'timezone' => 'UTC',
             'locale' => 'en_US',
