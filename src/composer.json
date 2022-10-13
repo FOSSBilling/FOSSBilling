@@ -28,7 +28,7 @@
         "stripe/stripe-php": "^7.92.0",
         "guzzlehttp/guzzle": "^7.4.2",
         "filp/whoops": "^2.14",
-        "psr/log": "^3.0.0",
+        "psr/log": "^2.0.0",
         "symfony/translation": "^6.0",
         "symfony/twig-bridge": "^6.0",
         "mpdf/mpdf": "^8.1.0"
