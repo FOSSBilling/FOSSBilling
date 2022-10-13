@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      *
@@ -15,26 +14,17 @@ return new class extends Migration
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
-            $table->string("aid")->nullable()->comment("Alternative id for foreign systems")->index();
-            $table->bigInteger("client_group_id")->nullable()->index();
-            $table->string("role")->default("client")->comment("client");
-            $table->string("auth_type");
-            $table->string("email");
-            $table->string("password");
-            $table->string("salt");
-            $table->enum("status",['active','suspended','canceled']);
-            $table->boolean("email_approved",)->default(0);
+            $table->string("name");
+            $table->enum("status", ['active', 'suspended', 'canceled']);
+            $table->string("billing_email");
+            $table->string("abuse_email");
             $table->boolean("tax_exempt")->default(0);
             $table->string("type");
-            $table->string("first_name");
-            $table->string("last_name");
-            $table->string("gender");
-            $table->date("birthday")->nullable();
             $table->string("phone_cc");
             $table->string("phone");
             $table->string("company");
             $table->string("company_vat");
-            $table->string("company_number");
+            $table->string("company_coc");
             $table->string("address_1");
             $table->string("address_2");
             $table->string("city");
@@ -46,19 +36,9 @@ return new class extends Migration
             $table->text("notes");
             $table->string("currency");
             $table->string("lang");
-            $table->ipAddress("ip");
             $table->string("api_token");
             $table->string("referred_by");
-            $table->text("custom_1")->nullable();
-            $table->text("custom_2")->nullable();
-            $table->text("custom_3")->nullable();
-            $table->text("custom_4")->nullable();
-            $table->text("custom_5")->nullable();
-            $table->text("custom_6")->nullable();
-            $table->text("custom_7")->nullable();
-            $table->text("custom_8")->nullable();
-            $table->text("custom_9")->nullable();
-            $table->text("custom_10")->nullable();
+            $table->json("custom")->nullable();
 
             $table->timestamps();
         });
