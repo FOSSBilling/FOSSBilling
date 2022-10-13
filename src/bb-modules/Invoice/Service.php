@@ -15,6 +15,7 @@
 namespace Box\Mod\Invoice;
 
 use Box\InjectionAwareInterface;
+use Dompdf\Dompdf;
 
 class Service implements InjectionAwareInterface
 {
@@ -1216,13 +1217,7 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('System');
         $company = $systemService->getCompany();
 
-        $pdf = new \Mpdf\Mpdf();
-        /*
-        $pdf->AddFont('DejaVu', '', 'DejaVuSansCondensed.ttf', true);
-        $pdf->AddFont('DejaVu', 'B', 'DejaVuSansCondensed-Bold.ttf', true);
-
-        $left = 10;
-        $fontSize = 12;
+        $pdf = = new Dompdf();
 
         if (isset($company['logo_url']) && !empty($company['logo_url'])) {
             $url = parse_url($company['logo_url'], PHP_URL_PATH);
@@ -1233,23 +1228,9 @@ class Service implements InjectionAwareInterface
                     $url = $company['logo_url'];
                 }
 			}
-            if ('.png' === substr($url, -4)) {
-                $pdf->ImagePngWithAlpha($url, $left + 15, 15, 50);
-            } else {
-                // Converting to .png
-                $img = imagecreatefromstring(file_get_contents($url));
-                if ($img) {
-                    $filename = 'logo.png';
-                    if (imagepng($img, $filename)) {
-                        $pdf->ImagePngWithAlpha($filename, $left + 15, 15, 50);
-                        unlink($filename);
-                    }
-                } else {
-                    throw new \Box_Exception('Error converting logo to PNG. Please ensure company logo is of the JPEG, PNG, GIF, BMP, WBMP, GD2, or WEBP type.');
-                }
-            }
+            $pdf->Image($url, 15, 15, 50, 50);            
         }
-		*/
+       
 
         $invoiceDate = strftime($localeDateFormat, strtotime($this->di['array_get']($invoice, 'due_at', $invoice['created_at'])));
 
@@ -1257,19 +1238,6 @@ class Service implements InjectionAwareInterface
         $invoiceInfo .= sprintf("%s: %s\n", __('Invoice date'), $invoiceDate);
         $invoiceInfo .= sprintf("%s: %s\n", __('Due date'), strftime($localeDateFormat, strtotime($invoice['due_at'])));
         $invoiceInfo .= sprintf("%s: %s\n", __('Invoice status'), ucfirst($invoice['status']));
-
-        /*
-        $pdf->SetXY($pdf->GetPageWidth() / 2, $pdf->GetY());
-        $pdf->SetFont('DejaVu', '', $fontSize);
-        $pdf->MultiCell($pdf->GetPageWidth() / 2, 6, "\n" . $invoiceInfo, 0, 'L', 0);
-
-        $pdf->SetXY($left, 50);
-        $pdf->SetLineWidth(0.5);
-        $pdf->Line($pdf->GetX(), $pdf->GetY(), $pdf->GetPageWidth() - $pdf->GetX(), $pdf->GetY());
-
-        $pdf->SetFont('DejaVu', 'B', $fontSize);
-        $pdf->Text($left, 75, __('Company'));
-        */
 
         $companyInfo = sprintf("%s: %s\n", __('Name'), $invoice['seller']['company']);
         $companyInfo .= sprintf("%s: %s\n", __('Address'), $invoice['seller']['address']);
@@ -1279,15 +1247,6 @@ class Service implements InjectionAwareInterface
         $companyInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['seller']['phone']);
         $companyInfo .= sprintf("%s: %s\n", __('Email'), $invoice['seller']['email']);
 
-        /*
-        $pdf->SetXY($left, 75);
-        $pdf->SetFont('DejaVu', '', $fontSize);
-        $pdf->MultiCell(90, 6, "\n" . $companyInfo, 0, 'L', 0);
-
-        $pdf->SetFont('DejaVu', 'B', $fontSize);
-        $pdf->Text($pdf->GetPageWidth() / 2, 75, __('Billing and delivery address'));
-        */
-
         $buyerInfo = sprintf("%s: %s %s\n", __('Name'), $invoice['buyer']['first_name'], $invoice['buyer']['last_name']);
         $buyerInfo .= sprintf("%s: %s\n", __('Company'), $invoice['buyer']['company']);
         $buyerInfo .= sprintf("%s: %s\n", __('Address'), $invoice['buyer']['address']);
@@ -1295,63 +1254,10 @@ class Service implements InjectionAwareInterface
         $buyerInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['seller']['company_number']);
         $buyerInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['buyer']['phone']);
 
-        /*
-        $pdf->SetXY($pdf->GetPageWidth() / 2, 75);
-        $pdf->SetFont('DejaVu', '', $fontSize);
-        $pdf->MultiCell(90, 6, "\n" . $buyerInfo, 0, 'L', 0);
-
-        $header = [__('#'), __('Title'), __('Price'), __('Total')];
-        $pdf->SetXY($left, 155);
-        $pdf->SetLineWidth(0.1);
-        $align = ['C', 'L', 'C', 'R'];
-        $width = [10, 120, 30, 30];
-
-        $counted = count($header);
-        for ($i = 0; $i < $counted; ++$i) {
-            $pdf->SetFillColor(74, 74, 74);
-            $pdf->SetTextColor(255);
-            $pdf->Cell($width[$i], 10, $header[$i], 0, 0, $align[$i], true);
-        }
-        $pdf->SetTextColor(0);
-        $pdf->Ln();
-
-        $pdf->SetFillColor(240, 240, 240);
-        $fill = true;
-        $nr = 1;
-        foreach ($invoice['lines'] as $row) {
-            $pdf->Cell($width[0], 10, $nr++, 0, 0, 'C', $fill);
-            $pdf->Cell($width[1], 10, $row['title'], 0, 0, 'L', $fill);
-            $pdf->Cell($width[2], 10, ($row['quantity'] > 1) ? $row['quantity'] . ' x ' . $this->money($row['price'], $currencyCode) : $this->money($row['price'], $currencyCode), 0, 0, 'C', $fill);
-            $pdf->Cell($width[3], 10, $this->money($row['total'], $currencyCode), 0, 0, 'R', $fill);
-            $pdf->Ln();
-            $fill = !$fill;
-        }
-        $pdf->Cell(array_sum($width), 0, '', 'T');
-
-        $pdf->SetXY(140, $pdf->GetY() + 10);
-        if ($invoice['tax'] > 0) {
-            $pdf->Cell(30, 6, sprintf('%s %s%%', $invoice['taxname'], $invoice['taxrate']), '', 0, 'C');
-            $pdf->Cell(30, 6, $this->money($invoice['tax'], $currencyCode), '', 0, 'R');
-            $pdf->Ln();
-        }
-
-        $pdf->SetX(140);
-        if (isset($invoice['discount']) && $invoice['discount'] > 0) {
-            $pdf->Cell(40, 8, __('Discount '), '', 0, 'C');
-            $pdf->Cell(40, 8, $this->money($invoice['discount'], $currencyCode), '', 0, 'R');
-            $pdf->Ln();
-        }
-
-        $pdf->SetX(140);
-        $pdf->SetFont('DejaVu', 'B', $fontSize + 2);
-        $pdf->Cell(30, 10, __('Total'), '', 0, 'C');
-        $pdf->Cell(30, 10, $this->money($invoice['total'], $currencyCode), '', 0, 'R');
-        $pdf->Ln();
-        */
-        $pdf->WriteHTML('<h1>Test PDF!</h1>');
-        $pdf->WriteHTML("$buyerInfo</p>");
-        $pdf->Output();
-        //$pdf->Output($invoice['serie_nr'] . '.pdf', 'I');
+        $pdf->loadHtml('<h1>Test PDF!</h1>');
+        $pdf->loadHtml("</p>$buyerInfo</p>");
+        $pdf->render();
+        $pdf->stream();
     }
 
     private function money($price, $currencyCode)
