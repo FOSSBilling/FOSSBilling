@@ -57,7 +57,7 @@
                     @endisset
                 </div>
             </div>
-            <p class="text-2xl text-right font-medium mt-5">Need more help? Visit <a class="text-orange-400 hover:text-orange-500" href="https://fossbilling/e/{{ $error_code }}/" target="_blank">fossbilling.org/e/{{ $error_code }}</a></p>
+            <p class="text-2xl text-right font-medium mt-5">Need more help? Visit <a class="text-orange-400 hover:text-orange-500" href="https://fossbilling.org/e/{{ $error_code }}/" target="_blank">fossbilling.org/e/{{ $error_code }}</a></p>
         </div>
 
         <!-- Footer -->
