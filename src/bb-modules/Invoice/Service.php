@@ -1216,8 +1216,8 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('System');
         $company = $systemService->getCompany();
 
-        $pdf = $this->di['pdf'];
-        $pdf->AddPage();
+        $pdf = new \Mpdf\Mpdf();
+        /*
         $pdf->AddFont('DejaVu', '', 'DejaVuSansCondensed.ttf', true);
         $pdf->AddFont('DejaVu', 'B', 'DejaVuSansCondensed-Bold.ttf', true);
 
@@ -1249,6 +1249,7 @@ class Service implements InjectionAwareInterface
                 }
             }
         }
+		*/
 
         $invoiceDate = strftime($localeDateFormat, strtotime($this->di['array_get']($invoice, 'due_at', $invoice['created_at'])));
 
@@ -1257,6 +1258,7 @@ class Service implements InjectionAwareInterface
         $invoiceInfo .= sprintf("%s: %s\n", __('Due date'), strftime($localeDateFormat, strtotime($invoice['due_at'])));
         $invoiceInfo .= sprintf("%s: %s\n", __('Invoice status'), ucfirst($invoice['status']));
 
+        /*
         $pdf->SetXY($pdf->GetPageWidth() / 2, $pdf->GetY());
         $pdf->SetFont('DejaVu', '', $fontSize);
         $pdf->MultiCell($pdf->GetPageWidth() / 2, 6, "\n" . $invoiceInfo, 0, 'L', 0);
@@ -1267,6 +1269,7 @@ class Service implements InjectionAwareInterface
 
         $pdf->SetFont('DejaVu', 'B', $fontSize);
         $pdf->Text($left, 75, __('Company'));
+        */
 
         $companyInfo = sprintf("%s: %s\n", __('Name'), $invoice['seller']['company']);
         $companyInfo .= sprintf("%s: %s\n", __('Address'), $invoice['seller']['address']);
@@ -1276,12 +1279,14 @@ class Service implements InjectionAwareInterface
         $companyInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['seller']['phone']);
         $companyInfo .= sprintf("%s: %s\n", __('Email'), $invoice['seller']['email']);
 
+        /*
         $pdf->SetXY($left, 75);
         $pdf->SetFont('DejaVu', '', $fontSize);
         $pdf->MultiCell(90, 6, "\n" . $companyInfo, 0, 'L', 0);
 
         $pdf->SetFont('DejaVu', 'B', $fontSize);
         $pdf->Text($pdf->GetPageWidth() / 2, 75, __('Billing and delivery address'));
+        */
 
         $buyerInfo = sprintf("%s: %s %s\n", __('Name'), $invoice['buyer']['first_name'], $invoice['buyer']['last_name']);
         $buyerInfo .= sprintf("%s: %s\n", __('Company'), $invoice['buyer']['company']);
@@ -1290,6 +1295,7 @@ class Service implements InjectionAwareInterface
         $buyerInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['seller']['company_number']);
         $buyerInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['buyer']['phone']);
 
+        /*
         $pdf->SetXY($pdf->GetPageWidth() / 2, 75);
         $pdf->SetFont('DejaVu', '', $fontSize);
         $pdf->MultiCell(90, 6, "\n" . $buyerInfo, 0, 'L', 0);
@@ -1341,8 +1347,11 @@ class Service implements InjectionAwareInterface
         $pdf->Cell(30, 10, __('Total'), '', 0, 'C');
         $pdf->Cell(30, 10, $this->money($invoice['total'], $currencyCode), '', 0, 'R');
         $pdf->Ln();
-
-        $pdf->Output($invoice['serie_nr'] . '.pdf', 'I');
+        */
+        $pdf->WriteHTML('<h1>Test PDF!</h1>');
+        $pdf->WriteHTML("$buyerInfo</p>");
+        $pdf->Output();
+        //$pdf->Output($invoice['serie_nr'] . '.pdf', 'I');
     }
 
     private function money($price, $currencyCode)
