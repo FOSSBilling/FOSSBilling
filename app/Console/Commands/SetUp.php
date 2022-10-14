@@ -12,11 +12,12 @@ use App\Models\Tax;
 use App\Models\PaymentGateway;
 use App\Models\ProductCategory;
 use App\Models\AdminGroup;
-use App\Models\Admin;
+
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class SetUp extends Command
 {
@@ -51,28 +52,35 @@ class SetUp extends Command
                 $this->askStep(
                     'Add Super Admin User',
                     function () {
-                        $user = Admin::create(
+                        $first_name = $this->ask("First name");
+                        $last_name = $this->ask("Last name");
+                        $email = $this->ask("Email");
+                        $password = Str::random();
+                        $user = User::create(
                             [
-                                'name' => 'Admin',
-                                'email' => 'admin@localhost',
-                                'password' => Hash::make('password')
+                                'first_name' => $first_name,
+                                'last_name'=> $last_name,
+                                'email' => $email,
+                                'password' => Hash::make($password),
+                                'type' => 'admin'
                             ]);
-                        $superadmin = Role::firstOrCreate(['name' => 'Super Admin', "guard_name" => "admin"]);
+                        $superadmin = Role::firstOrCreate(['name' => 'Super Admin']);
                         $user->assignRole([$superadmin]);
                         $user->save();
+                        $this->info('Password: '. $password);
 
                     }
                 );
                 //Create the roles now so we can use the min the migration
 
 
-                $admin = Role::firstOrCreate(['name' => 'admin', "guard_name" => "admin"]);
-                $permission = Permission::firstOrCreate(['name' => 'view admin', "guard_name" => "admin"]);
+                $admin = Role::firstOrCreate(['name' => 'admin']);
+                $permission = Permission::firstOrCreate(['name' => 'view admin']);
                 $admin->givePermissionTo($permission);
-                $permission = Permission::firstOrCreate(['name' => 'edit settings', "guard_name" => "admin"]);
+                $permission = Permission::firstOrCreate(['name' => 'edit settings']);
                 $admin->givePermissionTo($permission);
 
-                $staff = Role::firstOrCreate(['name' => 'staff', "guard_name" => "admin"]);
+                $staff = Role::firstOrCreate(['name' => 'staff']);
 
                 $this->info("Created roles");
                 //settings table
