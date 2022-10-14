@@ -43,7 +43,7 @@ $root_url = str_replace('/install', '', $current_url) . '/';
 
 define('BB_URL', $root_url);
 const BB_URL_INSTALL = BB_URL . 'install/';
-const BB_URL_ADMIN = BB_URL . 'index.php?_url=/bb-admin';
+const BB_URL_ADMIN = BB_URL . 'index.php?_url=/admin';
 
 define('BB_PATH_ROOT', dirname(__DIR__));
 const BB_PATH_LIBRARY = BB_PATH_ROOT . '/bb-library';
@@ -408,7 +408,7 @@ final class Box_Installer
 
             'salt' => md5(random_bytes(13)),
             'url' => BB_URL,
-            'admin_area_prefix' => '/bb-admin',
+            'admin_area_prefix' => '/admin',
             'sef_urls' => true,
             'timezone' => 'UTC',
             'locale' => 'en_US',

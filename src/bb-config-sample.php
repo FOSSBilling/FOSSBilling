@@ -6,7 +6,7 @@
  * to "bb-config.php" and fill in the values.
  * Import /install/sql/structure.sql to your database
  * Import /install/sql/content.sql to your database
- * Open browser https://www.yourdomain.com/index.php?_url=/bb-admin to create a new admin account.
+ * Open browser https://www.yourdomain.com/index.php?_url=/admin to create a new admin account.
  * Remove /install directory
  */
 
@@ -21,7 +21,7 @@ return [
     /**
      * The URL prefix to access the BB admin area. Ex: '/bb-admin' for https://example.com/bb-admin.
      */
-    'admin_area_prefix' => '/bb-admin',
+    'admin_area_prefix' => '/admin',
 
     /**
      * Enable or disable displaying advanced debugging messages.
