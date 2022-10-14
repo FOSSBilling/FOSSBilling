@@ -71,7 +71,7 @@ jobs:
                     DB_PASSWORD: fossbilling
                 run: |
                     php artisan test
-            -   name: Execute unit tests
+            -   name: Execute phpstan
                 run: |
                   ./vendor/bin/phpstan analyse
 
