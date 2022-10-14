@@ -1269,11 +1269,27 @@ class Service implements InjectionAwareInterface
                         white-space: normal;
                         line-height: 0.5;
                     }
-                    h3.Breakdown{
-                        background-color: grey;
+                    div.Breakdown{
                         position: absolute;
-                        top: 175px;
+                        left: 35px;
+                        width: 100%;
+                        top: 350px;
                     }
+                    div.tax{
+                        position:relative;
+                        right:60 px
+                    }
+                    div.discount{
+                        position:relative;
+                        right:60 px
+                    }
+                    div.total{
+                        position:relative;
+                        right:60 px
+                    }
+                    table {
+                        border-collapse: collapse;
+                      }
                     </style>
                 </head>
                 <body>';
@@ -1319,6 +1335,38 @@ class Service implements InjectionAwareInterface
         $html .=       '<p>Phone: ' . $invoice['buyer']['phone'] . '</p>';
         $html .= '</div>';
 
+        $html .= '<div class="Breakdown">
+        <table style="width:100%">
+        <tr>
+            <th>#</th>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Total</th>
+        </tr>';
+        $nr = 1;
+        foreach ($invoice['lines'] as $row) {
+            $html .= '<tr>';
+            $html .= '<th>' . $nr++ . '</th>';
+            $html .= '<th>' . $row['title'] . '</th>';
+            $html .= '<th>' . ($row['quantity'] > 1) ? $row['quantity'] . ' x ' . $this->money($row['price'], $currencyCode) : $this->money($row['price'], $currencyCode) . '</th>';
+            $html .= '<th>' . $this->money($row['total'], $currencyCode) . '</th>';
+            $html .= '</tr>';
+        }
+        $html .= '</table>';
+
+        if ($invoice['tax'] > 0) {
+            $html .='<div class="tax"';
+                $html .= '<p>Tax: ' . $invoice['taxname'] . ' '. $invoice['taxrate'] . '% ' . $invoice['tax'] . $currencyCode . '</p>';
+            $html .= '</div>';
+        }
+        if (isset($invoice['discount']) && $invoice['discount'] > 0) {
+            $html .='<div class="discount"';
+                $html .= '<p>Discount: ' . $invoice['discount'] . $currencyCode . '</p>';
+            $html .= '</div>';
+        }
+        $html .='<div class="total"';
+            $html .= '<p>Total: ' . $invoice['total'] . $currencyCode . '</p>';
+        $html .= '</div>';
         $html .= '</body>
                   </html>';
 
