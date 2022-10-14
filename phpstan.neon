@@ -5,6 +5,7 @@ parameters:
 
     paths:
         - app/
-
+    ignoreErrors:
+        - '#Parameter \#1 \$user of class Illuminate\\Auth\\Events\\Verified constructor expects Illuminate\\Contracts\\Auth\\MustVerifyEmail, App\\Models\\User\|null given.#'
     # Level 9 is the highest level
     level: 5
