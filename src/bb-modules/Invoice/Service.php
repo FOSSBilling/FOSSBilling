@@ -1217,7 +1217,66 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('System');
         $company = $systemService->getCompany();
 
-        $pdf = = new Dompdf();
+        $pdf = new Dompdf();
+        $options = $pdf->getOptions();
+        $options->setChroot($_SERVER['DOCUMENT_ROOT']);
+
+        $leftMargin = 12;
+
+        $html = '<!DOCTYPE html>
+                  <html>
+                  <head>';
+        $html .=    "<title>" . $invoice['serie_nr'] . "</title>";
+        $html .=    '<style>
+                     hr.Rounded {
+                        border-top: 8px solid #bbb;
+                        border-radius: 5px;
+                        position: relative;
+                        top: 35px;  
+                    }
+                    div.InvoiceInfo {
+                        position: absolute;
+                        right: 30px;
+                        top: 0px;
+                        line-height: 0.2;
+                    }
+                    img.CompanyLogo {
+                        position: relative;
+                        left: 40px;
+                        top: 7px;
+                    }
+                    h3.CompanyInfo{
+                        position: absolute;
+                        left: 100px;
+                        top: 110px;
+                    }
+                    div.CompanyInfo{
+                        position: absolute;
+                        left: 25px;
+                        top: 145px;
+                        white-space: normal;
+                        line-height: 0.5;
+                    }
+                    h3.ClientInfo{
+                        position: absolute;
+                        top: 110px;
+                        right: 200px;
+                    }
+                    div.ClientInfo{
+                        position: absolute;
+                        top: 145px;
+                        right: 250px;
+                        white-space: normal;
+                        line-height: 0.5;
+                    }
+                    h3.Breakdown{
+                        background-color: grey;
+                        position: absolute;
+                        top: 175px;
+                    }
+                    </style>
+                </head>
+                <body>';
 
         if (isset($company['logo_url']) && !empty($company['logo_url'])) {
             $url = parse_url($company['logo_url'], PHP_URL_PATH);
@@ -1226,38 +1285,48 @@ class Service implements InjectionAwareInterface
                 if(!file_exists($url)){
                     // Assume the URL points to an image not hosted on this server
                     $url = $company['logo_url'];
+                    $options->set('isRemoteEnabled',true);
                 }
 			}
-            $pdf->Image($url, 15, 15, 50, 50);            
+            $html .= "<img src=\"$url\" height=\"50\" class=\"CompanyLogo\"></img>";
+            $html .= '<hr class="Rounded">';
         }
-       
-
         $invoiceDate = strftime($localeDateFormat, strtotime($this->di['array_get']($invoice, 'due_at', $invoice['created_at'])));
 
-        $invoiceInfo = sprintf("%s: %s\n", __('Invoice number'), $invoice['serie_nr']);
-        $invoiceInfo .= sprintf("%s: %s\n", __('Invoice date'), $invoiceDate);
-        $invoiceInfo .= sprintf("%s: %s\n", __('Due date'), strftime($localeDateFormat, strtotime($invoice['due_at'])));
-        $invoiceInfo .= sprintf("%s: %s\n", __('Invoice status'), ucfirst($invoice['status']));
+        $html .= '<div class="InvoiceInfo">';
+        $html .=        '<p>Invoice number: ' . $invoice['serie_nr'] . '</p>';
+        $html .=        '<p>Invoice date: ' . $invoiceDate . '</p>';
+        $html .=        '<p>Due date: ' . strftime($localeDateFormat, strtotime($invoice['due_at'])) . '</p>';
+        $html .=        '<p>Invoice status: ' . ucfirst($invoice['status']) . '</p>';
+        $html .= '</div>';
 
-        $companyInfo = sprintf("%s: %s\n", __('Name'), $invoice['seller']['company']);
-        $companyInfo .= sprintf("%s: %s\n", __('Address'), $invoice['seller']['address']);
-        $companyInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['seller']['company_vat']);
-        $companyInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['seller']['company_number']);
-        $companyInfo .= sprintf("%s: %s\n", __('Account'), $invoice['seller']['account_number']);
-        $companyInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['seller']['phone']);
-        $companyInfo .= sprintf("%s: %s\n", __('Email'), $invoice['seller']['email']);
+        $html .= '<h3 class="CompanyInfo">Company</h3>';
+        $html .= '<div class="CompanyInfo">';
+        $html .=       '<p>Name: ' . $invoice['seller']['company'] . '</p>';
+        $html .=       '<p>Address: ' . $invoice['seller']['address'] . '</p>';
+        $html .=       '<p>Company VAT: ' . $invoice['seller']['company_vat'] . '</p>';
+        $html .=       '<p>Company number: ' . $invoice['seller']['company_number'] . '</p>';
+        $html .=       '<p>Account: ' . $invoice['seller']['account_number'] . '</p>';
+        $html .=       '<p>Phone: ' . $invoice['seller']['phone'] . '</p>';
+        $html .=       '<p>Email: ' . $invoice['seller']['email'] . '</p>';
+        $html .= '</div>';
 
-        $buyerInfo = sprintf("%s: %s %s\n", __('Name'), $invoice['buyer']['first_name'], $invoice['buyer']['last_name']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Company'), $invoice['buyer']['company']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Address'), $invoice['buyer']['address']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['seller']['company_vat']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['seller']['company_number']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['buyer']['phone']);
+        $html .= '<h3 class="ClientInfo">Client</h3>';
+        $html .= '<div class="ClientInfo">';
+        $html .=       '<p>Name: ' . $invoice['buyer']['first_name'] . $invoice['buyer']['last_name'] . '</p>';
+        $html .=       '<p>Company: ' . $invoice['buyer']['company'] . '</p>';
+        $html .=       '<p>Address: ' . $invoice['buyer']['address'] . '</p>';
+        $html .=       '<p>Phone: ' . $invoice['buyer']['phone'] . '</p>';
+        $html .= '</div>';
 
-        $pdf->loadHtml('<h1>Test PDF!</h1>');
-        $pdf->loadHtml("</p>$buyerInfo</p>");
+        $html .= '</body>
+                  </html>';
+
+        $pdf->setOptions($options);
+        $pdf->loadHtml($html);
         $pdf->render();
-        $pdf->stream();
+        $pdf->stream($invoice['serie_nr'], array("Attachment" => false));
+        exit(0);
     }
 
     private function money($price, $currencyCode)
