@@ -44,14 +44,14 @@ jobs:
                     fetch-depth: 0
             -   name: Composer validate
                 run: |
-                    composer validate         
+                    composer validate
             -   name: Composer install
                 run: |
                     composer install --prefer-dist --no-interaction --no-progress
 
             -   name: Install NPM dependencies
                 run: |
-                    npm ci 
+                    npm ci
             -   name: Build Vite assets
                 run: |
                     npm run build
@@ -70,4 +70,9 @@ jobs:
                     DB_USERNAME: fossbilling
                     DB_PASSWORD: fossbilling
                 run: |
-                    php artisan test 
+                    php artisan test
+            -   name: Execute phpstan
+                run: |
+                  ./vendor/bin/phpstan analyse
+
+

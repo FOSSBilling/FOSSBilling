@@ -14,13 +14,13 @@ use App\Models\User;
 class AfterClientLogin
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-
+    public User $user;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct(User $user)
+    public function __construct( User $user)
     {
         $this->user = $user;
     }
