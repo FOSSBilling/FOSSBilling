@@ -1247,7 +1247,7 @@ class Service implements InjectionAwareInterface
                     }
                     h3.CompanyInfo{
                         position: absolute;
-                        left: 100px;
+                        left: 25px;
                         top: 110px;
                     }
                     div.CompanyInfo{
@@ -1255,41 +1255,39 @@ class Service implements InjectionAwareInterface
                         left: 25px;
                         top: 145px;
                         white-space: normal;
-                        line-height: 0.5;
+                        line-height: 15px;
+                        max-width: 300px;
                     }
                     h3.ClientInfo{
                         position: absolute;
                         top: 110px;
-                        right: 200px;
+                        left: 375px;
                     }
                     div.ClientInfo{
                         position: absolute;
                         top: 145px;
-                        right: 250px;
+                        left: 375px;
                         white-space: normal;
-                        line-height: 0.5;
+                        line-height: 15px;
+                        max-width: 45%;
                     }
                     div.Breakdown{
                         position: absolute;
-                        left: 35px;
                         width: 100%;
-                        top: 350px;
-                    }
-                    div.tax{
-                        position:relative;
-                        right:60 px
-                    }
-                    div.discount{
-                        position:relative;
-                        right:60 px
-                    }
-                    div.total{
-                        position:relative;
-                        right:60 px
+                        top: 400px;
                     }
                     table {
                         border-collapse: collapse;
-                      }
+                    }
+                    p {
+                        font-size: 18px;
+                    }
+                    tr:nth-of-type(odd) {
+                        background-color:#ccc;
+                    }
+                    .right{
+                        text-align:right;
+                    }
                     </style>
                 </head>
                 <body>';
@@ -1329,7 +1327,7 @@ class Service implements InjectionAwareInterface
 
         $html .= '<h3 class="ClientInfo">Client</h3>';
         $html .= '<div class="ClientInfo">';
-        $html .=       '<p>Name: ' . $invoice['buyer']['first_name'] . $invoice['buyer']['last_name'] . '</p>';
+        $html .=       '<p>Name: ' . $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'] . '</p>';
         $html .=       '<p>Company: ' . $invoice['buyer']['company'] . '</p>';
         $html .=       '<p>Address: ' . $invoice['buyer']['address'] . '</p>';
         $html .=       '<p>Phone: ' . $invoice['buyer']['phone'] . '</p>';
@@ -1352,21 +1350,31 @@ class Service implements InjectionAwareInterface
             $html .= '<th>' . $this->money($row['total'], $currencyCode) . '</th>';
             $html .= '</tr>';
         }
-        $html .= '</table>';
+
+        $html .= '<tr>';
+        $html .= '<th colspan="4">___________________________________________________________________________________________</th>';
+        $html .= '</tr>';
 
         if ($invoice['tax'] > 0) {
-            $html .='<div class="tax"';
-                $html .= '<p>Tax: ' . $invoice['taxname'] . ' '. $invoice['taxrate'] . '% ' . $invoice['tax'] . $currencyCode . '</p>';
-            $html .= '</div>';
+            $html .= '<tr>';
+            $html .= '<th class="right" colspan="3">' . $invoice['taxname'] . ' '. $invoice['taxrate'] . '% Tax:' . '</th>';
+            $html .= '<th>' . $invoice['tax'] . $currencyCode .  '</th>';
+            $html .= '</tr>';
         }
+
         if (isset($invoice['discount']) && $invoice['discount'] > 0) {
-            $html .='<div class="discount"';
-                $html .= '<p>Discount: ' . $invoice['discount'] . $currencyCode . '</p>';
-            $html .= '</div>';
+            $html .= '<tr>';
+            $html .= '<th class="right" colspan="3">Discount:</th>';
+            $html .= '<th>' . $invoice['discount'] . $currencyCode .  '</th>';
+            $html .= '</tr>';
         }
-        $html .='<div class="total"';
-            $html .= '<p>Total: ' . $invoice['total'] . $currencyCode . '</p>';
-        $html .= '</div>';
+
+        $html .= '<tr>';
+        $html .= '<th class="right" colspan="3">Total:</th>';
+        $html .= '<th>' . $invoice['total'] . $currencyCode .  '</th>';
+        $html .= '</tr>';
+
+        $html .= '</table>';
         $html .= '</body>
                   </html>';
 
