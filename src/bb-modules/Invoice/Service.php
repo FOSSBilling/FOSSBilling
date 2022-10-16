@@ -1221,8 +1221,6 @@ class Service implements InjectionAwareInterface
         $options = $pdf->getOptions();
         $options->setChroot($_SERVER['DOCUMENT_ROOT']);
 
-        $leftMargin = 12;
-
         $html = '<!DOCTYPE html>
                   <html>
                   <head>';
@@ -1338,7 +1336,7 @@ class Service implements InjectionAwareInterface
         <tr>
             <th>#</th>
             <th>Product</th>
-            <th>Price</th>
+            <th>Quantity & Price</th>
             <th>Total</th>
         </tr>';
         $nr = 1;
@@ -1346,7 +1344,7 @@ class Service implements InjectionAwareInterface
             $html .= '<tr>';
             $html .= '<th>' . $nr++ . '</th>';
             $html .= '<th>' . $row['title'] . '</th>';
-            $html .= '<th>' . ($row['quantity'] > 1) ? $row['quantity'] . ' x ' . $this->money($row['price'], $currencyCode) : $this->money($row['price'], $currencyCode) . '</th>';
+            $html .= '<th>' . $row['quantity'] . 'x ' . $this->money($row['price'], $currencyCode) . '</th>';
             $html .= '<th>' . $this->money($row['total'], $currencyCode) . '</th>';
             $html .= '</tr>';
         }
