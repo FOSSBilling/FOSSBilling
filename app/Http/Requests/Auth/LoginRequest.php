@@ -4,7 +4,6 @@ namespace App\Http\Requests\Auth;
 
 use App\Events\AfterClientLogin;
 use App\Events\ClientLoginFailed;
-
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;

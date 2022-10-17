@@ -2,10 +2,7 @@
 
 namespace App\Http\Controllers;
 
-
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 
 class ProductController extends Controller
 {
@@ -32,7 +29,7 @@ class ProductController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param Request $request
+     * @param  Request  $request
      * @return void
      */
     public function store(Request $request)
@@ -65,7 +62,7 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param Request $request
+     * @param  Request  $request
      * @param  int  $id
      * @return void
      */

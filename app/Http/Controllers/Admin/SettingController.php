@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Setting;
 
 class SettingController extends Controller
 {
@@ -31,7 +30,7 @@ class SettingController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param Request $request
+     * @param  Request  $request
      * @return void
      */
     public function store(Request $request)
@@ -42,7 +41,7 @@ class SettingController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param int $id
+     * @param  int  $id
      * @return void
      */
     public function show($id)
@@ -53,7 +52,7 @@ class SettingController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param int $id
+     * @param  int  $id
      * @return void
      */
     public function edit($id)
@@ -64,8 +63,8 @@ class SettingController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param Request $request
-     * @param int $id
+     * @param  Request  $request
+     * @param  int  $id
      * @return void
      */
     public function update(Request $request, $id)
@@ -76,7 +75,7 @@ class SettingController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param int $id
+     * @param  int  $id
      * @return void
      */
     public function destroy($id)

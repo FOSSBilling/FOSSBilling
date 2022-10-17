@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 
 class UserController extends Controller
 {
@@ -33,7 +32,7 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param Request $request
+     * @param  Request  $request
      * @return void
      */
     public function store(Request $request)
@@ -66,7 +65,7 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param Request $request
+     * @param  Request  $request
      * @param  int  $id
      * @return void
      */

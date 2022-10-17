@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -23,7 +22,7 @@ class User extends Authenticatable
         'last_name',
         'email',
         'password',
-        'type'
+        'type',
     ];
 
     /**
@@ -47,6 +46,6 @@ class User extends Authenticatable
 
     public function getFullNameAttribute() // notice that the attribute name is in CamelCase.
     {
-        return $this->first_name . ' ' . $this->last_name;
+        return $this->first_name.' '.$this->last_name;
     }
 }

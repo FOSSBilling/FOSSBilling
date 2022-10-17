@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class RouteTest extends TestCase
@@ -18,6 +17,7 @@ class RouteTest extends TestCase
 
         $response->assertStatus(200);
     }
+
     public function test_that_the_application_returns_error_404()
     {
         $response = $this->get('/thisisaroutethatdoesnotexist');
