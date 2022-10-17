@@ -112,8 +112,8 @@ class Service implements InjectionAwareInterface
                     $p = $method->getParameters();
                     if ($method->isPublic()
                         && isset($p[0])
-                        && $p[0]->getclass()
-                        && in_array($p[0]->getclass()->getName(), ['Box_Event', '\Box_Event'])) {
+                        && $p[0]->getType() && !$p[0]->getType()->isBuiltin() ? new \ReflectionClass($p[0]->getType()->getName()) : null
+                        && in_array($p[0]->getType() && !$p[0]->getType()->isBuiltin() ? new \ReflectionClass($p[0]->getType()->getName()) : null, ['Box_Event', '\Box_Event'])) {
                         $this->connect(['event' => $method->getName(), 'mod' => $mod->getName()]);
                     }
                 }
