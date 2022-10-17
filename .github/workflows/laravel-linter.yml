@@ -1,4 +1,4 @@
-name: Laravel-linter
+name: Laravel
 
 on:
   push:
@@ -9,28 +9,33 @@ on:
       - 'lara'
 
 jobs:
-  test:
+  laravel:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
         include:
-          -   php-version: 8.1
-              name: Unit
-              skip-web-check: 1
+          - php-version: 8.1
+            name: Unit
+            skip-web-check: 1
     steps:
-      -   name: Checkout
-          uses: actions/checkout@v3
-          with:
-            fetch-depth: 0
-      -   name: Composer validate
-          run: |
-            composer validate
-      -   name: Composer install
-          run: |
-            composer install --prefer-dist --no-interaction --no-progress
-      -   name: Execute Pint
-          run: |
-            ./vendor/bin/pint --test
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Composer validate
+        run: |
+          composer validate
+      - name: Composer install
+        run: |
+          composer install --prefer-dist --no-interaction --no-progress
+      - name: Execute Pint
+        run: |
+          ./vendor/bin/pint
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: PHP Linting (Pint)
+          skip_fetch: true
 
 
