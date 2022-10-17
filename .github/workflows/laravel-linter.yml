@@ -1,4 +1,4 @@
-name: Laravel
+name: Laravel-linter
 
 on:
   push:
