@@ -2,17 +2,12 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use App\Models\User;
-
-
-
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class SetUp extends Command
 {
@@ -39,7 +34,7 @@ class SetUp extends Command
     {
         // migrate
         $this->askStep(
-            __("Would you like to migrate the database."),
+            __('Would you like to migrate the database.'),
             function () {
                 $this->call('migrate');
 
@@ -47,27 +42,25 @@ class SetUp extends Command
                 $this->askStep(
                     'Add Super Admin User',
                     function () {
-                        $first_name = $this->ask("First name");
-                        $last_name = $this->ask("Last name");
-                        $email = $this->ask("Email");
+                        $first_name = $this->ask('First name');
+                        $last_name = $this->ask('Last name');
+                        $email = $this->ask('Email');
                         $password = Str::random();
                         $user = User::create(
                             [
                                 'first_name' => $first_name,
-                                'last_name'=> $last_name,
+                                'last_name' => $last_name,
                                 'email' => $email,
                                 'password' => Hash::make($password),
-                                'type' => 'admin'
+                                'type' => 'admin',
                             ]);
                         $superadmin = Role::firstOrCreate(['name' => 'Super Admin']);
                         $user->assignRole([$superadmin]);
                         $user->save();
-                        $this->info('Password: '. $password);
-
+                        $this->info('Password: '.$password);
                     }
                 );
                 //Create the roles now so we can use the min the migration
-
 
                 $admin = Role::firstOrCreate(['name' => 'admin']);
                 $permission = Permission::firstOrCreate(['name' => 'view admin']);
@@ -77,9 +70,10 @@ class SetUp extends Command
 
                 $staff = Role::firstOrCreate(['name' => 'staff']);
 
-                $this->info("Created roles");
+                $this->info('Created roles');
             }
         );
+
         return 0;
     }
 
@@ -89,7 +83,7 @@ class SetUp extends Command
             $yesCallback();
         } else {
             if ($noCallback === null) {
-                $this->info("Step Skipped.");
+                $this->info('Step Skipped.');
             } else {
                 $noCallback();
             }

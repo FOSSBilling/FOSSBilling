@@ -3,8 +3,6 @@
 namespace App\Listeners;
 
 use App\Events\AfterClientLogin;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
 
 class LogSuccessfulLogin
@@ -22,12 +20,12 @@ class LogSuccessfulLogin
     /**
      * Handle the event.
      *
-     * @param  \App\Events\AfterClientLogin $event
+     * @param  \App\Events\AfterClientLogin  $event
      * @return void
      */
     public function handle(AfterClientLogin $event)
     {
         // Pretend like we've sent an e-mail here.
-        Log::info("User " . $event->user['name'] . " (" . $event->user['email'] . ") has logged in.");
+        Log::info('User '.$event->user['name'].' ('.$event->user['email'].') has logged in.');
     }
 }
