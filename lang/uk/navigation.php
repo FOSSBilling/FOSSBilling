@@ -10,6 +10,6 @@ return [
     */
 
     'dashboard' => 'Dashboard',
-    'logout' => 'Log out'
+    'logout' => 'Log out',
 
 ];
