@@ -15,6 +15,7 @@
 namespace Box\Mod\Invoice;
 
 use Box\InjectionAwareInterface;
+use Dompdf\Dompdf;
 
 class Service implements InjectionAwareInterface
 {
@@ -1216,13 +1217,78 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('System');
         $company = $systemService->getCompany();
 
-        $pdf = $this->di['pdf'];
-        $pdf->AddPage();
-        $pdf->AddFont('DejaVu', '', 'DejaVuSansCondensed.ttf', true);
-        $pdf->AddFont('DejaVu', 'B', 'DejaVuSansCondensed-Bold.ttf', true);
+        $pdf = new Dompdf();
+        $options = $pdf->getOptions();
+        $options->setChroot($_SERVER['DOCUMENT_ROOT']);
 
-        $left = 10;
-        $fontSize = 12;
+        $html = '<!DOCTYPE html>
+                  <html>
+                  <head>';
+        $html .=    "<title>" . $invoice['serie_nr'] . "</title>";
+        $html .=    '<style>
+                     hr.Rounded {
+                        border-top: 8px solid #bbb;
+                        border-radius: 5px;
+                        position: relative;
+                        top: 35px;  
+                    }
+                    div.InvoiceInfo {
+                        position: absolute;
+                        right: 30px;
+                        top: 0px;
+                        line-height: 0.2;
+                    }
+                    img.CompanyLogo {
+                        position: relative;
+                        left: 40px;
+                        top: 7px;
+                    }
+                    h3.CompanyInfo{
+                        position: absolute;
+                        left: 25px;
+                        top: 110px;
+                    }
+                    div.CompanyInfo{
+                        position: absolute;
+                        left: 25px;
+                        top: 145px;
+                        white-space: normal;
+                        line-height: 15px;
+                        max-width: 300px;
+                    }
+                    h3.ClientInfo{
+                        position: absolute;
+                        top: 110px;
+                        left: 375px;
+                    }
+                    div.ClientInfo{
+                        position: absolute;
+                        top: 145px;
+                        left: 375px;
+                        white-space: normal;
+                        line-height: 15px;
+                        max-width: 45%;
+                    }
+                    div.Breakdown{
+                        position: absolute;
+                        width: 100%;
+                        top: 400px;
+                    }
+                    table {
+                        border-collapse: collapse;
+                    }
+                    p {
+                        font-size: 18px;
+                    }
+                    tr:nth-of-type(odd) {
+                        background-color:#ccc;
+                    }
+                    .right{
+                        text-align:right;
+                    }
+                    </style>
+                </head>
+                <body>';
 
         if (isset($company['logo_url']) && !empty($company['logo_url'])) {
             $url = parse_url($company['logo_url'], PHP_URL_PATH);
@@ -1231,118 +1297,90 @@ class Service implements InjectionAwareInterface
                 if(!file_exists($url)){
                     // Assume the URL points to an image not hosted on this server
                     $url = $company['logo_url'];
+                    $options->set('isRemoteEnabled',true);
                 }
 			}
-            if ('.png' === substr($url, -4)) {
-                $pdf->ImagePngWithAlpha($url, $left + 15, 15, 50);
-            } else {
-                // Converting to .png
-                $img = imagecreatefromstring(file_get_contents($url));
-                if ($img) {
-                    $filename = 'logo.png';
-                    if (imagepng($img, $filename)) {
-                        $pdf->ImagePngWithAlpha($filename, $left + 15, 15, 50);
-                        unlink($filename);
-                    }
-                } else {
-                    throw new \Box_Exception('Error converting logo to PNG. Please ensure company logo is of the JPEG, PNG, GIF, BMP, WBMP, GD2, or WEBP type.');
-                }
-            }
+            $html .= "<img src=\"$url\" height=\"50\" class=\"CompanyLogo\"></img>";
+            $html .= '<hr class="Rounded">';
         }
-
         $invoiceDate = strftime($localeDateFormat, strtotime($this->di['array_get']($invoice, 'due_at', $invoice['created_at'])));
 
-        $invoiceInfo = sprintf("%s: %s\n", __('Invoice number'), $invoice['serie_nr']);
-        $invoiceInfo .= sprintf("%s: %s\n", __('Invoice date'), $invoiceDate);
-        $invoiceInfo .= sprintf("%s: %s\n", __('Due date'), strftime($localeDateFormat, strtotime($invoice['due_at'])));
-        $invoiceInfo .= sprintf("%s: %s\n", __('Invoice status'), ucfirst($invoice['status']));
+        $html .= '<div class="InvoiceInfo">';
+        $html .=        '<p>Invoice number: ' . $invoice['serie_nr'] . '</p>';
+        $html .=        '<p>Invoice date: ' . $invoiceDate . '</p>';
+        $html .=        '<p>Due date: ' . strftime($localeDateFormat, strtotime($invoice['due_at'])) . '</p>';
+        $html .=        '<p>Invoice status: ' . ucfirst($invoice['status']) . '</p>';
+        $html .= '</div>';
 
-        $pdf->SetXY($pdf->GetPageWidth() / 2, $pdf->GetY());
-        $pdf->SetFont('DejaVu', '', $fontSize);
-        $pdf->MultiCell($pdf->GetPageWidth() / 2, 6, "\n" . $invoiceInfo, 0, 'L', 0);
+        $html .= '<h3 class="CompanyInfo">Company</h3>';
+        $html .= '<div class="CompanyInfo">';
+        $html .=       '<p>Name: ' . $invoice['seller']['company'] . '</p>';
+        $html .=       '<p>Address: ' . $invoice['seller']['address'] . '</p>';
+        $html .=       '<p>Company VAT: ' . $invoice['seller']['company_vat'] . '</p>';
+        $html .=       '<p>Company number: ' . $invoice['seller']['company_number'] . '</p>';
+        $html .=       '<p>Account: ' . $invoice['seller']['account_number'] . '</p>';
+        $html .=       '<p>Phone: ' . $invoice['seller']['phone'] . '</p>';
+        $html .=       '<p>Email: ' . $invoice['seller']['email'] . '</p>';
+        $html .= '</div>';
 
-        $pdf->SetXY($left, 50);
-        $pdf->SetLineWidth(0.5);
-        $pdf->Line($pdf->GetX(), $pdf->GetY(), $pdf->GetPageWidth() - $pdf->GetX(), $pdf->GetY());
+        $html .= '<h3 class="ClientInfo">Client</h3>';
+        $html .= '<div class="ClientInfo">';
+        $html .=       '<p>Name: ' . $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'] . '</p>';
+        $html .=       '<p>Company: ' . $invoice['buyer']['company'] . '</p>';
+        $html .=       '<p>Address: ' . $invoice['buyer']['address'] . '</p>';
+        $html .=       '<p>Phone: ' . $invoice['buyer']['phone'] . '</p>';
+        $html .= '</div>';
 
-        $pdf->SetFont('DejaVu', 'B', $fontSize);
-        $pdf->Text($left, 75, __('Company'));
-
-        $companyInfo = sprintf("%s: %s\n", __('Name'), $invoice['seller']['company']);
-        $companyInfo .= sprintf("%s: %s\n", __('Address'), $invoice['seller']['address']);
-        $companyInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['seller']['company_vat']);
-        $companyInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['seller']['company_number']);
-        $companyInfo .= sprintf("%s: %s\n", __('Account'), $invoice['seller']['account_number']);
-        $companyInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['seller']['phone']);
-        $companyInfo .= sprintf("%s: %s\n", __('Email'), $invoice['seller']['email']);
-
-        $pdf->SetXY($left, 75);
-        $pdf->SetFont('DejaVu', '', $fontSize);
-        $pdf->MultiCell(90, 6, "\n" . $companyInfo, 0, 'L', 0);
-
-        $pdf->SetFont('DejaVu', 'B', $fontSize);
-        $pdf->Text($pdf->GetPageWidth() / 2, 75, __('Billing and delivery address'));
-
-        $buyerInfo = sprintf("%s: %s %s\n", __('Name'), $invoice['buyer']['first_name'], $invoice['buyer']['last_name']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Company'), $invoice['buyer']['company']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Address'), $invoice['buyer']['address']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Company VAT'), $invoice['seller']['company_vat']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Company number'), $invoice['seller']['company_number']);
-        $buyerInfo .= sprintf("%s: %s\n", __('Phone'), $invoice['buyer']['phone']);
-
-        $pdf->SetXY($pdf->GetPageWidth() / 2, 75);
-        $pdf->SetFont('DejaVu', '', $fontSize);
-        $pdf->MultiCell(90, 6, "\n" . $buyerInfo, 0, 'L', 0);
-
-        $header = [__('#'), __('Title'), __('Price'), __('Total')];
-        $pdf->SetXY($left, 155);
-        $pdf->SetLineWidth(0.1);
-        $align = ['C', 'L', 'C', 'R'];
-        $width = [10, 120, 30, 30];
-
-        $counted = count($header);
-        for ($i = 0; $i < $counted; ++$i) {
-            $pdf->SetFillColor(74, 74, 74);
-            $pdf->SetTextColor(255);
-            $pdf->Cell($width[$i], 10, $header[$i], 0, 0, $align[$i], true);
-        }
-        $pdf->SetTextColor(0);
-        $pdf->Ln();
-
-        $pdf->SetFillColor(240, 240, 240);
-        $fill = true;
+        $html .= '<div class="Breakdown">
+        <table style="width:100%">
+        <tr>
+            <th>#</th>
+            <th>Product</th>
+            <th>Quantity & Price</th>
+            <th>Total</th>
+        </tr>';
         $nr = 1;
         foreach ($invoice['lines'] as $row) {
-            $pdf->Cell($width[0], 10, $nr++, 0, 0, 'C', $fill);
-            $pdf->Cell($width[1], 10, $row['title'], 0, 0, 'L', $fill);
-            $pdf->Cell($width[2], 10, ($row['quantity'] > 1) ? $row['quantity'] . ' x ' . $this->money($row['price'], $currencyCode) : $this->money($row['price'], $currencyCode), 0, 0, 'C', $fill);
-            $pdf->Cell($width[3], 10, $this->money($row['total'], $currencyCode), 0, 0, 'R', $fill);
-            $pdf->Ln();
-            $fill = !$fill;
+            $html .= '<tr>';
+            $html .= '<th>' . $nr++ . '</th>';
+            $html .= '<th>' . $row['title'] . '</th>';
+            $html .= '<th>' . $row['quantity'] . 'x ' . $this->money($row['price'], $currencyCode) . '</th>';
+            $html .= '<th>' . $this->money($row['total'], $currencyCode) . '</th>';
+            $html .= '</tr>';
         }
-        $pdf->Cell(array_sum($width), 0, '', 'T');
 
-        $pdf->SetXY(140, $pdf->GetY() + 10);
+        $html .= '<tr>';
+        $html .= '<th colspan="4">___________________________________________________________________________________________</th>';
+        $html .= '</tr>';
+
         if ($invoice['tax'] > 0) {
-            $pdf->Cell(30, 6, sprintf('%s %s%%', $invoice['taxname'], $invoice['taxrate']), '', 0, 'C');
-            $pdf->Cell(30, 6, $this->money($invoice['tax'], $currencyCode), '', 0, 'R');
-            $pdf->Ln();
+            $html .= '<tr>';
+            $html .= '<th class="right" colspan="3">' . $invoice['taxname'] . ' '. $invoice['taxrate'] . '% Tax:' . '</th>';
+            $html .= '<th>' . $invoice['tax'] . $currencyCode .  '</th>';
+            $html .= '</tr>';
         }
 
-        $pdf->SetX(140);
         if (isset($invoice['discount']) && $invoice['discount'] > 0) {
-            $pdf->Cell(40, 8, __('Discount '), '', 0, 'C');
-            $pdf->Cell(40, 8, $this->money($invoice['discount'], $currencyCode), '', 0, 'R');
-            $pdf->Ln();
+            $html .= '<tr>';
+            $html .= '<th class="right" colspan="3">Discount:</th>';
+            $html .= '<th>' . $invoice['discount'] . $currencyCode .  '</th>';
+            $html .= '</tr>';
         }
 
-        $pdf->SetX(140);
-        $pdf->SetFont('DejaVu', 'B', $fontSize + 2);
-        $pdf->Cell(30, 10, __('Total'), '', 0, 'C');
-        $pdf->Cell(30, 10, $this->money($invoice['total'], $currencyCode), '', 0, 'R');
-        $pdf->Ln();
+        $html .= '<tr>';
+        $html .= '<th class="right" colspan="3">Total:</th>';
+        $html .= '<th>' . $invoice['total'] . $currencyCode .  '</th>';
+        $html .= '</tr>';
 
-        $pdf->Output($invoice['serie_nr'] . '.pdf', 'I');
+        $html .= '</table>';
+        $html .= '</body>
+                  </html>';
+
+        $pdf->setOptions($options);
+        $pdf->loadHtml($html);
+        $pdf->render();
+        $pdf->stream($invoice['serie_nr'], array("Attachment" => false));
+        exit(0);
     }
 
     private function money($price, $currencyCode)

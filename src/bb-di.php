@@ -401,12 +401,6 @@ $di['service_boxbilling'] = $di->protect(function ($config) {
 
 $di['ftp'] = $di->protect(function ($params) { return new \Box_Ftp($params); });
 
-$di['pdf'] = function () use ($di) {
-    include BB_PATH_LIBRARY.'/PDF_ImageAlpha.php';
-
-    return new \PDF_ImageAlpha();
-};
-
 $di['geoip'] = function () { return new \GeoIp2\Database\Reader(BB_PATH_LIBRARY.'/GeoLite2-Country.mmdb'); };
 
 $di['password'] = function () { return new Box_Password(); };

@@ -26,12 +26,12 @@
         "mustangostang/spyc": "^0.6.3",
         "michelf/php-markdown": "2.0.0",
         "stripe/stripe-php": "^7.92.0",
-        "docnet/tfpdf": "^2.2",
         "guzzlehttp/guzzle": "^7.4.2",
         "filp/whoops": "^2.14",
         "psr/log": "^3.0.0",
         "symfony/translation": "^6.0",
-        "symfony/twig-bridge": "^6.0"
+        "symfony/twig-bridge": "^6.0",
+        "dompdf/dompdf": "^2.0.1"
      
     },
     "require-dev": {
