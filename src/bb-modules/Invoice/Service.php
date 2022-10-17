@@ -1300,7 +1300,12 @@ class Service implements InjectionAwareInterface
                     $options->set('isRemoteEnabled',true);
                 }
 			}
-            $html .= "<img src=\"$url\" height=\"50\" class=\"CompanyLogo\"></img>";
+            // Workaround to get SVG images to render. Please see https://github.com/dompdf/dompdf/issues/320
+            if ('.svg' === substr($url, -4)) {
+                $html .= '<img src="data:image/svg+xml;base64,' . base64_encode(file_get_contents($url)) .'" height="50" class="CompanyLogo"></img>';
+            } else {
+                $html .= '<img src="'. $url .'" height="50" class="CompanyLogo"></img>';
+            }
             $html .= '<hr class="Rounded">';
         }
         $invoiceDate = strftime($localeDateFormat, strtotime($this->di['array_get']($invoice, 'due_at', $invoice['created_at'])));
