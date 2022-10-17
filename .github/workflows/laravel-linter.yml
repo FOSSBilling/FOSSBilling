@@ -30,9 +30,4 @@ jobs:
           composer install --prefer-dist --no-interaction --no-progress
       - name: Execute Pint
         run: |
-          ./vendor/bin/pint
-      - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: PHP Linting (Pint)
-          skip_fetch: true
+          ./vendor/bin/pint --test
