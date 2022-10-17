@@ -62,7 +62,7 @@ class Box_App
                 [$mod] = explode('/', $requestUri);
             }
         }
-        $mod = filter_var($mod, FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
+        $mod = htmlspecialchars($mod);
 
         $this->mod = $mod;
         $this->uri = $requestUri;
