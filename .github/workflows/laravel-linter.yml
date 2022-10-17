@@ -7,6 +7,9 @@ on:
   pull_request:
     branches:
       - 'lara'
+  pull_request_target:
+    branches:
+      - 'lara'
 
 jobs:
   linter:
