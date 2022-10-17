@@ -62,7 +62,7 @@ class FossInstallCommand extends Command
                 );
                 //Create the roles now so we can use the min the migration
 
-                $admin = Role::firstOrCreate([    'name'=> 'admin']);
+                $admin = Role::firstOrCreate(['name' => 'admin']);
                 $permission = Permission::firstOrCreate(['name' => 'view admin']);
                 $admin->givePermissionTo($permission);
                 $permission = Permission::firstOrCreate(['name' => 'edit settings']);
