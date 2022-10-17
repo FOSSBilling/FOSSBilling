@@ -1,4 +1,4 @@
-name: Laravel
+name: Laravel-linter
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - 'lara'
 
 jobs:
-  laravel:
+  linter:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -37,5 +37,3 @@ jobs:
         with:
           commit_message: PHP Linting (Pint)
           skip_fetch: true
-
-
