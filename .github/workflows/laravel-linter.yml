@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - 'lara'
-  pull_request:
-    branches:
-      - 'lara'
   pull_request_target:
 
 jobs:
