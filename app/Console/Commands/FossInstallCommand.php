@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
-class SetUp extends Command
+class FossInstallCommand extends Command
 {
     /**
      * The name and signature of the console command.
@@ -62,7 +62,7 @@ class SetUp extends Command
                 );
                 //Create the roles now so we can use the min the migration
 
-                $admin = Role::firstOrCreate(['name' => 'admin']);
+                $admin = Role::firstOrCreate([    'name'=> 'admin']);
                 $permission = Permission::firstOrCreate(['name' => 'view admin']);
                 $admin->givePermissionTo($permission);
                 $permission = Permission::firstOrCreate(['name' => 'edit settings']);
