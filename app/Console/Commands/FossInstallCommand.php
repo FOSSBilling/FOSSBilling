@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
-class SetUp extends Command
+class FossInstallCommand extends Command
 {
     /**
      * The name and signature of the console command.
