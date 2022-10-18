@@ -1303,12 +1303,11 @@ class Service implements InjectionAwareInterface
             $html .= "<img src=\"$url\" height=\"50\" class=\"CompanyLogo\"></img>";
             $html .= '<hr class="Rounded">';
         }
-        $invoiceDate = strftime($localeDateFormat, strtotime($this->di['array_get']($invoice, 'due_at', $invoice['created_at'])));
 
         $html .= '<div class="InvoiceInfo">';
         $html .=        '<p>Invoice number: ' . $invoice['serie_nr'] . '</p>';
-        $html .=        '<p>Invoice date: ' . $invoiceDate . '</p>';
-        $html .=        '<p>Due date: ' . strftime($localeDateFormat, strtotime($invoice['due_at'])) . '</p>';
+        $html .=        '<p>Invoice date: ' . date($localeDateFormat, strtotime($invoice['created_at'])) . '</p>';
+        $html .=        '<p>Due date: ' . date($localeDateFormat, strtotime($invoice['due_at'])) . '</p>';
         $html .=        '<p>Invoice status: ' . ucfirst($invoice['status']) . '</p>';
         $html .= '</div>';
 

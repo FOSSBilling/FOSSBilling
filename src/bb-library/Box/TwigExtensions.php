@@ -98,7 +98,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         $locale_date_format = $this->di['config']['locale_date_format'];
         $format = is_null($format) ? $locale_date_format : $format;
 
-        return strftime($format, strtotime($time));
+        return date($format, strtotime($time));
     }
 
     public function twig_bb_datetime($time, $format = null)
@@ -107,7 +107,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         $locale_time_format = $this->di['config']['locale_time_format'];
         $format = is_null($format) ? $locale_date_format.$locale_time_format : $format;
 
-        return strftime($format, strtotime($time));
+        return date($format, strtotime($time));
     }
 
     public function twig_ipcountryname_filter($value)

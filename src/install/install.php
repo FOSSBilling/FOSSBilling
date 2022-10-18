@@ -412,8 +412,8 @@ final class Box_Installer
             'sef_urls' => true,
             'timezone' => 'UTC',
             'locale' => 'en_US',
-            'locale_date_format' => '%A, %d %B %G',
-            'locale_time_format' => ' %T',
+            'locale_date_format' => 'l, d F o',
+            'locale_time_format' => ' G:i:s',
             'path_data' => BB_PATH_ROOT . '/bb-data',
             'path_logs' => BB_PATH_ROOT . '/bb-data/log/application.log',
 

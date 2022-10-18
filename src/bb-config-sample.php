@@ -76,16 +76,16 @@ return [
     /**
      * Set default date format for localized strings.
      *
-     * @see http://php.net/manual/en/function.strftime.php
+     * @see https://www.php.net/manual/en/datetime.format.php
      */
-    'locale_date_format' => '%A, %d %B %G',
+    'locale_date_format' => 'l, d F o',
 
     /**
      * Set default time format for localized strings.
      *
-     * @see http://php.net/manual/en/function.strftime.php
+     * @see https://www.php.net/manual/en/datetime.format.php
      */
-    'locale_time_format' => ' %T',
+    'locale_time_format' => ' G:i:s',
 
     /**
      * Set location to store sensitive data.
