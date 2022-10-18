@@ -593,7 +593,7 @@ class Registrar_Adapter_srsx extends Registrar_Adapter_Resellerclub
 		$randomResult = "";
 		mt_srand((double)microtime()*1000000);
 		while (strlen($randomResult)<$length) {
-			$randomResult .= $base[mt_rand(0,$max)];
+			$randomResult .= $base[random_int(0,$max)];
 		}
 		return $randomResult;
 	}
