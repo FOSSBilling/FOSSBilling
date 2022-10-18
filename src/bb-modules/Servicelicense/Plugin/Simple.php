@@ -51,7 +51,7 @@ class Simple
         $size = count($character_array) - 1;
         $string = '';
         for ($i = 1; $i < $length; ++$i) {
-            $string .= (0 == $i % 5) ? '-' : $character_array[rand(0, $size)];
+            $string .= (0 == $i % 5) ? '-' : $character_array[random_int(0, $size)];
         }
 
         return $prefix.$string;

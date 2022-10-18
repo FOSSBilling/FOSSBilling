@@ -220,7 +220,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
         if ($domain->getTld() == '.fr' || $domain->getTld() == '.re')
         {
-            $tm = rand(100000000, 999999999);
+            $tm = random_int(100000000, 999999999);
             $params['registrant_dotFRContactEntityType'] = 'OTHER';
             $params['admin_dotFRContactEntityType'] = 'OTHER';
             $params['registrant_dotFRContactEntityName'] = $c->getName();

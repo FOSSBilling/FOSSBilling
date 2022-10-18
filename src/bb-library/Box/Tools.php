@@ -185,21 +185,21 @@ class Box_Tools
 			break;
 			//lowercase + numeric
 			case 2:
-				$lower = rand(1, $length - 1);
+				$lower = random_int(1, $length - 1);
 				$numeric = $length - $lower;
 			break;
 			//lowercase + uppsercase + numeric
 			case 3:
-				$lower = rand(1, $length - 2);
-				$upper = rand(1, $length - $lower - 1);
+				$lower = random_int(1, $length - 2);
+				$upper = random_int(1, $length - $lower - 1);
 				$numeric = $length - $lower - $upper;
 			break;
 			//lowercase + uppercase + numeric + symbols
             case 4:
 			default:
-				$lower = rand(1, $length - 3);
-				$upper = rand(1, $length - $lower - 2);
-				$numeric = rand(1, $length - $lower - $upper - 1);
+				$lower = random_int(1, $length - 3);
+				$upper = random_int(1, $length - $lower - 2);
+				$numeric = random_int(1, $length - $lower - $upper - 1);
 				$other = $length - $lower - $upper - $numeric;
 			break;
 		}
@@ -207,16 +207,16 @@ class Box_Tools
         $passOrder = array();
 
 		for ($i = 0; $i < $upper; $i++) {
-        	$passOrder[] = $upper_letters[rand() % strlen($upper_letters)];
+        	$passOrder[] = $upper_letters[random_int() % strlen($upper_letters)];
     	}
     	for ($i = 0; $i < $lower; $i++) {
-        	$passOrder[] = $lower_letters[rand() % strlen($lower_letters)];
+        	$passOrder[] = $lower_letters[random_int() % strlen($lower_letters)];
     	}
     	for ($i = 0; $i < $numeric; $i++) {
-        	$passOrder[] = $numbers[rand() % strlen($numbers)];
+        	$passOrder[] = $numbers[random_int() % strlen($numbers)];
     	}
     	for ($i = 0; $i < $other; $i++) {
-        	$passOrder[] = $symbols[rand() % strlen($symbols)];
+        	$passOrder[] = $symbols[random_int() % strlen($symbols)];
     	}
 
     	shuffle($passOrder);

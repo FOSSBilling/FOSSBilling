@@ -202,7 +202,7 @@ class Service implements \Box\InjectionAwareInterface
         $sql = 'SELECT id FROM service_centovacast WHERE username = :u';
         $exists = $this->di['db']->getCell($sql, ['u' => $u]);
         if ($exists) {
-            $u = $u . rand(1, 100);
+            $u = $u . random_int(1, 100);
         }
 
         return $u;
