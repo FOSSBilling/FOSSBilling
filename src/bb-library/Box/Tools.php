@@ -207,16 +207,16 @@ class Box_Tools
         $passOrder = array();
 
 		for ($i = 0; $i < $upper; $i++) {
-        	$passOrder[] = $upper_letters[random_int() % strlen($upper_letters)];
+        	$passOrder[] = $upper_letters[random_int(0,getrandmax()) % strlen($upper_letters)];
     	}
     	for ($i = 0; $i < $lower; $i++) {
-        	$passOrder[] = $lower_letters[random_int() % strlen($lower_letters)];
+        	$passOrder[] = $lower_letters[random_int(0,getrandmax()) % strlen($lower_letters)];
     	}
     	for ($i = 0; $i < $numeric; $i++) {
-        	$passOrder[] = $numbers[random_int() % strlen($numbers)];
+        	$passOrder[] = $numbers[random_int(0,getrandmax()) % strlen($numbers)];
     	}
     	for ($i = 0; $i < $other; $i++) {
-        	$passOrder[] = $symbols[random_int() % strlen($symbols)];
+        	$passOrder[] = $symbols[random_int(0,getrandmax()) % strlen($symbols)];
     	}
 
     	shuffle($passOrder);
