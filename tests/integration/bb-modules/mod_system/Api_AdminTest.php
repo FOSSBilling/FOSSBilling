@@ -116,7 +116,7 @@ class Api_Admin_SystemTest extends BBDbApiTestCase
 
     public function testRenderDate()
     {
-        $result = strftime($this->di['config']['locale_date_format']);
+        $result = date($this->di['config']['locale_date_format']);
         $data = [
             'id' => 1,
             '_tpl' => '{{ now|date("Y-m-d")|bb_date }}',
