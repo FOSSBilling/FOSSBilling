@@ -1474,8 +1474,8 @@ class HTTPRetriever
         $output = [];
         foreach ($fields as $name => $field) {
             if ('image' == $field['type']) {
-                $output[$name.'.x'] = rand(2, 64);
-                $output[$name.'.y'] = rand(2, 16);
+                $output[$name.'.x'] = random_int(2, 64);
+                $output[$name.'.y'] = random_int(2, 16);
             } else {
                 $output[$name] = is_scalar($field['value']) ? $field['value'] : '';
             }

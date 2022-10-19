@@ -396,7 +396,7 @@ class Service implements InjectionAwareInterface
     {
         $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
         $username = substr($username, 0, 7);
-        $randnum = rand(0, 9);
+        $randnum = random_int(0, 9);
         $username = $username.$randnum;
 
         return $username;

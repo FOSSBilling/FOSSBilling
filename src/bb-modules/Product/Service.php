@@ -200,7 +200,7 @@ class Service implements InjectionAwareInterface
         try {
             $productId = $this->di['db']->store($model);
         } catch (\Exception $e) {
-            $model->slug = $this->di['tools']->slug($title).'-'.rand(1, 9999);
+            $model->slug = $this->di['tools']->slug($title).'-'.random_int(1, 9999);
         }
         $productId = $this->di['db']->store($model);
 
@@ -415,7 +415,7 @@ class Service implements InjectionAwareInterface
         try {
             $productId = $this->di['db']->store($model);
         } catch (\Exception $e) {
-            $model->slug = $this->di['tools']->slug($title).'-'.rand(1, 9999);
+            $model->slug = $this->di['tools']->slug($title).'-'.random_int(1, 9999);
             $productId = $this->di['db']->store($model);
         }
 
