@@ -17,8 +17,12 @@ class Model_ServiceLicense extends \RedBean_SimpleModel
 {
     private function _decodeJson($j)
     {
-        $config = json_decode($j, true);
-        return is_array($config) ? $config : array();
+        if(isset($j)){
+            $config = json_decode($j, true);
+            return is_array($config) ? $config : array();
+        } else {
+            return array();
+        }
     }
 
     public function getAllowedIps()

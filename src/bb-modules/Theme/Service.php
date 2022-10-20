@@ -250,7 +250,7 @@ class Service implements InjectionAwareInterface
                ';
         $default = 'admin_default';
         $theme = $this->di['db']->getCell($query, ['param' => 'admin_theme']);
-        $path = BB_PATH_THEMES.DIRECTORY_SEPARATOR.$theme;
+        $path = BB_PATH_THEMES.DIRECTORY_SEPARATOR;
         if (null == $theme || !file_exists($path.$theme)) {
             $theme = $default;
         }
