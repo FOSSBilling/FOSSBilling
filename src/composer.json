@@ -31,7 +31,8 @@
         "psr/log": "^3.0.0",
         "symfony/translation": "^6.0",
         "symfony/twig-bridge": "^6.0",
-        "dompdf/dompdf": "^2.0.1"
+        "dompdf/dompdf": "^2.0.1",
+        "gabordemooij/redbean": "^5.7.3"
      
     },
     "require-dev": {

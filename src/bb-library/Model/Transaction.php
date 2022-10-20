@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Model_Transaction extends RedBean_SimpleModel
+class Model_Transaction extends FOSS_Model
 {
     const STATUS_RECEIVED        = 'received';
     const STATUS_APPROVED        = 'approved';

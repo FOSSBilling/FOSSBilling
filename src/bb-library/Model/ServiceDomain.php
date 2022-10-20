@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Model_ServiceDomain extends RedBean_SimpleModel
+class Model_ServiceDomain extends FOSS_Model
 {
 
 }

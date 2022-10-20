@@ -13,7 +13,7 @@
  */
 
 
-class Model_ProductCustom extends \RedBean_SimpleModel
+class Model_ProductCustom extends FOSS_Model
 {
 
 }

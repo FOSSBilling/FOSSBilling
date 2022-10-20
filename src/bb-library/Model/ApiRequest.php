@@ -13,7 +13,7 @@
  */
 
 
-class Model_ApiRequest extends \RedBean_SimpleModel
+class Model_ApiRequest extends FOSS_Model
 {
 
 }

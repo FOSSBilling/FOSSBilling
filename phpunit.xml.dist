@@ -14,11 +14,8 @@
       <directory>src/vendor</directory>
       <directory>src/install</directory>
       <file>src/bb-library/Box/Zip.php</file>
-      <file>src/bb-library/PDF_ImageAlpha.php</file>
       <file>src/bb-library/PdoSessionHandler.php</file>
-      <file>src/bb-library/tfpdf.php</file>
       <file>src/bb-modules/Spamchecker/akismet.curl.class.php</file>
-      <file>src/rb.php</file>
     </exclude>
   </coverage>
   <testsuites>

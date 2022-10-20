@@ -13,7 +13,7 @@
  */
 
 
-class Model_Promo extends RedBean_SimpleModel
+class Model_Promo extends FOSS_Model
 {
 	const PERCENTAGE    = 'percentage';
 	const ABSOLUTE      = 'absolute';

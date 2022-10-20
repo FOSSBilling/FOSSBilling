@@ -13,7 +13,7 @@
  */
 
 
-class Model_ClientOrderMeta extends RedBean_SimpleModel
+class Model_ClientOrderMeta extends FOSS_Model
 {
 
 }

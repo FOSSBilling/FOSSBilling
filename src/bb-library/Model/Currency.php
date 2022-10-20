@@ -13,7 +13,7 @@
  */
 
 
-class Model_Currency extends \RedBean_SimpleModel
+class Model_Currency extends FOSS_Model
 {
     
 }

@@ -13,7 +13,7 @@
  */
 
 
-class Model_AdminGroup extends RedBean_SimpleModel
+class Model_AdminGroup extends FOSS_Model
 {
 
 }

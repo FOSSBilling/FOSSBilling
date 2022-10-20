@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Model_ActivityClientEmail extends \RedBean_SimpleModel
+class Model_ActivityClientEmail extends FOSS_Model
 {
 
 }

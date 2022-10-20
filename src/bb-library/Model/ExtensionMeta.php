@@ -13,7 +13,7 @@
  */
 
 
-class Model_ExtensionMeta extends \RedBean_SimpleModel
+class Model_ExtensionMeta extends FOSS_Model
 {
 
 }

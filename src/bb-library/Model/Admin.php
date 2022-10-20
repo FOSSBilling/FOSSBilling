@@ -13,7 +13,7 @@
  */
 
 
-class Model_Admin extends \RedBean_SimpleModel
+class Model_Admin extends FOSS_Model
 {
     const ROLE_ADMIN = 'admin';
     const ROLE_STAFF = 'staff';

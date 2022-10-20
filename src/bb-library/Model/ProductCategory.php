@@ -13,6 +13,6 @@
  */
 
 
-class Model_ProductCategory extends RedBean_SimpleModel
+class Model_ProductCategory extends FOSS_Model
 {
 }

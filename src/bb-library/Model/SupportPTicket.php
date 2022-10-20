@@ -13,7 +13,7 @@
  */
 
 
-class Model_SupportPTicket extends RedBean_SimpleModel
+class Model_SupportPTicket extends FOSS_Model
 {
     const OPENED = 'open';
     const ONHOLD = 'on_hold';

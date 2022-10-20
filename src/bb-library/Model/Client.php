@@ -13,7 +13,7 @@
  */
 
 
-class Model_Client extends RedBean_SimpleModel
+class Model_Client extends FOSS_Model
 {
     const ACTIVE                    = 'active';
     const SUSPENDED                 = 'suspended';

@@ -5,7 +5,6 @@ require_once dirname(__FILE__) . '/../src/bb-load.php';
 $config = include dirname(__FILE__) . '/../src/bb-config.php';
 
 require_once dirname(__FILE__) . '/../src/vendor/autoload.php';
-require_once dirname(__FILE__) . '/../src/rb.php';
 
 define('BB_DB_NAME', $config['db']['name']);
 define('BB_DB_USER', $config['db']['user']);

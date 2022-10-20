@@ -13,7 +13,7 @@
  */
 
 
-class Model_ClientPasswordReset extends RedBean_SimpleModel
+class Model_ClientPasswordReset extends FOSS_Model
 {
 
 }

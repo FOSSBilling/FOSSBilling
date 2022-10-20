@@ -13,6 +13,6 @@
  */
 
 
-class Model_SupportTicketMessage extends RedBean_SimpleModel
+class Model_SupportTicketMessage extends FOSS_Model
 {
 }

@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Model_KbArticle extends \RedBean_SimpleModel
+class Model_KbArticle extends FOSS_Model
 {
     const ACTIVE    = 'active';
     const DRAFT     = 'draft';

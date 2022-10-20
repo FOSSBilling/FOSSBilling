@@ -13,7 +13,7 @@
  */
 
 
-class Model_ServiceCustom extends \RedBean_SimpleModel
+class Model_ServiceCustom extends FOSS_Model
 {
 
 }

@@ -13,7 +13,7 @@
  */
 
 
-class Model_SupportPr extends RedBean_SimpleModel
+class Model_SupportPr extends FOSS_Model
 {
 
 }

@@ -13,7 +13,7 @@
  */
 
 
-class Model_ServiceLicense extends \RedBean_SimpleModel
+class Model_ServiceLicense extends FOSS_Model
 {
     private function _decodeJson($j)
     {

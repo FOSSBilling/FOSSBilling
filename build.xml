@@ -38,7 +38,6 @@
         <include name="bb-ipn.php"/>
         <include name="bb-load.php"/>
         <include name="bb-update.php"/>
-        <include name="rb.php"/>
         <include name="index.php"/>
         <include name="robots.txt"/>
         <include name=".htaccess"/>
