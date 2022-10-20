@@ -8,18 +8,18 @@ class DatabaseTest extends BBDbApiTestCase
     public function testModel()
     {
         $model = $this->di['db']->dispense('Admin');
-        $this->assertInstanceOf(FOSS_Model::class, $model);
+        $this->assertInstanceOf(RedBean_SimpleModel::class, $model);
         $id = $this->di['db']->store($model);
         
         $this->assertNotNull($id);
         $model = $this->di['db']->findOne('Admin', 'id = ?', array($id));
-        $this->assertInstanceOf(FOSS_Model::class, $model);
+        $this->assertInstanceOf(RedBean_SimpleModel::class, $model);
 
         $model = $this->di['db']->load('Admin', $id);
-        $this->assertInstanceOf(FOSS_Model::class, $model);
+        $this->assertInstanceOf(RedBean_SimpleModel::class, $model);
 
         $model = $this->di['db']->getExistingModelById('Admin', $id);
-        $this->assertInstanceOf(FOSS_Model::class, $model);
+        $this->assertInstanceOf(RedBean_SimpleModel::class, $model);
 
         $array = $this->di['db']->toArray($model);
         $this->assertIsArray($array);
