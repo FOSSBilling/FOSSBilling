@@ -26,7 +26,7 @@ class DatabaseTest extends BBDbApiTestCase
 
         $models = $this->di['db']->find('Admin');
         foreach($models as $m) {
-            $this->assertInstanceOf(FOSS_Model::class, $m);
+            $this->assertInstanceOf(RedBean_SimpleModel::class, $m);
         }
 
         $this->assertNull($this->di['db']->trash($model));
