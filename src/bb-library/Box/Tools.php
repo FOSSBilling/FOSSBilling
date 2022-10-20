@@ -354,8 +354,12 @@ class Box_Tools
 
     public function decodeJ($json_str)
     {
-        $config = json_decode($json_str, true);
-        return is_array($config) ? $config : array();
+        if(isset($json_str)){
+            $config = json_decode($json_str, true);
+            return is_array($config) ? $config : array();
+        } else {
+            return array();
+        }
     }
     
     public function sortByOneKey(array $array, $key, $asc = true) {
