@@ -509,12 +509,12 @@ class Service implements InjectionAwareInterface
              * It will, however, avoid instances like this when a domain name is entered with a capital letter:
              * https://github.com/boxbilling/boxbilling/discussions/1022#discussioncomment-1311819
              */
-            $item['register_sld'] = ($item['register_sld']) ? strtolower($item['register_sld']) : null;
-            $item['transfer_sld'] = ($item['transfer_sld']) ? strtolower($item['transfer_sld']) : null;
-            $item['sld'] = ($item['sld']) ? strtolower($item['sld']) : null;
-            $item['domain']['owndomain_sld'] = ($item['domain']['owndomain_sld']) ? strtolower($item['domain']['owndomain_sld']) : null;
-            $item['domain']['register_sld'] = ($item['domain']['register_sld']) ? strtolower($item['domain']['register_sld']) : null;
-            $item['domain']['transfer_sld'] = ($item['domain']['transfer_sld']) ? strtolower($item['domain']['transfer_sld']) : null;
+            $item['register_sld'] = (isset($item['register_sld'])) ? strtolower($item['register_sld']) : null;
+            $item['transfer_sld'] = (isset($item['transfer_sld'])) ? strtolower($item['transfer_sld']) : null;
+            $item['sld'] = (isset($item['sld'])) ? strtolower($item['sld']) : null;
+            $item['domain']['owndomain_sld'] = (isset($item['domain']['owndomain_sld'])) ? strtolower($item['domain']['owndomain_sld']) : null;
+            $item['domain']['register_sld'] = (isset($item['domain']['register_sld'])) ? strtolower($item['domain']['register_sld']) : null;
+            $item['domain']['transfer_sld'] = (isset($item['domain']['transfer_sld'])) ? strtolower($item['domain']['transfer_sld']) : null;
 
             $order = $this->di['db']->dispense('ClientOrder');
             $order->client_id = $client->id;
