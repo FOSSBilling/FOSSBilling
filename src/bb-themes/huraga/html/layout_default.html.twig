@@ -49,14 +49,18 @@
 {% endif %}
 
 {% block body %}
-{% if not client %}
+{% if not client and settings.require_login%}
 <script>
     $(function() {
         bb.redirect('{{ "login"|link }}');
     });
 </script>
-{% else %}
-{% set profile = client.client_get %}
+
+{% endif %}
+
+{% if client %}
+    {% set profile = client.client_get %}
+{% endif %}
 {% set company = guest.system_company %}
 
 <div id="wrapper">
@@ -139,7 +143,7 @@
                 {% include 'partial_menu.html.twig' %}
             </nav>
 
-            {% if settings.show_client_details %}
+            {% if settings.show_client_details and client %}
             <section class="user-profile">
                 <figure>
                     <img alt="{{profile.first_name}} {{profile.last_name}} gravatar" src="{{ profile.email|gravatar(60) }}">
@@ -155,7 +159,7 @@
             </section>
             {% endif %}
 
-            {% if settings.sidebar_balance_enabled %}
+            {% if settings.sidebar_balance_enabled and client %}
             <section class="balance">
                 <h2>{{ 'Account balance'|trans }}</h2>
                 <strong>{{ profile.balance | money(profile.currency) }}</strong>
@@ -196,6 +200,79 @@
             {% endif %}
 
             {% include "partial_message.html.twig" %}
+
+            {% if not client %}
+            <div class="row">
+                <article class="span6 data-block decent">
+                    <div class="data-container">
+                        <header>
+                            <h2>{{ 'Profile'|trans }}</h2>
+                        </header>
+                        <section>
+                            <p>{{ 'You are logged out'|trans }}</p>
+                            <ul class="dl-horizontal">
+                                <li>
+                                    <a class="btn btn-alt btn-inverse" href="{{ '/login'|link }}">{{ 'Login'|trans }}</a>
+                                    <a class="btn btn-alt btn-inverse" href="{{ '/signup'|link }}">{{ 'Register'|trans }}</a>
+                                </li>
+                            </ul>
+                        </section>
+                    </div>
+                </article>
+                
+                <article class="span6 data-block decent">
+                    <div class="data-container">
+                        <header>
+                            <h2>{{ 'Order'|trans }}</h2>
+                        </header>
+                        <section>
+                            <p>{{ 'Products and services'|trans }}</p>
+                            <ul class="dl-horizontal">
+                                <li>
+                                    <a class="btn btn-alt btn-inverse" href="{{ '/order'|link }}">{{ 'Order'|trans }}</a>
+                                </li>
+                            </ul>
+                        </section>
+                    </div>
+                </article>
+            </div>
+            <div class="row">
+                {% if guest.extension_is_on({"mod":"news"}) %}
+                <article class="span6 data-block decent">
+                    <div class="data-container">
+                        <header>
+                            <h2>{{ 'News'|trans }}</h2>
+                        </header>
+                        <section>
+                            <p>{{ 'Latest news and announcements' | trans }}</p>
+                            <ul class="dl-horizontal">
+                                <li>
+                                    <a class="btn btn-alt btn-inverse" href="{{ '/news'|link }}">{{ 'Announcements'|trans }}</a>
+                                </li>
+                            </ul>
+                        </section>
+                    </div>
+                </article>
+                {% endif %}
+                {% if guest.extension_is_on({"mod":"kb"}) %}
+                <article class="span6 data-block decent">
+                    <div class="data-container">
+                        <header>
+                            <h2>{{ 'Knowledge Base'|trans }}</h2>
+                        </header>
+                        <section>
+                            <p>{{ 'Browse our KB for answers and FAQ' | trans }}</p>
+                            <ul class="dl-horizontal">
+                                <li>
+                                    <a class="btn btn-alt btn-inverse" href="{{ '/kb'|link }}">{{ 'Knowledge Base'|trans }}</a>
+                                </li>
+                            </ul>
+                        </section>
+                    </div>
+                </article>
+                {% endif %}
+            </div>
+            {% endif %}
 
             {% block content_before %}{% endblock %}
             {% block content %}{% endblock %}
@@ -275,7 +352,6 @@
 </div>
 <noscript>NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's preference settings.</noscript>
 
-{% endif %}
 {% endblock %}
 
 {% if settings.top_menu_order or settings.side_menu_order %}
