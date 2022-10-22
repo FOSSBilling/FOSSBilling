@@ -333,6 +333,8 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Passwords do not match');
         }
 
+        $this->di['validator']->isPasswordStrong($password);
+
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => $data]);

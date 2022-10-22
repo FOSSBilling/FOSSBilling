@@ -60,25 +60,25 @@ class Box_Validate
     
     public function isPasswordStrong($pwd)
     {
-        if( strlen($pwd) < 7 ) {
-            throw new \Box_Exception("Password too short!");
+        if( strlen($pwd) < 8 ) {
+            throw new \Box_Exception("Minimum password length is 8 characters.");
         }
 
         if( !preg_match("#[0-9]+#", $pwd) ) {
-            throw new \Box_Exception("Password must include at least one number!");
+            throw new \Box_Exception("Password must include at least one number.");
         }
 
         if( !preg_match("#[a-z]+#", $pwd) ) {
-            throw new \Box_Exception("Password must include at least one letter!");
+            throw new \Box_Exception("Password must include at least one lowercase letter.");
+        }
+
+        if( !preg_match("#[A-Z]+#", $pwd) ) {
+            throw new \Box_Exception("Password must include at least one uppercase letter.");
         }
 
         /*
-        if( !preg_match("#[A-Z]+#", $pwd) ) {
-            throw new \Box_Exception("Password must include at least one CAPS!");
-        }
-
         if( !preg_match("#\W+#", $pwd) ) {
-            throw new \Box_Exception("Password must include at least one symbol!");
+            $msg = "Password must include at least one symbol!";
         }
         */
         return true;

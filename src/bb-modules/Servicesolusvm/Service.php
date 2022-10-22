@@ -219,7 +219,7 @@ class Service implements InjectionAwareInterface
 
         if (!$username) {
             $username = $client->email;
-            $password = $this->di['tools']->generatePassword(8, 2);
+            $password = $this->di['tools']->generatePassword(8, 3);
             $this->setSolusUserPassword($client, $username, $password);
         }
 

@@ -299,8 +299,20 @@ final class Box_Installer
             return false;
         }
 
-        if (empty($pass)) {
-            return false;
+        if( strlen($pass) < 8 ) {
+            throw new Exception('Minimum password length is 8 characters.');
+        }
+
+        if( !preg_match("#[0-9]+#", $pass) ) {
+            throw new Exception('Password must include at least one number.');
+        }
+
+        if( !preg_match("#[a-z]+#", $pass) ) {
+            throw new Exception('Password must include at least one lowercase letter.');
+        }
+
+        if( !preg_match("#[A-Z]+#", $pass) ) {
+            throw new Exception('Password must include at least one uppercase letter.');
         }
 
         if (empty($name)) {

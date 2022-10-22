@@ -485,6 +485,8 @@ class Service implements InjectionAwareInterface
     {
         $password = $this->di['array_get']($data, 'password', uniqid());
 
+        $this->di['validator']->isPasswordStrong($password);
+
         $client = $this->di['db']->dispense('Client');
 
         $client->auth_type = $this->di['array_get']($data, 'auth_type');
