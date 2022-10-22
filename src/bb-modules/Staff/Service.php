@@ -462,8 +462,6 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $data]);
 
-        $this->di['validator']->isPasswordStrong($data['password']);
-
         $model = $this->di['db']->dispense('Admin');
         $model->role = \Model_Admin::ROLE_STAFF;
         $model->admin_group_id = $data['admin_group_id'];

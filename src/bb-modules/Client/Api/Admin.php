@@ -158,6 +158,8 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Email is already registered.');
         }
 
+        $validator->isPasswordStrong($data['password']);
+
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
         $id = $service->adminCreateClient($data);
         $this->di['events_manager']->fire(['event' => 'onAfterAdminClientCreate', 'params' => $data]);

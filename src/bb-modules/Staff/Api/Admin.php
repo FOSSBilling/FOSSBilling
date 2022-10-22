@@ -164,6 +164,8 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
+        $validator->isPasswordStrong($data['password']);
+
         return $this->getService()->create($data);
     }
 
