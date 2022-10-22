@@ -122,7 +122,7 @@ class AdminTest extends \BBTestCase
         $adminApi->setDi($di);
         $adminApi->setIdentity($model);
         $adminApi->setService($serviceMock);
-        $result = $adminApi->change_password(array('password'=>'84asasd221as', 'password_confirm'=>'84asasd221as'));
+        $result = $adminApi->change_password(array('password'=>'84asasd221AS', 'password_confirm'=>'84asasd221AS'));
         $this->assertTrue($result);
     }
 }

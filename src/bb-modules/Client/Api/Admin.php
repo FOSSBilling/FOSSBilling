@@ -158,6 +158,8 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Email is already registered.');
         }
 
+        $validator->isPasswordStrong($data['password']);
+
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
         $id = $service->adminCreateClient($data);
         $this->di['events_manager']->fire(['event' => 'onAfterAdminClientCreate', 'params' => $data]);
@@ -332,6 +334,8 @@ class Admin extends \Api_Abstract
         if ($data['password'] != $data['password_confirm']) {
             throw new \Box_Exception('Passwords do not match');
         }
+
+        $this->di['validator']->isPasswordStrong($password);
 
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 

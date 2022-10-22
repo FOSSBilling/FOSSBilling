@@ -179,15 +179,6 @@ class Box_Tools
     	$symbols = '!@#$%&?()+-_';
 
 		switch ($strength) {
-			//lowercase
-			case 1:
-				$lower = $length;
-			break;
-			//lowercase + numeric
-			case 2:
-				$lower = random_int(1, $length - 1);
-				$numeric = $length - $lower;
-			break;
 			//lowercase + uppsercase + numeric
 			case 3:
 				$lower = random_int(1, $length - 2);

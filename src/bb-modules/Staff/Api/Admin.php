@@ -162,7 +162,10 @@ class Admin extends \Api_Abstract
             'name' => 'Name param is missing',
             'admin_group_id' => 'Group id is missing',
         ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        $validator = $this->di['validator'];
+        $validator->checkRequiredParamsForArray($required, $data);
+
+        $validator->isPasswordStrong($data['password']);
 
         return $this->getService()->create($data);
     }
