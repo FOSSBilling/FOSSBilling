@@ -104,13 +104,21 @@
                     {% endif %}
                     {% if settings.top_menu_profile %}
                     <li>
-                        <a href="{{ 'client/me'|link }}" class="show-tip" title="{{ 'Profile'|trans }}">{{ 'Profile'|trans }}</a>
+                        {% if client %}
+                            <a href="{{ 'client/me'|link }}" class="show-tip" title="{{ 'Profile'|trans }}">{{ 'Profile'|trans }}</a>
+                        {% else %}
+                            <a href="{{ 'login'|link }}" class="show-tip" title="{{ 'Login'|trans }}">{{ 'Login'|trans }}</a>
+                        {% endif %}
                     </li>
                     {% endif %}
 
                     {% if settings.top_menu_signout %}
                     <li>
-                        <a href="{{ 'client/logout'|link }}" class="show-tip" title="{{ 'Sign out'|trans }}">{{ 'Sign out'|trans }}</a>
+                        {% if client %}
+                            <a href="{{ 'client/logout'|link }}" class="show-tip" title="{{ 'Sign out'|trans }}">{{ 'Sign out'|trans }}</a>
+                        {% else %}
+                            <a href="{{ 'signup'|link }}" class="show-tip" title="{{ 'Register'|trans }}">{{ 'Register'|trans }}</a>
+                        {% endif %}
                     </li>
                     {% endif %}
                 </ul>

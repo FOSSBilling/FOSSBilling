@@ -33,7 +33,8 @@ try {
     if ('cli' === PHP_SAPI) {
         echo "\e[32mSuccessfully ran the cron jobs.\e[0m";
     } else {
-        $login_url = $di['url']->link('bb-admin');
+        $admin_prefix = $di['config']['admin_area_prefix'];
+        $login_url = $di['url']->link($admin_prefix);
         unset($service, $interval, $di);
         header("Location: $login_url");
     }
