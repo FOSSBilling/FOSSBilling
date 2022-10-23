@@ -177,7 +177,9 @@
             {% endif %}
         </div>
 
+        {% block content_before %}{% endblock %}
         <div class="content-block" role="main">
+            {% block content %}{% endblock %}
 
             {% if settings.show_breadcrumb %}
             {% block breadcrumbs %}
@@ -274,8 +276,6 @@
             </div>
             {% endif %}
 
-            {% block content_before %}{% endblock %}
-            {% block content %}{% endblock %}
             {% block content_after %}{% endblock %}
         </div>
     </section>
