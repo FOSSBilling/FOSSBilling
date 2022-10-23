@@ -46,7 +46,7 @@ class Model_ClientPasswordResetTable implements \Box\InjectionAwareInterface
         }
         
         $r->ip          = $ip;
-        $r->hash        = sha1(random_int(50, random_int(10, 99)));
+        $r->hash        = hash('sha256', random_int(50, random_int(10, 99)));
         $r->updated_at  = date('Y-m-d H:i:s');
         $this->di['db']->store($r);
         

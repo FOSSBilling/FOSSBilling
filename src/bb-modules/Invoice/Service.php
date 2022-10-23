@@ -548,7 +548,7 @@ class Service implements InjectionAwareInterface
 
         $model->serie = $systemService->getParamValue('invoice_series');
         $model->nr = $model->id;
-        $model->hash = sha1(uniqid());
+        $model->hash = hash('sha256', random_bytes(13));
 
         $taxtitle = '';
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
