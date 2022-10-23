@@ -121,3 +121,14 @@
 <!-- No WYSIWYG, no fancy stuff. Enable the WYSIWYG extension for a better management experience. -->
 {% endif %}
 {% endmacro %}
+
+{% macro table_search() %}
+<div style="position: relative;">
+    <div class="dataTables_filter">
+        <form method="get" action="">
+            <input type="hidden" name="_url" value="{{request._url}}"/>
+            <label>{% trans %}Search:{% endtrans %} <input type="text" name="search" placeholder="{% trans %}Enter search text..{% endtrans %}" value="{{request.search}}"><div class="srch"></div></label>
+        </form>
+    </div>
+</div>
+{% endmacro %}
