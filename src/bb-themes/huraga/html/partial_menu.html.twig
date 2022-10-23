@@ -42,13 +42,13 @@
     </li>
     {% endif %}
 
-    {% if guest.extension_is_on({"mod":"news"}) %}
+    {% if guest.extension_is_on({"mod":"news"}) && settings.side_menu_news %}
     <li class="main-menu">
         <a href="{{ '/news'|link }}"><span class="awe-edit"></span>{{ 'Blog'|trans }}</a>
     </li>
     {% endif %}
 
-    {% if guest.extension_is_on({"mod":"kb"}) %}
+    {% if guest.extension_is_on({"mod":"kb"}) && settings.side_menu_kb %}
     <li class="main-menu">
         <a href="{{ '/kb'|link }}"><span class="awe-book"></span>{{ 'Knowledge Base'|trans }}</a>
     </li>
