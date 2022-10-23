@@ -335,7 +335,7 @@ class Admin extends \Api_Abstract
             throw new \Box_Exception('Passwords do not match');
         }
 
-        $this->di['validator']->isPasswordStrong($password);
+        $this->di['validator']->isPasswordStrong($data['password']);
 
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
