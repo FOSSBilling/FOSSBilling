@@ -345,7 +345,8 @@ class Box_App
          *
          * @since 4.22.0
          */
-        if (true === $this->di['config']['maintenance_mode']['enabled']) {
+        $maintmode = isset($this->di['config']['maintenance_mode']) ? $this->di['config']['maintenance_mode']['enabled'] : false;
+        if ($maintmode) {
             // Check the allowlists
             if ($this->checkAdminPrefix() && $this->checkAllowedURLs() && $this->checkAllowedIPs()) {
                 // Set response code to 503.

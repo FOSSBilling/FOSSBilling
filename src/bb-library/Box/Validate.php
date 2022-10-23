@@ -64,6 +64,10 @@ class Box_Validate
             throw new \Box_Exception("Minimum password length is 8 characters.");
         }
 
+        if( strlen($pwd) > 256 ) {
+            throw new \Box_Exception("Maximum password length is 256 characters.");
+        }
+
         if( !preg_match("#[0-9]+#", $pwd) ) {
             throw new \Box_Exception("Password must include at least one number.");
         }
