@@ -236,7 +236,7 @@ copy_htaccess
 remove_installation_leftovers
 
 print_success "\e[1mInstallation complete.\e[0m"
-print_header "To create your administrator account, please visit the following URL: http://localhost/bb-admin"
+print_header "To create your administrator account, please visit the following URL: http://localhost/admin"
 print_separator
 print_success "\e[1mFOSSBilling needs funding!\e[0m We're working hard to maintain FOSSBilling in the long run. If you'd like to support us, please consider donating to our project. We'd really appreciate it! See https://github.com/sponsors/FOSSBilling for more information."
 print_success "You can also join the FOSSBilling Discord server at https://fossbilling.org/discord."
