@@ -128,7 +128,7 @@ class Admin extends \Api_Abstract
         $msg->queue_id = $q->id;
         $msg->handler = $handler;
         $msg->body = $body;
-        $msg->hash = md5($body);
+        $msg->hash = hash('sha256', $body);
         $msg->created_at = date('Y-m-d H:i:s');
         $msg->updated_at = date('Y-m-d H:i:s');
 
@@ -294,7 +294,7 @@ class Admin extends \Api_Abstract
 
         foreach ($stmt1->fetchAll() as $data) {
             $stmt = $db->prepare($sql2);
-            $stmt->bindValue('handle', md5(random_bytes(23)), \PDO::PARAM_STR);
+            $stmt->bindValue('handle', hash('sha256', random_bytes(23)), \PDO::PARAM_STR);
             $stmt->bindValue('id', $data['id'], \PDO::PARAM_INT);
             $stmt->bindValue('timeout', $microtime);
             if ($stmt->execute()) {
