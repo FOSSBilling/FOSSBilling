@@ -102,6 +102,7 @@ class Client extends \Api_Abstract
             'password_confirm' => 'Password confirmation required',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        $this->di['validator']->isPasswordStrong($data['password']);
 
         if ($data['password'] != $data['password_confirm']) {
             throw new \Box_Exception('Passwords do not match.');
