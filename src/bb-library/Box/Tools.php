@@ -477,4 +477,69 @@ class Box_Tools
         return $result;
     }
 
+    public function updateConfig(){
+        $configPath = BB_PATH_ROOT.'/bb-config.php';
+        $currentConfig = include $configPath;
+
+        if(!is_array($currentConfig)){
+            throw new \Box_Exception('Unable to load existing configuration. updateConfig() is unable to progress.');
+        }
+        if(!copy($configPath, $configPath . '.old')){
+            throw new \Box_Exception('Unable to create backup of configuration file. Canceling config migration.');
+        }
+
+        $newConfig = [
+            'debug' => (isset($currentConfig['debug'])) ? $currentConfig['debug'] : false,
+            'maintenance_mode' => [
+                'enabled' => (isset($currentConfig['maintenance_mode']['enabled'])) ? $currentConfig['maintenance_mode']['enabled'] : false,
+                'allowed_urls' => (isset($currentConfig['maintenance_mode']['allowed_urls'])) ? $currentConfig['maintenance_mode']['allowed_urls'] : [],
+                'allowed_ips' => (isset($currentConfig['maintenance_mode']['allowed_ips'])) ? $currentConfig['maintenance_mode']['allowed_ips'] : [],
+            ],
+            'salt' => $currentConfig['salt'],
+            'url' => $currentConfig['url'],
+            'admin_area_prefix' => $currentConfig['admin_area_prefix'],
+            'sef_urls' => $currentConfig['sef_urls'],
+            'timezone' => $currentConfig['timezone'],
+            'locale' =>  $currentConfig['locale'],
+            'locale_date_format' => ($currentConfig['locale_date_format'] === '%A, %d %B %G') ? 'l, d F o' : $currentConfig['locale_date_format'],
+            'locale_time_format' => ($currentConfig['locale_time_format'] === ' %T') ? ' G:i:s' : $currentConfig['locale_time_format'],
+            'path_data' => $currentConfig['path_data'],
+            'path_logs' => $currentConfig['path_logs'],
+            'log_to_db' => $currentConfig['log_to_db'],
+            'db' => [
+                'type' => $currentConfig['db']['type'],
+                'host' => $currentConfig['db']['host'],
+                'port' => (isset($currentConfig['db']['port'])) ? $currentConfig['db']['port'] : '3306',
+                'name' => $currentConfig['db']['name'],
+                'user' => $currentConfig['db']['user'],
+                'password' => $currentConfig['db']['password'],
+            ],
+            'twig' => [
+                'debug' => $currentConfig['twig']['debug'],
+                'auto_reload' => $currentConfig['twig']['auto_reload'],
+                'cache' => $currentConfig['twig']['cache'],
+            ],
+            'api' => [
+                'require_referrer_header' => $currentConfig['api']['require_referrer_header'],
+                'allowed_ips' => $currentConfig['api']['allowed_ips'],
+                'rate_span' => $currentConfig['api']['rate_span'],
+                'rate_limit' => $currentConfig['api']['rate_limit'],
+                'throttle_delay' => (isset($currentConfig['api']['rate_limit'])) ? $currentConfig['api']['rate_limit'] : 2,
+                'rate_span_login' => (isset($currentConfig['api']['rate_span_login'])) ? $currentConfig['api']['rate_span_login'] : 60,
+                'rate_limit_login' => (isset($currentConfig['api']['rate_limit_login'])) ? $currentConfig['api']['rate_limit_login'] : 20,
+            ],
+            'guzzle' => [
+                'user_agent' => (isset($currentConfig['guzzle']['user_agent'])) ? $currentConfig['guzzle']['user_agent'] : 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; FOSSBilling; +http://fossbilling.org) Gecko/20100101 Firefox/93.0',
+                'timeout' => (isset($currentConfig['guzzle']['timeout'])) ? $currentConfig['guzzle']['timeout'] : 0,
+                'upgrade_insecure_requests' => (isset($currentConfig['guzzle']['upgrade_insecure_requests'])) ? $currentConfig['guzzle']['upgrade_insecure_requests'] : 0,
+            ],
+        ];
+        $output = '<?php ' . PHP_EOL;
+        $output .= 'return ' . var_export($newConfig, true) . ';';
+        if(file_put_contents($configPath, $output)){
+            return true;
+        } else {
+            throw new \Box_Exception('Error when writing updated configuration file.');
+        }
+    }
 }
