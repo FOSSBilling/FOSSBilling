@@ -6,22 +6,21 @@
 	margin:0px; padding:0px;
 	outline:none;
 }
-.markItUp {
-    margin-bottom: 10px;
-}
 .markItUp a:link,
 .markItUp a:visited {
 	color:#000;
 	text-decoration:none;
 }
-.markItUpContainer textarea {
-    width: 100%;
+.markItUp  {
+	width:700px;
+	margin:5px 0 5px 0;
+	border:5px solid #F5F5F5;	
 }
 .markItUpContainer  {
+	border:1px solid #3C769D;	
 	background:#FFF url(images/bg-container.png) repeat-x top left;
 	padding:5px 5px 2px 5px;
 	font:11px Verdana, Arial, Helvetica, sans-serif;
-    min-width: 435px;
 }
 .markItUpEditor {
 	font:12px 'Courier New', Courier, monospace;
@@ -37,7 +36,7 @@
 .markItUpPreviewFrame	{
 	overflow:auto;
 	background-color:#FFFFFF;
-	border:1px solid #3C4049;
+	border:1px solid #3C769D;
 	width:99.9%;
 	height:300px;
 	margin:5px 0;
