@@ -148,6 +148,9 @@ class Box_Update
             error_log('Calling foss-update.php script from auto-updater');
             $this->di['tools']->file_get_contents(BB_URL.'foss-update.php');
         }
+
+        //Migrate the configuration file
+        $this->di['tools']->updateConfig();
         
         // clean up things
         $this->di['tools']->emptyFolder(BB_PATH_CACHE);
