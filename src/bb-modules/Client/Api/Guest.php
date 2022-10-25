@@ -223,7 +223,7 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
         }
 
-        $new_pass = substr(md5(time().uniqid()), 0, 10);
+        $new_pass = $this->di['tools']->generatePassword();
 
         $c = $this->di['db']->getExistingModelById('Client', $reset->client_id, 'Client not found');
         $c->pass = $this->di['password']->hashIt($new_pass);
