@@ -14,7 +14,7 @@ class FOSS_ToolsTest extends PHPUnit\Framework\TestCase
         $di['tools'] = $toolsMock;
 
         $result = $this->di['tools']->validateAndSanitizeEmail($email, false);
-        $this->assertEquals($email, $result)
+        $this->assertEquals($email, $result);
     }
 
     public function testValidateAndSanitizeEmailID()
@@ -26,7 +26,7 @@ class FOSS_ToolsTest extends PHPUnit\Framework\TestCase
         $di['tools'] = $toolsMock;
 
         $result = $this->di['tools']->validateAndSanitizeEmail($email, false);
-        $this->assertEquals($email, $result)
+        $this->assertEquals($email, $result);
     }
 
     public function testValidateAndSanitizeEmailInvalid()
@@ -38,6 +38,6 @@ class FOSS_ToolsTest extends PHPUnit\Framework\TestCase
         $di['tools'] = $toolsMock;
 
         $result = $this->di['tools']->validateAndSanitizeEmail($email, false);
-        $this->assertFalse($result)
+        $this->assertFalse($result);
     }
 }
