@@ -188,7 +188,6 @@ class AdminTest extends \BBTestCase
         method('emailAreadyRegistered')->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
 
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
@@ -389,7 +388,6 @@ class AdminTest extends \BBTestCase
         method('fire');
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
         $validatorMock->expects($this->atLeastOnce())
             ->method('checkRequiredParamsForArray');
 

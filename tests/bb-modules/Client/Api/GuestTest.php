@@ -49,7 +49,6 @@ class GuestTest extends \BBTestCase {
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
-        $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
@@ -110,6 +109,10 @@ class GuestTest extends \BBTestCase {
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
+
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $di['tools'] = $toolsMock;
 
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
@@ -295,6 +298,10 @@ class GuestTest extends \BBTestCase {
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
 
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $di['tools'] = $toolsMock;
+
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
 
@@ -346,10 +353,6 @@ class GuestTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
-
-        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
-        $di['tools'] = $toolsMock;
 
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
