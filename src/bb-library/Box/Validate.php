@@ -54,6 +54,7 @@ class Box_Validate
     */
     public function isEmailValid($email, $throw = true)
     {
+        $email = idn_to_ascii($email);
         $valid = (filter_var($email, FILTER_VALIDATE_EMAIL)) ? true : false;
         if(!$valid && $throw) {
             throw new \Box_Exception('Email is not valid');

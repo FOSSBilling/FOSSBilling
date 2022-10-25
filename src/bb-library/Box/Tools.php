@@ -544,6 +544,7 @@ class Box_Tools
     }
 
     public function validateAndSanitizeEmail($email, $throw = true){
+        $email = idn_to_ascii($email);
         $email = filter_var($email, FILTER_SANITIZE_EMAIL);
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)){
