@@ -11,6 +11,8 @@ class FOSS_ToolsTest extends PHPUnit\Framework\TestCase
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
+        $di = new \Box_Di();
         $di['tools'] = $toolsMock;
 
         $result = $this->di['tools']->validateAndSanitizeEmail($testEmail, false);
@@ -23,6 +25,8 @@ class FOSS_ToolsTest extends PHPUnit\Framework\TestCase
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
+        $di = new \Box_Di();
         $di['tools'] = $toolsMock;
 
         $result = $this->di['tools']->validateAndSanitizeEmail($testEmail, false);
@@ -35,6 +39,8 @@ class FOSS_ToolsTest extends PHPUnit\Framework\TestCase
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
+        $di = new \Box_Di();
         $di['tools'] = $toolsMock;
 
         $result = $this->di['tools']->validateAndSanitizeEmail($testEmail, false);
