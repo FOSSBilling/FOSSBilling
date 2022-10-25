@@ -100,7 +100,6 @@ class GuestTest extends \BBTestCase {
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
-        $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
         $di = new \Box_Di();
@@ -353,6 +352,10 @@ class GuestTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
+
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('generatePassword');
+        $di['tools'] = $toolsMock;
 
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
