@@ -261,6 +261,9 @@ class GuestTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
 
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;

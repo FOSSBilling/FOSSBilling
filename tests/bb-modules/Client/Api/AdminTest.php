@@ -156,7 +156,6 @@ class AdminTest extends \BBTestCase
         method('fire');
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
@@ -189,8 +188,12 @@ class AdminTest extends \BBTestCase
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
 
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
+        $di['tools'] = $toolsMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
