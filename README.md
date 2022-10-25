@@ -59,7 +59,8 @@ The following environment is highly recommended for running FOSSBilling. It *may
     - zlib
     - gettext
     - openssl
-	- mbstring
+    - mbstring
+    - intl
 
 ## Example Configurations
 - [nginx](https://github.com/fossbilling/fossbilling/blob/master/data/nginx.conf)
