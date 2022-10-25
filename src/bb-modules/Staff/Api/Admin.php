@@ -82,6 +82,10 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
+        if(!is_null($data['email']){
+            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        }
+
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         return $this->getService()->update($model, $data);
@@ -164,6 +168,8 @@ class Admin extends \Api_Abstract
         ];
         $validator = $this->di['validator'];
         $validator->checkRequiredParamsForArray($required, $data);
+
+        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
         $validator->isPasswordStrong($data['password']);
 
@@ -458,6 +464,10 @@ class Admin extends \Api_Abstract
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffProfileUpdate', 'params' => $event_params]);
 
         $admin = $this->getIdentity();
+
+        if(!is_null($data['email'])){
+            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        }
 
         $admin->email = $this->di['array_get']($data, 'email', $admin->email);
         $admin->name = $this->di['array_get']($data, 'name', $admin->name);

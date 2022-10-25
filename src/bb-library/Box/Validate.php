@@ -49,6 +49,9 @@ class Box_Validate
         }
     }
 
+    /*
+     * Deprecated. It is recommended to instead use validateAndSanitizeEmail() whenever possible.
+    */
     public function isEmailValid($email, $throw = true)
     {
         $valid = (filter_var($email, FILTER_VALIDATE_EMAIL)) ? true : false;

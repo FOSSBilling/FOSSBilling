@@ -151,7 +151,7 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $validator = $this->di['validator'];
-        $validator->isEmailValid($data['email']);
+        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
         $service = $this->getService();
         if ($service->emailAreadyRegistered($data['email'])) {
@@ -246,7 +246,7 @@ class Admin extends \Api_Abstract
 
         if (!is_null($this->di['array_get']($data, 'email'))) {
             $email = $this->di['array_get']($data, 'email');
-            $this->di['validator']->isEmailValid($email);
+            $email = $this->di['tools']->validateAndSanitizeEmail($email);
             if ($service->emailAreadyRegistered($email, $client)) {
                 throw new \Box_Exception('Can not change email. It is already registered.');
             }

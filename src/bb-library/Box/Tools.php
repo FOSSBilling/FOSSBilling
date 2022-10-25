@@ -542,4 +542,18 @@ class Box_Tools
             throw new \Box_Exception('Error when writing updated configuration file.');
         }
     }
+
+    public function validateAndSanitizeEmail($email, $throw = true){
+        $email = filter_var($email, FILTER_SANITIZE_EMAIL);
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)){
+            if($throw){
+                throw new \Box_Exception('Email address is invalid');
+            } else {
+                return false;
+            }
+        }
+
+        return $email;
+    }
 }
