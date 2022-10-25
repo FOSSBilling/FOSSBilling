@@ -82,7 +82,7 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        if(!is_null($data['email']){
+        if(!is_null($data['email'])){
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
         }
 

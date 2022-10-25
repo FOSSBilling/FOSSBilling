@@ -46,7 +46,7 @@ class Guest extends \Api_Abstract
         $validator->checkRequiredParamsForArray($required, $data);
         $validator->isPasswordStrong($data['password']);
 
-        if(!is_null($data['email']){
+        if(!is_null($data['email'])){
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
         }
 
