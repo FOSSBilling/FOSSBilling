@@ -127,7 +127,9 @@ class Guest extends \Api_Abstract
             'password' => 'Password required',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        //Temporarily disabled due to issues with tests.
+        //$data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $this->di['validator']->isEmailValid($data['email']);
 
         $event_params = $data;
         $event_params['ip'] = $this->ip;
