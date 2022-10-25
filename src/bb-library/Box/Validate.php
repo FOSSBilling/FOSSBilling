@@ -51,7 +51,7 @@ class Box_Validate
 
     public function isEmailValid($email, $throw = true)
     {
-        $valid = (preg_match("/[-a-zA-Z0-9_.+]+@[a-zA-Z0-9-]{2,}\.[a-zA-Z]{2,}/", $email) > 0) ? true : false;
+        $valid = (filter_var($email, FILTER_VALIDATE_EMAIL)) ? true : false;
         if(!$valid && $throw) {
             throw new \Box_Exception('Email is not valid');
         }
