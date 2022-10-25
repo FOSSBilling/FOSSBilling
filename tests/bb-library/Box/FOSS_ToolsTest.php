@@ -7,37 +7,37 @@ class FOSS_ToolsTest extends PHPUnit\Framework\TestCase
 {
         public function testValidateAndSanitizeEmail()
     {
-        $email = 'example@example.com';
+        $testEmail = 'example@example.com';
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
-        $result = $this->di['tools']->validateAndSanitizeEmail($email, false);
-        $this->assertEquals($email, $result);
+        $result = $this->di['tools']->validateAndSanitizeEmail($testEmail, false);
+        $this->assertEquals($testEmail, $result);
     }
 
     public function testValidateAndSanitizeEmailID()
     {
-        $email = 'example@example-tést.eu';
+        $testEmail = 'example@example-tést.eu';
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
-        $result = $this->di['tools']->validateAndSanitizeEmail($email, false);
-        $this->assertEquals($email, $result);
+        $result = $this->di['tools']->validateAndSanitizeEmail($testEmail, false);
+        $this->assertEquals($testEmail, $result);
     }
 
     public function testValidateAndSanitizeEmailInvalid()
     {
-        $email = '<a href="http://somethingnotgood.com">Totally an email</a>"';
+        $testEmail = '<a href="http://somethingnotgood.com">Totally an email</a>"';
 
         $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
-        $result = $this->di['tools']->validateAndSanitizeEmail($email, false);
+        $result = $this->di['tools']->validateAndSanitizeEmail($testEmail, false);
         $this->assertFalse($result);
     }
 }
