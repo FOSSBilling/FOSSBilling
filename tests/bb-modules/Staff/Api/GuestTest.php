@@ -50,6 +50,10 @@ class GuestTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
 
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $di['tools'] = $toolsMock;
+
         $apiMock->setDi($di);
         $apiMock->setService($serviceMock);
 
@@ -135,6 +139,10 @@ class GuestTest extends \BBTestCase
 
         $di = new \Box_Di();
         $di['validator'] = $validatorMock;
+
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $di['tools'] = $toolsMock;
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setMod($modMock);

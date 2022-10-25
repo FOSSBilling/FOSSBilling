@@ -44,6 +44,8 @@ class ClientTest extends \BBTestCase {
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Box_Di();
         $di['mod_service'] = $di->protect(function ($name) use($serviceMock) {return $serviceMock;});
@@ -52,6 +54,7 @@ class ClientTest extends \BBTestCase {
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
+        $di['tools'] = $toolsMock;
 
         $client = new \Box\Mod\Client\Api\Client();
         $client->setDi($di);
