@@ -90,7 +90,7 @@
 
             <div class="card-footer d-flex align-items-center justify-content-between">
                 {% include 'partial_batch_delete.html.twig' with { 'action': 'admin/invoice/batch_delete_subscription' } %}
-                {% include '_pagination.html.twig' with { 'list': subscriptions, 'url': 'invoice/subscriptions' } %}
+                {% include 'partial_pagination.html.twig' with { 'list': subscriptions, 'url': 'invoice/subscriptions' } %}
             </div>
         </div>
 

@@ -255,7 +255,7 @@
 
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     {% include "partial_batch_delete.html.twig" with { 'action': 'admin/invoice/batch_delete' } %}
-                    {% include "_pagination.html.twig" with { 'list': invoices, 'url': 'invoice' } %}
+                    {% include "partial_pagination.html.twig" with { 'list': invoices, 'url': 'invoice' } %}
                 </div>
             </div>
 
