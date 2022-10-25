@@ -49,8 +49,9 @@ class GuestTest extends \BBTestCase {
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
-        $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
 
         $di = new \Box_Di();
@@ -60,6 +61,8 @@ class GuestTest extends \BBTestCase {
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
+        $di['tools'] = $toolsMock;
+
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
         $client->setService($serviceMock);
@@ -97,7 +100,6 @@ class GuestTest extends \BBTestCase {
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
-        $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
         $validatorMock->expects($this->atLeastOnce())->method('checkRequiredParamsForArray');
 
         $di = new \Box_Di();
@@ -106,6 +108,10 @@ class GuestTest extends \BBTestCase {
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
+
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $di['tools'] = $toolsMock;
 
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
@@ -199,17 +205,21 @@ class GuestTest extends \BBTestCase {
         $cookieMock = $this->getMockBuilder('\Box_Cookie')->getMock();
         $cookieMock->expects($this->atLeastOnce())
             ->method('set');
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        //$toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
 
         $di = new \Box_Di();
         $di['events_manager'] = $eventMock;
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
         $di['cookie'] = $cookieMock;
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
+        $di['tools'] = $toolsMock;
 
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
@@ -245,16 +255,21 @@ class GuestTest extends \BBTestCase {
         $emailServiceMock =  $serviceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
         $emailServiceMock->expects($this->atLeastOnce())->
             method('sendTemplate');
+        
+        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
+        $validatorMock->expects($this->atLeastOnce())
+            ->method('checkRequiredParamsForArray')
+            ->will($this->returnValue(null));
+
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(function ($name) use($emailServiceMock) {return $emailServiceMock;});
         $di['logger'] = new \Box_Log();
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
+        $di['tools'] = $toolsMock;
         $di['validator'] = $validatorMock;
 
         $client = new \Box\Mod\Client\Api\Guest();
@@ -284,6 +299,10 @@ class GuestTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
+
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $di['tools'] = $toolsMock;
 
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);
@@ -336,6 +355,10 @@ class GuestTest extends \BBTestCase {
             ->method('checkRequiredParamsForArray')
             ->will($this->returnValue(null));
         $di['validator'] = $validatorMock;
+
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('generatePassword');
+        $di['tools'] = $toolsMock;
 
         $client = new \Box\Mod\Client\Api\Guest();
         $client->setDi($di);

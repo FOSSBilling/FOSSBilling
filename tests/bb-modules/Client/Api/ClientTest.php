@@ -142,13 +142,16 @@ class ClientTest extends \BBTestCase {
         method('fire');
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
-        $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
+
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['validator'] = $validatorMock;
         $di['logger'] = new \Box_Log();
+        $di['tools'] = $toolsMock;
 
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;

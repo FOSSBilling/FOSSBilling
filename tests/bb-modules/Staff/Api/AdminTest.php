@@ -230,6 +230,10 @@ class AdminTest extends \BBTestCase {
         $di = new \Box_Di();
         $di['validator'] = $validatorMock;
 
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $di['tools'] = $toolsMock;
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 

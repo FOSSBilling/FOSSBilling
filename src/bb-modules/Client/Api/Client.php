@@ -80,7 +80,7 @@ class Client extends \Api_Abstract
 
         $email = $this->di['array_get']($data, 'email', '');
         if (!empty($email)) {
-            $this->di['validator']->isEmailValid($email);
+            $email = $this->di['tools']->validateAndSanitizeEmail($email);
 
             $this->getService()->canChangeEmail($client, $email);
 

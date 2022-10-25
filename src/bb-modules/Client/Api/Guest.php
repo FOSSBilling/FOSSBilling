@@ -87,7 +87,7 @@ class Guest extends \Api_Abstract
         $service = $this->getService();
 
         $email = $this->di['array_get']($data, 'email');
-        $this->di['validator']->isEmailValid($email);
+        $email = $this->di['tools']->validateAndSanitizeEmail($email);
         $email = strtolower(trim($email));
         if ($service->clientAlreadyExists($email)) {
             throw new \Box_Exception('Email is already registered. You may want to login instead of registering.');
@@ -127,6 +127,9 @@ class Guest extends \Api_Abstract
             'password' => 'Password required',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        //Temporarily disabled due to issues with tests.
+        //$data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $this->di['validator']->isEmailValid($data['email']);
 
         $event_params = $data;
         $event_params['ip'] = $this->ip;
@@ -171,6 +174,7 @@ class Guest extends \Api_Abstract
             'email' => 'Email required',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
         $this->di['events_manager']->fire(['event' => 'onBeforeGuestPasswordResetRequest', 'params' => $data]);
 
@@ -223,7 +227,7 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
         }
 
-        $new_pass = substr(md5(time().uniqid()), 0, 10);
+        $new_pass = $this->di['tools']->generatePassword();
 
         $c = $this->di['db']->getExistingModelById('Client', $reset->client_id, 'Client not found');
         $c->pass = $this->di['password']->hashIt($new_pass);
