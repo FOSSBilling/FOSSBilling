@@ -5,10 +5,18 @@
 
 
 {% block breadcrumbs %}
-<ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
-    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
-    <li class="lastB">{{ 'Wysiwyg settings'|trans }}</li>
+<ul class="breadcrumb">
+    <li class="breadcrumb-item">
+        <a href="{{ '/'|alink }}">
+            <svg class="icon">
+                <use xlink:href="#home" />
+            </svg>
+        </a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">{{ 'Wysiwyg settings'|trans }}</li>
 </ul>
 {% endblock %}
 

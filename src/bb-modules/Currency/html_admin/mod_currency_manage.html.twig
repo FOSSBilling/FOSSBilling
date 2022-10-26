@@ -7,12 +7,20 @@
 {% block meta_title %}{{ 'Currency management'|trans }}{% endblock %}
 
 {% block breadcrumbs %}
-<ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
-    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
-    <li><a href="{{ 'extension/settings/currency'|alink }}">{{ 'Currency settings'|trans }}</a></li>
-    <li class="lastB">{{currency.code}}</li>
-</ul>
+    <ul class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Cron settings'|trans }}</li>
+        <li class="breadcrumb-item">{{currency.code}}</li>
+    </ul>
 {% endblock %}
 
 {% block content %}
