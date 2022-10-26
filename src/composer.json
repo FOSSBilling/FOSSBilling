@@ -31,7 +31,8 @@
         "psr/log": "^3.0.0",
         "symfony/translation": "^6.0",
         "symfony/twig-bridge": "^6.0",
-        "dompdf/dompdf": "^2.0.1"
+        "dompdf/dompdf": "^2.0.1",
+        "symfony/polyfill-intl-idn" : "*"
      
     },
     "require-dev": {
@@ -40,7 +41,8 @@
         "symfony/deprecation-contracts": "^3.0.0"
     },
     "suggest": {
-        "ext-gettext": "*"
+        "ext-gettext": "*",
+        "ext-intl": "*"
     },
     "autoload": {
         "psr-0": {"": "bb-library"},
