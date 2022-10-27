@@ -11,12 +11,21 @@
 <link rel='stylesheet' href='css/spectrum.css' />
 {% endblock %}
 
+
 {% block breadcrumbs %}
-<ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
-    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
-    <li class="lastB">{{ 'Order Button settings'|trans }}</li>
-</ul>
+    <ul class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Order Button settings'|trans }}</li>
+    </ul>
 {% endblock %}
 
 {% block content %}
