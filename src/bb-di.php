@@ -423,7 +423,8 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
 });
 
 $di['array_get'] = $di->protect(function (array $array, $key, $default = null) {
-    return array_key_exists($key, $array) ? $array[$key] : $default;
+    $result = array_key_exists($key, $array) ? $array[$key] : $default;
+    return ($result === '') ? null : $result;
 });
 
 return $di;
