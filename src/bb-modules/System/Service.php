@@ -229,7 +229,7 @@ class Service
         return true;
     }
 
-    public function getMessages($type)
+    public function getMessages($type, $runFromTest = false)
     {
         $msgs = [];
 
@@ -243,17 +243,19 @@ class Service
             error_log($e->getMessage());
         }
         $last_exec = $this->getParamValue('last_cron_exec');
-        if (!$last_exec) {
-            $msgs['info'][] = 'Cron was never executed. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup cron job.';
-            $cronService = $this->di['mod_service']('cron');
-            $cronService->runCrons($interval);
-        } else {
-            $minSinceLastExec = (time() - strtotime($last_exec)) / 60;
-            if($minSinceLastExec >= 15){
-                $msgs['info'][] = 'Cron hasn\'t been executed in '. $minSinceLastExec . 'minutes. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup cron job.';
+        if($runFromTest === false) {
+            if (!$last_exec) {
+                $msgs['info'][] = 'Cron was never executed. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup cron job.';
                 $cronService = $this->di['mod_service']('cron');
-                $cronService->runCrons();
-                error_log("Cron hasn't been run in $minSinceLastExec minutes. Manually executing.");
+                $cronService->runCrons($interval);
+            } else {
+                $minSinceLastExec = (time() - strtotime($last_exec)) / 60;
+                if($minSinceLastExec >= 15){
+                    $msgs['info'][] = 'Cron hasn\'t been executed in '. $minSinceLastExec . 'minutes. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup cron job.';
+                    $cronService = $this->di['mod_service']('cron');
+                    $cronService->runCrons();
+                    error_log("Cron hasn't been run in $minSinceLastExec minutes. Manually executing.");
+                }
             }
         }
 

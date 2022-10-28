@@ -176,11 +176,10 @@ class ServiceTest extends \BBTestCase {
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
-        $di['mod_service'] = $di->protect(function() use($systemServiceMock) {return $systemServiceMock;});
 
         $systemServiceMock->setDi($di);
 
-        $result = $systemServiceMock->getMessages($type);
+        $result = $systemServiceMock->getMessages($type, true);
         $this->assertIsArray($result);
     }
 
