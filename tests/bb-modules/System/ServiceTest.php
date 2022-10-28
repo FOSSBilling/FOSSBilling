@@ -179,7 +179,7 @@ class ServiceTest extends \BBTestCase {
 
         $systemServiceMock->setDi($di);
 
-        $result = $systemServiceMock->getMessages($type);
+        $result = $systemServiceMock->getMessages($type, true);
         $this->assertIsArray($result);
     }
 
