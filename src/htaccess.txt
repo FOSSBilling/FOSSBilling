@@ -33,17 +33,16 @@ RewriteRule .* index.php [F]
 # This line is for Windows Environment when API is giving authorization error
 RewriteRule .? - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+# Block access to sensitive files and return 404 to make it indistinguishable from a missing file
+RewriteCond %{THE_REQUEST} /.+\.(htaccess|htpasswd|ini|log|sh|inc|bak|twig|sql|_) [NC]
+RewriteRule ^ - [R=404,L]
+
 RewriteCond %{REQUEST_FILENAME} -s [OR]
 RewriteCond %{REQUEST_FILENAME} -l [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^.*$ - [NC,L]
 RewriteRule ^page/(.*)$ index.php?_url=/custompages/$1
 RewriteRule ^(.*)$ index.php?_url=/$1 [QSA,L]
-
-<FilesMatch "\.(htaccess|htpasswd|ini|log|sh|inc|bak|twig|sql)$">
-    Order Allow,Deny
-    Deny from all
-</FilesMatch>
 
 <IfModule mod_headers.c>
     # MONTH
