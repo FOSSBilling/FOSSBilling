@@ -57,6 +57,11 @@ return [
     ],
 
     /**
+     * FOSSBilling will automatically execute cron when you login to the admin panel if it hasn't been executed in awhile. You can disable this fallback here.
+     */
+    'disable_auto_cron' => false,
+
+    /**
      * Enable or disable search engine friendly URLs.
      * Configure .htaccess file before enabling this feature
      * Set to TRUE if using nginx.

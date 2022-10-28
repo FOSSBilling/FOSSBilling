@@ -243,7 +243,8 @@ class Service
             error_log($e->getMessage());
         }
         $last_exec = $this->getParamValue('last_cron_exec');
-        if($runFromTest === false) {
+        $disableAutoCron = isset($this->di['config']['disable_auto_cron']) ? $this->di['config']['disable_auto_cron'] : false;
+        if($runFromTest === false && $disableAutoCron === false) {
             if (!$last_exec) {
                 $msgs['info'][] = 'Cron was never executed. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup cron the job.';
                 $cronService = $this->di['mod_service']('cron');
