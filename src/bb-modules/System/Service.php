@@ -245,13 +245,13 @@ class Service
         $last_exec = $this->getParamValue('last_cron_exec');
         if($runFromTest === false) {
             if (!$last_exec) {
-                $msgs['info'][] = 'Cron was never executed. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup cron job.';
+                $msgs['info'][] = 'Cron was never executed. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup cron the job.';
                 $cronService = $this->di['mod_service']('cron');
                 $cronService->runCrons($interval);
             } else {
                 $minSinceLastExec = (time() - strtotime($last_exec)) / 60;
                 if($minSinceLastExec >= 15){
-                    $msgs['info'][] = 'Cron hasn\'t been executed in '. $minSinceLastExec . 'minutes. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup cron job.';
+                    $msgs['info'][] = 'Cron hasn\'t been executed in '. $minSinceLastExec . ' minutes. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup cron the job.';
                     $cronService = $this->di['mod_service']('cron');
                     $cronService->runCrons();
                     error_log("Cron hasn't been run in $minSinceLastExec minutes. Manually executing.");
