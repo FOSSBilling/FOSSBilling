@@ -112,6 +112,24 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Update FOSSBilling config.
+     *
+     * @return bool
+     *
+     * @throws Box_Exception
+     * @throws Exception
+     */
+    public function update_config($data)
+    {
+        $updater = $this->di['updater'];
+        $updater->performConfigUpdate();
+        
+        $this->di['logger']->info('Updated FOSSBilling config');
+
+        return true;
+    }
+
+    /**
      * Update existing extension.
      *
      * @param string $type - extensions type: mod, theme, gateway ...

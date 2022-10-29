@@ -150,12 +150,22 @@ class Box_Update
         }
 
         //Migrate the configuration file
-        $this->di['tools']->updateConfig();
+        $this->performConfigUpdate();
         
         // clean up things
         $this->di['tools']->emptyFolder(BB_PATH_CACHE);
         $this->di['tools']->emptyFolder(BB_PATH_ROOT.'/install');
         rmdir(BB_PATH_ROOT.'/install');
         return true;
+    }
+
+    /**
+     * Perform config file update
+     *
+     * @throws Exception
+     */
+    public function performConfigUpdate()
+    {
+        return $this->di['tools']->updateConfig();
     }
 }
