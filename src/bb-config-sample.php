@@ -29,6 +29,15 @@ return [
      */
     'debug' => false,
 
+    /**
+     * Enable or disable stacktraces when an exception is thrown (also requires debug to be enabled).
+     */
+    'log_stacktrace' => true,
+    /**
+     * How long the stacktrace should be.
+     */
+    'stacktrace_length' => 25,
+
     'maintenance_mode' => [
         /**
          * Enable or disable the system maintenance mode.

@@ -490,6 +490,8 @@ class Box_Tools
 
         $newConfig = [
             'debug' => (isset($currentConfig['debug'])) ? $currentConfig['debug'] : false,
+            'log_stacktrace' => (isset($currentConfig['log_stacktrace'])) ? $currentConfig['log_stacktrace'] : true,
+            'stacktrace_length' => (isset($currentConfig['stacktrace_length'])) ? $currentConfig['stacktrace_length'] : 25,
             'maintenance_mode' => [
                 'enabled' => (isset($currentConfig['maintenance_mode']['enabled'])) ? $currentConfig['maintenance_mode']['enabled'] : false,
                 'allowed_urls' => (isset($currentConfig['maintenance_mode']['allowed_urls'])) ? $currentConfig['maintenance_mode']['allowed_urls'] : [],
