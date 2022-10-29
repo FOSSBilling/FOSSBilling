@@ -119,7 +119,7 @@ class Admin extends \Api_Abstract
      * @throws Box_Exception
      * @throws Exception
      */
-    public function update_config($data)
+    public function update_config()
     {
         $updater = $this->di['updater'];
         $updater->performConfigUpdate();
