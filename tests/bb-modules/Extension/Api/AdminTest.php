@@ -147,6 +147,31 @@ class AdminTest extends \BBTestCase {
         $this->assertTrue($result);
     }
 
+    public function testupdate_config()
+    {
+        $updaterMock = $this->getMockBuilder('\Box_Update')->getMock();
+        $updaterMock->expects($this->atLeastOnce())
+            ->method('performConfigUpdate')
+            ->will($this->returnValue(true));
+
+        $toolsMock = $this->getMockBuilder('\Box_Tools')->getMock();
+
+        $di = new \Box_Di();
+        $di['updater'] = $updaterMock;
+        $di['logger'] = new \Box_Log();
+        $di['tools'] = $toolsMock;
+
+        $this->api->setDi($di);
+
+        $currentConfig = include BB_PATH_ROOT.'/bb-config.php';
+
+        $result = $this->api->update_config();
+        $this->assertTrue($result);
+
+        $newConfig = include BB_PATH_ROOT.'/bb-config.php';
+        $this->assertEquals($currentConfig, $newConfig);
+    }
+
     public function testupdate_coreNewestVerInstalledException()
     {
         $updaterMock = $this->getMockBuilder('\Box_Update')->getMock();
