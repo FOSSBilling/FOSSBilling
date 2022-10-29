@@ -498,6 +498,7 @@ class Box_Tools
             'salt' => $currentConfig['salt'],
             'url' => $currentConfig['url'],
             'admin_area_prefix' => $currentConfig['admin_area_prefix'],
+            'disable_auto_cron' => (isset($currentConfig['disable_auto_cron'])) ? $currentConfig['disable_auto_cron'] : false,
             'sef_urls' => $currentConfig['sef_urls'],
             'timezone' => $currentConfig['timezone'],
             'locale' =>  $currentConfig['locale'],

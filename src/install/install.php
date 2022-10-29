@@ -421,6 +421,7 @@ final class Box_Installer
             'salt' => md5(random_bytes(13)),
             'url' => BB_URL,
             'admin_area_prefix' => '/admin',
+            'disable_auto_cron' => false,
             'sef_urls' => true,
             'timezone' => 'UTC',
             'locale' => 'en_US',
