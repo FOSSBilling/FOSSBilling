@@ -65,7 +65,7 @@ const BB_PATH_HTACCESS = BB_PATH_ROOT . '/.htaccess';
 const BB_PATH_HTACCESS_TEMPLATE = BB_PATH_ROOT . '/htaccess.txt';
 
 const BB_HURAGA_CONFIG = BB_PATH_THEMES . '/huraga/config/settings_data.json';
-const BB_HURAGA_CONFIG_TEMPLATE = BB_PATH_THEMES . '/huraga/config/settings_data.json.txt';
+const BB_HURAGA_CONFIG_TEMPLATE = BB_PATH_THEMES . '/huraga/config/settings_data.json.example';
 
 // Ensure library/ is on include_path
 set_include_path(implode(PATH_SEPARATOR, [
