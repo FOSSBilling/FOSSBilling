@@ -23,10 +23,13 @@ class Box_Exception extends Exception
 	public function __construct($message, array $variables = NULL, $code = 0)
 	{
 		$config = include BB_PATH_ROOT.'/bb-config.php';
+		$debug = (isset($config['debug'])) ? isset($config['debug']) : false;
+		$logStack = (isset($config['log_stacktrace'])) ? isset($config['log_stacktrace']) : true;
+		$stackLength = (isset($config['stacktrace_length'])) ? isset($config['stacktrace_length']) : 25;
 
-		if(isset($config['debug']) && $config['debug'] === true){
-			error_log('An exception has been called. Stacktrace:');
-			error_log( $this->stackTrace() );
+		if($debug && $logStack){
+			error_log('An exception has been thrown. Stacktrace:');
+			error_log( $this->stackTrace($stackLength) );
 		}
 
 		// Set the message

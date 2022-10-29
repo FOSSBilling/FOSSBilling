@@ -411,6 +411,8 @@ final class Box_Installer
         // TODO: Why not just take the defaults from the bb.config.example.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
         $data = [
             'debug' => false,
+            'log_stacktrace' => true,
+            'stacktrace_length' => 25,
 
             'maintenance_mode' => [
                 'enabled' => false,
