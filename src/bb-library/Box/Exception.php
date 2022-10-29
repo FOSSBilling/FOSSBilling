@@ -64,7 +64,7 @@ class Box_Exception extends Exception
 	
 			$entry_file = 'NO_FILE';
 			if (array_key_exists('file', $entry)) {
-				$entry_file = $entry['file'];               
+				$entry_file = str_replace(BB_PATH_ROOT, '' , $entry['file']);               
 			}
 			$entry_line = 'NO_LINE';
 			if (array_key_exists('line', $entry)) {
