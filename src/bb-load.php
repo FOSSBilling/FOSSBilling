@@ -308,3 +308,12 @@ if ($config['debug']) {
 ini_set('log_errors', '1');
 ini_set('html_errors', false);
 ini_set('error_log', BB_PATH_LOG.'/php_error.log');
+
+$isApache = (function_exists("apache_get_version")) ? true : false;
+$serverSoftware = (isset($_SERVER["SERVER_SOFTWARE"])) ? $_SERVER["SERVER_SOFTWARE"] : "";
+
+if($isApache or (stripos($serverSoftware, 'apache') !== false) ){
+    if(!file_exists(BB_PATH_ROOT . '/.htaccess')){
+      throw new Exception('Error: You appear to be running an Apache server without a valid <b><em>.htaccess</em></b> file. You may need to rename <b><em>htaccess.txt</em></b> to <b><em>.htaccess</em></b>');
+  }
+}
