@@ -246,14 +246,10 @@ class Service implements InjectionAwareInterface
             if (!$staff_service->hasPermission($admin, $mod)) {
                 continue;
             }
+            $m = $this->di['mod']($mod);
+            $obj = $m->getAdminController();
 
-            try {
-                $m = $this->di['mod']($mod);
-                $obj = $m->getAdminController();
-            } catch (\Exception $e) {
-                continue;
-            }
-            if (method_exists($obj, 'fetchNavigation')) {
+            if (!is_null($obj) && method_exists($obj, 'fetchNavigation')) {
                 $n = $obj->fetchNavigation();
 
                 if (isset($n['group'])) {

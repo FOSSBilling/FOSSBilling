@@ -19,7 +19,9 @@ class Box_AppAdmin extends Box_App
     {
         $m = $this->di['mod']($this->mod);
         $controller = $m->getAdminController();
-        $controller->register($this);
+        if(!is_null($controller)){
+            $controller->register($this);
+        }
     }
 
     public function render($fileName, $variableArray = [])
