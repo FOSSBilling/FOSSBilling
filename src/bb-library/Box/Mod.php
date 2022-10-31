@@ -165,7 +165,7 @@ class Box_Mod
     public function getAdminController()
     {
         if(!$this->hasAdminController()) {
-            throw new \Box_Exception('Module :mod Admin controller class was not found', array(':mod'=>$this->mod));
+            return null;
         }
         $class = 'Box\\Mod\\'.ucfirst($this->mod).'\\Controller\\Admin';
         $service = new $class();
