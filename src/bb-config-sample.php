@@ -28,6 +28,12 @@ return [
      * You should keep this disabled unless you're making tests as it can reveal some information about your server.
      */
     'debug' => false,
+	
+    /**
+     * Configure the update branch for the automatic updater.
+     * Currently acceptable options are "release" or "preview".
+     */
+    'update_branch' => 'release',
 
     /**
      * Enable or disable stacktraces when an exception is thrown (also requires debug to be enabled).

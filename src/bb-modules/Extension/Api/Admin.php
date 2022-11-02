@@ -96,7 +96,7 @@ class Admin extends \Api_Abstract
     public function update_core($data)
     {
         $updater = $this->di['updater'];
-        if (!$updater->getCanUpdate()) {
+        if($updater->getUpdateBranch() === 'release' && !$updater->getCanUpdate()) {
             throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.', null, 930);
         }
 
