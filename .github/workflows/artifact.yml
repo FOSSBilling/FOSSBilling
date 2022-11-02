@@ -70,8 +70,11 @@ jobs:
         working-directory: ./build/source/bb-library/Box
 
       - name: Create the final archive
-        run: zip -r ./build/distribution/FOSSBilling-preview.zip .
+        run: zip -r ./FOSSBilling-preview.zip .
         working-directory: ./build/source/
+
+      - name: Copy the archive to its final location
+        run: cp ./build/source/FOSSBilling-preview.zip ./build/distribution
 
       - name: Upload the final artifact to GitHub
         uses: actions/upload-artifact@v3
