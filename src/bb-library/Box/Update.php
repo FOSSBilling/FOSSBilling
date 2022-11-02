@@ -143,7 +143,7 @@ class Box_Update
      */
     public function performUpdate()
     {
-        if($this->getUpdateBranch() === 'release' && !$this->getCanUpdate()) {
+        if($this->getUpdateBranch() !== 'preview' && !$this->getCanUpdate()) {
             throw new LogicException('You have latest version of FOSSBilling. You do not need to update.');
         }
 
