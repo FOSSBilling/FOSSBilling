@@ -19,7 +19,7 @@ The FOSSBilling community is made up of individuals, companies, or groups who us
 
 Anybody is free to use the core FOSSBilling software within the terms of the [license](https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE). There are not and never will be any fees for usage, and no special requirements.
 
-We really appreciate user contributions but if you just want to download, install, and go, then you have the complee freedom to do that.
+We really appreciate user contributions but if you just want to download, install, and go, then you have the complete freedom to do that.
 
 If you do want to be more involved in the community then the project [GitHub](https://github.com/FOSSBilling/FOSSBilling) page, the [Contribution Guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md), and [Discord](https://fossbilling.org/discord) are great places to start. You can also sponsor the project on [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or with [Open Collective](https://opencollective.com/fossbilling).
 
@@ -36,7 +36,7 @@ Although there is no concrete expectation of participation, contributions are wh
 
 There are no specific skill requirements and no formal selection process. A contributor's elevation to the role of maintainer will be done after discussion by, and at the discretion of, the steering committee.
 
-Maintainer status can be removed if somebody demonstrates disruptive behaviour, if they resign, or if they do not participate in the community or contribute to the project for 6 months. This would be decided by a majority consensus of the steering committee.
+Maintainer status can be removed if somebody demonstrates disruptive behavior, if they resign, or if they do not participate in the community or contribute to the project for 6 months. This would be decided by a majority consensus of the steering committee.
 
 ## Steering Committee
 
@@ -56,7 +56,7 @@ At this moment the Steering Committee includes seven members - identified here b
 
 Members of the steering committee may recommend and appoint new members from the community at any time. A nomination for a new member will result in a discussion and a vote by the existing committee members. 
 
-Members may be removed from the committee if they demonstrate disruptive behaviour, if they resign, or if they do not participate in the community or contribute to the project for 6 months. In the case of disruptive bevaviour, removal will be decided on by discussion and majority consensus between the other committee members. 
+Members may be removed from the committee if they demonstrate disruptive behavior, if they resign, or if they do not participate in the community or contribute to the project for 6 months. In the case of disruptive behavior, removal will be decided on by discussion and majority consensus between the other committee members. 
 
 ## Decision-making process
 
@@ -64,7 +64,7 @@ Major decisions about the future of FOSSBilling will be made after community dis
 
 We aim to resolve all issues and proposals through discussion, debate and collaboration. We are not saying that we will never resort to polls or votes but we will use them with care. Poll results will be used to help inform debate and consensus but they will not be taken as binding and definitive, and will not be the sole deciding factors.
 
-Because we aim to be transparent in our decision-making, all discussion on any issues and propsals, with the exception of security and sensitive governance issues, will take place in public on GitHub and Discord.
+Because we aim to be transparent in our decision-making, all discussion on any issues and proposals, with the exception of security and sensitive governance issues, will take place in public on GitHub and Discord.
 
 Ideologically it would be great to involve all community members in every decision, but in practical terms, it is simply not possible if we want to be able to move forward at a reasonable speed.
 

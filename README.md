@@ -24,24 +24,27 @@
 </div>
 
 > **Warning**
-> FOSSBilling is under active development but is currenly very much beta software, there may be stability or security issues and it is not recommended for use in active production environments yet!
+> FOSSBilling is under active development but is currently very much beta software, there may be stability or security issues and it is not recommended for use in active production environments yet!
 
 **FOSSBilling** is a free open source, billing and client management solution. Whatever the size of your online services business, whether a startup or established, FOSSBilling can help you to automate your invoicing, incoming payments, and client management and communication.
 
 If you run a web hosting business and are looking for an open-source alternative for billing and client management, then FOSSBilling is the answer. Although it is mostly used as a solution for hosting businesses, there is no reason why you can't use FOSSBilling for any other kind of online business, like digital downloads.
 
-FOSSBilling is designed to be extensible and to integrate easily with your favourite server management software and payment gateways.
+FOSSBilling is designed to be extensible and to integrate easily with your favorite server management software and payment gateways.
 
 📥 This is self-hosted software that is free for anyone to install — All you need is a some basic knowledge, a web server, running PHP and a MySQL database. For more details, check the [requirements](#requirements) section.
 
 ## Contents
 
+- [Contents](#contents)
 - [Requirements](#requirements)
+- [Example Configurations](#example-configurations)
 - [Installation](#installation)
-    - [Install the latest preview build](#download-the-latest-preview-build)
-    - [Install from latest source code](#install-from-latest-source-code)
-    - [Installing with Docker](#installing-with-docker)
+  - [Download the latest preview build](#download-the-latest-preview-build)
+  - [Install from latest source code](#install-from-latest-source-code)
+  - [Installing with Docker](#installing-with-docker)
 - [Contributing](#contributing)
+- [Star History](#star-history)
 - [Licensing](#licensing)
 - [Links](#links)
 
@@ -78,7 +81,7 @@ If you're planning to use FOSSBilling in a production environment (see the discl
 
 First, you should download the [latest preview build](https://fossbilling.org/downloads/preview). Unlike the source code, these preview builds already include the Composer packages, so you won't need to run Composer to install PHP packages. This is perfect if you are using shared hosting as you might not have the ability to run Composer yourself.
 
-You can either downnload the .tar file to your local computer and then upload it to your server using FTP, or download it directly to your web server using wget or git clone. In either case, you will need to extract the contents into the public folder of your site (usually, that's called **"htdocs"** or **"public_html"**).
+You can either download the .tar file to your local computer and then upload it to your server using FTP, or download it directly to your web server using wget or git clone. In either case, you will need to extract the contents into the public folder of your site (usually, that's called **"htdocs"** or **"public_html"**).
 
 Your web directory's structure should now look like this:
 - htdocs

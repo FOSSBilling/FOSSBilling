@@ -14,7 +14,20 @@
         "Plesk",
         "Huntr",
         "Fabien",
-        "Potencier"
+        "Potencier",
+        "Kloxo",
+        "Ispconfig",
+        "Interkassa",
+        "Payza",
+        "Spyc",
+        "Hostinger",
+        "docusaurus",
+        "Laravel",
+        "pastable",
+        "Nyan",
+        "recognised",
+        "fordnox",
+        "Dockerized"
     ],
 
     "ignoreWords": [
@@ -193,7 +206,23 @@
         "onsubmit",
         "rgba",
         "autofocus",
-        "Servicemembership"
+        "Servicemembership",
+        "uniqid",
+        "Bluepay",
+        "gettext",
+        "Centova",
+        "multisite",
+        "mcrypt",
+        "stopforumspam",
+        "Internetbs",
+        "binded",
+        "tada",
+        "TLDR",
+        "htdocs",
+        "LSWS",
+        "Lighttpd",
+        "mbstring",
+        "srcset"
     ],
     "ignorePaths": [
         "tests/**",
@@ -209,7 +238,7 @@
         "src/bb-modules/Servicesolusvm/**",
         "build.xml",
         "data/**",
-        "makefile",
+        "Makefile",
         "phpunit.xml.dist",
         "bin/**",
         "src/bb-library/GeoLite2-Country.mmdb",
@@ -231,6 +260,7 @@
         "src/bb-modules/Seo/Service.php",
         "src/bb-modules/Orderbutton/html_client/mod_orderbutton_js.html.twig",
         "src/bb-modules/Massmailer/Api/Admin.php",
-        "src/bb-modules/System/html_admin/mod_system_settings.html.twig"
+        "src/bb-modules/System/html_admin/mod_system_settings.html.twig",
+        "gulpfile.babel.js"
     ]
 }
