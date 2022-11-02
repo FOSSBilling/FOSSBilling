@@ -121,9 +121,6 @@ class AdminTest extends \BBTestCase {
     public function testupdate_core()
     {
         $updaterMock = $this->getMockBuilder('\Box_Update')->getMock();
-        $updaterMock->expects($this->atLeastOnce())
-            ->method('getCanUpdate')
-            ->will($this->returnValue(true));
 
         $updaterMock->expects($this->atLeastOnce())
             ->method('getLatestVersion')
