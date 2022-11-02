@@ -620,7 +620,7 @@ class Service implements InjectionAwareInterface
             $invoiceService->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
         }
 
-        // activate imediately if say so
+        // activate immediately if say so
         if ($activate) {
             try {
                 $this->activateOrder($order);
@@ -936,7 +936,7 @@ class Service implements InjectionAwareInterface
             $logic = $this->di['array_get']($config, 'order_renewal_logic', '');
 
             if ('from_today' == $logic) {
-                $from_time = time(); // renew order from the date renewal occured
+                $from_time = time(); // renew order from the date renewal occurred
             } elseif ('from_greater' == $logic) {
                 if (strtotime($order->expires_at) > time()) {
                     $from_time = strtotime($order->expires_at);
@@ -976,7 +976,7 @@ class Service implements InjectionAwareInterface
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
-        $note = (null === $reason) ? 'Order suspeded' : 'Order suspended for '.$reason;
+        $note = (null === $reason) ? 'Order suspended' : 'Order suspended for '.$reason;
         $this->saveStatusChange($order, $note);
 
         if (!$skipEvent) {

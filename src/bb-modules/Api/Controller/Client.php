@@ -249,7 +249,7 @@ class Client implements InjectionAwareInterface
     {
         $allowed = ['guest', 'client', 'admin'];
         if (!in_array($role, $allowed)) {
-            throw new \Box_Exception('Unknow API call', null, 701);
+            throw new \Box_Exception('Unknown API call', null, 701);
         }
 
         return true;

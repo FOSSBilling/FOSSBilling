@@ -197,7 +197,7 @@ class Service implements InjectionAwareInterface
                     continue;
                 }
 
-                // disconect modules without service class
+                // disconnect modules without service class
                 $mod = $this->di['mod']($mod_name);
                 if (!$mod->hasService()) {
                     $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);

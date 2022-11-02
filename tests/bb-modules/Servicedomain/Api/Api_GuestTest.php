@@ -206,10 +206,10 @@ class Api_GuestTest extends \BBTestCase
     public function testCan_be_transferred()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('tldFindOneByTld', 'canBeTransfered'))->getMock();
+            ->setMethods(array('tldFindOneByTld', 'canBetransferred'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->will($this->returnValue(new \Model_Tld()));
-        $serviceMock->expects($this->atLeastOnce())->method('canBeTransfered')
+        $serviceMock->expects($this->atLeastOnce())->method('canBetransferred')
             ->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -233,10 +233,10 @@ class Api_GuestTest extends \BBTestCase
     public function testCan_be_transferredTldNotFoundException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('tldFindOneByTld', 'canBeTransfered'))->getMock();
+            ->setMethods(array('tldFindOneByTld', 'canBetransferred'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->will($this->returnValue(null));
-        $serviceMock->expects($this->never())->method('canBeTransfered')
+        $serviceMock->expects($this->never())->method('canBetransferred')
             ->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
@@ -259,10 +259,10 @@ class Api_GuestTest extends \BBTestCase
     public function testCan_be_transferredCanNotBeTransferredException()
     {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('tldFindOneByTld', 'canBeTransfered'))->getMock();
+            ->setMethods(array('tldFindOneByTld', 'canBetransferred'))->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('tldFindOneByTld')
             ->will($this->returnValue(new \Model_Tld()));
-        $serviceMock->expects($this->atLeastOnce())->method('canBeTransfered')
+        $serviceMock->expects($this->atLeastOnce())->method('canBetransferred')
             ->will($this->returnValue(false));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();

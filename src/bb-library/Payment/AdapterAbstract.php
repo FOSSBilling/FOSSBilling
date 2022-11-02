@@ -56,7 +56,7 @@ abstract class Payment_AdapterAbstract
         $this->_config = $config;
 
         /**
-         * Redirect client after successfull payment, usually to invoice
+         * Redirect client after successful payment, usually to invoice
          */
         if(!$this->getParam('return_url')) {
             throw new Payment_Exception('Return URL for payment gateway was not set', array(), 6001);

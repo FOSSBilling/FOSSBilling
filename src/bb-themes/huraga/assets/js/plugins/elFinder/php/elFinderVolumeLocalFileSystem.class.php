@@ -44,7 +44,7 @@ class elFinderVolumeLocalFileSystem extends elFinderVolumeDriver {
 	/*********************************************************************/
 	
 	/**
-	 * Configure after successfull mount.
+	 * Configure after successful mount.
 	 *
 	 * @return void
 	 * @author Dmitry (dio) Levashov

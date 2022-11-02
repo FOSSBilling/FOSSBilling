@@ -69,7 +69,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         throw new Registrar_Exception('Email registrar can not determine whether domain is available');
     }
 
-    public function isDomainCanBeTransfered(Registrar_Domain $domain)
+    public function isDomainCanBetransferred(Registrar_Domain $domain)
     {
         throw new Registrar_Exception('Email registrar can not determine whether domain can be transferred');
     }
@@ -619,7 +619,7 @@ class Whois2 {
      */
     private function get_tld()
     {
-        // Splitting domainname
+        // Splitting domain name
         $domain=explode(".",$this->domain);
 
         if(count($domain)>2) {
@@ -662,7 +662,7 @@ class Whois2 {
      */
     private function get_domain()
     {
-        // Splitting domainname
+        // Splitting domain name
         $domain=explode(".",$this->domain);
         return $domain[0];
     }

@@ -40,7 +40,7 @@ class Admin extends \Api_Abstract
      * Update license parameters. Set which validation rules must be applied
      * for license.
      *
-     * @param int $order_id - License irder id
+     * @param int $order_id - License order id
      *
      * @optional string $plugin - New license plugin name
      * @optional bool $validate_ip - True to validate IP; False - to allow all IPs for this license

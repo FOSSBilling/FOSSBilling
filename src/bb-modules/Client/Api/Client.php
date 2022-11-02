@@ -31,7 +31,7 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Update currencty logged in client details.
+     * Update currently logged in client details.
      *
      * @optional string $email - new client email. Must not exist on system
      * @optional string $last_name - last name
@@ -84,7 +84,7 @@ class Client extends \Api_Abstract
 
             $this->getService()->canChangeEmail($client, $email);
 
-            if ($this->getService()->emailAreadyRegistered($email, $client)) {
+            if ($this->getService()->emailAlreadyRegistered($email, $client)) {
                 throw new \Box_Exception('Can not change email. It is already registered.');
             }
             $client->email = strtolower(trim($email));

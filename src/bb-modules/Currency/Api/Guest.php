@@ -60,10 +60,10 @@ class Guest extends \Api_Abstract
      *
      * @optional bool $convert - covert to default currency rate. Default - true;
      * @optional bool $without_currency - Show only number. No symbols are attached Default - false;
-     * @optional float $price - Price to be formated. Default 0
+     * @optional float $price - Price to be formatted. Default 0
      * @optional string $code - currency code, ie: USD. Default - default currency
      *
-     * @return string - formated string
+     * @return string - formatted string
      */
     public function format($data = [])
     {

@@ -33,7 +33,7 @@ class Admin extends \Api_Abstract
         $pager = $this->di['pager']->getSimpleResultSet($sql, $params, $per_page);
         foreach ($pager['list'] as $key => $item) {
             $staff = $this->di['db']->getExistingModelById('Admin', $item['id'], 'Admin is not found');
-            $pager['list'][$key] = $this->getService()->toModel_AdminApiiArray($staff);
+            $pager['list'][$key] = $this->getService()->toModel_AdminApiArray($staff);
         }
 
         return $pager;
@@ -57,7 +57,7 @@ class Admin extends \Api_Abstract
 
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
-        return $this->getService()->toModel_AdminApiiArray($model);
+        return $this->getService()->toModel_AdminApiArray($model);
     }
 
     /**
@@ -92,7 +92,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Completely delete staff member. Removes all related acitivity from logs.
+     * Completely delete staff member. Removes all related activity from logs.
      *
      * @param int $id - staff member ID
      *
@@ -215,7 +215,7 @@ class Admin extends \Api_Abstract
 
         $this->getService()->setPermissions($model->id, $data['permissions']);
 
-        $this->di['logger']->info('Changed staff member %s permisions', $model->id);
+        $this->di['logger']->info('Changed staff member %s permissions', $model->id);
 
         return true;
     }

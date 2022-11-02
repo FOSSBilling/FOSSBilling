@@ -87,8 +87,8 @@ class Client extends \Api_Abstract
             throw new \Box_Exception('Order not found');
         }
 
-        $orderSerivce = $this->di['mod_service']('order');
-        $s = $orderSerivce->getOrderService($order);
+        $orderService = $this->di['mod_service']('order');
+        $s = $orderService->getOrderService($order);
         if (!$s instanceof \Model_ServiceHosting) {
             throw new \Box_Exception('Order is not activated');
         }

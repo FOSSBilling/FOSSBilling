@@ -13,7 +13,7 @@
  */
 
 /**
- * Spam cheking module management.
+ * Spam checking module management.
  */
 
 namespace Box\Mod\Spamchecker\Api;

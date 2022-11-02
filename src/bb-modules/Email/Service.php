@@ -141,14 +141,14 @@ class Service implements \Box\InjectionAwareInterface
         unset($vars['to'], $vars['to_client'], $vars['to_staff'], $vars['to_name'], $vars['from'], $vars['from_name']);
         unset($vars['default_description'], $vars['default_subject'], $vars['default_template'], $vars['code']);
 
-        // add aditional variables to template
+        // add additional variables to template
         if (isset($data['to_staff']) && $data['to_staff']) {
             $staffService = $this->di['mod_service']('staff');
             $staff = $staffService->getList(['status' => 'active', 'no_cron' => true]);
             $vars['staff'] = $staff['list'][0];
         }
 
-        // add aditional variables to template
+        // add additional variables to template
         if (isset($data['to_client']) && $data['to_client'] > 0) {
             $clientService = $this->di['mod_service']('client');
             $customer = $clientService->get(['id' => $data['to_client']]);
@@ -483,7 +483,7 @@ class Service implements \Box\InjectionAwareInterface
             $dir = pathinfo($dir, PATHINFO_FILENAME);
             $mod = strtolower($dir);
 
-            // skip if disableda
+            // skip if disabled
             $extensionService = $this->di['mod_service']('extension');
 
             if (!$extensionService->isExtensionActive('mod', $mod)) {

@@ -384,7 +384,7 @@ class Service implements InjectionAwareInterface
         return $cron;
     }
 
-    public function toModel_AdminApiiArray(\Model_Admin $model, $deep = false)
+    public function toModel_AdminApiArray(\Model_Admin $model, $deep = false)
     {
         $data = [
             'id' => $model->id,

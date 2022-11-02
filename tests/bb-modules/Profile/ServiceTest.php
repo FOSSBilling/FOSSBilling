@@ -152,7 +152,7 @@ class ServiceTest extends \BBTestCase
 
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
-        method('emailAreadyRegistered')->will($this->returnValue(false));
+        method('emailAlreadyRegistered')->will($this->returnValue(false));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');
@@ -238,7 +238,7 @@ class ServiceTest extends \BBTestCase
 
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $clientServiceMock->expects($this->never())->
-        method('emailAreadyRegistered')->will($this->returnValue(false));
+        method('emailAlreadyRegistered')->will($this->returnValue(false));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->never())->method('isEmailValid');
@@ -295,7 +295,7 @@ class ServiceTest extends \BBTestCase
 
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $clientServiceMock->expects($this->atLeastOnce())->
-        method('emailAreadyRegistered')->will($this->returnValue(true));
+        method('emailAlreadyRegistered')->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isEmailValid');

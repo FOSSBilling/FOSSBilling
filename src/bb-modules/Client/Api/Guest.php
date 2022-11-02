@@ -198,8 +198,8 @@ class Guest extends \Api_Abstract
         $email['to_client'] = $c->id;
         $email['code'] = 'mod_client_password_reset_request';
         $email['hash'] = $hash;
-        $emailSerivce = $this->di['mod_service']('email');
-        $emailSerivce->sendTemplate($email);
+        $emailService = $this->di['mod_service']('email');
+        $emailService->sendTemplate($email);
 
         $this->di['logger']->info('Client requested password reset. Sent to email %s', $c->email);
 

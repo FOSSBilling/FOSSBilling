@@ -322,7 +322,7 @@ class ServiceTest extends \BBTestCase {
         $this->assertTrue(array_diff_key($result, $expectedArrayKeys) == array());
     }
 
-    public function testemailAreadyRegistered()
+    public function testemailAlreadyRegistered()
     {
         $email = 'test@example.com';
         $model = new \Model_Client();
@@ -337,7 +337,7 @@ class ServiceTest extends \BBTestCase {
         $clientService = new \Box\Mod\Client\Service();
         $clientService->setDi($di);
 
-        $result = $clientService->emailAreadyRegistered($email);
+        $result = $clientService->emailAlreadyRegistered($email);
         $this->assertIsBool($result);
     }
 
@@ -350,7 +350,7 @@ class ServiceTest extends \BBTestCase {
 
         $clientService = new \Box\Mod\Client\Service();
 
-        $result = $clientService->emailAreadyRegistered($email, $model);
+        $result = $clientService->emailAlreadyRegistered($email, $model);
         $this->assertIsBool($result);
         $this->assertEquals(false, $result);
     }

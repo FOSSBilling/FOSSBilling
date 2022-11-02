@@ -896,7 +896,7 @@ class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Admin', $result);
     }
 
-    public function testtoModel_AdminApiiArray()
+    public function testtoModel_AdminApiArray()
     {
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \RedBeanPHP\OODBBean());
@@ -929,7 +929,7 @@ class ServiceTest extends \BBTestCase
 
         $service = new \Box\Mod\Staff\Service();
         $service->setDi($di);
-        $result = $service->toModel_AdminApiiArray($adminModel);
+        $result = $service->toModel_AdminApiArray($adminModel);
 
         $this->assertNotEmpty($result);
         $this->assertIsArray($result);

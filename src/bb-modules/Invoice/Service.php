@@ -676,7 +676,7 @@ class Service implements InjectionAwareInterface
                     $pi->type = $item->type;
                     $pi->rel_id = $item->rel_id;
                     $pi->task = $item->task;
-                    $pi->status = \Model_InvoiceItem::STATUS_EXECUTED; // ark refund invoce as executed
+                    $pi->status = \Model_InvoiceItem::STATUS_EXECUTED; // ark refund invoice as executed
                     $pi->title = $item->title;
                     $pi->period = $item->period;
                     $pi->quantity = $item->quantity;

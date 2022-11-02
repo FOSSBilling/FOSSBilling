@@ -13,7 +13,7 @@
  */
 
 /**
- * Queue is a powerfull tool to execute long running tasks in the background.
+ * Queue is a powerful tool to execute long running tasks in the background.
  */
 
 namespace Box\Mod\Queue\Api;
@@ -43,7 +43,7 @@ class Admin extends \Api_Abstract
     /**
      * Get queue details.
      *
-     * @param string $queue - queue name, ie: massemails
+     * @param string $queue - queue name, ie: massmailer
      *
      * @return array
      */
@@ -79,7 +79,7 @@ class Admin extends \Api_Abstract
     /**
      * Add message to queue to be executed later.
      *
-     * @param string $queue - unique queue name, ie: massemails
+     * @param string $queue - unique queue name, ie: massmailer
      * @param string $mod   - module name, ie: massmailer
      *
      * @optional string $execute_at - Message execution time. Schedule message to be executed later, ie: 2022-12-29 14:53:51
@@ -150,7 +150,7 @@ class Admin extends \Api_Abstract
      * @optional int $interval - interval in seconds for message to be executed. Default is queue timeout
      * @optional bool $until_complete - Execute until all messages in queue are executed. Default true
      *
-     * @return bool - returns true when queue finihed executing
+     * @return bool - returns true when queue finished executing
      */
     public function execute($data)
     {

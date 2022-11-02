@@ -211,8 +211,8 @@ class Service implements InjectionAwareInterface
      */
     public function action_delete(\Model_ClientOrder $order)
     {
-        $prderService = $this->di['mod_service']('order');
-        $service = $prderService->getOrderService($order);
+        $orderService = $this->di['mod_service']('order');
+        $service = $orderService->getOrderService($order);
         if ($service instanceof \Model_ServiceLicense) {
             $this->di['db']->trash($service);
         }
@@ -250,8 +250,8 @@ class Service implements InjectionAwareInterface
 
     public function isLicenseActive(\Model_ServiceLicense $model)
     {
-        $prderService = $this->di['mod_service']('order');
-        $o = $prderService->getServiceOrder($model);
+        $orderService = $this->di['mod_service']('order');
+        $o = $orderService->getServiceOrder($model);
         if ($o instanceof \Model_ClientOrder) {
             return \Model_ClientOrder::STATUS_ACTIVE == $o->status;
         }
@@ -353,8 +353,8 @@ class Service implements InjectionAwareInterface
 
     public function getExpirationDate(\Model_ServiceLicense $model)
     {
-        $prderService = $this->di['mod_service']('order');
-        $o = $prderService->getServiceOrder($model);
+        $orderService = $this->di['mod_service']('order');
+        $o = $orderService->getServiceOrder($model);
         if ($o instanceof \Model_ClientOrder) {
             return $o->expires_at;
         }

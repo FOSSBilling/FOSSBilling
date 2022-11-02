@@ -117,7 +117,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Update prodcut settings.
+     * Update product settings.
      *
      * @param int $id - product id
      *

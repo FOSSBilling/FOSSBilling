@@ -54,7 +54,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Sets invoce status to paid. This method differs from invoice update method
+     * Sets invoice status to paid. This method differs from invoice update method
      * in a way that it sends notification to Events system, so emails are sent.
      * Also this will try to automatically apply payment if clients balance is
      * available.
@@ -722,7 +722,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get list of subscribtions.
+     * Get list of subscriptions.
      *
      * @return array
      */

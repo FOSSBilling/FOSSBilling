@@ -123,8 +123,8 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($where)) {
-            $whereStatment = implode(' and ', $where);
-            $sql .= ' WHERE '.$whereStatment;
+            $whereStatement = implode(' and ', $where);
+            $sql .= ' WHERE '.$whereStatement;
         }
 
         $sql .= ' ORDER by m.id desc';

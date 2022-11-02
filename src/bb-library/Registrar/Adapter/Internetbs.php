@@ -72,7 +72,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         return ($result['status'] == 'AVAILABLE');
     }
 
-    public function isDomainCanBeTransfered(Registrar_Domain $domain)
+    public function isDomainCanBetransferred(Registrar_Domain $domain)
     {
         throw new Registrar_Exception('Domain transfer checking is not implemented');
     }

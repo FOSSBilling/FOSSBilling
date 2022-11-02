@@ -78,7 +78,7 @@ class Admin extends \Api_Abstract
      *
      * @param int    $order_id - Hosting account order id
      * @param string $tld      - Top level domain value, ie: .com
-     * @param string $sld      - Second level domain value, ie: domainname
+     * @param string $sld      - Second level domain value, ie: domain name
      *
      * @return bool
      */
@@ -319,7 +319,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get hoting plan pairs.
+     * Get hosting plan pairs.
      *
      * @return array
      */
@@ -329,7 +329,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get hostin plans paginated list.
+     * Get hosting plans paginated list.
      *
      * @return array
      */
@@ -442,8 +442,8 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
-        $orderSerivce = $this->di['mod_service']('order');
-        $s = $orderSerivce->getOrderService($order);
+        $orderService = $this->di['mod_service']('order');
+        $s = $orderService->getOrderService($order);
         if (!$s instanceof \Model_ServiceHosting) {
             throw new \Box_Exception('Order is not activated');
         }
