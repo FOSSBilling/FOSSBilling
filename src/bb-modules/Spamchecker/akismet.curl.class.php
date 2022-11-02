@@ -1,17 +1,54 @@
 <?php
-
 /**
- * FOSSBilling.
+ * Akismet CURL Class.
  *
- * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license   Apache-2.0
+ * ABSTRACT
  *
- * Copyright FOSSBilling 2022
- * This software may contain code previously used in the BoxBilling project.
- * Copyright BoxBilling, Inc 2011-2021
+ * After looking over the current PHP Akismet API classes (http://askimet.com)
+ * I couldn't help but notice they all used fopen() to talk with akismet.
+ * Which besides being slow is also disabled on some hosts that have
+ * "safe mode" on. This class solves that problem by using the fast CURL
+ * php extension (http://php.net/curl) available on most web hosts.
  *
- * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
+ * EXAMPLE
+ *
+ * <?php
+ * require(akismet.curl.class.php);
+ *
+ * $bad_comment = array(
+ *     'comment_type'              => 'comment',
+ *     'comment_author'            => 'viagra-test-123',
+ *     'comment_author_email'      => 'test@example.com',
+ *     'comment_author_url'        => 'http://www.example.com/',
+ *     'comment_content'           => 'This is a test comment',
+ *     'permalink'                 => 'http://yoursite.com/post.php?id=9999',
+ * );
+ *
+ * $akismet = new akismet('akismet_api_key');
+ *
+ * //If there was no problem connecting to Akismet.
+ * if(!$akismet->error) {
+ *
+ *     //Check to see if the key is valid
+ *     if($akismet->valid_key()) {
+ *         print 'Akismet Key is valid!';
+ *     }
+ *
+ *     if($akismet->is_spam($bad_comment)) {
+ *         print 'Comment Spam!';
+ *     } else {
+ *         print 'Not spam!';
+ *     }
+ * }
+ * ?>
+ *
+ * @version    1.0.0 <4/18/2008>
+ *
+ * @author     David Pennington <@codexplorer.com>
+ * @copyright  Copyright (c) 2008 CodeXplorer <http://www.codexplorer.com>
+ * @license    http://www.gnu.org/licenses/gpl-3.0.html (GPL v3)
+ *
+ ********************************** 80 Columns *********************************
  */
 
 // Used by the Akismet class to communicate with the Akismet service

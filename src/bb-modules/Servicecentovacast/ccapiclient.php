@@ -1,17 +1,16 @@
 <?php
-
-/**
- * FOSSBilling.
+/* CentovaCast PHP API Client Example
+ * Copyright 2007-2008, Centova Technologies Inc.
+ * ===========================================================================
  *
- * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license   Apache-2.0
+ * This file provides an example interface to the CentovaCast XML API.
+ * An example of usage is provided in the example.php script accompanying
+ * this class.
  *
- * Copyright FOSSBilling 2022
- * This software may contain code previously used in the BoxBilling project.
- * Copyright BoxBilling, Inc 2011-2021
+ * Note that all of the methods defined in the classes below should be
+ * considered private; method overloading is used to dynamically handle
+ * calls to what would be the public methods of each class.
  *
- * This source file is subject to the Apache-2.0 License that is bundled
- * with this source code in the file LICENSE
  */
 
 namespace Box\Mod\Servicecentovacast;
