@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -200,7 +202,7 @@ class Service implements InjectionAwareInterface
         try {
             $productId = $this->di['db']->store($model);
         } catch (\Exception $e) {
-            $model->slug = $this->di['tools']->slug($title).'-'.random_int(1, 9999);
+            $model->slug = $this->di['tools']->slug($title) . '-' . random_int(1, 9999);
         }
         $productId = $this->di['db']->store($model);
 
@@ -415,7 +417,7 @@ class Service implements InjectionAwareInterface
         try {
             $productId = $this->di['db']->store($model);
         } catch (\Exception $e) {
-            $model->slug = $this->di['tools']->slug($title).'-'.random_int(1, 9999);
+            $model->slug = $this->di['tools']->slug($title) . '-' . random_int(1, 9999);
             $productId = $this->di['db']->store($model);
         }
 
@@ -515,7 +517,7 @@ class Service implements InjectionAwareInterface
 
         if ($search) {
             $sql .= ' AND code like :search';
-            $params['search'] = '%'.$search.'%';
+            $params['search'] = '%' . $search . '%';
         }
 
         switch ($status) {
@@ -688,7 +690,7 @@ class Service implements InjectionAwareInterface
 
         if ($search) {
             $sql .= ' AND m.title LIKE :search';
-            $params[':search'] = '%'.$search.'%';
+            $params[':search'] = '%' . $search . '%';
         }
 
         $sql .= ' ORDER BY m.priority ASC';
@@ -817,7 +819,7 @@ class Service implements InjectionAwareInterface
 
         $slots = (count($ids)) ? implode(',', array_fill(0, count($ids), '?')) : ''; // same as RedBean genSlots() method
 
-        $rows = $this->di['db']->getAll('SELECT id, title FROM product WHERE id in ('.$slots.')', $ids);
+        $rows = $this->di['db']->getAll('SELECT id, title FROM product WHERE id in (' . $slots . ')', $ids);
 
         $result = [];
         foreach ($rows as $record) {
@@ -909,7 +911,7 @@ class Service implements InjectionAwareInterface
 
     public function getSavePath($filename = null)
     {
-        $path = $this->di['config']['path_data'].'/uploads/';
+        $path = $this->di['config']['path_data'] . '/uploads/';
         if (null !== $filename) {
             $path .= md5($filename);
         }
@@ -970,7 +972,7 @@ class Service implements InjectionAwareInterface
                     $quantity = $config['quantity'];
                 }
 
-                $discount += round(($price * $quantity * $promo->value / 100), 2);
+                $discount += round($price * $quantity * $promo->value / 100, 2);
                 break;
 
             default:
@@ -1036,7 +1038,7 @@ class Service implements InjectionAwareInterface
         $slots = (count($ids)) ? implode(',', array_fill(0, count($ids), '?')) : ''; // same as RedBean genSlots() method
         array_unshift($ids, (int) $model->id); // adding product ID as first param in array
 
-        return $this->di['db']->find('Product', 'type = "custom" and is_addon= 1 and id != ? and id IN ('.$slots.')', $ids);
+        return $this->di['db']->find('Product', 'type = "custom" and is_addon= 1 and id != ? and id IN (' . $slots . ')', $ids);
     }
 
     public function toAddonArray(\Model_Product $model, $deep = true)

@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -54,10 +56,10 @@ class Simple
             $string .= (0 == $i % 5) ? '-' : $character_array[random_int(0, $size)];
         }
 
-        return $prefix.$string;
+        return $prefix . $string;
     }
 
-    /**
+    /*
      * This method is optional.
      * Additional validation rules can be applied to license validation logic.
      * Method is called after "expiration, ip, version, path, hostname validations are passed".

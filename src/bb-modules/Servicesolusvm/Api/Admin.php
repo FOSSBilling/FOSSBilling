@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -26,18 +28,18 @@ class Admin extends \Api_Abstract
         }
 
         $order = $this->di['db']->findOne('client_order',
-                "id=:id 
+            "id=:id 
                  AND service_type = 'solusvm'
                 ",
-                [':id' => $data['order_id']]);
+            [':id' => $data['order_id']]);
 
         if (!$order) {
             throw new \Box_Exception('Solusvm order not found');
         }
 
         $s = $this->di['db']->findOne('service_solusvm',
-                'id=:id',
-                [':id' => $order->service_id]);
+            'id=:id',
+            [':id' => $order->service_id]);
         if (!$s) {
             throw new \Box_Exception('Order is not activated');
         }
@@ -557,9 +559,9 @@ class Admin extends \Api_Abstract
                 $o->status = 'active';
                 $this->di['db']->store($o);
 
-                $log .= sprintf('Created order #%s for server #%s', $id, $server['vserverid']).PHP_EOL;
+                $log .= sprintf('Created order #%s for server #%s', $id, $server['vserverid']) . PHP_EOL;
             } catch (\Exception $e) {
-                $log .= sprintf('Order for server #%s was not imported due to error "%s"', $server['vserverid'], $e->getMessage()).PHP_EOL;
+                $log .= sprintf('Order for server #%s was not imported due to error "%s"', $server['vserverid'], $e->getMessage()) . PHP_EOL;
             }
         }
 
@@ -605,9 +607,9 @@ class Admin extends \Api_Abstract
                 $id = $this->di['api_admin']->client_create($cdata);
                 $c = $this->di['db']->load('client', $id);
                 $this->getService()->setSolusUserPassword($c, $client['username'], $password);
-                $log .= sprintf('Imported client #%s', $client['id']).PHP_EOL;
+                $log .= sprintf('Imported client #%s', $client['id']) . PHP_EOL;
             } catch (\Exception $e) {
-                $log .= sprintf('Client #%s was not imported due to error "%s"', $client['id'], $e->getMessage()).PHP_EOL;
+                $log .= sprintf('Client #%s was not imported due to error "%s"', $client['id'], $e->getMessage()) . PHP_EOL;
             }
         }
 
@@ -620,6 +622,7 @@ class Admin extends \Api_Abstract
      * Test connection to master server.
      *
      * @param int $order_id - order id
+     *
      * @optional string $return - if value = bool - does not return error but returns bool value
      *
      * @return bool

@@ -52,7 +52,13 @@ return (new PhpCsFixer\Config())
                 'vendor',
                 'install',
                 'bb-modules/Wysiwyg',
+                'bb-modules/Servicecentovacast',
+                'bb-modules/Servicesolusvm',
+                'bb-modules/Spamchecker'
             ])
-            ->notPath('rb.php')
+            ->notPath(
+                'rb.php',
+                'bb-config-sample.php'
+            )
     )
 ;

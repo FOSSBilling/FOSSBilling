@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -88,8 +90,8 @@ class Service implements InjectionAwareInterface
         $types = $this->getFormFieldsTypes();
         $type = $field['type'];
 
-        $label = $this->di['array_get']($field, 'label', $types[$type].' '.$field_number);
-        $name = $this->di['array_get']($field, 'name', ($this->slugify('new_'.$type).'_'.$field_number));
+        $label = $this->di['array_get']($field, 'label', $types[$type] . ' ' . $field_number);
+        $name = $this->di['array_get']($field, 'name', $this->slugify('new_' . $type) . '_' . $field_number);
 
         if ('select' == $type || 'checkbox' == $type || 'radio' == $type) {
             $field['options'] = '{"First option":"1", "Second option": "2", "Third option":"3"}';
@@ -181,10 +183,10 @@ class Service implements InjectionAwareInterface
         if (isset($field['type'])) {
             if ('checkbox' == $field['type'] || 'radio' == $field['type'] || 'select' == $field['type']) {
                 if (!$this->isArrayUnique(array_filter($field['values'], 'strlen'))) {
-                    throw new \Box_Exception(ucfirst($field['type']).' values must be unique', null, 1597);
+                    throw new \Box_Exception(ucfirst($field['type']) . ' values must be unique', null, 1597);
                 }
                 if (!$this->isArrayUnique(array_filter($field['labels'], 'strlen'))) {
-                    throw new \Box_Exception(ucfirst($field['type']).' labels must be unique', null, 1598);
+                    throw new \Box_Exception(ucfirst($field['type']) . ' labels must be unique', null, 1598);
                 }
                 $field['options'] = array_combine($field['labels'], $field['values']);
                 $field['options'] = array_filter($field['options'], 'strlen');
@@ -239,12 +241,12 @@ class Service implements InjectionAwareInterface
 
     public function getFormFields($formId)
     {
-        $sql = ('
+        $sql = '
         SELECT *
         FROM form_field
         WHERE form_id = :form_id
         ORDER BY ID asc
-        ');
+        ';
         $result = $this->di['db']->getAll($sql, [':form_id' => $formId]);
 
         return $result;
@@ -262,11 +264,11 @@ class Service implements InjectionAwareInterface
 
     public function getFormFieldsCount($form_id)
     {
-        $sql = ('
+        $sql = '
         SELECT COUNT(*)
         FROM form_field
         WHERE form_id = :form_id
-        ');
+        ';
 
         return $this->di['db']->getCell($sql, [':form_id' => $form_id]);
     }
@@ -343,13 +345,13 @@ class Service implements InjectionAwareInterface
         $form_id = $data['form_id'];
         $field_name = $data['field_name'];
         $field_id = $data['field_id'];
-        $sql = ('
+        $sql = '
         SELECT COUNT( * )
         FROM  `form_field`
         WHERE form_id = :form_id
         AND name =  :field_name
         AND id != :field_id
-        ');
+        ';
 
         $result = $this->di['db']->findOne('FormField', 'form_id = ? and name = ? and id != ?', [$form_id, $field_name, $field_id]);
 
@@ -358,13 +360,13 @@ class Service implements InjectionAwareInterface
 
     public function getForms()
     {
-        $sql = ('
+        $sql = '
         SELECT f.id, f.name, COUNT( p.id ) as product_count, COUNT( co.id ) as order_count
         FROM  `form` f
         LEFT JOIN product p ON (f.id = p.form_id)
         LEFT JOIN client_order co ON (f.id = co.form_id)
         GROUP BY f.id
-        ');
+        ';
 
         return $this->di['db']->getAll($sql);
     }

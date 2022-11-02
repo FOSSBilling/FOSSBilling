@@ -83,7 +83,7 @@ class SolusVM implements \Box\InjectionAwareInterface
 
     public function buildUrl(array $config)
     {
-        return $config['protocol'].'://'.$config['ipaddress'].':'.$config['port'].'/api/'.$config['usertype'].'/command.php';
+        return $config['protocol'] . '://' . $config['ipaddress'] . ':' . $config['port'] . '/api/' . $config['usertype'] . '/command.php';
     }
 
     public function getSecureUrl(array $config)

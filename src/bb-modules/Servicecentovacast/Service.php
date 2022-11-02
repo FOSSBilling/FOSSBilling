@@ -1,12 +1,13 @@
 <?php
 
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -101,8 +102,6 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param $order
-     *
      * @return \RedBeanPHP\OODBBean
      */
     public function create($order)
@@ -117,8 +116,6 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param $order
-     *
      * @return array
      *
      * @see http://www.centova.com/docs/cast/centovacast_xml_api.php?manual=1
@@ -211,8 +208,6 @@ class Service implements \Box\InjectionAwareInterface
     /**
      * Suspend order.
      *
-     * @param $order
-     *
      * @return bool
      */
     public function suspend($order, $model)
@@ -234,8 +229,6 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param $order
-     *
      * @return bool
      */
     public function unsuspend($order, $model)
@@ -258,8 +251,6 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param $order
-     *
      * @return bool
      */
     public function cancel($order, $model)
@@ -268,8 +259,6 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param $order
-     *
      * @return bool
      */
     public function uncancel($order, $model)
@@ -278,8 +267,6 @@ class Service implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @param $order
-     *
      * @return bool
      */
     public function delete($order, $model)

@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -346,7 +348,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($where)) {
-            $query = $query.' WHERE '.implode(' AND ', $where);
+            $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
         $query .= ' ORDER BY `admin_group_id` ASC, id ASC';
 
@@ -363,10 +365,10 @@ class Service implements InjectionAwareInterface
             return $cron;
         }
 
-        $cronEmail = $this->di['tools']->generatePassword().'@'.$this->di['tools']->generatePassword().'.com';
+        $cronEmail = $this->di['tools']->generatePassword() . '@' . $this->di['tools']->generatePassword() . '.com';
         $cronEmail = filter_var($cronEmail, FILTER_SANITIZE_EMAIL);
 
-        $CronPass = $this->di['tools']->generatePassword(256,4);
+        $CronPass = $this->di['tools']->generatePassword(256, 4);
 
         $cron = $this->di['db']->dispense('Admin');
         $cron->role = \Model_Admin::ROLE_CRON;
@@ -625,7 +627,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($where)) {
-            $sql .= ' WHERE '.implode(' AND ', $where);
+            $sql .= ' WHERE ' . implode(' AND ', $where);
         }
         $sql .= ' ORDER BY m.id DESC';
 
@@ -666,15 +668,15 @@ class Service implements InjectionAwareInterface
         $client_url = $this->di['url']->link('/');
         $admin_url = $this->di['url']->adminLink('/');
 
-        $content = "Hi $admin_name, ".PHP_EOL;
-        $content .= 'You have successfully setup FOSSBilling at '.BB_URL.PHP_EOL;
-        $content .= 'Access client area at: '.$client_url.PHP_EOL;
-        $content .= 'Access admin area at: '.$admin_url.' with login details:'.PHP_EOL;
-        $content .= 'Email: '.$admin_email.PHP_EOL;
-        $content .= 'Password: '.$admin_pass.PHP_EOL.PHP_EOL;
+        $content = "Hi $admin_name, " . PHP_EOL;
+        $content .= 'You have successfully setup FOSSBilling at ' . BB_URL . PHP_EOL;
+        $content .= 'Access client area at: ' . $client_url . PHP_EOL;
+        $content .= 'Access admin area at: ' . $admin_url . ' with login details:' . PHP_EOL;
+        $content .= 'Email: ' . $admin_email . PHP_EOL;
+        $content .= 'Password: ' . $admin_pass . PHP_EOL . PHP_EOL;
 
-        $content .= 'Read FossBilling documentation to get started http://docs.fossbilling.org/'.PHP_EOL;
-        $content .= 'Thank You for using FOSSBilling.'.PHP_EOL;
+        $content .= 'Read FossBilling documentation to get started http://docs.fossbilling.org/' . PHP_EOL;
+        $content .= 'Thank You for using FOSSBilling.' . PHP_EOL;
 
         $subject = sprintf('FOSSBilling is ready at "%s"', BB_URL);
 

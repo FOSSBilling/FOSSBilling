@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -46,7 +48,7 @@ class Service implements InjectionAwareInterface
         $client = $di['db']->load('Client', $params['client_id']);
         $comment = [
             'comment_type' => 'comment',
-            'comment_author' => $client->first_name.' '.$client->last_name,
+            'comment_author' => $client->first_name . ' ' . $client->last_name,
             'comment_author_email' => $client->email,
             'comment_content' => $params['message'],
         ];
@@ -99,7 +101,7 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        require_once BB_PATH_MODS.'/Spamchecker/akismet.curl.class.php';
+        require_once BB_PATH_MODS . '/Spamchecker/akismet.curl.class.php';
 
         $akismet = new \akismet($config['akismet_api_key'], $di['config']['url']);
         if (!$akismet->valid_key()) {
@@ -181,7 +183,7 @@ class Service implements InjectionAwareInterface
     public function isInStopForumSpamDatabase(array $data)
     {
         $data['f'] = 'json';
-        $url = 'https://www.stopforumspam.com/api?'.http_build_query($data);
+        $url = 'https://www.stopforumspam.com/api?' . http_build_query($data);
         $file_contents = $this->di['tools']->file_get_contents($url);
 
         $json = json_decode($file_contents);

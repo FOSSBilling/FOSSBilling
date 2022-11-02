@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -121,11 +123,11 @@ class Admin implements \Box\InjectionAwareInterface
         $redirect_to = '/';
         if ($this->di['request']->getQuery('r')) {
             $r = $this->di['request']->getQuery('r');
-            $redirect_to = '/'.trim($r, '/');
+            $redirect_to = '/' . trim($r, '/');
         }
 
         header('HTTP/1.1 301 Moved Permanently');
-        header('Location: '.$this->di['tools']->url($redirect_to));
+        header('Location: ' . $this->di['tools']->url($redirect_to));
         exit;
     }
 }

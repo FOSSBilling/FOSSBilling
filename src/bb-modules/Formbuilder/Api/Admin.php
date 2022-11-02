@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -82,7 +84,7 @@ class Admin extends \Api_Abstract
         if (!isset($data['type']) || !$service->typeValidation($data['type'])) {
             throw new \Box_Exception('Form field type is not valid', null, 2684);
         }
-        if (isset($data['options']) && is_array(($data['options'])) && !$service->isArrayUnique($data['options'])) {
+        if (isset($data['options']) && is_array($data['options']) && !$service->isArrayUnique($data['options'])) {
             throw new \Box_Exception('This input type must have unique values', null, 3658);
         }
         if (!isset($data['form_id'])) {

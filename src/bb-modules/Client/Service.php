@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -63,7 +65,7 @@ class Service implements InjectionAwareInterface
         $meta->updated_at = date('Y-m-d H:i:s');
         $db->store($meta);
 
-        return $this->di['tools']->url('/client/confirm-email/'.$hash);
+        return $this->di['tools']->url('/client/confirm-email/' . $hash);
     }
 
     public static function onAfterClientSignUp(\Box_Event $event)
@@ -119,19 +121,19 @@ class Service implements InjectionAwareInterface
 
         if ($name) {
             $where[] = '(c.first_name LIKE :first_name or c.last_name LIKE :last_name )';
-            $name = '%'.$name.'%';
+            $name = '%' . $name . '%';
             $params[':first_name'] = $name;
             $params[':last_name'] = $name;
         }
 
         if ($email) {
             $where[] = 'c.email LIKE :email';
-            $params[':email'] = '%'.$email.'%';
+            $params[':email'] = '%' . $email . '%';
         }
 
         if ($company) {
             $where[] = 'c.company LIKE :company';
-            $params[':company'] = '%'.$company.'%';
+            $params[':company'] = '%' . $company . '%';
         }
 
         if ($status) {
@@ -167,7 +169,7 @@ class Service implements InjectionAwareInterface
                 $params[':caid'] = $search;
             } else {
                 $where[] = "c.company LIKE :s_company OR c.first_name LIKE :s_first_time OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name";
-                $search = '%'.$search.'%';
+                $search = '%' . $search . '%';
                 $params[':s_company'] = $search;
                 $params[':s_first_time'] = $search;
                 $params[':s_last_name'] = $search;
@@ -177,9 +179,9 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($where)) {
-            $sql .= ' WHERE '.implode(' AND ', $where);
+            $sql .= ' WHERE ' . implode(' AND ', $where);
         }
-        $sql = $sql.' ORDER BY c.created_at desc';
+        $sql = $sql . ' ORDER BY c.created_at desc';
 
         return [$sql, $params];
     }
@@ -188,7 +190,7 @@ class Service implements InjectionAwareInterface
     {
         $limit = $this->di['array_get']($data, 'per_page', 30);
         [$sql, $params] = $this->getSearchQuery($data, "SELECT c.id, CONCAT(c.first_name,  ' ', c.last_name) as full_name");
-        $sql = $sql.' LIMIT '.$limit;
+        $sql = $sql . ' LIMIT ' . $limit;
 
         return $this->di['db']->getAssoc($sql, $params);
     }
@@ -287,8 +289,8 @@ class Service implements InjectionAwareInterface
         $params = [];
         if ($search) {
             $where[] = 'c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.id LIKE :id';
-            $params[':first_name'] = '%'.$search.'%';
-            $params[':last_name'] = '%'.$search.'%';
+            $params[':first_name'] = '%' . $search . '%';
+            $params[':last_name'] = '%' . $search . '%';
             $params[':id'] = $search;
         }
 
@@ -298,7 +300,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($where)) {
-            $q .= ' WHERE '.implode(' AND ', $where);
+            $q .= ' WHERE ' . implode(' AND ', $where);
         }
 
         $q .= ' ORDER BY ach.id desc';
@@ -378,7 +380,7 @@ class Service implements InjectionAwareInterface
 
         $m = $this->di['db']->toArray($model);
         for ($i = 1; $i < 11; ++$i) {
-            $k = 'custom_'.$i;
+            $k = 'custom_' . $i;
             if (isset($m[$k]) && !empty($m[$k])) {
                 $details[$k] = $m[$k];
             }

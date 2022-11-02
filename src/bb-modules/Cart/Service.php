@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -135,7 +137,7 @@ class Service implements InjectionAwareInterface
                         'config' => $ac,
                     ];
                 } else {
-                    error_log('Addon not found by id '.$id);
+                    error_log('Addon not found by id ' . $id);
                 }
             }
         }
@@ -638,7 +640,7 @@ class Service implements InjectionAwareInterface
             } catch (\Exception $e) {
                 error_log($e->getMessage());
                 $status = 'error';
-                $notes = 'Order could not be activated after checkout due to error: '.$e->getMessage();
+                $notes = 'Order could not be activated after checkout due to error: ' . $e->getMessage();
                 $orderService->orderStatusAdd($order, $status, $notes);
             }
         }

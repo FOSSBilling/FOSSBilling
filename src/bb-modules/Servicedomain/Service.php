@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -39,13 +41,13 @@ class Service implements \Box\InjectionAwareInterface
         if (isset($data['action']) && 'register' == $data['action'] &&
             isset($data['register_tld']) && isset($data['register_sld'])
         ) {
-            return __('Domain :domain registration', [':domain' => $data['register_sld'].$data['register_tld']]);
+            return __('Domain :domain registration', [':domain' => $data['register_sld'] . $data['register_tld']]);
         }
 
         if (isset($data['action']) && 'transfer' == $data['action'] &&
             isset($data['transfer_tld']) && isset($data['transfer_sld'])
         ) {
-            return __('Domain :domain transfer', [':domain' => $data['transfer_sld'].$data['transfer_tld']]);
+            return __('Domain :domain transfer', [':domain' => $data['transfer_sld'] . $data['transfer_tld']]);
         }
 
         return $product->title;
@@ -103,7 +105,7 @@ class Service implements \Box\InjectionAwareInterface
                 throw new \Box_Exception('TLD not found');
             }
 
-            $domain = $data['transfer_sld'].$tld->tld;
+            $domain = $data['transfer_sld'] . $tld->tld;
             if (!$this->canBeTransferred($tld, $data['transfer_sld'])) {
                 throw new \Box_Exception(':domain can not be transferred!', [':domain' => $domain]);
             }
@@ -140,13 +142,13 @@ class Service implements \Box\InjectionAwareInterface
                 throw new \Box_Exception(':tld can be registered for at least :years years', [':tld' => $tld->tld, ':years' => $tld->min_years]);
             }
 
-            $domain = $data['register_sld'].$tld->tld;
+            $domain = $data['register_sld'] . $tld->tld;
             if (!$this->isDomainAvailable($tld, $data['register_sld'])) {
                 throw new \Box_Exception(':domain is already registered!', [':domain' => $domain]);
             }
 
             // return by reference
-            $data['period'] = $years.'Y';
+            $data['period'] = $years . 'Y';
             $data['quantity'] = $years;
         }
     }
@@ -583,7 +585,7 @@ class Service implements \Box\InjectionAwareInterface
     public function toApiArray(\Model_ServiceDomain $model, $deep = false, $identity = null)
     {
         $data = [
-            'domain' => $model->sld.$model->tld,
+            'domain' => $model->sld . $model->tld,
             'sld' => $model->sld,
             'tld' => $model->tld,
             'ns1' => $model->ns1,
@@ -824,10 +826,10 @@ class Service implements \Box\InjectionAwareInterface
         }
 
         if (!empty($where)) {
-            $query = $query.' WHERE '.implode(' AND ', $where);
+            $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
 
-        $query = $query.' ORDER BY id ASC';
+        $query = $query . ' ORDER BY id ASC';
 
         return [$query, $bindings];
     }
@@ -905,7 +907,7 @@ class Service implements \Box\InjectionAwareInterface
 
         $exists = $this->di['db']->getAssoc($query);
 
-        $pattern = BB_PATH_LIBRARY.'/Registrar/Adapter/*.php';
+        $pattern = BB_PATH_LIBRARY . '/Registrar/Adapter/*.php';
         $adapters = [];
         foreach (glob($pattern) as $path) {
             $adapter = pathinfo($path, PATHINFO_FILENAME);
@@ -943,7 +945,7 @@ class Service implements \Box\InjectionAwareInterface
 
     private function registrarGetRegistrarAdapterClassName(\Model_TldRegistrar $model)
     {
-        if (!file_exists(BB_PATH_LIBRARY.'/Registrar/Adapter/'.$model->registrar.'.php')) {
+        if (!file_exists(BB_PATH_LIBRARY . '/Registrar/Adapter/' . $model->registrar . '.php')) {
             throw new \Box_Exception('Domain registrar :adapter was not found', [':adapter' => $model->registrar]);
         }
 
@@ -990,7 +992,7 @@ class Service implements \Box\InjectionAwareInterface
     public function registrarCopy(\Model_TldRegistrar $model)
     {
         $new = $this->di['db']->dispense('TldRegistrar');
-        $new->name = $model->name.' (Copy)';
+        $new->name = $model->name . ' (Copy)';
         $new->registrar = $model->registrar;
         $new->test_mode = $model->test_mode;
 

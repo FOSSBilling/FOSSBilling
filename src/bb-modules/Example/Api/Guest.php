@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -20,7 +22,7 @@
  * This module can be called from API or in template
  */
 
- // Change "Example" with your module's name
+// Change "Example" with your module's name
 
 namespace Box\Mod\Example\Api;
 
@@ -38,7 +40,7 @@ class Guest extends \Api_Abstract
         // Our example admin and client area pages will use this function to fetch the README data
         // Then, we'll tell Twig to parse and display the markdown output
 
-        $readme = $this->di['tools']->file_get_contents(BB_PATH_MODS.'/Example/README.md');
+        $readme = $this->di['tools']->file_get_contents(BB_PATH_MODS . '/Example/README.md');
 
         return $readme;
     }

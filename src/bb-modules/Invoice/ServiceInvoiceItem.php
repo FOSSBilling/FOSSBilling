@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -82,7 +84,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                             $orderService->activateOrder($order);
                         } catch (\Exception $e) {
                             error_log($e->getMessage());
-                            $orderService->saveStatusChange($order, 'Order could not be activated due to error: '.$e->getMessage());
+                            $orderService->saveStatusChange($order, 'Order could not be activated due to error: ' . $e->getMessage());
                         }
                     }
                     break;
@@ -98,7 +100,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                         $orderService->renewOrder($order);
                     } catch (\Exception $e) {
                         error_log($e->getMessage());
-                        $orderService->saveStatusChange($order, 'Order could not renew due to error: '.$e->getMessage());
+                        $orderService->saveStatusChange($order, 'Order could not renew due to error: ' . $e->getMessage());
                     }
                     break;
 
@@ -185,7 +187,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             return 0;
         }
 
-        return round(($item->price * $rate / 100), 2);
+        return round($item->price * $rate / 100, 2);
     }
 
     public function update(\Model_InvoiceItem $item, array $data)
@@ -342,12 +344,12 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
         switch ($promo->type) {
             case \Model_Promo::ABSOLUTE:
-                    $currencyAmount = $api_guest->currency_format(['code' => $currency, 'price' => $promo->value]);
+                $currencyAmount = $api_guest->currency_format(['code' => $currency, 'price' => $promo->value]);
 
-                    return __('Promotional Code: :code - :value Discount', [':code' => $promo->code, ':value' => $currencyAmount]);
+                return __('Promotional Code: :code - :value Discount', [':code' => $promo->code, ':value' => $currencyAmount]);
 
             case \Model_Promo::PERCENTAGE:
-                    return __('Promotional Code: :code - :value%', [':code' => $promo->code, ':value' => $promo->value]);
+                return __('Promotional Code: :code - :value%', [':code' => $promo->code, ':value' => $promo->value]);
 
             default:
                 break;

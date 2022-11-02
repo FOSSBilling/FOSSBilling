@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -184,7 +186,7 @@ class Admin extends \Api_Abstract
 
         $tld = $data['tld'];
         if ('.' != $tld[0]) {
-            $tld = '.'.$tld;
+            $tld = '.' . $tld;
         }
 
         $model = $this->getService()->tldFindOneByTld($tld);

@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -313,7 +315,7 @@ class Service implements InjectionAwareInterface
         ];
 
         foreach ($options as $key => &$name) {
-            $name = $key.' - '.$name;
+            $name = $key . ' - ' . $name;
         }
 
         return $options;
@@ -548,12 +550,12 @@ class Service implements InjectionAwareInterface
                 }
             }
         } elseif ('USD' == $from_Currency) {
-            $res = $this->di['guzzle_client']->get('https://api.currencylayer.com/live?access_key='.$this->getKey().'&currencies='.$to_Currency.'&format=1');
+            $res = $this->di['guzzle_client']->get('https://api.currencylayer.com/live?access_key=' . $this->getKey() . '&currencies=' . $to_Currency . '&format=1');
             $array = json_decode($res->getBody(), true);
             if (true !== $array['success']) {
-                throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />'.$array['error']['info']);
+                throw new \Box_Exception('<b>Currencylayer threw an error:</b><br />' . $array['error']['info']);
             } else {
-                return (float) $array['quotes']['USD'.$to_Currency];
+                return (float) $array['quotes']['USD' . $to_Currency];
             }
         }
     }

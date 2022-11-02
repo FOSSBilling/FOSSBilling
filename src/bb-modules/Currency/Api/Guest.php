@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -106,7 +108,8 @@ class Guest extends \Api_Abstract
         }
 
         $c['format'] = ($p >= 0) ? $c['format'] : '-' . $c['format'];
-        $p = $p >= 0 ? $p : -$p ;
+        $p = $p >= 0 ? $p : -$p;
+
         return str_replace('{{price}}', $p, $c['format']);
     }
 }

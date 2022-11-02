@@ -13,39 +13,39 @@
 return [
     'salt' => '',
 
-    /**
+    /*
      * Full URL where FOSSBilling is installed with trailing slash.
      */
     'url' => 'http://localhost/',
 
-    /**
+    /*
      * The URL prefix to access the BB admin area. Ex: '/admin' for https://example.com/admin.
      */
     'admin_area_prefix' => '/admin',
 
-    /**
+    /*
      * Enable or disable displaying advanced debugging messages.
      * You should keep this disabled unless you're making tests as it can reveal some information about your server.
      */
     'debug' => false,
-	
-    /**
+
+    /*
      * Configure the update branch for the automatic updater.
      * Currently acceptable options are "release" or "preview".
      */
     'update_branch' => 'release',
 
-    /**
+    /*
      * Enable or disable stacktraces when an exception is thrown (also requires debug to be enabled).
      */
     'log_stacktrace' => true,
-    /**
+    /*
      * How long the stacktrace should be.
      */
     'stacktrace_length' => 25,
 
     'maintenance_mode' => [
-        /**
+        /*
          * Enable or disable the system maintenance mode.
          * Enabling this will block public access to your website, and API endpoints except the allowed ones won't work
          * However, this will not block access to the administrator area.
@@ -54,7 +54,7 @@ return [
          */
         'enabled' => false,
 
-        /**
+        /*
          * Don't block these URLs when the maintenance is going on.
          * Supports wildcard (e.g. '/api/guest/staff/*').
          *
@@ -62,7 +62,7 @@ return [
          */
         'allowed_urls' => [],
 
-        /**
+        /*
          * Don't block these IP/Subnet addresses when the maintenance is going on.
          * Supported formats: 127.0.0.1、127.0.0.1/32.
          *
@@ -71,78 +71,78 @@ return [
         'allowed_ips' => [],
     ],
 
-    /**
+    /*
      * FOSSBilling will automatically execute cron when you login to the admin panel if it hasn't been executed in awhile. You can disable this fallback here.
      */
     'disable_auto_cron' => false,
 
-    /**
+    /*
      * Enable or disable search engine friendly URLs.
      * Configure .htaccess file before enabling this feature
      * Set to TRUE if using nginx.
      */
     'sef_urls' => true,
 
-    /**
+    /*
      * System timezone.
      */
     'timezone' => 'UTC',
 
-    /**
+    /*
      * FOSSBilling locale.
      */
     'locale' => 'en_US',
 
-    /**
+    /*
      * Set default date format for localized strings.
      *
      * @see https://www.php.net/manual/en/datetime.format.php
      */
     'locale_date_format' => 'l, d F o',
 
-    /**
+    /*
      * Set default time format for localized strings.
      *
      * @see https://www.php.net/manual/en/datetime.format.php
      */
     'locale_time_format' => ' G:i:s',
 
-    /**
+    /*
      * Set location to store sensitive data.
      */
-    'path_data' => __DIR__ .'/bb-data',
+    'path_data' => __DIR__ . '/bb-data',
 
-    'path_logs' => __DIR__ .'/bb-data/log/application.log',
+    'path_logs' => __DIR__ . '/bb-data/log/application.log',
 
     'log_to_db' => true,
 
     'db' => [
-        /**
+        /*
          * Database type. Don't change this if in doubt.
          */
         'type' => 'mysql',
 
-        /**
+        /*
          * Database hostname. Don't change this if in doubt.
          */
         'host' => getenv('DB_HOST') ?: '127.0.0.1',
 
-        /**
+        /*
          * The name of the database for FOSSBilling.
          */
         'name' => getenv('DB_NAME') ?: 'fossbilling',
 
-        /**
+        /*
          * Database username.
          */
         'user' => getenv('DB_USER') ?: 'foo',
 
-        /**
+        /*
          * Database password.
          */
         'password' => getenv('DB_PASS') ?: 'foo',
 
-        /**
+        /*
          * Database Port.
          */
         'port' => getenv('DB_PORT') ?: '3306',
@@ -151,7 +151,7 @@ return [
     'twig' => [
         'debug' => false,
         'auto_reload' => false,
-        'cache' => __DIR__ .'/bb-data/cache',
+        'cache' => __DIR__ . '/bb-data/cache',
     ],
 
     'api' => [
@@ -167,7 +167,7 @@ return [
         // How many requests allowed per time span
         'rate_limit' => 1000,
 
-        /**
+        /*
          * Note about rate-limiting login attempts:
          * When the limit is reached, a default delay of 2 seconds is added to the request.
          * This makes brute-forcing a password useless while not outright blocking legitimate traffic.
@@ -188,7 +188,7 @@ return [
     ],
 
     'guzzle' => [
-        /**
+        /*
          * The user agent to be used when making requests to external services.
          *
          * @since 4.22.0
@@ -196,7 +196,7 @@ return [
          */
         'user_agent' => 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; FOSSBilling; +https://fossbilling.org) Gecko/20100101 Firefox/93.0',
 
-        /**
+        /*
          * Default request timeout
          * Setting 0 will disable this limitation.
          *
@@ -205,7 +205,7 @@ return [
          */
         'timeout' => 0,
 
-        /**
+        /*
          * The HTTP Upgrade-Insecure-Requests header sends a signal to the server
          * expressing the client’s preference for an encrypted response.
          *

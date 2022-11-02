@@ -1,12 +1,13 @@
 <?php
 
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -325,6 +326,7 @@ class Admin extends \Api_Abstract
      * Generates email template preview.
      *
      * @param int $id - template id
+     *
      * @optional string $_tpl - string to be rendered. Default is email template.
      *
      * @return bool
@@ -399,14 +401,11 @@ class Admin extends \Api_Abstract
      * @optional string $to_staff - True to send to all active staff members. Default false
      * @optional string $to_client - Set client ID to send email to client. Default null
      * @optional string $to - receivers email
-     *
      * @optional string $from - from email. Default - company email
      * @optional string $from_name - from name. Default - company name
-     *
      * @optional string $default_subject - Default email subject if template does not exist
      * @optional string $default_template - Default email content if template does not exist
      * @optional string $default_description - Default template description if template does not exist.
-     *
      * @optional mixed $custom - All parameters passed to this method are also available in email template: {{ custom }}
      *
      * @return bool

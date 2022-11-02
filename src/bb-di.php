@@ -1,12 +1,13 @@
 <?php
 
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -20,7 +21,7 @@ use RedBeanPHP\Facade;
 $di = new Box_Di();
 
 $di['config'] = function () {
-    $array = include BB_PATH_ROOT.'/bb-config.php';
+    $array = include BB_PATH_ROOT . '/bb-config.php';
 
     return new Box_Config($array);
 };
@@ -63,7 +64,7 @@ $di['crypt'] = function () use ($di) {
 $di['pdo'] = function () use ($di) {
     $c = $di['config']['db'];
 
-    $pdo = new PDO($c['type'].':host='.$c['host'].';port='.$c['port'].';dbname='.$c['name'],
+    $pdo = new PDO($c['type'] . ':host=' . $c['host'] . ';port=' . $c['port'] . ';dbname=' . $c['name'],
         $c['user'],
         $c['password'],
         [
@@ -91,7 +92,7 @@ $di['pdo'] = function () use ($di) {
 };
 
 $di['db'] = function () use ($di) {
-    require_once __DIR__ .DIRECTORY_SEPARATOR.'rb.php';
+    require_once __DIR__ . DIRECTORY_SEPARATOR . 'rb.php';
     R::setup($di['pdo']);
     \RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
 
@@ -271,10 +272,10 @@ $di['api'] = $di->protect(function ($role) use ($di) {
 
         case 'system':
             $identity = $di['mod_service']('staff')->getCronAdmin();
-           break;
+            break;
 
         default:
-            throw new Exception('Unrecognized Handler type: '.$role);
+            throw new Exception('Unrecognized Handler type: ' . $role);
     }
 
     $api = new Api_Handler($identity);
@@ -401,7 +402,7 @@ $di['service_boxbilling'] = $di->protect(function ($config) {
 
 $di['ftp'] = $di->protect(function ($params) { return new \Box_Ftp($params); });
 
-$di['geoip'] = function () { return new \GeoIp2\Database\Reader(BB_PATH_LIBRARY.'/GeoLite2-Country.mmdb'); };
+$di['geoip'] = function () { return new \GeoIp2\Database\Reader(BB_PATH_LIBRARY . '/GeoLite2-Country.mmdb'); };
 
 $di['password'] = function () { return new Box_Password(); };
 
@@ -424,7 +425,8 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
 
 $di['array_get'] = $di->protect(function (array $array, $key, $default = null) {
     $result = array_key_exists($key, $array) ? $array[$key] : $default;
-    return ($result === '') ? null : $result;
+
+    return ('' === $result) ? null : $result;
 });
 
 return $di;

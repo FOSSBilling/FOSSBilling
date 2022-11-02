@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -15,7 +17,7 @@
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
-defined('APPLICATION_ENV') || define('APPLICATION_ENV', (getenv('APPLICATION_ENV') ?: 'production'));
+defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV') ?: 'production');
 const BB_PATH_ROOT = __DIR__;
 const BB_PATH_VENDOR = BB_PATH_ROOT . '/vendor';
 const BB_PATH_LIBRARY = BB_PATH_ROOT . '/bb-library';
@@ -35,7 +37,7 @@ function handler_error(int $number, string $message, string $file, int $line)
             handler_exception(new ErrorException($message, $number, 0, $file, $line));
         }
     } else {
-        error_log($number.' '.$message.' '.$file.' '.$line);
+        error_log($number . ' ' . $message . ' ' . $file . ' ' . $line);
     }
 
     return false;
@@ -45,10 +47,10 @@ function handler_error(int $number, string $message, string $file, int $line)
 function handler_exception($e)
 {
     if (isCLI) {
-        echo 'Error #['.$e->getCode().'] occurred in ['.$e->getFile().'] at line ['.$e->getLine().']: ['.trim(strip_tags($e->getMessage())).']';
+        echo 'Error #[' . $e->getCode() . '] occurred in [' . $e->getFile() . '] at line [' . $e->getLine() . ']: [' . trim(strip_tags($e->getMessage())) . ']';
     } else {
         if (APPLICATION_ENV === 'testing') {
-            echo $e->getMessage().PHP_EOL;
+            echo $e->getMessage() . PHP_EOL;
 
             return;
         }
@@ -240,7 +242,7 @@ if (!file_exists(BB_PATH_VENDOR)) {
 
 // Multisite support. Load new configuration depending on the current hostname
 // If being run from CLI, first parameter must be the hostname
-$configPath = BB_PATH_ROOT.'/bb-config.php';
+$configPath = BB_PATH_ROOT . '/bb-config.php';
 if ((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || ('cli' === PHP_SAPI && isset($argv[1]))) {
     if ('cli' === PHP_SAPI) {
         $host = $argv[1];
@@ -248,7 +250,7 @@ if ((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || ('cli' === PHP_SA
         $host = $_SERVER['HTTP_HOST'];
     }
 
-    $predictConfigPath = BB_PATH_ROOT.'/bb-config-'.$host.'.php';
+    $predictConfigPath = BB_PATH_ROOT . '/bb-config-' . $host . '.php';
     if (file_exists($predictConfigPath)) {
         $configPath = $predictConfigPath;
     }
@@ -259,11 +261,11 @@ if (!file_exists($configPath) || 0 === filesize($configPath)) {
     // Try to create an empty configuration file
     @file_put_contents($configPath, '');
 
-    $base_url = 'http'.((isset($_SERVER['HTTPS']) && ('on' === $_SERVER['HTTPS'] || 1 == $_SERVER['HTTPS'])) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && 'https' === $_SERVER['HTTP_X_FORWARDED_PROTO']) ? 's' : '').'://'.$_SERVER['HTTP_HOST'];
+    $base_url = 'http' . ((isset($_SERVER['HTTPS']) && ('on' === $_SERVER['HTTPS'] || 1 == $_SERVER['HTTPS'])) || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && 'https' === $_SERVER['HTTP_X_FORWARDED_PROTO']) ? 's' : '') . '://' . $_SERVER['HTTP_HOST'];
     $base_url .= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-    $url = $base_url.'/install/index.php';
+    $url = $base_url . '/install/index.php';
 
-    if (file_exists(BB_PATH_ROOT.'/install/index.php')) {
+    if (file_exists(BB_PATH_ROOT . '/install/index.php')) {
         header("Location: $url");
     }
 
@@ -273,26 +275,26 @@ if (!file_exists($configPath) || 0 === filesize($configPath)) {
 }
 
 // Try to check if /install directory still exists, even after the installation was completed
-if (file_exists($configPath) && 0 !== filesize($configPath) && file_exists(BB_PATH_ROOT.'/install/index.php')) {
+if (file_exists($configPath) && 0 !== filesize($configPath) && file_exists(BB_PATH_ROOT . '/install/index.php')) {
     throw new Exception('For safety reasons, you have to delete the <b><em>/install</em></b> directory to start using FOSSBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.', 102);
 }
 
 $config = require $configPath;
-require BB_PATH_VENDOR.'/autoload.php';
+require BB_PATH_VENDOR . '/autoload.php';
 
 date_default_timezone_set($config['timezone']);
 
 define('BB_DEBUG', $config['debug']);
 define('BB_URL', $config['url']);
 define('BB_SEF_URLS', $config['sef_urls']);
-define('BB_PATH_CACHE', $config['path_data'].'/cache');
-define('BB_PATH_LOG', $config['path_data'].'/log');
-define('BB_SSL', (str_starts_with($config['url'], 'https')));
+define('BB_PATH_CACHE', $config['path_data'] . '/cache');
+define('BB_PATH_LOG', $config['path_data'] . '/log');
+define('BB_SSL', str_starts_with($config['url'], 'https'));
 
 if ($config['sef_urls']) {
-    define('BB_URL_API', $config['url'].'api/');
+    define('BB_URL_API', $config['url'] . 'api/');
 } else {
-    define('BB_URL_API', $config['url'].'index.php?_url=/api/');
+    define('BB_URL_API', $config['url'] . 'index.php?_url=/api/');
 }
 
 if ($config['debug']) {
@@ -307,13 +309,13 @@ if ($config['debug']) {
 
 ini_set('log_errors', '1');
 ini_set('html_errors', false);
-ini_set('error_log', BB_PATH_LOG.'/php_error.log');
+ini_set('error_log', BB_PATH_LOG . '/php_error.log');
 
-$isApache = (function_exists("apache_get_version")) ? true : false;
-$serverSoftware = (isset($_SERVER["SERVER_SOFTWARE"])) ? $_SERVER["SERVER_SOFTWARE"] : "";
+$isApache = (function_exists('apache_get_version')) ? true : false;
+$serverSoftware = (isset($_SERVER['SERVER_SOFTWARE'])) ? $_SERVER['SERVER_SOFTWARE'] : '';
 
-if($isApache or (stripos($serverSoftware, 'apache') !== false) ){
-    if(!file_exists(BB_PATH_ROOT . '/.htaccess')){
-      throw new Exception('Error: You appear to be running an Apache server without a valid <b><em>.htaccess</em></b> file. You may need to rename <b><em>htaccess.txt</em></b> to <b><em>.htaccess</em></b>');
-  }
+if ($isApache or (false !== stripos($serverSoftware, 'apache'))) {
+    if (!file_exists(BB_PATH_ROOT . '/.htaccess')) {
+        throw new Exception('Error: You appear to be running an Apache server without a valid <b><em>.htaccess</em></b> file. You may need to rename <b><em>htaccess.txt</em></b> to <b><em>.htaccess</em></b>');
+    }
 }

@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -43,14 +45,14 @@ class Service implements \Box\InjectionAwareInterface
                 if (1 == $field['required']) {
                     $field_name = $field['name'];
                     if (!isset($data[$field_name]) || empty($data[$field_name])) {
-                        throw new \Box_Exception('You must fill in all required fields. '.$field['label'].' is missing', null, 9684);
+                        throw new \Box_Exception('You must fill in all required fields. ' . $field['label'] . ' is missing', null, 9684);
                     }
                 }
 
                 if (1 == $field['readonly']) {
                     $field_name = $field['name'];
                     if ($data[$field_name] != $field['default_value']) {
-                        throw new \Box_Exception('Field '.$field['label'].' is read only. You can not change its value', null, 5468);
+                        throw new \Box_Exception('Field ' . $field['label'] . ' is read only. You can not change its value', null, 5468);
                     }
                 }
             }
@@ -269,7 +271,7 @@ class Service implements \Box\InjectionAwareInterface
 
         // check if plugin exists. If plugin does not exist, do not throw error. Simply add to log
         $file = sprintf('Plugin/%s/%s.php', $plugin, $plugin);
-        if (APPLICATION_ENV != 'testing' && !file_exists(BB_PATH_LIBRARY.DIRECTORY_SEPARATOR.$file)) {
+        if (APPLICATION_ENV != 'testing' && !file_exists(BB_PATH_LIBRARY . DIRECTORY_SEPARATOR . $file)) {
             $e = new \Box_Exception('Plugin class file :file was not found', [':file' => $file], 3124);
             if (BB_DEBUG) {
                 error_log($e->getMessage());

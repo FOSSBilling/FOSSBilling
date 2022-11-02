@@ -82,7 +82,7 @@ class akismet
         // If no site URL was given
         if (!$site_url) {
             // Set it to the current site
-            $this->site_url = 'http://'.$_SERVER['SERVER_NAME'];
+            $this->site_url = 'http://' . $_SERVER['SERVER_NAME'];
         } else {
             // Set the site url
             $this->site_url = $site_url;
@@ -90,14 +90,14 @@ class akismet
 
         // Set the REST API URL's that we will use
         $this->urls = [
-                    'verify' => 'rest.akismet.com/'.$this->api_version
-                             .'/verify-key',
-                    'check_spam' => $this->api_key.'.rest.akismet.com/'
-                                 .$this->api_version.'/comment-check',
-                    'submit_spam' => $this->api_key.'.rest.akismet.com/'
-                                  .$this->api_version.'/submit-spam',
-                    'submit_ham' => $this->api_key.'.rest.akismet.com/'
-                                 .$this->api_version.'/submit-ham',
+                    'verify' => 'rest.akismet.com/' . $this->api_version
+                             . '/verify-key',
+                    'check_spam' => $this->api_key . '.rest.akismet.com/'
+                                 . $this->api_version . '/comment-check',
+                    'submit_spam' => $this->api_key . '.rest.akismet.com/'
+                                  . $this->api_version . '/submit-spam',
+                    'submit_ham' => $this->api_key . '.rest.akismet.com/'
+                                 . $this->api_version . '/submit-ham',
                     ];
 
         // Now connect
@@ -130,7 +130,7 @@ class akismet
         curl_setopt($this->connection_handle, CURLOPT_RETURNTRANSFER, 1);
         // The "User-Agent" header to be used in a HTTP request
         curl_setopt($this->connection_handle, CURLOPT_USERAGENT,
-                    'CodeXplorer/1.0.0 | Askimet/1.0.0');
+            'CodeXplorer/1.0.0 | Askimet/1.0.0');
         // Don't use a cached version of the url
         curl_setopt($this->connection_handle, CURLOPT_FRESH_CONNECT, 1);
 
@@ -281,7 +281,7 @@ class akismet
         $query_string = null;
         if (is_array($array)) {
             foreach ($array as $key => $value) {
-                $query_string .= $key.'='.urlencode($value).'&';
+                $query_string .= $key . '=' . urlencode($value) . '&';
             }
         }
 

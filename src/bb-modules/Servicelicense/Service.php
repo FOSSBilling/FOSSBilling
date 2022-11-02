@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -69,14 +71,14 @@ class Service implements InjectionAwareInterface
      */
     public function getLicensePlugins()
     {
-        $dir = dirname(__FILE__).'/Plugin/';
+        $dir = dirname(__FILE__) . '/Plugin/';
         $files = [];
         $directory = opendir($dir);
         while ($item = readdir($directory)) {
             // We filter the elements that we don't want to appear ".", ".." and ".svn"
             if (('.' != $item) && ('..' != $item) && ('.svn' != $item)) {
                 $info = pathinfo($item);
-                $info['path'] = $dir.$item;
+                $info['path'] = $dir . $item;
                 $files[] = $info;
             }
         }
@@ -388,7 +390,7 @@ class Service implements InjectionAwareInterface
      */
     private function _addValue(\Model_ServiceLicense $model, $key, $value)
     {
-        $m = 'getAllowed'.ucfirst($key);
+        $m = 'getAllowed' . ucfirst($key);
         $allowed = $model->{$m}();
         $allowed[] = $value;
 
@@ -403,7 +405,7 @@ class Service implements InjectionAwareInterface
         foreach ($plugins as $plugin) {
             if ($model->plugin == $plugin['filename']) {
                 require_once $plugin['path'];
-                $class_name = 'Box\\Mod\\Servicelicense\\Plugin\\'.$model->plugin;
+                $class_name = 'Box\\Mod\\Servicelicense\\Plugin\\' . $model->plugin;
 
                 return new $class_name();
             }
@@ -445,12 +447,12 @@ class Service implements InjectionAwareInterface
     public function checkLicenseDetails(array $data)
     {
         $log = $this->di['logger'];
-        $log->addWriter(new \Box_LogStream(BB_PATH_LOG.'/license.log'));
+        $log->addWriter(new \Box_LogStream(BB_PATH_LOG . '/license.log'));
         if ($this->di['config']['debug']) {
             $log->debug(print_r($data, 1));
         }
 
-        /**
+        /*
          * Return error code in result field if related to license error
          * If error comes from FOSSBilling core use $result['error'] field.
          *
@@ -475,7 +477,7 @@ class Service implements InjectionAwareInterface
             return $result;
         }
 
-        /**
+        /*
          * Old style api format return.
          *
          * @deprecated
@@ -491,7 +493,7 @@ class Service implements InjectionAwareInterface
             header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
             header('Content-type: application/json; charset=utf-8');
             echo json_encode($array);
-            exit();
+            exit;
         }
 
         $server = $this->di['license_server'];

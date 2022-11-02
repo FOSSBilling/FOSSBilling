@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -38,6 +40,7 @@ class Admin extends \Api_Abstract
      * Invoke hook with params.
      *
      * @param string $event - event name, ie: onEventBeforeInvoiceIsDue
+     *
      * @optional array $params - what params are passed to event method $event->getParams()
      *
      * @return mixed - event return value
@@ -54,7 +57,7 @@ class Admin extends \Api_Abstract
         $params = $this->di['array_get']($data, 'params', null);
         if ($this->di['config']['debug']) {
             try {
-                $this->di['logger']->info($event.': '.var_export($params, 1));
+                $this->di['logger']->info($event . ': ' . var_export($params, 1));
             } catch (\Exception $e) {
                 error_log($e->getMessage());
             }

@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -103,7 +105,7 @@ class Service implements InjectionAwareInterface
 
         if (null !== $search) {
             $sql .= ' AND name LIKE :search';
-            $params[':search'] = '%'.$search.'%';
+            $params[':search'] = '%' . $search . '%';
         }
 
         $sql .= ' ORDER BY type ASC, status DESC, id ASC';
@@ -138,7 +140,7 @@ class Service implements InjectionAwareInterface
         foreach ($installed as $im) {
             $manifest = json_decode($im['manifest'], 1);
             if (!is_array($manifest)) {
-                error_log('Error decoding module json file. '.$im['name']);
+                error_log('Error decoding module json file. ' . $im['name']);
                 continue;
             }
             $m = $this->di['mod']($im['name']);
@@ -198,7 +200,7 @@ class Service implements InjectionAwareInterface
             $iconPath = 'assets/icons/cog.svg';
             $icon_url = $this->di['array_get']($value, 'icon_url');
             if ($icon_url) {
-                $iconPath = $this->di['config']['url'].$icon_url;
+                $iconPath = $this->di['config']['url'] . $icon_url;
             }
             $result[$key]['icon_url'] = $iconPath;
         }
@@ -219,7 +221,7 @@ class Service implements InjectionAwareInterface
                 }
 
                 if (!$mod->hasManifest()) {
-                    error_log('Module '.$m.' manifest file is missing or is not readable.');
+                    error_log('Module ' . $m . ' manifest file is missing or is not readable.');
                     continue;
                 }
 
@@ -273,12 +275,12 @@ class Service implements InjectionAwareInterface
         $nav = $this->di['tools']->sortByOneKey($nav, 'index');
         foreach ($subpages as $page) {
             if (!isset($page['location'])) {
-                error_log('Invalid module menu item: '.print_r($page, 1));
+                error_log('Invalid module menu item: ' . print_r($page, 1));
                 continue;
             }
 
             if (!isset($nav[$page['location']])) {
-                error_log('Submenu item belongs to not existing location: '.$page['location']);
+                error_log('Submenu item belongs to not existing location: ' . $page['location']);
                 continue;
             }
 
@@ -369,8 +371,8 @@ class Service implements InjectionAwareInterface
     {
         switch ($ext->type) {
             case \Box_Extension::TYPE_HOOK:
-                $file = ucfirst($ext->name).'.php';
-                $destination = BB_PATH_LIBRARY.'/Hook/'.$file;
+                $file = ucfirst($ext->name) . '.php';
+                $destination = BB_PATH_LIBRARY . '/Hook/' . $file;
                 if (file_exists($destination)) {
                     unlink($destination);
                 }
@@ -428,8 +430,8 @@ class Service implements InjectionAwareInterface
             throw new \Exception('Extensions download url is not valid');
         }
 
-        $extracted = BB_PATH_CACHE.'/'.md5(uniqid());
-        $zip = BB_PATH_CACHE.'/'.md5(uniqid()).'.zip';
+        $extracted = BB_PATH_CACHE . '/' . md5(uniqid());
+        $zip = BB_PATH_CACHE . '/' . md5(uniqid()) . '.zip';
 
         $curl = $this->di['curl']($manifest['download_url']);
         $curl->downloadTo($zip);
@@ -446,7 +448,7 @@ class Service implements InjectionAwareInterface
         // install by type
         switch ($type) {
             case \Box_Extension::TYPE_MOD:
-                $destination = BB_PATH_MODS.'/mod_'.$id;
+                $destination = BB_PATH_MODS . '/mod_' . $id;
                 if ($this->di['tools']->fileExists($destination)) {
                     throw new \Box_Exception('Module already installed.', null, 436);
                 }
@@ -456,7 +458,7 @@ class Service implements InjectionAwareInterface
                 break;
 
             case \Box_Extension::TYPE_THEME:
-                $destination = BB_PATH_THEMES.'/'.$id;
+                $destination = BB_PATH_THEMES . '/' . $id;
                 if (!$this->di['tools']->fileExists($destination)) {
                     if (!$this->di['tools']->rename($extracted, $destination)) {
                         throw new \Box_Exception('Extension can not be moved. Make sure your server write permissions to bb-themes folder.', null, 439);
@@ -465,7 +467,7 @@ class Service implements InjectionAwareInterface
                 break;
 
             case \Box_Extension::TYPE_TRANSLATION:
-                $destination = BB_PATH_LANGS.'/'.$id.'/LC_MESSAGES';
+                $destination = BB_PATH_LANGS . '/' . $id . '/LC_MESSAGES';
                 $this->di['tools']->emptyFolder($destination);
                 if (!$this->di['tools']->fileExists($destination)) {
                     $this->di['tools']->mkdir($destination, 0777, true);
@@ -543,7 +545,7 @@ class Service implements InjectionAwareInterface
             $ext->manifest = null;
             $ext_id = $this->di['db']->store($ext);
         }
-        $ext_id = $ext_id ?? $ext->id;
+        $ext_id ??= $ext->id;
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminActivateExtension', 'params' => ['id' => $ext_id]]);
         try {
             $result = $this->activate($ext);

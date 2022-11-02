@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -96,7 +98,7 @@ class Admin extends \Api_Abstract
     public function update_core($data)
     {
         $updater = $this->di['updater'];
-        if($updater->getUpdateBranch() !== 'preview' && !$updater->getCanUpdate()) {
+        if ('preview' !== $updater->getUpdateBranch() && !$updater->getCanUpdate()) {
             throw new \Box_Exception('You have latest version of FOSSBilling. You do not need to update.', null, 930);
         }
 
@@ -105,7 +107,7 @@ class Admin extends \Api_Abstract
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
         $updater->performUpdate();
         $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
-        
+
         $this->di['logger']->info('Updated FOSSBilling from %s to %s', \Box_Version::VERSION, $new_version);
 
         return true;
@@ -123,7 +125,7 @@ class Admin extends \Api_Abstract
     {
         $updater = $this->di['updater'];
         $updater->performConfigUpdate();
-        
+
         $this->di['logger']->info('Updated FOSSBilling config');
 
         return true;
@@ -148,6 +150,7 @@ class Admin extends \Api_Abstract
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateExtension', 'params' => $ext]);
         $ext2 = $service->update($ext);
         $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateExtension', 'params' => $ext2]);
+
         return $ext2;
     }
 
@@ -198,7 +201,7 @@ class Admin extends \Api_Abstract
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminDeactivateExtension', 'params' => ['id' => $data['id'], 'type' => $data['type']]]);
 
-        $this->di['logger']->info('Deactivated extension "%s"', $data['type'].' '.$data['id']);
+        $this->di['logger']->info('Deactivated extension "%s"', $data['type'] . ' ' . $data['id']);
 
         return true;
     }
@@ -295,6 +298,7 @@ class Admin extends \Api_Abstract
      * Config is automatically encrypted and stored in database
      *
      * @param string $ext - extension name, ie: mod_news
+     *
      * @optional string $any - Any variable passed to this method is config parameter
      *
      * @return bool

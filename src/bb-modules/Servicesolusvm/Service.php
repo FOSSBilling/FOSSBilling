@@ -1,12 +1,13 @@
 <?php
 
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -78,10 +79,10 @@ class Service implements InjectionAwareInterface
     public function getCartProductTitle($product, array $data)
     {
         return __('Virtual private server :title',
-                  [
-                      ':title' => $product->title,
-                      ':template' => $data['template'],
-                      ':hostname' => $data['hostname'], ]);
+            [
+                ':title' => $product->title,
+                ':template' => $data['template'],
+                ':hostname' => $data['hostname'], ]);
     }
 
     public function validateOrderData(array $data)
@@ -227,8 +228,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param $order
-     *
      * @return void
      */
     public function create($order)
@@ -247,8 +246,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param $order
-     *
      * @return void
      */
     public function activate($order, $model)
@@ -344,8 +341,6 @@ class Service implements InjectionAwareInterface
     /**
      * Suspend VPS.
      *
-     * @param $order
-     *
      * @return bool
      */
     public function suspend($order, $model)
@@ -358,8 +353,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param $order
-     *
      * @return bool
      */
     public function unsuspend($order, $model)
@@ -372,8 +365,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param $order
-     *
      * @return bool
      */
     public function cancel($order, $model)
@@ -382,8 +373,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param $order
-     *
      * @return bool
      */
     public function uncancel($order, $model)
@@ -392,8 +381,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param $order
-     *
      * @return bool
      */
     public function delete($order, $model)

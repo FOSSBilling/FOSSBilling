@@ -174,8 +174,8 @@ if (!defined('CURL_PATH')) {
 // if the CURL extension is not loaded, but the CURL Emulation Library is found, try
 // to load it
 if (!extension_loaded('curl') && !defined('HTTPR_NO_REDECLARE_CURL')) {
-    foreach ([dirname(__FILE__).'/', dirname(__FILE__).'/libcurlemu/'] as $k => $libcurlemupath) {
-        $libcurlemuinc = $libcurlemupath.'libcurlemu.inc.php';
+    foreach ([dirname(__FILE__) . '/', dirname(__FILE__) . '/libcurlemu/'] as $k => $libcurlemupath) {
+        $libcurlemuinc = $libcurlemupath . 'libcurlemu.inc.php';
         if (is_readable($libcurlemuinc)) {
             require_once $libcurlemuinc;
         }
@@ -192,7 +192,7 @@ class HTTPRetriever
         // default HTTP headers to send with all requests
         $this->headers = [
             'Referer' => '',
-            'User-Agent' => 'HTTPRetriever/'.$this->class_version,
+            'User-Agent' => 'HTTPRetriever/' . $this->class_version,
             'Connection' => 'close',
         ];
 
@@ -381,9 +381,9 @@ class HTTPRetriever
                 if (is_array($value)) {
                     $output .= $this->array_to_query(urlencode($name), $value);
                 } elseif (is_scalar($value)) {
-                    $output .= urlencode($name).'='.urlencode($value).'&';
+                    $output .= urlencode($name) . '=' . urlencode($value) . '&';
                 } else {
-                    $output .= urlencode($name).'='.urlencode(serialize($value)).'&';
+                    $output .= urlencode($name) . '=' . urlencode(serialize($value)) . '&';
                 }
             }
         }
@@ -482,13 +482,13 @@ class HTTPRetriever
         }
 
         if ($this->caching_highvolume) {
-            $cache_dir .= substr($token, 0, 2).'/';
+            $cache_dir .= substr($token, 0, 2) . '/';
             if (!is_dir($cache_dir)) {
                 @mkdir($cache_dir);
             }
         }
 
-        $filename = $cache_dir.$token.'.tmp';
+        $filename = $cache_dir . $token . '.tmp';
 
         $fp = @fopen($filename, 'w');
         if (!$fp) {
@@ -518,10 +518,10 @@ class HTTPRetriever
         }
 
         if ($this->caching_highvolume) {
-            $cache_dir .= substr($token, 0, 2).'/';
+            $cache_dir .= substr($token, 0, 2) . '/';
         }
 
-        $filename = $cache_dir.$token.'.tmp';
+        $filename = $cache_dir . $token . '.tmp';
         if (!file_exists($filename)) {
             $this->progress(HRP_DEBUG, 'Page not available in cache');
 
@@ -574,7 +574,7 @@ class HTTPRetriever
         $path = explode('/', $path);
         array_pop($path);
 
-        return count($path) ? ('/'.implode('/', $path)) : '';
+        return count($path) ? ('/' . implode('/', $path)) : '';
     }
 
     // $cookies should be an array in one of two formats.
@@ -630,7 +630,7 @@ class HTTPRetriever
                 // make sure the cookie is valid for this host
                 $domain_match = (
                     ($requesthost == $cookiehost) ||
-                    (substr($requesthost, -(strlen($cookiehost) + 1)) == '.'.$cookiehost)
+                    (substr($requesthost, -(strlen($cookiehost) + 1)) == '.' . $cookiehost)
                 );
 
                 // make sure the cookie is valid for this path
@@ -703,9 +703,9 @@ class HTTPRetriever
                     if ('/' != substr($urlinfo['path'], 0, 1)) {
                         $baseurl = $oldurlinfo['path'];
                         if ('/' != substr($baseurl, -1)) {
-                            $baseurl = $this->parent_path($url).'/';
+                            $baseurl = $this->parent_path($url) . '/';
                         }
-                        $urlinfo['path'] = $baseurl.$urlinfo['path'];
+                        $urlinfo['path'] = $baseurl . $urlinfo['path'];
                     }
 
                     // rebuild the URL
@@ -714,7 +714,7 @@ class HTTPRetriever
                     $this->method = 'GET';
                     $this->post_data = '';
 
-                    $this->progress(HRP_INFO, 'Redirected to '.$url);
+                    $this->progress(HRP_INFO, 'Redirected to ' . $url);
                 }
             }
 
@@ -752,7 +752,7 @@ class HTTPRetriever
     {
         $this->progress(HRP_INFO, "Initiating {$this->method} request for $url");
         if ($this->caching) {
-            $cachetoken = md5($url.'|'.$this->post_data);
+            $cachetoken = md5($url . '|' . $this->post_data);
             if ($this->_cache_fetch($cachetoken)) {
                 return true;
             }
@@ -762,7 +762,7 @@ class HTTPRetriever
 
         $urldata = @parse_url($url);
         $this->urldata = &$urldata;
-        $http_host = $urldata['host'].(isset($urldata['port']) ? ':'.$urldata['port'] : '');
+        $http_host = $urldata['host'] . (isset($urldata['port']) ? ':' . $urldata['port'] : '');
 
         if (!isset($urldata['port']) || !$urldata['port']) {
             $urldata['port'] = ('https' == $urldata['scheme']) ? 443 : 80;
@@ -791,7 +791,7 @@ class HTTPRetriever
         }
 
         if (!empty($this->auth_username) || !empty($this->auth_password)) {
-            $this->headers['Authorization'] = 'Basic '.base64_encode($this->auth_username.':'.$this->auth_password);
+            $this->headers['Authorization'] = 'Basic ' . base64_encode($this->auth_username . ':' . $this->auth_password);
         } else {
             unset($this->headers['Authorization']);
         }
@@ -805,9 +805,9 @@ class HTTPRetriever
         }
 
         if (!empty($urldata['query'])) {
-            $urldata['path'] .= '?'.$urldata['query'];
+            $urldata['path'] .= '?' . $urldata['query'];
         }
-        $request = $this->method.' '.$urldata['path'].' HTTP/'.$this->version."\r\n";
+        $request = $this->method . ' ' . $urldata['path'] . ' HTTP/' . $this->version . "\r\n";
         $request .= $this->build_headers();
         $request .= $this->post_data;
 
@@ -830,12 +830,12 @@ class HTTPRetriever
 
             $hostname = $this->connect_ip ? $this->connect_ip : $urldata['host'];
             if ('https' == $urldata['scheme']) {
-                $hostname = 'ssl://'.$hostname;
+                $hostname = 'ssl://' . $hostname;
             }
 
             $time_connect_start = $this->getmicrotime();
 
-            $this->progress(HRP_INFO, 'Opening socket connection to '.$hostname.' port '.$urldata['port']);
+            $this->progress(HRP_INFO, 'Opening socket connection to ' . $hostname . ' port ' . $urldata['port']);
 
             $this->expected_bytes = -1;
             $this->received_bytes = 0;
@@ -856,7 +856,7 @@ class HTTPRetriever
                 if ($this->stream_timeout) {
                     $meta = socket_get_status($fp);
                     if ($meta['timed_out']) {
-                        $this->error = 'Exceeded socket write timeout of '.$this->stream_timeout.' seconds';
+                        $this->error = 'Exceeded socket write timeout of ' . $this->stream_timeout . ' seconds';
                         $this->progress(HRP_ERROR, $this->error);
 
                         return false;
@@ -872,16 +872,16 @@ class HTTPRetriever
                 while (!feof($fp)) {
                     if ($data_length > 0) {
                         $line = fread($fp, $data_length);
-                        $this->progress(HRP_DEBUG, "[DL] Got a line: [{$line}] ".gettype($line));
+                        $this->progress(HRP_DEBUG, "[DL] Got a line: [{$line}] " . gettype($line));
 
                         if (false !== $line) {
                             $data_length -= strlen($line);
                         }
                     } else {
                         $line = @fgets($fp, 10240);
-                        $this->progress(HRP_DEBUG, "[NDL] Got a line: [{$line}] ".gettype($line));
+                        $this->progress(HRP_DEBUG, "[NDL] Got a line: [{$line}] " . gettype($line));
 
-                        if (($chunked) && (false !== $line)) {
+                        if ($chunked && (false !== $line)) {
                             $line = trim($line);
                             if (!strlen($line)) {
                                 continue;
@@ -904,7 +904,7 @@ class HTTPRetriever
                         $meta = socket_get_status($fp);
                         if ($meta['timed_out']) {
                             if ($this->stream_timeout) {
-                                $this->error = 'Exceeded socket read timeout of '.$this->stream_timeout.' seconds';
+                                $this->error = 'Exceeded socket read timeout of ' . $this->stream_timeout . ' seconds';
                             } else {
                                 $this->error = 'Exceeded default socket read timeout';
                             }
@@ -920,7 +920,7 @@ class HTTPRetriever
                     // check time limits if requested
                     if ($this->max_time > 0) {
                         if ($this->getmicrotime() - $time_request_start > $this->max_time) {
-                            $this->error = 'Exceeded maximum transfer time of '.$this->max_time.' seconds';
+                            $this->error = 'Exceeded maximum transfer time of ' . $this->max_time . ' seconds';
                             $this->progress(HRP_ERROR, $this->error);
 
                             return false;
@@ -967,7 +967,7 @@ class HTTPRetriever
 
                         if (preg_match_all("/^Set-Cookie: ((.*?)\=(.*?)(?:;\s*(.*))?)$/im", $this->response, $cookielist, PREG_SET_ORDER)) {
                             foreach ($cookielist as $k => $cookie) {
-                                $this->cookie_headers .= $cookie[0]."\n";
+                                $this->cookie_headers .= $cookie[0] . "\n";
                             }
 
                             // get the path for which cookies will be valid if no path is specified
@@ -975,7 +975,7 @@ class HTTPRetriever
                             if ('/' != substr($cookiepath, -1)) {
                                 $cookiepath = explode('/', $cookiepath);
                                 array_pop($cookiepath);
-                                $cookiepath = implode('/', $cookiepath).'/';
+                                $cookiepath = implode('/', $cookiepath) . '/';
                             }
                             // process each cookie
                             foreach ($cookielist as $k => $cookiedata) {
@@ -1064,23 +1064,23 @@ class HTTPRetriever
 
                 $this->progress(HRP_INFO, 'Request complete');
             } else {
-                $this->error = strtoupper($urldata['scheme']).' connection to '.$hostname.' port '.$urldata['port'].' failed';
+                $this->error = strtoupper($urldata['scheme']) . ' connection to ' . $hostname . ' port ' . $urldata['port'] . ' failed';
                 $this->progress(HRP_ERROR, $this->error);
 
                 return false;
             }
 
-            // perform an HTTP/HTTPS request using CURL
-        } elseif (!$this->disable_curl && (('https' == $urldata['scheme']) || ($this->force_curl))) {
+        // perform an HTTP/HTTPS request using CURL
+        } elseif (!$this->disable_curl && (('https' == $urldata['scheme']) || $this->force_curl)) {
             $this->progress(HRP_INFO, 'Passing HTTP request for $url to CURL');
             $curl_mode = true;
             if (!$this->_curl_request($url)) {
                 return false;
             }
 
-            // unknown protocol
+        // unknown protocol
         } else {
-            $this->error = 'Unsupported protocol: '.$urldata['scheme'];
+            $this->error = 'Unsupported protocol: ' . $urldata['scheme'];
             $this->progress(HRP_ERROR, $this->error);
 
             return false;
@@ -1113,7 +1113,7 @@ class HTTPRetriever
             [, $response_version, $this->result_code, $this->result_text] = $matches;
 
             // skip HTTP result code 100 (Continue) responses
-        } while ((100 == $this->result_code) && ($headerlength));
+        } while ((100 == $this->result_code) && $headerlength);
 
         // record some statistics, roughly compatible with CURL's curl_getinfo()
         if (!$curl_mode) {
@@ -1173,10 +1173,10 @@ class HTTPRetriever
         }
 
         if ('.' != substr($actual_hostname, 0, 1)) {
-            $actual_hostname = '.'.$actual_hostname;
+            $actual_hostname = '.' . $actual_hostname;
         }
         if ('.' != substr($cookiehost, 0, 1)) {
-            $cookiehost = '.'.$cookiehost;
+            $cookiehost = '.' . $cookiehost;
         }
         $domain_match = (
             ($actual_hostname == $cookiehost) ||
@@ -1203,7 +1203,7 @@ class HTTPRetriever
                 $cookielist[] = "{$name}={$value}";
             }
             if (count($cookielist)) {
-                $headers .= 'Cookie: '.implode('; ', $cookielist)."\r\n";
+                $headers .= 'Cookie: ' . implode('; ', $cookielist) . "\r\n";
             }
         }
 
@@ -1215,7 +1215,7 @@ class HTTPRetriever
     // opposite of parse_url()
     public function rebuild_url($urlinfo)
     {
-        $url = $urlinfo['scheme'].'://';
+        $url = $urlinfo['scheme'] . '://';
 
         if ($urlinfo['user'] || $urlinfo['pass']) {
             $url .= $urlinfo['user'];
@@ -1230,16 +1230,16 @@ class HTTPRetriever
 
         $url .= $urlinfo['host'];
         if ($urlinfo['port']) {
-            $url .= ':'.$urlinfo['port'];
+            $url .= ':' . $urlinfo['port'];
         }
 
         $url .= $urlinfo['path'];
 
         if ($urlinfo['query']) {
-            $url .= '?'.$urlinfo['query'];
+            $url .= '?' . $urlinfo['query'];
         }
         if ($urlinfo['fragment']) {
-            $url .= '#'.$urlinfo['fragment'];
+            $url .= '#' . $urlinfo['fragment'];
         }
 
         return $url;
@@ -1297,7 +1297,7 @@ class HTTPRetriever
 
         $this->response = curl_exec($ch);
         if (0 != curl_errno($ch)) {
-            $this->error = 'CURL error #'.curl_errno($ch).': '.curl_error($ch);
+            $this->error = 'CURL error #' . curl_errno($ch) . ': ' . curl_error($ch);
         }
 
         $this->stats = curl_getinfo($ch);
@@ -1320,7 +1320,7 @@ class HTTPRetriever
     // errors and HTTP errors)
     public function get_error()
     {
-        return $this->error ? $this->error : 'HTTP '.$this->result_code.': '.$this->result_text;
+        return $this->error ? $this->error : 'HTTP ' . $this->result_code . ': ' . $this->result_text;
     }
 
     public function get_content_type()
@@ -1366,21 +1366,21 @@ class HTTPRetriever
             HRP_ERROR => 'error',
         ];
 
-        echo date('Y-m-d H:i:sa').' ['.$severities[$severity].'] '.$message."\n";
+        echo date('Y-m-d H:i:sa') . ' [' . $severities[$severity] . '] ' . $message . "\n";
         flush();
     }
 
     public function default_transfer_callback($transferred, $expected)
     {
-        $msg = 'Transferred '.round($transferred / 1024, 1);
+        $msg = 'Transferred ' . round($transferred / 1024, 1);
         if ($expected >= 0) {
-            $msg .= '/'.round($expected / 1024, 1);
+            $msg .= '/' . round($expected / 1024, 1);
         }
         $msg .= 'KB';
         if ($expected > 0) {
-            $msg .= ' ('.round($transferred * 100 / $expected, 1).'%)';
+            $msg .= ' (' . round($transferred * 100 / $expected, 1) . '%)';
         }
-        echo date('Y-m-d H:i:sa')." $msg\n";
+        echo date('Y-m-d H:i:sa') . " $msg\n";
         flush();
     }
 
@@ -1438,7 +1438,7 @@ class HTTPRetriever
 
         $fields = [];
         foreach ($inputtypes as $k => $inputtype) {
-            if (!preg_match_all('|<'.$inputtype.'([\s\S]*?)/?>|', $form, $matches)) {
+            if (!preg_match_all('|<' . $inputtype . '([\s\S]*?)/?>|', $form, $matches)) {
                 continue;
             }
 
@@ -1453,9 +1453,9 @@ class HTTPRetriever
 
     public function get_element_attributes($element)
     {
-        $regex = '/'.
-            '([a-z0-9_-]+)\s*?=\s*?[\"\']*\s*?'.	// [src=][src='][src = '][src="][src = "] / etc.
-            '([^\s\"\'>]*)'.				// [all characters up to a space, ", ', or >]
+        $regex = '/' .
+            '([a-z0-9_-]+)\s*?=\s*?[\"\']*\s*?' .	// [src=][src='][src = '][src="][src = "] / etc.
+            '([^\s\"\'>]*)' .				// [all characters up to a space, ", ', or >]
         '/i';
         if (!preg_match_all($regex, $element, $matches, PREG_SET_ORDER)) {
             return false;
@@ -1474,8 +1474,8 @@ class HTTPRetriever
         $output = [];
         foreach ($fields as $name => $field) {
             if ('image' == $field['type']) {
-                $output[$name.'.x'] = random_int(2, 64);
-                $output[$name.'.y'] = random_int(2, 16);
+                $output[$name . '.x'] = random_int(2, 64);
+                $output[$name . '.y'] = random_int(2, 16);
             } else {
                 $output[$name] = is_scalar($field['value']) ? $field['value'] : '';
             }
