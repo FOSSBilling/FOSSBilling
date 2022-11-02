@@ -31,7 +31,7 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Update currencty logged in client details.
+     * Update currently logged in client details.
      *
      * @optional string $email - new client email. Must not exist on system
      * @optional string $last_name - last name

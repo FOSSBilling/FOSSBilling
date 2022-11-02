@@ -3780,7 +3780,7 @@ msgid ""
 msgstr ""
 
 msgid ""
-"data-product attribute value will be overiden if popup's product is selected "
+"data-product attribute value will be  if popup's product is selected "
 "from select-box above"
 msgstr ""
 
@@ -4029,7 +4029,7 @@ msgstr ""
 
 msgid ""
 "Please keep in mind that field name can not start with number. Special "
-"characters will be replaced with underscrore ( _ )"
+"characters will be replaced with underscores ( _ )"
 msgstr ""
 
 msgid "Label"
@@ -5366,7 +5366,7 @@ msgstr ""
 msgid "Error message:"
 msgstr ""
 
-msgid "Set paid supoprt for helpdesks: "
+msgid "Set paid support for helpdesks: "
 msgstr ""
 
 msgid "Create new helpdesk"

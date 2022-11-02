@@ -135,7 +135,7 @@ class ClientTest extends \BBTestCase {
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())->
-        method('emailAreadyRegistered')->will($this->returnValue(false));
+        method('emailAlreadyRegistered')->will($this->returnValue(false));
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())->

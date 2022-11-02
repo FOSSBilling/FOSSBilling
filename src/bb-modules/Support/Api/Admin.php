@@ -346,7 +346,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Set iquery status to closed.
+     * Set id status to closed.
      *
      * @param int $id - inquiry id
      *

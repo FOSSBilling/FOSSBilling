@@ -76,7 +76,7 @@
                         </td>
                         <td>
                             From {% if promo.start_at %}{{ promo.start_at|date('Y-m-d') }}{% else %}now{% endif %}
-                            untill {% if promo.end_at %}{{ promo.end_at|date('Y-m-d') }}{% else %}disabled{% endif %}
+                            until {% if promo.end_at %}{{ promo.end_at|date('Y-m-d') }}{% else %}disabled{% endif %}
                         </td>
                         <td>
                             {% if promo.active == true %}

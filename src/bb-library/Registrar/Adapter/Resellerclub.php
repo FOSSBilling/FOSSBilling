@@ -119,7 +119,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return false;
     }
 
-    public function isDomainCanBeTransfered(Registrar_Domain $domain)
+    public function isDomaincanBeTransferred(Registrar_Domain $domain)
     {
         $params = array(
             'domain-name'       =>  $domain->getName(),

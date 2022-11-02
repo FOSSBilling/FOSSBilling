@@ -83,7 +83,7 @@ class Service implements InjectionAwareInterface
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
             $blocked_ips = array_map('trim', $blocked_ips);
             if (in_array($di['request']->getClientAddress(), $blocked_ips)) {
-                throw new \Box_Exception('Your IP addresss (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientAddress()], 403);
+                throw new \Box_Exception('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientAddress()], 403);
             }
         }
     }

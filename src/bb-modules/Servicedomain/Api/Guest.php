@@ -134,7 +134,7 @@ class Guest extends \Api_Abstract
         if (!$tld instanceof \Model_Tld) {
             throw new \Box_Exception('TLD is not active.');
         }
-        if (!$this->getService()->canBeTransfered($tld, $data['sld'])) {
+        if (!$this->getService()->canBeTransferred($tld, $data['sld'])) {
             throw new \Box_Exception('Domain can not be transferred.');
         }
 

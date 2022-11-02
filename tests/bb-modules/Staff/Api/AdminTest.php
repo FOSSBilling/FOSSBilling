@@ -32,7 +32,7 @@ class AdminTest extends \BBTestCase {
             ->method('getSearchQuery')
             ->will($this->returnValue(array('sqlString', array())));
         $serviceMock->expects($this->atLeastOnce())
-            ->method('toModel_AdminApiiArray')
+            ->method('toModel_AdminApiArray')
             ->will($this->returnValue(array()));
 
         $resultSet = array(
@@ -70,7 +70,7 @@ class AdminTest extends \BBTestCase {
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
-            ->method('toModel_AdminApiiArray')
+            ->method('toModel_AdminApiArray')
             ->will($this->returnValue(array()));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();

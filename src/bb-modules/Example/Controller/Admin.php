@@ -51,7 +51,7 @@ class Admin implements \Box\InjectionAwareInterface
         return [
             'group' => [
                 'index' => 1500,                // menu sort order
-                'location' => 'example',          // menu group identificator for subitems
+                'location' => 'example',          // menu group identifier for subitems
                 'label' => 'Example module',    // menu group title
                 'class' => 'example',           // used for css styling menu item
             ],

@@ -39,7 +39,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function create(\Model_Client $cient, \Model_PayGateway $pg, array $data)
+    public function create(\Model_Client $client, \Model_PayGateway $pg, array $data)
     {
         $model = $this->di['db']->dispense('Subscription');
         $model->client_id = $data['client_id'];
@@ -207,7 +207,7 @@ class ServiceSubscription implements InjectionAwareInterface
             return false;
         }
 
-        // check if first invoice line has deined period
+        // check if first invoice line has denied period
         $query = 'SELECT id, period
             FROM invoice_item
             WHERE invoice_id = :id

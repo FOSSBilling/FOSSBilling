@@ -34,7 +34,7 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
         );
     }
     
-    public function isDomainCanBeTransfered(Registrar_Domain $domain)
+    public function isDomaincanBeTransferred(Registrar_Domain $domain)
     {
         $this->getLog()->debug('Checking if domain can be transferred: ' . $domain->getName());
         return true;
@@ -563,7 +563,7 @@ class Whois {
      */
     private function get_tld()
     {
-        // Splitting domainname
+        // Splitting domain name
         $domain=explode(".",$this->domain);
 
         if(count($domain)>2) {
@@ -606,7 +606,7 @@ class Whois {
      */
     private function get_domain()
     {
-        // Splitting domainname
+        // Splitting domain name
         $domain=explode(".",$this->domain);
         return $domain[0];
     }

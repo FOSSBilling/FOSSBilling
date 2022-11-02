@@ -59,7 +59,7 @@ class Simple
 
     /**
      * This method is optional.
-     * Aditional validation rules can be applied to license validation logic.
+     * Additional validation rules can be applied to license validation logic.
      * Method is called after "expiration, ip, version, path, hostname validations are passed".
      *
      * Should throw "LogicException" if validation fails

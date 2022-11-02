@@ -125,7 +125,7 @@ class Service implements InjectionAwareInterface
             $validator->isEmailValid($email);
 
             $clientService = $this->di['mod_service']('client');
-            if ($clientService->emailAreadyRegistered($email, $client)) {
+            if ($clientService->emailAlreadyRegistered($email, $client)) {
                 throw new \Box_Exception('Can not change email. It is already registered.');
             }
 

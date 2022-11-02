@@ -2,8 +2,8 @@ Master
 ------------------------------------------------------------------------------
 
 **General:**
-* Rafactoring admin template with Tabler.io
-* Templates extensions .phtml ranamed to .html.twig
+* Refactoring admin template with Tabler.io
+* Templates extensions .phtml renamed to .html.twig
 * Updated bb-themes/bootstrap to Bootstrap 5
 
 Release 4.22-beta.1.1
@@ -19,7 +19,7 @@ Release 4.22-beta.1.2 !!Update in progress!!
 *
 
 **Bug Fixes:**
-* Fix plesk integration
+* Fix Plesk integration
 
 Release 4.22-beta.1.1
 ------------------------------------------------------------------------------
@@ -33,14 +33,14 @@ Release 4.22-beta.1.1
 
 **Security:**
 * Fixed three instances of XSS vulnerabilities
-* Use random_bytes instead of uniqid since it actually generates cryptographically secure pseudo-random bytes
+* Use random_bytes instead of `uniqid` since it actually generates cryptographically secure pseudo-random bytes
 
 **Bug Fixes**
 * Bugfixes with Bootstrap theme
 * Fix PDF generation
 * Fix KB entries, Tickets, and Invoices being duplicated in the BoxBilling interface
 * Fix "8192 Required parameter follows optional parameter"
-* Corrected path to stylesheet in Boostrap theme
+* Corrected path to stylesheet in Bootstrap theme
 * Fixed PHP 8 support
 * Fix PDF generation on PHP 8
 * Fix BoxBilling updater and have it update off GitHub releases
@@ -125,7 +125,7 @@ Release 4.16
 * Seo module updates
 * Users must verify theirs emails after email confirmations setting is enabled
 * Compatibility with PHP7
-* Generate VAT rules for each EU country according to it's standart rate
+* Generate VAT rules for each EU country according to it's standard rate
 * Various bug fixes and improvements
 
 Release 4.15 (2015-02-19)
@@ -197,7 +197,7 @@ Release 4.13 (2015-01-15)
 * WebMoney payment adapter updated
 * Ability to set how many hours user needs to wait until consequent support ticket submission
 * Added search in canned responses
-* Code improvements and optimisations
+* Code improvements and optimization
 * YouHosting module rewritten to work with open source version
 * Translation implementation reworked.
 * Bug fixes
@@ -263,7 +263,7 @@ Release 2.11.28 (2012-11-28)
 * News module updates
 * Ability to change payment gateway in invoice payment page
 * Immediately redirect to payment gateway after checkout if payment gateway was selected
-* Defautl theme update: Show client login/signup form before checkout button in shopping cart
+* Default theme update: Show client login/signup form before checkout button in shopping cart
 * Search can be made by order meta keys
 * Added new database table *client_order_meta* to store custom order data
 * new statistic method to get number of sales by country
@@ -272,14 +272,14 @@ Release 2.11.28 (2012-11-28)
 * Show Last month statistics in dashboard
 * Render mod_page_login.phtml instead of mod_client_login.phtml template if template exists
 * Allow create any template mod_client_*.phtml to be accessed by client only
-* Added redirects module. Usefull to redirect deprecated URLs to new ones
+* Added redirects module. Useful to redirect deprecated URLs to new ones
 * Simplified payment gateway logic. Now it is a simple file, no need to extend any class.
 * New event hooks:
     * onBeforeAdminExtensionConfigSave
     * onAfterAdminExtensionConfigSave
     * onBeforeProductAddedToCart
     * onAfterProductAddedToCart
-* Removed hostinger branding
+* Removed Hostinger branding
 * Option to enable/disable ability for client to change his email
 * Ability to require email confirmation in welcome email
 * Ability to define required fields for client registration form
@@ -389,7 +389,7 @@ Release 2.6.17 (2012-06-17)
 ------------------------------------------------------------------------------
 
 * New SolusVM VPS product type. Ability to import clients and existing servers from SolusVM master server. Full control from admin and client area.
-* New product type BoxBiling license. Ability to sell BoxBilling licenses from any BoxBilling installation. Enable
+* New product type BoxBilling license. Ability to sell BoxBilling licenses from any BoxBilling installation. Enable
 * Email templates are generated on first event occurrence. Until then it can not be managed.
 * Ability to filter orders by invoice option: issue invoice manually or automatically.
 * Ability to preview email templates. Old email templates are deprecated.
@@ -403,7 +403,7 @@ Release 2.6.17 (2012-06-17)
 * New dashboard widget to show active orders count grouped by products
 * Updated Twig to 1.8.2 version
 * Added ability to disable/enable automatic invoice issuing for orders
-* SpamChecker is a module. Google recapthca and stopforumspam.com database checks can be simply enabled or disabled as any other module
+* SpamChecker is a module. Google recaptcha and stopforumspam.com database checks can be simply enabled or disabled as any other module
 * All extensions can call other extension event hooks
 * All extensions can hook into cron job event
 * Added new API methods **extension_config_get** and **extension_config_save** to store encrypted extension configuration data
@@ -447,7 +447,7 @@ Release v2.4.30 (2012-04-30)
 * https://github.com/boxbilling/BoxBilling/issues/115 fix
 * Password issue fix: https://github.com/boxbilling/BoxBilling/issues/114
 * Including http://redbeanphp.com/ ORM in bb-library/rb.php For extensions as a helper
-* Simplifie nginx server support. Routing includes only 2 simple rules
+* Simplified nginx server support. Routing includes only 2 simple rules
 * Adding new core module mod_api. Api is now accessible from yourdomain.com/api/role/module/method. bb-api is deprecated and will be removed in 2.6 version
 * Gravatar url uses ssl if BoxBilling is on https
 * Selectable refunds logic: generate refund invoice with paid invoice numbering or generate credit note
@@ -468,7 +468,7 @@ Release v2.4.30 (2012-04-30)
 * Hosting account password is generated on order activation action
 * Removing favicon to avoid overwriting on update
 * Added zip code management to invoice client credentials
-* Whm/Cpanel server manager update. Do not try to exceute command again if response failed
+* Whm/Cpanel server manager update. Do not try to execute command again if response failed
 * Translations fix
 * Typo fix in order management page
 * WebToPay payment adapter updates

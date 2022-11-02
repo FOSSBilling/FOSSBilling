@@ -25,7 +25,7 @@ We've tried to keep this document as short as possible but there is a lot of inf
  * [Translating FOSSBilling](#translating-fossbilling)
  * [Sponsor the project](#sponsoring-the-project)
 
-[Styleguides](#styleguides)
+[style Guides](#styleguides)
 
 [But, I still have a question!](#but-i=stil-have-a-question)
 
@@ -46,7 +46,7 @@ If you need more reasons than that though, then because...
 
 First off, no matter how you plan to take part, please take a couple of minutes to read our code of conduct before contributing anything.
 
-This project and everyone participating in it are governed by the [FOSSBilling Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behaviour to the moderators on our [Discord](https://fossbilling.org/discord) server.
+This project and everyone participating in it are governed by the [FOSSBilling Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the moderators on our [Discord](https://fossbilling.org/discord) server.
 
 ### Which 'branch' should I contribute to?
 
@@ -54,7 +54,7 @@ The future of FOSSBilling is the /lara branch, which is a major rewrite of the c
 
 In the meantime, the /main branch is being maintained with bug fixes, security updates and small enhancements. It is the codebase that was inherited from BoxBilling with some small enhancements and updates. 
 
-### Unserstanding the strucutre of FOSSBilling
+### Understanding the structure of FOSSBilling
 
 FOSSBilling is an open-source project &mdash; it's made up of over [50 modules](https://github.com/FOSSBilling/FOSSBilling/tree/master/src/bb-modules). When you initially consider contributing to FOSSBilling, you might be unsure about which of those 50 modules implements the functionality you want to change or report a bug for. This section should help you with that.
 
@@ -75,7 +75,7 @@ There are a lot of different ways that you can get involved in the FOSSBilling p
 
 ### Reporting bugs
 
-If you find a bug in FOSSBilling, please report it. Following these guidelines helps maintainers and the community understand your report :pencil:, reproduce the behaviour:computer:, and find related reports :mag_right:.
+If you find a bug in FOSSBilling, please report it. Following these guidelines helps maintainers and the community understand your report :pencil:, reproduce the behavior:computer:, and find related reports :mag_right:.
 
 #### Before submitting a bug report
 
@@ -93,9 +93,9 @@ Explain the problem and include additional details to help maintainers reproduce
 
 * **Use a clear and descriptive title** for the issue to identify the problem.
 * **Describe the exact steps which reproduce the problem** in as much detail as possible. For example, start by explaining what section exactly you used in the browser, or which API call you were using. When listing steps, **don't just say what you did but explain how you did it**.
-* **Provide specific examples to demonstrate the steps**. Include links to files or GitHub projects, or copy/pasteable snippets, which you use in those examples. If you're providing snippets in the issue, use [Markdown code blocks](https://help.github.com/articles/markdown-basics/#multiple-lines).
-* **Describe the behaviour you observed after following the steps** and point out what exactly is the problem with that behaviour.
-* **Explain which behaviour you expected to see instead and why.**
+* **Provide specific examples to demonstrate the steps**. Include links to files or GitHub projects, or copy/pastable snippets, which you use in those examples. If you're providing snippets in the issue, use [Markdown code blocks](https://help.github.com/articles/markdown-basics/#multiple-lines).
+* **Describe the behavior you observed after following the steps** and point out what exactly is the problem with that behavior.
+* **Explain which behavior you expected to see instead and why.**
 * **Include screenshots and animated GIFs** which show you following the described steps and demonstrate the problem. 
 * **If the problem wasn't triggered by a specific action**, describe what you were doing before the problem happened and share more information using the guidelines below.
 
@@ -145,7 +145,7 @@ The process described here has several goals:
 Please follow these steps to have your contribution considered by the maintainers:
 
 1. Follow all instructions in [the template](https://github.com/FOSSBilling/.github/blob/master/.github/PULL_REQUEST_TEMPLATE/bug_fix.md)
-2. Follow the [styleguides](#styleguides)
+2. Follow the [style guides](#styleguides)
 3. After you submit your pull request, verify that all [status checks](https://help.github.com/articles/about-status-checks/) are passing <details><summary>What if the status checks are failing?</summary>If a status check is failing, and you believe that the failure is unrelated to your change, please leave a comment on the pull request explaining why you believe the failure is unrelated. A maintainer will re-run the status check for you. If we conclude that the failure was a false positive, then we will open an issue to track that problem with our status check suite.</details>
 
 Before a PR can be merged it must pass all of the automated tests and also be reviewed by two maintainers. All of the above requirements must be met before your pull request will be reviewed. Please be aware that the reviewers may ask you to complete additional design work, tests, or other changes before your pull request can be ultimately accepted.
@@ -156,7 +156,7 @@ Great code is only one-half of any successful project, and great documentation i
 
 The documentation for FOSSBilling is hosted here: [FOSSBilling Docs](https://docs.fossbilling.org/)
 
-Documentation is built using [Docusauras](https://docusaurus.io/) from this [GitHub repository](https://github.com/FOSSBilling/docs). You can contribute directly to the repo on GitHub or using the *Edit this page* links on each page of the docs site.
+Documentation is built using [docusaurus](https://docusaurus.io/) from this [GitHub repository](https://github.com/FOSSBilling/docs). You can contribute directly to the repo on GitHub or using the *Edit this page* links on each page of the docs site.
 
 Please try to be thorough and clear when writing directions. Something might seem obvious to you, but do not assume that it is to everybody else. 
 
@@ -175,9 +175,9 @@ If you do not have the time or necessary skills to actively take part in the dev
 You can do this using [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or on [Open Collective](https://opencollective.com/fossbilling). 
 
 
-## Styleguides
+## Style Guides
 
-### Commit Messages Styleguide
+### Commit Messages Style Guide
 
 Please be as clear and descriptive as possible in your commit messages, it makes it much easier for everyone to follow them. 
 
@@ -195,17 +195,17 @@ Please be as clear and descriptive as possible in your commit messages, it makes
     * ⬆️ when upgrading dependencies
     * :sparkles: when it is a new feature
     
-### PHP Styleguide
+### PHP Style Guide
 
 All PHP must adhere to [PSR-12](https://www.php-fig.org/psr/psr-12/).
 
-The /lara branch is a work in progress and is being built in Laravel. If you are not familiar with the framework then please take a look at the [Laravel docs](https://laravel.com/docs/9.x) before diving in. 
+The lara branch is a work in progress and is being built in Laravel. If you are not familiar with the framework then please take a look at the [Laravel docs](https://laravel.com/docs/9.x) before diving in. 
 
-### Documentation Styleguide
+### Documentation Style Guide
 
-We don't have a formal Documentation Styleguide yet, but we will be developing one soon. In the meantime please take a look at the existing documentation and follow the tone and writing style so that everything stays coherent. 
+We don't have a formal documentation style guide yet, but we will be developing one soon. In the meantime please take a look at the existing documentation and follow the tone and writing style so that everything stays coherent. 
 
-Docusauras uses Markdown and MDX. Please [see their guides](https://docusaurus.io/docs/markdown-features) for how to use them if you are not sure. 
+Docusaurus uses Markdown and MDX. Please [see their guides](https://docusaurus.io/docs/markdown-features) for how to use them if you are not sure. 
 
 ## But, I still have a question!
 

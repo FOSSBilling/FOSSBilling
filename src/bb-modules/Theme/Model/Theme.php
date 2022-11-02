@@ -109,7 +109,7 @@ class Theme
         // remove style attributes
         $settings_page = preg_replace('/(<[^>]+) style=".*?"/i', '$1', $settings_page);
 
-        // fix unclosed texarea
+        // fix unclosed text area
         $settings_page = preg_replace('/<textarea (.*)\/>/i', '<textarea $1></textarea>', $settings_page);
 
         return $settings_page;

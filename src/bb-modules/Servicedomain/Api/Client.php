@@ -90,7 +90,7 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Retireve domain transfer code.
+     * Retrieve domain transfer code.
      *
      * @param int $order_id - domain order id
      *

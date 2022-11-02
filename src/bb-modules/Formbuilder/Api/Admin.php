@@ -56,7 +56,7 @@ class Admin extends \Api_Abstract
      *
      * @optional
      * @optional string $label - Label of the field which will be shown. Default value "Type X" where X is number of fields in form. For example "Checkbox 2"
-     * @optional string $name - Name of the field. Dafault value "new_type_X" where X is number of fields in the form. For example "new_checkbox_2"
+     * @optional string $name - Name of the field. Default value "new_type_X" where X is number of fields in the form. For example "new_checkbox_2"
      * @optional bool $hide_label - Option either hide label of field or not
      * @optional string $description - Description of a field
      * @optional mixed $default_value - Default value of field. If field is checkbox or radio this variable must be array, otherwise it is string
@@ -70,7 +70,7 @@ class Admin extends \Api_Abstract
      * @optional bool $show_middle - Either show middle or not
      * @optional bool $show_prefix - Either to show prefix or not
      * @optional bool $show_suffix - Either to show suffix or not
-     * @optional int $text_size - Prefered text size
+     * @optional int $text_size - Preferred text size
      *
      * @return int - ID of created field
      *
@@ -227,7 +227,7 @@ class Admin extends \Api_Abstract
      *
      * @optional
      * @optional string $label - Label of the field which will be shown. Default value "Type X" where X is number of fields in form. For example "Checkbox 2"
-     * @optional string $name - Name of the field. Dafault value "new_type_X" where X is number of fields in the form. For example "new_checkbox_2"
+     * @optional string $name - Name of the field. Default value "new_type_X" where X is number of fields in the form. For example "new_checkbox_2"
      * @optional bool $hide_label - Option either hide label of field or not
      * @optional string $description - Description of a field
      * @optional mixed $default_value - Default value of field. If field is checkbox or radio this variable must be array, otherwise it is string
@@ -239,9 +239,9 @@ class Admin extends \Api_Abstract
      * @optional array $options - Array of options for "select", "checkbox" and "radio" type fields. Key represents label and value will be field's value. Array must be unique.
      * @optional bool $show_initial - Either show initial or not
      * @optional bool $show_middle - Either show middle or not
-     * @optional bool $show_prefix - Eithor to show prefix or not
+     * @optional bool $show_prefix - Either to show prefix or not
      * @optional bool $show_suffix - Either to show suffix or not
-     * @optional int $text_size - Prefered text size
+     * @optional int $text_size - Preferred text size
      *
      * @return int - ID of the field
      *

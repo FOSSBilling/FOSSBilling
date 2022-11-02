@@ -95,7 +95,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Return icome by day. If no timespan is selected method returns
+     * Return income by day. If no timespan is selected method returns
      * previous month statistics.
      *
      * @optional string $date_from - day since income are counted

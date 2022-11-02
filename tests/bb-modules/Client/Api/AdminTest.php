@@ -147,7 +147,7 @@ class AdminTest extends \BBTestCase
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())->
-        method('emailAreadyRegistered')->will($this->returnValue(false));
+        method('emailAlreadyRegistered')->will($this->returnValue(false));
         $serviceMock->expects($this->atLeastOnce())->
         method('adminCreateClient')->will($this->returnValue(1));
 
@@ -184,7 +184,7 @@ class AdminTest extends \BBTestCase
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())->
-        method('emailAreadyRegistered')->will($this->returnValue(true));
+        method('emailAlreadyRegistered')->will($this->returnValue(true));
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
 
@@ -297,7 +297,7 @@ class AdminTest extends \BBTestCase
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())->
-        method('emailAreadyRegistered')->will($this->returnValue(false));
+        method('emailAlreadyRegistered')->will($this->returnValue(false));
         $serviceMock->expects($this->atLeastOnce())->
         method('canChangeCurrency')->will($this->returnValue(true));
 
@@ -381,7 +381,7 @@ class AdminTest extends \BBTestCase
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())->
-        method('emailAreadyRegistered')->will($this->returnValue(true));
+        method('emailAlreadyRegistered')->will($this->returnValue(true));
         $serviceMock->expects($this->never())->
         method('canChangeCurrency')->will($this->returnValue(true));
 

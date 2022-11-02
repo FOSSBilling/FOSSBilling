@@ -37,7 +37,7 @@ abstract class Registrar_AdapterAbstract
      * @return bool
      * @throws Registrar_Exception
      */
-    abstract public function isDomainCanBeTransfered(Registrar_Domain $domain);
+    abstract public function isDomaincanBeTransferred(Registrar_Domain $domain);
 
     /**
      * @return bool

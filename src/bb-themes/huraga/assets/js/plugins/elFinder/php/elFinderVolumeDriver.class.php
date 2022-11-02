@@ -454,7 +454,7 @@ abstract class elFinderVolumeDriver {
 	}	
 		
 	/**
-	 * Configure after successfull mount.
+	 * Configure after successful mount.
 	 * By default set thumbnails path and image manipulation library.
 	 *
 	 * @return void

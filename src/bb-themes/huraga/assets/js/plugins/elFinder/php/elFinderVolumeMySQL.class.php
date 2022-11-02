@@ -178,7 +178,7 @@ class elFinderVolumeMySQL extends elFinderVolumeDriver {
 
 	/**
 	 * Perform sql query and return result.
-	 * Increase sqlCnt and save error if occured
+	 * Increase sqlCnt and save error if occurred
 	 *
 	 * @param  string  $sql  query
 	 * @return misc

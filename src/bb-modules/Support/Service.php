@@ -1364,7 +1364,7 @@ class Service implements \Box\InjectionAwareInterface
 
         $this->di['db']->trash($model);
 
-        $this->di['logger']->info('Deleted canned reponse #%s', $id);
+        $this->di['logger']->info('Deleted canned response #%s', $id);
 
         return true;
     }
