@@ -53,6 +53,9 @@ return (new PhpCsFixer\Config())
                 'install',
                 'bb-modules/Wysiwyg',
             ])
-            ->notPath('rb.php')
+            ->notPath(
+                'rb.php',
+                'bb-config-sample.php'
+            )
     )
 ;
