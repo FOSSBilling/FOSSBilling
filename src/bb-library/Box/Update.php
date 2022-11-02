@@ -35,7 +35,14 @@ class Box_Update
         return $this->di;
     }
     private $_url = 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/latest';
+    private $_preview_url = 'https://fossbilling.org/downloads/preview/';
 
+    /**
+     * Determines which branch FOSSBilling is configured to update from.
+     */
+    public function getUpdateBranch(){
+        return ( isset($this->di['config']['update_branch']) ) ? $this->di['config']['update_branch'] : "release";
+    }
 
     /**
      * Returns latest information
@@ -51,6 +58,10 @@ class Box_Update
      */
     public function getLatestReleaseNotes()
     {
+        if($this->getUpdateBranch() === "preview"){
+            return "Release notes are not available for preview builds. You can check the latest changes on our [Github](https://github.com/FOSSBilling/FOSSBilling/commits/main)";
+        }
+
         $response = $this->_getLatestVersionInfo();
         if(!isset($response['body'])){
             return "**Error: Release info unavailable**";
@@ -64,6 +75,10 @@ class Box_Update
      */
     public function getLatestVersion()
     {
+        if($this->getUpdateBranch() === "preview"){
+            return Box_Version::VERSION;
+        }
+
         $response = $this->_getLatestVersionInfo();
         if(!isset($response['tag_name'])){
             return Box_Version::VERSION;
@@ -77,6 +92,10 @@ class Box_Update
      */
     public function getLatestVersionDownloadLink()
     {
+        if($this->getUpdateBranch() === "preview"){
+            return $this->_preview_url;
+        }
+
         $response = $this->_getLatestVersionInfo();
         return $response['assets'][0]['browser_download_url'];
     }
@@ -124,7 +143,7 @@ class Box_Update
      */
     public function performUpdate()
     {
-        if(!$this->getCanUpdate()) {
+        if($this->getUpdateBranch() !== 'preview' && !$this->getCanUpdate()) {
             throw new LogicException('You have latest version of FOSSBilling. You do not need to update.');
         }
 

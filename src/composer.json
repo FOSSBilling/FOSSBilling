@@ -32,7 +32,8 @@
         "symfony/translation": "^6.0",
         "symfony/twig-bridge": "^6.0",
         "dompdf/dompdf": "^2.0.1",
-        "symfony/polyfill-intl-idn" : "*"
+        "symfony/polyfill-intl-idn" : "*",
+        "nelexa/zip": "^4.0.2"
      
     },
     "require-dev": {

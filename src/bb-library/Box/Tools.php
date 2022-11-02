@@ -490,6 +490,7 @@ class Box_Tools
 
         $newConfig = [
             'debug' => (isset($currentConfig['debug'])) ? $currentConfig['debug'] : false,
+            'update_branch' => (isset($currentConfig['update_branch'])) ? $currentConfig['update_branch'] : 'release',
             'log_stacktrace' => (isset($currentConfig['log_stacktrace'])) ? $currentConfig['log_stacktrace'] : true,
             'stacktrace_length' => (isset($currentConfig['stacktrace_length'])) ? $currentConfig['stacktrace_length'] : 25,
             'maintenance_mode' => [
