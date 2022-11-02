@@ -404,8 +404,7 @@ Release 2.6.17 (2012-06-17)
 * Updated Twig to 1.8.2 version
 * Added ability to disable/enable automatic invoice issuing for orders
 * SpamChecker is a module. Google recaptcha and stopforumspam.com database checks can be simply enabled or disabled as any other module
-* All extensions can call other extension even
-* t hooks
+* All extensions can call other extension event hooks
 * All extensions can hook into cron job event
 * Added new API methods **extension_config_get** and **extension_config_save** to store encrypted extension configuration data
 * Admin layout contains more blocks. Gives more freedom for extensions developers.

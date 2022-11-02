@@ -104,7 +104,7 @@ class Service implements \Box\InjectionAwareInterface
             }
 
             $domain = $data['transfer_sld'].$tld->tld;
-            if (!$this->canBetransferred($tld, $data['transfer_sld'])) {
+            if (!$this->canBeTransferred($tld, $data['transfer_sld'])) {
                 throw new \Box_Exception(':domain can not be transferred!', [':domain' => $domain]);
             }
 
@@ -527,7 +527,7 @@ class Service implements \Box\InjectionAwareInterface
         return true;
     }
 
-    public function canBetransferred(\Model_Tld $model, $sld)
+    public function canBeTransferred(\Model_Tld $model, $sld)
     {
         if (empty($sld)) {
             throw new \Box_Exception('Domain name is not valid');
@@ -545,7 +545,7 @@ class Service implements \Box\InjectionAwareInterface
         $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
         $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
-        return $adapter->isDomainCanBetransferred($domain);
+        return $adapter->isDomaincanBeTransferred($domain);
     }
 
     public function isDomainAvailable(\Model_Tld $model, $sld)

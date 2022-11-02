@@ -125,7 +125,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
         $this->assertFalse($result);
     }
 
-    public function testisDomainCanBetransferred()
+    public function testisDomaincanBeTransferred()
     {
         $adapterMock = $this->getMockBuilder('Registrar_Adapter_Resellerclub')->disableOriginalConstructor()
             ->setMethods(array('_makeRequest'))
@@ -140,7 +140,7 @@ class Registrar_Adapter_ResellerclubTest extends PHPUnit\Framework\TestCase
             ->with('domains/validate-transfer')
             ->willReturn($requestResult);
 
-        $result = $adapterMock->isDomainCanBetransferred($registrarDomain);
+        $result = $adapterMock->isDomaincanBeTransferred($registrarDomain);
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }

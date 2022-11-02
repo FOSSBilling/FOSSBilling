@@ -34,7 +34,7 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
         );
     }
     
-    public function isDomainCanBetransferred(Registrar_Domain $domain)
+    public function isDomaincanBeTransferred(Registrar_Domain $domain)
     {
         $this->getLog()->debug('Checking if domain can be transferred: ' . $domain->getName());
         return true;

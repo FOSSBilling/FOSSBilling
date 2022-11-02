@@ -69,7 +69,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         throw new Registrar_Exception('Email registrar can not determine whether domain is available');
     }
 
-    public function isDomainCanBetransferred(Registrar_Domain $domain)
+    public function isDomaincanBeTransferred(Registrar_Domain $domain)
     {
         throw new Registrar_Exception('Email registrar can not determine whether domain can be transferred');
     }

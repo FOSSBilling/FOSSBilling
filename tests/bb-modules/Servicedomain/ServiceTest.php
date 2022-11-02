@@ -103,7 +103,7 @@ class ServiceTest extends \BBTestCase
     /**
      * @dataProvider validateOrderDataProvider
      */
-    public function testValidateOrderData($data, $finOneByTldCalled, $canBetransferredCalled, $isDomainAvailableCalled)
+    public function testValidateOrderData($data, $finOneByTldCalled, $canBeTransferredCalled, $isDomainAvailableCalled)
     {
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isSldValid')
@@ -115,11 +115,11 @@ class ServiceTest extends \BBTestCase
         $tld->min_years = 2;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('tldFindOneByTld', 'canBetransferred', 'isDomainAvailable'))->getMock();
+            ->setMethods(array('tldFindOneByTld', 'canBeTransferred', 'isDomainAvailable'))->getMock();
 
         $serviceMock->expects($finOneByTldCalled)->method('tldFindOneByTld')
             ->will($this->returnValue($tld));
-        $serviceMock->expects($canBetransferredCalled)->method('canBetransferred')
+        $serviceMock->expects($canBeTransferredCalled)->method('canBeTransferred')
             ->will($this->returnValue(true));
         $serviceMock->expects($isDomainAvailableCalled)->method('isDomainAvailable')
             ->will($this->returnValue(true));
@@ -226,7 +226,7 @@ class ServiceTest extends \BBTestCase
                     'called'  => $this->atLeastOnce(),
                     'returns' => null
                 ),
-                array( //canBetransferred
+                array( //canBeTransferred
                     'called'  => $this->never(),
                     'returns' => true
                 )
@@ -245,7 +245,7 @@ class ServiceTest extends \BBTestCase
                     'called'  => $this->atLeastOnce(),
                     'returns' => $tldModel
                 ),
-                array( //canBetransferred
+                array( //canBeTransferred
                     'called'  => $this->atLeastOnce(),
                     'returns' => false
                 )
@@ -256,7 +256,7 @@ class ServiceTest extends \BBTestCase
     /**
      * @dataProvider validateOrderDateTransferExceptionsProvider
      */
-    public function testValidateOrderDateTransferExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBetransferred)
+    public function testValidateOrderDateTransferExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBeTransferred)
     {
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
@@ -265,11 +265,11 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
-            ->setMethods(array('tldFindOneByTld', 'canBetransferred'))->getMock();
+            ->setMethods(array('tldFindOneByTld', 'canBeTransferred'))->getMock();
         $serviceMock->expects($tldFindOneByTldArr['called'])->method('tldFindOneByTld')
             ->will($this->returnValue($tldFindOneByTldArr['returns']));
-        $serviceMock->expects($canBetransferred['called'])->method('canBetransferred')
-            ->will($this->returnValue($canBetransferred['returns']));
+        $serviceMock->expects($canBeTransferred['called'])->method('canBeTransferred')
+            ->will($this->returnValue($canBeTransferred['returns']));
 
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
@@ -354,7 +354,7 @@ class ServiceTest extends \BBTestCase
     /**
      * @dataProvider validateOrderDateRegisterExceptionsProvider
      */
-    public function testValidateOrderDateRegisterExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBetransferred)
+    public function testValidateOrderDateRegisterExceptions($data, $isSldValidArr, $tldFindOneByTldArr, $canBeTransferred)
     {
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($isSldValidArr['called'])->method('isSldValid')
@@ -366,8 +366,8 @@ class ServiceTest extends \BBTestCase
             ->setMethods(array('tldFindOneByTld', 'isDomainAvailable'))->getMock();
         $serviceMock->expects($tldFindOneByTldArr['called'])->method('tldFindOneByTld')
             ->will($this->returnValue($tldFindOneByTldArr['returns']));
-        $serviceMock->expects($canBetransferred['called'])->method('isDomainAvailable')
-            ->will($this->returnValue($canBetransferred['returns']));
+        $serviceMock->expects($canBeTransferred['called'])->method('isDomainAvailable')
+            ->will($this->returnValue($canBeTransferred['returns']));
 
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
@@ -1071,11 +1071,11 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testCanBetransferred()
+    public function testcanBeTransferred()
     {
         $registrarAdapterMock = $this->getMockBuilder('Registrar_Adapter_Custom')->disableOriginalConstructor()
             ->getMock();
-        $registrarAdapterMock->expects($this->atLeastOnce())->method('isDomainCanBetransferred')
+        $registrarAdapterMock->expects($this->atLeastOnce())->method('isDomaincanBeTransferred')
             ->will($this->returnValue(true));
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Service')
@@ -1102,25 +1102,25 @@ class ServiceTest extends \BBTestCase
         $tld->tld              = '.com';
         $tld->tld_registrar_id = rand(1, 100);
 
-        $result = $serviceMock->canBetransferred($tld, 'example');
+        $result = $serviceMock->canBeTransferred($tld, 'example');
 
         $this->assertTrue($result);
     }
 
-    public function testCanBetransferredEmptySldException()
+    public function testcanBeTransferredEmptySldException()
     {
         $this->expectException(\Box_Exception::class);
-        $this->service->canBetransferred(new \Model_Tld(), '');
+        $this->service->canBeTransferred(new \Model_Tld(), '');
     }
 
-    public function testCanBetransferredNotAllowedException()
+    public function testcanBeTransferredNotAllowedException()
     {
         $tldModel = new \Model_Tld();
         $tldModel->loadBean(new \RedBeanPHP\OODBBean());
         $tldModel->allow_transfer = false;
 
         $this->expectException(\Box_Exception::class);
-        $this->service->canBetransferred($tldModel, 'example');
+        $this->service->canBeTransferred($tldModel, 'example');
     }
 
     public function testIsDomainAvailable()
