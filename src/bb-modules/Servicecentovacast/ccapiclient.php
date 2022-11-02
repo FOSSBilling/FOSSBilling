@@ -1,21 +1,22 @@
 <?php
-/* CentovaCast PHP API Client Example
- * Copyright 2007-2008, Centova Technologies Inc.
- * ===========================================================================
+
+/**
+ * FOSSBilling.
  *
- * This file provides an example interface to the CentovaCast XML API.
- * An example of usage is provided in the example.php script accompanying
- * this class.
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license   Apache-2.0
  *
- * Note that all of the methods defined in the classes below should be
- * considered private; method overloading is used to dynamically handle
- * calls to what would be the public methods of each class.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
+ * Copyright BoxBilling, Inc 2011-2021
  *
+ * This source file is subject to the Apache-2.0 License that is bundled
+ * with this source code in the file LICENSE
  */
 
 namespace Box\Mod\Servicecentovacast;
 
-require_once dirname(__FILE__).'/class_HTTPRetriever.php';
+require_once dirname(__FILE__) . '/class_HTTPRetriever.php';
 
 // This library was originally designed to support object overloading, but
 // PHP's support for this appears to be flaky and prone to segfaulting
@@ -38,16 +39,16 @@ class CCBaseAPIClient
     public function build_request_packet($methodname, $payload)
     {
         return sprintf(
-            '<?xml version="1.0" encoding="'.$this->encoding.'"?'.'>'.
-            '<centovacast>'.
-                '<request class="%s" method="%s"%s>'.
-                '%s'.
-                '</request>'.
+            '<?xml version="1.0" encoding="' . $this->encoding . '"?>' .
+            '<centovacast>' .
+                '<request class="%s" method="%s"%s>' .
+                '%s' .
+                '</request>' .
             '</centovacast>',
             htmlentities($this->classname),
             htmlentities($methodname),
-            ($this->debug ? ' debug="enabled"' : '').
-            ($this->debugconsole ? ' debugconsole="'.htmlentities($this->debugconsole).'"' : ''),
+            ($this->debug ? ' debug="enabled"' : '') .
+            ($this->debugconsole ? ' debugconsole="' . htmlentities($this->debugconsole) . '"' : ''),
             $payload
         );
     }
@@ -155,7 +156,7 @@ class CCBaseAPIClient
     {
         $url = $this->ccurl;
         $apiscript = 'api.php';
-        if (substr($url, -strlen($apiscript) - 1) != '/'.$apiscript) {
+        if (substr($url, -strlen($apiscript) - 1) != '/' . $apiscript) {
             if ('/' != substr($url, -1)) {
                 $url .= '/';
             }
@@ -166,7 +167,7 @@ class CCBaseAPIClient
 
         $postdata = $packet;
         if (!$this->http->post($url, $postdata)) {
-            $this->set_error('Error contacting server: '.$this->http->get_error());
+            $this->set_error('Error contacting server: ' . $this->http->get_error());
 
             return;
         }
@@ -263,39 +264,39 @@ class CCBaseAPIClient
     {
         $output = [];
         switch ($node->nodeType) {
-        case XML_CDATA_SECTION_NODE:
-        case XML_TEXT_NODE:
-            $output = trim($node->textContent);
-        break;
-        case XML_ELEMENT_NODE:
-            for ($i = 0, $m = $node->childNodes->length; $i < $m; ++$i) {
-                $child = $node->childNodes->item($i);
-                $v = $this->domnode_to_array($child);
-                if (isset($child->tagName)) {
-                    $t = $child->tagName;
-                    if (!isset($output[$t])) {
-                        $output[$t] = [];
-                    }
-                    $output[$t][] = $v;
-                } elseif ($v) {
-                    $output = (string) $v;
-                }
-            }
-            if (is_array($output)) {
-                if ($node->attributes->length) {
-                    $a = [];
-                    foreach ($node->attributes as $attrName => $attrNode) {
-                        $a[$attrName] = (string) $attrNode->value;
-                    }
-                    $output['@attributes'] = $a;
-                }
-                foreach ($output as $t => $v) {
-                    if (is_array($v) && 1 == count($v) && '@attributes' != $t) {
-                        $output[$t] = $v[0];
+            case XML_CDATA_SECTION_NODE:
+            case XML_TEXT_NODE:
+                $output = trim($node->textContent);
+                break;
+            case XML_ELEMENT_NODE:
+                for ($i = 0, $m = $node->childNodes->length; $i < $m; ++$i) {
+                    $child = $node->childNodes->item($i);
+                    $v = $this->domnode_to_array($child);
+                    if (isset($child->tagName)) {
+                        $t = $child->tagName;
+                        if (!isset($output[$t])) {
+                            $output[$t] = [];
+                        }
+                        $output[$t][] = $v;
+                    } elseif ($v) {
+                        $output = (string) $v;
                     }
                 }
-            }
-        break;
+                if (is_array($output)) {
+                    if ($node->attributes->length) {
+                        $a = [];
+                        foreach ($node->attributes as $attrName => $attrNode) {
+                            $a[$attrName] = (string) $attrNode->value;
+                        }
+                        $output['@attributes'] = $a;
+                    }
+                    foreach ($output as $t => $v) {
+                        if (is_array($v) && 1 == count($v) && '@attributes' != $t) {
+                            $output[$t] = $v[0];
+                        }
+                    }
+                }
+                break;
         }
         if (empty($output)) {
             $output = null;

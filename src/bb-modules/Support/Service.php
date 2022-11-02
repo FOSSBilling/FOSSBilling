@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -296,8 +298,8 @@ class Service implements \Box\InjectionAwareInterface
         if ($client) {
             $where[] = 'c.first_name LIKE :first_name';
             $where[] = 'c.last_name LIKE :last_name';
-            $bindings[':first_name'] = '%'.$client.'%';
-            $bindings[':last_name'] = '%'.$client.'%';
+            $bindings[':first_name'] = '%' . $client . '%';
+            $bindings[':last_name'] = '%' . $client . '%';
         }
 
         if ($client_id) {
@@ -307,12 +309,12 @@ class Service implements \Box\InjectionAwareInterface
 
         if ($content) {
             $where[] = 'stm.content LIKE :content';
-            $bindings[':content'] = '%'.$content.'%';
+            $bindings[':content'] = '%' . $content . '%';
         }
 
         if ($subject) {
             $where[] = 'st.subject LIKE :subject';
-            $bindings[':subject'] = '%'.$subject.'%';
+            $bindings[':subject'] = '%' . $subject . '%';
         }
 
         if ($status) {
@@ -346,7 +348,7 @@ class Service implements \Box\InjectionAwareInterface
                 $where[] = 'st.id = :ticket_id';
                 $bindings[':ticket_id'] = $search;
             } else {
-                $search = '%'.$search.'%';
+                $search = '%' . $search . '%';
                 $where[] = '(stm.content LIKE :content OR st.subject LIKE :subject)';
                 $bindings[':content'] = $search;
                 $bindings[':subject'] = $search;
@@ -354,7 +356,7 @@ class Service implements \Box\InjectionAwareInterface
         }
 
         if (!empty($where)) {
-            $query = $query.' WHERE '.implode(' AND ', $where);
+            $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
 
         $query .= ' GROUP BY st.id ORDER BY st.priority ASC, st.id DESC';
@@ -581,7 +583,7 @@ class Service implements \Box\InjectionAwareInterface
 
             return $clientService->toApiArray($client);
         } else {
-            error_log('Missing client for ticket '.$ticket->id);
+            error_log('Missing client for ticket ' . $ticket->id);
 
             return [];
         }
@@ -625,7 +627,7 @@ class Service implements \Box\InjectionAwareInterface
         $bindings = [];
 
         if ($search) {
-            $search = '%'.$search.'%';
+            $search = '%' . $search . '%';
             $where[] = '(name LIKE :name OR email LIKE :email OR signature LIKE :signature)';
             $bindings[':name'] = $search;
             $bindings[':email'] = $search;
@@ -633,7 +635,7 @@ class Service implements \Box\InjectionAwareInterface
         }
 
         if (!empty($where)) {
-            $query = $query.' WHERE '.implode(' AND ', $where);
+            $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
         $query .= ' ORDER BY id DESC';
 
@@ -1043,7 +1045,7 @@ class Service implements \Box\InjectionAwareInterface
                 $where[] = 'spt.id = :p_ticket_id';
                 $bindings[':p_ticket_id'] = $search;
             } else {
-                $search = '%'.$search.'%';
+                $search = '%' . $search . '%';
                 $where[] = 'sptm.content LIKE :p_message_content OR spt.subject LIKE :p_ticket_subject';
                 $bindings[':p_message_content'] = $search;
                 $bindings[':p_ticket_subject'] = $search;
@@ -1051,7 +1053,7 @@ class Service implements \Box\InjectionAwareInterface
         }
 
         if (!empty($where)) {
-            $query = $query.' WHERE '.implode(' AND ', $where);
+            $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
 
         $query .= ' GROUP BY spt.id, sptm.id ORDER BY spt.id DESC, sptm.id ASC';
@@ -1328,14 +1330,14 @@ class Service implements \Box\InjectionAwareInterface
         $bindings = [];
 
         if ($search) {
-            $search = '%'.$search.'%';
+            $search = '%' . $search . '%';
             $where[] = 'title LIKE :title OR content LIKE :content';
             $bindings[':title'] = $search;
             $bindings[':content'] = $search;
         }
 
         if (!empty($where)) {
-            $query = $query.' WHERE '.implode(' AND ', $where);
+            $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
 
         $query .= ' ORDER BY sp.support_pr_category_id ASC';

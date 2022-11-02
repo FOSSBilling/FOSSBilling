@@ -1,12 +1,13 @@
 <?php
 
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -185,7 +186,7 @@ class Service
 
         // We can log event if it repeats for 2 time
         if ($meta->meta_value > 2) {
-            $api->activity_log(['m' => 'Client failed to enter correct login details '.$meta->meta_value.' time(s)']);
+            $api->activity_log(['m' => 'Client failed to enter correct login details ' . $meta->meta_value . ' time(s)']);
         }
 
         // if client gets funky, we block him

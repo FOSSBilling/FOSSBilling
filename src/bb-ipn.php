@@ -1,19 +1,21 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
  * with this source code in the file LICENSE
  */
 
-require_once __DIR__ .'/bb-load.php';
-$di = include __DIR__ .'/bb-di.php';
+require_once __DIR__ . '/bb-load.php';
+$di = include __DIR__ . '/bb-di.php';
 $di['translate']();
 
 $bb_invoice_id = $_POST['bb_invoice_id'] ?? $_GET['bb_invoice_id'] ?? null;
@@ -41,7 +43,7 @@ try {
 
 // redirect to invoice if gateways requires
 if (isset($_GET['bb_redirect'], $_GET['bb_invoice_hash'])) {
-    $url = $di['url']->link('invoice/'.$_GET['bb_invoice_hash']);
+    $url = $di['url']->link('invoice/' . $_GET['bb_invoice_hash']);
     header("Location: $url");
     exit;
 }

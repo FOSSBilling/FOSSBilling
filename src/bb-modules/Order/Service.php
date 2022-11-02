@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -228,7 +230,7 @@ class Service implements InjectionAwareInterface
 
                 return $this->di['db']->load($repo_class, $order->service_id);
             } else {
-                $service = $this->di['db']->findOne('service_'.$order->service_type,
+                $service = $this->di['db']->findOne('service_' . $order->service_type,
                     'id = :id',
                     [':id' => $order->service_id]);
 
@@ -243,7 +245,7 @@ class Service implements InjectionAwareInterface
     {
         $s = $this->di['tools']->to_camel_case($order->service_type, true);
 
-        return 'Service'.ucfirst($s);
+        return 'Service' . ucfirst($s);
     }
 
     public function getServiceOrder($service)
@@ -325,7 +327,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($where)) {
-            $query = $query.' AND '.implode(' AND ', $where);
+            $query = $query . ' AND ' . implode(' AND ', $where);
         }
 
         $query .= ' HAVING DATEDIFF(expires_at, NOW()) <= :days_until_expiration ORDER BY client_id DESC';
@@ -424,7 +426,7 @@ class Service implements InjectionAwareInterface
 
         if ($title) {
             $where[] = 'co.title LIKE :title';
-            $bindings[':title'] = '%'.$title.'%';
+            $bindings[':title'] = '%' . $title . '%';
         }
 
         if ($period) {
@@ -472,14 +474,14 @@ class Service implements InjectionAwareInterface
             $i = 1;
             foreach ($meta as $k => $v) {
                 $where[] = "(meta.name = :meta_name$i AND meta.value LIKE :meta_value$i)";
-                $bindings[':meta_name'.$i] = $k;
-                $bindings[':meta_value'.$i] = $v.'%';
+                $bindings[':meta_name' . $i] = $k;
+                $bindings[':meta_value' . $i] = $v . '%';
                 ++$i;
             }
         }
 
         if (!empty($where)) {
-            $query = $query.' WHERE '.implode(' AND ', $where);
+            $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
         $query .= ' ORDER BY co.id DESC';
 
@@ -533,14 +535,14 @@ class Service implements InjectionAwareInterface
         if ($period) {
             $config['period'] = $period;
         }
-        $se = $this->di['mod_service']('service'.$product->type);
+        $se = $this->di['mod_service']('service' . $product->type);
         // @deprecated logic
         if (method_exists($se, 'prependOrderConfig')) {
             $config = $se->prependOrderConfig($product, $config);
         }
 
         // @migration script
-        $se = $this->di['mod_service']('service'.$product->type);
+        $se = $this->di['mod_service']('service' . $product->type);
         if (method_exists($se, 'attachOrderConfig')) {
             $config = $se->attachOrderConfig($product, $config);
         }
@@ -698,12 +700,12 @@ class Service implements InjectionAwareInterface
     {
         $service = $this->getOrderService($order);
         if (!is_object($service)) {
-            $mod = $this->di['mod']('service'.$order->service_type);
+            $mod = $this->di['mod']('service' . $order->service_type);
             $s = $mod->getService();
             if (method_exists($s, 'create') || method_exists($s, 'action_create')) {
                 $service = $this->_callOnService($order, \Model_ClientOrder::ACTION_CREATE);
                 if (!is_object($service)) {
-                    throw new \Box_Exception('Error creating '.$order->service_type.' service for order '.$order->id);
+                    throw new \Box_Exception('Error creating ' . $order->service_type . ' service for order ' . $order->id);
                 }
 
                 $order->service_id = $service->id;
@@ -757,7 +759,7 @@ class Service implements InjectionAwareInterface
 
     protected function _callOnService(\Model_ClientOrder $order, $action)
     {
-        $repo = $this->di['mod_service']('service'.$order->service_type);
+        $repo = $this->di['mod_service']('service' . $order->service_type);
         // @deprecated
         // @todo remove this when doctrine is removed
         $core_services = [
@@ -770,9 +772,9 @@ class Service implements InjectionAwareInterface
         ];
 
         if (in_array($order->service_type, $core_services)) {
-            $m = 'action_'.$action;
+            $m = 'action_' . $action;
             if (!method_exists($repo, $m) || !is_callable([$repo, $m])) {
-                throw new \Box_Exception('Service '.$order->service_type.' do not support '.$m);
+                throw new \Box_Exception('Service ' . $order->service_type . ' do not support ' . $m);
             }
 
             return $repo->$m($order);
@@ -782,7 +784,7 @@ class Service implements InjectionAwareInterface
                 'id = :id',
                 [':id' => $order->id]);
             $service = null;
-            $sdbname = 'service_'.$order->service_type;
+            $sdbname = 'service_' . $order->service_type;
             if ($order->service_id) {
                 $service = $this->di['db']->load($sdbname, $order->service_id);
             }
@@ -976,7 +978,7 @@ class Service implements InjectionAwareInterface
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
-        $note = (null === $reason) ? 'Order suspended' : 'Order suspended for '.$reason;
+        $note = (null === $reason) ? 'Order suspended' : 'Order suspended for ' . $reason;
         $this->saveStatusChange($order, $note);
 
         if (!$skipEvent) {
@@ -1017,7 +1019,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (in_array($order->status, [\Model_ClientOrder::STATUS_CANCELED, \Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP])) {
-            throw new \Box_Exception('Can not cancel '.$order->status.' order');
+            throw new \Box_Exception('Can not cancel ' . $order->status . ' order');
         }
 
         $this->_callOnService($order, \Model_ClientOrder::ACTION_CANCEL);
@@ -1030,7 +1032,7 @@ class Service implements InjectionAwareInterface
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
-        $note = (null === $reason) ? 'Order canceled' : 'Canceled order for '.$reason;
+        $note = (null === $reason) ? 'Order canceled' : 'Canceled order for ' . $reason;
         $this->saveStatusChange($order, $note);
 
         if (!$skipEvent) {
@@ -1233,7 +1235,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($where)) {
-            $query = $query.' WHERE '.implode(' AND ', $where);
+            $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
 
         $query .= ' ORDER BY id DESC';
@@ -1286,7 +1288,7 @@ class Service implements InjectionAwareInterface
 
             return null;
         }
-        $srepo = $this->di['mod_service']('service'.$order->service_type);
+        $srepo = $this->di['mod_service']('service' . $order->service_type);
         if (!method_exists($srepo, 'toApiArray')) {
             error_log(sprintf('service #%s method toApiArray is missing', $order->service_type));
 

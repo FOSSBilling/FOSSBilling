@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -177,6 +179,7 @@ class Admin extends \Api_Abstract
      * the configuration for the streaming source is returned as well.
      *
      * @param int $order_id - order id
+     *
      * @optional bool $try - do not throw an exception, return error message as a result
      *
      * @return array
@@ -204,6 +207,7 @@ class Admin extends \Api_Abstract
      * and restarts crashed streaming servers as well.).
      *
      * @param int $order_id - order id
+     *
      * @optional bool $try - do not throw an exception, return error message as a result
      *
      * @return bool
@@ -246,18 +250,18 @@ class Admin extends \Api_Abstract
         }
 
         $order = $this->di['db']->findOne('client_order',
-                "id=:id 
+            "id=:id 
                  AND service_type = 'centovacast'
                 ",
-                ['id' => $data['order_id']]);
+            ['id' => $data['order_id']]);
 
         if (!$order) {
             throw new \Box_Exception('Centova Cast order not found');
         }
 
         $s = $this->di['db']->findOne('service_centovacast',
-                'id=:id',
-                ['id' => $order->service_id]);
+            'id=:id',
+            ['id' => $order->service_id]);
         if (!$s) {
             throw new \Box_Exception('Order :id is not activated', [':id' => $order->id]);
         }

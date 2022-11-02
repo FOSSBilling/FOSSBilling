@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -29,7 +31,6 @@ class Guest extends \Api_Abstract
      * @param string $password_confirm - must be same as password
      *
      * @optional bool $auto_login - Auto login client after signup
-     *
      * @optional string $last_name - last name
      * @optional string $aid - Alternative id. Usually used by import tools.
      * @optional string $gender - Gender - values: male|female
@@ -127,8 +128,8 @@ class Guest extends \Api_Abstract
             'password' => 'Password required',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        //Temporarily disabled due to issues with tests.
-        //$data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        // Temporarily disabled due to issues with tests.
+        // $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
         $this->di['validator']->isEmailValid($data['email']);
 
         $event_params = $data;
@@ -146,7 +147,7 @@ class Guest extends \Api_Abstract
         if (isset($data['remember'])) {
             $email = $data['email'];
             $cookie_time = (3600 * 24 * 30); // 30 days
-            $this->di['cookie']->set('BOXCLR', 'e='.base64_encode($email).'&p='.base64_encode($client->pass), time() + $cookie_time, '/');
+            $this->di['cookie']->set('BOXCLR', 'e=' . base64_encode($email) . '&p=' . base64_encode($client->pass), time() + $cookie_time, '/');
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->id, 'ip' => $this->ip]]);
@@ -183,7 +184,7 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('Email not found in our database');
         }
 
-        $hash = sha1(time().uniqid());
+        $hash = sha1(time() . uniqid());
 
         $reset = $this->di['db']->dispense('ClientPasswordReset');
         $reset->client_id = $c->id;

@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -47,10 +49,10 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $url = urldecode(BB_URL.'sitemap.xml');
+        $url = urldecode(BB_URL . 'sitemap.xml');
         if (isset($config['sitemap_google']) && $config['sitemap_google']) {
             try {
-                $link = 'http://www.google.com/ping?sitemap='.$url;
+                $link = 'http://www.google.com/ping?sitemap=' . $url;
                 $this->di['guzzle_client']->get($link);
                 error_log('Submitted sitemap to Google');
             } catch (\Exception $e) {
@@ -59,7 +61,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($config['sitemap_bing']) && $config['sitemap_bing']) {
-            $link = 'http://www.bing.com/ping?sitemap='.$url;
+            $link = 'http://www.bing.com/ping?sitemap=' . $url;
             $this->di['guzzle_client']->get($link);
             error_log('Submitted sitemap to Bing');
         }
@@ -82,9 +84,9 @@ class Service implements InjectionAwareInterface
         $title = urldecode($title);
         $homepage = urldecode($homepage);
 
-        $fp = @fopen("http://rpc.weblogs.com/pingSiteForm?name=$title&url=".$rss, 'r');
+        $fp = @fopen("http://rpc.weblogs.com/pingSiteForm?name=$title&url=" . $rss, 'r');
         @fclose($fp);
-        $fp = @fopen("http://pingomatic.com/ping/?title=$title&blogurl=$homepage&rssurl=".$rss.'&chk_weblogscom=on&chk_blogs=on&chk_feedburner=on&chk_syndic8=on&chk_newsgator=on&chk_myyahoo=on&chk_pubsubcom=on&chk_blogdigger=on&chk_blogstreet=on&chk_moreover=on&chk_weblogalot=on&chk_icerocket=on&chk_newsisfree=on&chk_topicexchange=on&chk_google=on&chk_tailrank=on&chk_postrank=on&chk_skygrid=on&chk_collecta=on&chk_superfeedr=on&chk_audioweblogs=on&chk_rubhub=on&chk_geourl=on&chk_a2b=on&chk_blogshares=on', 'r');
+        $fp = @fopen("http://pingomatic.com/ping/?title=$title&blogurl=$homepage&rssurl=" . $rss . '&chk_weblogscom=on&chk_blogs=on&chk_feedburner=on&chk_syndic8=on&chk_newsgator=on&chk_myyahoo=on&chk_pubsubcom=on&chk_blogdigger=on&chk_blogstreet=on&chk_moreover=on&chk_weblogalot=on&chk_icerocket=on&chk_newsisfree=on&chk_topicexchange=on&chk_google=on&chk_tailrank=on&chk_postrank=on&chk_skygrid=on&chk_collecta=on&chk_superfeedr=on&chk_audioweblogs=on&chk_rubhub=on&chk_geourl=on&chk_a2b=on&chk_blogshares=on', 'r');
         @fclose($fp);
 
         return true;

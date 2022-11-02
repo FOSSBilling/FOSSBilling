@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -102,7 +104,7 @@ class Admin extends \Api_Abstract
         $service = $mod->getService();
         $handler = $data['handler'] ?? $data['queue'];
         if (!method_exists($service, $handler)) {
-            throw new \Box_Exception('Message handler function :method does not exists', [':ext' => $data['mod'], ':method' => get_class($service).':'.$handler]);
+            throw new \Box_Exception('Message handler function :method does not exists', [':ext' => $data['mod'], ':method' => get_class($service) . ':' . $handler]);
         }
 
         $interval = isset($data['interval']) ? (int) $data['interval'] : 30;
@@ -164,14 +166,14 @@ class Admin extends \Api_Abstract
             throw new \Exception('Queue not found');
         }
 
-        $lock_file = BB_PATH_LOG.'/queue_'.$q->id.'.lock';
+        $lock_file = BB_PATH_LOG . '/queue_' . $q->id . '.lock';
         touch($lock_file);
         $file_handle = fopen($lock_file, 'r+');
         if (!flock($file_handle, LOCK_EX | LOCK_NB)) {
             $this->di['logger']->info(sprintf('Queue %s is being executed by other process.', $q->id));
             throw new \Exception('This queue is being executed by other process.');
         }
-        $this->di['logger']->info('Locked queue: '.$q->id);
+        $this->di['logger']->info('Locked queue: ' . $q->id);
 
         $max = isset($data['max']) ? (int) $data['max'] : $q->iteration;
         $interval = isset($data['interval']) ? (int) $data['interval'] : $q->timeout;
@@ -188,7 +190,7 @@ class Admin extends \Api_Abstract
             $wait_for = $interval - ($end - $start);
 
             if ($wait_for > 0.000001) {
-                $this->di['logger']->info('Waiting for '.$wait_for.' seconds to continue iteration');
+                $this->di['logger']->info('Waiting for ' . $wait_for . ' seconds to continue iteration');
                 if (APPLICATION_ENV != 'testing') {
                     sleep($wait_for);
                 }
@@ -201,7 +203,7 @@ class Admin extends \Api_Abstract
             }
         }
         fclose($file_handle);
-        $this->di['logger']->info('Unlocked queue: '.$q->id);
+        $this->di['logger']->info('Unlocked queue: ' . $q->id);
         unlink($lock_file);
 
         $this->di['logger']->info(sprintf('Finished executing queue %s', $q->name));
@@ -220,12 +222,12 @@ class Admin extends \Api_Abstract
         $result = [];
         foreach ($msgs as $msg) {
             try {
-                $this->di['logger']->info(sprintf('Executing %s queue message #%s with handler %s(%s)', $q->name, $msg['id'], get_class($service).':'.$msg['handler'], $msg['json']));
+                $this->di['logger']->info(sprintf('Executing %s queue message #%s with handler %s(%s)', $q->name, $msg['id'], get_class($service) . ':' . $msg['handler'], $msg['json']));
                 call_user_func([$service, $msg['handler']], $msg['params']);
                 $this->di['db']->exec($dsql, ['id' => $msg['id']]);
                 $result[$msg['id']] = ['status' => 'executed', 'error' => null];
             } catch (\Exception $e) {
-                $this->di['db']->exec($lsql, ['log' => $e->getMessage().' '.$e->getCode(), 'id' => $msg['id'], 'u' => date('Y-m-d H:i:s')]);
+                $this->di['db']->exec($lsql, ['log' => $e->getMessage() . ' ' . $e->getCode(), 'id' => $msg['id'], 'u' => date('Y-m-d H:i:s')]);
                 $this->di['logger']->info(sprintf('Error executing queue %s message #%s %s', $q->name, $msg['id'], $e->getMessage()));
                 $result[$msg['id']] = ['status' => 'fail', 'error' => $e->getMessage()];
             }
@@ -274,7 +276,7 @@ class Admin extends \Api_Abstract
         $sql = "SELECT id, handler, body
                 FROM queue_message
                 WHERE queue_id = $qid
-                AND (handle IS NULL OR timeout+".(int) $timeout.' < '.(int) $microtime.")
+                AND (handle IS NULL OR timeout+" . (int) $timeout . ' < ' . (int) $microtime . ")
                 AND (execute_at IS NULL OR UNIX_TIMESTAMP(execute_at) > UNIX_TIMESTAMP() )
                 LIMIT $max";
 
@@ -285,7 +287,7 @@ class Admin extends \Api_Abstract
                 WHERE
                     id = :id
                     AND
-                    (handle IS NULL OR timeout+'.(int) $timeout.' < '.(int) $microtime.')';
+                    (handle IS NULL OR timeout+' . (int) $timeout . ' < ' . (int) $microtime . ')';
 
         $stmt1 = $db->prepare($sql);
         $stmt1->execute();

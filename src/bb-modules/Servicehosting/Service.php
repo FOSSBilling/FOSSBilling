@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -44,7 +46,7 @@ class Service implements InjectionAwareInterface
         try {
             [$sld, $tld] = $this->_getDomainTuple($data);
 
-            return __(':hosting for :domain', [':hosting' => $product->title, ':domain' => $sld.$tld]);
+            return __(':hosting for :domain', [':hosting' => $product->title, ':domain' => $sld . $tld]);
         } catch (\Exception $e) {
             // should never occur, but in case
             error_log($e->getMessage());
@@ -116,7 +118,7 @@ class Service implements InjectionAwareInterface
         if (isset($c['username']) && !empty($c['username'])) {
             $username = $c['username'];
         } else {
-            $username = $this->_generateUsername($model->sld.$model->tld);
+            $username = $this->_generateUsername($model->sld . $model->tld);
         }
 
         $model->username = $username;
@@ -313,7 +315,7 @@ class Service implements InjectionAwareInterface
 
         if ($this->_performOnService($order)) {
             [$adapter, $account] = $this->_getAM($model);
-            $adapter->changeAccountDomain($account, $sld.$tld);
+            $adapter->changeAccountDomain($account, $sld . $tld);
         }
 
         $model->sld = $sld;
@@ -397,7 +399,7 @@ class Service implements InjectionAwareInterface
         $username = preg_replace('/[^A-Za-z0-9]/', '', $domain_name);
         $username = substr($username, 0, 7);
         $randnum = random_int(0, 9);
-        $username = $username.$randnum;
+        $username = $username . $randnum;
 
         return $username;
     }
@@ -433,7 +435,7 @@ class Service implements InjectionAwareInterface
             ->setPackage($p)
             ->setUsername($model->username)
             ->setReseller($model->reseller)
-            ->setDomain($model->sld.$model->tld)
+            ->setDomain($model->sld . $model->tld)
             ->setPassword($model->pass)
             ->setNs1($server->ns1)
             ->setNs2($server->ns2)
@@ -463,7 +465,7 @@ class Service implements InjectionAwareInterface
             'ip' => $model->ip,
             'sld' => $model->sld,
             'tld' => $model->tld,
-            'domain' => $model->sld.$model->tld,
+            'domain' => $model->sld . $model->tld,
             'username' => $model->username,
             'reseller' => $model->reseller,
             'server' => $server,
@@ -578,7 +580,7 @@ class Service implements InjectionAwareInterface
 
     private function _getServerManagers()
     {
-        $dir = BB_PATH_LIBRARY.'/Server/Manager';
+        $dir = BB_PATH_LIBRARY . '/Server/Manager';
         $files = [];
         $directory = opendir($dir);
         while ($item = readdir($directory)) {
@@ -593,14 +595,14 @@ class Service implements InjectionAwareInterface
 
     public function getServerManagerConfig($manager)
     {
-        $filename = BB_PATH_LIBRARY.'/Server/Manager/'.$manager.'.php';
+        $filename = BB_PATH_LIBRARY . '/Server/Manager/' . $manager . '.php';
         if (!file_exists($filename)) {
             return [];
         }
 
-        $classname = 'Server_Manager_'.$manager;
+        $classname = 'Server_Manager_' . $manager;
         $method = 'getForm';
-        if (!is_callable($classname.'::'.$method)) {
+        if (!is_callable($classname . '::' . $method)) {
             return [];
         }
 
@@ -908,7 +910,7 @@ class Service implements InjectionAwareInterface
 
             return [$m->getLoginUrl(), $m->getResellerLoginUrl()];
         } catch (\Exception $e) {
-            error_log('Error while retrieving cPanel url: '.$e->getMessage());
+            error_log('Error while retrieving cPanel url: ' . $e->getMessage());
         }
 
         return [false, false];

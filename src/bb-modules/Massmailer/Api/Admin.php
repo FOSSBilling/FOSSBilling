@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -227,7 +229,7 @@ Order our services at {{ "order"|link }}
         $copy = $this->di['db']->dispense('mod_massmailer');
         $copy->from_email = $model->from_email;
         $copy->from_name = $model->from_name;
-        $copy->subject = $model->subject.' (Copy)';
+        $copy->subject = $model->subject . ' (Copy)';
         $copy->content = $model->content;
         $copy->filter = $model->filter;
         $copy->status = 'draft';

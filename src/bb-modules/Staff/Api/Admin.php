@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -82,7 +84,7 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        if(!is_null($data['email'])){
+        if (!is_null($data['email'])) {
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
         }
 
@@ -399,6 +401,7 @@ class Admin extends \Api_Abstract
      * @return array
      *
      * @deprecated moved to profile module
+     *
      * @codeCoverageIgnore
      *
      * @example
@@ -428,6 +431,7 @@ class Admin extends \Api_Abstract
      * Clear session data and logout from system.
      *
      * @deprecated moved to profile module
+     *
      * @codeCoverageIgnore
      *
      * @return bool
@@ -455,6 +459,7 @@ class Admin extends \Api_Abstract
      * @return bool
      *
      * @throws Exception
+     *
      * @codeCoverageIgnore
      */
     public function profile_update($data)
@@ -465,7 +470,7 @@ class Admin extends \Api_Abstract
 
         $admin = $this->getIdentity();
 
-        if(!is_null($data['email'])){
+        if (!is_null($data['email'])) {
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
         }
 
@@ -490,6 +495,7 @@ class Admin extends \Api_Abstract
      * @deprecated moved to profile module
      *
      * @return bool
+     *
      * @codeCoverageIgnore
      */
     public function profile_generate_api_key($data)
@@ -522,6 +528,7 @@ class Admin extends \Api_Abstract
      * @deprecated moved to profile module
      *
      * @throws Exception
+     *
      * @codeCoverageIgnore
      */
     public function profile_change_password($data)

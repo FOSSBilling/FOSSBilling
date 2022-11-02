@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -26,19 +28,19 @@ class Client extends \Api_Abstract
         }
 
         $order = $this->di['db']->findOne('client_order',
-                "id=:id 
+            "id=:id 
                  AND client_id = :cid
                  AND service_type = 'solusvm'
                 ",
-                [':id' => $data['order_id'], ':cid' => $this->getIdentity()->id]);
+            [':id' => $data['order_id'], ':cid' => $this->getIdentity()->id]);
 
         if (!$order) {
             throw new \Box_Exception('Solusvm order not found');
         }
 
         $s = $this->di['db']->findOne('service_solusvm',
-                'id=:id AND client_id = :cid',
-                [':id' => $order->service_id, ':cid' => $this->getIdentity()->id]);
+            'id=:id AND client_id = :cid',
+            [':id' => $order->service_id, ':cid' => $this->getIdentity()->id]);
         if (!$s) {
             throw new \Box_Exception('Order is not activated');
         }

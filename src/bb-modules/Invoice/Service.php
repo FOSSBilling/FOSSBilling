@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -669,7 +671,7 @@ class Service implements InjectionAwareInterface
                 $new->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($new);
 
-            $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
+                $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
                 foreach ($invoiceItems as $item) {
                     $pi = $this->di['db']->dispense('InvoiceItem');
                     $pi->invoice_id = $new->id;
@@ -715,8 +717,8 @@ class Service implements InjectionAwareInterface
                 $result = (int) $new->id;
                 break;
 
-            // @todo undocumented
-            // @deprecated
+                // @todo undocumented
+                // @deprecated
             case 'same_invoice':
                 $amount = $this->getTotalWithTax($invoice);
                 $invoice->refund = empty($amount) ? null : $amount;
@@ -888,7 +890,7 @@ class Service implements InjectionAwareInterface
 
         $due_days = isset($data['due_days']) ? (int) $data['due_days'] : null;
         $invoice = $this->generateForOrder($model, $due_days);
-        $this->approveInvoice($invoice, (['id' => $invoice->id, 'use_credits' => true]));
+        $this->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->id, 'id' => $invoice->id]]);
 
@@ -1224,8 +1226,8 @@ class Service implements InjectionAwareInterface
         $html = '<!DOCTYPE html>
                   <html>
                   <head>';
-        $html .=    "<title>" . $invoice['serie_nr'] . "</title>";
-        $html .=    '<style>
+        $html .= '<title>' . $invoice['serie_nr'] . '</title>';
+        $html .= '<style>
                      hr.Rounded {
                         border-top: 8px solid #bbb;
                         border-radius: 5px;
@@ -1292,47 +1294,47 @@ class Service implements InjectionAwareInterface
 
         if (isset($company['logo_url']) && !empty($company['logo_url'])) {
             $url = parse_url($company['logo_url'], PHP_URL_PATH);
-            if(!file_exists($url)){
+            if (!file_exists($url)) {
                 $url = $_SERVER['DOCUMENT_ROOT'] . $url;
-                if(!file_exists($url)){
+                if (!file_exists($url)) {
                     // Assume the URL points to an image not hosted on this server
                     $url = $company['logo_url'];
-                    $options->set('isRemoteEnabled',true);
+                    $options->set('isRemoteEnabled', true);
                 }
-			}
+            }
             // Workaround to get SVG images to render. Please see https://github.com/dompdf/dompdf/issues/320
             if ('.svg' === substr($url, -4)) {
-                $html .= '<img src="data:image/svg+xml;base64,' . base64_encode(file_get_contents($url)) .'" height="50" class="CompanyLogo"></img>';
+                $html .= '<img src="data:image/svg+xml;base64,' . base64_encode(file_get_contents($url)) . '" height="50" class="CompanyLogo"></img>';
             } else {
-                $html .= '<img src="'. $url .'" height="50" class="CompanyLogo"></img>';
+                $html .= '<img src="' . $url . '" height="50" class="CompanyLogo"></img>';
             }
             $html .= '<hr class="Rounded">';
         }
 
         $html .= '<div class="InvoiceInfo">';
-        $html .=        '<p>Invoice number: ' . $invoice['serie_nr'] . '</p>';
-        $html .=        '<p>Invoice date: ' . date($localeDateFormat, strtotime($invoice['created_at'])) . '</p>';
-        $html .=        '<p>Due date: ' . date($localeDateFormat, strtotime($invoice['due_at'])) . '</p>';
-        $html .=        '<p>Invoice status: ' . ucfirst($invoice['status']) . '</p>';
+        $html .= '<p>Invoice number: ' . $invoice['serie_nr'] . '</p>';
+        $html .= '<p>Invoice date: ' . date($localeDateFormat, strtotime($invoice['created_at'])) . '</p>';
+        $html .= '<p>Due date: ' . date($localeDateFormat, strtotime($invoice['due_at'])) . '</p>';
+        $html .= '<p>Invoice status: ' . ucfirst($invoice['status']) . '</p>';
         $html .= '</div>';
 
         $html .= '<h3 class="CompanyInfo">Company</h3>';
         $html .= '<div class="CompanyInfo">';
-        $html .=       '<p>Name: ' . $invoice['seller']['company'] . '</p>';
-        $html .=       '<p>Address: ' . $invoice['seller']['address'] . '</p>';
-        $html .=       '<p>Company VAT: ' . $invoice['seller']['company_vat'] . '</p>';
-        $html .=       '<p>Company number: ' . $invoice['seller']['company_number'] . '</p>';
-        $html .=       '<p>Account: ' . $invoice['seller']['account_number'] . '</p>';
-        $html .=       '<p>Phone: ' . $invoice['seller']['phone'] . '</p>';
-        $html .=       '<p>Email: ' . $invoice['seller']['email'] . '</p>';
+        $html .= '<p>Name: ' . $invoice['seller']['company'] . '</p>';
+        $html .= '<p>Address: ' . $invoice['seller']['address'] . '</p>';
+        $html .= '<p>Company VAT: ' . $invoice['seller']['company_vat'] . '</p>';
+        $html .= '<p>Company number: ' . $invoice['seller']['company_number'] . '</p>';
+        $html .= '<p>Account: ' . $invoice['seller']['account_number'] . '</p>';
+        $html .= '<p>Phone: ' . $invoice['seller']['phone'] . '</p>';
+        $html .= '<p>Email: ' . $invoice['seller']['email'] . '</p>';
         $html .= '</div>';
 
         $html .= '<h3 class="ClientInfo">Client</h3>';
         $html .= '<div class="ClientInfo">';
-        $html .=       '<p>Name: ' . $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'] . '</p>';
-        $html .=       '<p>Company: ' . $invoice['buyer']['company'] . '</p>';
-        $html .=       '<p>Address: ' . $invoice['buyer']['address'] . '</p>';
-        $html .=       '<p>Phone: ' . $invoice['buyer']['phone'] . '</p>';
+        $html .= '<p>Name: ' . $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'] . '</p>';
+        $html .= '<p>Company: ' . $invoice['buyer']['company'] . '</p>';
+        $html .= '<p>Address: ' . $invoice['buyer']['address'] . '</p>';
+        $html .= '<p>Phone: ' . $invoice['buyer']['phone'] . '</p>';
         $html .= '</div>';
 
         $html .= '<div class="Breakdown">
@@ -1359,21 +1361,21 @@ class Service implements InjectionAwareInterface
 
         if ($invoice['tax'] > 0) {
             $html .= '<tr>';
-            $html .= '<th class="right" colspan="3">' . $invoice['taxname'] . ' '. $invoice['taxrate'] . '% Tax:' . '</th>';
-            $html .= '<th>' . $invoice['tax'] . $currencyCode .  '</th>';
+            $html .= '<th class="right" colspan="3">' . $invoice['taxname'] . ' ' . $invoice['taxrate'] . '% Tax:</th>';
+            $html .= '<th>' . $invoice['tax'] . $currencyCode . '</th>';
             $html .= '</tr>';
         }
 
         if (isset($invoice['discount']) && $invoice['discount'] > 0) {
             $html .= '<tr>';
             $html .= '<th class="right" colspan="3">Discount:</th>';
-            $html .= '<th>' . $invoice['discount'] . $currencyCode .  '</th>';
+            $html .= '<th>' . $invoice['discount'] . $currencyCode . '</th>';
             $html .= '</tr>';
         }
 
         $html .= '<tr>';
         $html .= '<th class="right" colspan="3">Total:</th>';
-        $html .= '<th>' . $invoice['total'] . $currencyCode .  '</th>';
+        $html .= '<th>' . $invoice['total'] . $currencyCode . '</th>';
         $html .= '</tr>';
 
         $html .= '</table>';
@@ -1383,7 +1385,7 @@ class Service implements InjectionAwareInterface
         $pdf->setOptions($options);
         $pdf->loadHtml($html);
         $pdf->render();
-        $pdf->stream($invoice['serie_nr'], array("Attachment" => false));
+        $pdf->stream($invoice['serie_nr'], ['Attachment' => false]);
         exit(0);
     }
 
@@ -1405,6 +1407,7 @@ class Service implements InjectionAwareInterface
     /**
      * Return list of unpaid invoices which can be covered from client balance.
      * Deposit invoices are excluded as they cannot be covered from client balance.
+     *
      * @param array $filter
      *
      * @return array

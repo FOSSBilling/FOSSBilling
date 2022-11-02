@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -61,7 +63,7 @@ class Client implements InjectionAwareInterface
 
     public function get_method(\Box_App $app, $role, $class, $method)
     {
-        $call = $class.'_'.$method;
+        $call = $class . '_' . $method;
 
         return $this->tryCall($role, $call, $_GET);
     }
@@ -76,7 +78,7 @@ class Client implements InjectionAwareInterface
             $p = @json_decode($input, 1);
         }
 
-        $call = $class.'_'.$method;
+        $call = $class . '_' . $method;
 
         return $this->tryCall($role, $call, $p);
     }
@@ -267,12 +269,12 @@ class Client implements InjectionAwareInterface
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
         header('Content-type: application/json; charset=utf-8');
-        header('X-FOSSBilling-Version: '.\Box_Version::VERSION);
-        header('X-RateLimit-Span: '.$this->_api_config['rate_span']);
-        header('X-RateLimit-Limit: '.$this->_api_config['rate_limit']);
-        header('X-RateLimit-Remaining: '.$this->_requests_left);
+        header('X-FOSSBilling-Version: ' . \Box_Version::VERSION);
+        header('X-RateLimit-Span: ' . $this->_api_config['rate_span']);
+        header('X-RateLimit-Limit: ' . $this->_api_config['rate_limit']);
+        header('X-RateLimit-Remaining: ' . $this->_requests_left);
         if (null !== $e) {
-            error_log($e->getMessage().' '.$e->getCode());
+            error_log($e->getMessage() . ' ' . $e->getCode());
             $code = $e->getCode() ? $e->getCode() : 9999;
             $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
         } else {

@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -145,7 +147,6 @@ class Admin extends \Api_Abstract
      * @optional string $paid_at - Invoice payment date (Y-m-d) or empty to remove
      * @optional string $due_at - Invoice due date (Y-m-d)or empty to remove
      * @optional string $created_at - Invoice issue date (Y-m-d) or empty to remove
-     *
      * @optional string $serie - Invoice serie
      * @optional string $nr - Invoice number
      * @optional string $status - Invoice status: paid|unpaid
@@ -156,17 +157,14 @@ class Admin extends \Api_Abstract
      * @optional int $gateway_id - selected payment method - gateway id
 
      * @optional array $new_item - [title] [price]
-     *
      * @optional string $text_1 - Custom invoice text 1
      * @optional string $text_2 - Custom invoice text 1
-     *
      * @optional string $seller_company - Seller company name
      * @optional string $seller_company_vat - Seller company VAT number
      * @optional string $seller_company_number - Seller company number
      * @optional string $seller_address - Seller address
      * @optional string $seller_phone - Seller phone
      * @optional string $seller_email - Seller email
-     *
      * @optional string $buyer_first_name - Buyer first name
      * @optional string $buyer_last_name - Buyer last name
      * @optional string $buyer_company - Buyer company name
@@ -229,6 +227,7 @@ class Admin extends \Api_Abstract
      * is returned.
      *
      * @param int $id - ID of order to generate new invoice for
+     *
      * @optional int $due_days - Days number until invoice is due
      *
      * @return string - invoice id
@@ -674,6 +673,7 @@ class Admin extends \Api_Abstract
      * Change gateway settings.
      *
      * @param int $id - gateway id
+     *
      * @optional string $title - gateway title
      * @optional array $config - gateway config array
      * @optional array $accepted_currencies - list of currencies this gateway supports

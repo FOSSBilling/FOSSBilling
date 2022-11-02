@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -721,7 +723,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $credit->client_id = $client->id;
         $credit->type = 'transaction';
         $credit->rel_id = $tx->id;
-        $credit->description = 'Invoice #'.$proforma->id.' payment received from transaction #'.$tx->id;
+        $credit->description = 'Invoice #' . $proforma->id . ' payment received from transaction #' . $tx->id;
         $credit->amount = $tx->amount;
         $credit->created_at = date('Y-m-d H:i:s');
         $credit->updated_at = date('Y-m-d H:i:s');

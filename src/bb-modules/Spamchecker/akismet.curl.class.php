@@ -1,54 +1,17 @@
 <?php
+
 /**
- * Akismet CURL Class.
+ * FOSSBilling.
  *
- * ABSTRACT
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license   Apache-2.0
  *
- * After looking over the current PHP Akismet API classes (http://askimet.com)
- * I couldn't help but notice they all used fopen() to talk with akismet.
- * Which besides being slow is also disabled on some hosts that have
- * "safe mode" on. This class solves that problem by using the fast CURL
- * php extension (http://php.net/curl) available on most web hosts.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
+ * Copyright BoxBilling, Inc 2011-2021
  *
- * EXAMPLE
- *
- * <?php
- * require(akismet.curl.class.php);
- *
- * $bad_comment = array(
- *     'comment_type'              => 'comment',
- *     'comment_author'            => 'viagra-test-123',
- *     'comment_author_email'      => 'test@example.com',
- *     'comment_author_url'        => 'http://www.example.com/',
- *     'comment_content'           => 'This is a test comment',
- *     'permalink'                 => 'http://yoursite.com/post.php?id=9999',
- * );
- *
- * $akismet = new akismet('akismet_api_key');
- *
- * //If there was no problem connecting to Akismet.
- * if(!$akismet->error) {
- *
- *     //Check to see if the key is valid
- *     if($akismet->valid_key()) {
- *         print 'Akismet Key is valid!';
- *     }
- *
- *     if($akismet->is_spam($bad_comment)) {
- *         print 'Comment Spam!';
- *     } else {
- *         print 'Not spam!';
- *     }
- * }
- * ?>
- *
- * @version    1.0.0 <4/18/2008>
- *
- * @author     David Pennington <@codexplorer.com>
- * @copyright  Copyright (c) 2008 CodeXplorer <http://www.codexplorer.com>
- * @license    http://www.gnu.org/licenses/gpl-3.0.html (GPL v3)
- *
- ********************************** 80 Columns *********************************
+ * This source file is subject to the Apache-2.0 License that is bundled
+ * with this source code in the file LICENSE
  */
 
 // Used by the Akismet class to communicate with the Akismet service
@@ -82,7 +45,7 @@ class akismet
         // If no site URL was given
         if (!$site_url) {
             // Set it to the current site
-            $this->site_url = 'http://'.$_SERVER['SERVER_NAME'];
+            $this->site_url = 'http://' . $_SERVER['SERVER_NAME'];
         } else {
             // Set the site url
             $this->site_url = $site_url;
@@ -90,14 +53,14 @@ class akismet
 
         // Set the REST API URL's that we will use
         $this->urls = [
-                    'verify' => 'rest.akismet.com/'.$this->api_version
-                             .'/verify-key',
-                    'check_spam' => $this->api_key.'.rest.akismet.com/'
-                                 .$this->api_version.'/comment-check',
-                    'submit_spam' => $this->api_key.'.rest.akismet.com/'
-                                  .$this->api_version.'/submit-spam',
-                    'submit_ham' => $this->api_key.'.rest.akismet.com/'
-                                 .$this->api_version.'/submit-ham',
+                    'verify' => 'rest.akismet.com/' . $this->api_version
+                             . '/verify-key',
+                    'check_spam' => $this->api_key . '.rest.akismet.com/'
+                                 . $this->api_version . '/comment-check',
+                    'submit_spam' => $this->api_key . '.rest.akismet.com/'
+                                  . $this->api_version . '/submit-spam',
+                    'submit_ham' => $this->api_key . '.rest.akismet.com/'
+                                 . $this->api_version . '/submit-ham',
                     ];
 
         // Now connect
@@ -130,7 +93,7 @@ class akismet
         curl_setopt($this->connection_handle, CURLOPT_RETURNTRANSFER, 1);
         // The "User-Agent" header to be used in a HTTP request
         curl_setopt($this->connection_handle, CURLOPT_USERAGENT,
-                    'CodeXplorer/1.0.0 | Askimet/1.0.0');
+            'CodeXplorer/1.0.0 | Askimet/1.0.0');
         // Don't use a cached version of the url
         curl_setopt($this->connection_handle, CURLOPT_FRESH_CONNECT, 1);
 
@@ -281,7 +244,7 @@ class akismet
         $query_string = null;
         if (is_array($array)) {
             foreach ($array as $key => $value) {
-                $query_string .= $key.'='.urlencode($value).'&';
+                $query_string .= $key . '=' . urlencode($value) . '&';
             }
         }
 

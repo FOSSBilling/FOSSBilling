@@ -1,12 +1,13 @@
 <?php
 
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -243,17 +244,17 @@ class Service
             error_log($e->getMessage());
         }
         $last_exec = $this->getParamValue('last_cron_exec');
-        $disableAutoCron = isset($this->di['config']['disable_auto_cron']) ? $this->di['config']['disable_auto_cron'] : false;
-        if($runFromTest === false && $disableAutoCron === false) {
+        $disableAutoCron = $this->di['config']['disable_auto_cron'] ?? false;
+        if (false === $runFromTest && false === $disableAutoCron) {
             if (!$last_exec) {
                 $msgs['info'][] = 'Cron was never executed. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup cron the job.';
                 $cronService = $this->di['mod_service']('cron');
                 $cronService->runCrons($interval);
             } else {
                 $minSinceLastExec = (time() - strtotime($last_exec)) / 60;
-                if($minSinceLastExec >= 15){
+                if ($minSinceLastExec >= 15) {
                     $minSinceLastExec = round($minSinceLastExec, 2);
-                    $msgs['info'][] = 'Cron hasn\'t been executed in '. $minSinceLastExec . ' minutes. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup cron the job.';
+                    $msgs['info'][] = 'Cron hasn\'t been executed in ' . $minSinceLastExec . ' minutes. FOSSBilling will automatically execute cron when you access the admin panel, but you should make sure you have setup cron the job.';
                     $cronService = $this->di['mod_service']('cron');
                     $cronService->runCrons();
                     error_log("Cron hasn't been run in $minSinceLastExec minutes. Manually executing.");

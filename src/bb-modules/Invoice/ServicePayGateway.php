@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -82,7 +84,7 @@ class ServicePayGateway implements InjectionAwareInterface
             $exists[$row['gateway']] = $row['name'];
         }
 
-        $pattern = BB_PATH_LIBRARY.'/Payment/Adapter/*.php';
+        $pattern = BB_PATH_LIBRARY . '/Payment/Adapter/*.php';
         $adapters = [];
         foreach (glob($pattern) as $path) {
             $adapter = pathinfo($path, PATHINFO_FILENAME);
@@ -145,7 +147,7 @@ class ServicePayGateway implements InjectionAwareInterface
     public function copy(\Model_PayGateway $model)
     {
         $new = $this->di['db']->dispense('PayGateway');
-        $new->name = $model->name.' (Copy)';
+        $new->name = $model->name . ' (Copy)';
         $new->gateway = $model->gateway;
         $new->enabled = 0;
         $new->accepted_currencies = $model->accepted_currencies;
@@ -222,8 +224,8 @@ class ServicePayGateway implements InjectionAwareInterface
         $defaults['continue_shopping_url'] = $this->di['tools']->url('/order');
         $defaults['single_page'] = true;
         if ($model instanceof \Model_Invoice) {
-            $defaults['thankyou_url'] = $this->di['tools']->url('/invoice/thank-you/'.$model->hash);
-            $defaults['invoice_url'] = $this->di['tools']->url('/invoice/'.$model->hash);
+            $defaults['thankyou_url'] = $this->di['tools']->url('/invoice/thank-you/' . $model->hash);
+            $defaults['invoice_url'] = $this->di['tools']->url('/invoice/' . $model->hash);
         }
 
         if (isset($optional['auto_redirect'])) {
@@ -262,7 +264,7 @@ class ServicePayGateway implements InjectionAwareInterface
     public function getAdapterConfig(\Model_PayGateway $pg)
     {
         $class = $this->getAdapterClassName($pg);
-        if (!file_exists(BB_PATH_LIBRARY.'/Payment/Adapter/'.$pg->gateway.'.php')) {
+        if (!file_exists(BB_PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '.php')) {
             throw new \Box_Exception('Payment gateway :adapter was not found', [':adapter' => $pg->gateway]);
         }
 
@@ -324,7 +326,7 @@ class ServicePayGateway implements InjectionAwareInterface
             $p['bb_invoice_id'] = $model->id;
         }
 
-        return $this->di['config']['url'].'bb-ipn.php?'.http_build_query($p);
+        return $this->di['config']['url'] . 'bb-ipn.php?' . http_build_query($p);
     }
 
     /**
@@ -333,7 +335,7 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getReturnUrl(\Model_PayGateway $pg, $model = null)
     {
         if ($model instanceof \Model_Invoice) {
-            return $this->di['url']->link('/invoice/'.$model->hash, ['status' => 'ok']);
+            return $this->di['url']->link('/invoice/' . $model->hash, ['status' => 'ok']);
         }
 
         return $this->di['url']->link('/invoice', ['status' => 'ok']);
@@ -345,7 +347,7 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getCancelUrl(\Model_PayGateway $pg, $model = null)
     {
         if ($model instanceof \Model_Invoice) {
-            return $this->di['url']->link('/invoice/'.$model->hash, ['status' => 'cancel']);
+            return $this->di['url']->link('/invoice/' . $model->hash, ['status' => 'cancel']);
         }
 
         return $this->di['url']->link('/invoice', ['status' => 'cancel']);
@@ -366,6 +368,6 @@ class ServicePayGateway implements InjectionAwareInterface
             $p['bb_redirect'] = 1;
         }
 
-        return $this->di['config']['url'].'bb-ipn.php?'.http_build_query($p);
+        return $this->di['config']['url'] . 'bb-ipn.php?' . http_build_query($p);
     }
 }

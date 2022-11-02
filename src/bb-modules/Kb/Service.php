@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -212,10 +214,10 @@ class Service
         }
 
         if (!empty($where)) {
-            $sql = $sql.' WHERE '.implode(' AND ', $where);
+            $sql = $sql . ' WHERE ' . implode(' AND ', $where);
         }
 
-        $sql = $sql.' GROUP BY kac.id ORDER BY kac.id DESC';
+        $sql = $sql . ' GROUP BY kac.id ORDER BY kac.id DESC';
 
         return [$sql, $bindings];
     }

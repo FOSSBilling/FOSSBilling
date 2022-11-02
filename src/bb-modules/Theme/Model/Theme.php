@@ -1,12 +1,13 @@
 <?php
 
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -46,7 +47,7 @@ class Theme
     public function getSnippets()
     {
         $path = $this->getPathHtml();
-        $snippets = glob($path.DIRECTORY_SEPARATOR.'snippet_*.html.twig');
+        $snippets = glob($path . DIRECTORY_SEPARATOR . 'snippet_*.html.twig');
         $result = [];
         foreach ($snippets as $snippet) {
             $result[basename($snippet)] = str_replace('snippet_', '', pathinfo($snippet, PATHINFO_FILENAME));
@@ -61,10 +62,10 @@ class Theme
         $files = $this->getSettingsPageFiles();
         $uploaded = [];
         foreach ($files as $file) {
-            if (file_exists($assets_folder.DIRECTORY_SEPARATOR.$file)) {
+            if (file_exists($assets_folder . DIRECTORY_SEPARATOR . $file)) {
                 $uploaded[] = [
                     'name' => $file,
-                    'url' => $this->getUrl().'/assets/'.$file,
+                    'url' => $this->getUrl() . '/assets/' . $file,
                 ];
             }
         }
@@ -96,9 +97,9 @@ class Theme
      */
     public function getSettingsPageHtml()
     {
-        $spp = $this->getPathConfig().DIRECTORY_SEPARATOR.'settings.html';
+        $spp = $this->getPathConfig() . DIRECTORY_SEPARATOR . 'settings.html';
         if (!file_exists($spp)) {
-            error_log('Theme '.$this->getName().' does not have settings page');
+            error_log('Theme ' . $this->getName() . ' does not have settings page');
 
             return '';
         }
@@ -154,32 +155,32 @@ class Theme
 
     public function getUrl()
     {
-        return BB_URL.'bb-themes/'.$this->name;
+        return BB_URL . 'bb-themes/' . $this->name;
     }
 
     public function getPath()
     {
-        return BB_PATH_THEMES.DIRECTORY_SEPARATOR.$this->name;
+        return BB_PATH_THEMES . DIRECTORY_SEPARATOR . $this->name;
     }
 
     public function getPathConfig()
     {
-        return $this->getPath().DIRECTORY_SEPARATOR.'config';
+        return $this->getPath() . DIRECTORY_SEPARATOR . 'config';
     }
 
     public function getPathAssets()
     {
-        return $this->getPath().DIRECTORY_SEPARATOR.'assets';
+        return $this->getPath() . DIRECTORY_SEPARATOR . 'assets';
     }
 
     public function getPathHtml()
     {
-        return $this->getPath().DIRECTORY_SEPARATOR.'html';
+        return $this->getPath() . DIRECTORY_SEPARATOR . 'html';
     }
 
     public function getPathSettingsDataFile()
     {
-        return $this->getPathConfig().DIRECTORY_SEPARATOR.'settings_data.json';
+        return $this->getPathConfig() . DIRECTORY_SEPARATOR . 'settings_data.json';
     }
 
     /**
@@ -192,9 +193,9 @@ class Theme
 
         if (is_array($tags) && !empty($tags)) {
             if (false === $invert) {
-                return preg_replace('@<(?!(?:'.implode('|', $tags).')\b)(\w+)\b.*?>.*?</\1>@si', '', $text);
+                return preg_replace('@<(?!(?:' . implode('|', $tags) . ')\b)(\w+)\b.*?>.*?</\1>@si', '', $text);
             } else {
-                return preg_replace('@<('.implode('|', $tags).')\b.*?>.*?</\1>@si', '', $text);
+                return preg_replace('@<(' . implode('|', $tags) . ')\b.*?>.*?</\1>@si', '', $text);
             }
         } elseif (false === $invert) {
             return preg_replace('@<(\w+)\b.*?>.*?</\1>@si', '', $text);

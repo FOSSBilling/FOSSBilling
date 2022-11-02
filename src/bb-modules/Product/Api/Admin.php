@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -133,7 +135,6 @@ class Admin extends \Api_Abstract
      * @optional string $slug - product slug. Used to create unique link to order page
      * @optional string $setup - product setup option. Define when order must be activated.
      * @optional bool $hidden - product visibility flag
-     *
      * @optional bool $stock_control - product stock control flag.
      * @optional bool $allow_quantity_select - client can select product quantity on order form flag
      * @optional bool $quantity_in_stock - quantity available for sale. When out of stock, new order can not be placed.
@@ -267,7 +268,6 @@ class Admin extends \Api_Abstract
      * @optional string $slug - product slug. Used to create unique link to order page
      * @optional string $setup - product setup option. Define when order must be activated.
      * @optional bool $hidden - product visibility flag
-     *
      * @optional bool $stock_control - product stock control flag.
      * @optional bool $allow_quantity_select - client can select product quantity on order form flag
      * @optional bool $quantity_in_stock - quantity available for sale. When out of stock, new order can not be placed.
@@ -525,7 +525,6 @@ class Admin extends \Api_Abstract
      * @optional string $code - promo code
      * @optional string $type - promo code type: percentage|absolute
      * @optional string $value - promo code value. Percents or discount amount in currency
-     *
      * @optional array $products - list of product ids for which this promo code applies
      * @optional array $periods - list of period codes
      * @optional bool $active - flag to enable/disable promo code
@@ -535,7 +534,6 @@ class Admin extends \Api_Abstract
      * @optional int $maxuses - how many times this promo code can be used
      * @optional string $start_at - date (Y-m-d) when will this promo code be active
      * @optional string $end_at - date (Y-m-d) when this promo code expires
-     *
      * @optional int $used - how many times this promo code was already used
      *
      * @return bool

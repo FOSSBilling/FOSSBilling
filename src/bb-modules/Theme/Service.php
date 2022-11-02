@@ -1,12 +1,13 @@
 <?php
 
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -164,7 +165,7 @@ class Service implements InjectionAwareInterface
 
     public function uploadAssets(Model\Theme $theme, array $files)
     {
-        $dest = $theme->getPathAssets().DIRECTORY_SEPARATOR;
+        $dest = $theme->getPathAssets() . DIRECTORY_SEPARATOR;
 
         foreach ($files as $filename => $f) {
             if (UPLOAD_ERR_NO_FILE == $f['error']) {
@@ -176,7 +177,7 @@ class Service implements InjectionAwareInterface
                 throw new \Box_Exception('Error uploading file :file Error code: :error', [':file' => $filename, ':error' => $f['error']]);
             }
 
-            move_uploaded_file($f['tmp_name'], $dest.$filename);
+            move_uploaded_file($f['tmp_name'], $dest . $filename);
         }
     }
 
@@ -219,15 +220,15 @@ class Service implements InjectionAwareInterface
 
     public function regenerateThemeCssAndJsFiles(Model\Theme $theme, $preset, $api_admin)
     {
-        $assets = $theme->getPathAssets().DIRECTORY_SEPARATOR;
+        $assets = $theme->getPathAssets() . DIRECTORY_SEPARATOR;
 
-        $css_files = $this->di['tools']->glob($assets.'*.css.html.twig');
-        $js_files = $this->di['tools']->glob($assets.'*.js.html.twig');
+        $css_files = $this->di['tools']->glob($assets . '*.css.html.twig');
+        $js_files = $this->di['tools']->glob($assets . '*.js.html.twig');
         $files = array_merge($css_files, $js_files);
 
         foreach ($files as $file) {
             $settings = $this->getThemeSettings($theme, $preset);
-            $real_file = pathinfo($file, PATHINFO_DIRNAME).DIRECTORY_SEPARATOR.pathinfo($file, PATHINFO_FILENAME);
+            $real_file = pathinfo($file, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . pathinfo($file, PATHINFO_FILENAME);
 
             $vars = [];
 
@@ -250,11 +251,11 @@ class Service implements InjectionAwareInterface
                ';
         $default = 'admin_default';
         $theme = $this->di['db']->getCell($query, ['param' => 'admin_theme']);
-        $path = BB_PATH_THEMES.DIRECTORY_SEPARATOR;
-        if (null == $theme || !file_exists($path.$theme)) {
+        $path = BB_PATH_THEMES . DIRECTORY_SEPARATOR;
+        if (null == $theme || !file_exists($path . $theme)) {
             $theme = $default;
         }
-        $url = $this->di['config']['url'].'bb-themes/'.$theme.'/';
+        $url = $this->di['config']['url'] . 'bb-themes/' . $theme . '/';
 
         return ['code' => $theme, 'url' => $url];
     }
@@ -283,7 +284,7 @@ class Service implements InjectionAwareInterface
         $path = $this->getThemesPath();
         if ($handle = opendir($path)) {
             while (false !== ($file = readdir($handle))) {
-                if (is_dir($path.DIRECTORY_SEPARATOR.$file) && '.' != $file[0]) {
+                if (is_dir($path . DIRECTORY_SEPARATOR . $file) && '.' != $file[0]) {
                     try {
                         if (!$client && false !== strpos($file, 'admin')) {
                             $list[] = $this->_loadTheme($file);
@@ -313,7 +314,7 @@ class Service implements InjectionAwareInterface
         }
 
         $path = $this->getThemesPath();
-        if (!file_exists($path.$theme)) {
+        if (!file_exists($path . $theme)) {
             $theme = $default;
         }
 
@@ -327,17 +328,17 @@ class Service implements InjectionAwareInterface
 
     public function getThemesPath()
     {
-        return BB_PATH_THEMES.DIRECTORY_SEPARATOR;
+        return BB_PATH_THEMES . DIRECTORY_SEPARATOR;
     }
 
     private function _loadTheme($theme, $client = true, $mod = null)
     {
-        $theme_path = $this->getThemesPath().$theme;
+        $theme_path = $this->getThemesPath() . $theme;
 
         if (!file_exists($theme_path)) {
             throw new \Box_Exception('Theme was not found in path :path', [':path' => $theme_path]);
         }
-        $manifest = $theme_path.'/manifest.json';
+        $manifest = $theme_path . '/manifest.json';
 
         if (file_exists($manifest)) {
             $config = json_decode(file_get_contents($manifest), true);
@@ -355,16 +356,16 @@ class Service implements InjectionAwareInterface
             throw new \Box_Exception('Unable to decode theme manifest file :file', [':file' => $manifest]);
         }
 
-        $paths = [$theme_path.'/html'];
+        $paths = [$theme_path . '/html'];
 
         if (isset($config['extends'])) {
             $ext = trim($config['extends'], '/');
             $ext = str_replace('.', '', $ext);
 
-            $config['url'] = BB_URL.'bb-themes/'.$ext.'/';
-            array_push($paths, $this->getThemesPath().$ext.'/html');
+            $config['url'] = BB_URL . 'bb-themes/' . $ext . '/';
+            array_push($paths, $this->getThemesPath() . $ext . '/html');
         } else {
-            $config['url'] = BB_URL.'bb-themes/'.$theme.'/';
+            $config['url'] = BB_URL . 'bb-themes/' . $theme . '/';
         }
 
         // add installed modules paths
@@ -376,7 +377,7 @@ class Service implements InjectionAwareInterface
         }
         $list = array_unique($list);
         foreach ($list as $mod) {
-            $p = BB_PATH_MODS.DIRECTORY_SEPARATOR.ucfirst($mod).DIRECTORY_SEPARATOR;
+            $p = BB_PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($mod) . DIRECTORY_SEPARATOR;
             $p .= $client ? 'html_client' : 'html_admin';
             if (file_exists($p)) {
                 array_push($paths, $p);

@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -36,8 +38,8 @@ class Service
         $service = $this->di['mod_service']('system');
 
         $result = [
-            'cron_url' => BB_URL.'bb-cron.php',
-            'cron_path' => BB_PATH_ROOT.DIRECTORY_SEPARATOR.'bb-cron.php',
+            'cron_url' => BB_URL . 'bb-cron.php',
+            'cron_path' => BB_PATH_ROOT . DIRECTORY_SEPARATOR . 'bb-cron.php',
             'last_cron_exec' => $service->getParamValue('last_cron_exec'),
         ];
 
@@ -95,7 +97,7 @@ class Service
             throw new Exception($e);
         } finally {
             if ('cli' == php_sapi_name()) {
-                echo "\e[32mSuccessfully ran ".$method.'('.$params.')'.".\e[0m\n";
+                echo "\e[32mSuccessfully ran " . $method . '(' . $params . ')' . ".\e[0m\n";
             }
         }
     }

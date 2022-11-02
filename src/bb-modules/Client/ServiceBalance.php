@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -15,9 +17,6 @@
 namespace Box\Mod\Client;
 
 use Box\InjectionAwareInterface;
-use Box_Exception;
-use Model_Client;
-use Model_ClientBalance;
 
 class ServiceBalance implements InjectionAwareInterface
 {
@@ -39,12 +38,12 @@ class ServiceBalance implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getClientBalance(Model_Client $c)
+    public function getClientBalance(\Model_Client $c)
     {
         return (float) $this->clientTotal($c);
     }
 
-    public function clientTotal(Model_Client $c)
+    public function clientTotal(\Model_Client $c)
     {
         $sql = '
         SELECT SUM(amount) as client_total
@@ -56,7 +55,7 @@ class ServiceBalance implements InjectionAwareInterface
         return $this->di['db']->getCell($sql, [$c->id]);
     }
 
-    public function rmByClient(Model_Client $client)
+    public function rmByClient(\Model_Client $client)
     {
         $clientBalances = $this->di['db']->find('ClientBalance', 'client_id = ?', [$client->id]);
         foreach ($clientBalances as $balanceModel) {
@@ -64,12 +63,12 @@ class ServiceBalance implements InjectionAwareInterface
         }
     }
 
-    public function rm(Model_ClientBalance $model)
+    public function rm(\Model_ClientBalance $model)
     {
         $this->di['db']->trash($model);
     }
 
-    public function toApiArray(Model_ClientBalance $model)
+    public function toApiArray(\Model_ClientBalance $model)
     {
         $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
 
@@ -117,7 +116,7 @@ class ServiceBalance implements InjectionAwareInterface
         }
 
         if (!empty($where)) {
-            $q .= ' WHERE '.implode(' AND ', $where);
+            $q .= ' WHERE ' . implode(' AND ', $where);
         }
         $q .= ' ORDER by m.id DESC';
 
@@ -129,18 +128,18 @@ class ServiceBalance implements InjectionAwareInterface
      * @param string $description
      * @param array  $data
      *
-     * @return Model_ClientBalance
+     * @return \Model_ClientBalance
      *
-     * @throws Box_Exception
+     * @throws \Box_Exception
      */
-    public function deductFunds(Model_Client $client, $amount, $description, array $data = null)
+    public function deductFunds(\Model_Client $client, $amount, $description, array $data = null)
     {
         if (!is_numeric($amount)) {
-            throw new Box_Exception('Funds amount is not valid');
+            throw new \Box_Exception('Funds amount is not valid');
         }
 
         if (0 == strlen(trim($description))) {
-            throw new Box_Exception('Funds description is not valid');
+            throw new \Box_Exception('Funds description is not valid');
         }
 
         $credit = $this->di['db']->dispense('ClientBalance');

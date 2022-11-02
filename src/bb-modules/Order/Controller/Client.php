@@ -1,12 +1,13 @@
 <?php
 
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -53,8 +54,8 @@ class Client implements \Box\InjectionAwareInterface
     {
         $api = $this->di['api_guest'];
         $product = $api->product_get(['slug' => $slug]);
-        $tpl = 'mod_service'.$product['type'].'_order';
-        if ($api->system_template_exists(['file' => $tpl.'.html.twig'])) {
+        $tpl = 'mod_service' . $product['type'] . '_order';
+        if ($api->system_template_exists(['file' => $tpl . '.html.twig'])) {
             return $app->render($tpl, ['product' => $product]);
         }
 
@@ -65,8 +66,8 @@ class Client implements \Box\InjectionAwareInterface
     {
         $api = $this->di['api_guest'];
         $product = $api->product_get(['id' => $id]);
-        $tpl = 'mod_service'.$product['type'].'_order';
-        if ($api->system_template_exists(['file' => $tpl.'.html.twig'])) {
+        $tpl = 'mod_service' . $product['type'] . '_order';
+        if ($api->system_template_exists(['file' => $tpl . '.html.twig'])) {
             return $app->render($tpl, ['product' => $product]);
         }
 

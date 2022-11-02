@@ -1,11 +1,13 @@
 <?php
+
 /**
- * FOSSBilling
+ * FOSSBilling.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   Apache-2.0
  *
- * This file may contain code previously used in the BoxBilling project.
+ * Copyright FOSSBilling 2022
+ * This software may contain code previously used in the BoxBilling project.
  * Copyright BoxBilling, Inc 2011-2021
  *
  * This source file is subject to the Apache-2.0 License that is bundled
@@ -50,6 +52,7 @@ class Admin extends \Api_Abstract
      * Add message to log.
      *
      * @param string $m - Message text
+     *
      * @optional int $admin_id - admin id
      * @optional int $client_id - client id
      * @optional string $priority - log priority
