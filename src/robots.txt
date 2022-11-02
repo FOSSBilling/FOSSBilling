@@ -1,5 +1,5 @@
 # If the FOSSBilling site is installed within a folder such as at
-# e.g. www.example.com/boxbilling/ the robots.txt file MUST be
+# e.g. www.example.com/fossbilling/ the robots.txt file MUST be
 # moved to the site root at e.g. www.example.com/robots.txt
 # AND the FOSSBilling folder name MUST be prefixed to the disallowed
 # path, e.g. the Disallow rule for the /bb-data/ folder
