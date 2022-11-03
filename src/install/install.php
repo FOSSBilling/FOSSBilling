@@ -75,9 +75,6 @@ set_include_path(implode(PATH_SEPARATOR, [
 
 require BB_PATH_VENDOR . '/autoload.php';
 
-$FOSSBillingVersion = Box_Version::VERSION
-$updateBranch = (preg_match('#^(\d+\.)?(\d+\.)?(\d+)(-[a-z0-9]+)?$#i', $FOSSBillingVersion, $matches) !== 0) ? "release" : "preview"; 
-
 final class Box_Installer
 {
     private Session $session;
@@ -179,7 +176,7 @@ final class Box_Installer
                 $this->session->set('agree', true);
 
                 $se = new Box_Requirements();
-                $options = $se->getOptions();
+                $options = $se->getOptions(); 
                 $vars = [
                     'tos' => $this->getLicense(),
 
@@ -187,7 +184,7 @@ final class Box_Installer
                     'files' => $se->files(),
                     'os' => PHP_OS,
                     'os_ok' => true,
-                    'box_ver' => $FOSSBillingVersion,
+                    'box_ver' => Box_Version::VERSION,
                     'box_ver_ok' => $se->isBoxVersionOk(),
                     'php_ver' => $options['php']['version'],
                     'php_ver_req' => $options['php']['min_version'],
@@ -411,6 +408,9 @@ final class Box_Installer
 
     private function _getConfigOutput($ns): string
     {
+        $version = new Box_Requirements();
+        $updateBranch = (preg_match('#^(\d+\.)?(\d+\.)?(\d+)(-[a-z0-9]+)?$#i', Box_Version::VERSION, $matches) !== 0) ? "release" : "preview"; 
+
         // TODO: Why not just take the defaults from the bb.config.example.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
         $data = [
             'debug' => false,
