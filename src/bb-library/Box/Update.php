@@ -59,7 +59,8 @@ class Box_Update
     public function getLatestReleaseNotes()
     {
         if($this->getUpdateBranch() === "preview"){
-            return "Release notes are not available for preview builds. You can check the latest changes on our [Github](https://github.com/FOSSBilling/FOSSBilling/commits/main)";
+            $compareLink = 'https://github.com/FOSSBilling/FOSSBilling/compare/' . $this->getLatestVersion() . '...main';
+            return "Release notes are not available for preview builds. You can check the latest changes on our [Github]($compareLink)";
         }
 
         $response = $this->_getLatestVersionInfo();
