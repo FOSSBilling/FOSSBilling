@@ -17,6 +17,24 @@
 /**
  * main.
  */
+
+
+/**
+ * Migration steps from BoxBilling to FOSSBilling.
+ */
+class FOSSPatch_25 extends FOSSPatchAbstract
+{
+    public function patch()
+    {
+        //Migrate email templates to be compatible with Twig 3.x
+        $q= "UPDATE email_template SET content = REPLACE(content, '{% filter markdown %}', '{% apply markdown %}')";
+        $this->execSql($q);
+
+        $q= "UPDATE email_template SET content = REPLACE(content, '{% endfilter %}', '{% endapply %}')";
+        $this->execSql($q);
+    }
+}
+
 abstract class FOSSPatchAbstract
 {
     protected mixed $pdo;
