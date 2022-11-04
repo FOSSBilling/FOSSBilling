@@ -486,7 +486,7 @@ LOCK TABLES `setting` WRITE;
 
 INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
 VALUES
-	(1,'last_patch','9',0,NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
+	(1,'last_patch','25',0,NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
 	(2,'company_name','FOSSBilling demo',0,NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
 	(3,'company_email','demo@fossbilling.org',0,NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoice and Support Software',0,NULL,NULL,'2022-01-01 12:00:00','2022-01-01 12:00:00'),
