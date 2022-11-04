@@ -22,20 +22,20 @@ function returnSettings(assetPath){
 			});
 			return r;
 		}, 
-
-		onShiftEnter:  	{keepDefault:false, replaceWith:'<br />\n'},
-		onCtrlEnter:  	{keepDefault:false, openWith:'\n<p>', closeWith:'</p>'},
+		onShiftEnter:  	{keepDefault:false, openWith:'\n\n'},
 		onTab:    		{keepDefault:false, replaceWith:'    '},
 		markupSet:  [ 	
-			{name:'Bold', key:'B', openWith:'(!(<strong>|!|<b>)!)', closeWith:'(!(</strong>|!|</b>)!)' },
-			{name:'Italic', key:'I', openWith:'(!(<em>|!|<i>)!)', closeWith:'(!(</em>|!|</i>)!)'  },
-			{name:'Stroke through', key:'S', openWith:'<del>', closeWith:'</del>' },
+			{name:'Bold', key:'B', openWith:'**', closeWith:'**'},
+			{name:'Italic', key:'I', openWith:'_', closeWith:'_'},
+			{name:'Stroke through', key:'S', openWith:'~~~', closeWith:'~~~' },
 			{separator:'---------------' },
-			{name:'Bulleted List', openWith:'    <li>', closeWith:'</li>', multiline:true, openBlockWith:'<ul>\n', closeBlockWith:'\n</ul>'},
-			{name:'Numeric List', openWith:'    <li>', closeWith:'</li>', multiline:true, openBlockWith:'<ol>\n', closeBlockWith:'\n</ol>'},
+			{name:'Bulleted List', openWith:'- '},
+			{name:'Numeric List', openWith:function(markItUp) {
+				return markItUp.line+'. ';
+			}},
 			{separator:'---------------' },
-			{name:'Picture', key:'P', replaceWith:'<img src="[![Source:!:http://]!]" alt="[![Alternative text]!]" />' },
-			{name:'Link', key:'L', openWith:'<a href="[![Link:!:http://]!]"(!( title="[![Title]!]")!)>', closeWith:'</a>', placeHolder:'Your text to link...' },
+			{name:'Picture', key:'P', replaceWith:'![[![Alternative text]!]]([![Url:!:http://]!])'},
+			{name:'Link', key:'L', openWith:'[', closeWith:']([![Url:!:http://]!])', placeHolder:'Your text to link here...'},
 			{separator:'---------------' },
 			{name:'Clean', className:'clean', replaceWith:function(markitup) { return markitup.selection.replace(/<(.*?)>/g, "") } },		
 			{name:'Preview', className:'preview',  call:'preview'}
