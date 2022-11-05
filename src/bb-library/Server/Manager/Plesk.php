@@ -62,14 +62,15 @@ class Server_Manager_Plesk extends Server_Manager
     			}
     		}
 
+            /*
     		if (count($ips['exclusive']) == 0) {
     			// Disabled. Resellers can also use shared IP addresses.
                 // throw new Server_Exception('Out of free IP adresses');
-            } else {
+            }
+            */
                 $ips['exclusive'] = array_values($ips['exclusive']);
     		    $rand = array_rand($ips['exclusive']);
     		    $a->setIp($ips['exclusive'][$rand]['ip']);
-            }
     	}
 
     	$id = $this->_createClient($a);
@@ -187,7 +188,6 @@ class Server_Manager_Plesk extends Server_Manager
     	return $result;
     }
 
-    // TODO: Write this
     public function changeAccountUsername(Server_Account $a, $new)
     {
         throw new Server_Exception('Server manager does not support username changes');
@@ -215,7 +215,6 @@ class Server_Manager_Plesk extends Server_Manager
         $this->_client->webspace()->request($params);   
     }
 
-    // TODO: Write this
     public function changeAccountIp(Server_Account $a, $new)
     {
         throw new Server_Exception('Server manager does not support changing IP addresses');
