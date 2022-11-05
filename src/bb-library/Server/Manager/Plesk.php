@@ -70,9 +70,11 @@ class Server_Manager_Plesk extends Server_Manager
                 // throw new Server_Exception('Out of free IP adresses');
             }
             */
+            if (count($ips['exclusive']) > 0) {
                 $ips['exclusive'] = array_values($ips['exclusive']);
     		    $rand = array_rand($ips['exclusive']);
     		    $a->setIp($ips['exclusive'][$rand]['ip']);
+            }
     	}
 
     	$id = $this->_createClient($a);
