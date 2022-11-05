@@ -14,8 +14,7 @@ use PleskX\Api\Client;
 class Server_Manager_Plesk extends Server_Manager
 {
     public function init() {
-        $defaultPort = $this->_config['secure'] ? 8443 : 8880;
-        $this->_config['port'] = empty($this->_config['port']) ? $defaultPort : $this->_config['port'];
+        $this->_config['port'] = empty($this->_config['port']) ? 8443 : $this->_config['port'];
 
         $this->_client = new \PleskX\Api\Client($this->_config['host'], $this->_config['port']);
         $this->_client->setCredentials($this->_config['username'], $this->_config['password']);
