@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a4fe4a125c81cf77e7b0cc94a812edda",
+    "content-hash": "f9901ff6e4492c41eddc11297a6705e7",
     "packages": [
         {
             "name": "composer/ca-bundle",
@@ -1184,6 +1184,65 @@
                 "source": "https://github.com/silexphp/Pimple/tree/v3.5.0"
             },
             "time": "2021-10-28T11:13:42+00:00"
+        },
+        {
+            "name": "plesk/api-php-lib",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/plesk/api-php-lib.git",
+                "reference": "ce25ff423cb2b999f2259240cfdb2a4247c54ebc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/plesk/api-php-lib/zipball/ce25ff423cb2b999f2259240cfdb2a4247c54ebc",
+                "reference": "ce25ff423cb2b999f2259240cfdb2a4247c54ebc",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-simplexml": "*",
+                "ext-xml": "*",
+                "php": "^7.4 || ^8.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9",
+                "spatie/phpunit-watcher": "^1.22",
+                "squizlabs/php_codesniffer": "^3.6",
+                "vimeo/psalm": "^4.10"
+            },
+            "default-branch": true,
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PleskX\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Alexei Yuzhakov",
+                    "email": "sibprogrammer@gmail.com"
+                },
+                {
+                    "name": "Plesk International GmbH.",
+                    "email": "plesk-dev-leads@plesk.com"
+                }
+            ],
+            "description": "PHP object-oriented library for Plesk XML-RPC API",
+            "support": {
+                "issues": "https://github.com/plesk/api-php-lib/issues",
+                "source": "https://github.com/plesk/api-php-lib/tree/master"
+            },
+            "time": "2022-03-29T07:07:28+00:00"
         },
         {
             "name": "psr/container",
@@ -5724,7 +5783,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "plesk/api-php-lib": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
