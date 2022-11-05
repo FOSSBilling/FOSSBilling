@@ -14,7 +14,10 @@ use PleskX\Api\Client;
 class Server_Manager_Plesk extends Server_Manager
 {
     public function init() {
-        $this->_client = new \PleskX\Api\Client($this->_config['host']);
+        $defaultPort = $this->_config['secure'] ? 8443 : 8880;
+        $this->_config['port'] = empty($this->_config['port']) ? $defaultPort : $this->_config['port'];
+
+        $this->_client = new \PleskX\Api\Client($this->_config['host'], $this->_config['port']);
         $this->_client->setCredentials($this->_config['username'], $this->_config['password']);
 	}
 
@@ -28,7 +31,7 @@ class Server_Manager_Plesk extends Server_Manager
 	public function getLoginUrl()
 	{
         $protocol = $this->_config['secure'] ? 'https' : 'http';
-        return $protocol . "://" . $this->_config['host'] . ':8443';
+        return $protocol . "://" . $this->_config['host'] . ':' . $this->_config['port'];
 	}
 
     public function getResellerLoginUrl()
@@ -52,7 +55,7 @@ class Server_Manager_Plesk extends Server_Manager
 
     public function createAccount(Server_Account $a)
     {
-    	$this->getLog()->info('Creating account ' .  $a->getUsername());
+    	$this->getLog()->info('Creating account ' . $a->getUsername());
 
     	if ($a->getReseller()) {
     		$ips = $this->_getIps();
