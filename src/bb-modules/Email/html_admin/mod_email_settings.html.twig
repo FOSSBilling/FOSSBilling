@@ -86,7 +86,7 @@
                     <div class="formBottom" id="mailer">
                         <label>{{ 'Send emails per cron run (0 = unlimited)'|trans }}</label><input type="text" name="queue_once" placeholder="0" value="{{ params.queue_once }}"/>
                         <label>{{ 'Max email sending time in minutes (0 = unlimited, default 5 min.)'|trans }}</label><input type="text" name="time_limit" placeholder="5" value="{% if params.time_limit %}{{ params.time_limit }}{% else %}5{% endif %}"/>
-                        <label>{{ 'Cancel sending email after unsuccessful tries (0 = do not cancel)'|trans }}</label><input type="text" name="cancel_after" placeholder="5" value="{{ params.cancel_after }}"/>
+                        <label>{{ 'Cancel sending email after unsuccessful tries'|trans }}</label><input type="text" name="cancel_after" placeholder="5" value="{{ params.cancel_after }}"/>
                     </div>
                     <div class="fix"></div>
                 </div>
