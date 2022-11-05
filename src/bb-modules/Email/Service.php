@@ -599,7 +599,7 @@ class Service implements \Box\InjectionAwareInterface
             $queue->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($queue);
             $maxTries = ( isset($settings['cancel_after']) ) ? $settings['cancel_after'] : 5;
-            if ($queue->tries > $maxTries) {
+            if ($queue->tries > $maxTries && $maxTries !== 0) {
                 $this->di['db']->trash($queue);
             }
         }
