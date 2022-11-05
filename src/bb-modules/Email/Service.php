@@ -588,6 +588,11 @@ class Service implements \Box\InjectionAwareInterface
 
             // Prevent mass retries of emails if one of them is "invalid"
             if(strpos($message, 'Invalid address:') !== false) {
+                try {
+                    $this->di['db']->trash($queue);
+                } catch (\Exception $e) {
+                    error_log($e->getMessage());
+                }
                 return true;
             }
 
