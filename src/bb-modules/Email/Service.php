@@ -583,7 +583,14 @@ class Service implements \Box\InjectionAwareInterface
                 error_log($e->getMessage());
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $message = $e->getMessage();
+            error_log($message);
+
+            // Prevent mass retries of emails if one of them is "invalid"
+            if(strpos($message, 'Invalid address:') !== false) {
+                return true;
+            }
+
             if ($queue->priority) {
                 --$queue->priority;
             }
