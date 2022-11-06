@@ -136,20 +136,16 @@ class Box_Tools
 
     public function emptyFolder($folder)
     {
-        if(!is_dir($folder)) {
-            return;
-        }
-        $d = dir($folder);
-        while (false !== ($entry = $d->read())) {
-            $isdir = is_dir($folder."/".$entry);
-            if (!$isdir && $entry!="." && $entry!="..") {
-                unlink($folder."/".$entry);
-            } elseif ($isdir  &&  $entry!="." && $entry!="..") {
-                $this->emptyFolder($folder."/".$entry);
-                rmdir($folder."/".$entry);
+        /* Original source for this lovely codesnippet: https://stackoverflow.com/a/24563703
+         * With modification suggested from KeineMaster (replaced $file with$file->getRealPath())
+         */
+        if(file_exists($folder)){
+            $di = new RecursiveDirectoryIterator($folder, FilesystemIterator::SKIP_DOTS);
+            $ri = new RecursiveIteratorIterator($di, RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ( $ri as $file ) {
+                $file->isDir() ?  rmdir($file->getRealPath()) : unlink($file->getRealPath());
             }
         }
-        $d->close();
     }
 
     /**
