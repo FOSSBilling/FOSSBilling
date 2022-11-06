@@ -45,6 +45,13 @@ class Model_ActivityClientHistoryTable implements \Box\InjectionAwareInterface
             return ;
         }
 
+        $extensionService = $this->di['mod_service']('extension');
+        if ($extensionService->isExtensionActive('mod', 'demo')) {
+        $ip = null;
+        } else {
+        $ip = $data['ip'];
+        }
+
         $entry = $this->di['db']->dispense('ActivityClientHistory');
         $entry->client_id       = $data['client_id'];
         $entry->ip              = $data['ip'];
