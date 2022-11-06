@@ -67,6 +67,10 @@ class ServiceTest extends \BBTestCase
 
         $extensionServiceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
 
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('isExtensionActive')
+            ->will($this->returnValue(true));
+        
         $di       = new \Box_Di();
         $di['db'] = $databaseMock;
         $di['mod_service'] = $di->protect(function ($serviceName) use ($extensionServiceMock){
