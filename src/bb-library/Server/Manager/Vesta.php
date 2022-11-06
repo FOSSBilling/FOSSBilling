@@ -73,7 +73,7 @@ class Server_Manager_Vesta extends Server_Manager
         $host = 'https://'.$this->_config['host'].':'.$this->_getPort().'/api/';
 
         // Server credentials
-        if ('' != $this->_config['accesshash']) {
+        if ('' !== $this->_config['accesshash']) {
             $params['hash'] = $this->_config['accesshash'];
         } else {
             $params['user'] = $this->_config['username'];
@@ -131,7 +131,7 @@ class Server_Manager_Vesta extends Server_Manager
         if (false !== strpos($result, 'Error')) {
             throw new Server_Exception('Connection to server failed  '.$result);
         } else {
-            if (0 == $result) {
+            if ('0' === $result) {
                 return true;
             } else {
                 throw new Server_Exception('Connection to server failed '.$result);
@@ -172,7 +172,7 @@ class Server_Manager_Vesta extends Server_Manager
             'arg2' => 'hestiapass',
         ];
         $result = $this->_makeRequest($postvars);
-        if (0 == $result) {
+        if ('0' === $result) {
             return '/tmp/hestiapass';
         } else {
             return false;
@@ -203,7 +203,7 @@ class Server_Manager_Vesta extends Server_Manager
         ];
         // Make request and create user
         $result = $this->_makeRequest($postvars);
-        if (0 == $result) {
+        if ('0' === $result) {
 // Create Domain Prepare POST query
             $postvars2 = [
                 'returncode' => 'yes',
@@ -212,7 +212,7 @@ class Server_Manager_Vesta extends Server_Manager
                 'arg2' => $a->getDomain(),
             ];
             $result2 = $this->_makeRequest($postvars2);
-            if ('0' != $result2) {
+            if ('0' !== $result2) {
                 throw new Server_Exception('Server Manager Vesta CP Error: Create Domain failure '.$result2);
             }
 
@@ -238,10 +238,10 @@ class Server_Manager_Vesta extends Server_Manager
         // Make request and suspend user
         $result = $this->_makeRequest($postvars);
         // Check if error 6 the account is suspended on server
-        if ('6' == $result) {
+        if ('6' === $result) {
             return true;
         }
-        if ('0' != $result) {
+        if ('0' !== $result) {
             throw new Server_Exception('Server Manager Vesta CP Error: Suspend Account Error '.$result.$suspended);
         }
 
@@ -265,7 +265,7 @@ class Server_Manager_Vesta extends Server_Manager
             ];
 
         $result = $this->_makeRequest($postvars);
-        if ('0' != $result) {
+        if ('0' !== $result) {
             throw new Server_Exception('Server Manager Vesta CP Error: Unsuspend Account Error '.$result);
         }
 
@@ -291,10 +291,10 @@ class Server_Manager_Vesta extends Server_Manager
             ];
         // Make request and delete user
         $result = $this->_makeRequest($postvars);
-        if ('3' == $result) {
+        if ('3' === $result) {
             return true;
         } else {
-            if ('0' != $result) {
+            if ('0' !== $result) {
                 throw new Server_Exception('Server Manager Vesta CP Error: Cancel Account Error '.$result);
             }
         }
@@ -324,7 +324,7 @@ class Server_Manager_Vesta extends Server_Manager
         ];
         // Make request and change package
         $result = $this->_makeRequest($postvars);
-        if ('0' != $result) {
+        if ('0' !== $result) {
             throw new Server_Exception('Server Manager Vesta CP Error: Change User package Account Error '.$result);
         }
 
@@ -372,7 +372,7 @@ class Server_Manager_Vesta extends Server_Manager
         ];
         // Make request and change password
         $result = $this->_makeRequest($postvars);
-        if ('0' != $result) {
+        if ('0' !== $result) {
             throw new Server_Exception('Server Manager Vesta CP Error: Change Password Account Error '.$result);
         }
 
