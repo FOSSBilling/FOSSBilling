@@ -136,6 +136,9 @@ class Box_Tools
 
     public function emptyFolder($folder)
     {
+        /* Originals source for this lovely codesnippet: https://stackoverflow.com/a/24563703
+         * With modification suggested from KeineMaster (replaced $file with$file->getRealPath())
+         */
         if(file_exists($folder)){
             $di = new RecursiveDirectoryIterator($folder, FilesystemIterator::SKIP_DOTS);
             $ri = new RecursiveIteratorIterator($di, RecursiveIteratorIterator::CHILD_FIRST);
