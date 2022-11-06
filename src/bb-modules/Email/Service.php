@@ -583,7 +583,19 @@ class Service implements \Box\InjectionAwareInterface
                 error_log($e->getMessage());
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $message = $e->getMessage();
+            error_log($message);
+
+            // Prevent mass retries of emails if one of them is "invalid"
+            if(strpos($message, 'Invalid address:') !== false) {
+                try {
+                    $this->di['db']->trash($queue);
+                } catch (\Exception $e) {
+                    error_log($e->getMessage());
+                }
+                return true;
+            }
+
             if ($queue->priority) {
                 --$queue->priority;
             }
@@ -591,7 +603,8 @@ class Service implements \Box\InjectionAwareInterface
             ++$queue->tries;
             $queue->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($queue);
-            if ($settings['cancel_after'] && $queue->tries > $settings['cancel_after']) {
+            $maxTries = ( isset($settings['cancel_after']) ) ? $settings['cancel_after'] : 5;
+            if ($queue->tries > $maxTries) {
                 $this->di['db']->trash($queue);
             }
         }
