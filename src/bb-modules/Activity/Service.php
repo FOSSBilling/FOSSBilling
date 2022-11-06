@@ -34,6 +34,13 @@ class Service implements InjectionAwareInterface
 
     public function logEvent($data)
     {
+        $extensionService = $this->di['mod_service']('extension');
+        if ($extensionService->isExtensionActive('mod', 'demo')) {
+            $ip = null;
+        } else {
+            $ip = $this->di['request']->getClientAddress();
+        }
+
         $entry = $this->di['db']->dispense('ActivitySystem');
         $entry->client_id = $this->di['array_get']($data, 'client_id', null);
         $entry->admin_id = $this->di['array_get']($data, 'admin_id', null);
@@ -41,7 +48,7 @@ class Service implements InjectionAwareInterface
         $entry->message = $data['message'];
         $entry->created_at = date('Y-m-d H:i:s');
         $entry->updated_at = date('Y-m-d H:i:s');
-        $entry->ip = $this->di['request']->getClientAddress();
+        $entry->ip = $ip;
         $this->di['db']->store($entry);
     }
 
@@ -51,9 +58,16 @@ class Service implements InjectionAwareInterface
         $params = $event->getParameters();
         $di = $event->getDi();
 
+        $extensionService = $di['mod_service']('extension');
+        if ($extensionService->isExtensionActive('mod', 'demo')) {
+            $ip = null;
+        } else {
+            $ip = $params['ip'];
+        }
+
         $log = $di['db']->dispense('ActivityClientHistory');
         $log->client_id = $params['id'];
-        $log->ip = $params['ip'];
+        $log->ip = $ip;
         $log->created_at = date('Y-m-d H:i:s');
         $log->updated_at = date('Y-m-d H:i:s');
 
@@ -65,9 +79,16 @@ class Service implements InjectionAwareInterface
         $params = $event->getParameters();
         $di = $event->getDi();
 
+        $extensionService = $di['mod_service']('extension');
+        if ($extensionService->isExtensionActive('mod', 'demo')) {
+            $ip = null;
+        } else {
+            $ip = $params['ip'];
+        }
+
         $log = $di['db']->dispense('ActivityAdminHistory');
         $log->admin_id = $params['id'];
-        $log->ip = $params['ip'];
+        $log->ip = $ip;
         $log->created_at = date('Y-m-d H:i:s');
         $log->updated_at = date('Y-m-d H:i:s');
 
