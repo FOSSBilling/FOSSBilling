@@ -136,7 +136,7 @@ class Box_Tools
 
     public function emptyFolder($folder)
     {
-        /* Originals source for this lovely codesnippet: https://stackoverflow.com/a/24563703
+        /* Original source for this lovely codesnippet: https://stackoverflow.com/a/24563703
          * With modification suggested from KeineMaster (replaced $file with$file->getRealPath())
          */
         if(file_exists($folder)){
