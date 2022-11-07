@@ -123,6 +123,7 @@ Just as with Composer (see above) we do not store the final artifacts in our sou
 Head over to your root directory and run
 
 ```bash
+$ npm install
 $ gulp
 ```
 
