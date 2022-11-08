@@ -48,6 +48,7 @@ class ServiceTest extends \BBTestCase
         $this->assertTrue(strpos($result[0], $search) != false, $expected, $result);
     }
 
+    /* Disabled - see https://github.com/FOSSBilling/FOSSBilling/pull/433
     public function testonAfterClientLogin()
     {
         $model = new \Model_ActivityClientHistory();
@@ -164,7 +165,7 @@ class ServiceTest extends \BBTestCase
         $result = $service->logEvent($data);
         $this->assertNull($result);
     }
-
+    */
 
     public function testLogEmail()
     {
