@@ -409,7 +409,8 @@ final class Box_Installer
     private function _getConfigOutput($ns): string
     {
         $version = new Box_Requirements();
-        $updateBranch = (preg_match('#^(\d+\.)?(\d+\.)?(\d+)(-[a-z0-9]+)?$#i', Box_Version::VERSION, $matches) !== 0) ? "release" : "preview"; 
+        $reg = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
+        $updateBranch = (preg_match($reg, Box_Version::VERSION, $matches) !== 0) ? "release" : "preview"; 
 
         // TODO: Why not just take the defaults from the bb.config.example.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
         $data = [
