@@ -38,7 +38,7 @@
     "gulp-uglifycss": "^1.1.0",
     "jquery": "^3.6.1",
     "upath": "^2.0.1",
-    "yargs": "^17.6.1"
+    "yargs": "^17.6.2"
   },
   "scripts": {
     "build": "gulp build",
