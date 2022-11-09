@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f9901ff6e4492c41eddc11297a6705e7",
+    "content-hash": "4af918687775bed9723212d1b80559c0",
     "packages": [
         {
             "name": "composer/ca-bundle",
@@ -1187,7 +1187,7 @@
         },
         {
             "name": "plesk/api-php-lib",
-            "version": "dev-master",
+            "version": "v2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/plesk/api-php-lib.git",
@@ -1211,7 +1211,6 @@
                 "squizlabs/php_codesniffer": "^3.6",
                 "vimeo/psalm": "^4.10"
             },
-            "default-branch": true,
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -1240,7 +1239,7 @@
             "description": "PHP object-oriented library for Plesk XML-RPC API",
             "support": {
                 "issues": "https://github.com/plesk/api-php-lib/issues",
-                "source": "https://github.com/plesk/api-php-lib/tree/master"
+                "source": "https://github.com/plesk/api-php-lib/tree/v2.0.0"
             },
             "time": "2022-03-29T07:07:28+00:00"
         },
@@ -5783,9 +5782,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "plesk/api-php-lib": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

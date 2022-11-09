@@ -34,7 +34,7 @@
         "dompdf/dompdf": "^2.0.1",
         "symfony/polyfill-intl-idn" : "*",
         "nelexa/zip": "^4.0.2",
-        "plesk/api-php-lib": "2.0.x-dev"
+        "plesk/api-php-lib": "^2.0.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0",
