@@ -121,7 +121,7 @@ class Box_Update
     {
         $version = $this->getLatestVersion();
         $result = Box_Version::compareVersion($version);
-        $result = ($this->isPreviewVersion()) ? 1 : $result;
+        $result = ($this->isPreviewVersion() && $this->getUpdateBranch() === "release") ? 1 : $result;
         return ($result > 0);
     }
 
