@@ -1274,7 +1274,7 @@ class Service implements InjectionAwareInterface
                     div.Breakdown{
                         position: absolute;
                         width: 100%;
-                        top: 400px;
+                        top: 405px;
                     }
                     table {
                         border-collapse: collapse;
@@ -1337,8 +1337,13 @@ class Service implements InjectionAwareInterface
         $html .= '<p>Phone: ' . $invoice['buyer']['phone'] . '</p>';
         $html .= '</div>';
 
-        $html .= '<div class="Breakdown">
-        <table style="width:100%">
+        $html .= 
+        '<div class="Breakdown">';
+        if (!empty($invoice['text_1'])){
+            $html .= '<p>' . $invoice['text_1'] . '</p>';
+        }
+        $html .= 
+        '<table style="width:100%">
         <tr>
             <th>#</th>
             <th>Product</th>
@@ -1377,8 +1382,12 @@ class Service implements InjectionAwareInterface
         $html .= '<th class="right" colspan="3">Total:</th>';
         $html .= '<th>' . $invoice['total'] . $currencyCode . '</th>';
         $html .= '</tr>';
-
         $html .= '</table>';
+
+        if (!empty($invoice['text_2'])){
+            $html .= '<p>' . $invoice['text_2'] . '</p>';
+        }
+        $html .= '</div>';
         $html .= '</body>
                   </html>';
 
