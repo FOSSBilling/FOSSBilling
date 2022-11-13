@@ -8,7 +8,7 @@
     <div class="container-tight py-4">
         <div class="text-center mb-4">
             <a href="{{ '/'|link }}" class="navbar-brand navbar-brand-autodark">
-                <img src="{{ guest.system_company.logo_url }}" alt="Boxbilling">
+                <img src="{{ guest.system_company.logo_url }}" height="75" alt="FOSSBilling">
             </a>
         </div>
         <div class="card card-md">
@@ -33,6 +33,7 @@
                         </div>
                     </form>
                 {% else %}
+                    <h2 class="h2 text-center mb-4">Log into your account</h2>
                     <form class="api-form" action="{{ 'api/guest/staff/login'|link }}" method="post" data-api-redirect="{{ 'index'|alink }}">
                         <div class="mb-3">
                             <label class="form-label" for="inputEmail">{{ 'Email'|trans }}</label>
