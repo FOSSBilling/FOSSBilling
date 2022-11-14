@@ -33,7 +33,7 @@
     "gulp-concat": "^2.6.1",
     "gulp-postcss": "^9.0.1",
     "gulp-sass": "^5.1.0",
-    "gulp-svg-sprite": "^2.0.0",
+    "gulp-svg-sprite": "^2.0.1",
     "gulp-uglify": "^3.0.2",
     "gulp-uglifycss": "^1.1.0",
     "jquery": "^3.6.1",
