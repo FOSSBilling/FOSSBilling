@@ -11,7 +11,7 @@ All modules can communicate with the other modules using their API endpoints.
 # Technical requirements about modules
 
 ## Required
-* API folder has to contain a **manifest.json** file to describe itself. The module engine will look for this file to find information about your extension.
+* Module folder has to contain a **manifest.json** file to describe itself. The module engine will look for this file to find information about your extension.
 
 ## Optional
 * **README.md** - file for installation and getting started instructions
