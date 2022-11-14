@@ -157,6 +157,38 @@ class Box_Mod
         return file_exists($this->_getModPath() . 'html_admin/mod_'.$this->mod.'_settings.html.twig');
     }
 
+    public function hasSettingsRoutes()
+    {
+        if($this->hasService()) {
+            $s = $this->getService();
+            if(method_exists($s, 'getSettingsRoutes')) {
+                return (count($s->getSettingsRoutes()) > 0);
+            }
+        }
+
+        return false;
+    }
+
+    public function getSettingsRoutes()
+    {
+        $result = array();
+        
+        if ($this->hasSettingsRoutes()) {
+            foreach ($this->getService()->getSettingsRoutes() as $route) {
+                // Check if it is a valid external link
+                $filtered = filter_var(idn_to_ascii($route["path"]), FILTER_VALIDATE_URL);
+                
+                // If it's an external link, return it directly. Otherwise, return the internal link with the /admin prefix.
+                $route['path'] = $filtered ? $filtered : $this->di['url']->adminLink($route["path"], []);
+                $result[] = $route;
+            }
+
+            return $result;
+        } else {
+            return array();
+        }
+    }
+
     public function hasAdminController()
     {
         return file_exists($this->_getModPath() . 'Controller/Admin.php');

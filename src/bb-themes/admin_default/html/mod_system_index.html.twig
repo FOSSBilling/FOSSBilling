@@ -9,32 +9,29 @@
 
 {% block content %}
     <div class="card">
-        <div class="tabs_container">
-            <div id="tab-index" class="tab_content nopadding">
-                {% include 'partial_search.html.twig' %}
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <tbody>
-                        {% for ext in admin.extension_get_list({ 'active': 1, 'has_settings': 1 }|merge(request)) %}
-                        <tr>
-                            <td class="w-5">
-                                <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}">
-                                    <img src="{{ ext.icon_url }}" alt="{{ ext.name }}" style="width: 32px; height: 32px;">
-                                </a>
-                            </td>
-                            <td>
-                                <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}">{{ ext.name }}</a>
-                            </td>
-                            <td class="w-1">
-                                <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}">
-                                    <svg class="icon">
-                                        <use xlink:href="#play" />
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div class="card-header">
+            <h3 class="card-title">Settings</h3>
+        </div>
+        <div class="card-body">
+            <div class="datagrid">
+                {% for ext in admin.extension_get_list({ 'active': 1, 'has_settings': 1 }|merge(request)) %}
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">
+                            <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}" class="text-reset">
+                                <img src="{{ ext.icon_url }}" alt="{{ ext.name }}" style="width: 32px; height: 32px; margin-right: .5rem;"> {{ ext.name }}
+                            </a>
+                        </div>
+                        <div class="datagrid-content">
+                            <ul>
+                                {% for route in ext.settings_routes %}
+                                <li>
+                                    <a href="{{ route.path }}">{{route.label}}</a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
         </div>
     </div>

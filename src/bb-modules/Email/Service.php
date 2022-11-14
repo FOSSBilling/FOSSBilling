@@ -30,6 +30,16 @@ class Service implements \Box\InjectionAwareInterface
         return $this->di;
     }
 
+    public function getSettingsRoutes()
+    {
+        return array(
+            'history' => array(
+                'path' => 'email/history',
+                'label' => 'Email history',
+            ),
+        );
+    }
+
     public function getSearchQuery($data)
     {
         $query = 'SELECT * FROM activity_client_email';

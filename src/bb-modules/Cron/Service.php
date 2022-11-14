@@ -33,6 +33,16 @@ class Service
         return $this->di;
     }
 
+    public function getSettingsRoutes()
+    {
+        return array(
+            'exec' => array(
+                'path' => BB_URL . 'bb-cron.php',
+                'label' => 'Execute now',
+            ),
+        );
+    }
+
     public function getCronInfo()
     {
         $service = $this->di['mod_service']('system');

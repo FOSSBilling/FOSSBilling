@@ -133,6 +133,8 @@ class Service implements InjectionAwareInterface
                 $manifest = $m->getManifest();
                 $manifest['status'] = 'core';
                 $manifest['has_settings'] = $m->hasSettingsPage();
+                $manifest['has_settings_routes'] = $m->hasSettingsRoutes();
+                $manifest['settings_routes'] = $m->hasSettingsRoutes() ? $m->getSettingsRoutes() : array();
                 $result[] = $manifest;
             }
         }
@@ -147,10 +149,10 @@ class Service implements InjectionAwareInterface
             $manifest['version'] = $im['version'];
 
             $manifest['status'] = $im['status'];
-            if ('mod' == $im['type'] && 'installed' == $im['status'] && $m->hasSettingsPage()) {
-                $manifest['has_settings'] = true;
-            } else {
-                $manifest['has_settings'] = false;
+            if ('mod' == $im['type'] && 'installed' == $im['status']) {
+                $manifest['has_settings'] = $m->hasSettingsPage();
+                $manifest['has_settings_routes'] = $m->hasSettingsRoutes();
+                $manifest['settings_routes'] = $m->hasSettingsRoutes() ? $m->getSettingsRoutes() : array();
             }
 
             $result[] = $manifest;
@@ -173,6 +175,8 @@ class Service implements InjectionAwareInterface
                 $manifest = $m->getManifest();
                 $manifest['status'] = null;
                 $manifest['has_settings'] = false;
+                $manifest['has_settings_routes'] = false;
+                $manifest['settings_routes'] = array();
 
                 $result[] = $manifest;
             }
