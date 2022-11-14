@@ -36,6 +36,25 @@ class Service
     }
 
     /**
+     * This method returns an array of custom links to be displayed in the settings page of the admin area.
+     * 
+     * @return array
+     */
+    public function getSettingsRoutes()
+    {
+        return array(
+            'source' => array(
+                'path' => 'https://github.com/FOSSBilling/example', // An example external link
+                'label' => 'View source code',
+            ),
+            'example' => array(
+                'path' => 'extension/settings/example', // An example internal link. Internal links are relative to the custom admin panel path.
+                'label' => 'This is an example!',
+            ),
+        );
+    }
+
+    /**
      * Method to install module. In most cases you will provide your own
      * database table or tables to store extension related data.
      *
