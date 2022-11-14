@@ -1,34 +1,43 @@
 {% import 'macro_functions.html.twig' as mf %}
+
 {% set profile = admin.profile_get %}
 {% set company = guest.system_company %}
+
 <!DOCTYPE html>
 <html lang="">
-   <head>
-      <title>{% block meta_title %}{% endblock %} - {{ company.name }}</title>
-      <meta charset="UTF-8">
-      <meta http-equiv="X-UA-Compatible" content="IE=edge">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <link rel="shortcut icon" href="favicon.ico">
-      {% include 'partial_bb_meta.html.twig' %}
-      <link rel="stylesheet" href="build/css/boxbilling-bundle.min.css?v={{ guest.system_version }}">
-      <script src="build/js/boxbilling-bundle.min.js?v={{ guest.system_version }}"></script>
-      {% block head %}{% endblock %}
-   </head>
-   <body class="theme-light">
-      {% if not admin %}
-      <script>
-         $(function () {
-             bb.redirect("{{ 'staff/login'|alink }}");
-         });
-      </script>
-      {% else %}
-      {% if hide_menu %}
-      {% block content_wide %}{% endblock %}
-      {% else %}
-      <div class="page">
-         {% block nav %}{% include 'partial_sidebar.html.twig' %}{% endblock %}
-         <div class="page-wrapper">
+
+<head>
+    <title>{% block meta_title %}{% endblock %} - {{ company.name }}</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="shortcut icon" href="favicon.ico">
+
+    {% include 'partial_bb_meta.html.twig' %}
+
+    <link rel="stylesheet" href="build/css/boxbilling-bundle.min.css?v={{ guest.system_version }}">
+    <script src="build/js/boxbilling-bundle.min.js?v={{ guest.system_version }}"></script>
+
+    {% block head %}{% endblock %}
+</head>
+
+<body class="layout-fluid theme-light">
+    {% if not admin %}
+    <script>
+        $(function () {
+            bb.redirect("{{ 'staff/login'|alink }}");
+        });
+    </script>
+    {% else %}
+    {% if hide_menu %}
+    {% block content_wide %}{% endblock %}
+    {% else %}
+    <div class="page">
+        {% block nav %}{% include 'partial_sidebar.html.twig' %}{% endblock %}
+        <div class="page-wrapper">
             {% block before_content %}{% endblock %}
+
             <header class="navbar navbar-expand-md navbar-light d-none d-lg-flex d-print-none">
                <div class="container-xl">
                   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,127 +127,139 @@
                   </div>
                </div>
             </header>
-            <div class="container-xl navbar">
-               <div class="ms-auto mt-4 mb-3 d-flex gap-3">
-                  {% if admin.system_is_allowed({ 'mod': 'client' }) %}
-                  <a href="{{ 'client'|alink }}" class="btn position-relative">
-                     <svg class="icon">
-                        <use xlink:href="#contacts" />
-                     </svg>
-                     {{ 'Clients'|trans }}
-                  </a>
-                  {% endif %}
-                  {% if admin.system_is_allowed({ 'mod': 'notification' }) and guest.extension_is_on({ 'mod': 'notification' }) %}
-                  {% set count_notifications = admin.notification_get_list({ 'per_page': 1 }).total %}
-                  <a href="{{ 'notification'|alink }}" class="btn position-relative">
-                  <span>{{ 'Notifications'|trans }}</span>
-                  {% if count_notifications %}
-                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_notifications }}</span>
-                  {% endif %}
-                  </a>
-                  {% endif %}
-                  {% if admin.system_is_allowed({ 'mod': 'order' }) %}
-                  {% set count_orders = admin.order_get_statuses.failed_setup %}
-                  <a href="{{ 'order'|alink({ 'status': 'failed_setup' }) }}" class="btn position-relative">
-                     <svg class="icon">
-                        <use xlink:href="#orders" />
-                     </svg>
-                     {{ 'Orders'|trans }}
-                     {% if count_orders %}
-                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_orders }}</span>
-                     {% endif %}
-                  </a>
-                  {% endif %}
-                  {% if admin.system_is_allowed({ 'mod': 'invoice' }) %}
-                  {% set count_invoices = admin.invoice_get_statuses.unpaid %}
-                  <a href="{{ 'invoice'|alink({ 'status': 'unpaid' }) }}" class="btn position-relative">
-                     <svg class="icon">
-                        <use xlink:href="#invoices" />
-                     </svg>
-                     {{ 'Invoices'|trans }}
-                     {% if count_invoices %}
-                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_invoices }}</span>
-                     {% endif %}
-                  </a>
-                  {% endif %}
-                  {% if admin.system_is_allowed({ 'mod': 'support' }) %}
-                  {% set count_tickets = admin.support_ticket_get_statuses.open %}
-                  {% set count_ptickets = admin.support_public_ticket_get_statuses.open %}
-                  <a href="{{ 'support'|alink({ 'status': 'open' }) }}" class="btn position-relative">
-                     <svg class="icon">
-                        <use xlink:href="#support" />
-                     </svg>
-                     {{ 'Tickets'|trans }}
-                     {% if count_tickets %}
-                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_tickets }}</span>
-                     {% endif %}
-                  </a>
-                  <a href="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}" class="btn position-relative">
-                     <svg class="icon">
-                        <use xlink:href="#chat" />
-                     </svg>
-                     {{ 'Inquiries'|trans }}
-                     {% if count_ptickets %}
-                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_ptickets }}</span>
-                     {% endif %}
-                  </a>
-                  {% endif %}
-               </div>
-            </div>
+
+                <div class="container-xl navbar">
+                    <div class="ms-auto mt-4 mb-3 d-flex gap-3">
+                        {% if admin.system_is_allowed({ 'mod': 'client' }) %}
+                            <a href="{{ 'client'|alink }}" class="btn position-relative">
+                                <svg class="icon">
+                                    <use xlink:href="#contacts" />
+                                </svg>
+                                {{ 'Clients'|trans }}
+                            </a>
+                        {% endif %}
+
+                        {% if admin.system_is_allowed({ 'mod': 'notification' }) and guest.extension_is_on({ 'mod': 'notification' }) %}
+                            {% set count_notifications = admin.notification_get_list({ 'per_page': 1 }).total %}
+                            <a href="{{ 'notification'|alink }}" class="btn position-relative">
+                                <span>{{ 'Notifications'|trans }}</span>
+                                {% if count_notifications %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_notifications }}</span>
+                                {% endif %}
+                            </a>
+                        {% endif %}
+
+                        {% if admin.system_is_allowed({ 'mod': 'order' }) %}
+                            {% set count_orders = admin.order_get_statuses.failed_setup %}
+                            <a href="{{ 'order'|alink({ 'status': 'failed_setup' }) }}" class="btn position-relative">
+                                <svg class="icon">
+                                    <use xlink:href="#orders" />
+                                </svg>
+                                {{ 'Orders'|trans }}
+                                {% if count_orders %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_orders }}</span>
+                                {% endif %}
+                            </a>
+                        {% endif %}
+
+                        {% if admin.system_is_allowed({ 'mod': 'invoice' }) %}
+                            {% set count_invoices = admin.invoice_get_statuses.unpaid %}
+                            <a href="{{ 'invoice'|alink({ 'status': 'unpaid' }) }}" class="btn position-relative">
+                                <svg class="icon">
+                                    <use xlink:href="#invoices" />
+                                </svg>
+                                {{ 'Invoices'|trans }}
+                                {% if count_invoices %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_invoices }}</span>
+                                {% endif %}
+                            </a>
+                        {% endif %}
+
+                        {% if admin.system_is_allowed({ 'mod': 'support' }) %}
+                            {% set count_tickets = admin.support_ticket_get_statuses.open %}
+                            {% set count_ptickets = admin.support_public_ticket_get_statuses.open %}
+                            <a href="{{ 'support'|alink({ 'status': 'open' }) }}" class="btn position-relative">
+                                <svg class="icon">
+                                    <use xlink:href="#support" />
+                                </svg>
+                                {{ 'Tickets'|trans }}
+                                {% if count_tickets %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_tickets }}</span>
+                                {% endif %}
+                            </a>
+                            <a href="{{ 'support/public-tickets'|alink({ 'status': 'open' }) }}" class="btn position-relative">
+                                <svg class="icon">
+                                    <use xlink:href="#chat" />
+                                </svg>
+                                {{ 'Inquiries'|trans }}
+                                {% if count_ptickets %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ count_ptickets }}</span>
+                                {% endif %}
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
             <main class="page-body">
-               <div class="container-xl">
-                  <nav class="mb-3" aria-label="breadcrumb">
-                     {% block breadcrumbs %}
-                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item">
-                           <a href="{{ '/'|alink }}">
-                              <svg class="icon">
-                                 <use xlink:href="#home" />
-                              </svg>
-                           </a>
-                        </li>
-                        <li class="breadcrumb-item active" aria-current="page">{{ block('meta_title') }}</li>
-                     </ol>
-                     {% endblock %}
-                  </nav>
-                  {% block top_content %}{% endblock %}
-                  {% block content %}{% endblock %}
-               </div>
+                <div class="container-xl">
+                    <nav class="mb-3" aria-label="breadcrumb">
+                        {% block breadcrumbs %}
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="{{ '/'|alink }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#home" />
+                                    </svg>
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ block('meta_title') }}</li>
+                        </ol>
+                        {% endblock %}
+                    </nav>
+                    {% block top_content %}{% endblock %}
+                    {% block content %}{% endblock %}
+                </div>
             </main>
+
             <footer class="footer footer-transparent d-print-none">
-               <div class="container-xl">
-                  <div>Copyright &copy; {{ now|date('Y') }}. All rights reserved. Powered by <a href="https://fossbilling.org" title="Billing system" target="_blank" rel="noopener">FOSSBilling {{ guest.system_version }}</a></div>
-               </div>
+                <div class="container-xl">
+                    <div>Copyright &copy; {{ now|date('Y') }}. All rights reserved. Powered by <a href="https://fossbilling.org" title="Billing system" target="_blank" rel="noopener">FOSSBilling {{ guest.system_version }}</a></div>
+                </div>
             </footer>
-         </div>
-      </div>
-      {% endif %}
-      <div class="loading dim"></div>
-      <div class="d-none">
-         {% include '../build/symbol/icons-sprite.svg' %}
-      </div>
-      <script>
-         // Switch light/dark theme
-         document.addEventListener('DOMContentLoaded', () => {
-             if (localStorage.getItem('theme') === 'dark') {
-                 document.body.classList.add('theme-dark');
-             }
-         });
-         
-         document.querySelectorAll('.js-theme-toggler').forEach(element => {
-             element.addEventListener('click', event => {
-                 event.preventDefault();
-         
-                 document.body.classList.toggle('theme-dark');
-         
-                 localStorage.setItem('theme', element.getAttribute('href').split('=')[1]);
-             });
-         });
-      </script>
-      {% block js %}{% endblock %}
-      <noscript id="noscript">
-         <div class="msg error">NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's preference settings.</div>
-      </noscript>
-      {% endif %}
-   </body>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="loading dim"></div>
+
+    <div class="d-none">
+        {% include '../build/symbol/icons-sprite.svg' %}
+    </div>
+
+    <script>
+        // Switch light/dark theme
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('theme-dark');
+            }
+        });
+
+        document.querySelectorAll('.js-theme-toggler').forEach(element => {
+            element.addEventListener('click', event => {
+                event.preventDefault();
+
+                document.body.classList.toggle('theme-dark');
+
+                localStorage.setItem('theme', element.getAttribute('href').split('=')[1]);
+            });
+        });
+    </script>
+
+    {% block js %}{% endblock %}
+
+    <noscript id="noscript">
+        <div class="msg error">NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's preference settings.</div>
+    </noscript>
+    {% endif %}
+</body>
 </html>
