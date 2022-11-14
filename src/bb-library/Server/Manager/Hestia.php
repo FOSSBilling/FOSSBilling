@@ -65,7 +65,7 @@ class Server_Manager_Hestia extends Server_Manager
      */
     public function getResellerLoginUrl()
     {
-        return '';
+        return 'https://hestiacp.com';
     }
 
     private function _makeRequest($params)
@@ -73,7 +73,7 @@ class Server_Manager_Hestia extends Server_Manager
         $host = 'https://'.$this->_config['host'].':'.$this->_getPort().'/api/';
 
         // Server credentials
-        if ('' !== $this->_config['accesshash']) {
+        if ('' != $this->_config['accesshash']) {
             $params['hash'] = $this->_config['accesshash'];
         } else {
             $params['user'] = $this->_config['username'];
@@ -161,23 +161,6 @@ class Server_Manager_Hestia extends Server_Manager
      *
      * @param Server_Account $a
      */
-    public function create_tmp_file($password)
-    {
-        $vst_command = 'v-make-tmp-file';
-        $vst_returncode = 'yes';
-        $postvars = [
-            'returncode' => $vst_returncode,
-            'cmd' => $vst_command,
-            'arg1' => $password,
-            'arg2' => 'hestiapass',
-        ];
-        $result = $this->_makeRequest($postvars);
-        if ('0' === $result) {
-            return '/tmp/hestiapass';
-        } else {
-            return false;
-        }
-    }
 
     public function createAccount(Server_Account $a)
     {
@@ -192,7 +175,7 @@ class Server_Manager_Hestia extends Server_Manager
             'returncode' => $vst_returncode,
             'cmd' => $vst_command,
             'arg1' => $a->getUsername(),
-            'arg2' => $this->create_tmp_file($a->getPassword()),
+            'arg2' => $a->getPassword(),
             'arg3' => $client->getEmail(),
             'arg4' => $packname,
             'arg5' => trim($client->getFullName()),
