@@ -66,7 +66,7 @@ class Service
     public function runCrons($interval = null)
     {
         $api = $this->di['api_system'];
-        $this->di['logger']->info('- Started executing cron');
+        $this->di['logger']->info('Started executing cron jobs');
 
         // @core tasks
         $this->_exec($api, 'hook_batch_connect');
@@ -91,7 +91,7 @@ class Service
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
 
-        $this->di['logger']->info('- Finished executing cron');
+        $this->di['logger']->info('Finished executing cron jobs');
 
         return true;
     }
