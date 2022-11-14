@@ -30,6 +30,28 @@ class Service implements \Box\InjectionAwareInterface
         return $this->di;
     }
 
+    public function getSettingsRoutes()
+    {
+        return array(
+            'open' => array(
+                'path' => '/support?status=open',
+                'label' => 'Tickets waiting for staff reply',
+            ),
+            'on_hold' => array(
+                'path' => '/support?status=on_hold',
+                'label' => 'Tickets waiting for client reply',
+            ),
+            'closed' => array(
+                'path' => '/support?status=closed',
+                'label' => 'Resolved tickets',
+            ),
+            'all' => array(
+                'path' => '/support',
+                'label' => 'All tickets',
+            ),
+        );
+    }
+
     public static function onAfterClientOpenTicket(\Box_Event $event)
     {
         $di = $event->getDi();

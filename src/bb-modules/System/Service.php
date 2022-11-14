@@ -28,6 +28,24 @@ class Service
         $this->di = $di;
     }
 
+    public function getSettingsRoutes()
+    {
+        return array(
+            'report_bug' => array(
+                'path' => 'https://github.com/FOSSBilling/FOSSBilling/issues/',
+                'label' => 'Report a bug',
+            ),
+            'activity' => array(
+                'path' => 'activity',
+                'label' => 'Event history',
+            ),
+            'languages' => array(
+                'path' => 'extension/languages',
+                'label' => 'Languages',
+            ),
+        );
+    }
+
     /**
      * @param string $param
      * @param bool   $default
