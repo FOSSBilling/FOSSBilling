@@ -65,7 +65,7 @@ class Server_Manager_Vesta extends Server_Manager
      */
     public function getResellerLoginUrl()
     {
-        return 'https://google.com';
+        return 'https://vestacp.com';
     }
 
     private function _makeRequest($params)
@@ -73,7 +73,7 @@ class Server_Manager_Vesta extends Server_Manager
         $host = 'https://'.$this->_config['host'].':'.$this->_getPort().'/api/';
 
         // Server credentials
-        if ('' !== $this->_config['accesshash']) {
+        if ('' != $this->_config['accesshash']) {
             $params['hash'] = $this->_config['accesshash'];
         } else {
             $params['user'] = $this->_config['username'];
@@ -161,24 +161,6 @@ class Server_Manager_Vesta extends Server_Manager
      *
      * @param Server_Account $a
      */
-    public function create_tmp_file($password)
-    {
-        $vst_command = 'v-make-tmp-file';
-        $vst_returncode = 'yes';
-        $postvars = [
-            'returncode' => $vst_returncode,
-            'cmd' => $vst_command,
-            'arg1' => $password,
-            'arg2' => 'hestiapass',
-        ];
-        $result = $this->_makeRequest($postvars);
-        if ('0' === $result) {
-            return '/tmp/hestiapass';
-        } else {
-            return false;
-        }
-    }
-
     public function createAccount(Server_Account $a)
     {
         $p = $a->getPackage();
@@ -195,7 +177,7 @@ class Server_Manager_Vesta extends Server_Manager
             'returncode' => $vst_returncode,
             'cmd' => $vst_command,
             'arg1' => $a->getUsername(),
-            'arg2' => $this->create_tmp_file($a->getPassword()),
+            'arg2' => $a->getPassword(),
             'arg3' => $client->getEmail(),
             'arg4' => $packname,
             'arg5' => trim($firstname),
@@ -213,12 +195,11 @@ class Server_Manager_Vesta extends Server_Manager
             ];
             $result2 = $this->_makeRequest($postvars2);
             if ('0' !== $result2) {
-                throw new Server_Exception('Server Manager Vesta CP Error: Create Domain failure '.$result2);
+                throw new Server_Exception('Server Manager Vesta CP Error: Create Domain failure! '.$result2);
             }
-
             return true;
         } else {
-            throw new Server_Exception('Server Manager Vesta CP Error: Unable to create User '.$result1);
+            throw new Server_Exception('Server Manager Vesta CP Error: Unable to create User! '.$result1);
         }
     }
 
@@ -242,7 +223,7 @@ class Server_Manager_Vesta extends Server_Manager
             return true;
         }
         if ('0' !== $result) {
-            throw new Server_Exception('Server Manager Vesta CP Error: Suspend Account Error '.$result.$suspended);
+            throw new Server_Exception('Server Manager Vesta CP Error: Suspend Account Error !'.$result);
         }
 
         return true;
@@ -266,7 +247,7 @@ class Server_Manager_Vesta extends Server_Manager
 
         $result = $this->_makeRequest($postvars);
         if ('0' !== $result) {
-            throw new Server_Exception('Server Manager Vesta CP Error: Unsuspend Account Error '.$result);
+            throw new Server_Exception('Server Manager Vesta CP Error: Unsuspend Account Error! '.$result);
         }
 
         return true;
@@ -295,7 +276,7 @@ class Server_Manager_Vesta extends Server_Manager
             return true;
         } else {
             if ('0' !== $result) {
-                throw new Server_Exception('Server Manager Vesta CP Error: Cancel Account Error '.$result);
+                throw new Server_Exception('Server Manager Vesta CP Error: Cancel Account Error! '.$result);
             }
         }
 
@@ -373,7 +354,7 @@ class Server_Manager_Vesta extends Server_Manager
         // Make request and change password
         $result = $this->_makeRequest($postvars);
         if ('0' !== $result) {
-            throw new Server_Exception('Server Manager Vesta CP Error: Change Password Account Error '.$result);
+            throw new Server_Exception('Server Manager Vesta CP Error: Change Password Account Error! '.$result);
         }
 
         return true;
