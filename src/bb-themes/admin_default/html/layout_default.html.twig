@@ -38,89 +38,97 @@
         <div class="page-wrapper">
             {% block before_content %}{% endblock %}
 
-            <header class="navbar">
-                <div class="container-xl">
-                    <a class="btn btn-link" href="{{ '/'|link }}" target="_blank">
-                        <svg class="icon icon-tabler icon-tabler-arrow-back-up">
-                            <use xlink:href="#arrow-back-up" />
-                        </svg>
-                        <span class="ml-2">{{ 'Visit site'|trans }}</span>
-                    </a>
-                    <div class="navbar-nav flex-row order-md-last">
-                        <div class="nav-item d-none d-md-flex me-3">
-                            <div class="btn-list">
-                                <a href="https://github.com/FOSSBilling/FOSSBilling" class="btn" target="_blank" rel="noreferrer">
-                                    <svg class="icon icon-tabler icon-tabler-arrow-back-up">
-                                        <use xlink:href="#brand-github" />
-                                    </svg>
-                                    {{ 'Source code'|trans }}
-                                </a>
-                                <a href="https://github.com/sponsors/FOSSBilling" class="btn" target="_blank" rel="noreferrer">
-                                    <svg class="icon icon-tabler icon-tabler-heart text-pink">
-                                        <use xlink:href="#heart" />
-                                    </svg>
-                                    {{ 'Sponsor'|trans }}
-                                </a>
-                            </div>
+            <header class="navbar navbar-expand-md navbar-light d-none d-lg-flex d-print-none">
+               <div class="container-xl">
+                  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+                  <span class="navbar-toggler-icon"></span>
+                  </button>
+                  <div class="navbar-nav flex-row order-md-last">
+                     <div class="nav-item d-none d-md-flex me-3">
+                        <div class="btn-list">
+                           <a href="https://github.com/FOSSBilling/FOSSBilling" class="btn" target="_blank" rel="noreferrer">
+                              <svg class="icon icon-tabler icon-tabler-arrow-back-up">
+                                 <use xlink:href="#brand-github" />
+                              </svg>
+                              {{ 'Source code'|trans }}
+                           </a>
+                           <a href="https://github.com/sponsors/FOSSBilling" class="btn" target="_blank" rel="noreferrer">
+                              <svg class="icon icon-tabler icon-tabler-heart text-pink">
+                                 <use xlink:href="#heart" />
+                              </svg>
+                              {{ 'Sponsor'|trans }}
+                           </a>
                         </div>
-                        <div class="d-none d-md-flex me-3">
-                            <a class="nav-link px-0 hide-theme-dark js-theme-toggler"
-                                href="?theme=dark"
-                                data-bs-toggle="tooltip"
-                                data-bs-placement="bottom"
-                                data-bs-original-title="{{ 'Enable dark mode'|trans }}">
-                                <svg class="icon">
-                                    <use xlink:href="#moon" />
-                                </svg>
-                            </a>
-                            <a class="nav-link px-0 hide-theme-light js-theme-toggler"
-                                href="?theme=light"
-                                data-bs-toggle="tooltip"
-                                data-bs-placement="bottom"
-                                data-bs-original-title="{{ 'Enable light mode'|trans }}">
-                                <svg class="icon">
-                                    <use xlink:href="#sun" />
-                                </svg>
-                            </a>
+                     </div>
+                     <div class="d-none d-md-flex me-3">
+                        <a class="nav-link px-0 hide-theme-dark js-theme-toggler"
+                           href="?theme=dark"
+                           data-bs-toggle="tooltip"
+                           data-bs-placement="bottom"
+                           data-bs-original-title="{{ 'Enable dark mode'|trans }}">
+                           <svg class="icon">
+                              <use xlink:href="#moon" />
+                           </svg>
+                        </a>
+                        <a class="nav-link px-0 hide-theme-light js-theme-toggler"
+                           href="?theme=light"
+                           data-bs-toggle="tooltip"
+                           data-bs-placement="bottom"
+                           data-bs-original-title="{{ 'Enable light mode'|trans }}">
+                           <svg class="icon">
+                              <use xlink:href="#sun" />
+                           </svg>
+                        </a>
+                     </div>
+                     <div class="nav-item dropdown">
+                        <a class="nav-link d-flex lh-1 text-reset p-0"
+                           href="{{ 'staff/profile'|alink }}"
+                           data-bs-toggle="dropdown"
+                           aria-label="Open user menu"
+                           aria-expanded="false">
+                           <span class="avatar avatar-sm" style="background-image: url({{ profile.email|gravatar }}&size=32)"></span>
+                           <div class="d-none d-xl-block ps-2">
+                              <div>{{ profile.name }}</div>
+                              <div class="mt-1 small text-muted">{{ profile.role }}</div>
+                           </div>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                           <a class="dropdown-item"
+                              href="{{ 'staff/profile'|alink }}">{{ 'Profile'|trans }}</a>
+                           <a class="dropdown-item"
+                              href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+                           <div class="dropdown-divider"></div>
+                           <a class="dropdown-item api-link"
+                              href="{{ 'api/admin/profile/logout'|link }}"
+                              data-api-redirect="{{ 'staff/login'|alink }}">{{ 'Logout'|trans }}</a>
                         </div>
-                        <div class="nav-item dropdown">
-                            <a class="nav-link d-flex lh-1 text-reset p-0"
-                                href="{{ 'staff/profile'|alink }}"
-                                data-bs-toggle="dropdown"
-                                aria-label="Open user menu"
-                                aria-expanded="false">
-                                <span class="avatar avatar-sm" style="background-image: url({{ profile.email|gravatar }}&size=32)"></span>
-                                <div class="d-none d-xl-block ps-2">
-                                    <div>{{ profile.name }}</div>
-                                    <div class="mt-1 small text-muted">{{ profile.role }}</div>
-                                </div>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                                <a class="dropdown-item"
-                                    href="{{ 'staff/profile'|alink }}">{{ 'Profile'|trans }}</a>
-                                <a class="dropdown-item"
-                                    href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item api-link"
-                                    href="{{ 'api/admin/profile/logout'|link }}"
-                                    data-api-redirect="{{ 'staff/login'|alink }}">{{ 'Logout'|trans }}</a>
-                            </div>
-                        </div>
-                        {% set languages = guest.extension_languages %}
-                        {% if languages|length > 1 %}
-                        <span>
-                            <select name="lang" class="language_selector"
-                                style="background-color: #262b2f; color:white;">
-                                {% for lang in languages %}
-                                <option value="{{ lang }}" class="lang_{{ lang }}">{{ lang|trans }}</option>
-                                {% endfor %}
-                            </select>
-                        </span>
-                        {% endif %}
-                    </div>
-                </div>
+                     </div>
+                  </div>
+                  {% set languages = guest.extension_languages %}
+                  {% if languages|length > 1 %}
+                  <span>
+                     <select name="lang" class="language_selector"
+                        style="background-color: #262b2f; color:white;">
+                        {% for lang in languages %}
+                        <option value="{{ lang }}" class="lang_{{ lang }}">{{ lang|trans }}</option>
+                        {% endfor %}
+                     </select>
+                  </span>
+                  {% endif %}
+                  <div class="collapse navbar-collapse" id="navbar-menu">
+                     <div>
+                        <a class="btn btn-link" href="{{ '/'|link }}" target="_blank">
+                           <svg class="icon icon-tabler icon-tabler-arrow-back-up">
+                              <use xlink:href="#arrow-back-up" />
+                           </svg>
+                           <span class="ml-2">{{ 'Visit client area' | trans }}</span>
+                        </a>
+                     </div>
+                  </div>
+               </div>
+            </header>
 
-                <div class="container-xl">
+                <div class="container-xl navbar">
                     <div class="ms-auto mt-4 mb-3 d-flex gap-3">
                         {% if admin.system_is_allowed({ 'mod': 'client' }) %}
                             <a href="{{ 'client'|alink }}" class="btn position-relative">
@@ -191,7 +199,6 @@
                         {% endif %}
                     </div>
                 </div>
-            </header>
 
             <main class="page-body">
                 <div class="container-xl">
