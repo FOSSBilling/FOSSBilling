@@ -69,28 +69,66 @@
     </div>
 </section>
 {% else %}
-    {% set statuses = admin.invoice_transaction_get_statuses %}
-    <div class="stats">
-        <ul>
-            <li>
-                <a href="{{ 'invoice/transactions'|alink({ 'status': 'processed' }) }}" class="count green">{{ statuses.processed }}</a>
-                <span>{{ 'Processed'|trans }}</span>
-            </li>
-            <li>
-                <a href="{{ 'invoice/transactions'|alink({ 'status': 'approved' }) }}" class="count blue">{{ statuses.approved }}</a>
-                <span>{{ 'Approved'|trans }}</span>
-            </li>
-            <li>
-                <a href="{{ 'invoice/transactions'|alink({ 'status': 'error' }) }}" class="count red">{{ statuses.error }}</a>
-                <span>{{ 'Error'|trans }}</span>
-            </li>
-            <li class="last">
-                <a href="{{ 'invoice/transactions'|alink }}" class="count grey">{{ statuses.received + statuses.approved + statuses.processed + statuses.error }}</a>
-                <span>{{ 'Total'|trans }}</span>
-            </li>
-        </ul>
-        <div class="fix"></div>
-    </div>
+
+{% set statuses = admin.invoice_transaction_get_statuses %}
+    <section class="row row-cards mb-3">
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'invoice/transactions'|alink({ 'status': 'processed' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-success text-white avatar">{{ statuses.processed }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Processed'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'invoice/transactions'|alink({ 'status': 'approved' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-info text-white avatar">{{ statuses.approved }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Approved'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'invoice/transactions'|alink({ 'status': 'error' }) }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-danger text-white avatar">{{ statuses.error }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Error'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="card card-sm card-link" href="{{ 'invoice/transactions'|alink }}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="bg-blue text-white avatar">{{ statuses.received + statuses.approved + statuses.processed + statuses.error }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium">{{ 'Total'|trans }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </section>
 {% endif %}
 {% endblock %}
 
