@@ -405,7 +405,7 @@ ul.sub li ul li { padding-left: 10px; }
 /* ===== Right side content ===== */
 
 .widget { /*width: 342px;*/ /*width: 100%;*/ margin-top: 40px; border: 1px solid #d5d5d5; display: block; background: #fafafa; clear: both; border-top: none; }
-.head { background: #efefef url(../images/leftNavBg.png) repeat-x; height: 38px; border-top: 1px solid #d5d5d5; border-bottom: 1px solid #d5d5d5; position: relative; }
+.head { background: #efefef url(../images/leftNavBg.png) repeat-x; height: 38px; border-top: 1px solid #d5d5d5; border-bottom: 1px solid #d5d5d5; position: relative; -webkit-transition:400ms linear; -moz-transition:400ms linear; -o-transition:400ms linear; -ms-transition:400ms linear; transition:400ms linear; }
 .widget .head h5, .table h5 { font-weight: normal; padding: 9px 12px 9px 35px; float: left; } 
 .widget .body { padding: 12px 14px; }
 .widget .normal h5, .accordion-close h5 { background: url(../images/aNormal.png) no-repeat 15px 15px; padding: 9px 12px 9px 32px!important }

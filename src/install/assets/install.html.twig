@@ -1,7 +1,7 @@
 {% extends "./assets/layout.html.twig" %}
 
 {% block left %}
-        <div class="widget nomargin step step-1">
+        <div class="widget nomargin step step-1 hide">
             <div class="head"><h5 class="iAlert">FOSSBilling installation</h5></div>
             <div class="body">
                 <p>This setup will guide you through installation process of FOSSBilling.</p>
@@ -238,120 +238,10 @@
 
 {% block js %}
 <div id="overlay" style="position: absolute; display: none; z-index: 1000; background-color: whitesmoke; width: 725px; height: 50px; opacity:0.5;"></div>
+<script type="text/javascript">
+const installURL = '{{constant("BB_URL_INSTALL")}}';
+</script>
 <script src="./assets/js/jquery.min.js" type="text/javascript"></script>
 <script src="./assets/js/jquery.smartWizard.js" type="text/javascript"></script>
-<script type="text/javascript">
-$(function() {
-	$('.wizard').smartWizard({
-		selected: 0,  // Selected Step, 0 = first step
-		keyNavigation: true, // Enable/Disable key navigation (left and right keys are used if enabled)
-		enableAllSteps: false,  // Enable/Disable all steps on first load
-		transitionEffect: 'fade', // Effect on navigation, none/fade/slide/slideleft
-		contentURL:null, // specifying content url enables ajax content loading
-		contentCache:false, // cache step contents, if false content is fetched always from ajax url
-		cycleSteps: false, // cycle step navigation
-		enableFinishButton: false, // makes finish button enabled always
-		errorSteps:[],    // array of step numbers to highlighting as error steps
-		labelNext:'Next', // label for Next button
-		labelPrevious:'Previous', // label for Previous button
-		labelFinish:'Finish',  // label for Finish button
-	  // Events
-		onLeaveStep: function(o, c){ if(c.fromStep < c.toStep) { return validateSteps(c.fromStep); } else { return true; } }, // triggers when leaving a step
-		onShowStep: function(o, c){ return showStep(c.toStep); },  // triggers when showing a step
-		onFinish: doFinish  // triggers when Finish button is clicked
-	 });
-
-    $("#overlay").ajaxStart(function(){
-        var o = $('.wizard').offset();
-        $(this).css('height', $('.wizard').height()-2).offset({top: o.top+1, left:o.left+1}).show();
-    }).ajaxStop(function(){
-        $(this).hide();
-    });
-});
-
-    function doFinish(){
-        $('#installer').hide();
-        $('.leftNav').animate({
-            width: '980px'
-        }, 400);
-        //$('.leftNav').css('width', '980px');
-        return false;
-    }
-
-    function showStep(stepnumber){
-        $('.step').hide();
-        $('.step.step-'+stepnumber).fadeIn();
-    }
-
-    function validateSteps(stepnumber){
-        var url = '{{constant("BB_URL_INSTALL")}}install.php?a=';
-        var data = $('#installer').serialize();
-        var ok = false;
-
-        if(stepnumber == 1){
-            if(!$('#agree').is(':checked')) {
-                alert('You must agree with terms of service');
-                return false;
-            }
-        }
-
-        if(stepnumber == 2){
-            if(isEmpty('db_host')) return false;
-            if(isEmpty('db_name')) return false;
-            if(isEmpty('db_user')) return false;
-
-            $.ajax({
-                async: false,
-                type: "POST",
-                url: url+'check-db',
-                data: data
-            }).done(function( msg ) {
-                if(msg != 'ok') {
-                    alert(msg);
-                } else {
-                    ok = true;
-                }
-            });
-            return ok;
-        }
-
-        if(stepnumber == 3){
-            if(isEmpty('admin_name')) return false;
-            if(isEmpty('admin_email')) return false;
-            if(isEmpty('admin_pass')) return false;
-            if(confirm('FOSSBilling installer will create database. It may take some time. Do not close this window. Continue?')) {
-                $.ajax({
-                    async: false,
-                    type: "POST",
-                    url: url+'install',
-                    data: data
-                }).done(function( msg ) {
-                    if(msg != 'ok') {
-                        alert(msg);
-                    } else {
-                        $('.buttonNext').text('Installed');
-                        $('.buttonPrevious').hide();
-                        ok = true;
-                    }
-                });
-                return ok;
-            } else {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function isEmpty(id)
-    {
-        if(!$('#'+id).val()) {
-            $('#'+id).addClass('error');
-            return true;
-        } else {
-            $('#'+id).removeClass('error');
-            return false;
-        }
-    }
-
-</script>
+<script src="./assets/js/install.js" type="text/javascript"></script>
 {% endblock %}
