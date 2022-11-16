@@ -301,6 +301,11 @@ class Box_Mod
 
     private function _getModPath()
     {
-        return BB_PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($this->mod) . DIRECTORY_SEPARATOR;
+        $modPath = BB_PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($this->mod) . DIRECTORY_SEPARATOR;
+        if(is_dir($modPath)){
+            return $modPath;
+        }else{
+            throw new Box_Exception("Error: module $this->mod path appears to be invalid. Please ensure the module folder is named " . ucfirst($this->mod));
+        }
     }
 }
