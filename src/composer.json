@@ -25,7 +25,7 @@
         "phpmailer/phpmailer": "^6.6.5",
         "mustangostang/spyc": "^0.6.3",
         "michelf/php-markdown": "^2.0.0",
-        "stripe/stripe-php": "^7.92.0",
+        "stripe/stripe-php": "^10.0.0",
         "guzzlehttp/guzzle": "^7.4.2",
         "filp/whoops": "^2.14",
         "psr/log": "^3.0.0",
