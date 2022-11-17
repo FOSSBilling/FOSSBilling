@@ -842,7 +842,7 @@ class Service implements \Box\InjectionAwareInterface
         }
 
         $ticket = $this->di['db']->dispense('SupportPTicket');
-        $ticket->hash = sha1(random_bytes(13));
+        $ticket->hash = hash('sha256', random_bytes(13));
         $ticket->author_name = $data['name'];
         $ticket->author_email = $data['email'];
         $ticket->subject = $subject;
@@ -1228,7 +1228,7 @@ class Service implements \Box\InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminPublicTicketOpen', 'params' => $data]);
 
         $ticket = $this->di['db']->dispense('SupportPTicket');
-        $ticket->hash = sha1(random_bytes(13));
+        $ticket->hash = hash('sha256', random_bytes(13));
         $ticket->author_name = $data['name'];
         $ticket->author_email = $data['email'];
         $ticket->subject = $data['subject'];

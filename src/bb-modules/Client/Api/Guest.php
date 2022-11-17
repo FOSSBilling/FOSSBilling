@@ -184,7 +184,7 @@ class Guest extends \Api_Abstract
             throw new \Box_Exception('Email not found in our database');
         }
 
-        $hash = sha1(time() . uniqid());
+        $hash = hash('sha256', time().random_bytes(13));
 
         $reset = $this->di['db']->dispense('ClientPasswordReset');
         $reset->client_id = $c->id;
