@@ -27,7 +27,7 @@ function returnSettings(assetPath){
 		markupSet:  [ 	
 			{name:'Bold', key:'B', openWith:'**', closeWith:'**'},
 			{name:'Italic', key:'I', openWith:'_', closeWith:'_'},
-			{name:'Stroke through', key:'S', openWith:'~~~', closeWith:'~~~' },
+			{name:'Strike Through', key:'S', openWith:'~~', closeWith:'~~' },
 			{separator:'---------------' },
 			{name:'Bulleted List', openWith:'- '},
 			{name:'Numeric List', openWith:function(markItUp) {
