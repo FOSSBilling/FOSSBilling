@@ -306,6 +306,7 @@ function twig_markdown_filter(Twig\Environment $env, $value)
         return $match[0];
     }, $result);
 
+    $result = preg_replace('/(?:~~)([^~~]*)(?:~~)/', '<s>$1</s>', $result);
     return $result;
 }
 
