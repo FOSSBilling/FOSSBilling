@@ -1,147 +1,187 @@
-{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% import "macro_functions.html.twig" as mf %}
+{% import 'macro_functions.html.twig' as mf %}
+
 {% block meta_title %}{{ 'Knowledge Base'|trans }}{% endblock %}
+
 {% set active_menu = 'kb' %}
 
 {% block content %}
-<div class="widget simpleTabs">
-    <ul class="tabs">
-        <li><a href="#tab-index">{{ 'Articles'|trans }}</a></li>
-        <li><a href="#tab-new-article">{{ 'New article'|trans }}</a></li>
-        <li><a href="#tab-new-category">{{ 'New category'|trans }}</a></li>
-        <li><a href="#tab-categories">{{ 'Manage categories'|trans }}</a></li>
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Articles'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-article" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New article'|trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Manage categories'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-category" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New category'|trans }}
+            </a>
+        </li>
     </ul>
 
-    <div class="tabs_container">
-        <div class="fix"></div>
-        <div class="tab_content nopadding" id="tab-index">
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            {% include 'partial_search.html.twig' %}
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Title'|trans }}</th>
+                        <th>{{ 'Category'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                        <th class="text-center">{{ 'Views'|trans }}</th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set posts = admin.kb_article_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                    {% for i, post in posts.list %}
+                    <tr>
+                        <td>
+                            <a href="{{ '/kb/article'|alink }}/{{ post.id }}">{{ post.title }}</a>
+                        </td>
+                        <td>
+                            <a href="{{ '/kb/category'|alink }}/{{ post.category.id }}">{{ post.category.title }}</a>
+                        </td>
+                        <td>
+                            {% if post.status == 'active' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if post.status == 'draft' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(post.status) }}</td>
+                        <td class="text-center">{{ post.views }}</td>
+                        <td>
+                            <a class="btn btn-icon" href="{{ '/kb/article'|alink }}/{{ post.id }}">
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{'kb'|alink}}" href="{{ 'api/admin/kb/article_delete'|link({ 'id': post.id }) }}">
+                                <svg class="icon">
+                                    <use xlink:href="#delete" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
 
-        {{ mf.table_search }}
-        <table class="tableStatic wide">
-            <thead>
-                <tr>
-                    <td>{{ 'Title'|trans }}</td>
-                    <td>{{ 'Category'|trans }}</td>
-                    <td>{{ 'Status'|trans }}</td>
-                    <td>{{ 'Views'|trans }}</td>
-                    <td>&nbsp;</td>
-                </tr>
-            </thead>
-
-            <tbody>
-            {% set posts = admin.kb_article_get_list({"per_page":30, "page":request.page}|merge(request)) %}
-            {% for i, post in posts.list %}
-            <tr>
-                <td>{{ post.title }}</td>
-                <td><a href="{{ '/kb/category'|alink }}/{{post.category.id}}">{{post.category.title}}</a></td>
-                <td>{{ mf.status_name(post.status) }}</td>
-                <td>{{ post.views }}</td>
-                <td class="actions">
-                    <a class="bb-button btn14" href="{{ '/kb/article'|alink }}/{{post.id}}"><img src="assets/icons/edit.svg" alt=""></a>
-                    <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" data-api-redirect="{{'kb'|alink}}" href="{{ 'api/admin/kb/article_delete'|link({'id' : post.id}) }}"><img src="assets/icons/delete.svg" alt=""></a>
-                </td>
-            </tr>
-            {% else %}
-                <tr>
-                    <td colspan="4">
-                        {{ 'The list is empty'|trans }}
-                    </td>
-                </tr>
-            
-            {% endfor %}
-            </tbody>
-        </table>
-        
-        {% include "partial_pagination.html.twig" with {'list': posts, 'url':'kb'} %}
+            {% include 'partial_pagination.html.twig' with { 'list': posts, 'url': 'kb' } %}
         </div>
 
-
-        <div class="tab_content nopadding" id="tab-new-article">
-            <form method="post" action="{{ 'api/admin/kb/article_create'|link }}" class="mainForm api-form" data-api-reload="1">
-                <fieldset>
-                    <div class="rowElem noborder">
-                        <label>{{ 'Category'|trans }}:</label>
-                        <div class="formRight">
+        <div class="tab-pane fade" id="tab-new-article" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'api/admin/kb/article_create'|link }}" class="api-form" data-api-reload="1">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
+                        <div class="col">
                             {{ mf.selectbox('kb_article_category_id', admin.kb_category_get_pairs, request.kb_article_category_id, 1) }}
                         </div>
-                        <div class="fix"></div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioStatusDraft" type="radio" name="status" value="draft" checked>
+                                <label class="form-check-label" for="radioStatusDraft">{{ 'Draft'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active">
+                                <label class="form-check-label" for="radioStatusActive">{{ 'Active'|trans }}</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}:</label>
+                        <div class="col">
+                            <textarea class="form-control" name="content" rows="10">{{ request.content }}</textarea>
+                        </div>
                     </div>
 
-                    <div class="rowElem">
-                        <label>{{ 'Title'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="title" value="{{request.title}}" required="required" placeholder=""/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-
-                    <div class="rowElem">
-                        <label>{{ 'Status'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="radio" name="status" value="draft" checked="checked"/><label>{{ 'Draft'|trans }}</label>
-                            <input type="radio" name="status" value="active"/><label>{{ 'Active'|trans }}</label>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-
-                    <div class="rowElem">
-                        <label>{{ 'Content'|trans }}</label>
-                        <div class="formRight">
-                            <textarea name="content" cols="5" rows="10">{{ request.content }}</textarea>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
-                </fieldset>
-            </form>
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
+                </form>
+            </div>
         </div>
 
-        <div class="tab_content nopadding" id="tab-new-category">
-
-            <form method="post" action="{{ 'api/admin/kb/category_create'|link }}" class="mainForm save api-form" data-api-reload="{{ 'Category created'|trans }}">
-                <fieldset>
-                    <div class="rowElem noborder">
-                        <label>{{ 'Title'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="title" value="" required="required"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-
-                    <div class="rowElem">
-                        <label>{{ 'Description'|trans }}:</label>
-                        <div class="formRight">
-                            <textarea name="description" cols="5" rows="20"></textarea>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-
-                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
-                </fieldset>
-            </form>
-        </div>
-
-        <div class="tab_content nopadding" id="tab-categories">
-            <table class="tableStatic wide">
+        <div class="tab-pane fade" id="tab-categories" role="tabpanel">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
                 <tbody>
                     {% for cat_id, cat_title in admin.kb_category_get_pairs %}
-                    <tr {% if loop.first %}class="noborder"{% endif %}>
-                        <td>{{cat_title}}</td>
-                        <td class="actions" style="width:13%">
-                            <a class="bb-button btn14" href="{{ '/kb/category'|alink }}/{{cat_id}}"><img src="assets/icons/edit.svg" alt=""></a>
-                            <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/kb/category_delete'|link({'id' : cat_id}) }}" data-api-redirect="{{'kb/new'|alink}}"><img src="assets/icons/delete.svg" alt=""></a>
+                    <tr>
+                        <td>
+                            <a href="{{ '/kb/category'|alink }}/{{ cat_id }}">{{ cat_title }}</a>
+                        </td>
+                        <td class="w-1">
+                            <a class="btn btn-icon" href="{{ '/kb/category'|alink }}/{{ cat_id }}">
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon api-link"
+                                href="{{ 'api/admin/kb/category_delete'|link({ 'id': cat_id }) }}"
+                                data-api-confirm="{{ 'Are you sure?'|trans }}"
+                                data-api-redirect="{{ 'kb/new'|alink }}">
+                                <svg class="icon">
+                                    <use xlink:href="#delete" />
+                                </svg>
+                            </a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="3">{{ 'The list is empty'|trans }}</td>
+                        <td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+
+        <div class="tab-pane fade" id="tab-new-category" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'api/admin/kb/category_create'|link }}" class="api-form" data-api-reload="{{ 'Category created'|trans }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="title" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Description'|trans }}:</label>
+                        <div class="col">
+                            <textarea class="form-control" name="description" rows="20"></textarea>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="fix"></div>
 </div>
 {% endblock %}

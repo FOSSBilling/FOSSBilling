@@ -1,91 +1,90 @@
-{% extends "layout_default.html.twig" %}
+{% extends 'layout_default.html.twig' %}
 
-{% import "macro_functions.html.twig" as mf %}
+{% import 'macro_functions.html.twig' as mf %}
 
 {% set active_menu = 'kb' %}
 
 {% block meta_title %}{{ post.title }}{% endblock %}
 
 {% block breadcrumbs %}
-<ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
-    <li><a href="{{ 'kb'|alink }}">{{ 'Knowledge Base'|trans }}</a></li>
-    <li class="lastB">{{ post.title }}</li>
-</ul>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'kb'|alink }}">{{ 'Knowledge Base'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ post.title }}</li>
+    </ol>
 {% endblock %}
 
 {% block content %}
-<div class="widget">
-    <div class="head">
-        <h5>{{ post.title}}</h5>
-    </div>
-    
-    <form method="post" action="{{ 'api/admin/kb/article_update'|link }}" class="mainForm save api-form" data-api-msg="{{ 'Article updated'|trans }}">
-        <fieldset>
-            <textarea name="content" cols="5" rows="40" class="bb-textarea">{{ post.content }}</textarea>
-            <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-            <input type="hidden" name="id" value="{{ post.id }}"/>
-        </fieldset>
-    </form>
-</div>
+<div class="card">
+    <form method="post" action="{{ 'api/admin/kb/article_update'|link }}" class="api-form" data-api-msg="{{ 'Article updated'|trans }}">
+        <div class="card-body">
+            <h3>{{ post.title }}</h3>
 
-<div class="widget">
-
-    <div class="head">
-        <h5>{{ 'Article details'|trans }}</h5>
-    </div>
-
-    <form method="post" action="{{ 'api/admin/kb/article_update'|link }}" class="mainForm save api-form" data-api-msg="{{ 'Article updated'|trans }}">
-        <fieldset>
-            <div class="rowElem noborder">
-                <label>{{ 'Category'|trans }}:</label>
-                <div class="formRight">
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
+                <div class="col">
                     {{ mf.selectbox('kb_article_category_id', admin.kb_category_get_pairs, post.kb_article_category_id, 1) }}
                 </div>
-                <div class="fix"></div>
             </div>
-
-            <div class="rowElem">
-                <label>{{ 'Title'|trans }}:</label>
-                <div class="formRight">
-                    <input type="text" name="title" value="{{ post.title }}" required="required"/>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="title" value="{{ post.title }}" required="required">
                 </div>
-                <div class="fix"></div>
             </div>
-
-            <div class="rowElem">
-                <label>{{ 'Slug'|trans }}:</label>
-                <div class="formRight">
-                    <input type="text" name="slug" value="{{ post.slug }}" required="required"/>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}:</label>
+                <div class="col">
+                    <textarea name="content" rows="10" class="bb-textarea">{{ post.content }}</textarea>
                 </div>
-                <div class="fix"></div>
             </div>
-
-            <div class="rowElem">
-                <label>{{ 'Views'|trans }}:</label>
-                <div class="formRight">
-                    <input type="text" name="views" value="{{ post.views }}" required="required"/>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Slug'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="slug" value="{{ post.slug }}" required="required">
                 </div>
-                <div class="fix"></div>
             </div>
-
-            <div class="rowElem">
-                <label>{{ 'Status'|trans }}:</label>
-                <div class="formRight noborder">
-                    <input type="radio" name="status" value="draft"{% if post.status == 'draft' %} checked="checked"{% endif %}/><label>Draft</label>
-                    <input type="radio" name="status" value="active"{% if post.status == 'active' %} checked="checked"{% endif %} /><label>Active</label>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Views'|trans }}:</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="views" value="{{ post.views }}" required>
                 </div>
-                <div class="fix"></div>
             </div>
-            
-            <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-            <input type="hidden" name="id" value="{{ post.id }}"/>
-        </fieldset>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
+                <div class="col">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="radioStatusDraft" type="radio" name="status" value="draft"{% if post.status == 'draft' %} checked{% endif %}>
+                        <label class="form-check-label" for="radioStatusDraft">{{ 'Draft'|trans }}</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active"{% if post.status == 'active' %} checked{% endif %}>
+                        <label class="form-check-label" for="radioStatusActive">{{ 'Active'|trans }}</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" name="id" value="{{ post.id }}">
+
+        <div class="card-footer d-flex gap-2">
+            <a href="{{ 'kb'|alink }}" class="btn btn-secondary w-25">
+                <svg class="icon">
+                    <use xlink:href="#arrow-sm-left" />
+                </svg>
+                {{ 'Go back'|trans }}
+            </a>
+            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+        </div>
     </form>
-
-    <div class="body">
-        <a href="{{ 'kb'|alink }}"  title="" class="btnIconLeft mr10"><img src="images/icons/dark/arrowLeft.png" alt="" class="icon"><span>Go back</span></a>
-    </div>
 </div>
 {% endblock %}
 
