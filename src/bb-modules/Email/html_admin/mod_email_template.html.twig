@@ -4,12 +4,22 @@
 {% set active_menu = 'system' %}
 
 {% block breadcrumbs %}
-<ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
-    <li><a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a></li>
-    <li><a href="{{ 'extension/settings/email'|alink }}">{{ 'Email'|trans }}</a></li>
-    <li class="lastB">{{ template.action_code }}</li>
-</ul>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'extension/settings/email'|alink }}">{{ 'Email'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ template.action_code }}</li>
+    </ol>
 {% endblock %}
 
 {% block content %}
@@ -18,92 +28,117 @@
     <p><strong>{{ 'INFORMATION'|trans }}: </strong>{{ 'This email template is deprecated'|trans }}</p>
 </div>
 {% endif %} #}
-    
-<div class="widget simpleTabs">
-    <ul class="tabs">
-        <li><a href="#template">{{ 'Template'|trans }}</a></li>
-        <li><a href="#vars">{{ 'Variables'|trans }}</a></li>
-        <li><a href="#manage" >{{ 'Template Settings'|trans }}</a></li>
-        <li><a href="#reset">{{ 'Reset template'|trans }}</a></li>
-        <li><a href="#examples">{{ 'Examples'|trans }}</a></li>
+
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-template" data-bs-toggle="tab">{{ 'Template'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-vars" data-bs-toggle="tab">{{ 'Variables'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-manage" data-bs-toggle="tab">{{ 'Template Settings'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-examples" data-bs-toggle="tab">{{ 'Examples'|trans }}</a>
+        </li>
     </ul>
 
-    <div class="tab_container">
-        <div id="template" class="tab_content nopadding">
-            <div class="help">
-                <h3>{{ 'Manage email template'|trans }}</h3>
-                <p>{{ 'Most email templates receives parameters from FOSSBilling. You can browse them on "Variables" tab. Copy variable name to email template and hit preview to see parsed content. Please note that values will be different when actual email is sent.'|trans }}</p>
-            </div>
-            <div class="body">
-            <form method="post" action="admin/email/template_update" class="mainForm save api-form" data-api-msg="{{ 'Template updated'|trans }}">
-                <fieldset>
-                <div class="formBottom">
-                    <input type="text" name="subject" value="{{ template.subject }}" id="email-subject" required="required" placeholder="Email subject"/>
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-template" role="tabpanel">
+            <form method="post" action="admin/email/template_update" class="api-form" data-api-msg="{{ 'Template updated'|trans }}">
+                <div class="card-body">
+                    <h3>{{ 'Manage email template'|trans }}</h3>
+                    <p class="text-muted">{{ 'Most email templates receives parameters from FOSSBilling. You can browse them on "Variables" tab. Copy variable name to email template and hit preview to see parsed content. Please note that values will be different when actual email is sent.'|trans }}</p>
+
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Email subject'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="subject" value="{{ template.subject }}" id="email-subject" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Email message'|trans }}</label>
+                        <div class="col">
+                            <textarea class="form-control" name="content" id="email-template" rows="10" required>{{ template.content }}</textarea>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ template.id }}">
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-secondary w-25" id="preview-button"
+                            {% if template.vars|length == 0 %}
+                                disabled
+                            {% endif %}>
+                            <svg class="icon">
+                                <use xlink:href="#eye" />
+                            </svg>
+                            {{ 'Preview'|trans }}
+                        </button>
+
+                        <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                        <a class="btn btn-danger w-25 api-link"
+                            href="{{ 'api/admin/email/template_reset'|link }}?code={{ template.action_code }}"
+                            data-api-confirm="{{ 'Are you sure?'|trans }}"
+                            data-api-reload="1">
+                            {{ 'Reset'|trans }}
+                        </a>
+                    </div>
+
+                    <div class="mt-3" id="preview" style="display: none;">
+                        <div class="p-3 esubject mb-3" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
+                        <div class="p-3 econtent" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
+                    </div>
                 </div>
-                <div class="formBottom">
-                    <textarea name="content" cols="5" rows="20" id="email-template" required="required" placeholder="Email message">{{ template.content }}</textarea>
-                </div>
-                    
-                {% if template.vars %}
-                    <input type="button" value="{{ 'Preview'|trans }}" class="blueBtn" id="preview-button"/>
-                {% else %}
-                    {{ 'Preview mode is disabled until first event occurrence'|trans }}
-                {% endif %}
-                <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" style="margin: 0;"/>
-                <input type="hidden" name="id" value="{{ template.id }}"/>
-                <div class="fix"></div>
-                </fieldset>
             </form>
-            
-            <div class="pt20" id="preview" style="display: none;">
-                <div class="body esubject mb20" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
-                <div class="body econtent" style="background: white; border: 1px dashed grey; overflow: auto;"></div>
-            </div>
-            </div>
         </div>
-        
-        <div id="manage" class="tab_content nopadding">
-            <div class="help">
+
+        <div class="tab-pane fade" id="tab-manage" role="tabpanel">
+            <div class="card-body">
                 <h3>{{ 'Template settings'|trans }}</h3>
                 <p>{{ 'Enable or disable this email template.'|trans }}</p>
+
+                <form method="post" action="admin/email/template_update" class="api-form" data-api-msg="{{ 'Template updated'|trans }}">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Enabled'|trans }}:</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioEnabledYes" type="radio" name="enabled" value="1"{% if template.enabled %} checked{% endif %}>
+                                <label class="form-check-label" for="radioEnabledYes">{{ 'Yes'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioEnabledNo" type="radio" name="enabled" value="0"{% if not template.enabled %} checked{% endif %}>
+                                <label class="form-check-label" for="radioEnabledNo">{{ 'No'|trans }}</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="category" value="{{ template.category }}" required placeholder="General">
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ template.id }}">
+                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                </form>
             </div>
-            <form method="post" action="admin/email/template_update" class="mainForm save api-form" data-api-msg="{{ 'Template updated'|trans }}">
-            <fieldset>
-                <div class="rowElem noborder">
-                    <label>{{ 'Enabled'|trans }}:</label>
-                    <div class="formRight noborder">
-                        <input type="radio" name="enabled" value="1"{% if template.enabled %} checked="checked"{% endif %}/><label>Yes</label>
-                        <input type="radio" name="enabled" value="0"{% if not template.enabled %} checked="checked"{% endif %} /><label>No</label>
-                    </div>
-                    <div class="fix"></div>
-                </div>
-                <div class="rowElem">
-                    <label>{{ 'Category'|trans }}</label>
-                    <div class="formRight">
-                        <input type="text" name="category" value="{{ template.category }}" required="required" placeholder="General"/>
-                    </div>
-                    <div class="fix"></div>
-                </div>
-                <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-                <input type="hidden" name="id" value="{{ template.id }}"/>
-            </fieldset>
-            </form>
         </div>
-        
-        <div id="vars" class="tab_content nopadding">
+
+        <div class="tab-pane fade" id="tab-vars" role="tabpanel">
             <div class="help">
                 <h3>{{ 'List of variables used in this email'|trans }}</h3>
-                <p>{{ 'These values will change when real email is sent. You can pass these variables to admin or guest API to get additional information from database.'|trans }}</p>
+                <p class="text-muted">{{ 'These values will change when real email is sent. You can pass these variables to admin or guest API to get additional information from database.'|trans }}</p>
             </div>
-            
-            <table class="tableStatic wide">
+
+            <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
                         <th>{{ 'Variable'|trans }}</th>
                         <th>{{ 'Example value'|trans }}</th>
                     </tr>
                 </thead>
-                
                 <tbody>
                 {% for k,var in template.vars %}
                     {% if var is iterable %}
@@ -112,19 +147,19 @@
                                 {% for subsubkey,subsubvalue in var %}
                                     {% if subsubvalue is not iterable %}
                                         <tr>
-                                            <td>{{ '{{' }} {{ k }}.{{subkey}}.{{subsubkey}}{{ '}}' }}</td>
+                                            <td>{{ '{{' }} {{ k }}.{{ subkey }}.{{ subsubkey }}{{ '}}' }}</td>
                                             <td>{{ subsubvalue }}</td>
                                         </tr>
                                     {% else %}
                                         <tr>
-                                            <td>{{ '{{' }} {{ k }}.{{subkey}}.{{subsubkey}}{{ '}}' }}</td>
+                                            <td>{{ '{{' }} {{ k }}.{{ subkey }}.{{ subsubkey }}{{ '}}' }}</td>
                                             <td>Array [ ]</td>
                                         </tr>
                                     {% endif %}
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td>{{ '{{' }} {{ k }}.{{subkey}} {{ '}}' }}</td>
+                                    <td>{{ '{{' }} {{ k }}.{{ subkey }} {{ '}}' }}</td>
                                     <td>{{ subvalue }}</td>
                                 </tr>
                             {% endif %}
@@ -135,43 +170,26 @@
                             <td>{{ var }}</td>
                         </tr>
                     {% endif %}
-
                 {% else %}
                     <tr>
-                        <td colspan="2">{{ 'This template does not receive any parameters'|trans }}</td>
+                        <td class="text-muted" colspan="2">{{ 'This template does not receive any parameters'|trans }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
-        
-        <div id="reset" class="tab_content nopadding">
-            <div class="help">
-                <h3>{{ 'Reset email template to default'|trans }}</h3>
-            </div>
-            
-            <div class="body mainForm">
-                <form action="{{ 'api/admin/email/template_reset'|link }}" class="api-form" data-api-reload="1">
-                    <input type="submit" value="{{ 'Reset to default'|trans }}" class="blackBtn"/>
-                    <input type="hidden" name="code" value="{{ template.action_code }}"/>
-                </form>
-            </div>
-        </div>
-        
-        <div id="examples" class="tab_content nopadding">
-            <div class="help">
-                <h3>{{ 'Email templates examples'|trans }}</h3>
-                <p>{{ 'Email template playground. Use this tool to try rendering email templates.'|trans }}</p>
-            </div>
-            
-            <div class="body mainForm">
-                <div class="formBottom">
-                    <textarea cols="5" rows="20" class="example">{% autoescape false %} {% apply markdown %}
 
+        <div class="tab-pane fade" id="tab-examples" role="tabpanel">
+            <div class="card-body">
+                <h3>{{ 'Email templates examples'|trans }}</h3>
+                <p class="text-muted">{{ 'Email template playground. Use this tool to try rendering email templates.'|trans }}</p>
+
+                <div class="mb-3">
+                    <textarea class="form-control" rows="20">{% autoescape false %}{% apply markdown %}
 This is an example of markdown syntax in email template
 
-*Italic text*    
-**Bolded text**   
+*Italic text*
+**Bolded text**
 
 Lists:
 
@@ -181,59 +199,61 @@ Lists:
 
 ***
 
-Link to login form: <{{ 'login'|link }}>   
+Link to login form: <{{ 'login'|link }}>
 
-Company signature: {{ guest.system_company.signature }}   
+Company signature: {{ guest.system_company.signature }}
 
 You can event use IF statements in email templates: {% if 1 == 2 %}This will never show{% else %}Of course 1 is not equal 2{% endif %}
 
 ***
 
-Accessing Admin API can get information about your FOSSBilling, for example how many clients you have:   
-{% set stats =  admin.stats_get_summary %}   
+Accessing Admin API can get information about your FOSSBilling, for example how many clients you have:
+{% set stats =  admin.stats_get_summary %}
 **Total clients:** {{ stats.clients_total }}
 
 {# Comments in email templates. This text is not visible #}
 {# Uncomment the line below to see what is the output #}
 
 {#<pre>{% debug stats %}</pre>#}
-
-
 {% endapply %}{% endautoescape %}</textarea>
-                    <input type="button" value="{{ 'Preview'|trans }}" class="blueBtn mt10 epb"/>
-                    <div class="mt20 example-preview" style="padding: 5px; background: white; border: 1px dashed grey; overflow: auto; display: none;"></div>
                 </div>
+
+                <button class="btn btn-secondary w-100 epb">
+                    <svg class="icon">
+                        <use xlink:href="#eye" />
+                    </svg>
+                    {{ 'Preview'|trans }}
+                </button>
+                <div class="mt-3 p-3 example-preview" style="border: 1px dashed grey; overflow: auto; display: none;"></div>
             </div>
-            
         </div>
     </div>
-    <div class="fix"></div>	 
 </div>
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript">
+<script>
 $(function() {
-    $('.epb').click(function(){
+    $('.epb').click(function() {
         var r = $(this).siblings('.example-preview');
-        var params = {_tpl:$(this).siblings('textarea').val(), id:'{{template.id}}' };
+        var params = { _tpl: $(this).siblings('textarea').val(), id: '{{ template.id }}' };
 
-        bb.post('admin/email/template_render', params, function(result){
+        bb.post('admin/email/template_render', params, function(result) {
             r.html(result).show();
         });
     });
-    
-    $('#preview-button').click(function(){
-        var params = {_tpl:$('#email-template').val(), id:'{{template.id}}' };
 
-        bb.post('admin/email/template_render', params, function(result){
+    $('#preview-button').click(function() {
+        var params = { _tpl: $('#email-template').val(), id: '{{ template.id }}' };
+
+        bb.post('admin/email/template_render', params, function(result) {
             $('#preview').show();
             $('#preview .econtent').html(result);
         });
-        
-        var params = {_tpl:$('#email-subject').val(), id:'{{template.id}}' };
 
-        bb.post('admin/email/template_render', params, function(result){
+        var params = { _tpl: $('#email-subject').val(), id: '{{ template.id }}' };
+
+        bb.post('admin/email/template_render', params, function(result) {
             $('#preview').show();
             $('#preview .esubject').html(result);
         });
