@@ -6,11 +6,11 @@ var bb = {
       data: params,
       dataType: 'json',
       error: function (jqXHR, textStatus, e) {
-        boxbilling.message(e, 'error');
+        FOSSBilling.message(e, 'error');
       },
       success: function (data) {
         if (data.error) {
-          boxbilling.message(data.error.message, 'error');
+          FOSSBilling.message(data.error.message, 'error');
         } else {
           if (typeof jsonp === 'function') {
             return jsonp(data.result);
@@ -28,11 +28,11 @@ var bb = {
       data: params,
       dataType: 'json',
       error: function (jqXHR, textStatus, e) {
-        boxbilling.message(e, 'error');
+        FOSSBilling.message(e, 'error');
       },
       success: function (data) {
         if (data.error) {
-          boxbilling.message(data.error.message, 'error');
+          FOSSBilling.message(data.error.message, 'error');
         } else {
           if (typeof jsonp === 'function') {
             return jsonp(data.result);
@@ -53,10 +53,10 @@ var bb = {
     jAlert(txt, 'Error code: ' + code);
   },
   /**
-   * @deprecated Will be removed after testing. Use boxbilling.message()
+   * @deprecated Will be removed after testing. Use FOSSBilling.message()
    */
   msg: function (txt, type) {
-    boxbilling.message(txt, type);
+    FOSSBilling.message(txt, type);
   },
   redirect: function (url) {
     if (url === undefined) {
@@ -107,13 +107,13 @@ var bb = {
     }
 
     if (obj.attr('data-api-msg') !== undefined) {
-      boxbilling.message(obj.attr('data-api-msg'), 'success');
+      FOSSBilling.message(obj.attr('data-api-msg'), 'success');
 
       return;
     }
 
     if (result) {
-      boxbilling.message('Form updated', 'success');
+      FOSSBilling.message('Form updated', 'success');
 
       return;
     }

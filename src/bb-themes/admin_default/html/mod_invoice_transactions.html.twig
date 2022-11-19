@@ -172,7 +172,7 @@
                 <td>{{ mf.status_name(tx.type|default('-')) }}</td>
                 <td>
                     {% if tx.error %}
-                        <a href="#" onclick="bb.msg('{{ tx.error }}', '{{ tx.error_code }}'); return false;">{{ tx.error_code }}</a>
+                        <a href="#" onclick="FOSSBilling.message('{{ tx.error }}', '{{ tx.error_code }}'); return false;">{{ tx.error_code }}</a>
                     {% else %}
                         {{ mf.status_name(tx.status) }}
                     {% endif %}
