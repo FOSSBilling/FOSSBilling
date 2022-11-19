@@ -325,7 +325,7 @@ $(function () {
   }).val(bb.cookieRead('BBLANG'));
 });
 
-const boxbilling = {
+const FOSSBilling = {
   message: (message, type = 'info') => {
     switch (type) {
       case 'error':
