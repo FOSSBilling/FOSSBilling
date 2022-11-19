@@ -47,17 +47,17 @@ class Box_Url implements Box\InjectionAwareInterface
     public function link($uri = null, $params = array())
     {
         $uri = trim($uri, '/');
-        $link =$this->baseUri .'index.php?_url=/' . $uri;
+        $link = BB_SEF_URLS ? $this->baseUri . $uri : $this->baseUri .'index.php?_url=/' . $uri;
         if(BB_SEF_URLS) {
-            $link = $this->baseUri . $uri;
             if (!empty($params)){
-                $link .= '?';
+                $link .= '?' . http_build_query($params);
+            }
+        } else {
+            if (!empty($params)){
+                $link .= '&' . http_build_query($params);
             }
         }
 
-        if(!empty($params)) {
-            $link  .= '&' . http_build_query($params);
-        }
         return $link;
     }
 
