@@ -271,8 +271,6 @@ $(function () {
   if ($("a.api-link").length) { bb.apiLink(); }
   //if($("ul#menu").length){bb.menuAutoActive();}
 
-  $().UItoTop();
-
   //===== Datepickers =====//
   $(".datepicker").datepicker({
     defaultDate: +7,
@@ -323,6 +321,25 @@ $(function () {
     bb.reload();
     return false;
   }).val(bb.cookieRead('BBLANG'));
+
+  //===== Back to top =====//
+  let toTopButton = document.getElementById("back-to-top");
+
+  toTopButton.addEventListener("click", toTop);
+
+  function toTop() {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  }
+
+  window.onscroll = function () {
+    // If the page is scrolled more than 200px, show the button
+    if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+      toTopButton.classList.replace("hidden", "visible");
+    } else {
+      toTopButton.classList.replace("visible", "hidden");
+    }
+  };
 });
 
 const FOSSBilling = {

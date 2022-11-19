@@ -1,3 +1,11 @@
 .page {
     min-height: calc(100vh - 2px);
 }
+
+.visible {
+    transition: opacity 400ms;
+}
+
+.hidden {
+    opacity: 0;
+}
