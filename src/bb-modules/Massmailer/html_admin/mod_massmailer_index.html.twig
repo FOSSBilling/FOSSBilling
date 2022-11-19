@@ -2,109 +2,130 @@
 
 {% import "macro_functions.html.twig" as mf %}
 
-{% block meta_title %}Mass mailer{% endblock %}
+{% block meta_title %}{{ 'Mass mailer'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
 {% block content %}
-<div class="widget simpleTabs">
-    <ul class="tabs">
-        <li><a href="#tab-index">{{ 'Mass Mail Messages'|trans }}</a></li>
-        <li><a href="#tab-new">{{ 'Create new mass mail message'|trans }}</a></li>
-        <li><a href="#tab-settings">{{ 'Settings'|trans }}</a></li>
-    </ul>
-
-    <div class="tabs_container">
-
-        <div class="fix"></div>
-        <div class="tab_content nopadding" id="tab-index">
-
-        {{ mf.table_search }}
-        <table class="tableStatic wide">
-            <thead>
-                <tr>
-                    <td style="width: 30%">{{ 'Subject'|trans }}</td>
-                    <td>{{ 'From'|trans }}</td>
-                    <td>{{ 'Status'|trans }}</td>
-                    <td style="width: 18%">&nbsp;</td>
-                </tr>
-            </thead>
-
-            <tbody>
-            {% set msgs = admin.massmailer_get_list({ "per_page": 30, "page": request.page }|merge(request)) %}
-            {% for i, msg in msgs.list %}
-            <tr>
-                <td>{{ msg.subject }}</td>
-                <td>{{ msg.from_name }} <br/>{{ msg.from_email }}</td>
-                <td>{{ mf.status_name(msg.status) }}</td>
-                <td class="actions">
-                    <a class="bb-button btn14 api-link" href="{{ 'api/admin/massmailer/copy'|link({'id' : msg.id}) }}" data-api-redirect="{{ 'massmailer'|alink }}" title="Copy"><img src="images/icons/dark/balloons.png" alt=""></a>
-                    <a class="bb-button btn14" href="{{ '/massmailer/message'|alink }}/{{msg.id}}"><img src="assets/icons/edit.svg" alt=""></a>
-                    <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="Are you sure?" href="{{ 'api/admin/massmailer/delete'|link({'id' : msg.id}) }}" data-api-redirect="{{ 'massmailer'|alink }}"><img src="assets/icons/delete.svg" alt=""></a>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="4">
-                    {{ 'The list is empty'|trans }}
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% include "partial_pagination.html.twig" with {'list': msgs, 'url':'massmailer'} %}
-        </div>
-
-        <div class="tab_content nopadding" id="tab-new">
-
-            <form method="post" action="admin/massmailer/create" class="mainForm api-form" data-api-jsonp="onAfterCreateMM">
-                <fieldset>
-                    <div class="rowElem noborder">
-                        <label>{{ 'Subject'|trans }}:</label>
-                        <div class="formRight">
-                            <input type="text" name="subject" value="{{ request.subject }}" required="required" placeholder="Message subject"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
-                </fieldset>
-            </form>
-        </div>
-
-        <div class="tab_content nopadding" id="tab-settings">
-            <div class="help">
-                <h3>{{ 'Mass Mail Settings'|trans }}</h3>
+<div class="card">
+    <div class="card-header">
+      <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+          <a href="#index" class="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">{{ 'Messages' |trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+          <a href="#new" class="nav-link" data-bs-toggle="tab" aria-selected="true" role="tab">
+            <svg class="icon me-2">
+                <use xlink:href="#plus" />
+            </svg>
+            {{ 'New message' |trans }} 
+          </a>
+        </li>
+        <li class="nav-item" role="presentation">
+          <a href="#settings" class="nav-link" data-bs-toggle="tab" aria-selected="true" role="tab">
+            <svg class="icon me-2">
+                <use xlink:href="#cog" />
+            </svg>
+            {{ 'Settings' |trans }}
+          </a>
+        </li>
+      </ul>
+    </div>
+    <div class="card-body">
+      <div class="tab-content">
+        <div class="tab-pane active show" id="index" role="tabpanel">
+        {% include 'partial_search.html.twig' %}
+        <div class="table-responsive">
+          <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Subject'|trans }}</th>
+                        <th>{{ 'From'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set msgs = admin.massmailer_get_list({ "per_page": 30, "page": request.page }|merge(request)) %}
+                    {% for i, msg in msgs.list %}
+                    <tr>
+                        <td>{{ msg.subject }}</td>
+                        <td>{{ msg.from_name }} <br/>{{ msg.from_email }}</td>
+                        <td>{{ mf.status_name(msg.status) }}</td>
+                        <td>
+                            <a class="btn btn-icon api-link" href="{{ 'api/admin/massmailer/copy'|link({'id' : msg.id}) }}" data-api-redirect="{{ 'massmailer'|alink }}">
+                                <svg class="icon">
+                                    <use xlink:href="#copy" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon" href="{{ '/massmailer/message'|alink }}/{{msg.id}}">
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/massmailer/delete'|link({'id' : msg.id}) }}" data-api-redirect="{{ 'massmailer'|alink }}">
+                                <svg class="icon">
+                                    <use xlink:href="#delete" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% include "partial_pagination.html.twig" with {'list': msgs, 'url':'massmailer'} %}
             </div>
-    
-            {% set params = admin.extension_config_get({"ext":"mod_massmailer"}) %}
-            <form method="post" action="admin/extension/config_save" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
-                <fieldset>
-                    <div class="rowElem noborder">
-                        <div class="moreFields">
-                            <ul>
-                                <li class="sep txt">Send</li>
-                                <li style="width: 50px"><input type="text" name="limit" value="{{ params.limit }}" placeholder="25"></li>
-                                <li class="sep txt"> emails every </li>
-                                <li style="width: 45px"><input type="text" name="interval" value="{{ params.interval }}" placeholder="30"/></li>
-                                <li class="sep txt">seconds until complete</li>
-                            </ul>
-                        </div> 
-                        <div class="fix"></div>
-                    </div>
-                    
-                    <div class="rowElem">
-                        <label class="topLabel">{{ 'Client ID to send test email while creating message'|trans }}</label>
-                        <div class="formBottom">
-                            <input type="text" value="{{ params.test_client_id }}" name="test_client_id" placeholder="Test client ID"/>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-                    
-                    <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
-                    <input type="hidden" name="ext" value="mod_massmailer" />
-                </fieldset>
-            </form>
         </div>
+        <div class="tab-pane" id="new" role="tabpanel">
+          <form method="post" action="admin/massmailer/create" class="mainForm api-form" data-api-jsonp="onAfterCreateMM">
+            <fieldset>
+                <div class="rowElem noborder">
+                    <label>{{ 'Subject'|trans }}:</label>
+                    <div class="formRight">
+                        <input type="text" name="subject" value="{{ request.subject }}" required="required" placeholder="Message subject"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
+            </fieldset>
+                    </form>
+                    </div>
+                    <div class="tab-pane" id="settings" role="tabpanel">
+                    <h4>{{ 'Mass Mail Settings'|trans }}</h4>
+                    {% set params = admin.extension_config_get({"ext":"mod_massmailer"}) %}
+                    <form method="post" action="admin/extension/config_save" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+            <fieldset>
+                <div class="rowElem noborder">
+                    <div class="moreFields">
+                        <ul>
+                            <li class="sep txt">Send</li>
+                            <li style="width: 50px"><input type="text" name="limit" value="{{ params.limit }}" placeholder="25"></li>
+                            <li class="sep txt"> emails every </li>
+                            <li style="width: 45px"><input type="text" name="interval" value="{{ params.interval }}" placeholder="30"/></li>
+                            <li class="sep txt">seconds until complete</li>
+                        </ul>
+                    </div> 
+                    <div class="fix"></div>
+                </div>
+                
+                <div class="rowElem">
+                    <label class="topLabel">{{ 'Client ID to send test email while creating message'|trans }}</label>
+                    <div class="formBottom">
+                        <input type="text" value="{{ params.test_client_id }}" name="test_client_id" placeholder="Test client ID"/>
+                    </div>
+                    <div class="fix"></div>
+                </div>
+                
+                <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
+                <input type="hidden" name="ext" value="mod_massmailer" />
+            </fieldset>
+          </form>
+        </div>
+      </div>
     </div>
 </div>
 {% endblock %}
