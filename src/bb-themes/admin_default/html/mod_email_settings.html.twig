@@ -289,7 +289,7 @@
 $(function() {
     $('#emailTest').click(function() {
         bb.post('admin/email/send_test', null, function(result) {
-            boxbilling.message("{{ 'Email was successfully sent'|trans }}");
+            FOSSBilling.message("{{ 'Email was successfully sent'|trans }}");
         });
 
         return false;
