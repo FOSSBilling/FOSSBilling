@@ -5,6 +5,18 @@
 {% block meta_title %}{{ 'Dashboard'|trans }}{% endblock %}
 
 {% block content %}
+    {% for msg in admin.system_messages({ 'type': 'danger' }) %}
+    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+        <strong>{{ 'Danger!'|trans }}</strong> {{ msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% for msg in admin.system_messages({ 'type': 'warning' }) %}
+    <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+        <strong>{{ 'Warning'|trans }}:</strong> {{ msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
     {% for msg in admin.system_messages({ 'type': 'info' }) %}
     <div class="alert alert-primary alert-dismissible fade show mb-3" role="alert">
         <strong>{{ 'Information'|trans }}:</strong> {{ msg }}
