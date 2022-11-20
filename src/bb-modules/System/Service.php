@@ -282,15 +282,15 @@ class Service
 
         $install = BB_PATH_ROOT . '/install';
         if ($this->di['tools']->fileExists(BB_PATH_ROOT . '/install')) {
-            $msgs['info'][] = sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install);
+            $msgs['danger'][] = sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install);
         }
 
         if ('0.0.1' == $this->getVersion()) {
-            $msgs['info'][] = 'FOSSBilling couldn\'t find valid version information. This is okay if you downloaded FOSSBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.';
+            $msgs['warning'][] = 'FOSSBilling couldn\'t find valid version information. This is okay if you downloaded FOSSBilling directly from the master branch, instead of a released version. But beware, the master branch may not be stable enough for production use.';
         }
 
         if (!extension_loaded('openssl')) {
-            $msgs['info'][] = sprintf('FOSSBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl');
+            $msgs['warning'][] = sprintf('FOSSBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl');
         }
 
         return $this->di['array_get']($msgs, $type, []);
