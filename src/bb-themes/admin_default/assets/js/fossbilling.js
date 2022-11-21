@@ -1,4 +1,4 @@
-/*eslint no-unused-vars: ["error", { "argsIgnorePattern": "^boxbilling" }]*/
+/*eslint no-unused-vars: ["error", { "varsIgnorePattern": "boxbilling" }]*/
 
 var bb = {
   post: function (url, params, jsonp) {
