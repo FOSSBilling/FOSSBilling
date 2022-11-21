@@ -59,6 +59,7 @@ export const buildThemeAdminJs = function buildThemeAdminJs() {
     upath.joinSafe(nodeModulesPath, '@tabler/core/dist/js/tabler.js'),
     upath.joinSafe(nodeModulesPath, 'apexcharts/dist/apexcharts.js'),
     'assets/js/fossbilling.js',
+    'assets/js/ui/backToTop.js',
   ];
 
   return gulp.src(files)

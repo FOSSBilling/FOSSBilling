@@ -1,3 +1,5 @@
+/*eslint no-unused-vars: ["error", { "argsIgnorePattern": "^boxbilling" }]*/
+
 var bb = {
   post: function (url, params, jsonp) {
     $.ajax({
@@ -257,91 +259,6 @@ $.fn.simpleTabs = function () {
 
 };//end function
 
-$(function () {
-
-  //===== Global ajax methods =====//
-  $('.loading').ajaxStart(function () {
-    $(this).show();
-  }).ajaxStop(function () {
-    $(this).hide();
-  });
-
-  //===== Api forms and links =====//
-  if ($("form.api-form").length) { bb.apiForm(); }
-  if ($("a.api-link").length) { bb.apiLink(); }
-  //if($("ul#menu").length){bb.menuAutoActive();}
-
-  //===== Datepickers =====//
-  $(".datepicker").datepicker({
-    defaultDate: +7,
-    autoSize: true,
-    //appendText: '(yyyy-mm-dd)',
-    dateFormat: 'yy-mm-dd'
-  });
-
-  //===== Tooltip =====//
-
-  $('.leftDir').tipsy({ fade: true, gravity: 'e' });
-  $('.rightDir').tipsy({ fade: true, gravity: 'w' });
-  $('.topDir').tipsy({ fade: true, gravity: 's' });
-  $('.botDir').tipsy({ fade: true, gravity: 'n' });
-
-  $('.dd').click(function () {
-    $('ul.menu_body', this).slideToggle(100);
-  });
-
-  //===== Form elements styling =====//
-  // $(".mainForm select, .mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
-  $(".mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
-
-  //===== Collapsible elements management =====//
-  $('.exp').collapsible({
-    defaultOpen: 'current',
-    cookieName: 'navAct',
-    cssOpen: 'active',
-    cssClose: 'inactive',
-    speed: 300
-  });
-
-  $("div.simpleTabs").simpleTabs();
-
-
-  $(document).delegate('div.msg span.close', 'click', function () {
-    $(this).parent().slideUp(70);
-    return false;
-  });
-
-  //===== Information boxes =====//
-  $(".hideit").click(function () {
-    $(this).fadeOut(400);
-  });
-
-  $("select.language_selector").bind('change', function () {
-    bb.cookieCreate('BBLANG', $(this).val(), 7);
-    bb.reload();
-    return false;
-  }).val(bb.cookieRead('BBLANG'));
-
-  //===== Back to top =====//
-  let toTopButton = document.getElementById("back-to-top");
-
-  toTopButton.addEventListener("click", toTop);
-
-  function toTop() {
-    document.body.scrollTop = 0;
-    document.documentElement.scrollTop = 0;
-  }
-
-  window.onscroll = function () {
-    // If the page is scrolled more than 200px, show the button
-    if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
-      toTopButton.classList.replace("hidden", "visible");
-    } else {
-      toTopButton.classList.replace("visible", "hidden");
-    }
-  };
-});
-
 const FOSSBilling = {
   message: (message, type = 'info') => {
     switch (type) {
@@ -396,3 +313,72 @@ const boxbilling = {
     FOSSBilling.message(message, type);
   }
 }
+
+$(function () {
+
+  //===== Global ajax methods =====//
+  $('.loading').ajaxStart(function () {
+    $(this).show();
+  }).ajaxStop(function () {
+    $(this).hide();
+  });
+
+  //===== Api forms and links =====//
+  if ($("form.api-form").length) { bb.apiForm(); }
+  if ($("a.api-link").length) { bb.apiLink(); }
+  //if($("ul#menu").length){bb.menuAutoActive();}
+
+  // Initialize backToTop
+  FOSSBilling.backToTop();
+
+  //===== Datepickers =====//
+  $(".datepicker").datepicker({
+    defaultDate: +7,
+    autoSize: true,
+    //appendText: '(yyyy-mm-dd)',
+    dateFormat: 'yy-mm-dd'
+  });
+
+  //===== Tooltip =====//
+
+  $('.leftDir').tipsy({ fade: true, gravity: 'e' });
+  $('.rightDir').tipsy({ fade: true, gravity: 'w' });
+  $('.topDir').tipsy({ fade: true, gravity: 's' });
+  $('.botDir').tipsy({ fade: true, gravity: 'n' });
+
+  $('.dd').click(function () {
+    $('ul.menu_body', this).slideToggle(100);
+  });
+
+  //===== Form elements styling =====//
+  // $(".mainForm select, .mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
+  $(".mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
+
+  //===== Collapsible elements management =====//
+  $('.exp').collapsible({
+    defaultOpen: 'current',
+    cookieName: 'navAct',
+    cssOpen: 'active',
+    cssClose: 'inactive',
+    speed: 300
+  });
+
+  $("div.simpleTabs").simpleTabs();
+
+
+  $(document).delegate('div.msg span.close', 'click', function () {
+    $(this).parent().slideUp(70);
+    return false;
+  });
+
+  //===== Information boxes =====//
+  $(".hideit").click(function () {
+    $(this).fadeOut(400);
+  });
+
+  $("select.language_selector").bind('change', function () {
+    bb.cookieCreate('BBLANG', $(this).val(), 7);
+    bb.reload();
+    return false;
+  }).val(bb.cookieRead('BBLANG'));
+});
