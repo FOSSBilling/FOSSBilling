@@ -257,7 +257,7 @@ $(function() {
             'admin/servicedomain/lock',
             { order_id: {{ order.id }} },
             function(result) {
-                boxbilling.message("{{ 'Domain locked'|trans }}");
+                FOSSBilling.message("{{ 'Domain locked'|trans }}");
 
                 document.getElementById('domain-lock').classList.remove('d-inline-block');
                 document.getElementById('domain-lock').style.display = 'none';
@@ -273,7 +273,7 @@ $(function() {
             'admin/servicedomain/unlock',
             { order_id: {{ order.id }} },
             function(result) {
-                boxbilling.message("{{ 'Domain unlocked'|trans }}");
+                FOSSBilling.message("{{ 'Domain unlocked'|trans }}");
 
                 document.getElementById('domain-lock').classList.add('d-inline-block');
                 document.getElementById('domain-unlock').classList.remove('d-inline-block');
@@ -301,7 +301,7 @@ $(function() {
             'admin/servicedomain/enable_privacy_protection',
             { order_id: {{ order.id }} },
             function(result) {
-                boxbilling.message("{{ 'Privacy protection enabled'|trans }}");
+                FOSSBilling.message("{{ 'Privacy protection enabled'|trans }}");
 
                 {# $('#domain-enable-pp').toggle(); #}
                 {# $('#domain-disable-pp').toggle(); #}
@@ -319,7 +319,7 @@ $(function() {
             'admin/servicedomain/disable_privacy_protection',
             { order_id: {{ order.id }} },
             function(result) {
-                boxbilling.message("{{ 'Privacy protection disabled'|trans }}");
+                FOSSBilling.message("{{ 'Privacy protection disabled'|trans }}");
 
                 {# $('#domain-enable-pp').toggle(); #}
                 {# $('#domain-disable-pp').toggle(); #}
@@ -337,7 +337,7 @@ $(function() {
             'admin/servicedomain/get_transfer_code',
             { order_id: {{ order.id }} },
             function(result) {
-                boxbilling.message("{{ 'Domain transfer code is: '|trans }}" + result);
+                FOSSBilling.message("{{ 'Domain transfer code is: '|trans }}" + result);
             }
         );
     });

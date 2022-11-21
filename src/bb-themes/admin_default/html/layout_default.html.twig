@@ -16,8 +16,8 @@
 
     {% include 'partial_bb_meta.html.twig' %}
 
-    <link rel="stylesheet" href="build/css/boxbilling-bundle.min.css?v={{ guest.system_version }}">
-    <script src="build/js/boxbilling-bundle.min.js?v={{ guest.system_version }}"></script>
+    <link rel="stylesheet" href="build/css/fossbilling-bundle.min.css?v={{ guest.system_version }}">
+    <script src="build/js/fossbilling-bundle.min.js?v={{ guest.system_version }}"></script>
 
     {% block head %}{% endblock %}
 </head>
@@ -44,6 +44,16 @@
                   <span class="navbar-toggler-icon"></span>
                   </button>
                   <div class="navbar-nav flex-row order-md-last">
+                    {% set languages = guest.extension_languages %}
+                    {% if languages|length > 1 %}
+                    <div class="nav-item me-3">
+                        <select name="lang" class="form-select js-language-selector">
+                            {% for lang in languages %}
+                                <option value="{{ lang }}" class="lang_{{ lang }}">{{ lang|trans }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
                      <div class="nav-item d-none d-md-flex me-3">
                         <div class="btn-list">
                            <a href="https://github.com/FOSSBilling/FOSSBilling" class="btn" target="_blank" rel="noreferrer">
@@ -104,17 +114,6 @@
                         </div>
                      </div>
                   </div>
-                  {% set languages = guest.extension_languages %}
-                  {% if languages|length > 1 %}
-                  <span>
-                     <select name="lang" class="language_selector"
-                        style="background-color: #262b2f; color:white;">
-                        {% for lang in languages %}
-                        <option value="{{ lang }}" class="lang_{{ lang }}">{{ lang|trans }}</option>
-                        {% endfor %}
-                     </select>
-                  </span>
-                  {% endif %}
                   <div class="collapse navbar-collapse" id="navbar-menu">
                      <div>
                         <a class="btn btn-link" href="{{ '/'|link }}" target="_blank">
@@ -235,6 +234,12 @@
     <div class="d-none">
         {% include '../build/symbol/icons-sprite.svg' %}
     </div>
+
+    <button type="button" aria-label="Back to top" class="btn btn-floating btn-lg btn-icon hidden" id="back-to-top">
+        <svg class="icon">
+            <use xlink:href="#arrow-up" />
+        </svg>
+    </button>
 
     <script>
         // Switch light/dark theme

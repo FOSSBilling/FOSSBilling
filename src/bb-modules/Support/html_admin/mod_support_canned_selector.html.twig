@@ -1,13 +1,13 @@
-{% block head%}
-<link rel='stylesheet' href='css/select2.css' />
-{% endblock %}
+{# {% block head %}
+<link rel='stylesheet' href='assets/scss/select2.scss'>
+{% endblock %} #}
 
 <div class="canned_response" style="position: relative;">
-    <select name="canned_response" class="canned" style="position: absolute; top:6px; right: 10px; margin-bottom: 10px; min-width: 50%">
+    <select name="canned_response" class="canned">
         <option value=""></option>
-        {% for ctitle,cat in admin.support_canned_pairs %}
+        {% for ctitle, cat in admin.support_canned_pairs %}
             <optgroup label="{{ ctitle }}">
-                {% for mid,mtitle in cat %}
+                {% for mid, mtitle in cat %}
                     <option value="{{ mid }}">{{ mtitle }}</option>
                 {% endfor %}
             </optgroup>
@@ -15,8 +15,8 @@
     </select>
 </div>
 
-<script src='js/forms/select2.min.js'></script>
-<script type="text/javascript">
+<script src='assets/js/forms/select2.min.js'></script>
+<script>
     $(function () {
         $('select.canned').on("change", function () {
             var id = $(this).val();
@@ -27,8 +27,9 @@
 
             return false;
         });
+
         $("select.canned").select2({
-            placeholder: "Select Canned Response"
+            placeholder: "{{ 'Select canned response'|trans }}"
         });
     });
 </script>

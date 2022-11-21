@@ -159,7 +159,7 @@
             bb.post('admin/servicehosting/server_test_connection',
                 { id: {{ server.id }} },
                 function(result) {
-                    boxbilling.message("{{ 'Successfully connected to server'|trans }}");
+                    FOSSBilling.message("{{ 'Successfully connected to server'|trans }}");
                 }
             );
 

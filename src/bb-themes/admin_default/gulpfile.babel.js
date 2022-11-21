@@ -51,19 +51,17 @@ export const buildThemeAdminJs = function buildThemeAdminJs() {
   const files = [
     'assets/js/jquery.min.js',
     'assets/js/ui/jquery.alerts.js',
-    'assets/js/ui/jquery.tipsy.js',
-    'assets/js/jquery.collapsible.min.js',
     'assets/js/forms/forms.js',
-    'assets/js/jquery.ToTop.js',
     'assets/js/jquery.scrollTo-min.js',
     'assets/js/jquery-ui.js',
     upath.joinSafe(nodeModulesPath, '@tabler/core/dist/js/tabler.js'),
     upath.joinSafe(nodeModulesPath, 'apexcharts/dist/apexcharts.js'),
-    'assets/js/boxbilling.js',
+    'assets/js/fossbilling.js',
+    'assets/js/ui/backToTop.js',
   ];
 
   return gulp.src(files)
-    .pipe(concat('boxbilling-bundle.min.js'))
+    .pipe(concat('fossbilling-bundle.min.js'))
     .pipe(uglify())
     .pipe(gulp.dest('build/js'));
 }
@@ -79,7 +77,7 @@ export const buildThemeAdminCSS = function buildThemeAdminCSS() {
   ];
 
   return gulp.src(files)
-    .pipe(concat('boxbilling-bundle.min.css'))
+    .pipe(concat('fossbilling-bundle.min.css'))
     .pipe(postcss([
       autoprefixer()
     ]))

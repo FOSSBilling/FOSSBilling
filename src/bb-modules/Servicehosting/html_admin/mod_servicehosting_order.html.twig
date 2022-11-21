@@ -1,37 +1,39 @@
-<div class="rowElem">
-    <label>{{ 'Import existing'|trans }}:</label>
-    <div class="formRight">
-        <input type="radio" name="config[import]" value="1"/><label>Yes</label>
-        <input type="radio" name="config[import]" value="0" checked="checked" /><label>No</label>
+<div class="mb-3 row">
+    <label class="form-label col-3 col-form-label">{{ 'Import existing'|trans }}:</label>
+    <div class="col">
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" id="radioImportConfigYes" type="radio" name="config[import]" value="1">
+            <label class="form-check-label" for="radioImportConfigYes">{{ 'Yes'|trans }}</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" id="radioImportConfigNo" type="radio" name="config[import]" value="0" checked>
+            <label class="form-check-label" for="radioImportConfigNo">{{ 'No'|trans }}</label>
+        </div>
     </div>
-    <div class="fix"></div>
 </div>
 
-<div class="rowElem">
-    <label>{{ 'Domain'|trans }}:</label>
-    <div class="formRight moreFields">
-        <ul>
-            <li style="width: 200px"><input type="text" name="config[domain][owndomain_sld]]" value="" placeholder="{{ 'Domain name'|trans }}"></li>
-            <li style="width: 50px"><input type="text" name="config[domain][owndomain_tld]]" value=".com" placeholder="{{ 'Domain TLD'|trans }}"></li>
-        </ul>
+<div class="mb-3 row">
+    <label class="form-label col-3 col-form-label">{{ 'Domain'|trans }}:</label>
+    <div class="col">
+        <div class="input-group">
+            <input class="form-control w-50" type="text" name="config[domain][owndomain_sld]]" placeholder="{{ 'Domain name'|trans }}">
+            <input class="form-control" type="text" name="config[domain][owndomain_tld]]" value=".com" placeholder="{{ 'Domain TLD'|trans }}">
+        </div>
     </div>
-    <div class="fix"></div>
 </div>
 
-<div class="rowElem">
-    <label>{{ 'Username'|trans }}:</label>
-    <div class="formRight">
-        <input type="text" name="config[username]" value="" placeholder="Leave blank to generate"/>
+<div class="mb-3 row">
+    <label class="form-label col-3 col-form-label">{{ 'Username'|trans }}:</label>
+    <div class="col">
+        <input class="form-control" type="text" name="config[username]" placeholder="{{ 'Leave blank to generate'|trans }}">
     </div>
-    <div class="fix"></div>
 </div>
 
-<div class="rowElem">
-    <label>{{ 'Password'|trans }}:</label>
-    <div class="formRight">
-        <input type="text" name="config[password]" value="" placeholder="Leave blank to generate"/>
+<div class="mb-3 row">
+    <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}:</label>
+    <div class="col">
+        <input class="form-control" type="text" name="config[password]" placeholder="{{ 'Leave blank to generate'|trans }}">
     </div>
-    <div class="fix"></div>
 </div>
 
-<input type="hidden" name="config[domain][action]" value="owndomain"/>
+<input type="hidden" name="config[domain][action]" value="owndomain">

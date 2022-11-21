@@ -1,3 +1,5 @@
+/*eslint no-unused-vars: ["error", { "varsIgnorePattern": "boxbilling" }]*/
+
 var bb = {
   post: function (url, params, jsonp) {
     $.ajax({
@@ -6,11 +8,11 @@ var bb = {
       data: params,
       dataType: 'json',
       error: function (jqXHR, textStatus, e) {
-        boxbilling.message(e, 'error');
+        FOSSBilling.message(e, 'error');
       },
       success: function (data) {
         if (data.error) {
-          boxbilling.message(data.error.message, 'error');
+          FOSSBilling.message(data.error.message, 'error');
         } else {
           if (typeof jsonp === 'function') {
             return jsonp(data.result);
@@ -28,11 +30,11 @@ var bb = {
       data: params,
       dataType: 'json',
       error: function (jqXHR, textStatus, e) {
-        boxbilling.message(e, 'error');
+        FOSSBilling.message(e, 'error');
       },
       success: function (data) {
         if (data.error) {
-          boxbilling.message(data.error.message, 'error');
+          FOSSBilling.message(data.error.message, 'error');
         } else {
           if (typeof jsonp === 'function') {
             return jsonp(data.result);
@@ -53,10 +55,10 @@ var bb = {
     jAlert(txt, 'Error code: ' + code);
   },
   /**
-   * @deprecated Will be removed after testing. Use boxbilling.message()
+   * @deprecated Will be removed after testing. Use FOSSBilling.message()
    */
   msg: function (txt, type) {
-    boxbilling.message(txt, type);
+    FOSSBilling.message(txt, type);
   },
   redirect: function (url) {
     if (url === undefined) {
@@ -107,13 +109,13 @@ var bb = {
     }
 
     if (obj.attr('data-api-msg') !== undefined) {
-      boxbilling.message(obj.attr('data-api-msg'), 'success');
+      FOSSBilling.message(obj.attr('data-api-msg'), 'success');
 
       return;
     }
 
     if (result) {
-      boxbilling.message('Form updated', 'success');
+      FOSSBilling.message('Form updated', 'success');
 
       return;
     }
@@ -221,15 +223,6 @@ var bb = {
   }
 }
 
-//===== Left navigation submenu animation =====//
-
-$("ul.sub li a").hover(function () {
-  $(this).stop().animate({ color: "#3a6fa5" }, 400);
-}, function () {
-  $(this).stop().animate({ color: "#494949" }, 400);
-});
-
-
 //===== Tabs =====//
 $.fn.simpleTabs = function () {
 
@@ -257,75 +250,7 @@ $.fn.simpleTabs = function () {
 
 };//end function
 
-$(function () {
-
-  //===== Global ajax methods =====//
-  $('.loading').ajaxStart(function () {
-    $(this).show();
-  }).ajaxStop(function () {
-    $(this).hide();
-  });
-
-  //===== Api forms and links =====//
-  if ($("form.api-form").length) { bb.apiForm(); }
-  if ($("a.api-link").length) { bb.apiLink(); }
-  //if($("ul#menu").length){bb.menuAutoActive();}
-
-  $().UItoTop();
-
-  //===== Datepickers =====//
-  $(".datepicker").datepicker({
-    defaultDate: +7,
-    autoSize: true,
-    //appendText: '(yyyy-mm-dd)',
-    dateFormat: 'yy-mm-dd'
-  });
-
-  //===== Tooltip =====//
-
-  $('.leftDir').tipsy({ fade: true, gravity: 'e' });
-  $('.rightDir').tipsy({ fade: true, gravity: 'w' });
-  $('.topDir').tipsy({ fade: true, gravity: 's' });
-  $('.botDir').tipsy({ fade: true, gravity: 'n' });
-
-  $('.dd').click(function () {
-    $('ul.menu_body', this).slideToggle(100);
-  });
-
-  //===== Form elements styling =====//
-  // $(".mainForm select, .mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
-  $(".mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
-
-  //===== Collapsible elements management =====//
-  $('.exp').collapsible({
-    defaultOpen: 'current',
-    cookieName: 'navAct',
-    cssOpen: 'active',
-    cssClose: 'inactive',
-    speed: 300
-  });
-
-  $("div.simpleTabs").simpleTabs();
-
-
-  $(document).delegate('div.msg span.close', 'click', function () {
-    $(this).parent().slideUp(70);
-    return false;
-  });
-
-  //===== Information boxes =====//
-  $(".hideit").click(function () {
-    $(this).fadeOut(400);
-  });
-
-  $("select.language_selector").bind('change', function () {
-    bb.cookieCreate('BBLANG', $(this).val(), 7);
-    bb.reload();
-    return false;
-  }).val(bb.cookieRead('BBLANG'));
-});
-
-const boxbilling = {
+const FOSSBilling = {
   message: (message, type = 'info') => {
     switch (type) {
       case 'error':
@@ -371,3 +296,61 @@ const boxbilling = {
     toast.show();
   }
 };
+
+// Fallback for modules that still use the old "boxbilling" object. It will display deprecation warnings in the console and will be removed entirely in the future.
+const boxbilling = {
+  message: (message, type = 'info') => {
+    console.warn('The "boxbilling" object is deprecated and will be removed in a future release. Use FOSSBilling.message() instead.');
+    FOSSBilling.message(message, type);
+  }
+}
+
+$(function () {
+
+  //===== Global ajax methods =====//
+  $('.loading').ajaxStart(function () {
+    $(this).show();
+  }).ajaxStop(function () {
+    $(this).hide();
+  });
+
+  //===== Api forms and links =====//
+  if ($("form.api-form").length) { bb.apiForm(); }
+  if ($("a.api-link").length) { bb.apiLink(); }
+  //if($("ul#menu").length){bb.menuAutoActive();}
+
+  // Initialize backToTop
+  FOSSBilling.backToTop();
+
+  //===== Datepickers =====//
+  $(".datepicker").datepicker({
+    defaultDate: +7,
+    autoSize: true,
+    //appendText: '(yyyy-mm-dd)',
+    dateFormat: 'yy-mm-dd'
+  });
+
+  //===== Form elements styling =====//
+  // $(".mainForm select, .mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
+  $(".mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
+
+  $("div.simpleTabs").simpleTabs();
+
+
+  $(document).delegate('div.msg span.close', 'click', function () {
+    $(this).parent().slideUp(70);
+    return false;
+  });
+
+  //===== Information boxes =====//
+  $(".hideit").click(function () {
+    $(this).fadeOut(400);
+  });
+
+  $("select.js-language-selector").bind('change', function () {
+    bb.cookieCreate('BBLANG', $(this).val(), 7);
+    bb.reload();
+    
+    return false;
+  }).val(bb.cookieRead('BBLANG'));
+});
