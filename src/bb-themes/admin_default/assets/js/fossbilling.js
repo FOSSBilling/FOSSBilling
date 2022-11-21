@@ -343,15 +343,6 @@ $(function () {
   // $(".mainForm select, .mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
   $(".mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
 
-  //===== Collapsible elements management =====//
-  $('.exp').collapsible({
-    defaultOpen: 'current',
-    cookieName: 'navAct',
-    cssOpen: 'active',
-    cssClose: 'inactive',
-    speed: 300
-  });
-
   $("div.simpleTabs").simpleTabs();
 
 

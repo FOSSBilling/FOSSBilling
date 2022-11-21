@@ -51,7 +51,6 @@ export const buildThemeAdminJs = function buildThemeAdminJs() {
   const files = [
     'assets/js/jquery.min.js',
     'assets/js/ui/jquery.alerts.js',
-    'assets/js/jquery.collapsible.min.js',
     'assets/js/forms/forms.js',
     'assets/js/jquery.scrollTo-min.js',
     'assets/js/jquery-ui.js',
