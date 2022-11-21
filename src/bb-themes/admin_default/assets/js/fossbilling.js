@@ -223,15 +223,6 @@ var bb = {
   }
 }
 
-//===== Left navigation submenu animation =====//
-
-$("ul.sub li a").hover(function () {
-  $(this).stop().animate({ color: "#3a6fa5" }, 400);
-}, function () {
-  $(this).stop().animate({ color: "#494949" }, 400);
-});
-
-
 //===== Tabs =====//
 $.fn.simpleTabs = function () {
 
