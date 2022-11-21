@@ -10,7 +10,6 @@
 
  (function () {
     FOSSBilling.backToTop = function (options) {
-
         var defaults = {
             hiddenClass: 'hidden',
             visibleClass: 'visible',

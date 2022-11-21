@@ -339,17 +339,6 @@ $(function () {
     dateFormat: 'yy-mm-dd'
   });
 
-  //===== Tooltip =====//
-
-  $('.leftDir').tipsy({ fade: true, gravity: 'e' });
-  $('.rightDir').tipsy({ fade: true, gravity: 'w' });
-  $('.topDir').tipsy({ fade: true, gravity: 's' });
-  $('.botDir').tipsy({ fade: true, gravity: 'n' });
-
-  $('.dd').click(function () {
-    $('ul.menu_body', this).slideToggle(100);
-  });
-
   //===== Form elements styling =====//
   // $(".mainForm select, .mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
   $(".mainForm input:checkbox, .mainForm input:radio, .mainForm input:file").uniform();
