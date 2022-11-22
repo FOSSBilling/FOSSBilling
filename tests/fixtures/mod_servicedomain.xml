@@ -23,6 +23,4 @@
     <setting id="4" param="nameserver_2" value="ns2.1freehosting.com" hash="aa"/>
     <setting id="5" param="nameserver_3" value="ns3.1freehosting.com" hash="aa"/>
     <setting id="6" param="nameserver_4" value="ns4.1freehosting.com" hash="aa"/>
-    
-    <extension id="1" type="mod" name="servicesolusvm" status="installed"/>
 </dataset>

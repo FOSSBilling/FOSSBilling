@@ -48,7 +48,6 @@
     <product id="11" product_category_id="1" product_payment_id="8" type="hosting" title="Shared hosting with free domain" description="" unit="month" active="1" is_addon="0" addons="" config='{"server_id":"1", "hosting_plan_id":"1", "free_domain":"1", "free_transfer":"1","free_tlds":[".com"],"free_domain_periods":["1M","3M","6M","1Y","2Y"]}' setup="after_payment" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     <product id="12" product_category_id="1" product_payment_id="10" type="membership" title="PVA Membership" description="" unit="month" active="1" is_addon="0" addons="" config='' setup="after_payment" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     <product id="13" product_category_id="1" product_payment_id="11" type="custom" title="Product with setup price" description="Product with setup price" unit="product" active="1" is_addon="0" addons="" setup="after_payment" plugin="" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
-    <product id="15" product_category_id="1" product_payment_id="12" type="solusvm" title="SolusVM product" description="VPS Product" unit="product" active="1" is_addon="0" addons="" config='{"node":"1", "plan":"Small", "vtype":"openvz", "ips":"1"}' setup="after_payment" plugin="" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     <product id="16" product_category_id="1" product_payment_id="12" type="boxbillinglicense" title="FOSSBilling license" description="FOSSBilling License product" unit="product" active="1" is_addon="0" addons="" config='' setup="after_payment" plugin="" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
     <product id="17" product_category_id="1" product_payment_id="13" type="boxbillinglicense" title="FOSSBilling license" description="FOSSBilling License product" unit="product" active="1" is_addon="0" addons="" config='' setup="after_payment" plugin="" created_at="2011-01-01 12:00:00" updated_at="2011-01-01 12:00:00"/>
 
@@ -64,7 +63,6 @@
 
     <client_order id="8" client_id="1" group_id="200" group_master="1" promo_id="3" promo_recurring="1" promo_used="1" product_id="1" currency="USD" service_type="custom" service_id="1" period="1Y" quantity="1" price="30" discount="15" status="active" notes="" config='' expires_at="2011-12-25 15:23:43" created_at="2011-11-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
     <client_order id="10" client_id="1" group_id="300" promo_id="3" promo_recurring="0" promo_used="1" product_id="1" currency="USD" service_type="custom" period="1Y" quantity="1" price="30" discount="15" status="active" notes="" config='' expires_at="2011-12-25 15:23:43" created_at="2011-11-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
-    <client_order id="12" client_id="1" group_id="300" promo_recurring="0" promo_used="0" product_id="15" currency="USD" service_type="solusvm" period="3M" quantity="1" price="30" discount="0" status="pending_setup" notes="" config='{"server_id":"1", "plan":"Small", "hostname":"vpsdomain.com", "template":"centos-6-x86"}' expires_at="2011-12-25 15:23:43" created_at="2011-11-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
     <client_order id="13" client_id="1" group_id="300" service_type="boxbillinglicense" service_id="1" status="pending_setup"/>
     
     <cart id="1" currency_id="1" created_at="2011-10-24 15:23:43"/>
@@ -91,9 +89,7 @@
     <setting id="7" param="nameserver_4" value="ns4.1freehosting.com" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
     <setting id="8" param="invoice_issue_days_before_expire" value="14" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
     
-    <extension id="1" type="mod" name="servicesolusvm" status="installed" manifest='{ "id":  "servicesolusvm",	"type":"mod", "name":"SolusVM product", "description":  "Sell virtual servers using SolusVM extension for FOSSBilling", "icon_url":  "icon.png", "homepage_url": "https://github.com/FOSSBilling/", "author": "FOSSBilling", "author_url":"https://github.com/FOSSBilling/", "license":"https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE", "version":"1.0.0"}'/>
     <extension id="2" type="mod" name="serviceboxbillinglicense" status="installed" manifest='{"id":"serviceboxbillinglicense",	"type":"mod","name":"FOSSBilling license product","description":  "Sell BoxBiling licenses and get paid. The more you sell - more profit you make","icon_url": "icon.png","homepage_url": "https://github.com/FOSSBilling/","author":   "FOSSBilling","author_url":   "https://github.com/FOSSBilling/","license":  "https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE","version":  "1.0.0"}'/>
-    <extension_meta id="1" extension="mod_servicesolusvm" rel_type="cluster" rel_id="1" meta_key="config" meta_value='{"id":"api_id", "key":"api_key", "ipaddress":"123.123.123.123"}'/>
 
     <setting id="9" param="company_email" value="fossbilling@fossbilling.org" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>
     <setting id="10" param="theme" value="huraga" created_at="2011-10-24 15:23:43" updated_at="2011-10-24 15:23:43"/>

@@ -23,7 +23,6 @@ set_include_path(implode(PATH_SEPARATOR, array(
 )));
 
 
-require_once 'SolusvmMock.php';
 require_once 'BoxSessionMock.php';
 require_once 'BBTestCase.php';
 require_once 'BBDatabaseTestCase.php'; 
