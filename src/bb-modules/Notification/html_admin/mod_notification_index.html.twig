@@ -2,73 +2,86 @@
 
 {% import "macro_functions.html.twig" as mf %}
 
-{% block meta_title %}Notifications center{% endblock %}
+{% block meta_title %}{{ 'Notifications center'|trans }}{% endblock %}
 
 {% set active_menu = 'activity' %}
 
 {% block content %}
-<div class="widget simpleTabs">
-    <ul class="tabs">
-        <li><a href="#tab-index">{{ 'Notifications'|trans }}</a></li>
-        <li><a href="#tab-new">{{ 'New note'|trans }}</a></li>
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Notifications'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-note" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New note'|trans }}
+            </a>
+        </li>
     </ul>
 
-    <div class="tabs_container">
-        
-        <div class="fix"></div>
-        <div class="tab_content nopadding" id="tab-index">
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            <div class="card-body">
+                    <h5>{{ 'Notifications'|trans }}</h5>
+                </div>
+                {% include 'partial_search.html.twig' %}
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>{{ 'Message'|trans }}</th>
+                            <th>{{ 'Date'|trans }}</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% set events = admin.notification_get_list({ "per_page": 10, "page": request.page }|merge(request)) %}
+                    {% for i, event in events.list %}
+                        <tr>
+                            <td>{{ admin.system_string_render({ "_tpl": event.meta_value, "_try": true })|raw }}</td>
+                            <td>{{ event.created_at|date('Y-m-d H:i') }}</td>
+                            <td>
+                                <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'notification'|alink }}" href="{{ 'api/admin/notification/delete'|link({ 'id': event.id }) }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#delete" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% include "partial_pagination.html.twig" with {'list': events, 'url':'notification'} %}
 
-            {{ mf.table_search }}
-            <table class="tableStatic wide">
-                <thead>
-                    <tr>
-                        <td>{{ 'Message'|trans }}</td>
-                        <td>{{ 'Date'|trans }}</td>
-                        <td style="width: 5%">&nbsp;</td>
-                    </tr>
-                </thead>
-
-                <tbody>
-                {% set events = admin.notification_get_list({ "per_page": 10, "page": request.page }|merge(request)) %}
-                {% for i, event in events.list %}
-                <tr>
-                    <td>{{ admin.system_string_render({ "_tpl": event.meta_value, "_try": true })|raw }}</td>
-                    <td>{{ event.created_at|date('Y-m-d H:i') }}</td>
-                    <td class="actions">
-                        <a class="bb-button btn14 bb-rm-tr api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'activity'|alink }}" href="{{ 'api/admin/notification/delete'|link({ 'id': event.id }) }}"><img src="assets/icons/delete.svg" alt=""></a>
-                    </td>
-                </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="6">
-                            {{ 'The list is empty'|trans }}
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            
-            {% include "partial_pagination.html.twig" with {'list': events, 'url':'notification'} %}
-            
-            <div class="body">
-                <a href="{{ 'api/admin/notification/delete_all'|link }}"  title="" class="btnIconLeft mr10 api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1"><img src="assets/icons/delete.svg" alt="" class="icon"><span>{{ 'Delete all messages'|trans }}</span></a>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="btn btn-danger api-link" href="{{ 'api/admin/notification/delete_all'|link }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                        <svg class="icon">
+                            <use xlink:href="#delete"></use>
+                        </svg>
+                        {{ 'Delete all'|trans }}
+                    </a>
+                </div>
             </div>
-
-        </div>
         
-        <div class="tab_content nopadding" id="tab-new">
-            <form method="post" action="{{ 'api/admin/notification/add'|link }}" class="mainForm api-form" data-api-reload="1">
-                <fieldset>
-                    <div class="rowElem noborder">
-                        <div class="formBottom">
-                            <textarea cols="5" rows="10" name="message" placeholder="{{ 'Add note or todo task'|trans }}" ></textarea>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
 
-                     <input type="submit" value="{{ 'Add note'|trans }}" class="greyishBtn submitForm" />
-                </fieldset>
-            </form>
+        <div class="tab-pane fade" id="tab-new-note" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'api/admin/notification/add'|link }}" class="api-form" data-api-reload="1">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Note'|trans }}:</label>
+                        <div class="col">
+                            <textarea class="form-control" name="message" rows="5" rows="10" placeholder="{{ 'Add note or todo task'|trans }}" required></textarea>
+                        </div>
+                    </div>
+                    <input type="submit" value="{{ 'Add note'|trans }}" class="btn btn-primary">
+                </form>
+            </div>
         </div>
     </div>
 </div>
