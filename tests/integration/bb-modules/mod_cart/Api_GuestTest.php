@@ -197,6 +197,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $this->assertTrue($bool);
     }
     
+    /* @TODO: Handle tests for external modules better
     public function testAddSolusvmProduct()
     {
         $this->api_guest->cart_reset();
@@ -213,6 +214,7 @@ class Box_Mod_Cart_Api_GuestTest extends BBDbApiTestCase
         $bool = $this->api_guest->cart_add_item($data);
         $this->assertTrue($bool);
     }
+    */
 
     public function testAddResellerHostingProduct()
     {
