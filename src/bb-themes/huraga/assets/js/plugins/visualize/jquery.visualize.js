@@ -112,7 +112,7 @@ $.fn.visualize = function(options, container){
 						tableCords: [i,j]
 					} );
 				});
-			};
+			}
 		}
 		
 	
@@ -671,7 +671,7 @@ $.fn.visualize = function(options, container){
 					.appendTo(newKey);
 			});
 			newKey.appendTo(infoContain);
-		};		
+		}		
 		
 		// init interaction
 		if(o.interaction) {

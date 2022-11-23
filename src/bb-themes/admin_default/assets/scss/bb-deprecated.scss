@@ -40,7 +40,7 @@ div.help blockquote {
 }
 
 .tableStatic thead th {
-    padding: 3px 0 2px 0;
+    padding: 3px 0 2px;
     text-align: center;
     border-left: 1px solid #D5D5D5;
     background: #EFEFEF url(../../images/leftNavBg.png) repeat-x;
@@ -234,7 +234,7 @@ div.bull.task.pending_payment {
     font-size: 13px;
     font-weight: bold;
     color: #444;
-    padding: 5px 0 5px 0;
+    padding: 5px 0;
 }
 
 #theme-settings table {
@@ -299,7 +299,6 @@ div.bull.task.pending_payment {
 }
 
 .sp-boxbilling .sp-preview {
-    margin: 0px !important;
     border: 0px solid white !important;
     margin: 0px !important;
     width: 17px !important;

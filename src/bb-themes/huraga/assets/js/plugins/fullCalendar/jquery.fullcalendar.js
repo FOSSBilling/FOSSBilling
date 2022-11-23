@@ -1549,7 +1549,7 @@ function formatDates(date1, date2, format, options) {
 		}
 	}
 	return res;
-};
+}
 
 
 var dateFormatters = {

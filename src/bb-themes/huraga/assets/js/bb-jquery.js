@@ -262,7 +262,7 @@ jQuery(function ($) {
 
     if(jQuery().tipsy) {
         $('a.show-tip').tipsy({fade: true, delayIn: 500});
-    };
+    }
 
     $("li.language_selector").bind('click', function(){
         bb.cookieCreate('BBLANG', $(this).attr('data-language-code'), 7);

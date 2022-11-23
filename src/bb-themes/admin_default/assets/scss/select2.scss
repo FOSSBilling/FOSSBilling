@@ -4,7 +4,6 @@ Version: 3.5.2 Timestamp: Sat Nov  1 14:43:36 EDT 2014
 .select2-container {
     margin: 0;
     position: relative;
-    display: inline-block;
     /* inline-block for ie7 */
     zoom: 1;
     *display: inline;
@@ -49,8 +48,6 @@ Version: 3.5.2 Timestamp: Sat Nov  1 14:43:36 EDT 2014
               user-select: none;
 
     background-color: #fff;
-    background-image: -webkit-gradient(linear, left bottom, left top, color-stop(0, #eee), color-stop(0.5, #fff));
-    background-image: -webkit-linear-gradient(center bottom, #eee 0%, #fff 50%);
     background-image: -moz-linear-gradient(center bottom, #eee 0%, #fff 50%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr = '#ffffff', endColorstr = '#eeeeee', GradientType = 0);
     background-image: linear-gradient(to top, #eee 0%, #fff 50%);
@@ -64,9 +61,6 @@ html[dir="rtl"] .select2-container .select2-choice {
     border-bottom-color: #aaa;
 
     border-radius: 0 0 4px 4px;
-
-    background-image: -webkit-gradient(linear, left bottom, left top, color-stop(0, #eee), color-stop(0.9, #fff));
-    background-image: -webkit-linear-gradient(center bottom, #eee 0%, #fff 90%);
     background-image: -moz-linear-gradient(center bottom, #eee 0%, #fff 90%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#eeeeee', GradientType=0);
     background-image: linear-gradient(to bottom, #eee 0%, #fff 90%);
@@ -198,8 +192,6 @@ html[dir="rtl"] .select2-container .select2-choice > .select2-chosen {
     background-clip: padding-box;
 
     background: #ccc;
-    background-image: -webkit-gradient(linear, left bottom, left top, color-stop(0, #ccc), color-stop(0.6, #eee));
-    background-image: -webkit-linear-gradient(center bottom, #ccc 0%, #eee 60%);
     background-image: -moz-linear-gradient(center bottom, #ccc 0%, #eee 60%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr = '#eeeeee', endColorstr = '#cccccc', GradientType = 0);
     background-image: linear-gradient(to top, #ccc 0%, #eee 60%);
@@ -303,8 +295,6 @@ html[dir="rtl"] .select2-search input {
     border-bottom-right-radius: 0;
 
     background-color: #eee;
-    background-image: -webkit-gradient(linear, left bottom, left top, color-stop(0, #fff), color-stop(0.5, #eee));
-    background-image: -webkit-linear-gradient(center bottom, #fff 0%, #eee 50%);
     background-image: -moz-linear-gradient(center bottom, #fff 0%, #eee 50%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#eeeeee', endColorstr='#ffffff', GradientType=0);
     background-image: linear-gradient(to top, #fff 0%, #eee 50%);
@@ -314,9 +304,6 @@ html[dir="rtl"] .select2-search input {
 .select2-dropdown-open.select2-drop-above .select2-choices {
     border: 1px solid #5897fb;
     border-top-color: transparent;
-
-    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #fff), color-stop(0.5, #eee));
-    background-image: -webkit-linear-gradient(center top, #fff 0%, #eee 50%);
     background-image: -moz-linear-gradient(center top, #fff 0%, #eee 50%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#eeeeee', endColorstr='#ffffff', GradientType=0);
     background-image: linear-gradient(to bottom, #fff 0%, #eee 50%);
@@ -508,7 +495,7 @@ html[dir="rtl"] .select2-container-multi .select2-choices {
 }
 
 .select2-locked {
-  padding: 3px 5px 3px 5px !important;
+  padding: 3px 5px !important;
 }
 
 .select2-container-multi .select2-choices {
@@ -642,7 +629,7 @@ html[dir="rtl"] .select2-container-multi .select2-search-choice-close {
 }
 
 .select2-container-multi.select2-container-disabled .select2-choices .select2-search-choice {
-    padding: 3px 5px 3px 5px;
+    padding: 3px 5px;
     border: 1px solid #ddd;
     background-image: none;
     background-color: #f4f4f4;
