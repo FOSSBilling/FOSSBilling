@@ -37,7 +37,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get list of extensions from extensions.boxbilling.org
+     * Get list of extensions from extensions.fossbilling.org
      * which can be installed on current version of FOSSBilling.
      *
      * @param string $type - mod, gateway ...
@@ -46,9 +46,6 @@ class Admin extends \Api_Abstract
      */
     public function get_latest($data)
     {
-        // @todo enable when extensions are available
-        return [];
-        /*
         $type = $this->di['array_get']($data, 'type', null);
         try {
             $list = $this->di['extension']->getLatest($type);
@@ -56,7 +53,6 @@ class Admin extends \Api_Abstract
             $list = array();
         }
         return $list;
-        */
     }
 
     /**

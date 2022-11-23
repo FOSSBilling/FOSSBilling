@@ -18,20 +18,22 @@
         {% for extension in extensions %}
         <tr>
             <td>
-                <img src="{{ extension.icon_url }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;">
+                <img src="{{ extension.iconURL|default('assets/icons/cog.svg') }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;">
             </td>
             <td>
-                <a class="bb-button" href="{{ extension.project_url }}" target="_blank" title="View extension details">{{ extension.name|truncate(40) }} {{ extension.version }}</a>
-                <br/>by <a href="{{ extension.author_url }}" target="_blank">{{ extension.author }}</a>
+                <strong>{{ extension.name }}</strong> {{ extension.version }}<br>
+                <span>by <a href="{{ extension.author.URL }}" target="_blank">{{ extension.author.name }}</a></span>
             </td>
-            <td>{{ extension.description|truncate(150) }}</td>
-            <td class="actions">
-                <a class="bb-button btn14 api-link" data-api-confirm="By installing '{{ extension.name }}' you agree with terms and conditions. Install only extensions you trust. Continue?" data-api-reload="1" href="{{ 'api/admin/extension/install'|link ({ 'type': extension.type, 'id': extension.id }) }}" title="Install extension">
-                    <img src="images/icons/dark/cog.png" alt=""></a>
-                <a class="bb-button btn14" href="{{ extension.project_url }}" target="_blank" title="Details">
-                    <img src="images/icons/dark/globe.png" alt=""></a>
-                <a class="bb-button btn14" href="{{ extension.download_url }}" title="Download {{ extension.name }}">
-                    <img src="images/icons/dark/download.png" alt=""></a>
+            <td>
+                {{ extension.description|truncate(150) }}<br>
+                <a href="https://extensions.fossbilling.org/extension/{{ extension.id }}" target="_blank" title="Project details">{{ 'Learn more'|trans }}</a>
+            </td>
+            <td>
+                <a class="btn btn-icon api-link" data-api-confirm="By installing '{{ extension.name }}', you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong. Continue?" data-api-reload="1" href="{{ 'api/admin/extension/install'|link ({ 'type': extension.type, 'id': extension.id }) }}" title="Install extension">
+                    <svg class="icon">
+                        <use xlink:href="#download" />
+                    </svg>
+                </a>
             </td>
         </tr>
         {% else %}

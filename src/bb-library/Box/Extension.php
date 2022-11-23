@@ -55,7 +55,7 @@
             $params['return'] = 'manifest';
             $params['type'] = $type;
             $params['id'] = $id;
-            return $this->_request('guest/extension/get', $params);
+            return $this->_request('extension/' . $params['id'], $params);
         }
 
         public function getLatestExtensionVersion($id, $type = Box_Extension::TYPE_MOD)
@@ -63,7 +63,7 @@
             $params = array();
             $params['type'] = $type;
             $params['id'] = $id;
-            return $this->_request('guest/extension/version', $params);
+            return $this->_request('extension/' . $params['id'] . '/version');
         }
 
         public function getLatest($type = null)
@@ -73,7 +73,7 @@
             if(!empty($type)) {
                 $params['type'] = $type;
             }
-            return $this->_request('guest/extension/search', $params);
+            return $this->_request('list', $params);
         }
 
         /**
