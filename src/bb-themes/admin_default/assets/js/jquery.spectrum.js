@@ -111,7 +111,7 @@
             html.push('<span title="' + tiny.toHexString() + '" data-color="' + tiny.toRgbString() + '" class="' + c + '"><span class="sp-thumb-inner" style="' + swatchStyle + ';" /></span>');
         }
         return "<div class='sp-cf " + className + "'>" + html.join('') + "</div>";
-    };
+    }
 
     function hideAll() {
         for (var i = 0; i < spectrums.length; i++) {
@@ -285,7 +285,7 @@
                 move();
             }, dragStart, dragStop);
 
-            if (!!initialColor) {
+            if (initialColor) {
                 set(initialColor);
 
                 // In case color was black - update the preview UI and set the format

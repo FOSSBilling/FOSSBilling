@@ -366,13 +366,13 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 
 .ui-dialog { position: absolute; padding: .2em; width: 300px; overflow: hidden; }
 .ui-dialog .ui-dialog-titlebar { position: relative;  }
-.ui-dialog .ui-dialog-title { float: left; height: 38px; font-size: 16px; padding: 0 12px 0 12px; line-height: 38px; }
-.ui-dialog .ui-dialog-titlebar-close { position: absolute; right: 6px; top: 50%; width: 19px; margin: -10px 0 0 0; padding: 1px; height: 18px; }
+.ui-dialog .ui-dialog-title { float: left; height: 38px; font-size: 16px; padding: 0 12px; line-height: 38px; }
+.ui-dialog .ui-dialog-titlebar-close { position: absolute; right: 6px; top: 50%; width: 19px; margin: -10px 0 0; padding: 1px; height: 18px; }
 .ui-dialog .ui-dialog-titlebar-close span { display: block; margin: 1px; }
 .ui-dialog .ui-dialog-titlebar-close:hover, .ui-dialog .ui-dialog-titlebar-close:focus { padding: 1px; background: #fafafa; }
 .ui-dialog .ui-dialog-content { position: relative; border: 0; padding: .5em 1em; background: none; overflow: auto; zoom: 1; }
 .ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset { float: right; }
-.ui-dialog .ui-dialog-buttonpane button { font-size: 10px; font-weight: bold; text-transform: uppercase; padding: 3px 12px 4px 12px; cursor: pointer; font-family: Arial, Helvetica, sans-serif; border: 1px solid #d5d5d5; color: #525252; margin: 5px; }
+.ui-dialog .ui-dialog-buttonpane button { font-size: 10px; font-weight: bold; text-transform: uppercase; padding: 3px 12px 4px; cursor: pointer; font-family: Arial, Helvetica, sans-serif; border: 1px solid #d5d5d5; color: #525252; margin: 5px; }
 .ui-dialog .ui-resizable-se { width: 14px; height: 14px; right: 3px; bottom: 3px; }
 .ui-draggable .ui-dialog-titlebar { cursor: move; }
 
@@ -381,7 +381,7 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 /* ===== UI Slider ===== */
 
 .ui-slider { position: relative; text-align: left; }
-.ui-slider .ui-slider-handle { position: absolute; z-index: 2; width: 16px; height: 16px; cursor: default; background: url(../../images/ui/handle.png) no-repeat; border: none; cursor: pointer; }
+.ui-slider .ui-slider-handle { position: absolute; z-index: 2; width: 16px; height: 16px; background: url(../../images/ui/handle.png) no-repeat; border: none; cursor: pointer; }
 .ui-slider .ui-slider-range { position: absolute; z-index: 1; font-size: .7em; display: block; border: 0; background: url(../../images/ui/sliderOverlay.png) repeat-x; -moz-border-radius: 4px; -webkit-border-radius: 4px; -khtml-border-radius: 4px; border-radius: 4px; }
 
 .ui-slider-horizontal { height: 6px; background: url(../../images/ui/sliderBg.png) repeat-x; clear: both; margin-top: 10px; }
@@ -436,8 +436,8 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 .ui-datepicker th { padding: .7em .3em; text-align: center; font-weight: bold; border: 0;  }
 .ui-datepicker td { border: 0; padding: 1px; }
 .ui-datepicker td span, .ui-datepicker td a { display: block; padding: .2em; text-align: right; text-decoration: none; }
-.ui-datepicker .ui-datepicker-buttonpane { background-image: none; margin: .7em 0 0 0; padding:0 .2em; border-left: 0; border-right: 0; border-bottom: 0; }
-.ui-datepicker .ui-datepicker-buttonpane button { float: right; margin: .5em .2em .4em; cursor: pointer; padding: .2em .6em .3em .6em; width:auto; overflow:visible; }
+.ui-datepicker .ui-datepicker-buttonpane { background-image: none; margin: .7em 0 0; padding:0 .2em; border-left: 0; border-right: 0; border-bottom: 0; }
+.ui-datepicker .ui-datepicker-buttonpane button { float: right; margin: .5em .2em .4em; cursor: pointer; padding: .2em .6em .3em; width:auto; overflow:visible; }
 .ui-datepicker .ui-datepicker-buttonpane button.ui-datepicker-current { float:left; }
 
 /* with multiple calendars */

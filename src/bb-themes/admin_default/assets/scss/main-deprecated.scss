@@ -33,7 +33,7 @@ label.error {
     width: 100%;
     white-space: nowrap;
     float: none;
-    margin: 8px 0 -8px 0;
+    margin: 8px 0 -8px;
     padding: 0 !important;
 }
 
@@ -80,10 +80,10 @@ div.tagsinput span.tag {
     border: 1px solid #a5d24a;
     display: block;
     float: left;
-    padding: 3px 8px 2px 8px;
+    padding: 3px 8px 2px;
     background: #cde69c;
     color: #638421;
-    margin: 5px 5px 5px 5px;
+    margin: 5px;
 }
 
 div.tagsinput span.tag a {
@@ -554,7 +554,7 @@ button,
 .btn55 {
     background: #efefef url(../../images/middlebg.png) repeat-x 0 0;
     border: 1px solid #d5d5d5;
-    padding: 8px 6px 2px 6px;
+    padding: 8px 6px 2px;
     display: inline-block;
 }
 
@@ -568,7 +568,7 @@ button,
 
 .btn55 span {
     display: block;
-    padding: 5px 5px 0 5px;
+    padding: 5px 5px 0;
     color: #595858;
 }
 
@@ -795,7 +795,7 @@ button,
     top: 35px;
     margin-top: 0px;
     background: #2f2f2f;
-    padding: 0 1px 1px 1px;
+    padding: 0 1px 1px;
     border: 1px solid #1d1d1d;
     z-index: 100;
 }
@@ -905,7 +905,7 @@ button,
 
 .middleNav ul li a span {
     display: block;
-    padding: 34px 10px 0 10px;
+    padding: 34px 10px 0;
 }
 
 .middleNav ul li a span i {
@@ -1317,7 +1317,7 @@ ul.sub li ul li {
 }
 
 .userWidget {
-    padding: 6px 12px 0 12px;
+    padding: 6px 12px 0;
     display: block;
     float: left;
 }
@@ -1352,14 +1352,14 @@ ul.sub li ul li {
 .pics {
     padding-bottom: 14px;
     margin: auto;
-    padding: 0 6px 14px 6px;
+    padding: 0 6px 14px;
     text-align: center;
 }
 
 .pics ul li {
     display: inline-block;
     height: 102px;
-    margin: 16px 6px 0 6px;
+    margin: 16px 6px 0;
     border: 1px solid #d5d5d5;
     position: relative;
 }
@@ -1538,7 +1538,7 @@ a.count1,
 /* Support ticket and Latest orders */
 .supTicket {
     background: url(../../images/linesSep.png) 0 0 repeat-x;
-    padding: 12px 12px 15px 12px;
+    padding: 12px 12px 15px;
 }
 
 .supTicket .issueType {
@@ -1742,7 +1742,7 @@ a.count1,
 .bars {
     height: 220px;
     z-index: 90;
-    margin: 10px 0 0 0;
+    margin: 10px 0 0;
     max-width: 100%;
 }
 
@@ -1783,7 +1783,7 @@ a.count1,
 /* ===== Table ===== */
 
 .tableStatic thead td {
-    padding: 3px 0 2px 0;
+    padding: 3px 0 2px;
     text-align: center;
     border-left: 1px solid #D5D5D5;
     background: #efefef url(../../images/leftNavBg.png) repeat-x;
@@ -1979,14 +1979,13 @@ a.count1,
 
 .submitForm {
     float: right;
-    margin: 1px 16px 22px 16px;
+    margin: 1px 16px 22px;
 }
 
 
 /* Select */
 
 div.selector {
-    position: relative;
     height: 26px;
     background: url(../../images/chosenSelect.png) repeat-x;
     float: left;
@@ -2135,7 +2134,6 @@ div.uploader span.action {
     height: 22px;
     font-size: 11px;
     font-weight: bold;
-    cursor: pointer;
     float: right;
     text-indent: -9999px;
     display: inline;
@@ -2179,8 +2177,6 @@ div.uploader input {
 }
 
 .uploader {
-    display: -moz-inline-box;
-    display: inline-block;
     vertical-align: middle;
     zoom: 1;
     *display: inline;
@@ -2281,7 +2277,7 @@ div.uploader input {
 }
 
 .tipsy-inner {
-    padding: 2px 8px 2px 8px;
+    padding: 2px 8px;
     background-color: black;
     color: white;
     max-width: 200px;
@@ -2316,7 +2312,7 @@ div.uploader input {
 .nNote {
     cursor: pointer;
     clear: both;
-    margin: 20px 0px 20px 0px;
+    margin: 20px 0px;
 }
 
 .nNote strong {
@@ -2655,7 +2651,7 @@ ul.listData {
 
 ul.listData li {
     display: inline-block;
-    padding: 0 6px 1px 6px !important;
+    padding: 0 6px 1px !important;
     border: none !important;
     margin-left: 6px
 }
@@ -2949,7 +2945,7 @@ ul.listData li {
     width: 160px;
     font-size: 11px;
     border: 1px solid #000;
-    padding: 4px 10px 4px 10px;
+    padding: 4px 10px;
     border-radius: 2px;
     -moz-border-radius: 2px;
     -webkit-border-radius: 2px;
@@ -2980,7 +2976,6 @@ ul.listData li {
 }
 
 .formError .formErrorArrow div {
-    font-size: 0px;
     height: 1px;
     background: #202020;
     margin: 0 auto;
@@ -3113,7 +3108,7 @@ ul.listData li {
     height: 9px;
     overflow: hidden;
     background: url(../../images/colorPicker/colorpicker_indic.gif) left top;
-    margin: -4px 0 0 0;
+    margin: -4px 0 0;
     left: 0px;
 }
 
@@ -3376,7 +3371,7 @@ ul.listData li {
 
 #popup_panel {
     text-align: center;
-    margin: 1em 0em 0em 0em;
+    margin: 1em 0em 0em;
 }
 
 #popup_message input[type=text] {
@@ -3432,7 +3427,7 @@ ul.listData li {
 
 #suspend_popup_panel {
     text-align: center;
-    margin: 1em 0em 0em 0em;
+    margin: 1em 0em 0em;
 }
 
 #suspend_popup_prompt {
@@ -3485,7 +3480,7 @@ ul.listData li {
 
 #help_popup_panel {
     text-align: center;
-    margin: 1em 0em 0em 0em;
+    margin: 1em 0em 0em;
 }
 
 #help_popup_prompt {
@@ -3503,7 +3498,7 @@ ul.listData li {
 
 .errorPage {
     width: 370px;
-    margin: 100px auto 80px auto;
+    margin: 100px auto 80px;
     position: relative;
 }
 
@@ -3600,7 +3595,7 @@ a.plupload_disabled:hover {
 }
 
 .plupload_disabled span {
-    padding: 5px 13px 6px 13px;
+    padding: 5px 13px 6px;
 }
 
 .plupload_add {
@@ -3941,7 +3936,7 @@ li.plupload_droptext {
 .swMain .buttonNext {
     display: block;
     float: right;
-    margin: 8px 12px 0 12px;
+    margin: 8px 12px 0;
     padding: 6px 12px;
 }
 
@@ -3956,7 +3951,7 @@ li.plupload_droptext {
 .swMain .buttonPrevious {
     display: block;
     float: right;
-    margin: 8px 0px 0 0px;
+    margin: 8px 0px 0;
     padding: 6px 12px;
 }
 
@@ -4006,7 +4001,7 @@ li.plupload_droptext {
     float: right;
     margin: 0 0 0 5px;
     outline-style: none;
-    padding: 0 2px 0 2px;
+    padding: 0 2px;
     position: relative;
     text-align: center;
     text-decoration: none;
@@ -4199,7 +4194,6 @@ li.plupload_droptext {
 
 .chzn-container {
     position: relative;
-    display: inline-block;
     zoom: 1;
     *display: inline;
 }
@@ -4349,7 +4343,7 @@ li.plupload_droptext {
     border: 0 !important;
     font-family: sans-serif;
     font-size: 12px !important;
-    padding: 11px 4px 10px 4px !important;
+    padding: 11px 4px 10px !important;
     margin: 0;
     outline: 0;
     box-shadow: none !important;
@@ -4530,7 +4524,7 @@ li.plupload_droptext {
     .leftNav ul li {
         width: 49px;
         display: inline-block;
-        margin: 0 0 4px 0;
+        margin: 0 0 4px;
         position: static;
     }
 
@@ -4665,7 +4659,7 @@ li.plupload_droptext {
     }
 
     .userNav ul li img {
-        padding: 13px 14px 11px 14px;
+        padding: 13px 14px 11px;
         margin: 0;
     }
 
@@ -4685,7 +4679,7 @@ li.plupload_droptext {
     .rowElem>label {
         width: 100%;
         float: none;
-        padding: 8px 0 6px 0;
+        padding: 8px 0 6px;
     }
 
     .formRight {
@@ -4896,7 +4890,7 @@ li.plupload_droptext {
     }
 
     .plupload_disabled span {
-        padding: 5px 8px 6px 8px;
+        padding: 5px 8px 6px;
     }
 
     .plupload_add span {
@@ -4973,7 +4967,7 @@ li.plupload_droptext {
     ul.listData {
         float: left;
         text-align: center;
-        margin: 3px 0 5px 0;
+        margin: 3px 0 5px;
         font-size: 11px;
     }
 
@@ -5016,7 +5010,7 @@ li.plupload_droptext {
 
     .dataTables_length {
         float: none;
-        margin: 6px auto 0 auto;
+        margin: 6px auto 0;
         width: 140px;
     }
 

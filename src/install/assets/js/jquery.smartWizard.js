@@ -364,7 +364,7 @@ function SmartWizard(target, options) {
     }
 
     _init(this);
-};
+}
 
 
 

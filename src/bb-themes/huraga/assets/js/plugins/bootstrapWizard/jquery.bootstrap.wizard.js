@@ -8,7 +8,7 @@
  * http://www.gnu.org/licenses/gpl.html
  * Authors: Vadim Vincent Gabriel (http://vadimg.com), Jason Gill (www.gilluminate.com)
  */
-;(function($) {
+(function($) {
 var bootstrapWizardCreate = function(element, options) {
 	var element = $(element);
 	var obj = this;
