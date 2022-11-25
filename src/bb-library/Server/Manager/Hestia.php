@@ -181,7 +181,7 @@ class Server_Manager_Hestia extends Server_Manager
             'arg5' => trim($client->getFullName()),
         ];
         // Make request and create user
-        $result = $this->_makeRequest($postvars);
+        $result1 = $this->_makeRequest($postvars);
         if ('0' === $result) {
             // Create Domain Prepare POST query
             $postvars2 = [
