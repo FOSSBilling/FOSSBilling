@@ -184,7 +184,7 @@ class Server_Manager_Vesta extends Server_Manager
             'arg6' => trim($lastname),
         ];
         // Make request and create user
-        $result = $this->_makeRequest($postvars);
+        $result1 = $this->_makeRequest($postvars);
         if ('0' === $result) {
 // Create Domain Prepare POST query
             $postvars2 = [
