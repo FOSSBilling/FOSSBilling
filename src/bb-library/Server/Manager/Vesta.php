@@ -185,7 +185,7 @@ class Server_Manager_Vesta extends Server_Manager
         ];
         // Make request and create user
         $result1 = $this->_makeRequest($postvars);
-        if ('0' === $result) {
+        if ('0' === $result1) {
 // Create Domain Prepare POST query
             $postvars2 = [
                 'returncode' => 'yes',
