@@ -246,11 +246,6 @@ class Admin extends \Api_Abstract
         $service = $this->getService();
         $service->downloadAndExtract($data['type'], $data['id']);
 
-        try {
-            $this->activate($data);
-        } catch (\Exception $e) {
-            error_log($e->getMessage());
-        }
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInstallExtension', 'params' => $data]);
 
         return [
