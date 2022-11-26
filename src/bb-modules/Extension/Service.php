@@ -438,7 +438,7 @@ class Service implements InjectionAwareInterface
         $zip = BB_PATH_CACHE . '/' . md5(uniqid()) . '.zip';
         
         // Create a temporary directory to extract the extension
-        mkdir($extracted, 0644, true);
+        mkdir($extracted, 0755, true);
 
         // Download the extension archive and save it to the cache folder
         $resource = \GuzzleHttp\Psr7\Utils::tryFopen($zip, 'w');
@@ -451,7 +451,7 @@ class Service implements InjectionAwareInterface
         // Install by type
         switch ($type) {
             case \Box_Extension::TYPE_MOD:
-                $destination = BB_PATH_MODS . '/mod_' . $id;
+                $destination = BB_PATH_MODS . '/' . $id;
                 if ($this->di['tools']->fileExists($destination)) {
                     throw new \Box_Exception('Module seems to be already installed.', null, 436);
                 }
