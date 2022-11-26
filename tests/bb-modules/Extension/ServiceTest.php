@@ -600,7 +600,7 @@ class ServiceTest extends \BBTestCase {
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->disableOriginalConstructor()->getMock();
+        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
 
@@ -620,7 +620,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['guzzle_client'] =  $di->protect(function ($name) use($guzzleMock) { return $guzzleMock;});
+        $di['guzzle_client'] = $guzzleMock;
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
@@ -1091,4 +1091,3 @@ class ServiceTest extends \BBTestCase {
     }
 
 }
- 
