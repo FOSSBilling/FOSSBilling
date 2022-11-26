@@ -636,24 +636,18 @@ class ServiceTest extends \BBTestCase {
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
-        $curlMock->expects($this->atLeastOnce())
-            ->method('downloadTo');
+        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
+        $guzzleMock->expects($this->atLeastOnce())
+            ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('open')
-            ->will($this->returnValue(TRUE));
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('extractTo');
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('close');
-
+            ->method('decompress');
+        
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['curl'] =  $di->protect(function ($name) use($curlMock) { return $curlMock;});
-        $di['zip_archive'] = $zipArchiveMock;
-
+        $di['guzzle_client'] = $guzzleMock;
+        
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionMessage('Extension does not support auto-install feature. Extension must be installed manually');
@@ -668,20 +662,13 @@ class ServiceTest extends \BBTestCase {
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
-        $curlMock->expects($this->atLeastOnce())
-            ->method('downloadTo');
+        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
+        $guzzleMock->expects($this->atLeastOnce())
+            ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('open')
-            ->will($this->returnValue(TRUE));
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('extractTo');
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('close');
-
-
+            ->method('decompress');
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -697,8 +684,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['curl'] =  $di->protect(function ($name) use($curlMock) { return $curlMock;});
-        $di['zip_archive'] = $zipArchiveMock;
+        $di['guzzle_client'] = $guzzleMock;
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
@@ -716,20 +702,13 @@ class ServiceTest extends \BBTestCase {
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
-        $curlMock->expects($this->atLeastOnce())
-            ->method('downloadTo');
+        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
+        $guzzleMock->expects($this->atLeastOnce())
+            ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('open')
-            ->will($this->returnValue(TRUE));
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('extractTo');
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('close');
-
-
+            ->method('decompress');
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -741,8 +720,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['curl'] =  $di->protect(function ($name) use($curlMock) { return $curlMock;});
-        $di['zip_archive'] = $zipArchiveMock;
+        $di['guzzle_client'] = $guzzleMock;
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
@@ -760,20 +738,13 @@ class ServiceTest extends \BBTestCase {
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
-        $curlMock->expects($this->atLeastOnce())
-            ->method('downloadTo');
+        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
+        $guzzleMock->expects($this->atLeastOnce())
+            ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('open')
-            ->will($this->returnValue(TRUE));
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('extractTo');
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('close');
-
-
+            ->method('decompress');
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -785,8 +756,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['curl'] =  $di->protect(function ($name) use($curlMock) { return $curlMock;});
-        $di['zip_archive'] = $zipArchiveMock;
+        $di['guzzle_mock'] = $guzzleMock;
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
@@ -804,20 +774,13 @@ class ServiceTest extends \BBTestCase {
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
-        $curlMock->expects($this->atLeastOnce())
-            ->method('downloadTo');
+        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
+        $guzzleMock->expects($this->atLeastOnce())
+            ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('open')
-            ->will($this->returnValue(TRUE));
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('extractTo');
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('close');
-
-
+            ->method('decompress');
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -826,8 +789,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['curl'] =  $di->protect(function ($name) use($curlMock) { return $curlMock;});
-        $di['zip_archive'] = $zipArchiveMock;
+        $di['guzzle_client'] = $guzzleMock;
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
@@ -845,19 +807,17 @@ class ServiceTest extends \BBTestCase {
             ->method('getExtension')
             ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
 
-        $curlMock = $this->getMockBuilder(\Box_Curl::class)->disableOriginalConstructor()->getMock();
-        $curlMock->expects($this->atLeastOnce())
-            ->method('downloadTo');
+        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
+        $guzzleMock->expects($this->atLeastOnce())
+            ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\ZipArchive::class)->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('open')
-            ->will($this->returnValue(false));
+            ->method('decompress');
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['curl'] =  $di->protect(function ($name) use($curlMock) { return $curlMock;});
-        $di['zip_archive'] = $zipArchiveMock;
+        $di['guzzle_client'] = $guzzleMock;
 
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
