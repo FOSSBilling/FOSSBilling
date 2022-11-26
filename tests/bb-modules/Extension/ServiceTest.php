@@ -690,7 +690,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionCode(440);
-        $this->expectExceptionMessage('Extension can not be moved. Make sure your server write permissions to bb-locale folder.');
+        $this->expectExceptionMessage('Locale files can not be moved. Make sure your server allows you to write to the bb-locale folder');
         $this->service->downloadAndExtract('translation', 'extensionId', true);
     }
 
@@ -726,7 +726,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionMessage(439);
-        $this->expectExceptionMessage('Extension can not be moved. Make sure your server write permissions to bb-themes folder.');
+        $this->expectExceptionMessage('Theme can not be moved. Make sure your server allows you to write to the bb-themes folder.');
         $this->service->downloadAndExtract('theme', 'extensionId', true);
     }
 
@@ -795,7 +795,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionCode(436);
-        $this->expectExceptionMessage('Module already installed.');
+        $this->expectExceptionMessage('Module seems to be already installed.');
         $this->service->downloadAndExtract('mod', 'extensionId', true);
     }
 
@@ -815,9 +815,15 @@ class ServiceTest extends \BBTestCase {
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('decompress');
 
+        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
+        $toolsMock->expects($this->atLeastOnce())
+            ->method('fileExists')
+            ->will($this->returnValue(true));
+
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
         $di['guzzle_client'] = $guzzleMock;
+        $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
