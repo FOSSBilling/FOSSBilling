@@ -604,7 +604,7 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('decompress');
 
@@ -640,7 +640,7 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('decompress');
         
@@ -666,7 +666,7 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('decompress');
 
@@ -706,7 +706,7 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('decompress');
 
@@ -742,7 +742,7 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('decompress');
 
@@ -778,7 +778,7 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('decompress');
 
@@ -811,7 +811,7 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('decompress');
 
