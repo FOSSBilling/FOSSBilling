@@ -604,10 +604,6 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('decompress');
-
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
@@ -639,10 +635,6 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
-
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('decompress');
         
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
@@ -665,10 +657,6 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
-
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('decompress');
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
@@ -706,10 +694,6 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('decompress');
-
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
@@ -742,10 +726,6 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('decompress');
-
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
@@ -762,7 +742,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionCode(437);
-        $this->expectExceptionMessage('Extension can not be moved. Make sure your server write permissions to bb-modules folder.');
+        $this->expectExceptionMessage('Extension can not be moved. Make sure your server allows you to write to the bb-modules folder.');
         $this->service->downloadAndExtract('mod', 'extensionId', true);
     }
 
@@ -778,10 +758,6 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('decompress');
-
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
             ->method('fileExists')
@@ -796,38 +772,6 @@ class ServiceTest extends \BBTestCase {
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionCode(436);
         $this->expectExceptionMessage('Module seems to be already installed.');
-        $this->service->downloadAndExtract('mod', 'extensionId', true);
-    }
-
-    public function testdownloadAndExtractExceptionExtract()
-    {
-        $extensionMock = $this->getMockBuilder(\Box_Extension::class)->getMock();
-
-        $extensionMock->expects($this->atLeastOnce())
-            ->method('getExtension')
-            ->will($this->returnValue(array('download_url' => 'www.boxbillig.com')));
-
-        $guzzleMock = $this->getMockBuilder(\GuzzleHttp\Client::class)->getMock();
-        $guzzleMock->expects($this->atLeastOnce())
-            ->method('request');
-
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
-        $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('decompress');
-
-        $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
-        $toolsMock->expects($this->atLeastOnce())
-            ->method('fileExists')
-            ->will($this->returnValue(true));
-
-        $di = new \Box_Di();
-        $di['extension'] = $extensionMock;
-        $di['guzzle_client'] = $guzzleMock;
-        $di['tools'] = $toolsMock;
-
-        $this->service->setDi($di);
-        $this->expectException(\Box_Exception::class);
-        $this->expectExceptionMessage('Could not extract extension zip file');
         $this->service->downloadAndExtract('mod', 'extensionId', true);
     }
 
