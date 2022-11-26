@@ -425,7 +425,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function downloadAndExtract($type, $id)
+    public function downloadAndExtract($type, $id, $runFromTest = false)
     {
         $ext = $this->di['extension'];
         $manifest = $ext->getExtension($id, $type);
@@ -446,7 +446,7 @@ class Service implements InjectionAwareInterface
 
         // Extract the archive
         $ff = new \Box_Zip($zip);
-        $ff->decompress($extracted);
+        $ff->decompress($extracted, $runFromTest);
 
         // Install by type
         switch ($type) {
