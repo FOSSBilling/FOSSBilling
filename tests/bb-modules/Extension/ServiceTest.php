@@ -604,7 +604,7 @@ class ServiceTest extends \BBTestCase {
         $guzzleMock->expects($this->atLeastOnce())
             ->method('request');
 
-        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->disableOriginalConstructor()->getMock();
+        $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
             ->method('decompress');
 
@@ -756,7 +756,7 @@ class ServiceTest extends \BBTestCase {
 
         $di = new \Box_Di();
         $di['extension'] = $extensionMock;
-        $di['guzzle_mock'] = $guzzleMock;
+        $di['guzzle_client'] = $guzzleMock;
         $di['tools'] = $toolsMock;
 
         $this->service->setDi($di);
