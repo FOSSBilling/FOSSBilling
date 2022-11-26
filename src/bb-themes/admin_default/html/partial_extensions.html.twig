@@ -18,7 +18,7 @@
         {% for extension in extensions %}
         <tr>
             <td>
-                <img src="{{ extension.iconURL|default('assets/icons/cog.svg') }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;">
+                <img src="{{ extension.icon_url|default('assets/icons/cog.svg') }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;">
             </td>
             <td>
                 <strong>{{ extension.name }}</strong> {{ extension.version }}<br>

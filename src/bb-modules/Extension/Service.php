@@ -430,7 +430,7 @@ class Service implements InjectionAwareInterface
         $ext = $this->di['extension'];
         $manifest = $ext->getExtension($id, $type);
 
-        if (!isset($manifest['downloadURL'])) {
+        if (!isset($manifest['download_url'])) {
             throw new \Exception('Invalid download URL for the extension');
         }
 
@@ -442,7 +442,7 @@ class Service implements InjectionAwareInterface
 
         // Download the extension archive and save it to the cache folder
         $resource = \GuzzleHttp\Psr7\Utils::tryFopen($zip, 'w');
-        $this->di['guzzle_client']->request('GET', $manifest['downloadURL'], ['sink' => $resource]);
+        $this->di['guzzle_client']->request('GET', $manifest['download_url'], ['sink' => $resource]);
 
         // Extract the archive
         $ff = new \Box_Zip($zip);
