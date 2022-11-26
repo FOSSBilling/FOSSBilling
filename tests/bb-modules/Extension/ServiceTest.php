@@ -606,7 +606,7 @@ class ServiceTest extends \BBTestCase {
 
         $zipArchiveMock = $this->getMockBuilder(\Box_Zip::class)->getMock();
         $zipArchiveMock->expects($this->atLeastOnce())
-            ->method('decompress')
+            ->method('decompress');
 
         $toolsMock = $this->getMockBuilder(\Box_tools::class)->getMock();
         $toolsMock->expects($this->atLeastOnce())
