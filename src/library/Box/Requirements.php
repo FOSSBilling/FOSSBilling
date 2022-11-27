@@ -53,7 +53,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
                 $this->_app_path . '/data/uploads',
             ),
             'writable_files' => array(
-                $this->_app_path . '/bb-config.php',
+                $this->_app_path . '/config.php',
             ),
         );
     }

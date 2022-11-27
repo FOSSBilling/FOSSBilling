@@ -145,7 +145,7 @@ $ cd fossbilling
 
 # If you would like to run Dockerized FOSSBilling on a different port,
 # Please note that FOSSBilling won't support SSL unless you use a proxy in front of it!
-# In that case, make sure to update ./src/bb-config.php and replace http://localhost/ with https://domain.com/
+# In that case, make sure to update ./src/config.php and replace http://localhost/ with https://domain.com/
 # Also update docker-compose.yaml - line 9
 # -3000:80 (For example, map port 80 to the port 3000)
 

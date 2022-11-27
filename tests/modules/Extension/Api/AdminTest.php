@@ -163,12 +163,12 @@ class AdminTest extends \BBTestCase {
 
         $this->api->setDi($di);
 
-        $currentConfig = include PATH_ROOT.'/bb-config.php';
+        $currentConfig = include PATH_ROOT.'/config.php';
 
         $result = $this->api->update_config();
         $this->assertTrue($result);
 
-        $newConfig = include PATH_ROOT.'/bb-config.php';
+        $newConfig = include PATH_ROOT.'/config.php';
         $this->assertEquals($currentConfig, $newConfig);
     }
 

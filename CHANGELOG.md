@@ -308,7 +308,7 @@ Release 2.9.10 (2012-09-10)
 
 * Search clients by company name in clients listing page
 * Ability to define staff member permissions
-* New parameter in bb-config.php file BB_LOCALE_TIME_FORMAT - to define localized time format
+* New parameter in config.php file BB_LOCALE_TIME_FORMAT - to define localized time format
 * Add: New filter to display translatable date with time: bb_datetime
 * Update: Search clients by company name in clients listing page
 * Fix: Use PDO::MYSQL_ATTR_USE_BUFFERED_QUERY for PDO connection

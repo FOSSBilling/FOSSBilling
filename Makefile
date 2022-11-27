@@ -48,7 +48,7 @@ install: start ## Install app after start
 	rm -rf ./src/install
 
 reinstall: ## Reinstall app
-	rm -rf ./src/bb-config.php
+	rm -rf ./src/config.php
 	make install
 
 test: start ## Run app tests
