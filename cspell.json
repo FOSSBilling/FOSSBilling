@@ -295,7 +295,12 @@
         "tailwindcss",
         "flexbox",
         "juoda",
-        "BOXSID"
+        "BOXSID",
+        "texgt",
+        "Domaincan",
+        "datagrid",
+        "buildmetadata",
+        "endfilter"
     ],
     "ignorePaths": [
         "tests/**",
