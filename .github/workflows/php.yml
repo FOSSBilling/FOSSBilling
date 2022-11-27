@@ -50,7 +50,7 @@ jobs:
       working-directory: ./src
     - name: Configure environment for Tests
       run: |
-        cp ./src/config-sample.php ./src/bb-config.php
+        cp ./src/config-sample.php ./src/config.php
         mkdir -p ./src/data/cache
         mkdir -p ./src/data/log
         echo > ./src/data/log/license.log

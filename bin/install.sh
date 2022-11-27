@@ -84,7 +84,7 @@ function change_folder_permissions() {
 # Create the configuration file
 function create_config() {
     print_info "Creating the configuration file..."
-    cp $PATH_PREFIX/src/config-sample.php $PATH_PREFIX/src/bb-config.php
+    cp $PATH_PREFIX/src/config-sample.php $PATH_PREFIX/src/config.php
     print_success "Created the configuration file."
     print_separator
 }
@@ -206,7 +206,7 @@ if [ ! -d "$PATH_PREFIX/src/install" ]; then
 fi
 
 # Check and delete the config file if it already exists
-if [ -f "$PATH_PREFIX/src/bb-config.php" ]; then
+if [ -f "$PATH_PREFIX/src/config.php" ]; then
     print_warning "The config file already exists. If FOSSBilling is already installed and you ran the script as a mistake, answer no to the next prompt to quit safely."
     print_header "To continue, the installer will need to delete the existing configuration file first.\nKeep in mind that you will lose your existing configuration if you have an active installation."
     echo # new line
@@ -219,7 +219,7 @@ if [ -f "$PATH_PREFIX/src/bb-config.php" ]; then
 
     echo # new line
 
-    rm -f $PATH_PREFIX/src/bb-config.php
+    rm -f $PATH_PREFIX/src/config.php
     print_success "The config file has been deleted."
 
     print_separator

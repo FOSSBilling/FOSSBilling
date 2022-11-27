@@ -474,7 +474,7 @@ class Box_Tools
     }
 
     public function updateConfig(){
-        $configPath = PATH_ROOT.'/bb-config.php';
+        $configPath = PATH_ROOT.'/config.php';
         $currentConfig = include $configPath;
 
         if(!is_array($currentConfig)){

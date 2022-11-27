@@ -54,7 +54,7 @@ const PATH_LICENSE = PATH_ROOT . '/LICENSE';
 const PATH_SQL = PATH_ROOT . '/install/sql/structure.sql';
 const PATH_SQL_DATA = PATH_ROOT . '/install/sql/content.sql';
 const PATH_INSTALL = PATH_ROOT . '/install';
-const PATH_CONFIG = PATH_ROOT . '/bb-config.php';
+const PATH_CONFIG = PATH_ROOT . '/config.php';
 const PATH_CRON = PATH_ROOT . '/cron.php';
 const PATH_LANGS = PATH_ROOT . '/locale';
 

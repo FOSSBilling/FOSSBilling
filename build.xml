@@ -84,7 +84,7 @@
     </target>
 
     <target name="config" description="Create config file">
-        <copy file="src/config-sample.php" tofile="src/bb-config.php" overwrite="true"/>
+        <copy file="src/config-sample.php" tofile="src/config.php" overwrite="true"/>
     </target>
 
     <target name="test-unit">
