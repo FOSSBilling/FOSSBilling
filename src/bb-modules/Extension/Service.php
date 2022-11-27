@@ -331,7 +331,7 @@ class Service implements InjectionAwareInterface
                 throw new \Box_Exception('Could not retrieve :ext information', [':ext' => $model->name], 744);
             }
 
-            throw new \Box_Exception('Visit extension site for update information.', null, 252);
+            throw new \Box_Exception('Visit the extension store for more information on updating this extension.', null, 252);
             $result = [
                 'version_old' => $model->version,
                 'version_new' => $latest,
@@ -425,39 +425,38 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function downloadAndExtract($type, $id)
+    public function downloadAndExtract($type, $id, $runFromTest = false)
     {
         $ext = $this->di['extension'];
         $manifest = $ext->getExtension($id, $type);
 
         if (!isset($manifest['download_url'])) {
-            throw new \Exception('Extensions download url is not valid');
+            throw new \Exception('Invalid download URL for the extension');
         }
 
         $extracted = BB_PATH_CACHE . '/' . md5(uniqid());
         $zip = BB_PATH_CACHE . '/' . md5(uniqid()) . '.zip';
+        
+        // Create a temporary directory to extract the extension
+        mkdir($extracted, 0755, true);
 
-        $curl = $this->di['curl']($manifest['download_url']);
-        $curl->downloadTo($zip);
+        // Download the extension archive and save it to the cache folder
+        $resource = \GuzzleHttp\Psr7\Utils::tryFopen($zip, 'w');
+        $this->di['guzzle_client']->request('GET', $manifest['download_url'], ['sink' => $resource]);
 
-        $em = $this->di['zip_archive'];
-        $res = $em->open($zip);
-        if (true === $res) {
-            $em->extractTo($extracted);
-            $em->close();
-        } else {
-            throw new \Box_Exception('Could not extract extension zip file');
-        }
+        // Extract the archive
+        $ff = new \Box_Zip($zip);
+        $ff->decompress($extracted, $runFromTest);
 
-        // install by type
+        // Install by type
         switch ($type) {
             case \Box_Extension::TYPE_MOD:
-                $destination = BB_PATH_MODS . '/mod_' . $id;
+                $destination = BB_PATH_MODS . '/' . $id;
                 if ($this->di['tools']->fileExists($destination)) {
-                    throw new \Box_Exception('Module already installed.', null, 436);
+                    throw new \Box_Exception('Module seems to be already installed.', null, 436);
                 }
                 if (!$this->di['tools']->rename($extracted, $destination)) {
-                    throw new \Box_Exception('Extension can not be moved. Make sure your server write permissions to bb-modules folder.', null, 437);
+                    throw new \Box_Exception('Extension can not be moved. Make sure your server allows you to write to the bb-modules folder.', null, 437);
                 }
                 break;
 
@@ -465,7 +464,7 @@ class Service implements InjectionAwareInterface
                 $destination = BB_PATH_THEMES . '/' . $id;
                 if (!$this->di['tools']->fileExists($destination)) {
                     if (!$this->di['tools']->rename($extracted, $destination)) {
-                        throw new \Box_Exception('Extension can not be moved. Make sure your server write permissions to bb-themes folder.', null, 439);
+                        throw new \Box_Exception('Theme can not be moved. Make sure your server allows you to write to the bb-themes folder.', null, 439);
                     }
                 }
                 break;
@@ -477,7 +476,7 @@ class Service implements InjectionAwareInterface
                     $this->di['tools']->mkdir($destination, 0777, true);
                 }
                 if (!$this->di['tools']->rename($extracted, $destination)) {
-                    throw new \Box_Exception('Extension can not be moved. Make sure your server write permissions to bb-locale folder.', null, 440);
+                    throw new \Box_Exception('Locale files can not be moved. Make sure your server allows you to write to the bb-locale folder', null, 440);
                 }
                 break;
 

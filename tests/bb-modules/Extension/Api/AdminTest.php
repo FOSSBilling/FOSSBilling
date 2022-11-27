@@ -372,9 +372,6 @@ class AdminTest extends \BBTestCase {
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
-            ->method('activateExistingExtension')
-            ->will($this->returnValue(array()));
-        $serviceMock->expects($this->atLeastOnce())
             ->method('downloadAndExtract')
             ->will($this->returnValue(true));
 
@@ -416,9 +413,6 @@ class AdminTest extends \BBTestCase {
         $model->loadBean(new \RedBeanPHP\OODBBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('activateExistingExtension')
-            ->will($this->returnValue(new \Exception('testinstallExceptionActivate() exception logged')));
         $serviceMock->expects($this->atLeastOnce())
             ->method('downloadAndExtract')
             ->will($this->returnValue(true));

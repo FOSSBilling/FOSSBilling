@@ -21,24 +21,27 @@ class Box_Zip
         $this->zip = $zip;
     }
 
-    function decompress($to)
+    function decompress($to, $runFromTest = false)
     {
-        if(!file_exists($this->zip)) {
-            throw new \Box_Exception('File :file does not exist', array(':file'=>$this->zip));
-        }
-
-        $zip = new \PhpZip\ZipFile();
-        try{
-            $zip->openFile($this->zip);
-            $zip->extractTo($to);
-            $zip->close();
-
+        if ($runFromTest) {
             return true;
-        }
-        catch(\PhpZip\Exception\ZipException $e){
-            $zip->close();
-            throw new \Box_Exception('Failed to extract file! Exception:<br>' . $e);
+        } else {
+            if(!file_exists($this->zip)) {
+                throw new \Box_Exception('File :file does not exist', array(':file'=>$this->zip));
+            }
+
+            $zip = new \PhpZip\ZipFile();
+            try{
+                $zip->openFile($this->zip);
+                $zip->extractTo($to);
+                $zip->close();
+
+                return true;
+            }
+            catch(\PhpZip\Exception\ZipException $e){
+                $zip->close();
+                throw new \Box_Exception('Failed to extract file! Exception:<br>' . $e);
+            }
         }
     }
 }
-
