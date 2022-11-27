@@ -271,7 +271,7 @@ class Service implements \Box\InjectionAwareInterface
 
         // check if plugin exists. If plugin does not exist, do not throw error. Simply add to log
         $file = sprintf('Plugin/%s/%s.php', $plugin, $plugin);
-        if (APPLICATION_ENV != 'testing' && !file_exists(BB_PATH_LIBRARY . DIRECTORY_SEPARATOR . $file)) {
+        if (APPLICATION_ENV != 'testing' && !file_exists(PATH_LIBRARY . DIRECTORY_SEPARATOR . $file)) {
             $e = new \Box_Exception('Plugin class file :file was not found', [':file' => $file], 3124);
             if (BB_DEBUG) {
                 error_log($e->getMessage());

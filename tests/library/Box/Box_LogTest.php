@@ -13,7 +13,7 @@ class Box_LogTest extends PHPUnit\Framework\TestCase
 
         $writer1 = new Box_LogDb($service_mock);
         $writer2 = new Box_LogStream('php://output');
-        $writer3 = new Box_LogStream(BB_PATH_LOG . '/test.log');
+        $writer3 = new Box_LogStream(PATH_LOG . '/test.log');
 
         $log = new Box_Log();
         $log->addWriter($writer1);

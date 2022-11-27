@@ -22,7 +22,7 @@ class Box_Exception extends Exception
 	 */
 	public function __construct($message, array $variables = NULL, $code = 0)
 	{
-		$config = include BB_PATH_ROOT.'/bb-config.php';
+		$config = include PATH_ROOT.'/bb-config.php';
 		$debug = (isset($config['debug'])) ? isset($config['debug']) : false;
 		$logStack = (isset($config['log_stacktrace'])) ? isset($config['log_stacktrace']) : true;
 		$stackLength = (isset($config['stacktrace_length'])) ? isset($config['stacktrace_length']) : 25;
@@ -67,7 +67,7 @@ class Box_Exception extends Exception
 	
 			$entry_file = 'NO_FILE';
 			if (array_key_exists('file', $entry)) {
-				$entry_file = str_replace(BB_PATH_ROOT, '' , $entry['file']);               
+				$entry_file = str_replace(PATH_ROOT, '' , $entry['file']);               
 			}
 			$entry_line = 'NO_LINE';
 			if (array_key_exists('line', $entry)) {

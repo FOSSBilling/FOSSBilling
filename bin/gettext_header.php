@@ -32,4 +32,4 @@ function prepend($string, $filename) {
 
 require_once dirname(__FILE__) . '/../src/load.php';
 
-prepend(_writeHeader(), BB_PATH_LANGS.'/messages.pot');
+prepend(_writeHeader(), PATH_LANGS.'/messages.pot');

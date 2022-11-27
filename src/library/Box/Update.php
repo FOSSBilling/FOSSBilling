@@ -163,7 +163,7 @@ class Box_Update
 
         error_log('Started FOSSBilling auto-update script');
         $latest_version = $this->getLatestVersion();
-        $latest_version_archive = BB_PATH_CACHE.DIRECTORY_SEPARATOR.$latest_version.'.zip';
+        $latest_version_archive = PATH_CACHE.DIRECTORY_SEPARATOR.$latest_version.'.zip';
 
         // download latest archive from link
         $content = $this->di['tools']->file_get_contents($this->getLatestVersionDownloadLink(), false, null, null, false);
@@ -175,9 +175,9 @@ class Box_Update
 
         // Extract latest archive on top of current version
         $ff = new Box_Zip($latest_version_archive);
-        $ff->decompress(BB_PATH_ROOT);
+        $ff->decompress(PATH_ROOT);
 
-        if(file_exists(BB_PATH_ROOT.'/foss-update.php')) {
+        if(file_exists(PATH_ROOT.'/foss-update.php')) {
             error_log('Calling foss-update.php script from auto-updater');
             $this->di['tools']->file_get_contents(BB_URL.'foss-update.php');
         }
@@ -186,9 +186,9 @@ class Box_Update
         $this->performConfigUpdate();
         
         // clean up things
-        $this->di['tools']->emptyFolder(BB_PATH_CACHE);
-        $this->di['tools']->emptyFolder(BB_PATH_ROOT.'/install');
-        rmdir(BB_PATH_ROOT.'/install');
+        $this->di['tools']->emptyFolder(PATH_CACHE);
+        $this->di['tools']->emptyFolder(PATH_ROOT.'/install');
+        rmdir(PATH_ROOT.'/install');
         return true;
     }
 

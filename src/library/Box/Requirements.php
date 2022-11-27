@@ -28,7 +28,7 @@ class Box_Requirements implements \Box\InjectionAwareInterface
     }
 
     private $_all_ok = true;
-    private $_app_path = BB_PATH_ROOT;
+    private $_app_path = PATH_ROOT;
     private $_options = array();
 
     public function __construct()
@@ -83,10 +83,10 @@ class Box_Requirements implements \Box\InjectionAwareInterface
         );
 
         $data['permissions']    = array(
-            BB_PATH_UPLOADS     =>  substr(sprintf('%o', fileperms(BB_PATH_UPLOADS)), -4),
-            BB_PATH_DATA        =>  substr(sprintf('%o', fileperms(BB_PATH_DATA)), -4),
-            BB_PATH_CACHE       =>  substr(sprintf('%o', fileperms(BB_PATH_CACHE)), -4),
-            BB_PATH_LOG         =>  substr(sprintf('%o', fileperms(BB_PATH_LOG)), -4),
+            PATH_UPLOADS     =>  substr(sprintf('%o', fileperms(PATH_UPLOADS)), -4),
+            PATH_DATA        =>  substr(sprintf('%o', fileperms(PATH_DATA)), -4),
+            PATH_CACHE       =>  substr(sprintf('%o', fileperms(PATH_CACHE)), -4),
+            PATH_LOG         =>  substr(sprintf('%o', fileperms(PATH_LOG)), -4),
         );
         
         $data['extensions']    = array(

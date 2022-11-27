@@ -183,7 +183,7 @@ class Service
 
     public function getLanguages($deep = false)
     {
-        $path = BB_PATH_LANGS;
+        $path = PATH_LANGS;
         $locales = [];
         if ($handle = opendir($path)) {
             while (false !== ($entry = readdir($handle))) {
@@ -280,8 +280,8 @@ class Service
             }
         }
 
-        $install = BB_PATH_ROOT . '/install';
-        if ($this->di['tools']->fileExists(BB_PATH_ROOT . '/install')) {
+        $install = PATH_ROOT . '/install';
+        if ($this->di['tools']->fileExists(PATH_ROOT . '/install')) {
             $msgs['danger'][] = sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install);
         }
 
@@ -365,7 +365,7 @@ class Service
 
     public function clearCache()
     {
-        $this->di['tools']->emptyFolder(BB_PATH_CACHE);
+        $this->di['tools']->emptyFolder(PATH_CACHE);
 
         return true;
     }

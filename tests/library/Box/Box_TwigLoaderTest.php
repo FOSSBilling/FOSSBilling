@@ -21,8 +21,8 @@ class Box_TwigLoaderTest extends PHPUnit\Framework\TestCase
     public function testTemplates()
     {
         $loader = new Box_TwigLoader([
-            'mods' => BB_PATH_MODS,
-            'theme' => BB_PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga',
+            'mods' => PATH_MODS,
+            'theme' => PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga',
             'type' => 'client',
         ]);
         $test = $loader->getSourceContext('mod_example_index.html.twig');
@@ -36,8 +36,8 @@ class Box_TwigLoaderTest extends PHPUnit\Framework\TestCase
     {
         $loader = new Box_TwigLoader([
             'type' => 'client',
-            'mods' => BB_PATH_MODS,
-            'theme' => BB_PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga',
+            'mods' => PATH_MODS,
+            'theme' => PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga',
         ]);
         $this->expectException(Twig\Error\LoaderError::class);
         $test = $loader->getSourceContext('mod_non_existing_settings.html.twig');

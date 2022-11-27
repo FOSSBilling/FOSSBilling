@@ -447,7 +447,7 @@ class Service implements InjectionAwareInterface
     public function checkLicenseDetails(array $data)
     {
         $log = $this->di['logger'];
-        $log->addWriter(new \Box_LogStream(BB_PATH_LOG . '/license.log'));
+        $log->addWriter(new \Box_LogStream(PATH_LOG . '/license.log'));
         if ($this->di['config']['debug']) {
             $log->debug(print_r($data, 1));
         }

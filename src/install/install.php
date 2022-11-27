@@ -45,35 +45,35 @@ define('BB_URL', $root_url);
 const BB_URL_INSTALL = BB_URL . 'install/';
 const BB_URL_ADMIN = BB_URL . 'index.php?_url=/admin';
 
-define('BB_PATH_ROOT', dirname(__DIR__));
-const BB_PATH_LIBRARY = BB_PATH_ROOT . '/library';
-const BB_PATH_VENDOR = BB_PATH_ROOT . '/vendor';
-const BB_PATH_INSTALL_THEMES = BB_PATH_ROOT . '/install';
-const BB_PATH_THEMES = BB_PATH_ROOT . '/themes';
-const BB_PATH_LICENSE = BB_PATH_ROOT . '/LICENSE';
-const BB_PATH_SQL = BB_PATH_ROOT . '/install/sql/structure.sql';
-const BB_PATH_SQL_DATA = BB_PATH_ROOT . '/install/sql/content.sql';
-const BB_PATH_INSTALL = BB_PATH_ROOT . '/install';
-const BB_PATH_CONFIG = BB_PATH_ROOT . '/bb-config.php';
-const BB_PATH_CRON = BB_PATH_ROOT . '/cron.php';
-const BB_PATH_LANGS = BB_PATH_ROOT . '/locale';
+define('PATH_ROOT', dirname(__DIR__));
+const PATH_LIBRARY = PATH_ROOT . '/library';
+const PATH_VENDOR = PATH_ROOT . '/vendor';
+const PATH_INSTALL_THEMES = PATH_ROOT . '/install';
+const PATH_THEMES = PATH_ROOT . '/themes';
+const PATH_LICENSE = PATH_ROOT . '/LICENSE';
+const PATH_SQL = PATH_ROOT . '/install/sql/structure.sql';
+const PATH_SQL_DATA = PATH_ROOT . '/install/sql/content.sql';
+const PATH_INSTALL = PATH_ROOT . '/install';
+const PATH_CONFIG = PATH_ROOT . '/bb-config.php';
+const PATH_CRON = PATH_ROOT . '/cron.php';
+const PATH_LANGS = PATH_ROOT . '/locale';
 
 /*
   Config paths & templates
 */
-const BB_PATH_HTACCESS = BB_PATH_ROOT . '/.htaccess';
-const BB_PATH_HTACCESS_TEMPLATE = BB_PATH_ROOT . '/htaccess.txt';
+const PATH_HTACCESS = PATH_ROOT . '/.htaccess';
+const PATH_HTACCESS_TEMPLATE = PATH_ROOT . '/htaccess.txt';
 
-const BB_HURAGA_CONFIG = BB_PATH_THEMES . '/huraga/config/settings_data.json';
-const BB_HURAGA_CONFIG_TEMPLATE = BB_PATH_THEMES . '/huraga/config/settings_data.json.example';
+const BB_HURAGA_CONFIG = PATH_THEMES . '/huraga/config/settings_data.json';
+const BB_HURAGA_CONFIG_TEMPLATE = PATH_THEMES . '/huraga/config/settings_data.json.example';
 
 // Ensure library/ is on include_path
 set_include_path(implode(PATH_SEPARATOR, [
-    BB_PATH_LIBRARY,
+    PATH_LIBRARY,
     get_include_path(),
 ]));
 
-require BB_PATH_VENDOR . '/autoload.php';
+require PATH_VENDOR . '/autoload.php';
 
 final class Box_Installer
 {
@@ -205,9 +205,9 @@ final class Box_Installer
                     'license' => $this->session->get('license'),
                     'agree' => $this->session->get('agree'),
 
-                    'install_module_path' => BB_PATH_INSTALL,
-                    'cron_path' => BB_PATH_CRON,
-                    'config_file_path' => BB_PATH_CONFIG,
+                    'install_module_path' => PATH_INSTALL,
+                    'cron_path' => PATH_CRON,
+                    'config_file_path' => PATH_CONFIG,
                     'live_site' => BB_URL,
                     'admin_site' => BB_URL_ADMIN,
 
@@ -221,7 +221,7 @@ final class Box_Installer
     private function render($name, $vars = []): string
     {
         $options = [
-            'paths' => [BB_PATH_INSTALL_THEMES],
+            'paths' => [PATH_INSTALL_THEMES],
             'debug' => true,
             'charset' => 'utf-8',
             'optimizations' => 1,
@@ -240,7 +240,7 @@ final class Box_Installer
 
     private function getLicense(): bool|string
     {
-        $path = BB_PATH_LICENSE;
+        $path = PATH_LICENSE;
         if (!file_exists($path)) {
             return 'FOSSBilling is licensed under the Apache License, Version 2.0.' . PHP_EOL . 'Please visit https://github.com/FOSSBilling/FOSSBilling/blob/master/LICENSE for full license text.';
         }
@@ -329,8 +329,8 @@ final class Box_Installer
 
         $pdo = $this->getPdo($ns->get('db_host').';'.$ns->get('db_port'), $ns->get('db_name'), $ns->get('db_user'), $ns->get('db_pass'));
 
-        $sql = file_get_contents(BB_PATH_SQL);
-        $sql_content = file_get_contents(BB_PATH_SQL_DATA);
+        $sql = file_get_contents(PATH_SQL);
+        $sql_content = file_get_contents(PATH_SQL_DATA);
 
         if (!$sql || !$sql_content) {
             throw new Exception('Could not read structure.sql file');
@@ -366,8 +366,8 @@ final class Box_Installer
         /*
           Copy config templates when applicable
         */
-        if (!file_exists(BB_PATH_HTACCESS) && file_exists(BB_PATH_HTACCESS_TEMPLATE)) {
-            rename(BB_PATH_HTACCESS_TEMPLATE, BB_PATH_HTACCESS);
+        if (!file_exists(PATH_HTACCESS) && file_exists(PATH_HTACCESS_TEMPLATE)) {
+            rename(PATH_HTACCESS_TEMPLATE, PATH_HTACCESS);
         }
 
         if (!file_exists(BB_HURAGA_CONFIG) && file_exists(BB_HURAGA_CONFIG_TEMPLATE)) {
@@ -401,8 +401,8 @@ final class Box_Installer
     private function _createConfigurationFile($data): void
     {
         $output = $this->_getConfigOutput($data);
-        if (!@file_put_contents(BB_PATH_CONFIG, $output)) {
-            throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . BB_PATH_CONFIG . ' and make it writable', 101);
+        if (!@file_put_contents(PATH_CONFIG, $output)) {
+            throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . PATH_CONFIG . ' and make it writable', 101);
         }
     }
 
@@ -434,8 +434,8 @@ final class Box_Installer
             'locale' => 'en_US',
             'locale_date_format' => 'l, d F o',
             'locale_time_format' => ' G:i:s',
-            'path_data' => BB_PATH_ROOT . '/data',
-            'path_logs' => BB_PATH_ROOT . '/data/log/application.log',
+            'path_data' => PATH_ROOT . '/data',
+            'path_logs' => PATH_ROOT . '/data/log/application.log',
 
             'log_to_db' => true,
 
@@ -451,7 +451,7 @@ final class Box_Installer
             'twig' => [
                 'debug' => true,
                 'auto_reload' => true,
-                'cache' => BB_PATH_ROOT . '/data/cache',
+                'cache' => PATH_ROOT . '/data/cache',
             ],
 
             'api' => [
@@ -488,10 +488,10 @@ final class Box_Installer
 
     private function generateEmailTemplates(): bool
     {
-        define('BB_PATH_MODS', BB_PATH_ROOT . '/modules');
+        define('PATH_MODS', PATH_ROOT . '/modules');
 
         $emailService = new Service();
-        $di = include BB_PATH_ROOT . '/di.php';
+        $di = include PATH_ROOT . '/di.php';
         $di['translate']();
         $emailService->setDi($di);
 

@@ -40,7 +40,7 @@ class Guest extends \Api_Abstract
         // Our example admin and client area pages will use this function to fetch the README data
         // Then, we'll tell Twig to parse and display the markdown output
 
-        $readme = $this->di['tools']->file_get_contents(BB_PATH_MODS . '/Example/README.md');
+        $readme = $this->di['tools']->file_get_contents(PATH_MODS . '/Example/README.md');
 
         return $readme;
     }

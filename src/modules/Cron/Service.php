@@ -49,7 +49,7 @@ class Service
 
         $result = [
             'cron_url' => BB_URL . 'cron.php',
-            'cron_path' => BB_PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php',
+            'cron_path' => PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php',
             'last_cron_exec' => $service->getParamValue('last_cron_exec'),
         ];
 
