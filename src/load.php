@@ -28,6 +28,16 @@ const PATH_UPLOADS = PATH_ROOT . '/uploads';
 const PATH_DATA = PATH_ROOT . '/data';
 const isCLI = 'cli' === PHP_SAPI;
 
+// Deprecated aliases
+const BB_PATH_ROOT = PATH_ROOT;
+const BB_PATH_VENDOR = PATH_VENDOR;
+const BB_PATH_LIBRARY = PATH_LIBRARY;
+const BB_PATH_THEMES = PATH_THEMES;
+const BB_PATH_MODS = PATH_MODS;
+const BB_PATH_LANGS = PATH_LANGS;
+const BB_PATH_UPLOADS = PATH_UPLOADS;
+const BB_PATH_DATA = PATH_DATA;
+
 function handler_error(int $number, string $message, string $file, int $line)
 {
     if (E_RECOVERABLE_ERROR === $number) {
