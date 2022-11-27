@@ -38,7 +38,6 @@ jobs:
 
       - name: Validate composer.json and composer.lock
         run: composer validate
-        working-directory: ./src
 
       - name: Installing NPM dependencies
         run: npm install
@@ -52,16 +51,15 @@ jobs:
       - name: Build assets
         run: gulp build
 
+      - name: Installing Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest --no-dev --optimize-autoloader
+
       - name: Copy mandatory files to the temporary build folder
         run: |
           cp -r ./src/* ./build/source/
           cp README.md ./build/source/
           cp LICENSE ./build/source/
           cp CHANGELOG.md ./build/source/
-
-      - name: Installing Composer dependencies
-        run: composer install --prefer-dist --no-progress --no-suggest --no-dev --optimize-autoloader
-        working-directory: ./build/source
 
       - name: Add short commit hash as the release number
         run: |

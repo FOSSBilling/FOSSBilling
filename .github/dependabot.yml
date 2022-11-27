@@ -13,7 +13,7 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "composer"
-    directory: "/src" # Location of package manifests
+    directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
   

@@ -112,7 +112,7 @@ We do not store the Composer packages in our GitHub repository, we use [Composer
 
 If you don't have Composer installed, or it's your first time using it, you probably should read Composer's [getting started guide](https://getcomposer.org/doc/00-intro.md).
 
-If you've already installed Composer, head over to the folder where you copied the content of the **"src"** folder, and run the following command to download the required packages to your web server:
+If you've already installed Composer, head over to the folder where you have extracted FOSSBilling, and run the following command to download the required packages to your web server:
 
 ```bash
 $ composer install

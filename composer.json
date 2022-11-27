@@ -45,6 +45,9 @@
         "ext-gettext": "*",
         "ext-intl": "*"
     },
+    "config": {
+        "vendor-dir": "src/vendor"
+    },
     "autoload": {
         "psr-0": {"": "library"},
         "psr-4": {"Box\\Mod\\": "modules"}

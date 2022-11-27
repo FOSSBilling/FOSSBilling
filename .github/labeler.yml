@@ -11,8 +11,8 @@ huraga:
 - src/themes/huraga/*
 
 composer:
-- src/composer.json
-- src/composer.lock
+- composer.json
+- composer.lock
 
 installer:
 - src/install/*

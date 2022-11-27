@@ -111,7 +111,7 @@ function install_composer_dependencies() {
     print_header "Installing Composer dependencies..."
     docker run -it --rm \
         --volume $PWD:/app \
-        composer install --working-dir=src --no-interaction --prefer-dist --no-dev
+        composer install --no-interaction --prefer-dist --no-dev
     print_success "Successfully installed the Composer dependencies."
     print_separator
 }
