@@ -284,6 +284,37 @@ if (!file_exists($configPath) || 0 === filesize($configPath)) {
     throw new Exception($msg, 101);
 }
 
+// Try to check if /install directory still exists, even after the installation was completed and display a message
+if (file_exists($configPath) && 0 !== filesize($configPath) && file_exists(PATH_ROOT . '/install/index.php')) {
+    throw new Exception('For safety reasons, you have to delete the <b><em>/install</em></b> directory to start using FOSSBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.', 102);
+}
+
+// Detect old for files from an old BoxBilling or FOSSBilling preview installation.
+function detectOldFiles(){
+    $i = 0;
+    $msg = '';
+    $foundOld = false;
+
+    $oldFolderNames = ['bb-data','bb-library','bb-locale','bb-modules','bb-themes','bb-uploads','bb-cron.php','bb-di.php','bb-ipn.php','bb-load.php'];
+    $newFolderNames = ['data','library','locale','modules','themes','uploads','cron.php','di.php','ipn.php','load.php'];
+
+    foreach ($oldFolderNames as $folder){
+        $toCheck = PATH_ROOT . DIRECTORY_SEPARATOR . $folder;
+        $newName = $newFolderNames[$i];
+        if(file_exists($toCheck) or is_dir($toCheck)){
+            $msg .= "<b>$folder</b> --> <b>$newName</b> <br>";
+            $foundOld = true;
+        }
+        $i++;
+    }
+    if($foundOld){
+        $finalMsg = "The FOSSBilling file structure has been changed, please migrate any custom files and folders from the old folder to the new folder and then delete the old ones. <br>";
+        $finalMsg .= $msg;
+        throw new Exception($finalMsg);
+    }
+}
+detectOldFiles();
+
 // Try to check if /install directory still exists, even after the installation was completed
 if (file_exists($configPath) && 0 !== filesize($configPath) && file_exists(PATH_ROOT . '/install/index.php')) {
     throw new Exception('For safety reasons, you have to delete the <b><em>/install</em></b> directory to start using FOSSBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.', 102);
