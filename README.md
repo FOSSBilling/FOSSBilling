@@ -85,8 +85,8 @@ You can either download the .tar file to your local computer and then upload it 
 
 Your web directory's structure should now look like this:
 - htdocs
-    - bb-data
-    - bb-library
+    - data
+    - library
     - bb-module
     - **...**
 
@@ -101,8 +101,8 @@ You can either download the .zip file to your local computer and then upload it 
 
 Your web directory's structure should now look like this:
 - htdocs
-    - bb-data
-    - bb-library
+    - data
+    - library
     - bb-module
     - **...**
 

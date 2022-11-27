@@ -678,7 +678,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionCode(440);
-        $this->expectExceptionMessage('Locale files can not be moved. Make sure your server allows you to write to the bb-locale folder');
+        $this->expectExceptionMessage('Locale files can not be moved. Make sure your server allows you to write to the locale folder');
         $this->service->downloadAndExtract('translation', 'extensionId', true);
     }
 
@@ -710,7 +710,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionMessage(439);
-        $this->expectExceptionMessage('Theme can not be moved. Make sure your server allows you to write to the bb-themes folder.');
+        $this->expectExceptionMessage('Theme can not be moved. Make sure your server allows you to write to the themes folder.');
         $this->service->downloadAndExtract('theme', 'extensionId', true);
     }
 
@@ -742,7 +742,7 @@ class ServiceTest extends \BBTestCase {
         $this->service->setDi($di);
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionCode(437);
-        $this->expectExceptionMessage('Extension can not be moved. Make sure your server allows you to write to the bb-modules folder.');
+        $this->expectExceptionMessage('Extension can not be moved. Make sure your server allows you to write to the modules folder.');
         $this->service->downloadAndExtract('mod', 'extensionId', true);
     }
 

@@ -108,7 +108,7 @@ class Box_Mod
         $info['type'] = 'mod';
 
         if(!empty($info['icon_url'])) {
-            $info['icon_url'] = '/bb-modules/'.ucfirst($this->mod).'/'.$info['icon_url'];
+            $info['icon_url'] = '/modules/'.ucfirst($this->mod).'/'.$info['icon_url'];
         }
 
         return $info;

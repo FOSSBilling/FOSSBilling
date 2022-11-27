@@ -152,7 +152,7 @@ class Service
      * Make sure extension is enabled before testing this event.
      *
      * NOTE: IF you have BB_DEBUG mode set to TRUE then all events with params
-     * are logged to bb-data/log/hook_*.log file. Check this file to see what
+     * are logged to data/log/hook_*.log file. Check this file to see what
      * kind of parameters are passed to event.
      *
      * In this example we are going to count how many times client failed
@@ -263,7 +263,7 @@ class Service
 
          $email = array();
          $email['to_client'] = $params['client_id'];
-         $email['code']      = 'mod_example_email'; //@see bb-modules/Example/html_email/mod_example_email.html.twig
+         $email['code']      = 'mod_example_email'; //@see modules/Example/html_email/mod_example_email.html.twig
 
          // these parameters are available in email template
          $email['order']     = $api->order_get(array('id'=>$params['id']));

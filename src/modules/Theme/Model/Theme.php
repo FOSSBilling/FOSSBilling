@@ -155,7 +155,7 @@ class Theme
 
     public function getUrl()
     {
-        return BB_URL . 'bb-themes/' . $this->name;
+        return BB_URL . 'themes/' . $this->name;
     }
 
     public function getPath()

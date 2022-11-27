@@ -46,17 +46,17 @@ const BB_URL_INSTALL = BB_URL . 'install/';
 const BB_URL_ADMIN = BB_URL . 'index.php?_url=/admin';
 
 define('BB_PATH_ROOT', dirname(__DIR__));
-const BB_PATH_LIBRARY = BB_PATH_ROOT . '/bb-library';
+const BB_PATH_LIBRARY = BB_PATH_ROOT . '/library';
 const BB_PATH_VENDOR = BB_PATH_ROOT . '/vendor';
 const BB_PATH_INSTALL_THEMES = BB_PATH_ROOT . '/install';
-const BB_PATH_THEMES = BB_PATH_ROOT . '/bb-themes';
+const BB_PATH_THEMES = BB_PATH_ROOT . '/themes';
 const BB_PATH_LICENSE = BB_PATH_ROOT . '/LICENSE';
 const BB_PATH_SQL = BB_PATH_ROOT . '/install/sql/structure.sql';
 const BB_PATH_SQL_DATA = BB_PATH_ROOT . '/install/sql/content.sql';
 const BB_PATH_INSTALL = BB_PATH_ROOT . '/install';
 const BB_PATH_CONFIG = BB_PATH_ROOT . '/bb-config.php';
-const BB_PATH_CRON = BB_PATH_ROOT . '/bb-cron.php';
-const BB_PATH_LANGS = BB_PATH_ROOT . '/bb-locale';
+const BB_PATH_CRON = BB_PATH_ROOT . '/cron.php';
+const BB_PATH_LANGS = BB_PATH_ROOT . '/locale';
 
 /*
   Config paths & templates
@@ -434,8 +434,8 @@ final class Box_Installer
             'locale' => 'en_US',
             'locale_date_format' => 'l, d F o',
             'locale_time_format' => ' G:i:s',
-            'path_data' => BB_PATH_ROOT . '/bb-data',
-            'path_logs' => BB_PATH_ROOT . '/bb-data/log/application.log',
+            'path_data' => BB_PATH_ROOT . '/data',
+            'path_logs' => BB_PATH_ROOT . '/data/log/application.log',
 
             'log_to_db' => true,
 
@@ -451,7 +451,7 @@ final class Box_Installer
             'twig' => [
                 'debug' => true,
                 'auto_reload' => true,
-                'cache' => BB_PATH_ROOT . '/bb-data/cache',
+                'cache' => BB_PATH_ROOT . '/data/cache',
             ],
 
             'api' => [
@@ -488,10 +488,10 @@ final class Box_Installer
 
     private function generateEmailTemplates(): bool
     {
-        define('BB_PATH_MODS', BB_PATH_ROOT . '/bb-modules');
+        define('BB_PATH_MODS', BB_PATH_ROOT . '/modules');
 
         $emailService = new Service();
-        $di = include BB_PATH_ROOT . '/bb-di.php';
+        $di = include BB_PATH_ROOT . '/di.php';
         $di['translate']();
         $emailService->setDi($di);
 

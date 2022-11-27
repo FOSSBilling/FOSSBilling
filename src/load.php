@@ -20,12 +20,12 @@ use Whoops\Run;
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV') ?: 'production');
 const BB_PATH_ROOT = __DIR__;
 const BB_PATH_VENDOR = BB_PATH_ROOT . '/vendor';
-const BB_PATH_LIBRARY = BB_PATH_ROOT . '/bb-library';
-const BB_PATH_THEMES = BB_PATH_ROOT . '/bb-themes';
-const BB_PATH_MODS = BB_PATH_ROOT . '/bb-modules';
-const BB_PATH_LANGS = BB_PATH_ROOT . '/bb-locale';
-const BB_PATH_UPLOADS = BB_PATH_ROOT . '/bb-uploads';
-const BB_PATH_DATA = BB_PATH_ROOT . '/bb-data';
+const BB_PATH_LIBRARY = BB_PATH_ROOT . '/library';
+const BB_PATH_THEMES = BB_PATH_ROOT . '/themes';
+const BB_PATH_MODS = BB_PATH_ROOT . '/modules';
+const BB_PATH_LANGS = BB_PATH_ROOT . '/locale';
+const BB_PATH_UPLOADS = BB_PATH_ROOT . '/uploads';
+const BB_PATH_DATA = BB_PATH_ROOT . '/data';
 const isCLI = 'cli' === PHP_SAPI;
 
 function handler_error(int $number, string $message, string $file, int $line)
@@ -135,7 +135,7 @@ function handler_exception($e)
               display: inline-block;
               width: 150px;
               height: 150px;
-              background-image: url('/bb-themes/huraga/assets/img/fb_wallet.svg');
+              background-image: url('/themes/huraga/assets/img/fb_wallet.svg');
               background-repeat: no-repeat;
               background-size: 124px 144px;
             }
@@ -270,7 +270,7 @@ if (!file_exists($configPath) || 0 === filesize($configPath)) {
     }
 
     $configFile = pathinfo($configPath, PATHINFO_BASENAME);
-    $msg = "Your <b><em>$configFile</em></b> file seems to be invalid. It's possible that your preexisting configuration file may not contain the required configuration parameters or have become corrupted. FOSSBilling needs to have a valid configuration file present in order to function properly.</p> <p>Please use the example config as reference <a target='_blank' href='https://raw.githubusercontent.com/FOSSBilling/FOSSBilling/master/src/bb-config-sample.php'>here</a>. You may need to manually restore a old config file or fix your existing one.</p>";
+    $msg = "Your <b><em>$configFile</em></b> file seems to be invalid. It's possible that your preexisting configuration file may not contain the required configuration parameters or have become corrupted. FOSSBilling needs to have a valid configuration file present in order to function properly.</p> <p>Please use the example config as reference <a target='_blank' href='https://raw.githubusercontent.com/FOSSBilling/FOSSBilling/master/src/config-sample.php'>here</a>. You may need to manually restore a old config file or fix your existing one.</p>";
     throw new Exception($msg, 101);
 }
 

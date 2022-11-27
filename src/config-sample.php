@@ -110,9 +110,9 @@ return [
     /*
      * Set location to store sensitive data.
      */
-    'path_data' => __DIR__ . '/bb-data',
+    'path_data' => __DIR__ . '/data',
 
-    'path_logs' => __DIR__ . '/bb-data/log/application.log',
+    'path_logs' => __DIR__ . '/data/log/application.log',
 
     'log_to_db' => true,
 
@@ -151,7 +151,7 @@ return [
     'twig' => [
         'debug' => false,
         'auto_reload' => false,
-        'cache' => __DIR__ . '/bb-data/cache',
+        'cache' => __DIR__ . '/data/cache',
     ],
 
     'api' => [

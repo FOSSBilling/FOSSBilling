@@ -14,8 +14,8 @@
  * with this source code in the file LICENSE
  */
 
-require_once __DIR__ . '/bb-load.php';
-$di = include __DIR__ . '/bb-di.php';
+require_once __DIR__ . '/load.php';
+$di = include __DIR__ . '/di.php';
 $di['translate']();
 
 $bb_invoice_id = $_POST['bb_invoice_id'] ?? $_GET['bb_invoice_id'] ?? null;
