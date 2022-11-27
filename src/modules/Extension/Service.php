@@ -456,7 +456,7 @@ class Service implements InjectionAwareInterface
                     throw new \Box_Exception('Module seems to be already installed.', null, 436);
                 }
                 if (!$this->di['tools']->rename($extracted, $destination)) {
-                    throw new \Box_Exception('Extension can not be moved. Make sure your server allows you to write to the bb-modules folder.', null, 437);
+                    throw new \Box_Exception('Extension can not be moved. Make sure your server allows you to write to the modules folder.', null, 437);
                 }
                 break;
 
@@ -464,7 +464,7 @@ class Service implements InjectionAwareInterface
                 $destination = BB_PATH_THEMES . '/' . $id;
                 if (!$this->di['tools']->fileExists($destination)) {
                     if (!$this->di['tools']->rename($extracted, $destination)) {
-                        throw new \Box_Exception('Theme can not be moved. Make sure your server allows you to write to the bb-themes folder.', null, 439);
+                        throw new \Box_Exception('Theme can not be moved. Make sure your server allows you to write to the themes folder.', null, 439);
                     }
                 }
                 break;
@@ -476,7 +476,7 @@ class Service implements InjectionAwareInterface
                     $this->di['tools']->mkdir($destination, 0777, true);
                 }
                 if (!$this->di['tools']->rename($extracted, $destination)) {
-                    throw new \Box_Exception('Locale files can not be moved. Make sure your server allows you to write to the bb-locale folder', null, 440);
+                    throw new \Box_Exception('Locale files can not be moved. Make sure your server allows you to write to the locale folder', null, 440);
                 }
                 break;
 

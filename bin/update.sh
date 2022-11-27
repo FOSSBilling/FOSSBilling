@@ -6,4 +6,4 @@ wget -O update.zip -q $UPDATE_URL
 unzip -o update.zip
 php foss-update.php
 rm -rf update.zip
-rm -rf bb-data/cache/*
+rm -rf data/cache/*

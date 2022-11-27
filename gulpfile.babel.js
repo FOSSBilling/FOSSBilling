@@ -20,7 +20,7 @@ const config = [
 ];
 
 export const buildThemeAdmin = function buildThemeAdmin() {
-  return gulp.src('src/bb-themes/admin_default/gulpfile.babel.js', { read: false })
+  return gulp.src('src/themes/admin_default/gulpfile.babel.js', { read: false })
     .pipe(chug({ args: config, tasks: 'build' }));
 }
 buildThemeAdmin.description = 'Build theme Admin assets.';

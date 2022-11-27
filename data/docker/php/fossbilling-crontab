@@ -1,1 +1,1 @@
-* * * * * php /var/www/html/src/bb-cron.php >> /var/www/html/src/bb-data/log/cron.log 2>&1
+* * * * * php /var/www/html/src/cron.php >> /var/www/html/src/data/log/cron.log 2>&1

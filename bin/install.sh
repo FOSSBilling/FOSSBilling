@@ -70,21 +70,21 @@ function print_separator() {
 
 # Create necessary directories if they don't exist
 function create_directories() {
-    mkdir -p $PATH_PREFIX/src/bb-data/{cache,log,uploads}
+    mkdir -p $PATH_PREFIX/src/data/{cache,log,uploads}
 }
 
 # Change folder permissions
 function change_folder_permissions() {
     print_info "Changing folder permissions..."
-    chmod -R 777 $PATH_PREFIX/src/bb-data/{cache,log,uploads}
-    chmod -R 777 $PATH_PREFIX/src/bb-themes
+    chmod -R 777 $PATH_PREFIX/src/data/{cache,log,uploads}
+    chmod -R 777 $PATH_PREFIX/src/themes
     print_success "Folder permissions changed."
 }
 
 # Create the configuration file
 function create_config() {
     print_info "Creating the configuration file..."
-    cp $PATH_PREFIX/src/bb-config-sample.php $PATH_PREFIX/src/bb-config.php
+    cp $PATH_PREFIX/src/config-sample.php $PATH_PREFIX/src/bb-config.php
     print_success "Created the configuration file."
     print_separator
 }
@@ -146,9 +146,9 @@ function remove_installation_leftovers() {
 
 # Copy configuration for Huraga if it doesn't exist
 function copy_huraga_config() {
-    if [ ! -f $PATH_PREFIX/src/bb-themes/huraga/config/settings_data.json ]; then
+    if [ ! -f $PATH_PREFIX/src/themes/huraga/config/settings_data.json ]; then
         print_header "Copying Huraga configuration..."
-        cp $PATH_PREFIX/src/bb-themes/huraga/config/settings_data.json.example $PATH_PREFIX/src/bb-themes/huraga/config/settings_data.json
+        cp $PATH_PREFIX/src/themes/huraga/config/settings_data.json.example $PATH_PREFIX/src/themes/huraga/config/settings_data.json
         print_success "Successfully copied Huraga configuration."
         print_separator
     fi
