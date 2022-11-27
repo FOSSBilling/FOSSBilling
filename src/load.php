@@ -295,8 +295,8 @@ function detectOldFiles(){
     $msg = '';
     $foundOld = false;
 
-    $oldFolderNames = ['bb-data','bb-library','bb-locale','bb-modules','bb-themes','bb-uploads','bb-cron.php','bb-di.php','bb-ipn.php','bb-load.php'];
-    $newFolderNames = ['data','library','locale','modules','themes','uploads','cron.php','di.php','ipn.php','load.php'];
+    $oldFolderNames = ['bb-data','bb-library','bb-locale','bb-modules','bb-themes','bb-uploads','bb-cron.php','bb-di.php','bb-ipn.php','bb-load.php','bb-config.php'];
+    $newFolderNames = ['data','library','locale','modules','themes','uploads','cron.php','di.php','ipn.php','load.php','config.php'];
 
     foreach ($oldFolderNames as $folder){
         $toCheck = PATH_ROOT . DIRECTORY_SEPARATOR . $folder;
@@ -308,7 +308,9 @@ function detectOldFiles(){
         $i++;
     }
     if($foundOld){
-        $finalMsg = "The FOSSBilling file structure has been changed, please migrate any custom files and folders from the old folder to the new folder and then delete the old ones. <br>";
+        $finalMsg = "The FOSSBilling file structure has been changed, please migrate any custom files and folders from the old folder to the new folder and then delete the old ones. You will also need to update the paths in your config.php file. <br>";
+        $finalMsg .= "Feel free to join our <a href='https://fossbilling.org/discord'>Discord Server</a> for assitance. <br><br>";
+        $finalMsg .= "Files and folders renamed: <br>";
         $finalMsg .= $msg;
         throw new Exception($finalMsg);
     }
