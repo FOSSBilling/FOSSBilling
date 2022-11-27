@@ -215,7 +215,7 @@ class Service implements InjectionAwareInterface
     private function _getAvailable()
     {
         $mods = [];
-        $handle = opendir(BB_PATH_MODS);
+        $handle = opendir(PATH_MODS);
         while ($name = readdir($handle)) {
             if (ctype_alnum($name)) {
                 $m = $name;
@@ -376,7 +376,7 @@ class Service implements InjectionAwareInterface
         switch ($ext->type) {
             case \Box_Extension::TYPE_HOOK:
                 $file = ucfirst($ext->name) . '.php';
-                $destination = BB_PATH_LIBRARY . '/Hook/' . $file;
+                $destination = PATH_LIBRARY . '/Hook/' . $file;
                 if (file_exists($destination)) {
                     unlink($destination);
                 }
@@ -434,8 +434,8 @@ class Service implements InjectionAwareInterface
             throw new \Exception('Invalid download URL for the extension');
         }
 
-        $extracted = BB_PATH_CACHE . '/' . md5(uniqid());
-        $zip = BB_PATH_CACHE . '/' . md5(uniqid()) . '.zip';
+        $extracted = PATH_CACHE . '/' . md5(uniqid());
+        $zip = PATH_CACHE . '/' . md5(uniqid()) . '.zip';
         
         // Create a temporary directory to extract the extension
         mkdir($extracted, 0755, true);
@@ -451,7 +451,7 @@ class Service implements InjectionAwareInterface
         // Install by type
         switch ($type) {
             case \Box_Extension::TYPE_MOD:
-                $destination = BB_PATH_MODS . '/' . $id;
+                $destination = PATH_MODS . '/' . $id;
                 if ($this->di['tools']->fileExists($destination)) {
                     throw new \Box_Exception('Module seems to be already installed.', null, 436);
                 }
@@ -461,7 +461,7 @@ class Service implements InjectionAwareInterface
                 break;
 
             case \Box_Extension::TYPE_THEME:
-                $destination = BB_PATH_THEMES . '/' . $id;
+                $destination = PATH_THEMES . '/' . $id;
                 if (!$this->di['tools']->fileExists($destination)) {
                     if (!$this->di['tools']->rename($extracted, $destination)) {
                         throw new \Box_Exception('Theme can not be moved. Make sure your server allows you to write to the themes folder.', null, 439);
@@ -470,7 +470,7 @@ class Service implements InjectionAwareInterface
                 break;
 
             case \Box_Extension::TYPE_TRANSLATION:
-                $destination = BB_PATH_LANGS . '/' . $id . '/LC_MESSAGES';
+                $destination = PATH_LANGS . '/' . $id . '/LC_MESSAGES';
                 $this->di['tools']->emptyFolder($destination);
                 if (!$this->di['tools']->fileExists($destination)) {
                     $this->di['tools']->mkdir($destination, 0777, true);

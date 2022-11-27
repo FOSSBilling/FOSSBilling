@@ -21,7 +21,7 @@ use RedBeanPHP\Facade;
 $di = new Box_Di();
 
 $di['config'] = function () {
-    $array = include BB_PATH_ROOT . '/bb-config.php';
+    $array = include PATH_ROOT . '/bb-config.php';
 
     return new Box_Config($array);
 };
@@ -394,7 +394,7 @@ $di['service_boxbilling'] = $di->protect(function ($config) {
 
 $di['ftp'] = $di->protect(function ($params) { return new \Box_Ftp($params); });
 
-$di['geoip'] = function () { return new \GeoIp2\Database\Reader(BB_PATH_LIBRARY . '/GeoLite2-Country.mmdb'); };
+$di['geoip'] = function () { return new \GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb'); };
 
 $di['password'] = function () { return new Box_Password(); };
 

@@ -166,7 +166,7 @@ class Admin extends \Api_Abstract
             throw new \Exception('Queue not found');
         }
 
-        $lock_file = BB_PATH_LOG . '/queue_' . $q->id . '.lock';
+        $lock_file = PATH_LOG . '/queue_' . $q->id . '.lock';
         touch($lock_file);
         $file_handle = fopen($lock_file, 'r+');
         if (!flock($file_handle, LOCK_EX | LOCK_NB)) {

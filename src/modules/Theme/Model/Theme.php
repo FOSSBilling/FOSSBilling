@@ -160,7 +160,7 @@ class Theme
 
     public function getPath()
     {
-        return BB_PATH_THEMES . DIRECTORY_SEPARATOR . $this->name;
+        return PATH_THEMES . DIRECTORY_SEPARATOR . $this->name;
     }
 
     public function getPathConfig()

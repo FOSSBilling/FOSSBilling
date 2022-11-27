@@ -907,7 +907,7 @@ class Service implements \Box\InjectionAwareInterface
 
         $exists = $this->di['db']->getAssoc($query);
 
-        $pattern = BB_PATH_LIBRARY . '/Registrar/Adapter/*.php';
+        $pattern = PATH_LIBRARY . '/Registrar/Adapter/*.php';
         $adapters = [];
         foreach (glob($pattern) as $path) {
             $adapter = pathinfo($path, PATHINFO_FILENAME);
@@ -945,7 +945,7 @@ class Service implements \Box\InjectionAwareInterface
 
     private function registrarGetRegistrarAdapterClassName(\Model_TldRegistrar $model)
     {
-        if (!file_exists(BB_PATH_LIBRARY . '/Registrar/Adapter/' . $model->registrar . '.php')) {
+        if (!file_exists(PATH_LIBRARY . '/Registrar/Adapter/' . $model->registrar . '.php')) {
             throw new \Box_Exception('Domain registrar :adapter was not found', [':adapter' => $model->registrar]);
         }
 

@@ -18,14 +18,14 @@ use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV') ?: 'production');
-const BB_PATH_ROOT = __DIR__;
-const BB_PATH_VENDOR = BB_PATH_ROOT . '/vendor';
-const BB_PATH_LIBRARY = BB_PATH_ROOT . '/library';
-const BB_PATH_THEMES = BB_PATH_ROOT . '/themes';
-const BB_PATH_MODS = BB_PATH_ROOT . '/modules';
-const BB_PATH_LANGS = BB_PATH_ROOT . '/locale';
-const BB_PATH_UPLOADS = BB_PATH_ROOT . '/uploads';
-const BB_PATH_DATA = BB_PATH_ROOT . '/data';
+const PATH_ROOT = __DIR__;
+const PATH_VENDOR = PATH_ROOT . '/vendor';
+const PATH_LIBRARY = PATH_ROOT . '/library';
+const PATH_THEMES = PATH_ROOT . '/themes';
+const PATH_MODS = PATH_ROOT . '/modules';
+const PATH_LANGS = PATH_ROOT . '/locale';
+const PATH_UPLOADS = PATH_ROOT . '/uploads';
+const PATH_DATA = PATH_ROOT . '/data';
 const isCLI = 'cli' === PHP_SAPI;
 
 function handler_error(int $number, string $message, string $file, int $line)
@@ -64,7 +64,7 @@ function handler_exception($e)
             return false;
         }
 
-        if (defined('BB_DEBUG') && BB_DEBUG && file_exists(BB_PATH_VENDOR)) {
+        if (defined('BB_DEBUG') && BB_DEBUG && file_exists(PATH_VENDOR)) {
             /**
              * If advanced debugging is enabled, print Whoops instead of our error page.
              * flip/whoops documentation: https://github.com/filp/whoops/blob/master/docs/API%20Documentation.md.
@@ -236,13 +236,13 @@ set_exception_handler('handler_exception');
 set_error_handler('handler_error');
 
 // Check for Composer packages
-if (!file_exists(BB_PATH_VENDOR)) {
+if (!file_exists(PATH_VENDOR)) {
     throw new Exception("It seems like Composer packages are missing. You have to run \"<code>composer install</code>\" in order to install them. For detailed instruction, you can see <a href=\"https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies\">Composer's getting started guide</a>.<br /><br />If you have downloaded FOSSBilling from <a href=\"https://github.com/FOSSBilling/FOSSBilling/releases\">GitHub releases</a>, this shouldn't happen.", 110);
 }
 
 // Multisite support. Load new configuration depending on the current hostname
 // If being run from CLI, first parameter must be the hostname
-$configPath = BB_PATH_ROOT . '/bb-config.php';
+$configPath = PATH_ROOT . '/bb-config.php';
 if ((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || ('cli' === PHP_SAPI && isset($argv[1]))) {
     if ('cli' === PHP_SAPI) {
         $host = $argv[1];
@@ -250,7 +250,7 @@ if ((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || ('cli' === PHP_SA
         $host = $_SERVER['HTTP_HOST'];
     }
 
-    $predictConfigPath = BB_PATH_ROOT . '/bb-config-' . $host . '.php';
+    $predictConfigPath = PATH_ROOT . '/bb-config-' . $host . '.php';
     if (file_exists($predictConfigPath)) {
         $configPath = $predictConfigPath;
     }
@@ -265,7 +265,7 @@ if (!file_exists($configPath) || 0 === filesize($configPath)) {
     $base_url .= rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
     $url = $base_url . '/install/index.php';
 
-    if (file_exists(BB_PATH_ROOT . '/install/index.php')) {
+    if (file_exists(PATH_ROOT . '/install/index.php')) {
         header("Location: $url");
     }
 
@@ -275,20 +275,20 @@ if (!file_exists($configPath) || 0 === filesize($configPath)) {
 }
 
 // Try to check if /install directory still exists, even after the installation was completed
-if (file_exists($configPath) && 0 !== filesize($configPath) && file_exists(BB_PATH_ROOT . '/install/index.php')) {
+if (file_exists($configPath) && 0 !== filesize($configPath) && file_exists(PATH_ROOT . '/install/index.php')) {
     throw new Exception('For safety reasons, you have to delete the <b><em>/install</em></b> directory to start using FOSSBilling.</p><p>Please delete the <b><em>/install</em></b> directory from your web server.', 102);
 }
 
 $config = require $configPath;
-require BB_PATH_VENDOR . '/autoload.php';
+require PATH_VENDOR . '/autoload.php';
 
 date_default_timezone_set($config['timezone']);
 
 define('BB_DEBUG', $config['debug']);
 define('BB_URL', $config['url']);
 define('BB_SEF_URLS', $config['sef_urls']);
-define('BB_PATH_CACHE', $config['path_data'] . '/cache');
-define('BB_PATH_LOG', $config['path_data'] . '/log');
+define('PATH_CACHE', $config['path_data'] . '/cache');
+define('PATH_LOG', $config['path_data'] . '/log');
 define('BB_SSL', str_starts_with($config['url'], 'https'));
 
 if ($config['sef_urls']) {
@@ -309,13 +309,13 @@ if ($config['debug']) {
 
 ini_set('log_errors', '1');
 ini_set('html_errors', false);
-ini_set('error_log', BB_PATH_LOG . '/php_error.log');
+ini_set('error_log', PATH_LOG . '/php_error.log');
 
 $isApache = (function_exists('apache_get_version')) ? true : false;
 $serverSoftware = (isset($_SERVER['SERVER_SOFTWARE'])) ? $_SERVER['SERVER_SOFTWARE'] : '';
 
 if ($isApache or (false !== stripos($serverSoftware, 'apache'))) {
-    if (!file_exists(BB_PATH_ROOT . '/.htaccess')) {
+    if (!file_exists(PATH_ROOT . '/.htaccess')) {
         throw new Exception('Error: You appear to be running an Apache server without a valid <b><em>.htaccess</em></b> file. You may need to rename <b><em>htaccess.txt</em></b> to <b><em>.htaccess</em></b>');
     }
 }

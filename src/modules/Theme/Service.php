@@ -251,7 +251,7 @@ class Service implements InjectionAwareInterface
                ';
         $default = 'admin_default';
         $theme = $this->di['db']->getCell($query, ['param' => 'admin_theme']);
-        $path = BB_PATH_THEMES . DIRECTORY_SEPARATOR;
+        $path = PATH_THEMES . DIRECTORY_SEPARATOR;
         if (null == $theme || !file_exists($path . $theme)) {
             $theme = $default;
         }
@@ -328,7 +328,7 @@ class Service implements InjectionAwareInterface
 
     public function getThemesPath()
     {
-        return BB_PATH_THEMES . DIRECTORY_SEPARATOR;
+        return PATH_THEMES . DIRECTORY_SEPARATOR;
     }
 
     private function _loadTheme($theme, $client = true, $mod = null)
@@ -377,7 +377,7 @@ class Service implements InjectionAwareInterface
         }
         $list = array_unique($list);
         foreach ($list as $mod) {
-            $p = BB_PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($mod) . DIRECTORY_SEPARATOR;
+            $p = PATH_MODS . DIRECTORY_SEPARATOR . ucfirst($mod) . DIRECTORY_SEPARATOR;
             $p .= $client ? 'html_client' : 'html_admin';
             if (file_exists($p)) {
                 array_push($paths, $p);

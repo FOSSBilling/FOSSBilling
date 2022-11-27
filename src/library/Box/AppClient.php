@@ -92,8 +92,8 @@ class Box_AppClient extends Box_App
         $settings = $service->getThemeSettings($theme);
 
         $loader = new Box_TwigLoader([
-                'mods' => BB_PATH_MODS,
-                'theme' => BB_PATH_THEMES . DIRECTORY_SEPARATOR . $code,
+                'mods' => PATH_MODS,
+                'theme' => PATH_THEMES . DIRECTORY_SEPARATOR . $code,
                 'type' => 'client',
             ]
         );

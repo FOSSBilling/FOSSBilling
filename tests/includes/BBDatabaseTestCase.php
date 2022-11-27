@@ -29,7 +29,7 @@ abstract class BBDatabaseTestCase extends Testcase
     public function getSeedFilesPath()
     {
         if ($this->_seedFilesPath == NULL) {
-            $this->_seedFilesPath = BB_PATH_TESTS.'/fixtures';
+            $this->_seedFilesPath = PATH_TESTS.'/fixtures';
         }
 
         return rtrim($this->_seedFilesPath, '/') . '/';

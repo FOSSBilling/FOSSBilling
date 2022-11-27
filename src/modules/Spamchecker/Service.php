@@ -101,7 +101,7 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        require_once BB_PATH_MODS . '/Spamchecker/akismet.curl.class.php';
+        require_once PATH_MODS . '/Spamchecker/akismet.curl.class.php';
 
         $akismet = new \akismet($config['akismet_api_key'], $di['config']['url']);
         if (!$akismet->valid_key()) {

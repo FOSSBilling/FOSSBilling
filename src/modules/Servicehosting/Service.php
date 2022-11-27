@@ -580,7 +580,7 @@ class Service implements InjectionAwareInterface
 
     private function _getServerManagers()
     {
-        $dir = BB_PATH_LIBRARY . '/Server/Manager';
+        $dir = PATH_LIBRARY . '/Server/Manager';
         $files = [];
         $directory = opendir($dir);
         while ($item = readdir($directory)) {
@@ -595,7 +595,7 @@ class Service implements InjectionAwareInterface
 
     public function getServerManagerConfig($manager)
     {
-        $filename = BB_PATH_LIBRARY . '/Server/Manager/' . $manager . '.php';
+        $filename = PATH_LIBRARY . '/Server/Manager/' . $manager . '.php';
         if (!file_exists($filename)) {
             return [];
         }
