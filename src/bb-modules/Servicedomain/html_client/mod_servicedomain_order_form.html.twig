@@ -97,6 +97,8 @@ $(function() {
         $('#domain-action').val($(this).attr('rel'));
     });
 
+    $('#config-next').hide();
+
     if ($(".addons").length) {
         $('.order-button').one('click', function() {
             $(this).hide();
@@ -167,6 +169,7 @@ $(function() {
 
                     s.append(new Option(i + "{{ ' Year/s @ '|trans }}" + price, i));
                 }
+                $('#config-next').show();
             }
         );
     }
@@ -179,6 +182,7 @@ $(function() {
                 var price = bb.currency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
                 
                 $('#transfer-price').text(price);
+                $('#config-next').show();
             }
         );
     }
