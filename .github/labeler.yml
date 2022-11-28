@@ -2,13 +2,13 @@ tests/CI:
 - tests/*
 
 front-end:
-- src/bb-themes/*
+- src/themes/*
 
 admin-panel:
-- src/bb-themes/admin_*
+- src/themes/admin_*
 
 huraga:
-- src/bb-themes/huraga/*
+- src/themes/huraga/*
 
 composer:
 - src/composer.json
@@ -19,16 +19,16 @@ installer:
 - bin/install.sh
 
 payments:
-- src/bb-library/Payment*
+- src/library/Payment*
 
 server-manager:
-- src/bb-library/Server*
+- src/library/Server*
 
 github-config:
 - .github/*
 
 hosting:
-- src/bb-library/Server/Manager/*
+- src/library/Server/Manager/*
 
 docker:
 - docker-compose.yaml

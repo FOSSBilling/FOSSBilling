@@ -12,7 +12,7 @@ class Api_Admin_ServiceDownloadableTest extends BBDbApiTestCase
 
         /*
         $endpoint = BB_URL . 'bb-api/rest.php/admin/servicedownloadable/upload';
-        $file_name = BB_PATH_TESTS.'/fixtures/services.xml';
+        $file_name = PATH_TESTS.'/fixtures/services.xml';
 
         $params = array(
             'id'            =>  7, // product id

@@ -4,7 +4,7 @@ Master
 **General:**
 * Refactoring admin template with Tabler.io
 * Templates extensions .phtml renamed to .html.twig
-* Updated bb-themes/bootstrap to Bootstrap 5
+* Updated themes/bootstrap to Bootstrap 5
 
 Release 4.22-beta.1.1
 ------------------------------------------------------------------------------
@@ -308,7 +308,7 @@ Release 2.9.10 (2012-09-10)
 
 * Search clients by company name in clients listing page
 * Ability to define staff member permissions
-* New parameter in bb-config.php file BB_LOCALE_TIME_FORMAT - to define localized time format
+* New parameter in config.php file BB_LOCALE_TIME_FORMAT - to define localized time format
 * Add: New filter to display translatable date with time: bb_datetime
 * Update: Search clients by company name in clients listing page
 * Fix: Use PDO::MYSQL_ATTR_USE_BUFFERED_QUERY for PDO connection
@@ -395,7 +395,7 @@ Release 2.6.17 (2012-06-17)
 * Ability to preview email templates. Old email templates are deprecated.
 * Ability to place new order for clients from admin area
 * Ability to change currency price format
-* Deprecated bb-library/Hook bindings. Now event hooks are binded from modules Service.php class
+* Deprecated library/Hook bindings. Now event hooks are binded from modules Service.php class
 * php mcrypt extension is now mandatory
 * Email settings are now stored in encrypted format
 * Added ability to reset email template to default
@@ -446,7 +446,7 @@ Release v2.4.30 (2012-04-30)
 * https links updates
 * https://github.com/boxbilling/BoxBilling/issues/115 fix
 * Password issue fix: https://github.com/boxbilling/BoxBilling/issues/114
-* Including http://redbeanphp.com/ ORM in bb-library/rb.php For extensions as a helper
+* Including http://redbeanphp.com/ ORM in library/rb.php For extensions as a helper
 * Simplified nginx server support. Routing includes only 2 simple rules
 * Adding new core module mod_api. Api is now accessible from yourdomain.com/api/role/module/method. bb-api is deprecated and will be removed in 2.6 version
 * Gravatar url uses ssl if BoxBilling is on https

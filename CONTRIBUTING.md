@@ -56,7 +56,7 @@ In the meantime, the /main branch is being maintained with bug fixes, security u
 
 ### Understanding the structure of FOSSBilling
 
-FOSSBilling is an open-source project &mdash; it's made up of over [50 modules](https://github.com/FOSSBilling/FOSSBilling/tree/master/src/bb-modules). When you initially consider contributing to FOSSBilling, you might be unsure about which of those 50 modules implements the functionality you want to change or report a bug for. This section should help you with that.
+FOSSBilling is an open-source project &mdash; it's made up of over [50 modules](https://github.com/FOSSBilling/FOSSBilling/tree/master/src/modules). When you initially consider contributing to FOSSBilling, you might be unsure about which of those 50 modules implements the functionality you want to change or report a bug for. This section should help you with that.
 
 There are 2 types of modules:
 

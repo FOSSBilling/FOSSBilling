@@ -4,7 +4,7 @@
 BASEDIR=$(dirname $0)
 APPDIR=`cd $BASEDIR/.. ; pwd`
 BB_CACHE="/tmp/bb-translations/"
-BB_POT=$APPDIR/src/bb-locale/messages.pot
+BB_POT=$APPDIR/src/locale/messages.pot
 BB_POT_EXCLUDE=$APPDIR/bin/gettext_exclude.po
 BB_POT_INCLUDE=$APPDIR/bin/gettext_include.pot
 

@@ -1,11 +1,11 @@
 <?php
 
-require_once dirname(__FILE__) . '/../src/bb-load.php';
+require_once dirname(__FILE__) . '/../src/load.php';
 
 echo "Caching templates".PHP_EOL;
-$dirs = glob(BB_PATH_MODS.'/*/html_admin');
-$dirs = array_merge($dirs, glob(BB_PATH_MODS . '/*/html_client'));
-$dirs = array_merge($dirs, glob(BB_PATH_THEMES . '/*/html'));
+$dirs = glob(PATH_MODS.'/*/html_admin');
+$dirs = array_merge($dirs, glob(PATH_MODS . '/*/html_client'));
+$dirs = array_merge($dirs, glob(PATH_THEMES . '/*/html'));
 genCache($dirs, "/tmp/bb-translations/");
 
 function genCache($dirs, $tmpDir)

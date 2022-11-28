@@ -14,46 +14,46 @@
     </fileset>
 
     <fileset id="api-sources" dir="src" followsymlinks="false">
-        <include name="bb-data/log"/>
-        <include name="bb-data/cache/index.html"/>
-        <include name="bb-data/uploads/index.html"/>
-        <include name="bb-data/index.html"/>
-        <include name="bb-data/.htaccess.txt"/>
+        <include name="data/log"/>
+        <include name="data/cache/index.html"/>
+        <include name="data/uploads/index.html"/>
+        <include name="data/index.html"/>
+        <include name="data/.htaccess.txt"/>
 
-        <exclude name="bb-data/log/*"/>
-        <exclude name="bb-data/cache/*"/>
-        <exclude name="bb-data/uploads/*"/>
+        <exclude name="data/log/*"/>
+        <exclude name="data/cache/*"/>
+        <exclude name="data/uploads/*"/>
 
         <include name="vendor/**"/>
-        <include name="bb-library/**"/>
-        <include name="bb-modules/**"/>
-        <include name="bb-locale/**"/>
-        <include name="bb-themes/**"/>
-        <include name="bb-uploads/**"/>
+        <include name="library/**"/>
+        <include name="modules/**"/>
+        <include name="locale/**"/>
+        <include name="themes/**"/>
+        <include name="uploads/**"/>
         <include name="install/**"/>
 
-        <include name="bb-config-sample.php"/>
-        <include name="bb-cron.php"/>
-        <include name="bb-di.php"/>
-        <include name="bb-ipn.php"/>
-        <include name="bb-load.php"/>
+        <include name="config-sample.php"/>
+        <include name="cron.php"/>
+        <include name="di.php"/>
+        <include name="ipn.php"/>
+        <include name="load.php"/>
         <include name="foss-update.php"/>
         <include name="rb.php"/>
         <include name="index.php"/>
         <include name="robots.txt"/>
         <include name=".htaccess"/>
 
-        <exclude name="bb-library/Server/Manager/Directadmin.php"/>
-        <exclude name="bb-library/Server/Manager/Ispconfig3.php"/>
-        <exclude name="bb-library/Server/Manager/Plesk.php"/>
-        <exclude name="bb-library/Server/Manager/Virtualmin.php"/>
+        <exclude name="library/Server/Manager/Directadmin.php"/>
+        <exclude name="library/Server/Manager/Ispconfig3.php"/>
+        <exclude name="library/Server/Manager/Plesk.php"/>
+        <exclude name="library/Server/Manager/Virtualmin.php"/>
 
-        <exclude name="bb-library/Registrar/includes/**"/>
+        <exclude name="library/Registrar/includes/**"/>
     </fileset>
 
     <target name="clean" description="Clean up and create artifact directories">
-        <delete dir="src/bb-data/cache"/>
-        <mkdir  dir="src/bb-data/cache"/>
+        <delete dir="src/data/cache"/>
+        <mkdir  dir="src/data/cache"/>
         <delete dir="${build.dir}"/>
 
         <mkdir dir="${build.dir}"/>
@@ -84,15 +84,15 @@
     </target>
 
     <target name="config" description="Create config file">
-        <copy file="src/bb-config-sample.php" tofile="src/bb-config.php" overwrite="true"/>
+        <copy file="src/config-sample.php" tofile="src/config.php" overwrite="true"/>
     </target>
 
     <target name="test-unit">
         <exec executable="src/bb-vendor/bin/phpunit" failonerror="true">
-              <arg line="tests/bb-library/" />
+              <arg line="tests/library/" />
         </exec>
         <exec executable="src/bb-vendor/bin/phpunit" failonerror="true">
-            <arg line="tests/bb-modules/" />
+            <arg line="tests/modules/" />
         </exec>
     </target>
 
@@ -107,7 +107,7 @@
 
     <target name="test-modules">
         <exec executable="src/bb-vendor/bin/phpunit" failonerror="true">
-            <arg line="src/bb-modules/" />
+            <arg line="src/modules/" />
         </exec>
     </target>
 
@@ -122,11 +122,11 @@
         <property environment="env"/>
         <echo message="Release TAG: ${env.TRAVIS_TAG}" />
 
-        <exec executable="sed" failonerror="true" output="${source}/bb-library/Box/Version2.php">
-            <arg line="s/0.0.1/${env.TRAVIS_TAG}/ ${source}/bb-library/Box/Version.php" />
+        <exec executable="sed" failonerror="true" output="${source}/library/Box/Version2.php">
+            <arg line="s/0.0.1/${env.TRAVIS_TAG}/ ${source}/library/Box/Version.php" />
         </exec>
         <exec executable="mv" failonerror="true">
-            <arg line="${source}/bb-library/Box/Version2.php ${source}/bb-library/Box/Version.php" />
+            <arg line="${source}/library/Box/Version2.php ${source}/library/Box/Version.php" />
         </exec>
     </target>
 
