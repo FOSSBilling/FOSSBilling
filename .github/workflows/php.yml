@@ -37,7 +37,7 @@ jobs:
         path: ./src/vendor
         key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
         restore-keys: |
-          ${{ runner.os }}-php-
+          ${{ runner.os }}-php
     - name: Install dependencies
       if: steps.composer-cache.outputs.cache-hit != 'true'
       run: composer install --prefer-dist --no-progress --no-suggest
