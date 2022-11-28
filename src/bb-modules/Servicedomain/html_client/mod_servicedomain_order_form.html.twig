@@ -74,7 +74,7 @@
                                 <div class="form-horizontal">
                                     <div id="domain-transfer-config" style="display:none;">
                                         <p>{{ 'Transfer price'|trans }}: <span id="transfer-price"></span></p>
-                                        <input type="text" name="transfer_code" value="{{ request.transfer_code }}" style="width: 200px" placeholder="{{ 'Enter domain transfer code'|trans }}">
+                                        <input type="text" name="transfer_code" value="{{ request.transfer_code }}" style="width: 200px" placeholder="{{ 'Enter domain transfer code'|trans }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -96,6 +96,8 @@ $(function() {
     $('ul.nav.nav-tabs > li.domain-tab a').bind('click', function () {
         $('#domain-action').val($(this).attr('rel'));
     });
+
+    $('#config-next').hide();
 
     if ($(".addons").length) {
         $('.order-button').one('click', function() {
@@ -167,6 +169,7 @@ $(function() {
 
                     s.append(new Option(i + "{{ ' Year/s @ '|trans }}" + price, i));
                 }
+                $('#config-next').show();
             }
         );
     }
@@ -179,6 +182,7 @@ $(function() {
                 var price = bb.currency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
                 
                 $('#transfer-price').text(price);
+                $('#config-next').show();
             }
         );
     }
