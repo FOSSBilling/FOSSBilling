@@ -1,6 +1,6 @@
 {% extends 'layout_default.html.twig' %}
 
-{% block meta_title %}Client area languages{% endblock %}
+{% block meta_title %}{{ 'Client area languages'|trans }}{% endblock %}
 
 {% set active_menu = 'extensions' %}
 
@@ -58,8 +58,7 @@
                         <li>{{ 'Check if your language translation file is available at'|trans }} <a href="https://translate.fossbilling.org" target="_blank">{{ 'FOSSBilling translations repository'|trans }}</a></li>
                         <li>{{ 'Download language files and place them to'|trans }} <strong>{{ constant('PATH_LANGS') }}</strong></li>
                         <li>{{ 'Language will be automatically available and can be changed in client area'|trans }}</li>
-                        <li>{{ 'Read'|trans }} <a href="http://docs.fossbilling.org/en/latest/reference/language.html" title="Installing FOSSBilling in Your Language" target="_blank">{{ 'Installing FOSSBilling in Your Language'|trans }}</a> {{ 'to learn how to install files that will transform FOSSBilling so it displays in your language.'|trans }}</li>
-                        <li>{{ 'Translations can be made with'|trans }} <a href="http://www.poedit.net/" target="_blank">http://www.poedit.net/</a> {{ 'software'|trans }}</li>
+                        <li>{{ 'Read'|trans }} <a href="https://fossbilling.org/docs/customizing-fossbilling/localization" title="Using FOSSBilling in your language" target="_blank">{{ 'Using FOSSBilling in your language'|trans }}</a> {{ 'to learn how to install a new language.'|trans }}</li>
                     </ul>
                 </div>
 
