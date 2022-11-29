@@ -266,6 +266,11 @@ if ((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || ('cli' === PHP_SA
     }
 }
 
+// Rename the old "bb-config" file to the new name if it exists
+if(!file_exists($configPath) && file_exists(PATH_ROOT . '/bb-config.php')){
+    rename(PATH_ROOT . '/bb-config.php', $configPath);
+}
+
 // Try to check if configuration is available
 if (!file_exists($configPath) || 0 === filesize($configPath)) {
     // Try to create an empty configuration file
