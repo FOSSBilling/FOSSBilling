@@ -495,14 +495,14 @@
     {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
         <script>
             $(function() {
-                setPlotDataData('chart-income', {{ admin.stats_get_income({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }} );
-                setPlotDataData('chart-orders', {{ admin.stats_get_orders({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }} );
-                setPlotDataData('chart-invoices', {{ admin.stats_get_invoices({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }} );
-                setPlotDataData('chart-clients', {{ admin.stats_get_clients({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }} );
-                setPlotDataData('chart-tickets', {{ admin.stats_get_tickets({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }} );
+                setPlotDataData('chart-income', {{ admin.stats_get_income({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Income'|trans }}" );
+                setPlotDataData('chart-orders', {{ admin.stats_get_orders({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Orders'|trans }}" );
+                setPlotDataData('chart-invoices', {{ admin.stats_get_invoices({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }},"{{ 'Invoices'|trans }}" );
+                setPlotDataData('chart-clients', {{ admin.stats_get_clients({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Clients'|trans }}" );
+                setPlotDataData('chart-tickets', {{ admin.stats_get_tickets({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Tickets'|trans }}");
             });
 
-            function setPlotDataData(elementId, data) {
+            function setPlotDataData(elementId, data, displayName="Name Placeholder") {
                 new ApexCharts(document.getElementById(elementId), {
                     chart: {
                         type: 'area',
@@ -529,7 +529,7 @@
                         curve: "smooth",
                     },
                     series: [{
-                        name: "{{ 'Invoices'|trans }}",
+                        name: displayName,
                         data: data
                     }],
                     grid: {
