@@ -143,6 +143,7 @@ class Service
             'company_tel',
             'company_signature',
             'company_logo',
+            'company_logo_dark',
             'company_address_1',
             'company_address_2',
             'company_address_3',
@@ -162,6 +163,11 @@ class Service
             $logoUrl = $baseUrl . $logoUrl;
         }
 
+        $logoUrlDark = $this->di['array_get']($results, 'company_logo_dark', $logoUrl);
+        if (null !== $logoUrlDark && false === strpos($logoUrlDark, 'http')) {
+            $logoUrlDark = $baseUrl . $logoUrlDark;
+        }
+
         return [
             'www' => $baseUrl,
             'name' => $this->di['array_get']($results, 'company_name', null),
@@ -169,6 +175,7 @@ class Service
             'tel' => $this->di['array_get']($results, 'company_tel', null),
             'signature' => $this->di['array_get']($results, 'company_signature', null),
             'logo_url' => $logoUrl,
+            'logo_url_dark' => $logoUrlDark,
             'address_1' => $this->di['array_get']($results, 'company_address_1', null),
             'address_2' => $this->di['array_get']($results, 'company_address_2', null),
             'address_3' => $this->di['array_get']($results, 'company_address_3', null),
