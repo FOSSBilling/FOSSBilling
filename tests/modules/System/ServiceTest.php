@@ -34,6 +34,7 @@ class ServiceTest extends \BBTestCase {
             'tel'               =>   NULL,
             'signature'         =>   NULL,
             'logo_url'          =>   NULL,
+            'logo_url_dark'     =>   NULL,
             'address_1'         =>   NULL,
             'address_2'         =>   NULL,
             'address_3'         =>   NULL,
