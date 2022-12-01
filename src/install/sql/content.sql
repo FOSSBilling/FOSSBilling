@@ -40,8 +40,8 @@ LOCK TABLES `admin_group` WRITE;
 
 INSERT INTO `admin_group` (`id`, `name`, `created_at`, `updated_at`)
 VALUES
-	(1,'Administrators','2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(2,'Support','2021-01-01 12:00:00','2021-01-01 12:00:00');
+	(1,'Administrators','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(2,'Support','2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `admin_group` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -80,7 +80,7 @@ LOCK TABLES `client_group` WRITE;
 
 INSERT INTO `client_group` (`id`, `title`, `created_at`, `updated_at`)
 VALUES
-	(1,'Default','2021-01-01 12:00:00','2021-01-01 12:00:00');
+	(1,'Default','2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `client_group` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -114,7 +114,7 @@ LOCK TABLES `currency` WRITE;
 
 INSERT INTO `currency` (`id`, `title`, `code`, `is_default`, `conversion_rate`, `format`, `price_format`, `created_at`, `updated_at`)
 VALUES
-	(1,'US Dollar','USD',1,1.000000,'${{price}}','1','2021-01-01 12:00:00','2021-01-01 12:00:00');
+	(1,'US Dollar','USD',1,1.000000,'${{price}}','1','2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `currency` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -176,9 +176,9 @@ LOCK TABLES `kb_article` WRITE;
 
 INSERT INTO `kb_article` (`id`, `kb_article_category_id`, `views`, `title`, `content`, `slug`, `status`, `created_at`, `updated_at`)
 VALUES
-	(1,2,0,'How to contact support','Registered clients can contact our support team:\n------------------------------------------------------------\n\n* Login to clients area\n* Select **Support** menu item\n* Click **Submit new ticket**\n* Fill the form and press *Submit*\n\nGuests can contact our support team:\n------------------------------------------------------------\n\n* Use our contact form.\n* Fill the form and click *Submit*\n','how-to-contact-support','active','2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(2,2,0,'How to place new order','To place new order, follow these steps:\n------------------------------------------------------------\n\n* Select our services at *Order* page.\n* Depending on selected product, you might need to provide additional information to complete order request.\n* Click \"Continue\" and your product/service is now in shopping cart.\n* If you have promo code, you can apply it and get discount.\n* Click on \"Checkout\" button to proceed with checkout process\n    * If you are already logged in, uou will be automaticaly redirected to new invoice\n    * If you are registerd client, you can provide your login details\n    * If you have never purchased any service from us, fill up client sign up form, and continue checkout\n* Choose payment method to pay for invoice. List of all avalable payment methods will be listed below invoice details.\n* Choose payment method\n* You will be redirected to payment gateway page\n* After successful payment, You will be redirected back to invoice page.\n* Depending on selected services your order will be reviewed and activated by our staff members.\n* After you receive confirmation email about order activation you are able to manage your services.\n','how-to-place-new-order','active','2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(3,2,0,'Example article','Example article heading\n------------------------------------------------------------\n\nCursus, parturient porta dis sit? Habitasse non, sociis porttitor, sagittis dapibus scelerisque? Pid, porttitor integer, montes. Hac, in? Arcu nunc integer nascetur dis nisi. In, sed a amet? Adipiscing odio mauris mauris, porta, integer, adipiscing habitasse, elementum phasellus, turpis in? Quis magna placerat eu, cursus urna mattis egestas, a ac massa turpis mus et odio pid in, urna dapibus ridiculus in turpis cursus ac a urna magna purus etiam ac nisi porttitor! Auctor est? In adipiscing, hac platea augue vut, hac est cum sagittis! Montes nascetur pulvinar tristique porta platea? Magnis vel etiam nisi augue auctor sit pulvinar! Aliquet rhoncus, elit porta? Magnis pulvinar eu turpis purus sociis a augue? Sit, nascetur! Mattis nisi, penatibus ac ac natoque auctor turpis.\n\nExample article heading\n------------------------------------------------------------\n\nUt diam cursus, elit pulvinar, habitasse purus? Enim. Urna? Velit arcu, rhoncus sociis sed, et, ultrices nascetur lacus vut purus tempor a. Vel? Sagittis integer scelerisque, dapibus lectus mid, magnis, augue duis velit etiam tortor! Eros, a et phasellus est ultricies integer elementum in, tempor sed parturient. Dictumst rhoncus, ut sed sagittis facilisis? In, proin? Urna augue in sociis enim dignissim! Velit magna tincidunt ac. Nunc, vel auctor porta enim integer. Phasellus amet eu. Tristique lundium arcu! In? Massa penatibus arcu, rhoncus augue ut pid pulvinar, porttitor, porta, et! A sit odio, proin natoque ultrices cras cras magna porttitor! Ultrices sed magna in! Porttitor nunc, tincidunt nec, amet integer aenean. Tincidunt, placerat nec dolor parturient et ac pulvinar a.\n','example-article-slug','active','2021-01-01 12:00:00','2021-01-01 12:00:00');
+	(1,2,0,'How to contact support','Registered clients can contact our support team:\n------------------------------------------------------------\n\n* Login to clients area\n* Select **Support** menu item\n* Click **Submit new ticket**\n* Fill the form and press *Submit*\n\nGuests can contact our support team:\n------------------------------------------------------------\n\n* Use our contact form.\n* Fill the form and click *Submit*\n','how-to-contact-support','active','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(2,2,0,'How to place new order','To place new order, follow these steps:\n------------------------------------------------------------\n\n* Select our services at *Order* page.\n* Depending on selected product, you might need to provide additional information to complete order request.\n* Click \"Continue\" and your product/service is now in shopping cart.\n* If you have promo code, you can apply it and get discount.\n* Click on \"Checkout\" button to proceed with checkout process\n    * If you are already logged in, uou will be automaticaly redirected to new invoice\n    * If you are registerd client, you can provide your login details\n    * If you have never purchased any service from us, fill up client sign up form, and continue checkout\n* Choose payment method to pay for invoice. List of all avalable payment methods will be listed below invoice details.\n* Choose payment method\n* You will be redirected to payment gateway page\n* After successful payment, You will be redirected back to invoice page.\n* Depending on selected services your order will be reviewed and activated by our staff members.\n* After you receive confirmation email about order activation you are able to manage your services.\n','how-to-place-new-order','active','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(3,2,0,'Example article','Example article heading\n------------------------------------------------------------\n\nCursus, parturient porta dis sit? Habitasse non, sociis porttitor, sagittis dapibus scelerisque? Pid, porttitor integer, montes. Hac, in? Arcu nunc integer nascetur dis nisi. In, sed a amet? Adipiscing odio mauris mauris, porta, integer, adipiscing habitasse, elementum phasellus, turpis in? Quis magna placerat eu, cursus urna mattis egestas, a ac massa turpis mus et odio pid in, urna dapibus ridiculus in turpis cursus ac a urna magna purus etiam ac nisi porttitor! Auctor est? In adipiscing, hac platea augue vut, hac est cum sagittis! Montes nascetur pulvinar tristique porta platea? Magnis vel etiam nisi augue auctor sit pulvinar! Aliquet rhoncus, elit porta? Magnis pulvinar eu turpis purus sociis a augue? Sit, nascetur! Mattis nisi, penatibus ac ac natoque auctor turpis.\n\nExample article heading\n------------------------------------------------------------\n\nUt diam cursus, elit pulvinar, habitasse purus? Enim. Urna? Velit arcu, rhoncus sociis sed, et, ultrices nascetur lacus vut purus tempor a. Vel? Sagittis integer scelerisque, dapibus lectus mid, magnis, augue duis velit etiam tortor! Eros, a et phasellus est ultricies integer elementum in, tempor sed parturient. Dictumst rhoncus, ut sed sagittis facilisis? In, proin? Urna augue in sociis enim dignissim! Velit magna tincidunt ac. Nunc, vel auctor porta enim integer. Phasellus amet eu. Tristique lundium arcu! In? Massa penatibus arcu, rhoncus augue ut pid pulvinar, porttitor, porta, et! A sit odio, proin natoque ultrices cras cras magna porttitor! Ultrices sed magna in! Porttitor nunc, tincidunt nec, amet integer aenean. Tincidunt, placerat nec dolor parturient et ac pulvinar a.\n','example-article-slug','active','2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `kb_article` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -192,8 +192,8 @@ LOCK TABLES `kb_article_category` WRITE;
 
 INSERT INTO `kb_article_category` (`id`, `title`, `description`, `slug`, `created_at`, `updated_at`)
 VALUES
-	(1,'Frequently asked questions','Section for common issues','faq','2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(2,'How to''s','Section dedicated for tutorials','how-to','2021-01-01 12:00:00','2021-01-01 12:00:00');
+	(1,'Frequently asked questions','Section for common issues','faq','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(2,'How to''s','Section dedicated for tutorials','how-to','2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `kb_article_category` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -222,9 +222,9 @@ LOCK TABLES `post` WRITE;
 
 INSERT INTO `post` (`id`, `admin_id`, `title`, `description`, `content`, `slug`, `status`, `image`, `section`, `publish_at`, `published_at`, `expires_at`, `created_at`, `updated_at`)
 VALUES
-	(1,1,'FOSSBilling is the most affordable Billing Application Ever!','Just in case you weren''t already aware, FOSSBilling is the most affordable client management application ever!','Just in case you weren''t already aware, FOSSBilling is the most affordable client management application ever!\n\nTo learn more about it You can always visit [www.fossbilling.org](https://www.fossbilling.org/)\n','fossbilling-is-affordable-billing-system','active',NULL,NULL,NULL,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(2,1,'Check out great features of FOSSBilling','FOSSBilling supports automated billing, invoicing, product provisioning', '* Supports automated billing, invoicing, product provisioning\n* Automatically create accounts as soon as the payment is received, suspend when account becomes overdue, terminate when a specified amount of time passes.\n* FOSSBilling is perfectly created to sell shared and reseller hosting accounts, software licenses and downloadable products.\n* Integrated helpdesk, knowledgebase, news and announcements system.\n','great-features-of-fossbilling','active',NULL,NULL,NULL,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(3,1,'FOSSBilling is customizable','You can create your own simple or advanced hooks on FOSSBilling events.','* You can create your own simple or advanced hooks on FOSSBilling events. For example, send notification via sms when new client signs up.\n* Create custom theme for your client interface\n','fossbilling-is-customizable','active',NULL,NULL,NULL,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00');
+	(1,1,'FOSSBilling is the most affordable Billing Application Ever!','Just in case you weren''t already aware, FOSSBilling is the most affordable client management application ever!','Just in case you weren''t already aware, FOSSBilling is the most affordable client management application ever!\n\nTo learn more about it You can always visit [www.fossbilling.org](https://www.fossbilling.org/)\n','fossbilling-is-affordable-billing-system','active',NULL,NULL,NULL,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(2,1,'Check out great features of FOSSBilling','FOSSBilling supports automated billing, invoicing, product provisioning', '* Supports automated billing, invoicing, product provisioning\n* Automatically create accounts as soon as the payment is received, suspend when account becomes overdue, terminate when a specified amount of time passes.\n* FOSSBilling is perfectly created to sell shared and reseller hosting accounts, software licenses and downloadable products.\n* Integrated helpdesk, knowledgebase, news and announcements system.\n','great-features-of-fossbilling','active',NULL,NULL,NULL,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(3,1,'FOSSBilling is customizable','You can create your own simple or advanced hooks on FOSSBilling events.','* You can create your own simple or advanced hooks on FOSSBilling events. For example, send notification via sms when new client signs up.\n* Create custom theme for your client interface\n','fossbilling-is-customizable','active',NULL,NULL,NULL,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `post` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -238,7 +238,7 @@ LOCK TABLES `product` WRITE;
 
 INSERT INTO `product` (`id`, `product_category_id`, `product_payment_id`, `form_id`, `title`, `slug`, `description`, `unit`, `active`, `status`, `hidden`, `is_addon`, `setup`, `addons`, `icon_url`, `allow_quantity_select`, `stock_control`, `quantity_in_stock`, `plugin`, `plugin_config`, `upgrades`, `priority`, `config`, `created_at`, `updated_at`, `type`)
 VALUES
-	(1,1,NULL,NULL,'Domains registration and transfer','domain-checker',NULL,'product',1,'enabled',0,0,'after_payment',NULL,NULL,0,0,0,NULL,NULL,NULL,1,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00','domain');
+	(1,1,NULL,NULL,'Domains registration and transfer','domain-checker',NULL,'product',1,'enabled',0,0,'after_payment',NULL,NULL,0,0,0,NULL,NULL,NULL,1,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00','domain');
 
 /*!40000 ALTER TABLE `product` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -252,7 +252,7 @@ LOCK TABLES `product_category` WRITE;
 
 INSERT INTO `product_category` (`id`, `title`, `description`, `icon_url`, `created_at`, `updated_at`)
 VALUES
-	(1,'Default category',NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00');
+	(1,'Default category',NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `product_category` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -316,34 +316,34 @@ LOCK TABLES `setting` WRITE;
 
 INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
 VALUES
-	(1,'last_patch','25',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(2,'company_name','Company Name',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(3,'company_email','company@email.com',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(4,'company_signature','FOSSBilling.org - Client Management, Invoice and Support Software',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(5,'company_logo','themes/huraga/assets/img/logo.svg',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(5,'company_logo_dark','themes/huraga/assets/img/logo_white.svg',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(6,'company_address_1','Demo address line 1',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(7,'company_address_2','Demo address line 2',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(8,'company_address_3','Demo address line 3',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(9,'company_tel','+123 456 12345',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(10,'company_tos','Sit ridiculus nascetur porta purus tortor, augue natoque, pulvinar integer nisi mattis dignissim mus, elementum nascetur, augue etiam. Mus mus tortor? A mauris habitasse dictumst, scelerisque, dis nec pulvinar magnis velit, integer, nisi, aliquet, elit phasellus? Parturient odio purus tristique porttitor augue diam pulvinar magna ac lacus in. Augue tincidunt sociis ultrices parturient aliquet dapibus sit. Pulvinar mauris platea in amet penatibus augue ut non ridiculus, nunc lundium. Duis dapibus a mid proin pellentesque lundium vut mauris egestas dolor nec? Diam eu duis sociis. Dapibus porta! Proin, turpis nascetur et. Aenean tristique eu in elit dolor, montes sit nec, magna amet montes, hac diam ac, pellentesque duis sociis, est placerat? Montes ac, nunc aliquet ridiculus nisi? Dignissim. Et aliquet sed.\n\nAuctor mid, mauris placerat? Scelerisque amet a a facilisis porttitor aenean dolor, placerat dapibus, odio parturient scelerisque? In dis arcu nec mid ac in adipiscing ultricies, pulvinar purus dis. Nisi dis massa magnis, porta amet, scelerisque turpis etiam scelerisque porttitor ac dictumst, cras, enim? Placerat enim pulvinar turpis a cum! Aliquam? Urna ut facilisis diam diam lorem mattis ut, ac pid, sed pellentesque. Egestas nunc, lacus, tempor amet? Lacus, nunc dictumst, ac porttitor magna, nisi, montes scelerisque? Cum, rhoncus. Pid adipiscing porta dictumst porta amet dignissim purus, aliquet dolor non sagittis porta urna? Tortor egestas, ultricies elementum, placerat velit magnis lacus? Augue nunc? Ac et cras ut? Ac odio tortor lectus. Mattis adipiscing urna, scelerisque nec aenean adipiscing mid.\n',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(11,'company_privacy_policy','Ac dapibus. Rhoncus integer sit aliquam a! Natoque? Lacus porttitor rhoncus, aliquam porttitor in risus turpis adipiscing! Integer, mus mattis sed enim ac velit proin est et ut, amet eros! Hac augue et vel ac sit duis facilisis purus tincidunt, porttitor eu a penatibus rhoncus platea et mauris rhoncus magnis rhoncus, montes? Et porttitor, urna, dolor, dapibus elementum porttitor aliquam.\n\nCras risus? Turpis, mus tincidunt vel dolor lectus pulvinar aliquam nascetur parturient nunc proin aenean tortor, augue aenean ac penatibus vut arcu. Augue, aenean dapibus in nec. In tempor turpis dictumst cursus, nec eros, elit non, ut integer magna. Augue placerat magnis facilisis platea ridiculus tincidunt et ut porttitor! Cursus odio, aliquet purus tristique vel tempor urna, vut enim.\n\nPorta habitasse scelerisque elementum adipiscing elit pulvinar? Cursus! Turpis! Massa ac elementum a, facilisis eu, sed ac porta massa sociis nascetur rhoncus sed, scelerisque habitasse aliquam? Velit adipiscing turpis, risus ut duis non integer rhoncus, placerat eu adipiscing, hac? Integer cursus porttitor rhoncus turpis lundium nisi, velit? Arcu tincidunt turpis, nunc integer turpis! Ridiculus enim natoque in, eros odio.\n\nScelerisque tempor dolor magnis natoque cras nascetur lorem, augue habitasse ac ut mid rhoncus? Montes tristique arcu, nisi integer? Augue? Adipiscing tempor parturient elementum nunc? Amet mid aliquam penatibus. Aliquam proin, parturient vel parturient dictumst? A porttitor rhoncus, a sit egestas massa tincidunt! Nunc purus. Hac ac! Enim placerat augue cursus augue sociis cum cras, pulvinar placerat nec platea.\n\nPenatibus et duis, urna. Massa cum porttitor elit porta, natoque etiam et turpis placerat lacus etiam scelerisque nunc, egestas, urna non tincidunt cursus odio urna tempor dictumst dignissim habitasse. Mus non et, nisi purus, pulvinar natoque in vel nascetur. Porttitor phasellus sed aenean eu quis? Nec vel, dignissim magna placerat turpis, ridiculus cum est auctor, sagittis, sit scelerisque duis.\n',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(12,'company_note','Amet auctor, sed massa lacus phasellus turpis urna mauris dictumst, dapibus turpis? Sociis amet, mid aliquam, sagittis, risus, eros porta mid placerat eros in? Elementum porta ac pulvinar porttitor adipiscing, tristique porta pid dolor elementum? Eros, pulvinar amet auctor, urna enim amet magnis ultrices etiam? Dictumst ultrices velit eu tortor aliquet, rhoncus! Magnis porttitor. Vel parturient, ac, nascetur magnis tincidunt.\n\nQuis, pid. Lacus lorem scelerisque tortor phasellus, duis adipiscing nec mid mus purus placerat nunc porttitor placerat, risus odio pulvinar penatibus tincidunt, proin. Est tincidunt aliquam vel, ut scelerisque. Enim lorem magna tempor, auctor elit? Magnis lorem ut cursus, nunc nascetur! Est et odio nunc odio adipiscing amet nunc, ridiculus magnis egestas proin, montes nunc tristique tortor, ridiculus magna.\n',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(13,'invoice_series','FOSS',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(14,'invoice_due_days','5',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(15,'invoice_auto_approval','1',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(16,'invoice_issue_days_before_expire','14',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(17,'theme','huraga',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(18,'issue_invoice_days_before_expire','7',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(19,'invoice_refund_logic','credit_note',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(20,'invoice_cn_series','CN-',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(21,'invoice_cn_starting_number','1',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(22,'nameserver_1',NULL,0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(23,'nameserver_2',NULL,0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(24,'nameserver_3',NULL,0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(25,'nameserver_4',NULL,0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(26,'funds_min_amount','10',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(27,'funds_max_amount','200',0,NULL,NULL,'2021-01-01 12:00:00','2021-01-01 12:00:00');
+	(1,'last_patch','25',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(2,'company_name','Company Name',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(3,'company_email','company@email.com',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(4,'company_signature','FOSSBilling.org - Client Management, Invoice and Support Software',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(5,'company_logo','themes/huraga/assets/img/logo.svg',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(5,'company_logo_dark','themes/huraga/assets/img/logo_white.svg',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(6,'company_address_1','Demo address line 1',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(7,'company_address_2','Demo address line 2',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(8,'company_address_3','Demo address line 3',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(9,'company_tel','+123 456 12345',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(10,'company_tos','Sit ridiculus nascetur porta purus tortor, augue natoque, pulvinar integer nisi mattis dignissim mus, elementum nascetur, augue etiam. Mus mus tortor? A mauris habitasse dictumst, scelerisque, dis nec pulvinar magnis velit, integer, nisi, aliquet, elit phasellus? Parturient odio purus tristique porttitor augue diam pulvinar magna ac lacus in. Augue tincidunt sociis ultrices parturient aliquet dapibus sit. Pulvinar mauris platea in amet penatibus augue ut non ridiculus, nunc lundium. Duis dapibus a mid proin pellentesque lundium vut mauris egestas dolor nec? Diam eu duis sociis. Dapibus porta! Proin, turpis nascetur et. Aenean tristique eu in elit dolor, montes sit nec, magna amet montes, hac diam ac, pellentesque duis sociis, est placerat? Montes ac, nunc aliquet ridiculus nisi? Dignissim. Et aliquet sed.\n\nAuctor mid, mauris placerat? Scelerisque amet a a facilisis porttitor aenean dolor, placerat dapibus, odio parturient scelerisque? In dis arcu nec mid ac in adipiscing ultricies, pulvinar purus dis. Nisi dis massa magnis, porta amet, scelerisque turpis etiam scelerisque porttitor ac dictumst, cras, enim? Placerat enim pulvinar turpis a cum! Aliquam? Urna ut facilisis diam diam lorem mattis ut, ac pid, sed pellentesque. Egestas nunc, lacus, tempor amet? Lacus, nunc dictumst, ac porttitor magna, nisi, montes scelerisque? Cum, rhoncus. Pid adipiscing porta dictumst porta amet dignissim purus, aliquet dolor non sagittis porta urna? Tortor egestas, ultricies elementum, placerat velit magnis lacus? Augue nunc? Ac et cras ut? Ac odio tortor lectus. Mattis adipiscing urna, scelerisque nec aenean adipiscing mid.\n',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(11,'company_privacy_policy','Ac dapibus. Rhoncus integer sit aliquam a! Natoque? Lacus porttitor rhoncus, aliquam porttitor in risus turpis adipiscing! Integer, mus mattis sed enim ac velit proin est et ut, amet eros! Hac augue et vel ac sit duis facilisis purus tincidunt, porttitor eu a penatibus rhoncus platea et mauris rhoncus magnis rhoncus, montes? Et porttitor, urna, dolor, dapibus elementum porttitor aliquam.\n\nCras risus? Turpis, mus tincidunt vel dolor lectus pulvinar aliquam nascetur parturient nunc proin aenean tortor, augue aenean ac penatibus vut arcu. Augue, aenean dapibus in nec. In tempor turpis dictumst cursus, nec eros, elit non, ut integer magna. Augue placerat magnis facilisis platea ridiculus tincidunt et ut porttitor! Cursus odio, aliquet purus tristique vel tempor urna, vut enim.\n\nPorta habitasse scelerisque elementum adipiscing elit pulvinar? Cursus! Turpis! Massa ac elementum a, facilisis eu, sed ac porta massa sociis nascetur rhoncus sed, scelerisque habitasse aliquam? Velit adipiscing turpis, risus ut duis non integer rhoncus, placerat eu adipiscing, hac? Integer cursus porttitor rhoncus turpis lundium nisi, velit? Arcu tincidunt turpis, nunc integer turpis! Ridiculus enim natoque in, eros odio.\n\nScelerisque tempor dolor magnis natoque cras nascetur lorem, augue habitasse ac ut mid rhoncus? Montes tristique arcu, nisi integer? Augue? Adipiscing tempor parturient elementum nunc? Amet mid aliquam penatibus. Aliquam proin, parturient vel parturient dictumst? A porttitor rhoncus, a sit egestas massa tincidunt! Nunc purus. Hac ac! Enim placerat augue cursus augue sociis cum cras, pulvinar placerat nec platea.\n\nPenatibus et duis, urna. Massa cum porttitor elit porta, natoque etiam et turpis placerat lacus etiam scelerisque nunc, egestas, urna non tincidunt cursus odio urna tempor dictumst dignissim habitasse. Mus non et, nisi purus, pulvinar natoque in vel nascetur. Porttitor phasellus sed aenean eu quis? Nec vel, dignissim magna placerat turpis, ridiculus cum est auctor, sagittis, sit scelerisque duis.\n',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(12,'company_note','Amet auctor, sed massa lacus phasellus turpis urna mauris dictumst, dapibus turpis? Sociis amet, mid aliquam, sagittis, risus, eros porta mid placerat eros in? Elementum porta ac pulvinar porttitor adipiscing, tristique porta pid dolor elementum? Eros, pulvinar amet auctor, urna enim amet magnis ultrices etiam? Dictumst ultrices velit eu tortor aliquet, rhoncus! Magnis porttitor. Vel parturient, ac, nascetur magnis tincidunt.\n\nQuis, pid. Lacus lorem scelerisque tortor phasellus, duis adipiscing nec mid mus purus placerat nunc porttitor placerat, risus odio pulvinar penatibus tincidunt, proin. Est tincidunt aliquam vel, ut scelerisque. Enim lorem magna tempor, auctor elit? Magnis lorem ut cursus, nunc nascetur! Est et odio nunc odio adipiscing amet nunc, ridiculus magnis egestas proin, montes nunc tristique tortor, ridiculus magna.\n',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(13,'invoice_series','FOSS',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(14,'invoice_due_days','5',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(15,'invoice_auto_approval','1',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(16,'invoice_issue_days_before_expire','14',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(17,'theme','huraga',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(18,'issue_invoice_days_before_expire','7',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(19,'invoice_refund_logic','credit_note',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(20,'invoice_cn_series','CN-',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(21,'invoice_cn_starting_number','1',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(22,'nameserver_1',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(23,'nameserver_2',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(24,'nameserver_3',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(25,'nameserver_4',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(26,'funds_min_amount','10',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(27,'funds_max_amount','200',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `setting` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -362,7 +362,7 @@ LOCK TABLES `support_helpdesk` WRITE;
 
 INSERT INTO `support_helpdesk` (`id`, `name`, `email`, `close_after`, `can_reopen`, `signature`, `created_at`, `updated_at`)
 VALUES
-	(1,'General','info@yourdomain.com',24,0,'It is always a pleasure to help.\nHave a Nice Day !','2021-01-01 12:00:00','2021-01-01 12:00:00');
+	(1,'General','info@yourdomain.com',24,0,'It is always a pleasure to help.\nHave a Nice Day !','2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `support_helpdesk` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -386,14 +386,14 @@ LOCK TABLES `support_pr` WRITE;
 
 INSERT INTO `support_pr` (`id`, `support_pr_category_id`, `title`, `content`, `created_at`, `updated_at`)
 VALUES
-	(1,1,'Hello #1','Hello,\n\n\n\nThank you for using our services.','2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(2,1,'Hello #2','Greetings,\n\n\n\nThank you.','2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(3,2,'It was fixed','\nIt was fixed for your account. If you have any more questions or requests, please let us to know.','2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(4,2,'It was done as requested','\nIt''s done as you have requested. Please let us to know if you have any further requests or questions.','2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(5,2,'Your website works fine','\nI have just checked your website and it works fine. Please check it from your end and let us to know if you still experience any problems.','2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(6,3,'Do you get any errors?','\nDo you get any errors and maybe you can copy/paste full error messages?','2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(7,3,'Domain is not pointing to our server','\nYour domain is not pointing to our server. Please set our nameservers for your domain and give 24 hours until changes will apply worldwide.','2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(8,3,'What is your domain and username?','\nWhat is your domain name and username?','2021-01-01 12:00:00','2021-01-01 12:00:00');
+	(1,1,'Hello #1','Hello,\n\n\n\nThank you for using our services.','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(2,1,'Hello #2','Greetings,\n\n\n\nThank you.','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(3,2,'It was fixed','\nIt was fixed for your account. If you have any more questions or requests, please let us to know.','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(4,2,'It was done as requested','\nIt''s done as you have requested. Please let us to know if you have any further requests or questions.','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(5,2,'Your website works fine','\nI have just checked your website and it works fine. Please check it from your end and let us to know if you still experience any problems.','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(6,3,'Do you get any errors?','\nDo you get any errors and maybe you can copy/paste full error messages?','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(7,3,'Domain is not pointing to our server','\nYour domain is not pointing to our server. Please set our nameservers for your domain and give 24 hours until changes will apply worldwide.','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(8,3,'What is your domain and username?','\nWhat is your domain name and username?','2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `support_pr` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -407,9 +407,9 @@ LOCK TABLES `support_pr_category` WRITE;
 
 INSERT INTO `support_pr_category` (`id`, `title`, `created_at`, `updated_at`)
 VALUES
-	(1,'Greetings','2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(2,'General','2021-01-01 12:00:00','2021-01-01 12:00:00'),
-	(3,'Accounting','2021-01-01 12:00:00','2021-01-01 12:00:00');
+	(1,'Greetings','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(2,'General','2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(3,'Accounting','2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `support_pr_category` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -443,7 +443,7 @@ LOCK TABLES `tld` WRITE;
 
 INSERT INTO `tld` (`id`, `tld_registrar_id`, `tld`, `price_registration`, `price_renew`, `price_transfer`, `allow_register`, `allow_transfer`, `active`, `min_years`, `created_at`, `updated_at`)
 VALUES
-	(1,1,'.com',11.99,11.99,11.99,1,1,1,1,'2021-01-01 12:00:00','2021-01-01 12:00:00');
+	(1,1,'.com',11.99,11.99,11.99,1,1,1,1,'2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `tld` ENABLE KEYS */;
 UNLOCK TABLES;
