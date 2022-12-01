@@ -163,10 +163,11 @@ class Service
             $logoUrl = $baseUrl . $logoUrl;
         }
 
-        $logoUrlDark = $this->di['array_get']($results, 'company_logo_dark', $logoUrl);
+        $logoUrlDark = $this->di['array_get']($results, 'company_logo_dark', null);
         if (null !== $logoUrlDark && false === strpos($logoUrlDark, 'http')) {
             $logoUrlDark = $baseUrl . $logoUrlDark;
         }
+        $logoUrlDark = (null === $logoUrlDark) ? $logoUrl : $logoUrlDark;
 
         return [
             'www' => $baseUrl,
