@@ -42,9 +42,6 @@
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-password" data-bs-toggle="tab">{{ 'Password'|trans }}</a>
         </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-api" data-bs-toggle="tab">{{ 'API'|trans }}</a>
-        </li>
     </ul>
 
 <div class="card">
@@ -164,27 +161,6 @@
                     <input type="hidden" name="id" value="{{ staff.id }}">
                     <input type="submit" value="{{ 'Submit'|trans }}" class="btn btn-primary w-100">
                 </form>
-            </div>
-        </div>
-
-        <div class="tab-pane fade" id="tab-api" role="tabpanel">
-            <div class="card-body">
-                <h3>{{ 'API key'|trans }}</h3>
-                <p class="text-muted">{{ 'API keys are used to manage the system via other interfaces.'|trans }}</p>
-                <p class="text-muted">{{ 'As of this time, staff members can only change their own API keys from within their'|trans }} <a href="{{ '/admin/staff/profile'|alink }}">profile</a></p>
-                <!--
-                <form method="post" action="admin/profile/generate_api_key" class="api-form" data-api-reload="1">
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'API key'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" value="{{ admin.profile_get.api_token }}">
-                        </div>
-                    </div>
-
-                    <input type="hidden" name="id" value="{{ staff.id }}">
-                    <input type="submit" value="{{ 'Generate new key'|trans }}" class="btn btn-primary w-100">
-                </form>
-                -->
             </div>
         </div>
     </div>
