@@ -11,7 +11,7 @@
 
 <div align="center">
 
-<a href="https://fossbilling.org/downloads/preview"><img src="https://fossbilling.org/img/gh-download-button.png" alt="Download button" width="400"/></a>
+<a href="https://fossbilling.org/downloads/"><img src="https://fossbilling.org/img/gh-download-button.png" alt="Download button" width="400"/></a>
 
 [![PHP Composer](https://github.com/fossbilling/fossbilling/actions/workflows/php.yml/badge.svg)](https://github.com/fossbilling/fossbilling/actions/workflows/php.yml)
 [![Download Latest](https://img.shields.io/github/downloads/fossbilling/fossbilling/total)](https://github.com/fossbilling/fossbilling/releases/latest)
