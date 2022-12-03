@@ -243,7 +243,7 @@
                             <label class="form-label col-3 col-form-label">{{ 'Client'|trans }}</label>
                             <div class="col">
                                 {% if not request.client_id %}
-                                <input type="text" class="form-control js-autocomplete" placeholder="{{ 'Start typing clients name, email or ID'|trans }}" required>
+                                <input type="text" class="form-control js-autocomplete" placeholder="{{ 'Start typing the client\'s name, email or ID'|trans }}" required>
                                 <input type="hidden" name="client_id" value="{{ request.client_id }}" id="client_id">
                                 {% else %}
                                     {% set client = admin.client_get({ 'id': request.client_id }) %}

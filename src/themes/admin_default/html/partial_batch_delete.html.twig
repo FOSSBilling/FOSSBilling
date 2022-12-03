@@ -1,4 +1,4 @@
-<a class="btn btn-primary" id="batch-delete-selected-btn">
+<a class="btn btn-danger" id="batch-delete-selected-btn">
     <svg class="icon">
         <use xlink:href="#delete" />
     </svg>
@@ -8,7 +8,7 @@
     $(function () {
         $('#batch-delete-selected-btn').click(function() {
             if ($('input.batch-delete-checkbox:checked').length) {
-                jConfirm("{{ 'Are you sure?'|trans }}", 'Confirm Batch Delete', function(r) {
+                jConfirm("{{ 'Are you sure?'|trans }}", 'Confirm batch delete', function(r) {
                     if (r) {
                         var ids = $('input.batch-delete-checkbox:checked').map(function() {
                             return $(this).attr("data-item-id");

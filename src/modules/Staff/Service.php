@@ -488,7 +488,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffCreate', 'params' => ['id' => $newId]]);
 
-        $this->di['logger']->info('Created new  staff member %s', $newId);
+        $this->di['logger']->info('Created new staff member %s', $newId);
 
         return (int) $newId;
     }
@@ -668,15 +668,15 @@ class Service implements InjectionAwareInterface
         $client_url = $this->di['url']->link('/');
         $admin_url = $this->di['url']->adminLink('/');
 
-        $content = "Hi $admin_name, " . PHP_EOL;
-        $content .= 'You have successfully setup FOSSBilling at ' . BB_URL . PHP_EOL;
-        $content .= 'Access client area at: ' . $client_url . PHP_EOL;
-        $content .= 'Access admin area at: ' . $admin_url . ' with login details:' . PHP_EOL;
+        $content = "Hello, $admin_name. " . PHP_EOL;
+        $content .= 'You have successfully installed FOSSBilling at ' . BB_URL . PHP_EOL;
+        $content .= 'Access the client area at: ' . $client_url . PHP_EOL;
+        $content .= 'Access the admin area at: ' . $admin_url . ' with login details:' . PHP_EOL;
         $content .= 'Email: ' . $admin_email . PHP_EOL;
         $content .= 'Password: ' . $admin_pass . PHP_EOL . PHP_EOL;
 
-        $content .= 'Read FossBilling documentation to get started http://docs.fossbilling.org/' . PHP_EOL;
-        $content .= 'Thank You for using FOSSBilling.' . PHP_EOL;
+        $content .= 'Read the FOSSBilling documentation to get started https://fossbilling.org/docs' . PHP_EOL;
+        $content .= 'Thank you for using FOSSBilling.' . PHP_EOL;
 
         $subject = sprintf('FOSSBilling is ready at "%s"', BB_URL);
 

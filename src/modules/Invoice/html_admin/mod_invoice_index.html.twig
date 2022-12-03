@@ -28,7 +28,7 @@
                     <label class="form-label col-3 col-form-label">{{ 'Client'|trans }}</label>
                     <div class="col">
                         <input class="form-control js-autocomplete" type="text"
-                            placeholder="{{ 'Start typing clients name, email or ID'|trans }}"
+                            placeholder="{{ 'Start typing the client\'s name, email or ID'|trans }}"
                         {% if request.client_id %}
                             {% set client = admin.client_get({ 'id': request.client_id }) %}
                             value="{{ client.first_name }} {{ client.last_name }}"
@@ -266,7 +266,7 @@
                             <label class="form-label col-3 col-form-label" for="inputUser">{{ 'Client'|trans }}</label>
                             <div class="col">
                                 <input type="text" class="form-control js-autocomplete" id="inputUser">
-                                <small class="form-hint">{{ 'Start typing clients name, email or ID'|trans }}</small>
+                                <small class="form-hint">{{ 'Start typing the client\'s name, email or ID'|trans }}</small>
                             </div>
                         </div>
                         <input type="hidden" name="client_id" value="{{ request.client_id }}" class="client_id">
