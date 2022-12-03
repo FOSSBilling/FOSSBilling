@@ -38,6 +38,9 @@
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-cache" data-bs-toggle="tab" role="tab">{{ 'Cache'|trans }}</a>
         </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-about" data-bs-toggle="tab" role="tab">{{ 'About'|trans }}</a>
+        </li>
     </ul>
 
 <div class="card">
@@ -450,6 +453,31 @@ ZW=Zimbabwe
                 </form>
             </div>
         </div>
+
+        <div class="tab-pane fade" id="tab-about" role="tabpanel">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">{{ 'About FOSSBilling'|trans }}</h3>
+              </div>
+              <div class="card-body">
+                <div class="datagrid">
+                  <div class="datagrid-item">
+                    <div class="datagrid-title">FOSSBilling version</div>
+                    <div class="datagrid-content">{{ guest.system_version }}</div>
+                  </div>
+                  <div class="datagrid-item">
+                    <div class="datagrid-title">PHP version</div>
+                    <div class="datagrid-content">{{ constant('PHP_VERSION') }}</div>
+                  </div>
+                  <div class="datagrid-item">
+                    <div class="datagrid-title">License</div>
+                    <div class="datagrid-content"><a href="https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE">Apache 2.0</a></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+        </div>
+        
     </div>
 </div>
 {% endblock %}
