@@ -2271,7 +2271,7 @@ msgstr ""
 msgid "Forum"
 msgstr ""
 
-msgid "Report bug"
+msgid "Report a bug"
 msgstr ""
 
 msgid "Search:"
@@ -3226,7 +3226,7 @@ msgstr ""
 msgid "New subscription"
 msgstr ""
 
-msgid "Start typing clients name, email or ID"
+msgid "Start typing the client's name, email or ID"
 msgstr ""
 
 msgid "Subscription ID on payment gateway"
@@ -3660,7 +3660,7 @@ msgstr ""
 msgid "Sorting"
 msgstr ""
 
-msgid "Knowledge Base"
+msgid "Knowledge base"
 msgstr ""
 
 msgid "Articles"
@@ -4325,7 +4325,7 @@ msgstr ""
 msgid "Free domain transfer"
 msgstr ""
 
-msgid "Payments history"
+msgid "Payment history"
 msgstr ""
 
 msgid ""

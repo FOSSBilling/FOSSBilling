@@ -108,7 +108,7 @@ class Service
             'updated_at' => $model->updated_at,
         ];
 
-        $cat = $this->di['db']->getExistingModelById('KbArticleCategory', $model->kb_article_category_id, 'Knowledge Base category not found');
+        $cat = $this->di['db']->getExistingModelById('KbArticleCategory', $model->kb_article_category_id, 'Knowledge base category not found');
         $data['category'] = [
             'id' => $cat->id,
             'slug' => $cat->slug,

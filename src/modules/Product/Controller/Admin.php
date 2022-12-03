@@ -51,7 +51,7 @@ class Admin implements \Box\InjectionAwareInterface
                 [
                     'location' => 'products',
                     'index' => 110,
-                    'label' => 'Products / Services',
+                    'label' => 'Products & services',
                     'uri' => $this->di['url']->adminLink('product'),
                     'class' => '',
                 ],

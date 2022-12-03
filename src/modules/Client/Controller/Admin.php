@@ -65,7 +65,7 @@ class Admin implements \Box\InjectionAwareInterface
                 [
                     'location' => 'activity',
                     'index' => 900,
-                    'label' => 'Client logins history',
+                    'label' => 'Client login history',
                     'uri' => $this->di['url']->adminLink('client/logins'),
                     'class' => '',
                 ],

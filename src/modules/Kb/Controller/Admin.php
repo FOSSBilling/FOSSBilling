@@ -42,7 +42,7 @@ class Admin implements \Box\InjectionAwareInterface
             'group' => [
                 'index' => 501,
                 'location' => 'kb',
-                'label' => 'Knowledge Base',
+                'label' => 'Knowledge base',
                 'uri' => $this->di['url']->adminLink('kb'),
                 'class' => 'info',
                 'sprite_class' => 'dark-sprite-icon sprite-docs',
@@ -51,7 +51,7 @@ class Admin implements \Box\InjectionAwareInterface
                 [
                     'location' => 'kb',
                     'index' => 800,
-                    'label' => 'Knowledge Base',
+                    'label' => 'Knowledge base',
                     'uri' => $this->di['url']->adminLink('kb'),
                     'class' => '',
                 ],

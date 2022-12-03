@@ -49,7 +49,7 @@ class Admin implements \Box\InjectionAwareInterface
             'subpages' => [
                 [
                     'location' => 'activity',
-                    'label' => 'Events history',
+                    'label' => 'Event history',
                     'index' => 100,
                     'uri' => $this->di['url']->adminLink('activity'),
                     'class' => '',
