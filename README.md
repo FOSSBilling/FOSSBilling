@@ -87,7 +87,7 @@ Your web directory's structure should now look like this:
 - htdocs
     - data
     - library
-    - bb-module
+    - modules
     - **...**
 
 Next, you will also need to create a new empty MySQL database using the command line, or from your server control panel. Make a note of the database name, database user, and password, you will need them in the next step. 
@@ -103,7 +103,7 @@ Your web directory's structure should now look like this:
 - htdocs
     - data
     - library
-    - bb-module
+    - modules
     - **...**
 
 Next, you will also need to create a new empty MySQL database using the command line, or from your server control panel. Make a note of the database name, database user, and password, you will need them later. 

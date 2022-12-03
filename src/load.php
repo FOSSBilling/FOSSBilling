@@ -314,7 +314,7 @@ function detectOldFiles(){
     }
     if($foundOld){
         $finalMsg = "The FOSSBilling file structure has been changed, please migrate any custom files and folders from the old folder to the new folder and then delete the old ones. You will also need to update the paths in your config.php file. <br>";
-        $finalMsg .= "Feel free to join our <a href='https://fossbilling.org/discord'>Discord Server</a> for assitance. <br><br>";
+        $finalMsg .= "Feel free to join our <a href='https://fossbilling.org/discord'>Discord Server</a> for assistance. <br><br>";
         $finalMsg .= "Files and folders renamed: <br>";
         $finalMsg .= $msg;
         throw new Exception($finalMsg);
