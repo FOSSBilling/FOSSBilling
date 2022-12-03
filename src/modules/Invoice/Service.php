@@ -1247,7 +1247,8 @@ class Service implements InjectionAwareInterface
 
         $html = '<!DOCTYPE html>
                   <html>
-                  <head>';
+                  <head>
+                  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>';
         $html .= '<title>' . $invoice['serie_nr'] . '</title>';
         $html .= '<style>
                      hr.Rounded {
@@ -1296,7 +1297,7 @@ class Service implements InjectionAwareInterface
                     div.Breakdown{
                         position: absolute;
                         width: 100%;
-                        top: 400px;
+                        top: 475px;
                     }
                     table {
                         border-collapse: collapse;
@@ -1310,6 +1311,7 @@ class Service implements InjectionAwareInterface
                     .right{
                         text-align:right;
                     }
+                    body { font-family: DejaVu Sans; }
                     </style>
                 </head>
                 <body>';
