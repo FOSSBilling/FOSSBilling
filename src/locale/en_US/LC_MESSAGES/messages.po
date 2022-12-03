@@ -2327,7 +2327,7 @@ msgstr ""
 msgid "Read"
 msgstr ""
 
-msgid "FossBilling documentation"
+msgid "FOSSBilling documentation"
 msgstr ""
 
 msgid "for more information."
