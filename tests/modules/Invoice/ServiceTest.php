@@ -1189,10 +1189,20 @@ class ServiceTest extends \BBTestCase
         $invoiceItemServiceMock->expects($this->atLeastOnce())
             ->method('generateFromOrder');
 
+        $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')
+            ->setMethods(array('getByCode'))->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())->method('getByCode')
+            ->will($this->returnValue(new \Model_Currency()));
+
         $di                = new \Box_Di();
         $di['db']          = $dbMock;
-        $di['mod_service'] = $di->protect(function () use ($invoiceItemServiceMock) {
-            return $invoiceItemServiceMock;
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $invoiceItemServiceMock) {
+            if ($serviceName == 'currency') {
+                return $currencyServiceMock;
+            }
+            if ($serviceName == 'invoice') {
+                return $invoiceItemServiceMock;
+            }
         });
 
         $serviceMock->setDi($di);
