@@ -47,6 +47,7 @@
 
 {% block content %}
         <form action="" class="mainForm" method="get" id="installer">
+            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
             <fieldset>
                 <div class="widget nomargin">
                     <div class="wizard swMain">

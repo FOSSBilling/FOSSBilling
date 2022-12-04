@@ -4,6 +4,7 @@
             <div class="ms-2 d-inline-block">
                 <div class="d-flex">
                     <form method="get">
+                        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                         <input type="hidden" name="_url" value="{{ request._url }}">
                         <div class="input-group input-group-flat">
                             <input class="form-control"
