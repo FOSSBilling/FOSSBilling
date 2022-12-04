@@ -13,6 +13,7 @@
             <h5>{{ 'Filter clients'|trans }}</h5>
 
             <form method="get">
+                {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                 <div class="form-group mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
                     <div class="col">
@@ -267,6 +268,7 @@
             <div class="tab-pane fade" id="tab-new" role="tabpanel">
                 <div class="card-body">
                     <form method="post" action="{{ 'api/admin/client/create'|link }}" class="api-form save" data-api-redirect="{{ 'client'|alink }}">
+                        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                             <div class="col">
@@ -416,6 +418,7 @@
             <div class="tab-pane fade" id="tab-new-group" role="tabpanel">
                 <div class="card-body">
                     <form method="post" action="{{ 'api/admin/client/group_create'|link }}" class="api-form" data-api-redirect="{{ 'client'|alink }}">
+                        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                             <div class="col">

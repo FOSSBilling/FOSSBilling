@@ -26,6 +26,7 @@
     </div>
     
     <form method="post" action="{{ 'api/admin/custompages/update'|link }}" class="mainForm save api-form" data-api-msg="{{ 'Custom page updated'|trans }}">
+        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
         <input type="hidden" name="id" value="{{ page.id }}">
         <fieldset>
             <div class="rowElem noborder">

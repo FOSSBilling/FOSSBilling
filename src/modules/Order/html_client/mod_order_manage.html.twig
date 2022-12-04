@@ -172,6 +172,7 @@
     </div>
     <div class="modal-body">
         <form action="" method="post" style="background: none" class="open-ticket">
+            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
             <fieldset>
                 <div class="control-group">
                     <label>{{ 'Help desk'|trans }}: </label>
@@ -211,6 +212,7 @@
         </div>
         <div class="modal-body">
             <form action="" method="post" style="background:none" class="request-cancellation">
+                {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                 <div class="control-group">
                     <label>{{ 'Help desk'|trans }}: </label>
                     <div class="controls">
@@ -248,6 +250,7 @@
     </div>
     <div class="modal-body">
         <form action="" method="post" class="request-upgrade" data-api-url="client/support/ticket_create" data-api-msg="Upgrade request received" style="background: none">
+            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
             <fieldset>
                 <div class="control-group">
                     <label>{{ 'Subject'|trans }}: </label>

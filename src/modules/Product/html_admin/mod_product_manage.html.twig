@@ -47,6 +47,7 @@
             <div class="card-body">
                 <h5>{{ product.type|title }} {{ 'General settings'|trans }}</h5>
                 <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}" name="form">
+                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
                         <div class="col">
@@ -176,6 +177,7 @@
 
         <div class="tab-pane fade" id="tab-addons" role="tabpanel" aria-labelledby="addons-tab">
             <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}">
+                {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                 <div class="card-body">
                     <h5>{{ 'Choose which addons you would like to offer with'|trans }} {{ product.title }}</h5>
                 </div>
@@ -224,6 +226,7 @@
             <div class="card-body">
                 <h5>{{ 'Choose which products can client upgrade to'|trans }}</h5>
                 <form method="post" action="admin/product/update" class="api-form" data-api-msg="{{ 'Product configuration updated'|trans }}">
+                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Product Upgrades'|trans }}</label>
                         <div class="col">

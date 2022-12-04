@@ -5,6 +5,7 @@
 </div>
 
 <form method="post" action="{{ 'api/admin/product/update_config'|link }}" class="mainForm api-form save" data-api-msg="License settings updated">
+{{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
 <fieldset>
     <div class="rowElem noborder">
         <label>{{ 'Prefix'|trans }}:</label>

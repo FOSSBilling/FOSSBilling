@@ -86,6 +86,7 @@
     </div>
     <div class="modal-body">
         <form action="" method="post" id="ticket-submit" class="form" style="background: none">
+            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                 <div class="control-group">
                     <label>{{ 'Help desk'|trans }}: </label>
                     <div class="controls">

@@ -7,7 +7,7 @@
     <div id="order" class="accordion-body collapse {% if request.order%}in{%endif%}">
         <div class="accordion-inner">
             <form method="post" style="background:none;" class="form-{{ product.form_id ? guest.formbuilder_get( {"id":product.form_id}).style.type : 0 }}" action="{{ '/order'|link }}/{{ product.slug }}" id="add-to-cart" onsubmit="return false;">
-
+            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
             {% set product_details %}
             <div class="well">
                 <strong>{{ product.title }}</strong>

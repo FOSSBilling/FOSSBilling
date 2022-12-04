@@ -48,6 +48,7 @@
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-template" role="tabpanel">
             <form method="post" action="admin/email/template_update" class="api-form" data-api-msg="{{ 'Template updated'|trans }}">
+                {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                 <div class="card-body">
                     <h3>{{ 'Manage email template'|trans }}</h3>
                     <p class="text-muted">{{ 'Most email templates receives parameters from FOSSBilling. You can browse them on "Variables" tab. Copy variable name to email template and hit preview to see parsed content. Please note that values will be different when actual email is sent.'|trans }}</p>
@@ -100,6 +101,7 @@
                 <p>{{ 'Enable or disable this email template.'|trans }}</p>
 
                 <form method="post" action="admin/email/template_update" class="api-form" data-api-msg="{{ 'Template updated'|trans }}">
+                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Enabled'|trans }}:</label>
                         <div class="col">

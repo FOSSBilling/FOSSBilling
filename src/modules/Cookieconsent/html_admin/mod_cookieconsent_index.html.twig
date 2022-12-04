@@ -19,6 +19,7 @@
     {% set params = admin.extension_config_get({"ext":"mod_cookieconsent"}) %}
     <div class="tab_content nopadding" id="tab-new">
         <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
             <fieldset>
                 <div class="rowElem noborder">
                     <div class="formBottom">

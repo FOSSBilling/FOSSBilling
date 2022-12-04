@@ -145,6 +145,7 @@
                     <div class="span3"></div>
                     <div class="span9">
                         <form method="post" action="" class="api_form" data-api-url="{{ 'api/client/support/ticket_reply'|link }}" data-api-reload="1">
+                            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                             <fieldset>
                                 <textarea name="content" cols="5" rows="10" class="span12" required="required" id="ticket-reply-text"></textarea>
                                 <button class="btn btn-primary btn-large" type="submit" id="submit-support-message" value="{{ 'Post'|trans }}" onclick="">{{ 'Post'|trans }}</button>

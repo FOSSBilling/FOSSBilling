@@ -40,6 +40,7 @@
 
                 {% set params = admin.extension_config_get({ 'ext': 'mod_support' }) %}
                 <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Enable auto responder'|trans }}</label>
                         <div class="col">

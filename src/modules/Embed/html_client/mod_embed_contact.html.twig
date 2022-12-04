@@ -36,6 +36,7 @@
 
 <body>
     <form method="post" action="" id="public-ticket-create">
+        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
         <fieldset>
             <p>
                 <label>{{ 'Name'|trans }}: </label>

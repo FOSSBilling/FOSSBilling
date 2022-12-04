@@ -30,6 +30,7 @@
 
 <body>
 <form method="post" action="" class="domainsearch" id="domain-checker">
+    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
     <fieldset>
         <p>
             <input type="text" id="dsearch" value="" name="sld" />

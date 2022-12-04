@@ -34,6 +34,7 @@
         <h3>{{ 'Canned category'|trans }}</h3>
 
         <form method="post" action="{{ 'api/admin/support/canned_category_update'|link }}" class="api-form" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                 <div class="col">

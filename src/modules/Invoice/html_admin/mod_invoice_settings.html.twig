@@ -29,6 +29,7 @@
 
         {% set params = admin.system_get_params %}
         <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="Settings updated">
+            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Number of days to generate new invoice before order expiration'|trans }}</label>
                 <div class="col">

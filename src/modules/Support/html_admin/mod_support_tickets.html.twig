@@ -13,6 +13,7 @@
         <div class="card-body">
             <h5>{{ 'Filter support tickets'|trans }}</h5>
             <form method="get">
+                {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                 <div class="form-group mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Client ID'|trans }}</label>
                     <div class="col">
@@ -255,6 +256,7 @@
             <div class="card-body">
                 <h5>{{ 'Open ticket for existing client'|trans }}</h5>
                 <form method="post" action="{{ 'api/admin/support/ticket_create'|link }}" class="api-form" data-api-redirect="{{ 'support'|alink }}">
+                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                     {% if not request.client_id %}
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Client'|trans }}</label>
@@ -292,6 +294,7 @@
             <div class="card-body">
                 <h5>{{ 'Open public ticket for non client'|trans }}</h5>
                 <form method="post" action="{{ 'api/admin/support/public_ticket_create'|link }}" class="mainForm api-form" data-api-jsonp="onAfterPublicTicketCreate">
+                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Receivers name'|trans }}</label>
                         <div class="col">
