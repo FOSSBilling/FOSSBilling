@@ -31,7 +31,7 @@
             <h5>{{ 'Create new redirect'|trans }}</h5>
 
             <form method="post" action="{{ 'api/admin/redirect/create'|link }}" class="api-form" data-api-reload="1">
-                {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                {{ 'hiddenInput' |csrftoken_filter }}
                 <div class="input-group">
                     <span class="input-group-text">{{ ''|link }}</span>
                     <input class="form-control" type="text" name="path" required="required">

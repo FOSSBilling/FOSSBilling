@@ -109,7 +109,7 @@
 <div class="card-body">
     <h3>{{ 'Nameservers'|trans }}</h3>
     <form method="post" action="{{ 'api/admin/servicedomain/update_nameservers'|link }}" class="api-form" data-api-msg="{{ 'Nameservers updated'|trans }}">
-        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+        {{ 'hiddenInput' |csrftoken_filter }}
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>
             <div class="col">
@@ -142,7 +142,7 @@
 
     <h3>{{ 'Domain data'|trans }}</h3>
     <form method="post" action="{{ 'api/admin/servicedomain/update'|link }}" class="api-form" data-api-msg="{{ 'Domain data updated'|trans }}">
-        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+        {{ 'hiddenInput' |csrftoken_filter }}
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Transfer code (EPP)'|trans }}: </label>
             <div class="col">
@@ -163,7 +163,7 @@
 
     <h3>{{ 'Update domain contact details'|trans }}</h3>
     <form method="post" action="{{ 'api/admin/servicedomain/update_contacts'|link }}" class="api-form" data-api-msg="{{ 'Domain contact details updated'|trans }}">
-        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+        {{ 'hiddenInput' |csrftoken_filter }}
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'First Name'|trans }}: </label>
             <div class="col">

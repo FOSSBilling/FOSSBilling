@@ -74,7 +74,7 @@
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-new">
             <form method="post" action="{{ 'api/admin/staff/create'|link }}" class="mainForm api-form" data-api-jsonp="onAfterStaffCreate">
-                {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                {{ 'hiddenInput' |csrftoken_filter }}
                 <fieldset>
                     <div class="rowElem noborder">
                         <label>{{ 'Group'|trans }}</label>
@@ -164,7 +164,7 @@
         <div class="fix"></div>
         <div class="tab_content nopadding" id="tab-new-group">
             <form method="post" action="{{ 'api/admin/staff/group_create'|link }}" class="mainForm save api-form" data-api-redirect="{{ 'staff'|alink }}">
-                {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                {{ 'hiddenInput' |csrftoken_filter }}
                 <div class="rowElem noborder">
                     <label>{{ 'Name'|trans }}</label>
                     <div class="formRight">

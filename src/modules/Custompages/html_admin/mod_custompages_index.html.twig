@@ -58,7 +58,7 @@
         <div class="tab_content nopadding" id="tab-new">
 
             <form method="post" action="{{ 'api/admin/custompages/create'|link }}" class="mainForm api-form save" data-api-redirect="{{ 'custompages'|alink }}">
-                {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                {{ 'hiddenInput' |csrftoken_filter }}
                 <fieldset>
                     <div class="rowElem noborder">
                         <label>{{ 'Title'|trans }}:</label>

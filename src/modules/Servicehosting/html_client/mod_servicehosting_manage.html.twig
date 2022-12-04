@@ -76,7 +76,7 @@
                 <div class="tab-pane" id="tab-change-pass">
                     <h3>{{ 'Change your FTP/cPanel/SSH password.'|trans }}</h3>
                         <form action="" method="post" id="change-password" class="form-horizontal">
-                            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                            {{ 'hiddenInput' |csrftoken_filter }}
                             <fieldset>
                                 <div class="control-group">
                                     <label class="control-label" >{{ 'Password'|trans }}: </label>
@@ -104,7 +104,7 @@
                 <div class="tab-pane" id="tab-change-domain">
                     <h3>{{ 'Change domain'|trans }}</h3>
                         <form action="" method="post" id="change-domain" class="form-horizontal">
-                            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                            {{ 'hiddenInput' |csrftoken_filter }}
                             <fieldset>
                                 <div class="control-group">
                                     <label class="control-label" >{{ 'New domain'|trans }}: </label>
@@ -126,7 +126,7 @@
                 <div class="tab-pane" id="tab-change-username">
                     <h3>{{ 'Change username'|trans }}</h3>
                         <form action="" method="post" id="change-username" class="form-horizontal">
-                            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                            {{ 'hiddenInput' |csrftoken_filter }}
                             <fieldset>
                             <div class="control-group">
                                 <label class="control-label" >{{ 'Username'|trans }}: </label>

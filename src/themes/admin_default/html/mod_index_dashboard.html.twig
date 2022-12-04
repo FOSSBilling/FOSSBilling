@@ -360,7 +360,7 @@
             <div class="card-body">
                 <h5>{{ 'Define date interval for graphs'|trans }}</h5>
                 <form method="get" action="">
-                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                    {{ 'hiddenInput' |csrftoken_filter }}
                     <input type="hidden" name="_url" value="{{ request._url }}">
                     <div class="input-group">
                         <input class="form-control" type="date" name="date_from" value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}" placeholder="{{ now|date('Y-m-d') }}">

@@ -99,7 +99,7 @@
                     <div class="span9">
                         {% if ticket.status != 'closed' %}
                         <form method="post" action="" class="api_form" data-api-url="guest/support/ticket_reply" data-api-reload="1">
-                            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                            {{ 'hiddenInput' |csrftoken_filter }}
                             <fieldset>
                                 <textarea name="message" cols="5" rows="10" class="span12" required="required" id="ticket-reply-text"></textarea>
                                 <button class="btn btn-primary btn-large" type="submit" value="{{ 'Post'|trans }}" onclick="$('.wait').show()">{{ 'Post'|trans }}</button>

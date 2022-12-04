@@ -96,7 +96,7 @@
                 <p class="text-muted">{{ 'Setup new TLD prices and properties'|trans }}</p>
 
                 <form method="post" action="{{ 'api/admin/servicedomain/tld_create'|link }}" class="api-form" data-api-reload="1">
-                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                    {{ 'hiddenInput' |csrftoken_filter }}
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Tld'|trans }}:</label>
                         <div class="col">
@@ -279,7 +279,7 @@
                 <p class="text-muted">{{ 'Setup default nameservers that will be used for new domain registrations if client have not provided his own nameservers in order form'|trans }}</p>
 
                 <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Nameservers updated'|trans }}">
-                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                    {{ 'hiddenInput' |csrftoken_filter }}
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>
                         <div class="col">

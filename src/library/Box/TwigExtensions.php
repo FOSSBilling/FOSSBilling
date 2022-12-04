@@ -338,10 +338,13 @@ function twig_bbmd_filter(Twig\Environment $env, $value)
     return $value;
 }
 
-function twig_CSRFToken_filter()
+function twig_CSRFToken_filter($mode = "hiddenInput")
 {
     $token = (!is_null(session_id())) ? hash('md5', session_id()) : null;
     $name = 'CSRFToken';
-    $hiddenInput = '<input type="hidden" name="'. $name . '" value="'. $token . '"/>';
-    return $hiddenInput;
+    if($mode == "token") {
+        return $token;
+    } else {
+        return '<input type="hidden" name="'. $name . '" value="'. $token . '"/>';
+    }
 }

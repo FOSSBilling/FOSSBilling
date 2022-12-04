@@ -12,7 +12,7 @@
         <div class="card-body">
             <h5>{{ 'Filter invoices'|trans }}</h5>
             <form method="get">
-                {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                {{ 'hiddenInput' |csrftoken_filter }}
                 <div class="mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
                     <div class="col">
@@ -263,7 +263,7 @@
             <div class="tab-pane show" id="tab-new" role="tabpanel">
                 <div class="card-body">
                     <form method="post" action="{{ 'api/admin/invoice/prepare'|link }}" class="api-form" data-api-jsonp="onAfterInvoicePrepared">
-                        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                        {{ 'hiddenInput' |csrftoken_filter }}
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label" for="inputUser">{{ 'Client'|trans }}</label>
                             <div class="col">

@@ -92,7 +92,7 @@
         <div class="tab-pane fade" id="tab-new" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/news/create'|link }}" class="api-form" data-api-redirect="{{ 'news'|alink }}">
-                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                    {{ 'hiddenInput' |csrftoken_filter }}
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                         <div class="col">

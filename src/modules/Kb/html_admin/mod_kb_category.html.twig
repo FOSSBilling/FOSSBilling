@@ -26,7 +26,7 @@
 {% block content %}
 <div class="card">
     <form method="post" action="{{ 'api/admin/kb/category_update'|link }}" class="api-form" data-api-msg="{{ 'Category updated'|trans }}">
-        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+        {{ 'hiddenInput' |csrftoken_filter }}
         <div class="card-body">
             <h3>{{ category.title}}</h3>
 

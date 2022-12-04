@@ -41,7 +41,7 @@
 </table>
 
 <form method="post" action="{{ 'api/admin/servicelicense/update'|link }}" class="mainForm api-form" data-api-msg="License updated">
-    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+    {{ 'hiddenInput' |csrftoken_filter }}
     <fieldset>
         <legend>{{ 'License data'|trans }}</legend>
         <div class="rowElem">

@@ -17,7 +17,7 @@
                 </header>
                 <section>
                     <form method="post" action="" id="public-ticket-create" class="form form-horizontal span6">
-                        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                        {{ 'hiddenInput' |csrftoken_filter }}
                         <fieldset>
                             <div class="control-group">
                                 <label for="name">{{ 'Name'|trans }}: </label>

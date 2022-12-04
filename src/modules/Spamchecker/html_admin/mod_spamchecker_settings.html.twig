@@ -33,7 +33,7 @@
 {% set params = admin.extension_config_get({ "ext": "mod_spamchecker" }) %}
 
 <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
-    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+    {{ 'hiddenInput' |csrftoken_filter }}
     <fieldset>
         <div class="rowElem noborder">
             <label>{{ 'Enable IP blocking'|trans }}</label>

@@ -30,7 +30,7 @@
 
 <body>
 <form action="" method="post" id="client-login">
-    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+    {{ 'hiddenInput' |csrftoken_filter }}
     <fieldset>
         <legend>Login to client area</legend>
         <p>

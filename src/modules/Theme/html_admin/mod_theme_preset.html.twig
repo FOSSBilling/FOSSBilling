@@ -61,7 +61,7 @@
 
                 <div id="theme-settings">
                     <form method="post" action="" enctype="multipart/form-data">
-                        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                        {{ 'hiddenInput' |csrftoken_filter }}
                         {{ settings_html|raw }}
                         <div class="mt-3">
                             <div class="form-check">

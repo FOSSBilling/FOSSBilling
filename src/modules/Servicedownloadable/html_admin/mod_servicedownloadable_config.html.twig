@@ -1,7 +1,7 @@
 <div class="card-nody">
     <h5>{{ 'File'|trans }}</h5>
     <form method="post" action="" class="" enctype="multipart/form-data" target="uploadframe" id="bb-upload-form">
-        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+        {{ 'hiddenInput' |csrftoken_filter }}
         {% if product.config.filename  %}
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Currently uploaded file'|trans }}:</label>

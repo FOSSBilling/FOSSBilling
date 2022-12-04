@@ -12,7 +12,7 @@
     <div class="card-body">
         <h5>{{ 'Filter transactions'|trans }}</h5>
         <form method="get">
-            {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+            {{ 'hiddenInput' |csrftoken_filter }}
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
                 <div class="col">

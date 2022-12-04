@@ -48,7 +48,7 @@
         <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Company updated'|trans }}">
-                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                    {{ 'hiddenInput' |csrftoken_filter }}
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}</label>
                         <div class="col">
@@ -117,7 +117,7 @@
                 <hr>
 
                 <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Company updated'|trans }}">
-                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                    {{ 'hiddenInput' |csrftoken_filter }}
                     <div class="mb-3">
                         <h3>{{ 'Company terms of service, legal regulation'|trans }}</h3>
                         <textarea class="form-control bb-textarea" name="company_tos" rows="5">{{ params.company_tos }}</textarea>
@@ -139,7 +139,7 @@
         <div class="tab-pane fade" id="tab-countries" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Countries updated'|trans }}">
-                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                    {{ 'hiddenInput' |csrftoken_filter }}
 {% set default_countries %}
 AF=Afghanistan
 AX=Aland Islands
@@ -406,7 +406,7 @@ ZW=Zimbabwe
                 <p class="text-muted">{{ 'FTP is used to manage FOSSBilling modules and updates.'|trans }}</p>
 
                 <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'FTP settings updated'|trans }}">
-                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                    {{ 'hiddenInput' |csrftoken_filter }}
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'FTP hostname'|trans }}:</label>
                         <div class="col">
@@ -453,7 +453,7 @@ ZW=Zimbabwe
                 <h3>{{ 'Cache control'|trans }}</h3>
 
                 <form method="post" action="{{ 'api/admin/system/clear_cache'|link }}" class="api-form" data-api-msg="{{ 'Cache folder cleared'|trans }}">
-                    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+                    {{ 'hiddenInput' |csrftoken_filter }}
                     <button class="btn btn-danger w-100" type="submit">{{ 'Invalidate cache'|trans }}</button>
                 </form>
             </div>

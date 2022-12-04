@@ -37,7 +37,7 @@
     </ul>
 
     <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-reload="Settings updated">
-        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+        {{ 'hiddenInput' |csrftoken_filter }}
     <div class="tabs_container">
         <div class="fix"></div>
 
@@ -167,7 +167,7 @@
     </div>
 
     <form class="mainForm">
-        {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+        {{ 'hiddenInput' |csrftoken_filter }}
         <fieldset>
             <div class="rowElem">
                 <div class="formBottom moreFields">

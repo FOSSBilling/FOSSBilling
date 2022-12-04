@@ -1,5 +1,5 @@
 <form method="post" action="" name="field_form{{ field.id }}" class="field-form update-field">
-    {{ 'FOSSBilling_CSRFToken' |csrftoken_filter }}
+    {{ 'hiddenInput' |csrftoken_filter }}
 <div class="head">
     <h5><span class="awe-edit"></span> {{ 'Edit field'|trans }}</h5>
     <a href="#" class="floatright close-field-form"><span class="ui-icon ui-icon-closethick ui-icon" ></span></a>
