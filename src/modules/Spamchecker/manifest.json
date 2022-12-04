@@ -4,10 +4,10 @@
     "name":         "SpamChecker",
     "description":  "Uses stopforumspam.com and reCAPTCHA to stop spam",
     "icon_url":     "icon.png",
-    "project_url":  "https://boxbilling.org/",
-    "homepage_url": "https://boxbilling.org/",
+    "project_url":  "https://fossbilling.org/",
+    "homepage_url": "https://fossbilling.org/",
     "author":       "FOSSBilling",
-    "author_url":   "https://boxbilling.org/",
+    "author_url":   "https://fossbilling.org/",
     "license":      "Free for commercial and non-commercial use (Apache License or GPL 2)",
     "version":      "4.22.0"
 }

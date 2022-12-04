@@ -5,7 +5,7 @@
     "description":  "Provides ability to embed parts of FOSSBilling to other websites",
     "homepage_url": "http://github.com/boxbilling/",
     "author":       "FOSSBilling",
-    "author_url":   "http://extensions.boxbilling.org/",
+    "author_url":   "http://extensions.fossbilling.org/",
     "license":      "GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
     "version":      "1.0.1"
 }

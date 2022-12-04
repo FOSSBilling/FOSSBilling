@@ -90,7 +90,7 @@ class Service
 
     /**
      * Method to update module. When you release new version to
-     * extensions.boxbilling.org then this method will be called
+     * extensions.fossbilling.org then this method will be called
      * after new files are placed.
      *
      * @param array $manifest - information about new module version
