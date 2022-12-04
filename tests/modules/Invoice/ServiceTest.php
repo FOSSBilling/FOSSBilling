@@ -1197,14 +1197,13 @@ class ServiceTest extends \BBTestCase
         $di                = new \Box_Di();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $invoiceItemServiceMock) {
-            if ($serviceName == 'currency') {
+            if ($serviceName == 'Currency') {
                 return $currencyServiceMock;
             }
-            if ($serviceName == 'invoice') {
+            if ($serviceName == 'Invoice') {
                 return $invoiceItemServiceMock;
             }
         });
-
         $serviceMock->setDi($di);
         $result = $serviceMock->generateForOrder($orderModel);
         $this->assertInstanceOf('\Model_Invoice', $result);
