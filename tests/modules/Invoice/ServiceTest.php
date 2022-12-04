@@ -1202,9 +1202,7 @@ class ServiceTest extends \BBTestCase
             if ($serviceName == 'currency') {
                 return $currencyServiceMock;
             }
-            if ($serviceName == 'invoice') {
-                return $invoiceItemServiceMock;
-            }
+            return $invoiceItemServiceMock;
         });
         $serviceMock->setDi($di);
         $result = $serviceMock->generateForOrder($orderModel);
