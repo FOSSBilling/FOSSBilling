@@ -185,6 +185,13 @@ return [
 
         // How many login requests allowed per time span
         'rate_limit_login' => 20,
+        
+        /*
+        * This enables the usage of a token to protect the system from CSRF attacks.
+        * Disabling this is highly discouraged and opens your instance to a known vulnerability.
+        * This option is only here for backwards compatibility.
+        */
+        'CSRFPrevention' => true,
     ],
 
     'guzzle' => [

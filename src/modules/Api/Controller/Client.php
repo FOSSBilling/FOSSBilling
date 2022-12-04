@@ -298,8 +298,13 @@ class Client implements InjectionAwareInterface
      * @throws \Box_Exception
      */
     public function _checkCSRFToken(){
+        $this->_loadConfig();
         $token= (!empty($_POST["CSRFToken"]) ? $_POST["CSRFToken"] : $_GET["CSRFToken"]);
         $expectedToken = (!is_null(session_id())) ? hash('md5', session_id()) : null;
+
+        if(isset($this->_api_config['CSRFPrevention']) && $this->_api_config['CSRFPrevention'] === false){
+            return true;
+        }
 
         if(!is_null($expectedToken) && $expectedToken !== $token && php_sapi_name() !== 'cli'){
             throw new \Box_Exception('CSRF token invalid.', null, 403);
