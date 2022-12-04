@@ -80,6 +80,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             'money_without_currency' => new TwigFilter('money_without_currency', 'twig_money_without_currency', ['needs_environment' => true, 'is_safe' => ['html']]),
             'money_convert' => new TwigFilter('money_convert', 'twig_money_convert', ['needs_environment' => true, 'is_safe' => ['html']]),
             'money_convert_without_currency' => new TwigFilter('money_convert_without_currency', ['needs_environment' => true, 'is_safe' => ['html']]),
+            'csrftoken_filter' => new TwigFilter('csrftoken_filter','twig_CSRFToken_filter', ['is_safe' => ['html']]),
         ];
     }
 
@@ -335,4 +336,12 @@ function twig_bbmd_filter(Twig\Environment $env, $value)
     $value = twig_markdown_filter($env, $value);
 
     return $value;
+}
+
+function twig_CSRFToken_filter()
+{
+    $token = (!is_null(session_id())) ? hash('md5', session_id()) : null;
+    $name = 'CSRFToken';
+    $hiddenInput = '<input type="hidden" name="'. $name . '" value="'. $token . '"/>';
+    return $hiddenInput;
 }

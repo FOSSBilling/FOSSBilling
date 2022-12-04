@@ -175,6 +175,9 @@ class Client implements InjectionAwareInterface
 
         try {
             $this->isRoleLoggedIn($role);
+            if($role == 'client' || $role == 'admin'){
+                $this->_checkCSRFToken();
+            }
         } catch (\Exception $e) {
             $this->_tryTokenLogin();
         }
@@ -287,5 +290,19 @@ class Client implements InjectionAwareInterface
     private function _getIp()
     {
         return $this->di['request']->getClientAddress();
+    }
+    
+    /**
+     * Checks if the CSRF token provided is valid
+     *
+     * @throws \Box_Exception
+     */
+    public function _checkCSRFToken(){
+        $token= (!empty($_POST["CSRFToken"]) ? $_POST["CSRFToken"] : $_GET["CSRFToken"]);
+        $expectedToken = (!is_null(session_id())) ? hash('md5', session_id()) : null;
+
+        if(!is_null($expectedToken) && $expectedToken !== $token && php_sapi_name() !== 'cli'){
+            throw new \Box_Exception('CSRF token invalid.', null, 403);
+        }
     }
 }
