@@ -1199,10 +1199,10 @@ class ServiceTest extends \BBTestCase
         $di                = new \Box_Di();
         $di['db']          = $dbMock;
         $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $invoiceItemServiceMock) {
-            if ($serviceName == 'Currency') {
+            if ($serviceName == 'currency') {
                 return $currencyServiceMock;
             }
-            if ($serviceName == 'Invoice') {
+            if ($serviceName == 'invoice') {
                 return $invoiceItemServiceMock;
             }
         });
