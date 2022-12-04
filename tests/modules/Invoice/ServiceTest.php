@@ -1183,6 +1183,8 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($invoiceModel));
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getCell');
 
         $invoiceItemServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
             ->getMock();
