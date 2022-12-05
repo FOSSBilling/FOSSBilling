@@ -7,7 +7,7 @@ currently being supported with security updates.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 4.22.x   | :white_check_mark: |
+| 0.1.X   | :white_check_mark: |
 
 ## Reporting Vulnerabilities 
 To report a vulnerability, please make a submission on [Huntr.dev](https://huntr.dev/bounties/disclose/?target=https://github.com/FOSSBilling/FOSSBilling).
