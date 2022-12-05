@@ -168,7 +168,7 @@
                     data: {
                         per_page: 10,
                         search: request.term,
-                        CSRFToken: {{ CSRFToken }}
+                        CSRFToken: "{{ CSRFToken }}"
                     },
                     success: function(data) {
                         response( $.map( data.result, function(name, id) {
