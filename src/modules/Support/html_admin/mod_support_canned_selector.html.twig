@@ -21,7 +21,7 @@
         $('select.canned').on("change", function () {
             var id = $(this).val();
 
-            if (id) bb.get('admin/support/canned_get', { id: id }, function (result) {
+            if (id) bb.get('admin/support/canned_get', { id: id, CSRFToken: "{{CSRFToken}}" }, function (result) {
                 bb.insertToTextarea('rt', result.content)
             });
 

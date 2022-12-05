@@ -362,14 +362,16 @@
         $('.shd select').change(function(){
             bb.get('admin/support/ticket_update', {
                 id: {{ ticket.id }},
-                support_helpdesk_id: $(this).val()
+                support_helpdesk_id: $(this).val(),
+                CSRFToken: "{{CSRFToken}}"
             });
         });
 
         $('input.tst').click(function(){
             bb.get('admin/support/ticket_update', {
                 id: {{ ticket.id }},
-                status: $(this).val()
+                status: $(this).val(),
+                CSRFToken: "{{CSRFToken}}"
             });
         });
 

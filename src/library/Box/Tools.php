@@ -527,6 +527,7 @@ class Box_Tools
                 'throttle_delay' => (isset($currentConfig['api']['rate_limit'])) ? $currentConfig['api']['rate_limit'] : 2,
                 'rate_span_login' => (isset($currentConfig['api']['rate_span_login'])) ? $currentConfig['api']['rate_span_login'] : 60,
                 'rate_limit_login' => (isset($currentConfig['api']['rate_limit_login'])) ? $currentConfig['api']['rate_limit_login'] : 20,
+                'CSRFPrevention' => (isset($currentConfig['api']['CSRFPrevention'])) ? $currentConfig['api']['CSRFPrevention'] : true,
             ],
             'guzzle' => [
                 'user_agent' => (isset($currentConfig['guzzle']['user_agent'])) ? $currentConfig['guzzle']['user_agent'] : 'Mozilla/5.0 (RedHatEnterpriseLinux; Linux x86_64; FOSSBilling; +http://fossbilling.org) Gecko/20100101 Firefox/93.0',
