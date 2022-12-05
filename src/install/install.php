@@ -234,10 +234,6 @@ final class Box_Installer
         // $twig->addExtension(new Twig_Extension_Optimizer());
         $twig->addGlobal('request', $_REQUEST);
         $twig->addGlobal('version', Box_Version::VERSION);
-        
-        //CSRF token
-        $token = (!is_null(session_id())) ? hash('md5', session_id()) : null;
-        $twig->addGlobal('CSRFToken', $token);
 
         return $twig->render($name, $vars);
     }
