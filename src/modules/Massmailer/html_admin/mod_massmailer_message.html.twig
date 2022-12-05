@@ -11,7 +11,7 @@
     </div>
     
     <form method="post" action="admin/massmailer/update" class="mainForm save api-form" data-api-jsonp="onAfterMessageUpdate" id="msg-form">
-        {{ 'hiddenInput' |csrftoken_filter }}
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <fieldset>
             
             <div class="rowElem noborder">

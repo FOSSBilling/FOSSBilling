@@ -82,7 +82,7 @@
         </div>
         <div class="tab-pane" id="new" role="tabpanel">
           <form method="post" action="admin/massmailer/create" class="mainForm api-form" data-api-jsonp="onAfterCreateMM">
-            {{ 'hiddenInput' |csrftoken_filter }}
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <fieldset>
                 <div class="rowElem noborder">
                     <label>{{ 'Subject'|trans }}:</label>
@@ -99,7 +99,7 @@
                     <h4>{{ 'Mass Mail Settings'|trans }}</h4>
                     {% set params = admin.extension_config_get({"ext":"mod_massmailer"}) %}
                     <form method="post" action="admin/extension/config_save" class="mainForm api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
-                        {{ 'hiddenInput' |csrftoken_filter }}
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <fieldset>
                 <div class="rowElem noborder">
                     <div class="moreFields">

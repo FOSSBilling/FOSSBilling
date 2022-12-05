@@ -31,7 +31,7 @@
         <h3>{{ 'Edit currency information'|trans }} {{ currency.code }}</h3>
 
         <form method="post" action="{{ 'api/admin/currency/update'|link }}" class="mainForm save api-form" data-api-msg="{{ 'Currency updated'|trans }}">
-            {{ 'hiddenInput' |csrftoken_filter }}
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                 <div class="col">

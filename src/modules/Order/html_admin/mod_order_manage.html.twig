@@ -297,7 +297,7 @@
             <div class="card-body">
                 <h3>{{ 'Order management'|trans }}</h2>
                 <form method="post" action="{{ 'api/admin/order/update'|link }}" class="api-form" data-api-reload="1">
-                    {{ 'hiddenInput' |csrftoken_filter }}
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
                         <div class="col">
@@ -365,7 +365,7 @@
             </div>
 
             {# <form method="post" action="{{ 'api/admin/order/update'|link }}" class="api-form" data-api-reload="1">
-                {{ 'hiddenInput' |csrftoken_filter }}
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <fieldset>
                     <legend>Order promotion code</legend>
 
@@ -389,7 +389,7 @@
             </div>
 
             <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="api-form" data-api-msg="Order config updated">
-                {{ 'hiddenInput' |csrftoken_filter }}
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 {% for name, value in order.config %}
                 <div class="mb-3 row">
                     <label class="topLabel">{{ name }}:</label>
@@ -412,7 +412,7 @@
                 <p class="text-muted">{{ 'Please be cautious and make sure you know what you are doing when editing order config! FOSSBilling relies on these parameters and you might get unexpected results if you change some of them.'|trans }}</p>
 
                 <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="api-form" data-api-reload="1">
-                    {{ 'hiddenInput' |csrftoken_filter }}
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     {% for key, config in order.config %}
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ key }}</label>

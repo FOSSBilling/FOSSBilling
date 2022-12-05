@@ -29,7 +29,7 @@
 
         {% set params = admin.extension_config_get({ 'ext': 'mod_wysiwyg' }) %}
         <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
-            {{ 'hiddenInput' |csrftoken_filter }}
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Default editor'|trans }}</label>
                 <div class="col">

@@ -20,7 +20,7 @@
     <div class="data-block">
         <div class="data-container">
             <form method="post" action="" id="client-login">
-                {{ 'hiddenInput' |csrftoken_filter }}
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <fieldset>
                     <div class="control-group">
                         <label class="control-label" for="email">{{ 'Email Address'|trans }}</label>

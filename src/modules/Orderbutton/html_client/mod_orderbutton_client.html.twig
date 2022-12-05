@@ -10,7 +10,7 @@
 <div class="tab-content">
     <div class="tab-pane active" id="login-tab">
         <form method="post" action="" id="client-login">
-            {{ 'hiddenInput' |csrftoken_filter }}
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <fieldset>
                 <div class="control-group">
                     <label class="control-label" for="email">{{ 'Email Address'|trans }}</label>
@@ -41,7 +41,7 @@
     </div>
     <div class="tab-pane" id="register-tab">
         <form action="" method="post" id="create-profile">
-            {{ 'hiddenInput' |csrftoken_filter }}
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             {% set r = guest.client_required %}
             <fieldset>
                 <div class="control-group">

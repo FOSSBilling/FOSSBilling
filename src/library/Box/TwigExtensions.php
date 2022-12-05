@@ -337,14 +337,3 @@ function twig_bbmd_filter(Twig\Environment $env, $value)
 
     return $value;
 }
-
-function twig_CSRFToken_filter($mode = "hiddenInput")
-{
-    $token = (!is_null(session_id())) ? hash('md5', session_id()) : null;
-    $name = 'CSRFToken';
-    if($mode == "token") {
-        return $token;
-    } else {
-        return '<input type="hidden" name="'. $name . '" value="'. $token . '"/>';
-    }
-}

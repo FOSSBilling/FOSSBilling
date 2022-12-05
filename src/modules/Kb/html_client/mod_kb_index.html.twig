@@ -18,7 +18,7 @@
                     <h1>{{ 'Knowledge base'|trans }}</h1><br/>
                     {{ 'Please try to read related topics in knowledge base before contacting support.'|trans }}
                     <form method="get" action="" class="form form-search pull-right" style="background: none; border: 0px">
-                        {{ 'hiddenInput' |csrftoken_filter }}
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <p>
                             <input class="" name="_url" type="hidden" value="/kb">
                             <input class="search-query text" name="q" type="text" value="{{ request.q }}" placeholder="{{ 'What are you looking for?'|trans }}">

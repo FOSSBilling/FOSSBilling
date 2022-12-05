@@ -119,7 +119,7 @@
         <div class="tab-pane fade" id="tab-new-currency" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/currency/create'|link }}" class="api-form" data-api-redirect="{{ 'extension/settings/currency'|alink }}">
-                    {{ 'hiddenInput' |csrftoken_filter }}
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Code'|trans }}:</label>
                         <div class="col">
@@ -157,7 +157,7 @@
                 <p><b>FOSSBilling does not take any responsibilities for data grabbed from 3rd party sources, including European Central Bank and currencylayer.</b></p>
 
                 <form method="post" action="{{ 'api/admin/currency/update_rate_settings'|link }}" class="api-form" data-api-msg="{{ 'Successfully updated settings'|trans }}">
-                    {{ 'hiddenInput' |csrftoken_filter }}
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'API key for currencylayer'|trans }}:</label>
                         <div class="col">
@@ -186,7 +186,7 @@
 
         <div class="tab-pane fade" id="tab-converter" role="tabpanel">
             <form method="post" action="">
-                {{ 'hiddenInput' |csrftoken_filter }}
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="card-body">
                     <div class="input-group">
                             <span class="input-group-text">{{ guest.currency_get.code }}</span>

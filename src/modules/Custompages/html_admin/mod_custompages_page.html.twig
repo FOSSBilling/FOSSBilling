@@ -26,7 +26,7 @@
     </div>
     
     <form method="post" action="{{ 'api/admin/custompages/update'|link }}" class="mainForm save api-form" data-api-msg="{{ 'Custom page updated'|trans }}">
-        {{ 'hiddenInput' |csrftoken_filter }}
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <input type="hidden" name="id" value="{{ page.id }}">
         <fieldset>
             <div class="rowElem noborder">

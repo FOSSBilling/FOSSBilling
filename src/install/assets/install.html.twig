@@ -47,7 +47,7 @@
 
 {% block content %}
         <form action="" class="mainForm" method="get" id="installer">
-            {{ 'hiddenInput' |csrftoken_filter }}
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <fieldset>
                 <div class="widget nomargin">
                     <div class="wizard swMain">

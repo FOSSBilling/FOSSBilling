@@ -61,7 +61,7 @@
 
                 <div id="theme-settings">
                     <form method="post" action="" enctype="multipart/form-data">
-                        {{ 'hiddenInput' |csrftoken_filter }}
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         {{ settings_html|raw }}
                         <div class="mt-3">
                             <div class="form-check">

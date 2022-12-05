@@ -30,7 +30,7 @@
 
 <body>
 <form action="" method="post" id="client-login">
-    {{ 'hiddenInput' |csrftoken_filter }}
+    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
     <fieldset>
         <legend>Login to client area</legend>
         <p>

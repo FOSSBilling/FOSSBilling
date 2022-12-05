@@ -26,7 +26,7 @@
         <h4>{{ 'Edit client group'|trans }} - {{ group.title }}</h4>
     </div>
     <form method="post" action="{{ 'api/admin/client/group_update'|link }}" class="api-form" data-api-redirect="{{ 'client'|alink }}">
-        {{ 'hiddenInput' |csrftoken_filter }}
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <div class="card-body">
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>

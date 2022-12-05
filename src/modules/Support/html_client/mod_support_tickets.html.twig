@@ -86,7 +86,7 @@
     </div>
     <div class="modal-body">
         <form action="" method="post" id="ticket-submit" class="form" style="background: none">
-            {{ 'hiddenInput' |csrftoken_filter }}
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="control-group">
                     <label>{{ 'Help desk'|trans }}: </label>
                     <div class="controls">

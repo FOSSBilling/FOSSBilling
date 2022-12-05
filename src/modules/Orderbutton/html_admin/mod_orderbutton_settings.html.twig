@@ -37,7 +37,7 @@
     </ul>
 
     <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="mainForm api-form" data-api-reload="Settings updated">
-        {{ 'hiddenInput' |csrftoken_filter }}
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
     <div class="tabs_container">
         <div class="fix"></div>
 
@@ -167,7 +167,7 @@
     </div>
 
     <form class="mainForm">
-        {{ 'hiddenInput' |csrftoken_filter }}
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
         <fieldset>
             <div class="rowElem">
                 <div class="formBottom moreFields">

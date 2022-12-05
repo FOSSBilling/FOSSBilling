@@ -111,7 +111,7 @@
                     {% endif %}
 
                     <form action="guest/cart/apply_promo" method="post" class="well" id="apply-promo" data-api-reload="1" {% if not cart.promocode %}style="display:none"{% endif %}>
-                        {{ 'hiddenInput' |csrftoken_filter }}
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="control-group">
                             <div class="form-controls">
                                 <div class="input-append">
@@ -166,7 +166,7 @@
                     </table>
 
                     <form method="post" action="client/cart/checkout" class="form-horizontal" id="checkout-form" onsubmit="return false;">
-                        {{ 'hiddenInput' |csrftoken_filter }}
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <fieldset>
                             {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
                             {% if cart.total and not enough_in_balance %}

@@ -101,7 +101,7 @@
         <div class="tab-pane fade" id="tab-new" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/invoice/tax_create'|link }}" class="api-form" data-api-reload="1">
-                    {{ 'hiddenInput' |csrftoken_filter }}
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Tax title'|trans }}:</label>
                         <div class="col">
@@ -139,7 +139,7 @@
         <div class="tab-pane fade" id="tab-settings" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Tax settings updated'|trans }}">
-                    {{ 'hiddenInput' |csrftoken_filter }}
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Enable tax support'|trans }}:</label>
                         <div class="col">

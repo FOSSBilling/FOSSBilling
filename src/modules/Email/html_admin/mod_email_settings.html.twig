@@ -116,7 +116,7 @@
                 <p class="text-muted">{{ 'Newly created email templates can be used in custom event hooks.'|trans }}</p>
 
                 <form method="post" action="{{ 'api/admin/email/template_create'|link }}" class="api-form" data-api-reload="1">
-                    {{ 'hiddenInput' |csrftoken_filter }}
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Enabled'|trans }}:</label>
                         <div class="col">
@@ -163,7 +163,7 @@
         {% set params = admin.extension_config_get({ 'ext': 'mod_email' }) %}
         <div class="tab-pane fade" id="tab-email" role="tabpanel">
             <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Email settings updated'|trans }}">
-                {{ 'hiddenInput' |csrftoken_filter }}
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="card-body">
                     <h3>{{ 'Configure email options'|trans }}</h3>
                     <p class="text-muted">{{ 'FOSSBilling sends emails using <em>sendmail</em> by default or you can configure your own SMTP server'|trans|raw }}</p>

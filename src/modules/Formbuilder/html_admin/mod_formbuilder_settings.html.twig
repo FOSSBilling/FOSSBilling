@@ -97,7 +97,7 @@
 
         <div class="tab_content" id="tab-import">
             <form method="post" action="{{ 'api/admin/formbuilder/import'|link }}" class="mainForm api-form save" data-api-reload="1">
-                {{ 'hiddenInput' |csrftoken_filter }}
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <fieldset>
                     <div class="formBottom">
                         <textarea name="form" cols="5" rows="5" placeholder="Paste new form configuration text."></textarea>
@@ -120,7 +120,7 @@
 
     <div class="mainForm">
         <form  id="update-form-options">
-            {{ 'hiddenInput' |csrftoken_filter }}
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="rowElem">
                 <label>
                     <strong>{{ 'New form name and options'|trans }}</strong>
