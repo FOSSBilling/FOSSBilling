@@ -243,7 +243,7 @@
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link" href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                                    <a class="btn btn-icon api-link" href="{{ 'api/admin/client/delete'|link({ 'id': client.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -399,7 +399,7 @@
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
-                                <a class="btn btn-icon api-link" href="{{ 'api/admin/client/group_delete'|link({ 'id': id }) }}" data-api-reload="1" data-api-confirm="{{ 'Are you sure?'|trans }}">
+                                <a class="btn btn-icon api-link" href="{{ 'api/admin/client/group_delete'|link({ 'id': id, 'CSRFToken': CSRFToken }) }}" data-api-reload="1" data-api-confirm="{{ 'Are you sure?'|trans }}">
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>

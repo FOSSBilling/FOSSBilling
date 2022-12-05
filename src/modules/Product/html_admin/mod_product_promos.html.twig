@@ -94,7 +94,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/promo_delete'|link({ 'id': promo.id }) }}" data-api-redirect="{{ 'product/promos'|alink }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/promo_delete'|link({ 'id': promo.id, 'CSRFToken': CSRFToken }) }}" data-api-redirect="{{ 'product/promos'|alink }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>

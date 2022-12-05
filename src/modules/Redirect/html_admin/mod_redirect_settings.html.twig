@@ -75,7 +75,7 @@
                     </td>
                     <td>
                         <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/redirect/delete'|link({ 'id': r.id }) }}"
+                            href="{{ 'api/admin/redirect/delete'|link({ 'id': r.id, 'CSRFToken': CSRFToken }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-reload="1">
                             <svg class="icon">

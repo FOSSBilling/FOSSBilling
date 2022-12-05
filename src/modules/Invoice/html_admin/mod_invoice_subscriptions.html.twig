@@ -73,7 +73,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                            <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>

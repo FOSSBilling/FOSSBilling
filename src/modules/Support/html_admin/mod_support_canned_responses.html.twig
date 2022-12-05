@@ -75,7 +75,7 @@
                                 <use xlink:href="#edit" />
                             </svg>
                         </a>
-                        <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/support/canned_delete'|link({ 'id': response.id }) }}" data-api-redirect="{{ 'support/canned-responses'|alink }}">
+                        <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/support/canned_delete'|link({ 'id': response.id, 'CSRFToken': CSRFToken }) }}" data-api-redirect="{{ 'support/canned-responses'|alink }}">
                             <svg class="icon">
                                 <use xlink:href="#delete" />
                             </svg>

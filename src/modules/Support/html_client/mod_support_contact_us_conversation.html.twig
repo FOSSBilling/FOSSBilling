@@ -18,7 +18,7 @@
                 <h2>{{ 'Ticket information'|trans }}</h2>
                 <div class="pull-right">
                     {% if ticket.status != 'closed' %}
-                        <button class="btn btn-small" href="{{ 'api/guest/support/ticket_close'|link({ 'hash': ticket.hash })}}" id="new-ticket-button" data-api-reload="1"> {{ 'Close ticket'|trans }}</button>
+                        <button class="btn btn-small" href="{{ 'api/guest/support/ticket_close'|link({ 'hash': ticket.hash, 'CSRFToken': CSRFToken })}}" id="new-ticket-button" data-api-reload="1"> {{ 'Close ticket'|trans }}</button>
                     {% endif %}
                 </div>
             </header>

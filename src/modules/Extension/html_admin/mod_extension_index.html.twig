@@ -59,13 +59,13 @@
                         <td>
                             {% if ext.type == 'mod' %}
                                 {% if ext.status == 'installed' %}
-                                <a class="btn btn-icon api-link" href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="Module was deactivated" title="{{ 'Deactivate'|trans }}">
+                                <a class="btn btn-icon api-link" href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="Module was deactivated" title="{{ 'Deactivate'|trans }}">
                                     <svg class="icon">
                                         <use xlink:href="#close" />
                                     </svg>
                                 </a>
                                 {% else %}
-                                <a class="btn btn-icon api-link" href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-jsonp="onAfterModuleActivated">
+                                <a class="btn btn-icon api-link" href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-jsonp="onAfterModuleActivated">
                                     <svg class="icon">
                                         <use xlink:href="#play" />
                                     </svg>
@@ -107,7 +107,7 @@
                 <p class="text-muted">{{ 'Automatic updater is a tool to update FOSSBilling to latest version in one click. Works on these hosting environments where PHP has permissions to overwrite files uploaded via FTP.'|trans }}</p>
 
                 {{ admin.system_release_notes|bbmd }}
-                <a href="{{ 'api/admin/extension/update_core'|link }}" class="btn btn-primary api-link" data-api-confirm="Make sure that you have made database and files backups before proceeding with automatic update. Click OK when you are ready to continue." data-api-msg="Update complete">
+                <a href="{{ 'api/admin/extension/update_core'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="Make sure that you have made database and files backups before proceeding with automatic update. Click OK when you are ready to continue." data-api-msg="Update complete">
                     <svg class="icon">
                         <use xlink:href="#refresh" />
                     </svg>
@@ -118,7 +118,7 @@
                 <h3>{{ 'Migrate configuration file'|trans }}</h3>
                 <p class="text-muted">{{ 'Use this tool to automatically migrate your configuration file to be compatible with the latest FOSSBilling changes. Note: this is only needed when performing manual updates'|trans }}</p>
 
-                <a href="{{ 'api/admin/extension/update_config'|link }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.php.old." data-api-msg="Migration complete">
+                <a href="{{ 'api/admin/extension/update_config'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="If you run into any issues, you can revert to the old config which will be saved as config.php.old." data-api-msg="Migration complete">
                     <svg class="icon">
                         <use xlink:href="#refresh" />
                     </svg>

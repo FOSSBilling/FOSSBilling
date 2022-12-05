@@ -76,7 +76,7 @@
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/delete'|link({'id' : product.id}) }}" data-api-redirect="{{ 'product'|alink }}">
+                                    <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/delete'|link({'id' : product.id, 'CSRFToken': CSRFToken}) }}" data-api-redirect="{{ 'product'|alink }}">
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -155,7 +155,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/category_delete'|link({ 'id': cat_id }) }}" data-api-redirect="{{ 'product'|alink }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/product/category_delete'|link({ 'id': cat_id, 'CSRFToken': CSRFToken }) }}" data-api-redirect="{{ 'product'|alink }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>

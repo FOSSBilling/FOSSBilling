@@ -144,7 +144,7 @@
                     <span class="d-block text-secondary">{{ 'Login to client area'|trans }}</span>
                 </a>
                 <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
-                    href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}"
+                    href="{{ 'api/admin/client/delete'|link({ 'id': client.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'client'|alink }}">
                     <svg class="mb-2 text-secondary" width="24" height="24">
@@ -530,7 +530,7 @@
 
                 <div class="card-body">
                     <a class="btn btn-primary api-link"
-                        href="{{ 'api/admin/invoice/prepare'|link({ 'client_id': client.id }) }}"
+                        href="{{ 'api/admin/invoice/prepare'|link({ 'client_id': client.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-jsonp="onAfterInvoicePrepared">
                         <svg class="icon">
                             <use xlink:href="#plus" />
@@ -629,7 +629,7 @@
                             <td>{{ tx.created_at|date("Y-m-d H:i") }}</td>
                             <td>
                                 <a class="btn btn-icon api-link"
-                                    href="{{ 'api/admin/client/balance_delete'|link({ 'id': tx.id }) }}"
+                                    href="{{ 'api/admin/client/balance_delete'|link({ 'id': tx.id, 'CSRFToken': CSRFToken }) }}"
                                     data-api-confirm="{{ 'Are you sure?'|trans }}">
                                     <svg class="icon">
                                         <use xlink:href="#delete" />

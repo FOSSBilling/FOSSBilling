@@ -87,7 +87,7 @@
     {% endif %}
 
     <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
-        href="{{ 'api/admin/servicehosting/sync'|link({ 'order_id': order.id }) }}"
+        href="{{ 'api/admin/servicehosting/sync'|link({ 'order_id': order.id, 'CSRFToken': CSRFToken }) }}"
         data-api-confirm="{{ 'Are you sure?'|trans }}"
         data-api-msg="{{ 'Account was synced'|trans }}">
         <svg class="mb-2 text-secondary" width="24" height="24">

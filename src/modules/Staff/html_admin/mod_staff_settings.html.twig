@@ -96,7 +96,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'extension/settings/staff'|alink }}" href="{{ 'api/admin/staff/delete'|link({ 'id': member.id }) }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'extension/settings/staff'|alink }}" href="{{ 'api/admin/staff/delete'|link({ 'id': member.id, 'CSRFToken': CSRFToken }) }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -217,7 +217,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'extension/settings/staff'|alink }}" href="{{ 'api/admin/staff/group_delete'|link({ 'id': group.id }) }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'extension/settings/staff'|alink }}" href="{{ 'api/admin/staff/group_delete'|link({ 'id': group.id, 'CSRFToken': CSRFToken }) }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>

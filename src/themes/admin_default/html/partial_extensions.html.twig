@@ -29,7 +29,7 @@
                 <a href="https://extensions.fossbilling.org/extension/{{ extension.id }}" target="_blank" title="Project details">{{ 'Learn more'|trans }}</a>
             </td>
             <td>
-                <a class="btn btn-icon api-link" data-api-confirm="By installing '{{ extension.name }}', you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong. Continue?" data-api-reload="1" href="{{ 'api/admin/extension/install'|link ({ 'type': extension.type, 'id': extension.id }) }}" title="Install extension">
+                <a class="btn btn-icon api-link" data-api-confirm="By installing '{{ extension.name }}', you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong. Continue?" data-api-reload="1" href="{{ 'api/admin/extension/install'|link ({ 'type': extension.type, 'id': extension.id, 'CSRFToken': CSRFToken }) }}" title="Install extension">
                     <svg class="icon">
                         <use xlink:href="#download" />
                     </svg>

@@ -53,7 +53,7 @@
                         <td>{{ msg.from_name }} <br/>{{ msg.from_email }}</td>
                         <td>{{ mf.status_name(msg.status) }}</td>
                         <td>
-                            <a class="btn btn-icon api-link" href="{{ 'api/admin/massmailer/copy'|link({'id' : msg.id}) }}" data-api-redirect="{{ 'massmailer'|alink }}">
+                            <a class="btn btn-icon api-link" href="{{ 'api/admin/massmailer/copy'|link({'id' : msg.id, 'CSRFToken': CSRFToken}) }}" data-api-redirect="{{ 'massmailer'|alink }}">
                                 <svg class="icon">
                                     <use xlink:href="#copy" />
                                 </svg>
@@ -63,7 +63,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/massmailer/delete'|link({'id' : msg.id}) }}" data-api-redirect="{{ 'massmailer'|alink }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" href="{{ 'api/admin/massmailer/delete'|link({'id' : msg.id, 'CSRFToken': CSRFToken}) }}" data-api-redirect="{{ 'massmailer'|alink }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>

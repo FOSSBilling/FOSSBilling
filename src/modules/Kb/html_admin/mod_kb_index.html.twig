@@ -71,7 +71,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{'kb'|alink}}" href="{{ 'api/admin/kb/article_delete'|link({ 'id': post.id }) }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{'kb'|alink}}" href="{{ 'api/admin/kb/article_delete'|link({ 'id': post.id, 'CSRFToken': CSRFToken }) }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -145,7 +145,7 @@
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/kb/category_delete'|link({ 'id': cat_id }) }}"
+                                href="{{ 'api/admin/kb/category_delete'|link({ 'id': cat_id, 'CSRFToken': CSRFToken }) }}"
                                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                                 data-api-redirect="{{ 'kb/new'|alink }}">
                                 <svg class="icon">

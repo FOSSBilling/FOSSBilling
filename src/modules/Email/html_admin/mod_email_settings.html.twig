@@ -77,7 +77,7 @@
                             </svg>
                         </a>
                         <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/email/template_delete'|link({ 'id': template.id }) }}"
+                            href="{{ 'api/admin/email/template_delete'|link({ 'id': template.id, 'CSRFToken': CSRFToken }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-reload="1">
                             <svg class="icon">
@@ -95,15 +95,15 @@
             </table>
 
             <div class="card-footer text-center">
-                <a href="{{ 'api/admin/email/batch_template_generate'|link }}" class="btn55 mr10 api-link" data-api-reload="1">
+                <a href="{{ 'api/admin/email/batch_template_generate'|link({ 'CSRFToken': CSRFToken }) }}" class="btn55 mr10 api-link" data-api-reload="1">
                     <img src="images/icons/middlenav/power.png" alt="">
                     <span>Generate templates</span>
                 </a>
-                <a href="{{ 'api/admin/email/batch_template_enable'|link }}" class="btn55 mr10 api-link" data-api-msg="All email templates enabled">
+                <a href="{{ 'api/admin/email/batch_template_enable'|link({ 'CSRFToken': CSRFToken }) }}" class="btn55 mr10 api-link" data-api-msg="All email templates enabled">
                     <img src="images/icons/middlenav/play2.png" alt="">
                     <span>Enable all</span>
                 </a>
-                <a href="{{ 'api/admin/email/batch_template_disable'|link }}" class="btn55 mr10 api-link" data-api-msg="All email templates disabled">
+                <a href="{{ 'api/admin/email/batch_template_disable'|link({ 'CSRFToken': CSRFToken }) }}" class="btn55 mr10 api-link" data-api-msg="All email templates disabled">
                     <img src="images/icons/middlenav/stop.png" alt="">
                     <span>Disable all</span>
                 </a>
@@ -115,7 +115,7 @@
                 <h3>{{ 'Where I can use new email template?'|trans }}</h3>
                 <p class="text-muted">{{ 'Newly created email templates can be used in custom event hooks.'|trans }}</p>
 
-                <form method="post" action="{{ 'api/admin/email/template_create'|link }}" class="api-form" data-api-reload="1">
+                <form method="post" action="{{ 'api/admin/email/template_create'|link({ 'CSRFToken': CSRFToken }) }}" class="api-form" data-api-reload="1">
                     <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Enabled'|trans }}:</label>

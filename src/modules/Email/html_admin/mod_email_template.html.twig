@@ -80,7 +80,7 @@
 
                         <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
                         <a class="btn btn-danger w-25 api-link"
-                            href="{{ 'api/admin/email/template_reset'|link }}?code={{ template.action_code }}"
+                            href="{{ 'api/admin/email/template_reset'|link }}?code={{ template.action_code, 'CSRFToken': CSRFToken }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-reload="1">
                             {{ 'Reset'|trans }}

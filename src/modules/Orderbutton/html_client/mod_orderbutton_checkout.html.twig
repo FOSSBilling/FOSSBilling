@@ -117,7 +117,7 @@
                                 <div class="input-append">
                                     <input class="span8" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo.required %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
                                     {% if cart.promocode %}
-                                    <button class="btn" id="remove-promo" href="{{ 'api/guest/cart/remove_promo'|link }}" type="button" data-api-reload="1">{{ 'Remove'|trans }}</button>
+                                    <button class="btn" id="remove-promo" href="{{ 'api/guest/cart/remove_promo'|link({ 'CSRFToken': CSRFToken }) }}" type="button" data-api-reload="1">{{ 'Remove'|trans }}</button>
                                     {% else %}
                                     <button class="btn" type="submit">{{ 'Apply'|trans }}</button>
                                     {% endif %}
@@ -127,7 +127,7 @@
                         {#
                         <input type="text" class="search-query" name="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo.required %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
                         {% if cart.promocode %}
-                        <a href="{{ 'api/guest/cart/remove_promo'|link }}" class="btn btn-info api-link" data-api-reload="1" >{{ 'Remove '|trans }}(<strong>{{cart.promocode}}</strong>)</a>
+                        <a href="{{ 'api/guest/cart/remove_promo'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-info api-link" data-api-reload="1" >{{ 'Remove '|trans }}(<strong>{{cart.promocode}}</strong>)</a>
                         {% else %}
                         <button class="btn btn-info" type="submit"><span class="awe-gift"></span> {{ 'Apply'|trans }}</button>
                         {% endif %}

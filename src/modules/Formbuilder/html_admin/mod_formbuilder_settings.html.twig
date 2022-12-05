@@ -170,11 +170,11 @@
 <div class="mainForm">
 
 <div class="body" id="fields">
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text'}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1" ><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Text'|trans }}</span></a>
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select'}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Dropdown'|trans }}</span></a>
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio'}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Radio'|trans }}</span></a>
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox'}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Checkbox'|trans }}</span></a>
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea'}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Textarea'|trans }}</span></a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text', 'CSRFToken': CSRFToken}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1" ><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Text'|trans }}</span></a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select', 'CSRFToken': CSRFToken}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Dropdown'|trans }}</span></a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio', 'CSRFToken': CSRFToken}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Radio'|trans }}</span></a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox', 'CSRFToken': CSRFToken}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Checkbox'|trans }}</span></a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea', 'CSRFToken': CSRFToken}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Textarea'|trans }}</span></a>
 </div>
 
 <fieldset>

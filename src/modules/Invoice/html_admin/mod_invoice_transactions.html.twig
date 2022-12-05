@@ -187,12 +187,12 @@
                             <use xlink:href="#edit" />
                         </svg>
                     </a>
-                    <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': tx.id }) }}" data-api-msg="Processed" title="Process again">
+                    <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_process'|link({ 'id': tx.id, 'CSRFToken': CSRFToken }) }}" data-api-msg="Processed" title="Process again">
                         <svg class="icon">
                             <use xlink:href="#refresh" />
                         </svg>
                     </a>
-                    <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': tx.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                    <a class="btn btn-icon api-link" href="{{ 'api/admin/invoice/transaction_delete'|link({ 'id': tx.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
                         <svg class="icon">
                             <use xlink:href="#delete" />
                         </svg>

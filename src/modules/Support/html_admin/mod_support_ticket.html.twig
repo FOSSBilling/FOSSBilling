@@ -106,7 +106,7 @@
             <div class="card-footer text-center">
                 {% if ticket.status != 'closed' %}
                 <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
-                    href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id }) }}"
+                    href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'support'|alink({ 'status': 'open' }) }}">
                     <svg class="mb-2 text-secondary" width="24" height="24">
@@ -116,7 +116,7 @@
                 </a>
                 {% endif %}
                 <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
-                    href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id }) }}"
+                    href="{{ 'api/admin/support/ticket_delete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
                     data-api-confirm="{{ 'Are you sure?'|trans }}"
                     data-api-redirect="{{ 'support'|alink }}">
                     <svg class="mb-2 text-secondary" width="24" height="24">
@@ -126,7 +126,7 @@
                 </a>
 
                 {% if task.status == 'pending' %}
-                <a href="{{ 'api/admin/support/task_complete'|link({ 'id': ticket.id }) }}" class="btn55 mr10 api-link" data-api-reload="1">
+                <a href="{{ 'api/admin/support/task_complete'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}" class="btn55 mr10 api-link" data-api-reload="1">
                     <img src="images/icons/middlenav/check.png" alt="" data-api-reload="1">
                     <span>{{ 'Set Task complete'|trans }}</span>
                 </a>
@@ -179,7 +179,7 @@
                     <td>{{ note.note }}</td>
                     <td class="w-1">
                         <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/support/note_delete'|link({ 'id': note.id }) }}"
+                            href="{{ 'api/admin/support/note_delete'|link({ 'id': note.id, 'CSRFToken': CSRFToken }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-reload="1">
                             <svg class="icon">
@@ -321,7 +321,7 @@
 
             {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
             <a class="btn btn-danger w-25 api-link"
-                href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id }) }}"
+                href="{{ 'api/admin/support/ticket_close'|link({ 'id': ticket.id, 'CSRFToken': CSRFToken }) }}"
                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                 data-api-redirect="{{ 'support'|alink({ 'status': 'open' }) }}">
                 <svg class="icon">
