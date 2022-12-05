@@ -290,7 +290,8 @@
                     dataType: "json",
                     data: {
                         per_page: 10,
-                        search: request.term
+                        search: request.term,
+                        CSRFToken: {{ CSRFToken }}
                     },
                     success: function(data) {
                         response($.map(data.result, function(name, id) {
