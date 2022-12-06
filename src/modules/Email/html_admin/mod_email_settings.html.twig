@@ -290,7 +290,7 @@
 <script>
 $(function() {
     $('#emailTest').click(function() {
-        bb.post('admin/email/send_test', null, function(result) {
+        bb.post('admin/email/send_test', {CSRFToken: "{{CSRFToken}}" }, function(result) {
             FOSSBilling.message("{{ 'Email was successfully sent'|trans }}");
         });
 
