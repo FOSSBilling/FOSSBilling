@@ -14,7 +14,7 @@
                                 aria-label="{{ 'Search'|trans }}">
                             <span class="input-group-text">
                                 <a class="link-secondary"
-                                    href="{{ request._url }}?show_filter=1"
+                                    href="{{ request._url|link({ 'show_filter': 1 }) }}"
                                     data-bs-toggle="tooltip"
                                     data-bs-original-title="{{ 'Search settings'|trans }}">
                                     <svg class="icon">
