@@ -77,17 +77,8 @@ class ServiceTest extends \BBTestCase {
 
     public function testgetLanguages()
     {
-        $expected = array(
-            array(
-                'locale' => 'en_US',
-                'title' => 'English (United States)',
-            ),
-        );
-
         $result = $this->service->getLanguages(true);
-        $this->assertIsArray($result);
-        $this->assertEquals($expected, $result);
-    }
+        $this->assertIsArray($result);    }
 
     public function testgetParams()
     {
