@@ -52,6 +52,7 @@
             <div class="row-fluid">
                 <div class="span3">
                     <form action="" method="post" class="form-inline api-form" data-api-url="{{ 'api/client/invoice/funds_invoice'|link }}" data-api-jsonp="onAfterInvoiceCreated">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <fieldset>
                             <div class="control-group">
                                 <div class="form-controls">

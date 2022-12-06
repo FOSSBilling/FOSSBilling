@@ -40,6 +40,7 @@
 
                 {% set params = admin.extension_config_get({ 'ext': 'mod_support' }) %}
                 <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" class="api-form" data-api-msg="{{ 'Configuration updated'|trans }}">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Enable auto responder'|trans }}</label>
                         <div class="col">
@@ -152,7 +153,7 @@
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id }) }}"
+                                href="{{ 'api/admin/support/helpdesk_delete'|link({ 'id': helpdesk.id, 'CSRFToken': CSRFToken }) }}"
                                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                                 data-api-redirect="{{ 'extension/settings/support'|alink }}">
                                 <svg class="icon">

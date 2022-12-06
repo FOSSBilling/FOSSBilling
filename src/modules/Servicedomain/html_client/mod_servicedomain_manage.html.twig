@@ -65,6 +65,7 @@
                     <div class="block">
                         <p class="alert alert-info">{{ 'If you would like to host this domain with another company you can update nameservers.'|trans }}</p>
                         <form action="" method="post" id="update-nameservers" class="form-horizontal">
+                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <fieldset>
                             <div class="control-group">
                                 <label class="control-label" >{{ 'Nameserver 1'|trans }}: </label>
@@ -106,6 +107,7 @@
                     <div class="block">
                         <p class="alert alert-info">{{ 'Domain contact details will be displayed once someone will check WHOIS output (which is public) of your service. This will update Technical, Billing and Admin contacts for this service. You can enable domain privacy protection if you want to hide your public WHOIS information.'|trans }}</p>
                         <form method="post" action="" id="update-contact" class="form-horizontal">
+                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <fieldset>
                                 <div class="control-group">
                                     <label class="control-label" >{{ 'First Name'|trans }}: </label>

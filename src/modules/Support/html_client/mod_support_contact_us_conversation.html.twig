@@ -18,7 +18,7 @@
                 <h2>{{ 'Ticket information'|trans }}</h2>
                 <div class="pull-right">
                     {% if ticket.status != 'closed' %}
-                        <button class="btn btn-small" href="{{ 'api/guest/support/ticket_close'|link({ 'hash': ticket.hash })}}" id="new-ticket-button" data-api-reload="1"> {{ 'Close ticket'|trans }}</button>
+                        <button class="btn btn-small" href="{{ 'api/guest/support/ticket_close'|link({ 'hash': ticket.hash, 'CSRFToken': CSRFToken })}}" id="new-ticket-button" data-api-reload="1"> {{ 'Close ticket'|trans }}</button>
                     {% endif %}
                 </div>
             </header>
@@ -99,6 +99,7 @@
                     <div class="span9">
                         {% if ticket.status != 'closed' %}
                         <form method="post" action="" class="api_form" data-api-url="guest/support/ticket_reply" data-api-reload="1">
+                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                             <fieldset>
                                 <textarea name="message" cols="5" rows="10" class="span12" required="required" id="ticket-reply-text"></textarea>
                                 <button class="btn btn-primary btn-large" type="submit" value="{{ 'Post'|trans }}" onclick="$('.wait').show()">{{ 'Post'|trans }}</button>

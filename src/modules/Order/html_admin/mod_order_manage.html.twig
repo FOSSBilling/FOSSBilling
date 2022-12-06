@@ -169,7 +169,7 @@
                 {% set order_actions %}
                     {% if order.status == 'pending_setup' or order.status == 'failed_setup' %}
                     <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
-                        href="{{ 'api/admin/order/activate'|link({ 'id': order.id }) }}"
+                        href="{{ 'api/admin/order/activate'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="{{ 'Order activated'|trans }}">
                         <svg class="mb-2 text-secondary" width="24" height="24">
@@ -182,7 +182,7 @@
                     {% if order.status == 'active' %}
                     {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
                     <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
-                        href="{{ 'api/admin/order/renew'|link({ 'id': order.id }) }}"
+                        href="{{ 'api/admin/order/renew'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="{{ 'Order renewed'|trans }}">
                         <svg class="mb-2 text-secondary" width="24" height="24">
@@ -193,7 +193,7 @@
 
                     {% if params.suspend_reason_list|trim == null %}
                     <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
-                        href="{{ 'api/admin/order/suspend'|link({ 'id': order.id }) }}"
+                        href="{{ 'api/admin/order/suspend'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-prompt-key="reason"
                         data-api-prompt="1"
                         data-api-prompt-text="{{ 'Reason of suspension'|trans }}"
@@ -234,7 +234,7 @@
                     </a>
                     {% endif %}
                     <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
-                        href="{{ 'api/admin/order/cancel'|link({ 'id': order.id }) }}"
+                        href="{{ 'api/admin/order/cancel'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-prompt-key="reason"
                         data-api-prompt="1"
                         data-api-prompt-text="{{ 'Reason of cancelation'|trans }}"
@@ -249,7 +249,7 @@
 
                     {% if order.status == 'suspended' %}
                     <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
-                        href="{{ 'api/admin/order/unsuspend'|link({ 'id': order.id }) }}"
+                        href="{{ 'api/admin/order/unsuspend'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="{{ 'Order activated'|trans }}">
                         <svg class="mb-2 text-secondary" width="24" height="24">
@@ -260,14 +260,14 @@
                     {% endif %}
 
                     {% if order.status == 'canceled' %}
-                    <a href="{{ 'api/admin/order/uncancel'|link({ 'id': order.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" class="btn55 mr10 api-link" data-api-reload="Order activated">
+                    <a href="{{ 'api/admin/order/uncancel'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" class="btn55 mr10 api-link" data-api-reload="Order activated">
                         <img src="images/icons/middlenav/play2.png" alt="">
                         <span>{{ 'Activate'|trans }}</span>
                     </a>
                     {% endif %}
 
                     <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
-                        href="{{ 'api/admin/order/delete'|link({ 'id': order.id }) }}"
+                        href="{{ 'api/admin/order/delete'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-redirect="{{ 'order'|alink }}">
                         <svg class="mb-2 text-secondary" width="24" height="24">
@@ -278,7 +278,7 @@
 
                     {% if not order.unpaid_invoice_id %}
                     <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
-                        href="{{ 'api/admin/invoice/renewal_invoice'|link({ 'id': order.id }) }}"
+                        href="{{ 'api/admin/invoice/renewal_invoice'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="1">
                         <svg class="mb-2 text-secondary" width="24" height="24">
@@ -297,6 +297,7 @@
             <div class="card-body">
                 <h3>{{ 'Order management'|trans }}</h2>
                 <form method="post" action="{{ 'api/admin/order/update'|link }}" class="api-form" data-api-reload="1">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
                         <div class="col">
@@ -364,6 +365,7 @@
             </div>
 
             {# <form method="post" action="{{ 'api/admin/order/update'|link }}" class="api-form" data-api-reload="1">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <fieldset>
                     <legend>Order promotion code</legend>
 
@@ -387,6 +389,7 @@
             </div>
 
             <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="api-form" data-api-msg="Order config updated">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 {% for name, value in order.config %}
                 <div class="mb-3 row">
                     <label class="topLabel">{{ name }}:</label>
@@ -409,6 +412,7 @@
                 <p class="text-muted">{{ 'Please be cautious and make sure you know what you are doing when editing order config! FOSSBilling relies on these parameters and you might get unexpected results if you change some of them.'|trans }}</p>
 
                 <form method="post" action="{{ 'api/admin/order/update_config'|link }}" class="api-form" data-api-reload="1">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     {% for key, config in order.config %}
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ key }}</label>
@@ -581,7 +585,7 @@
                         </td>
                         <td>{{ sh.notes }}</td>
                         <td>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'support'|alink }}" href="{{ 'api/admin/order/status_history_delete'|link({ 'id': sh.id }) }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{ 'support'|alink }}" href="{{ 'api/admin/order/status_history_delete'|link({ 'id': sh.id, 'CSRFToken': CSRFToken }) }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>

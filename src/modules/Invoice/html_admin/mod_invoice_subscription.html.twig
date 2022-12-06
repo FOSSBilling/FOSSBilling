@@ -86,7 +86,7 @@
 
                 <div class="body footer text-center">
                     <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
-                        href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id }) }}"
+                        href="{{ 'api/admin/invoice/subscription_delete'|link({ 'id': subscription.id, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-redirect="{{ 'invoice/subscriptions'|alink }}">
                         <svg class="mb-2 text-secondary" width="24" height="24">
@@ -100,6 +100,7 @@
             <div class="tab-pane fade" id="tab-manage" role="tabpanel">
                 <div class="card-body">
                     <form method="post" action="{{ 'api/admin/invoice/subscription_update'|link }}" class="api-form" data-api-reload="1">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Payment Gateway'|trans }}:</label>
                             <div class="col">

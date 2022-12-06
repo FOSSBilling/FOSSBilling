@@ -2,6 +2,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" action="{{ 'api/admin/support/helpdesk_create'|link }}" class="api-form" data-api-redirect="{{ 'extension/settings/support'|alink }}">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="modal-header">
                     <h5 class="modal-title">{{ 'Create new helpdesk'|trans }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

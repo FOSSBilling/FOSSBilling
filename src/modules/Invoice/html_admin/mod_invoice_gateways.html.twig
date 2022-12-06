@@ -48,7 +48,7 @@
                     <td>{{ mf.q(gateway.allow_recurrent) }}</td>
                     <td>
                         <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/invoice/gateway_copy'|link({ 'id': gateway.id }) }}"
+                            href="{{ 'api/admin/invoice/gateway_copy'|link({ 'id': gateway.id, 'CSRFToken': CSRFToken }) }}"
                             title="{{ 'Copy'|trans }}"
                             data-api-redirect="{{ 'invoice/gateways'|alink }}">
                             <svg class="icon">
@@ -61,7 +61,7 @@
                             </svg>
                         </a>
                         <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/invoice/gateway_delete'|link({ 'id': gateway.id }) }}"
+                            href="{{ 'api/admin/invoice/gateway_delete'|link({ 'id': gateway.id, 'CSRFToken': CSRFToken }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-redirect="{{ 'invoice/gateways'|alink }}">
                             <svg class="icon">
@@ -111,7 +111,7 @@
                     <td>{{ gtw }}</td>
                     <td>
                         <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/invoice/gateway_install'|link({ 'code': gtw }) }}"
+                            href="{{ 'api/admin/invoice/gateway_install'|link({ 'code': gtw, 'CSRFToken': CSRFToken }) }}"
                              title="{{ 'Install'|trans }}"
                             data-api-redirect="{{ 'invoice/gateways'|alink }}">
                             <svg class="icon">

@@ -22,6 +22,7 @@
                 {% if payment.type == 'form' %}
                 <h2>{{ 'Redirecting to payment gateway..'|trans }}</h2>
                 <form name="payment_form" action="{{ payment.service_url }}" method="post">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     {% for key, value in payment.result %}
                     <input type="hidden" name="{{ key }}" value="{{ value }}" />
                     {% endfor %}

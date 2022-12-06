@@ -31,6 +31,7 @@
                 <p>{{ 'Keep your personal data up to date.'|trans }}</p>
             </header>
             <form method="post" action="" id="profile-update" class="form-horizontal">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <fieldset>
                     <div class="alert alert-block alert-success">
                         <div class="row">
@@ -184,6 +185,7 @@
                 <p>{{ 'Please enter new password two times in order avoid mistypes'|trans }}</p>
             </header>
             <form method="post" action="" id="change-password" class="form-horizontal">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <fieldset>
                         <div class="control-group">
                             <label class="control-label" for="input">{{ 'Password'|trans }}</label>
@@ -210,6 +212,7 @@
                 <p>{{ 'API key allows integration with external applications. You will need this key for authentication.'|trans }}</p>
             </header>
             <form method="post" action="" id="change-api-key" class="form-horizontal">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <fieldset>
                     <div class="alert alert-block">
                      <h4><p>{{ 'Warning! Resetting the key will break existing applications using it!'|trans }}</p></h4>

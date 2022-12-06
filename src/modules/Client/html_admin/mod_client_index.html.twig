@@ -13,6 +13,7 @@
             <h5>{{ 'Filter clients'|trans }}</h5>
 
             <form method="get">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="form-group mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
                     <div class="col">
@@ -242,7 +243,7 @@
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon api-link" href="{{ 'api/admin/client/delete'|link({ 'id': client.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                                    <a class="btn btn-icon api-link" href="{{ 'api/admin/client/delete'|link({ 'id': client.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -267,6 +268,7 @@
             <div class="tab-pane fade" id="tab-new" role="tabpanel">
                 <div class="card-body">
                     <form method="post" action="{{ 'api/admin/client/create'|link }}" class="api-form save" data-api-redirect="{{ 'client'|alink }}">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                             <div class="col">
@@ -397,7 +399,7 @@
                                         <use xlink:href="#edit" />
                                     </svg>
                                 </a>
-                                <a class="btn btn-icon api-link" href="{{ 'api/admin/client/group_delete'|link({ 'id': id }) }}" data-api-reload="1" data-api-confirm="{{ 'Are you sure?'|trans }}">
+                                <a class="btn btn-icon api-link" href="{{ 'api/admin/client/group_delete'|link({ 'id': id, 'CSRFToken': CSRFToken }) }}" data-api-reload="1" data-api-confirm="{{ 'Are you sure?'|trans }}">
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
@@ -416,6 +418,7 @@
             <div class="tab-pane fade" id="tab-new-group" role="tabpanel">
                 <div class="card-body">
                     <form method="post" action="{{ 'api/admin/client/group_create'|link }}" class="api-form" data-api-redirect="{{ 'client'|alink }}">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                             <div class="col">

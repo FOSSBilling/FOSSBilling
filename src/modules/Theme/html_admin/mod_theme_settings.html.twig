@@ -45,7 +45,7 @@
                         {{ 'Settings'|trans }}
                     </a>
                     {% if guest.extension_theme(true).code != theme.code %}
-                    <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}" href="{{ 'api/admin/theme/select'|link({ 'code': theme.code }) }}">
+                    <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}" href="{{ 'api/admin/theme/select'|link({ 'code': theme.code, 'CSRFToken': CSRFToken }) }}">
                         <svg class="icon">
                             <use xlink:href="#check" />
                         </svg>
@@ -93,7 +93,7 @@
                         {{ 'Settings'|trans }}
                     </a>
                     {% if guest.extension_theme(false).code != theme.code %}
-                    <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}" href="{{ 'api/admin/theme/select'|link({'code' : theme.code}) }}">
+                    <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}" href="{{ 'api/admin/theme/select'|link({'code' : theme.code, 'CSRFToken': CSRFToken}) }}">
                         <svg class="icon">
                             <use xlink:href="#check" />
                         </svg>

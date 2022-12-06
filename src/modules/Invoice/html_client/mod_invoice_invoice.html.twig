@@ -25,6 +25,7 @@
                         <p>{{ 'Please choose payment type and pay for your chosen products.'|trans }}</p>
                     </header>
                     <form method="post" action="{{ 'api/guest/invoice/payment'|link }}" class="api-form" data-api-redirect="{{ ('invoice/'~invoice.hash)|link({ 'auto_redirect': 1 }) }}">
+                        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                         <input type="hidden" name="hash" value="{{ invoice.hash }}"/>
                         {% for gtw in guest.invoice_gateways %}
                         {% if invoice.currency in gtw.accepted_currencies %}

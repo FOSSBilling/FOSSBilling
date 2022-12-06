@@ -78,7 +78,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1" href="{{ 'api/admin/servicedomain/tld_delete'|link({ 'tld': tld.tld }) }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1" href="{{ 'api/admin/servicedomain/tld_delete'|link({ 'tld': tld.tld, 'CSRFToken': CSRFToken }) }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -96,6 +96,7 @@
                 <p class="text-muted">{{ 'Setup new TLD prices and properties'|trans }}</p>
 
                 <form method="post" action="{{ 'api/admin/servicedomain/tld_create'|link }}" class="api-form" data-api-reload="1">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Tld'|trans }}:</label>
                         <div class="col">
@@ -201,7 +202,7 @@
                             <a href="{{ 'servicedomain/registrar/'|alink }}/{{ registrar.id }}">{{ registrar.title }}</a>
                         </td>
                         <td>
-                            <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_copy'|link({ 'id': registrar.id }) }}" data-api-reload="1" title="Install">
+                            <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_copy'|link({ 'id': registrar.id, 'CSRFToken': CSRFToken }) }}" data-api-reload="1" title="Install">
                                 <svg class="icon">
                                     <use xlink:href="#copy" />
                                 </svg>
@@ -211,7 +212,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_delete'|link({ 'id': registrar.id }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
+                            <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_delete'|link({ 'id': registrar.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-reload="1">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -253,7 +254,7 @@
                 <tr>
                     <td>{{ code }}</td>
                     <td>
-                        <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_install'|link({ 'code': code }) }}" data-api-msg="{{ 'Domain registrar installed'|trans }}" title="Install">
+                        <a class="btn btn-icon api-link" href="{{ 'api/admin/servicedomain/registrar_install'|link({ 'code': code, 'CSRFToken': CSRFToken }) }}" data-api-msg="{{ 'Domain registrar installed'|trans }}" title="Install">
                             <svg  class="icon">
                                 <use xlink:href="#cog" />
                             </svg>
@@ -278,6 +279,7 @@
                 <p class="text-muted">{{ 'Setup default nameservers that will be used for new domain registrations if client have not provided his own nameservers in order form'|trans }}</p>
 
                 <form method="post" action="{{ 'api/admin/system/update_params'|link }}" class="api-form" data-api-msg="{{ 'Nameservers updated'|trans }}">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>
                         <div class="col">

@@ -53,7 +53,7 @@
                 <td>{{ queue.created_at|bb_date }}</td>
                 <td class="actions">
                     <a class="btn btn-icon api-link"
-                        href="{{ 'api/admin/queue/execute'|link({ 'queue': queue.name }) }}"
+                        href="{{ 'api/admin/queue/execute'|link({ 'queue': queue.name, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="1">
                         <svg class="icon">
@@ -61,7 +61,7 @@
                         </svg>
                     </a>
                     {# <a class="btn btn-icon api-link"
-                        href="{{ 'api/admin/queue/queue_delete'|link({ 'id': queue.name }) }}"
+                        href="{{ 'api/admin/queue/queue_delete'|link({ 'id': queue.name, 'CSRFToken': CSRFToken }) }}"
                         data-api-confirm="{{ 'Are you sure?'|trans }}"
                         data-api-reload="1">
                         <svg class="icon">

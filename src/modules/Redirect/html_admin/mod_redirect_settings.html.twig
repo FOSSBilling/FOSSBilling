@@ -31,6 +31,7 @@
             <h5>{{ 'Create new redirect'|trans }}</h5>
 
             <form method="post" action="{{ 'api/admin/redirect/create'|link }}" class="api-form" data-api-reload="1">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="input-group">
                     <span class="input-group-text">{{ ''|link }}</span>
                     <input class="form-control" type="text" name="path" required="required">
@@ -74,7 +75,7 @@
                     </td>
                     <td>
                         <a class="btn btn-icon api-link"
-                            href="{{ 'api/admin/redirect/delete'|link({ 'id': r.id }) }}"
+                            href="{{ 'api/admin/redirect/delete'|link({ 'id': r.id, 'CSRFToken': CSRFToken }) }}"
                             data-api-confirm="{{ 'Are you sure?'|trans }}"
                             data-api-reload="1">
                             <svg class="icon">

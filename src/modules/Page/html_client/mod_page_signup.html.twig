@@ -18,6 +18,7 @@
         <div class="data-container">
 
             <form method="post" action="" id="client-signup">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="alert alert-info" style="display: none" id="account-created-info-block">
                     <button class="close" data-dismiss="alert">×</button>
                     <strong>{{ 'Account has been created'|trans }}.</strong> {{ 'Please check your mailbox and confirm email address'|trans }}.

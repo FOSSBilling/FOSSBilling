@@ -172,6 +172,7 @@
     </div>
     <div class="modal-body">
         <form action="" method="post" style="background: none" class="open-ticket">
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <fieldset>
                 <div class="control-group">
                     <label>{{ 'Help desk'|trans }}: </label>
@@ -211,6 +212,7 @@
         </div>
         <div class="modal-body">
             <form action="" method="post" style="background:none" class="request-cancellation">
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="control-group">
                     <label>{{ 'Help desk'|trans }}: </label>
                     <div class="controls">
@@ -248,6 +250,7 @@
     </div>
     <div class="modal-body">
         <form action="" method="post" class="request-upgrade" data-api-url="client/support/ticket_create" data-api-msg="Upgrade request received" style="background: none">
+            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <fieldset>
                 <div class="control-group">
                     <label>{{ 'Subject'|trans }}: </label>

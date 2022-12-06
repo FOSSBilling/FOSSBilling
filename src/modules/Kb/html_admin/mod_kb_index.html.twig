@@ -71,7 +71,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{'kb'|alink}}" href="{{ 'api/admin/kb/article_delete'|link({ 'id': post.id }) }}">
+                            <a class="btn btn-icon api-link" data-api-confirm="{{ 'Are you sure?'|trans }}" data-api-redirect="{{'kb'|alink}}" href="{{ 'api/admin/kb/article_delete'|link({ 'id': post.id, 'CSRFToken': CSRFToken }) }}">
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -92,6 +92,7 @@
         <div class="tab-pane fade" id="tab-new-article" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/kb/article_create'|link }}" class="api-form" data-api-reload="1">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
                         <div class="col">
@@ -144,7 +145,7 @@
                                 </svg>
                             </a>
                             <a class="btn btn-icon api-link"
-                                href="{{ 'api/admin/kb/category_delete'|link({ 'id': cat_id }) }}"
+                                href="{{ 'api/admin/kb/category_delete'|link({ 'id': cat_id, 'CSRFToken': CSRFToken }) }}"
                                 data-api-confirm="{{ 'Are you sure?'|trans }}"
                                 data-api-redirect="{{ 'kb/new'|alink }}">
                                 <svg class="icon">
@@ -165,6 +166,7 @@
         <div class="tab-pane fade" id="tab-new-category" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'api/admin/kb/category_create'|link }}" class="api-form" data-api-reload="{{ 'Category created'|trans }}">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
                         <div class="col">
