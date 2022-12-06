@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 4\n"
 "POT-Creation-Date: 2022-12-05 22:13-0800\n"
-"PO-Revision-Date: 2022-12-05 22:13-0800\n"
+"PO-Revision-Date: 2022-12-06 11:59-0800\n"
 "Last-Translator: \n"
 "Language-Team: FOSSBilling TM <info@fossbilling.org>\n"
 "Language: en\n"
@@ -23,6 +23,330 @@ msgstr ""
 "X-Poedit-SearchPathExcluded-3: *.css\n"
 "X-Poedit-SearchPathExcluded-4: *.scss\n"
 "X-Poedit-SearchPathExcluded-5: *.md\n"
+
+msgid "sq_AL"
+msgstr ""
+
+msgid "ar_DZ"
+msgstr ""
+
+msgid "ar_BH"
+msgstr ""
+
+msgid "ar_EG"
+msgstr ""
+
+msgid "ar_IQ"
+msgstr ""
+
+msgid "ar_JO"
+msgstr ""
+
+msgid "ar_KW"
+msgstr ""
+
+msgid "ar_LB"
+msgstr ""
+
+msgid "ar_LY"
+msgstr ""
+
+msgid "ar_MA"
+msgstr ""
+
+msgid "ar_OM"
+msgstr ""
+
+msgid "ar_QA"
+msgstr ""
+
+msgid "ar_SA"
+msgstr ""
+
+msgid "ar_SD"
+msgstr ""
+
+msgid "ar_SY"
+msgstr ""
+
+msgid "ar_TN"
+msgstr ""
+
+msgid "ar_AE"
+msgstr ""
+
+msgid "ar_YE"
+msgstr ""
+
+msgid "be_BY"
+msgstr ""
+
+msgid "bg_BG"
+msgstr ""
+
+msgid "ca_ES"
+msgstr ""
+
+msgid "zh_CN"
+msgstr ""
+
+msgid "zh_HK"
+msgstr ""
+
+msgid "zh_SG"
+msgstr ""
+
+msgid "zh_TW"
+msgstr ""
+
+msgid "hr_HR"
+msgstr ""
+
+msgid "cs_CZ"
+msgstr ""
+
+msgid "da_DK"
+msgstr ""
+
+msgid "nl_BE"
+msgstr ""
+
+msgid "nl_NL"
+msgstr ""
+
+msgid "en_AU"
+msgstr ""
+
+msgid "en_CA"
+msgstr ""
+
+msgid "en_IN"
+msgstr ""
+
+msgid "en_IE"
+msgstr ""
+
+msgid "en_MT"
+msgstr ""
+
+msgid "en_NZ"
+msgstr ""
+
+msgid "en_PH"
+msgstr ""
+
+msgid "en_SG"
+msgstr ""
+
+msgid "en_ZA"
+msgstr ""
+
+msgid "en_GB"
+msgstr ""
+
+msgid "en_US"
+msgstr ""
+
+msgid "et_EE"
+msgstr ""
+
+msgid "fi_FI"
+msgstr ""
+
+msgid "fr_BE"
+msgstr ""
+
+msgid "fr_CA"
+msgstr ""
+
+msgid "fr_FR"
+msgstr ""
+
+msgid "fr_LU"
+msgstr ""
+
+msgid "fr_CH"
+msgstr ""
+
+msgid "de_AT"
+msgstr ""
+
+msgid "de_DE"
+msgstr ""
+
+msgid "de_LU"
+msgstr ""
+
+msgid "de_CH"
+msgstr ""
+
+msgid "el_CY"
+msgstr ""
+
+msgid "el_GR"
+msgstr ""
+
+msgid "iw_IL"
+msgstr ""
+
+msgid "hi_IN"
+msgstr ""
+
+msgid "hu_HU"
+msgstr ""
+
+msgid "is_IS"
+msgstr ""
+
+msgid "in_ID"
+msgstr ""
+
+msgid "ga_IE"
+msgstr ""
+
+msgid "it_IT"
+msgstr ""
+
+msgid "it_CH"
+msgstr ""
+
+msgid "ja_JP"
+msgstr ""
+
+msgid "ja_JP_JP"
+msgstr ""
+
+msgid "ko_KR"
+msgstr ""
+
+msgid "lv_LV"
+msgstr ""
+
+msgid "lt_LT"
+msgstr ""
+
+msgid "mk_MK"
+msgstr ""
+
+msgid "ms_MY"
+msgstr ""
+
+msgid "mt_MT"
+msgstr ""
+
+msgid "no_NO"
+msgstr ""
+
+msgid "no_NO_NY"
+msgstr ""
+
+msgid "pl_PL"
+msgstr ""
+
+msgid "pt_BR"
+msgstr ""
+
+msgid "pt_PT"
+msgstr ""
+
+msgid "ro_RO"
+msgstr ""
+
+msgid "ru_RU"
+msgstr ""
+
+msgid "sr_BA"
+msgstr ""
+
+msgid "sr_ME"
+msgstr ""
+
+msgid "sr_CS"
+msgstr ""
+
+msgid "sr_RS"
+msgstr ""
+
+msgid "sk_SK"
+msgstr ""
+
+msgid "sl_SI"
+msgstr ""
+
+msgid "es_AR"
+msgstr ""
+
+msgid "es_BO"
+msgstr ""
+
+msgid "es_CL"
+msgstr ""
+
+msgid "es_CO"
+msgstr ""
+
+msgid "es_CR"
+msgstr ""
+
+msgid "es_DO"
+msgstr ""
+
+msgid "es_EC"
+msgstr ""
+
+msgid "es_SV"
+msgstr ""
+
+msgid "es_GT"
+msgstr ""
+
+msgid "es_HN"
+msgstr ""
+
+msgid "es_MX"
+msgstr ""
+
+msgid "es_NI"
+msgstr ""
+
+msgid "es_PA"
+msgstr ""
+
+msgid "es_PY"
+msgstr ""
+
+msgid "es_PE"
+msgstr ""
+
+msgid "es_PR"
+msgstr ""
+
+msgid "es_ES"
+msgstr ""
+
+msgid "es_US"
+msgstr ""
+
+msgid "es_UY"
+msgstr ""
+
+msgid "es_VE"
+msgstr ""
+
+msgid "sv_SE"
+msgstr ""
+
+msgid "th_TH"
+msgstr ""
+
+msgid "tr_TR"
+msgstr ""
+
+msgid "uk_UA"
+msgstr ""
+
+msgid "vi_VN"
+msgstr ""
 
 #: modules/Activity/html_admin/mod_activity_index.html.twig:12
 msgid "System activity"
