@@ -77,7 +77,27 @@ class Server_Manager_Whm extends Server_Manager
     public static function getForm()
     {
         return array(
-            'label'     =>  'cPanel WHM',
+            'label'	=>  'WHM (cPanel)',
+			'form' => [
+                'credentials' => [
+                    'fields' => [
+                        [
+                            'name' => 'username',
+                            'type' => 'text',
+                            'label' => 'Username',
+                            'placeholder' => 'Username to connect to the server',
+                            'required' => true,
+                        ],
+                        [
+                            'name' => 'accesshash',
+                            'type' => 'text',
+                            'label' => 'Access hash',
+                            'placeholder' => 'Access hash to connect to the server',
+                            'required' => true,
+                        ],
+                    ],
+                ],
+            ]
         );
     }
 
@@ -2683,7 +2703,5 @@ class xmlapi {
 			$values['display'] = substr($args, 0, -1);
 		}
 		return $this->api2_query($username, 'StatsBar', 'stat', $values);
-	}
-	
-	
+	}	
 }

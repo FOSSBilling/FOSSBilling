@@ -27,11 +27,7 @@ class Server_Manager_Hestia extends Server_Manager
 
     public function _getPort()
     {
-        if ($this->_config['port']) {
-            return $this->_config['port'];
-        } else {
-            return '8083';
-        }
+        return is_numeric($this->_config['port']) ? $this->_config['port'] : '8083';
     }
 
     /**
@@ -42,7 +38,27 @@ class Server_Manager_Hestia extends Server_Manager
     public static function getForm()
     {
         return [
-            'label' => 'Hestia',
+            'label' => 'Hestia Control Panel',
+            'form' => [
+                'credentials' => [
+                    'fields' => [
+                        [
+                            'name' => 'username',
+                            'type' => 'text',
+                            'label' => 'Username',
+                            'placeholder' => 'Username to connect to the server',
+                            'required' => true,
+                        ],
+                        [
+                            'name' => 'accesshash',
+                            'type' => 'text',
+                            'label' => 'Access hash',
+                            'placeholder' => 'Access hash to connect to the server',
+                            'required' => true,
+                        ],
+                    ],
+                ],
+            ]
         ];
     }
 
@@ -53,9 +69,7 @@ class Server_Manager_Hestia extends Server_Manager
      */
     public function getLoginUrl()
     {
-        $host = 'https://'.$this->_config['host'].':'.$this->_getPort().'/';
-
-        return $host;
+        return 'https://'.$this->_config['host'].':'.$this->_getPort().'/';
     }
 
     /**
@@ -65,7 +79,7 @@ class Server_Manager_Hestia extends Server_Manager
      */
     public function getResellerLoginUrl()
     {
-        return 'https://hestiacp.com';
+        return $this->getLoginUrl();
     }
 
     private function _makeRequest($params)
