@@ -64,7 +64,7 @@
             var email_id = $(this).attr('mail-id');
             bb.post(
                 'client/email/resend',
-                {id: email_id },
+                {id: email_id, CSRFToken: "{{ CSRFToken }}" },
                 function(result) {
                     $('.wait').hide();
                     bb.msg('Email resent');
@@ -79,7 +79,7 @@
                 var email_id = $(this).attr('mail-id');
                 bb.post(
                     'client/email/delete',
-                    {id: email_id },
+                    {id: email_id, CSRFToken: "{{ CSRFToken }}" },
                     function(result) {
                         bb.msg('Email deleted');
                         bb.redirect('{{ 'email'|link }}');

@@ -13,7 +13,7 @@
                         var ids = $('input.batch-delete-checkbox:checked').map(function() {
                             return $(this).attr("data-item-id");
                         }).get();
-                        bb.post('{{ action }}', { ids: ids }, function (result) {
+                        bb.post('{{ action }}', { ids: ids, CSRFToken: "{{ CSRFToken }}" }, function (result) {
                             bb.reload();
                         })
                     }

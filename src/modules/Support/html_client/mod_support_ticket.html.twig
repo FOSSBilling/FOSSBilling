@@ -189,7 +189,7 @@ $(function() {
         
         bb.post(
             'client/support/ticket_close',
-            { id: {{ ticket.id }} },
+            { id: {{ ticket.id }}, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 bb.redirect("{{ 'support'|link }}");
             }

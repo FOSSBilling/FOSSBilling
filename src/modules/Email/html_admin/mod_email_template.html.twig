@@ -238,7 +238,7 @@ Accessing Admin API can get information about your FOSSBilling, for example how 
 $(function() {
     $('.epb').click(function() {
         var r = $(this).siblings('.example-preview');
-        var params = { _tpl: $(this).siblings('textarea').val(), id: '{{ template.id }}' };
+        var params = { _tpl: $(this).siblings('textarea').val(), id: '{{ template.id }}', CSRFToken: "{{ CSRFToken }}" };
 
         bb.post('admin/email/template_render', params, function(result) {
             r.html(result).show();
@@ -246,14 +246,14 @@ $(function() {
     });
 
     $('#preview-button').click(function() {
-        var params = { _tpl: $('#email-template').val(), id: '{{ template.id }}' };
+        var params = { _tpl: $('#email-template').val(), id: '{{ template.id }}', CSRFToken: "{{ CSRFToken }}" };
 
         bb.post('admin/email/template_render', params, function(result) {
             $('#preview').show();
             $('#preview .econtent').html(result);
         });
 
-        var params = { _tpl: $('#email-subject').val(), id: '{{ template.id }}' };
+        var params = { _tpl: $('#email-subject').val(), id: '{{ template.id }}', CSRFToken: "{{ CSRFToken }}" };
 
         bb.post('admin/email/template_render', params, function(result) {
             $('#preview').show();

@@ -237,7 +237,7 @@
 
             jConfirm('Are you sure?', 'Confirm', function(r) {
                 if(r) {
-                    bb.post('admin/formbuilder/delete_field', {id: fid}, function () {
+                    bb.post('admin/formbuilder/delete_field', {id: fid, CSRFToken: "{{ CSRFToken }}"}, function () {
                         $(rm).parents('.wrap-field').slideUp("normal", function () {
                             $(rm).remove();
                         });
@@ -329,7 +329,7 @@
        $('#new-form').click(function () {
             jPrompt('Give your new form a title', 'My new form', 'Form title', function (title) {
                 if (title) {
-                    bb.post('admin/formbuilder/create_form', { name: title }, function (id) {
+                    bb.post('admin/formbuilder/create_form', { name: title, CSRFToken: "{{ CSRFToken }}" }, function (id) {
                         bb.redirect("{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id);
                     });
                 }
@@ -343,7 +343,7 @@
 
             jPrompt('Give your new form a title', 'My new form', 'Form title', function (title) {
                 if (title) {
-                    bb.post('admin/formbuilder/copy_form', { name: title, form_id: fid }, function (id) {
+                    bb.post('admin/formbuilder/copy_form', { name: title, form_id: fid, CSRFToken: "{{ CSRFToken }}" }, function (id) {
                         bb.redirect("{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id);
                     });
                 }

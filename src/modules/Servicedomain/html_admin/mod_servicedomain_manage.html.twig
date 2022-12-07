@@ -258,7 +258,7 @@ $(function() {
     $('#domain-lock').bind('click', function(event) {
         bb.post(
             'admin/servicedomain/lock',
-            { order_id: {{ order.id }} },
+            { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 FOSSBilling.message("{{ 'Domain locked'|trans }}");
 
@@ -274,7 +274,7 @@ $(function() {
     $('#domain-unlock').bind('click', function(event) {
         bb.post(
             'admin/servicedomain/unlock',
-            { order_id: {{ order.id }} },
+            { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 FOSSBilling.message("{{ 'Domain unlocked'|trans }}");
 
@@ -302,7 +302,7 @@ $(function() {
     $('#domain-enable-pp').bind('click', function(event) {
         bb.post(
             'admin/servicedomain/enable_privacy_protection',
-            { order_id: {{ order.id }} },
+            { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 FOSSBilling.message("{{ 'Privacy protection enabled'|trans }}");
 
@@ -320,7 +320,7 @@ $(function() {
     $('#domain-disable-pp').bind('click', function(event) {
         bb.post(
             'admin/servicedomain/disable_privacy_protection',
-            { order_id: {{ order.id }} },
+            { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 FOSSBilling.message("{{ 'Privacy protection disabled'|trans }}");
 
@@ -338,7 +338,7 @@ $(function() {
     $('#get-epp').bind('click', function(event) {
         bb.post(
             'admin/servicedomain/get_transfer_code',
-            { order_id: {{ order.id }} },
+            { order_id: {{ order.id, CSRFToken: "{{ CSRFToken }}" }} },
             function(result) {
                 FOSSBilling.message("{{ 'Domain transfer code is: '|trans }}" + result);
             }

@@ -97,7 +97,7 @@ $(function() {
         if (confirm("{{ 'Are you sure?'|trans }}")) {
             bb.post(
                 'client/servicelicense/reset',
-                { order_id: {{ order.id }} },
+                { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
                 function(result) {
                     bb.msg('License was reset');
                 }
