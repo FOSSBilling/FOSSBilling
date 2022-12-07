@@ -131,7 +131,7 @@ class Server_Manager_Vesta extends Server_Manager
         if (false !== strpos($result, 'Error')) {
             throw new Server_Exception('Connection to server failed  '.$result);
         } else {
-            if ('0' === $result) {
+            if ('0' == $result) {
                 return true;
             } else {
                 throw new Server_Exception('Connection to server failed '.$result);
@@ -185,7 +185,7 @@ class Server_Manager_Vesta extends Server_Manager
         ];
         // Make request and create user
         $result1 = $this->_makeRequest($postvars);
-        if ('0' === $result1) {
+        if ('0' == $result1) {
 // Create Domain Prepare POST query
             $postvars2 = [
                 'returncode' => 'yes',
@@ -219,7 +219,7 @@ class Server_Manager_Vesta extends Server_Manager
         // Make request and suspend user
         $result = $this->_makeRequest($postvars);
         // Check if error 6 the account is suspended on server
-        if ('6' === $result) {
+        if ('6' == $result) {
             return true;
         }
         if ('0' !== $result) {
@@ -272,7 +272,7 @@ class Server_Manager_Vesta extends Server_Manager
             ];
         // Make request and delete user
         $result = $this->_makeRequest($postvars);
-        if ('3' === $result) {
+        if ('3' == $result) {
             return true;
         } else {
             if ('0' !== $result) {
