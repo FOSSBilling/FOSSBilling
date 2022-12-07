@@ -27,6 +27,10 @@ jobs:
     - name: Check PHP Version
       run: php -v
 
+    - name: Clone and update the locale submodule.
+      run: git submodule update --init --recursive
+      working-directory: ./src/locale
+
     - name: Validate composer.json and composer.lock
       run: composer validate
       working-directory: ./src
