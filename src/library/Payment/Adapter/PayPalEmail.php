@@ -359,7 +359,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         $data['cmd']                = '_xclick-subscriptions';
         $data['rm']                 = '2';
 
-        $data['invoice_id']         = $invoice['id'];
+        $data['invoice']         = $invoice['id'];
 
         // Recurrence info
         $data['a3']                 = $this->moneyFormat($invoice['total'], $invoice['currency']); // Regular subscription price.
@@ -387,7 +387,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         $data['last_name']			= $buyer['last_name'];
         $data['zip']				= $buyer['zip'];
         $data['state']				= $buyer['state'];
-        $data['bn']                             = "FOSSBilling_SP";
+        $data['bn']                  = "FOSSBilling_SP";
         return $data;
     }
 
