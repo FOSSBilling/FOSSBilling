@@ -515,7 +515,8 @@ class Box_Tools
                 'password' => $currentConfig['db']['password'],
             ],
             'twig' => [
-                'debug' => $currentConfig['twig']['debug'],
+                //'debug' => $currentConfig['twig']['debug'],
+                'debug' => false,
                 'auto_reload' => $currentConfig['twig']['auto_reload'],
                 'cache' => $currentConfig['twig']['cache'],
             ],

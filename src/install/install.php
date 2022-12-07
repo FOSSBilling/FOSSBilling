@@ -449,7 +449,7 @@ final class Box_Installer
             ],
 
             'twig' => [
-                'debug' => true,
+                'debug' => false,
                 'auto_reload' => true,
                 'cache' => PATH_ROOT . '/data/cache',
             ],
