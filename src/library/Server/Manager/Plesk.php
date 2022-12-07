@@ -22,9 +22,9 @@ class Server_Manager_Plesk extends Server_Manager
 
     public static function getForm()
     {
-        return array(
+        return [
             'label' => 'Plesk',
-        );
+        ];
     }
 
 	public function getLoginUrl()

@@ -70,37 +70,20 @@
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Server manager'|trans }}:</label>
                 <div class="col">
-                    <select class="form-select" name="manager">
+                    <select class="form-select" name="manager" onchange="handleManagerChange(this)">
                         {% for code, manager in admin.servicehosting_manager_get_pairs %}
                         <option value="{{ code }}"{% if server.manager == code %} selected{% endif %}>{{ manager.label }}</option>
                         {% endfor %}
                     </select>
                 </div>
             </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Username'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="username" value="{{ server.username }}" placeholder="{{ 'Login username to your server: root/reseller'|trans }}">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="password" name="password" value="{{ server.password }}" placeholder="{{ 'Login password to your server'|trans }}">
-                </div>
-            </div>
-
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Access Hash (Instead of password for cPanel servers)'|trans }}:</label>
-                <div class="col">
-                    <textarea class="form-control" name="accesshash" rows="5">{{ server.accesshash }}</textarea>
-                </div>
-            </div>
+            
+            <div id="credentials"></div>
 
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Connection port'|trans }}:</label>
                 <div class="col">
-                    <input class="form-control" type="text" name="port" value="{{ server.port }}" placeholder="{{ 'Custom port. Use blank to use default. Used to connect to API'|trans }}">
+                    <input class="form-control" type="text" name="port" value="{{ server.port }}" placeholder="{{ 'Custom port. Use blank to use default. Used to connect to the API'|trans }}">
                 </div>
             </div>
             <div class="mb-3 row">
@@ -167,5 +150,77 @@
             return false;
         });
     });
+
+    function handleManagerChange (select) {
+        var pairs = {{ admin.servicehosting_manager_get_pairs|json_encode|raw }} // PHP array returned by the server manager converted to a JavaScript object
+        var defaults = {
+            form: {
+                credentials: {
+                    fields: [
+                        {
+                            name: 'username',
+                            label: 'Username',
+                            type: 'text',
+                            placeholder: 'Username to connect to the server',
+                            required: true
+                        },
+                        {
+                            name: 'password',
+                            label: 'Password',
+                            type: 'password',
+                            placeholder: 'Password to connect to the server',
+                            required: true
+                        }
+                    ],
+                },
+            },
+        } // Default form fields. If server manager does not provide any, use these.
+
+        var values = {{ server|json_encode|raw }}; // Server data returned by the server manager converted to a JavaScript object
+
+        var credentials = document.getElementById('credentials'); // HTML element where the form fields will be inserted.
+        var manager = select.value; // Selected server manager code.
+
+        credentials.innerHTML = ''; // Clear the form fields.
+
+        console.log(values);
+
+        if (pairs[manager].form && pairs[manager].form.credentials && pairs[manager].form.credentials.fields) {
+            var data = pairs[manager].form.credentials.fields;
+        } else {
+            var data = defaults.form.credentials.fields;
+        }
+        
+        for (var i = 0; i < data.length; i++) {
+            // Create a new form field and append it to the credentials element.
+            var field = data[i];
+            var div = document.createElement('div');
+            div.className = 'mb-3 row';
+
+            var label = document.createElement('label');
+            label.className = 'form-label col-3 col-form-label';
+            label.innerHTML = field.label + ':';
+            div.appendChild(label);
+
+            var input = document.createElement('input');
+            input.className = 'form-control';
+            input.type = field.type;
+            input.name = field.name;
+            input.value = values[field.name];
+            input.placeholder = field.placeholder;
+            input.required = field.required;
+
+            var col = document.createElement('div');
+            col.className = 'col';
+            col.appendChild(input);
+            div.appendChild(col);
+
+            credentials.appendChild(div);
+        }
+    }
+
+    window.onload = function () {
+        handleManagerChange(document.querySelector('select[name="manager"]'));
+    };
 </script>
 {% endblock %}

@@ -27,11 +27,7 @@ class Server_Manager_Vesta extends Server_Manager
 
     public function _getPort()
     {
-        if (is_numeric($this->_config['port'])) {
-            return $this->_config['port'];
-        } else {
-            return '8083';
-        }
+        return is_numeric($this->_config['port']) ? $this->_config['port'] : '8083';
     }
 
     /**
@@ -53,9 +49,7 @@ class Server_Manager_Vesta extends Server_Manager
      */
     public function getLoginUrl()
     {
-        $host = 'https://'.$this->_config['host'].':'.$this->_getPort().'/';
-
-        return $host;
+        return 'https://'.$this->_config['host'].':'.$this->_getPort().'/';
     }
 
     /**
@@ -65,7 +59,7 @@ class Server_Manager_Vesta extends Server_Manager
      */
     public function getResellerLoginUrl()
     {
-        return 'https://vestacp.com';
+        return $this->getLoginUrl();
     }
 
     private function _makeRequest($params)
