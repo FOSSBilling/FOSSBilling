@@ -1,226 +1,184 @@
-{% extends 'layout_default.html.twig' %}
+{% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'Hosting management'|trans }}{% endblock %}
+{% set server = service.server %}
+{% set hp = service.hosting_plan %}
 
-{% set active_menu = 'system' %}
-
-{% block breadcrumbs %}
-<ul class="breadcrumb">
-    <li class="breadcrumb-item">
-        <a href="{{ '/'|alink }}">
-            <svg class="icon">
-                <use xlink:href="#home" />
-            </svg>
-        </a>
-    </li>
-    <li class="breadcrumb-item">
-        <a href="{{ 'servicehosting'|alink }}">{{ 'Hosting plans and servers'|trans }}</a>
-    </li>
-    <li class="breadcrumb-item active" aria-current="page">{{ server.name }}</li>
-</ul>
-{% endblock %}
-
-{% block content %}
-<div class="card">
-    <div class="card-body">
-        <h3>{{ 'Server management'|trans }}</h3>
-
-        <form method="post" action="{{ 'api/admin/servicehosting/server_update'|link }}" id="server-update" class="api-form" data-api-msg="{{ 'Server updated'|trans }}">
-            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="name" value="{{ server.name }}" required placeholder="{{ 'Unique name to identify this server'|trans }}">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Hostname'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="hostname" value="{{ server.hostname }}" placeholder="host1.domain.com">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'IP'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="ip" value="{{ server.ip }}" required placeholder="{{ 'Primary IP address of the server used to connect to it like: 127.0.0.1'|trans }}">
-                </div>
-            </div>
-            {# <div class="mb-3 row">
-                <label>{{ 'Assigned IP Addresses'|trans }}:</label>
-                <div class="col">
-                    <textarea name="assigned_ips" rows="5" placeholder="List the IP Addresses assigned to the server (One per line)">{% for v in server.assigned_ips %}{{ v }}{{constant("PHP_EOL")}}{% endfor %}</textarea>
-                </div>
-            </div> #}
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Enable/Disable'|trans }}:</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioActiveYes" type="radio" name="active" value="1"{% if server.active %} checked{% endif %}>
-                        <label class="form-check-label" for="radioActiveYes">{{ 'Yes'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioActiveNo" type="radio" name="active" value="0"{% if not server.active %} checked{% endif %}>
-                        <label class="form-check-label" for="radioActiveNo">{{ 'No'|trans }}</label>
-                    </div>
-                </div>
-            </div>
-            <hr>
-
-            <h5>{{ 'Server manager'|trans }}</h5>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Server manager'|trans }}:</label>
-                <div class="col">
-                    <select class="form-select" name="manager" onchange="handleManagerChange(this)">
-                        {% for code, manager in admin.servicehosting_manager_get_pairs %}
-                        <option value="{{ code }}"{% if server.manager == code %} selected{% endif %}>{{ manager.label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            
-            <div id="credentials"></div>
-
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Connection port'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="port" value="{{ server.port }}" placeholder="{{ 'Custom port. Use blank to use default. Used to connect to the API'|trans }}">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Use Secure connection'|trans }}:</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioSecureConnectionYes" type="radio" name="secure" value="1"{% if server.secure %} checked{% endif %}>
-                        <label class="form-check-label" for="radioSecureConnectionYes">{{ 'Yes'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioSecureConnectionNo" type="radio" name="secure" value="0"{% if not server.secure %} checked{% endif %}>
-                        <label class="form-check-label" for="radioSecureConnectionNo">{{ 'No'|trans }}</label>
-                    </div>
-                </div>
-            </div>
-
-            <input class="btn btn-primary w-100" id="test-connection" type="button" value="{{ 'Update and test connection'|trans }}">
-
-            <h5>{{ 'Nameservers'|trans }}</h5>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="ns1" value="{{ server.ns1 }}" placeholder="ns1.yourdomain.com">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Nameserver 2'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="ns2" value="{{ server.ns2 }}" placeholder="ns2.yourdomain.com">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Nameserver 3'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="ns3" value="{{ server.ns3 }}" placeholder="ns3.yourdomain.com">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Nameserver 4'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="ns4" value="{{ server.ns4 }}" placeholder="ns4.yourdomain.com">
-                </div>
-            </div>
-
-            <input type="hidden" name="id" value="{{ server.id }}">
-            <input type="submit" value="{{ 'Update server'|trans }}" class="btn btn-primary w-100">
-        </form>
-    </div>
+<div class="card-body">
+    <h3>{{ 'Details'|trans }}</h3>
 </div>
-{% endblock %}
+<table class="table card-table table-vcenter table-striped text-nowrap">
+    <tbody>
+        <tr>
+            <td class="w-50 text-end">{{ 'Status'|trans }}:</td>
+            <td>{{ mf.status_name(order.status) }}</td>
+        </tr>
+        <tr>
+            <td class="text-end">{{ 'Domain'|trans }}:</td>
+            <td>
+                <a target="_blank" href="https://{{ service.domain }}">{{ service.domain }}</a>
+            </td>
+        </tr>
+        <tr>
+            <td class="text-end">{{ 'Server Name'|trans }}:</td>
+            <td><a href="{{ 'servicehosting/server'|alink }}/{{ server.id }}">{{ server.name }}</a></td>
+        </tr>
+        <tr>
+            <td class="text-end">{{ 'Hosting plan'|trans }}:</td>
+            <td><a href="{{ 'servicehosting/plan'|alink }}/{{ hp.id }}">{{ hp.name }}</a></td>
+        </tr>
+        <tr>
+            <td class="text-end">{{ 'Server IP'|trans }}:</td>
+            <td>{{ server.ip }}</td>
+        </tr>
+        <tr>
+            <td class="text-end">{{ 'Account IP'|trans }}:</td>
+            <td>{{ service.ip }}</td>
+        </tr>
+        <tr>
+            <td class="text-end">{{ 'Username'|trans }}:</td>
+            <td>{{ service.username }}</td>
+        </tr>
+        <tr>
+            <td class="text-end">{{ 'Nameserver 1'|trans }}:</td>
+            <td>{{ server.ns1 }}</td>
+        </tr>
+        <tr>
+            <td class="text-end">{{ 'Nameserver 2'|trans }}:</td>
+            <td>{{ server.ns2 }}</td>
+        </tr>
+        {% if server.ns3 %}
+        <tr>
+            <td class="text-end">{{ 'Nameserver 3'|trans }}:</td>
+            <td>{{ server.ns3 }}</td>
+        </tr>
+        {% endif %}
+        {% if server.ns4 %}
+        <tr>
+            <td class="text-end">{{ 'Nameserver 4'|trans }}:</td>
+            <td>{{ server.ns4 }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td class="text-end">{{ 'Bandwidth'|trans }}:</td>
+            <td>{{ hp.bandwidth }} MB / {{ 'per month'|trans }}</td>
+        </tr>
+        <tr>
+            <td class="text-end">{{ 'Disk quota'|trans }}:</td>
+            <td>{{ hp.quota }} MB</td>
+        </tr>
+    </tbody>
+</table>
 
-{% block js%}
-<script>
-    $(function() {
-        $('#test-connection').click(function(){
-            $('#server-update').submit();
-            bb.post('admin/servicehosting/server_test_connection',
-                { id: {{ server.id }} },
-                function(result) {
-                    FOSSBilling.message("{{ 'Successfully connected to server'|trans }}");
-                }
-            );
+<div class="card-footer text-center">
+    {{ order_actions }}
+    <a class="d-inline-block mx-1 btn bg-light bg-gradient" href="{{ server.cpanel_url }}" target="_blank">
+        <svg class="mb-2 text-secondary" width="24" height="24">
+            <use xlink:href="#server" />
+        </svg>
+        <span class="d-block text-secondary">{{ 'Jump to control panel'|trans }}</span>
+    </a>
+    {% if service.reseller %}
+    <a class="d-inline-block mx-1 btn bg-light bg-gradient" href="{{ server.reseller_cpanel_url }}" target="_blank">
+        <svg class="mb-2 text-secondary" width="24" height="24">
+            <use xlink:href="#server" />
+        </svg>
+        <span class="d-block text-secondary">{{ 'Reseller control panel'|trans }}</span>
+    </a>
+    {% endif %}
 
-            return false;
-        });
-    });
+    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+        href="{{ 'api/admin/servicehosting/sync'|link({ 'order_id': order.id, 'CSRFToken': CSRFToken }) }}"
+        data-api-confirm="{{ 'Are you sure?'|trans }}"
+        data-api-msg="{{ 'Account was synced'|trans }}">
+        <svg class="mb-2 text-secondary" width="24" height="24">
+            <use xlink:href="#refresh" />
+        </svg>
+        <span class="d-block text-secondary">{{ 'Sync with server'|trans }}</span>
+    </a>
+</div>
 
-    function handleManagerChange (select) {
-        var pairs = {{ admin.servicehosting_manager_get_pairs|json_encode|raw }} // PHP array returned by the server manager converted to a JavaScript object
-        var defaults = {
-            form: {
-                credentials: {
-                    fields: [
-                        {
-                            name: 'username',
-                            label: 'Username',
-                            type: 'text',
-                            placeholder: 'Username to connect to the server',
-                            required: true
-                        },
-                        {
-                            name: 'password',
-                            label: 'Password',
-                            type: 'password',
-                            placeholder: 'Password to connect to the server',
-                            required: true
-                        }
-                    ],
-                },
-            },
-        } // Default form fields. If server manager does not provide any, use these.
+<div class="card-body">
+    <h3>{{ 'Change hosting plan'|trans }}</h3>
 
-        var values = {{ server|json_encode|raw }}; // Server data returned by the server manager converted to a JavaScript object
+    <form action="{{ 'api/admin/servicehosting/change_plan'|link }}" method="post" class="api-form" data-api-msg="{{ 'Hosting plan changed'|trans }}">
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'New hosting plan'|trans }}:</label>
+            <div class="col">
+                {{ mf.selectbox('plan_id', admin.servicehosting_hp_get_pairs, hp.id, 1) }}
+            </div>
+        </div>
 
-        var credentials = document.getElementById('credentials'); // HTML element where the form fields will be inserted.
-        var manager = select.value; // Selected server manager code.
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <input type="submit" value="{{ 'Change'|trans }}" class="btn btn-primary w-100">
+    </form>
+    <hr>
 
-        credentials.innerHTML = ''; // Clear the form fields.
+    <h3>{{ 'Change account password'|trans }}</h3>
+    <form action="{{ 'api/admin/servicehosting/change_password'|link }}" method="post" class="api-form" data-api-msg="{{ 'Account password changed'|trans }}">
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}:</label>
+            <div class="col">
+                <input class="form-control" type="password" name="password" required>
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Password Confirm'|trans }}:</label>
+            <div class="col">
+                <input class="form-control" type="password" name="password_confirm" required>
+            </div>
+        </div>
 
-        console.log(values);
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <input type="submit" value="{{ 'Change'|trans }}" class="btn btn-primary w-100">
+    </form>
+    <hr>
 
-        if (pairs[manager].form && pairs[manager].form.credentials && pairs[manager].form.credentials.fields) {
-            var data = pairs[manager].form.credentials.fields;
-        } else {
-            var data = defaults.form.credentials.fields;
-        }
-        
-        for (var i = 0; i < data.length; i++) {
-            // Create a new form field and append it to the credentials element.
-            var field = data[i];
-            var div = document.createElement('div');
-            div.className = 'mb-3 row';
+    <h3>{{ 'Change IP'|trans }}</h3>
+    <form method="post" action="{{ 'api/admin/servicehosting/change_ip'|link }}" class="api-form" data-api-msg="{{ 'Account IP changed'|trans }}">
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'IP'|trans }}:</label>
+            <div class="col">
+                <input class="form-control" type="text" name="ip" value="{{ request.ip|default(service.ip) }}" required>
+            </div>
+        </div>
 
-            var label = document.createElement('label');
-            label.className = 'form-label col-3 col-form-label';
-            label.innerHTML = field.label + ':';
-            div.appendChild(label);
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <button class="btn btn-primary w-100" type="submit">{{ 'Change'|trans }}</button>
+    </form>
+    <hr>
 
-            var input = document.createElement('input');
-            input.className = 'form-control';
-            input.type = field.type;
-            input.name = field.name;
-            input.value = values[field.name];
-            input.placeholder = field.placeholder;
-            input.required = field.required;
+    <h3>{{ 'Change username'|trans }}</h3>
+    <form method="post" action="{{ 'api/admin/servicehosting/change_username'|link }}" class="api-form" data-api-msg="{{ 'Account username changed'|trans }}">
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Username'|trans }}:</label>
+            <div class="col">
+                <input class="form-control" type="text" name="username" value="{{ request.username|default(service.username) }}" required>
+            </div>
+        </div>
 
-            var col = document.createElement('div');
-            col.className = 'col';
-            col.appendChild(input);
-            div.appendChild(col);
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <button class="btn btn-primary w-100" type="submit">{{ 'Change'|trans }}</button>
+    </form>
+    <hr>
 
-            credentials.appendChild(div);
-        }
-    }
+    <h3>{{ 'Change domain'|trans }}</h3>
+    <form method="post" action="{{ 'api/admin/servicehosting/change_domain'|link }}" class="api-form" data-api-msg="{{ 'Account domain changed'|trans }}">
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+        <div class="mb-3 row">
+            <label class="form-label col-3 col-form-label">{{ 'Domain'|trans }}:</label>
+            <div class="col">
+                <div class="input-group">
+                    <input class="form-control" type="text" name="sld" value="{{ request.domain|default(service.sld) }}" required>
+                    <input class="form-control" type="text" name="tld" value="{{ request.domain|default(service.tld) }}" required>
+                </div>
+            </div>
+        </div>
 
-    window.onload = function () {
-        handleManagerChange(document.querySelector('select[name="manager"]'));
-    };
-</script>
-{% endblock %}
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <button class="btn btn-primary w-100" type="submit">{{ 'Change'|trans }}</button>
+    </form>
+</div>
