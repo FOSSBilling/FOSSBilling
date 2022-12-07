@@ -362,7 +362,7 @@ $(function() {
     });
 
     $('a.show-notes').click(function() {
-        bb.post('admin/support/ticket_get', { id: $(this).attr('rel') }, function(result){
+        bb.post('admin/support/ticket_get', { id: $(this).attr('rel'), CSRFToken: "{{ CSRFToken }}" }, function(result){
             var html = $('<div>');
             $.each(result.notes, function(i, v){
                 html.append($('<div>').html(v.note));

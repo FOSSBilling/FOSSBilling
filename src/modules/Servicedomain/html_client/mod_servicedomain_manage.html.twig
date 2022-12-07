@@ -234,7 +234,7 @@ $(function() {
 
         bb.post(
             'client/servicedomain/lock',
-            { order_id: {{ order.id }} },
+            { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 bb.msg('Domain locked');
                 $('#domain-lock').toggle();
@@ -248,7 +248,7 @@ $(function() {
 
         bb.post(
             'client/servicedomain/unlock',
-            { order_id: {{ order.id }} },
+            { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 bb.msg('Domain unlocked');
                 $('#domain-lock').toggle();
@@ -262,7 +262,7 @@ $(function() {
 
         bb.post(
             'client/servicedomain/enable_privacy_protection',
-            { order_id: {{ order.id }} },
+            { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 bb.msg('Privacy Protection enabled');
                 $('#domain-enable-pp').toggle();
@@ -276,7 +276,7 @@ $(function() {
 
         bb.post(
             'client/servicedomain/disable_privacy_protection',
-            { order_id: {{ order.id }} },
+            { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 bb.msg('Privacy Protection disabled');
                 $('#domain-enable-pp').toggle();
@@ -289,7 +289,7 @@ $(function() {
         event.preventDefault();
         bb.post(
             'client/servicedomain/get_transfer_code',
-            { order_id: {{ order.id }} },
+            { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 bb.msg('Domain transfer code is: ' + result);
             }

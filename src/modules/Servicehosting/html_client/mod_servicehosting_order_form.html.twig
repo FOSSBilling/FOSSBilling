@@ -73,7 +73,7 @@ $(function() {
         var domain = sld + tld;
         bb.post(
             'guest/servicedomain/check',
-            { sld: sld, tld: tld },
+            { sld: sld, tld: tld, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 setRegistrationPricing(tld);
                 $('#domain-config').fadeIn('slow');
@@ -107,7 +107,7 @@ $(function() {
     {
         bb.post(
             'guest/servicedomain/pricing',
-            { tld: tld },
+            { tld: tld, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 var s = $("select[name='domain[register_years]']");
                 

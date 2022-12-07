@@ -209,7 +209,7 @@
         var price = $('input[name="amount"]').val();
         var code = $('select[name="to"]').val();
 
-        bb.post('guest/currency/format', { price: price, code: code }, function(result) {
+        bb.post('guest/currency/format', { price: price, code: code, CSRFToken: "{{ CSRFToken }}" }, function(result) {
             $('#converted_result').val(result);
         });
 

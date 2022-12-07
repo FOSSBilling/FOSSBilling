@@ -145,7 +145,7 @@ $(function() {
     $('#new-ticket-button').click(function(e) {
         e.preventDefault();
         
-        bb.post("guest/support/ticket_close", { hash: '{{ ticket.hash }}' }, function(r) {
+        bb.post("guest/support/ticket_close", { hash: '{{ ticket.hash }}', CSRFToken: "{{ CSRFToken }}" }, function(r) {
             bb.msg("Ticket was closed");
             bb.reload();
         });

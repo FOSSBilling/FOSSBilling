@@ -141,7 +141,7 @@
         $('#test-connection').click(function(){
             $('#server-update').submit();
             bb.post('admin/servicehosting/server_test_connection',
-                { id: {{ server.id }} },
+                { id: {{ server.id }}, CSRFToken: "{{ CSRFToken }}" },
                 function(result) {
                     FOSSBilling.message("{{ 'Successfully connected to server'|trans }}");
                 }
