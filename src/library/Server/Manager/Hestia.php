@@ -128,14 +128,10 @@ class Server_Manager_Hestia extends Server_Manager
 
         // Make request and check sys info
         $result = $this->_makeRequest($postvars);
-        if (false !== strpos($result, 'Error')) {
-            throw new Server_Exception('Connection to server failed. Error code: '.$result);
+        if (0 == intval($result)) {
+            return true;
         } else {
-            if ('0' == $result) {
-                return true;
-            } else {
-                throw new Server_Exception('Connection to server failed. Error code: '.$result);
-            }
+            throw new Server_Exception('Connection to server failed. Error code: '.$result);
         }
 
         return true;
@@ -182,7 +178,7 @@ class Server_Manager_Hestia extends Server_Manager
         ];
         // Make request and create user
         $result1 = $this->_makeRequest($postvars);
-        if ('0' == $result1) {
+        if (0 == intval($result1)) {
             // Create Domain Prepare POST query
             $postvars2 = [
                 'returncode' => 'yes',
@@ -194,7 +190,7 @@ class Server_Manager_Hestia extends Server_Manager
         } else {
             throw new Server_Exception('Server Manager Hestia CP Error: Unable to create User. Error code: '.$result1);
         }
-        if ('0' !== $result2) {
+        if (0 !== intval($result2)) {
             throw new Server_Exception('Server Manager Hestia CP Error: Create Domain failure. Error code: '.$result2);
         }
 
@@ -217,10 +213,10 @@ class Server_Manager_Hestia extends Server_Manager
         // Make request and suspend user
         $result = $this->_makeRequest($postvars);
         // Check if error 6 the account is suspended on server
-        if ('6' == $result) {
+        if (6 == intval($result)) {
             return true;
         }
-        if ('0' !== $result) {
+        if (0 !== intval($result)) {
             throw new Server_Exception('Server Manager Hestia CP Error: Suspend Account Error. Error code: '.$result);
         }
 
@@ -244,7 +240,7 @@ class Server_Manager_Hestia extends Server_Manager
             ];
 
         $result = $this->_makeRequest($postvars);
-        if ('0' !== $result) {
+        if (0 !== intval($result)) {
             throw new Server_Exception('Server Manager Hestia CP Error: Unsuspend Account Error. Error code: '.$result);
         }
 
@@ -270,12 +266,10 @@ class Server_Manager_Hestia extends Server_Manager
             ];
         // Make request and delete user
         $result = $this->_makeRequest($postvars);
-        if ('3' == $result) {
+        if ('3' == intval($result)) {
             return true;
-        } else {
-            if ('0' !== $result) {
-                throw new Server_Exception('Server Manager Hestia CP Error: Cancel Account Error. Error code: '.$result);
-            }
+        } elseif (0 !== intval($result)) {
+            throw new Server_Exception('Server Manager Hestia CP Error: Cancel Account Error. Error code: '.$result);
         }
 
         return true;
@@ -303,7 +297,7 @@ class Server_Manager_Hestia extends Server_Manager
         ];
         // Make request and change package
         $result = $this->_makeRequest($postvars);
-        if ('0' !== $result) {
+        if (0 !== intval($result)) {
             throw new Server_Exception('Server Manager Hestia CP Error: Change User package Account Error. Error code: '.$result);
         }
 
@@ -351,7 +345,7 @@ class Server_Manager_Hestia extends Server_Manager
         ];
         // Make request and change password
         $result = $this->_makeRequest($postvars);
-        if ('0' !== $result) {
+        if (0 !== intval($result)) {
             throw new Server_Exception('Server Manager Hestia CP Error: Change Password Account Error. Error code: '.$result);
         }
 
