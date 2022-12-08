@@ -51,7 +51,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
              *
              * TODO: Use Symfony\Component\Translation\Loader\MoFileLoader and remove php-gettext hardcoded library.
              */
-            'trans' => new TwigFilter('trans', 'gettext'),
+            'trans' => new TwigFilter('trans', '_gettext'),
             'alink' => new TwigFilter('alink', [$this, 'twig_bb_admin_link_filter'], ['is_safe' => ['html']]),
             'link' => new TwigFilter('link', [$this, 'twig_bb_client_link_filter'], ['is_safe' => ['html']]),
             'gravatar' => new TwigFilter('gravatar', 'twig_gravatar_filter'),
