@@ -60,35 +60,32 @@ class Box_Translate implements \Box\InjectionAwareInterface
 
     public function setup()
     {
+        PhpMyAdmin\MoTranslator\Loader::loadFunctions();
+
         $locale = $this->getLocale();
         $codeset = "UTF-8";
-        if(!function_exists('gettext')) {
-            throw new exception("Error! gettext function is not installed.");
-        } else {
-            @putenv('LANG='.$locale.'.'.$codeset);
-            @putenv('LANGUAGE='.$locale.'.'.$codeset);
-            // set locale
-            if (!defined('LC_MESSAGES')) {
-                define('LC_MESSAGES', 5);
-            }
-            if (!defined('LC_TIME')) {
-                define('LC_TIME', 2);
-            }
-            setlocale(LC_MESSAGES, $locale.'.'.$codeset);
-            setlocale(LC_TIME, $locale.'.'.$codeset);
-            bindtextdomain($this->domain, PATH_LANGS);
-            if(function_exists('bind_textdomain_codeset')) bind_textdomain_codeset($this->domain, $codeset);
-            textdomain($this->domain);
-
-            if (!function_exists('__')) {
-                function __($msgid, array $values = NULL)
-                {
-                    if (empty($msgid)) {
-                        return null;
-                    }
-                    $string = gettext($msgid);
-                    return empty($values) ? $string : strtr($string, $values);
+        @putenv('LANG='.$locale.'.'.$codeset);
+        @putenv('LANGUAGE='.$locale.'.'.$codeset);
+        // set locale
+        if (!defined('LC_MESSAGES')) {
+            define('LC_MESSAGES', 5);
+        }
+        if (!defined('LC_TIME')) {
+            define('LC_TIME', 2);
+        }
+        _setlocale(LC_MESSAGES, $locale.'.'.$codeset);
+        _textdomain(LC_TIME, $locale.'.'.$codeset);
+        _bindtextdomain($this->domain, PATH_LANGS);
+        _bind_textdomain_codeset($this->domain, $codeset);
+        _textdomain($this->domain)
+        if (!function_exists('__')) {
+            function __($msgid, array $values = NULL)
+            {
+                if (empty($msgid)) {
+                    return null;
                 }
+                $string = _gettext($msgid);
+                return empty($values) ? $string : strtr($string, $values);
             }
         }
     }
