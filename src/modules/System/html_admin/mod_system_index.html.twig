@@ -17,17 +17,20 @@
                 {% for ext in admin.extension_get_list({ 'active': 1, 'has_settings': 1 }|merge(request)) %}
                     <div class="datagrid-item">
                         <div class="datagrid-title">
-                            <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}" class="text-reset">
-                                <img src="{{ ext.icon_url }}" alt="{{ ext.name }}" style="width: 32px; height: 32px; margin-right: .5rem;"> {{ ext.name }}
-                            </a>
+                                <img src="{{ ext.icon_url }}" alt="{{ ext.name }}" style="width: 32px; height: 32px; margin-right: .5rem;">{{ ext.name }}
                         </div>
                         <div class="datagrid-content">
                             <ul>
-                                {% for route in ext.settings_routes %}
                                 <li>
-                                    <a href="{{ route.path }}">{{route.label}}</a>
+                                    <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}">{{ ext.name }} {{ 'Settings' |trans }}</a>
                                 </li>
-                                {% endfor %}
+                                <ul>
+                                    {% for route in ext.settings_routes %}
+                                    <li>
+                                        <a href="{{ route.path }}">{{route.label}}</a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
                             </ul>
                         </div>
                     </div>
