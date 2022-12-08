@@ -386,6 +386,11 @@ class Service implements InjectionAwareInterface
 
         $config['code'] = $theme;
         $config['paths'] = $paths;
+        $config['hasSettings'] = false;
+
+        if (is_dir($theme_path . '/config')) {
+            $config['hasSettings'] = true;
+        }
 
         return $config;
     }

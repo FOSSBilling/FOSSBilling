@@ -38,12 +38,16 @@
             <tr>
                 <td>{% if guest.extension_theme(true).code == theme.code %}<strong>{{ theme.code }}</strong>{% else %}{{ theme.code }}{% endif %}</td>
                 <td>
+                    {% if theme.hasSettings %}
                     <a class="btn btn-primary" href="{{ 'theme'|alink }}/{{theme.code}}">
                         <svg class="icon">
                             <use xlink:href="#settings" />
                         </svg>
                         {{ 'Settings'|trans }}
                     </a>
+                    {% else %}
+                    <p>Theme does not have settings</p>
+                    {% endif %}
                     {% if guest.extension_theme(true).code != theme.code %}
                     <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}" href="{{ 'api/admin/theme/select'|link({ 'code': theme.code, 'CSRFToken': CSRFToken }) }}">
                         <svg class="icon">
@@ -86,12 +90,16 @@
                     {% endif %}
                 </td>
                 <td>
+                    {% if theme.hasSettings %}
                     <a class="btn btn-primary" href="{{ 'theme'|alink }}/{{theme.code}}">
                         <svg class="icon">
                             <use xlink:href="#settings" />
                         </svg>
                         {{ 'Settings'|trans }}
                     </a>
+                    {% else %}
+                    <p>Theme does not have settings</p>
+                    {% endif %}
                     {% if guest.extension_theme(false).code != theme.code %}
                     <a class="btn btn-primary api-link" data-api-redirect="{{ 'extension/settings/theme'|alink }}" href="{{ 'api/admin/theme/select'|link({'code' : theme.code, 'CSRFToken': CSRFToken}) }}">
                         <svg class="icon">
