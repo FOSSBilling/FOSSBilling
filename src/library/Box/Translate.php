@@ -63,12 +63,7 @@ class Box_Translate implements \Box\InjectionAwareInterface
         $locale = $this->getLocale();
         $codeset = "UTF-8";
         if(!function_exists('gettext')) {
-            require_once PATH_LIBRARY . '/php-gettext/gettext.inc';
-            T_setlocale(LC_MESSAGES, $locale.'.'.$codeset);
-            T_setlocale(LC_TIME, $locale.'.'.$codeset);
-            T_bindtextdomain($this->domain, PATH_LANGS);
-            T_bind_textdomain_codeset($this->domain, $codeset);
-            T_textdomain($this->domain);
+            throw new exception("Error! gettext function is not installed.");
         } else {
             @putenv('LANG='.$locale.'.'.$codeset);
             @putenv('LANGUAGE='.$locale.'.'.$codeset);
