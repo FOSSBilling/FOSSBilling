@@ -77,7 +77,7 @@ class Box_Translate implements \Box\InjectionAwareInterface
         _textdomain(LC_TIME, $locale.'.'.$codeset);
         _bindtextdomain($this->domain, PATH_LANGS);
         _bind_textdomain_codeset($this->domain, $codeset);
-        _textdomain($this->domain)
+        _textdomain($this->domain);
         if (!function_exists('__')) {
             function __($msgid, array $values = NULL)
             {
