@@ -120,7 +120,7 @@ $(function() {
     $('#send-msg').click(function() {
         jConfirm('Send message to clients?', 'Confirm', function(confirm) {
             if (confirm) {
-                bb.post('admin/massmailer/send', { id: {{ msg.id, CSRFToken: "{{ CSRFToken }}" }} }, function(result) {
+                bb.post('admin/massmailer/send', { id: {{ msg.id}}, CSRFToken: "{{ CSRFToken }}" }, function(result) {
                     bb.msg("{{ 'Message was added to mail queue and will be sent with scheduled tasks.'|trans }}");
                 });
             }
@@ -132,7 +132,7 @@ $(function() {
     $('#send-test-msg').click(function() {
         jConfirm('Send test message?', 'Confirm', function(confirm) {
             if (confirm) {
-                bb.post('admin/massmailer/send_test', { id: {{ msg.id, CSRFToken: "{{ CSRFToken }}" }} }, function(result) {
+                bb.post('admin/massmailer/send_test', { id: {{ msg.id}}, CSRFToken: "{{ CSRFToken }}" }, function(result) {
                     bb.msg("{{ 'Message was sent'|trans }}");
                 });
             }
