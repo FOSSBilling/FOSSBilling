@@ -90,9 +90,9 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             ':id'=>sprintf('%05s', $invoice->nr),
             ':serie'=>$invoice->serie,
             ':title'=>$invoiceItems[0]['title']);
-        $title = __('Payment for invoice :serie:id [:title]', $params);
+        $title = __trans('Payment for invoice :serie:id [:title]', $params);
         if(count($invoiceItems) > 1) {
-            $title = __('Payment for invoice :serie:id', $params);
+            $title = __trans('Payment for invoice :serie:id', $params);
         }
         return $title;
     }
@@ -248,7 +248,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             ':description' => $title,
             ':image' => $company['logo_url'],
             ':email' => $invoice->buyer_email,
-            ':label' => __('Pay now'),
+            ':label' => __trans('Pay now'),
             ':callbackUrl' => $payGatewayService->getCallbackUrl($payGateway, $invoice),
             ':redirectUrl' => $this->di['tools']->url('invoice/'.$invoice->hash)
         );

@@ -110,11 +110,11 @@ class Admin implements \Box\InjectionAwareInterface
 
         $info = null;
         if (!$t->isAssetsPathWritable()) {
-            $info = __('Theme ":name" assets folder is not writable. Set folder :folder permissions to 777', [':name' => $t->getName(), ':folder' => $t->getPathAssets()]);
+            $info = __trans('Theme ":name" assets folder is not writable. Set folder :folder permissions to 777', [':name' => $t->getName(), ':folder' => $t->getPathAssets()]);
         }
 
         if (empty($html)) {
-            $info = __('Theme ":name" is not configurable', [':name' => $t->getName()]);
+            $info = __trans('Theme ":name" is not configurable', [':name' => $t->getName()]);
         }
 
         $data = [

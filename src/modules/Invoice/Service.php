@@ -1533,9 +1533,9 @@ class Service implements InjectionAwareInterface
             ':serie' => $proforma['serie'],
             ':title' => $first_title, ];
         if ($first_title) {
-            $title = __('Payment for invoice :serie:id [:title]', $params);
+            $title = __trans('Payment for invoice :serie:id [:title]', $params);
         } else {
-            $title = __('Payment for invoice :serie:id', $params);
+            $title = __trans('Payment for invoice :serie:id', $params);
         }
 
         $mpi = new \Payment_Invoice();

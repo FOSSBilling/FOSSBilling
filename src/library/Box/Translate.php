@@ -78,14 +78,17 @@ class Box_Translate implements \Box\InjectionAwareInterface
         _bindtextdomain($this->domain, PATH_LANGS);
         _bind_textdomain_codeset($this->domain, $codeset);
         _textdomain($this->domain);
-        if (!function_exists('__')) {
-            function __($msgid, array $values = NULL)
-            {
-                if (empty($msgid)) {
-                    return null;
-                }
-                $string = _gettext($msgid);
-                return empty($values) ? $string : strtr($string, $values);
+        
+        function __trans($msgid, array $values = NULL)
+        {
+            if (empty($msgid)) {
+                return null;
+            }
+            if (is_null($values)){
+                return _gettext($msgid);
+            } else {
+                $string = strtr($msgid, $values);
+                return _gettext($string);
             }
         }
     }
@@ -110,6 +113,6 @@ class Box_Translate implements \Box\InjectionAwareInterface
 
     public function __($msgid, array $values = NULL)
     {
-        return __($msgid, $values);
+        return __trans($msgid, $values);
     }
 }

@@ -51,7 +51,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
              *
              * TODO: Use Symfony\Component\Translation\Loader\MoFileLoader and remove php-gettext hardcoded library.
              */
-            'trans' => new TwigFilter('trans', '_gettext'),
+            'trans' => new TwigFilter('trans', '__trans'),
             'alink' => new TwigFilter('alink', [$this, 'twig_bb_admin_link_filter'], ['is_safe' => ['html']]),
             'link' => new TwigFilter('link', [$this, 'twig_bb_client_link_filter'], ['is_safe' => ['html']]),
             'gravatar' => new TwigFilter('gravatar', 'twig_gravatar_filter'),
@@ -256,7 +256,7 @@ function twig_timeago_filter($iso8601)
 {
     $cur_tm = time();
     $dif = $cur_tm - strtotime($iso8601);
-    $pds = [__('second'), __('minute'), __('hour'), __('day'), __('week'), __('month'), __('year'), __('decade')];
+    $pds = [__trans('second'), __trans('minute'), __trans('hour'), __trans('day'), __trans('week'), __trans('month'), __trans('year'), __trans('decade')];
     $lngh = [1, 60, 3600, 86400, 604800, 2630880, 31570560, 315705600];
     
     for ($v = sizeof($lngh) - 1; ($v >= 0) && (($no = $dif / $lngh[$v]) <= 1); --$v) {

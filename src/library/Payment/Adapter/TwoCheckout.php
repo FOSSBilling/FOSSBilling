@@ -360,7 +360,7 @@ class Payment_Adapter_TwoCheckout implements \Box\InjectionAwareInterface
         $form .=  '</form>' . PHP_EOL . PHP_EOL;
 
         if(isset($this->config['auto_redirect']) && $this->config['auto_redirect']) {
-            $form .= sprintf('<h2>%s</h2>', __('Redirecting to 2Checkout.com'));
+            $form .= sprintf('<h2>%s</h2>', __trans('Redirecting to 2Checkout.com'));
             $form .=  "<script type='text/javascript'>$(document).ready(function(){    document.getElementById('payment_button').style.display = 'none';    document.forms['payment_form'].submit();});</script>";
         }
 

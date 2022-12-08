@@ -54,12 +54,12 @@ class Payment_Adapter_ClientBalance implements \Box\InjectionAwareInterface
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
 
         if (!$this->enoughInBalanceToCoverInvoice($invoiceModel)){
-            return __('Not enough in balance');
+            return __trans('Not enough in balance');
         }
 
         $invoiceService = $this->di['mod_service']('Invoice');
         if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)){
-            return __('Forbidden to pay deposit invoice with this gateway');
+            return __trans('Forbidden to pay deposit invoice with this gateway');
         }
 
         $ipnUrl = $this->getServiceUrl($invoice_id);

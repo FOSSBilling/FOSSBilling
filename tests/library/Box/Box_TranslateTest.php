@@ -41,7 +41,7 @@ class Box_TranslateTest extends PHPUnit\Framework\TestCase
         global $di;
 
         $text = 'Translate ME';
-        $result = $di['translate']()->__($text);
+        $result = $di['translate']()->__trans($text);
 
         $this->assertEquals($text, $result);
     }

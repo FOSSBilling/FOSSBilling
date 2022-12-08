@@ -228,7 +228,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->rel_id = null;
         $pi->task = \Model_InvoiceItem::TASK_VOID;
         $pi->status = \Model_InvoiceItem::STATUS_PENDING_PAYMENT;
-        $pi->title = __('Add funds to account');
+        $pi->title = __trans('Add funds to account');
         $pi->period = null;
         $pi->quantity = 1;
         $pi->unit = null;
@@ -346,10 +346,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             case \Model_Promo::ABSOLUTE:
                 $currencyAmount = $api_guest->currency_format(['code' => $currency, 'price' => $promo->value]);
 
-                return __('Promotional Code: :code - :value Discount', [':code' => $promo->code, ':value' => $currencyAmount]);
+                return __trans('Promotional Code: :code - :value Discount', [':code' => $promo->code, ':value' => $currencyAmount]);
 
             case \Model_Promo::PERCENTAGE:
-                return __('Promotional Code: :code - :value%', [':code' => $promo->code, ':value' => $promo->value]);
+                return __trans('Promotional Code: :code - :value%', [':code' => $promo->code, ':value' => $promo->value]);
 
             default:
                 break;

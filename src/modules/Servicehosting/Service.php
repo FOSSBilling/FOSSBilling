@@ -46,7 +46,7 @@ class Service implements InjectionAwareInterface
         try {
             [$sld, $tld] = $this->_getDomainTuple($data);
 
-            return __(':hosting for :domain', [':hosting' => $product->title, ':domain' => $sld . $tld]);
+            return __trans(':hosting for :domain', [':hosting' => $product->title, ':domain' => $sld . $tld]);
         } catch (\Exception $e) {
             // should never occur, but in case
             error_log($e->getMessage());
