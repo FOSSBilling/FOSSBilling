@@ -1,7 +1,7 @@
 {
     "id":           "servicemembership",
 	"type":         "mod",
-    "name":         "Membership product",
+    "name":         "Membership Product",
     "description":  "Sell membership subscriptions to clients",
     "homepage_url": "http://github.com/boxbilling/",
     "author":       "FOSSBilling",

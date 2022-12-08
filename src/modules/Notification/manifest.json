@@ -1,7 +1,7 @@
 {
     "id":           "notification",
 	"type":         "mod",
-    "name":         "Notification center",
+    "name":         "Notification Center",
     "description":  "Important messages for staff members",
     "version":      "1.0.0"
 }

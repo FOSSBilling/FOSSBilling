@@ -1,7 +1,7 @@
 {
     "id":           "cron",
 	"type":         "mod",
-    "name":         "Scheduled tasks",
+    "name":         "Scheduled Tasks",
     "description":  "FOSSBilling core module",
     "icon_url":     "icon.png",
     "version":      "1.0.0"
