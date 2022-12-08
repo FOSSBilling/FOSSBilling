@@ -176,7 +176,8 @@ class Client implements InjectionAwareInterface
         try {
             $this->isRoleLoggedIn($role);
             if($role == 'client' || $role == 'admin'){
-                $this->_checkCSRFToken();
+                // TODO: Re-enable this once all the issues have been ironed out
+                //$this->_checkCSRFToken();
             }
         } catch (\Exception $e) {
             $this->_tryTokenLogin();
