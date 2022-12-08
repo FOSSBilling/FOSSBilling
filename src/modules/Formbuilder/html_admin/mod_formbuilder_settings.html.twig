@@ -78,9 +78,21 @@
                         <td>{{ form.order_count }}</td>
                         <td>{{ form.product_count }}</td>
                         <td class="actions">
-                            <a class="bb-button btn14" href="{{ 'extension/settings/formbuilder'|alink({'id' : form.id}) }}"><img src="assets/icons/edit.svg" alt=""></a>
-                            <a class="bb-button btn14 copy_form" href="#" data-api-reload="1"  title="Copy" data-form-id="{{ form.id }}"><img src="images/icons/dark/balloons.png" alt=""></a>
-                            <a class="btn14 bb-rm-tr api-link" href="{{'api/admin/formbuilder/delete_form'|link({'id' : form.id}) }}" data-api-confirm="Are you sure?" ><img src="assets/icons/delete.svg" alt=""></a>
+                            <a class="btn btn-primary" href="{{ 'extension/settings/formbuilder'|alink({'id' : form.id}) }}">
+                                <svg class="icon">
+                                    <use xlink:href="#edit"/>
+                                </svg>
+                            </a>
+                            <a class="btn btn-primary copy_form" href="#" data-api-reload="1"  title="Copy" data-form-id="{{ form.id }}">
+                                <svg class="icon">
+                                    <use xlink:href="#copy"/>
+                                </svg>
+                            </a>
+                            <a class="btn btn-primary api-link" href="{{'api/admin/formbuilder/delete_form'|link({'id' : form.id}) }}" data-api-confirm="Are you sure?" >
+                                <svg class="icon">
+                                    <use xlink:href="#delete"/>
+                                </svg>
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -88,7 +100,7 @@
                 <tfoot>
                     <tr>
                         <td colspan="4">
-                            <input type="button" value="{{ 'Create new form'|trans }}" class="greyishBtn" id="new-form" style="width: 150px; float: right;"/>
+                            <input type="button" value="{{ 'Create new form'|trans }}" class="btn btn-primary" id="new-form" style="width: 150px; float: right;"/>
                         </td>
                     </tr>
                 </tfoot>
@@ -153,7 +165,7 @@
 
             <div class="rowElem">
                 <div class="formRight">
-                    <button type="submit" href="#" class="button blueBtn">{{ 'Update'|trans }}</button>
+                    <button type="submit" href="#" class="btn btn-primary">{{ 'Update'|trans }}</button>
                 </div>
                 <div class="fix"></div>
             </div>
@@ -170,11 +182,36 @@
 <div class="mainForm">
 
 <div class="body" id="fields">
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text', 'CSRFToken': CSRFToken}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1" ><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Text'|trans }}</span></a>
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select', 'CSRFToken': CSRFToken}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Dropdown'|trans }}</span></a>
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio', 'CSRFToken': CSRFToken}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Radio'|trans }}</span></a>
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox', 'CSRFToken': CSRFToken}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Checkbox'|trans }}</span></a>
-    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea', 'CSRFToken': CSRFToken}) }}" title="" class="btnIconLeft mr10 api-link" data-api-reload="1"><img src="images/icons/dark/add.png" alt="" class="icon"><span>{{ 'Textarea'|trans }}</span></a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text', 'CSRFToken': CSRFToken}) }}" title="" class="btn btn-primary api-link" data-api-reload="1" >
+        <svg class="icon">
+            <use xlink:href="#plus"/>
+        </svg>
+        <span>{{ 'Text'|trans }}</span>
+    </a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select', 'CSRFToken': CSRFToken}) }}" title="" class="btn btn-primary api-link" data-api-reload="1">
+        <svg class="icon">
+            <use xlink:href="#plus"/>
+        </svg>
+        <span>{{ 'Dropdown'|trans }}</span>
+    </a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio', 'CSRFToken': CSRFToken}) }}" title="" class="btn btn-primary api-link" data-api-reload="1">
+        <svg class="icon">
+            <use xlink:href="#plus"/>
+        </svg>
+        <span>{{ 'Radio'|trans }}</span>
+    </a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox', 'CSRFToken': CSRFToken}) }}" title="" class="btn btn-primary api-link" data-api-reload="1">
+        <svg class="icon">
+            <use xlink:href="#plus"/>
+        </svg>
+        <span>{{ 'Checkbox'|trans }}</span>
+    </a>
+    <a href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea', 'CSRFToken': CSRFToken}) }}" title="" class="btn btn-primary api-link" data-api-reload="1">
+        <svg class="icon">
+            <use xlink:href="#plus"/>
+        </svg>
+        <span>{{ 'Textarea'|trans }}</span>
+    </a>
 </div>
 
 <fieldset>
