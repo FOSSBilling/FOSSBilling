@@ -338,7 +338,7 @@ $(function() {
     $('#get-epp').bind('click', function(event) {
         bb.post(
             'admin/servicedomain/get_transfer_code',
-            { order_id: {{ order.id, CSRFToken: "{{ CSRFToken }}" }} },
+            { order_id: {{ order.id}}, CSRFToken: "{{ CSRFToken }}" },
             function(result) {
                 FOSSBilling.message("{{ 'Domain transfer code is: '|trans }}" + result);
             }

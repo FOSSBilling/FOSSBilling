@@ -309,7 +309,7 @@ $(function() {
         if (confirm("This will generate new invoice. Are you sure you want to continue?")) {
             bb.post(
                 'client/invoice/renewal_invoice',
-                { order_id: {{ order.id, CSRFToken: "{{ CSRFToken }}" }} },
+                { order_id: {{ order.id }}, CSRFToken: "{{ CSRFToken }}" },
                 function(result) {
                     bb.redirect("{{ 'invoice'|link }}" + '/' + result);
                 }
