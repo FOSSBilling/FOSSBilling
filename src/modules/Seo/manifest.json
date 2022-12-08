@@ -1,7 +1,7 @@
 {
     "id":           "seo",
     "type":         "mod",
-    "name":         "SEO tools",
+    "name":         "SEO Tools",
     "description":  "Ping sitemap to Google, Yahoo and Bing",
     "icon_url":     "icon.png",
     "homepage_url": "http://github.com/boxbilling/",

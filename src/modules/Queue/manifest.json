@@ -1,7 +1,7 @@
 {
     "id":           "queue",
     "type":         "mod",
-    "name":         "Queue manager",
+    "name":         "Queue Manager",
     "description":  "Execute long running tasks in queue",
     "homepage_url": "http://github.com/boxbilling/",
     "author":       "FOSSBilling",

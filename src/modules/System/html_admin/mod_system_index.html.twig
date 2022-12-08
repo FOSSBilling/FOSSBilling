@@ -17,7 +17,7 @@
                 {% for ext in admin.extension_get_list({ 'active': 1, 'has_settings': 1 }|merge(request)) %}
                     <div class="datagrid-item">
                         <div class="datagrid-title">
-                            <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}" class="text-reset">
+                            <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}">
                                 <img src="{{ ext.icon_url }}" alt="{{ ext.name }}" style="width: 32px; height: 32px; margin-right: .5rem;"> {{ ext.name }}
                             </a>
                         </div>

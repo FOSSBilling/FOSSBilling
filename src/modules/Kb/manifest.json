@@ -1,7 +1,7 @@
 {
     "id":           "kb",
 	"type":         "mod",
-    "name":         "Knowledge base",
+    "name":         "Knowledge Base",
     "description":  "Knowledge base module for FOSSBilling",
     "homepage_url": "http://github.com/boxbilling/",
     "author":       "FOSSBilling",
