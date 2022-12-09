@@ -81,7 +81,7 @@ class Box_Translate implements \Box\InjectionAwareInterface
         
         function __trans($msgid, array $values = NULL)
         {
-            if (empty($msgid)) {
+            if (empty($msgid) || is_null($msgid)) {
                 return null;
             }
             if (is_null($values)){

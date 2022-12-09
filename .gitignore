@@ -5,7 +5,7 @@
 .vagrant*
 tmp
 src/.htaccess
-src/bb-config*
+src/config.php
 !src/config-sample.php
 src/data/log/*
 src/data/cache/*
