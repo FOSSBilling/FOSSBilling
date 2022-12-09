@@ -10,7 +10,6 @@
     <fileset id="shared-artifacts" dir=".">
         <include name="LICENSE"/>
         <include name="README.md"/>
-        <include name="CHANGELOG.md"/>
     </fileset>
 
     <fileset id="api-sources" dir="src" followsymlinks="false">

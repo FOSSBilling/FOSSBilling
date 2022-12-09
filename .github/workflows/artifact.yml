@@ -61,7 +61,6 @@ jobs:
           cp -r ./src/* ./build/source/
           cp README.md ./build/source/
           cp LICENSE ./build/source/
-          cp CHANGELOG.md ./build/source/
 
       - name: Installing Composer dependencies
         run: composer install --prefer-dist --no-progress --no-suggest --no-dev --optimize-autoloader
