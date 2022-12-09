@@ -222,7 +222,7 @@
                             </div>
 
                             <div class="rowElem">
-                                <label>Default currency title:</label>
+                                <label>Currency title:</label>
                                 <div class="formRight">
                                     {% if request.currency_title %}
                                     <input type="text" name="currency_title" id="currency_title" value="{{ request.currency_title|default(currency_title) }}" autocomplete="off" required="required" placeholder="USD"/>
@@ -234,7 +234,7 @@
                             </div>
 
                             <div class="rowElem">
-                                <label>Default currency price format:</label>
+                                <label>Currency price format:</label>
                                 <div class="formRight">
                                     {% if request.currency_format %}
                                     <input type="text" name="currency_format" id="currency_format" value="{{ request.currency_format|default(currency_format) }}" autocomplete="off" required="required" placeholder="USD"/>
