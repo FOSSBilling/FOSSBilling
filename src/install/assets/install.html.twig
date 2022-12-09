@@ -21,11 +21,12 @@
         </div>
 
         <div class="widget nomargin step step-3">
-            <div class="head"><h5 class="iAlert">Administrator account</h5></div>
+            <div class="head"><h5 class="iAlert">Account & currency</h5></div>
             <div class="body">
-                <p>This is the main user account to control all aspects of FOSSBilling.</p>
+                <p>This will be your main administrator user account to control all aspects of FOSSBilling.</p>
                 <p>Email will be used to login to admin area.</p>
                 <p>Make sure password is strong.</p>
+                <p>Here you will also configure the default currency for your system</p>
             </div>
         </div>
 
@@ -71,7 +72,7 @@
                         <ul>
                             <li><a href="#step-1" class="bordLeft wFirst"><h5 class="stepDesc iSettings">1. Preparation</h5></a></li>
                             <li><a href="#step-2"><h5 class="stepDesc iDatabase">2. Database</h5></a></li>
-                            <li><a href="#step-3"><h5 class="stepDesc iAdminUser">3. Administrator</h5></a></li>
+                            <li><a href="#step-3"><h5 class="stepDesc iAdminUser">3. Account & Currency</h5></a></li>
                             <li><a href="#step-4" class="bordRight"><h5 class="stepDesc iFlag">4. Finish</h5></a></li>
                         </ul>
 
@@ -208,6 +209,41 @@
                                 <div class="fix"></div>
                             </div>
 
+                            <div class="rowElem nobg">
+                                <label>Default currency code:</label>
+                                <div class="formRight">
+                                    {% if request.currency_code %}
+                                    <input type="text" name="currency_code" id="currency_code" value="{{ request.currency_code|default(currency_code) }}" autocomplete="off" required="required" placeholder="USD"/>
+                                    {% else %}
+                                    <input type="text" name="currency_code" id="currency_code" value="USD" autocomplete="off" required="required" placeholder="USD"/>
+                                    {% endif %}
+                                </div>
+                                <div class="fix"></div>
+                            </div>
+
+                            <div class="rowElem">
+                                <label>Default currency title:</label>
+                                <div class="formRight">
+                                    {% if request.currency_title %}
+                                    <input type="text" name="currency_title" id="currency_title" value="{{ request.currency_title|default(currency_title) }}" autocomplete="off" required="required" placeholder="USD"/>
+                                    {% else %}
+                                    <input type="text" name="currency_title" id="currency_title" value="US Dollar" autocomplete="off" required="required" placeholder="US Dollar"/>
+                                    {% endif %}
+                                </div>
+                                <div class="fix"></div>
+                            </div>
+
+                            <div class="rowElem">
+                                <label>Default currency price format:</label>
+                                <div class="formRight">
+                                    {% if request.currency_format %}
+                                    <input type="text" name="currency_format" id="currency_format" value="{{ request.currency_format|default(currency_format) }}" autocomplete="off" required="required" placeholder="USD"/>
+                                    {% else %}
+                                    <input type="text" name="currency_format" id="currency_format" value={% verbatim %}"${{price}}"{% endverbatim %} autocomplete="off" required="required" placeholder={% verbatim %}"${{price}}"{% endverbatim %}/>
+                                    {% endif %}
+                                </div>
+                                <div class="fix"></div>
+                            </div>
                             <div class="fix"></div>
                         </div>
                         <div id="step-4">
@@ -319,6 +355,9 @@ $(function() {
             if(isEmpty('admin_name')) return false;
             if(isEmpty('admin_email')) return false;
             if(isEmpty('admin_pass')) return false;
+            if(isEmpty('currency_code')) return false;
+            if(isEmpty('currency_title')) return false;
+            if(isEmpty('currency_format')) return false;
             if(confirm('FOSSBilling installer will create database. It may take some time. Do not close this window. Continue?')) {
                 $.ajax({
                     async: false,

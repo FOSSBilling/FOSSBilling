@@ -138,6 +138,15 @@ final class Box_Installer
                     $this->session->set('admin_pass', $admin_pass);
                     $this->session->set('admin_name', $admin_name);
 
+                    // Get the default currency
+                    $currency_code = $_POST['currency_code'];
+                    $currency_title = $_POST['currency_title'];
+                    $currency_format = $_POST['currency_format'];
+
+                    $this->session->set('currency_code', $currency_code);
+                    $this->session->set('currency_title', $currency_title);
+                    $this->session->set('currency_format', $currency_format);
+
                     $this->session->set('license', 'FOSSBilling CE');
                     $this->makeInstall($this->session);
                     $this->generateEmailTemplates();
@@ -201,6 +210,10 @@ final class Box_Installer
                     'admin_email' => $this->session->get('admin_email'),
                     'admin_pass' => $this->session->get('admin_pass'),
                     'admin_name' => $this->session->get('admin_name'),
+
+                    'currency_code' => $this->session->get('currency_code'),
+                    'currency_title' => $this->session->get('currency_title'),
+                    'currency_format' => $this->session->get('currency_format'),
 
                     'license' => $this->session->get('license'),
                     'agree' => $this->session->get('agree'),
@@ -354,6 +367,13 @@ final class Box_Installer
             'admin_name' => $ns->get('admin_name'),
             'admin_email' => $ns->get('admin_email'),
             'admin_pass' => $passwordObject->hashIt($ns->get('admin_pass')),
+        ]);
+
+        $stmt = $pdo->prepare("INSERT INTO currency (title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(:currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());");
+        $stmt->execute([
+            'currency_title' => $ns->get('currency_title'),
+            'currency_code' => $ns->get('currency_code'),
+            'currency_format' => $ns->get('currency_format'),
         ]);
 
         try {
