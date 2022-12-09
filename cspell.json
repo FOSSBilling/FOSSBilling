@@ -1,8 +1,6 @@
 {
     "version": "0.2",
-    // language - current active spelling language
     "language": "en",
-    // words - list of words to be always considered correct
     "words": [
         "FOSS",
         "huraga",
@@ -29,7 +27,28 @@
         "fordnox",
         "Dockerized",
         "proccess",
-        "unsuspended"
+        "unsuspended",
+        "Futuna",
+        "Caicos",
+        "Tokelau",
+        "Leste",
+        "Mayen",
+        "Maarten",
+        "Sint",
+        "Marino",
+        "Kitts",
+        "Cunha",
+        "Barthelemy",
+        "Islas",
+        "Eswatini",
+        "D'Ivoire",
+        "Rica",
+        "Cabo",
+        "Faso",
+        "Burkina",
+        "Eustatius",
+        "Sint",
+        "Aland"
     ],
 
     "ignoreWords": [
@@ -335,8 +354,9 @@
         "src/modules/Seo/Service.php",
         "src/modules/Orderbutton/html_client/mod_orderbutton_js.html.twig",
         "src/modules/Massmailer/Api/Admin.php",
-        "src/modules/System/html_admin/mod_system_settings.html.twig",
         "gulpfile.babel.js",
-        "htaccess.txt"
+        "htaccess.txt",
+        "src/vendor/**",
+        "src/data/**"
     ]
 }
