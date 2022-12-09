@@ -369,7 +369,10 @@ final class Box_Installer
             'admin_pass' => $passwordObject->hashIt($ns->get('admin_pass')),
         ]);
 
-        $stmt = $pdo->prepare("INSERT INTO currency (title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(:currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());");
+        $stmt = $pdo->prepare("DELETE FROM currency WHERE code='USD'");
+        $stmt->execute();
+
+        $stmt = $pdo->prepare("INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());");
         $stmt->execute([
             'currency_title' => $ns->get('currency_title'),
             'currency_code' => $ns->get('currency_code'),
