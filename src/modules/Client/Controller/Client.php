@@ -80,7 +80,7 @@ class Client implements \Box\InjectionAwareInterface
         $service = $this->di['mod_service']('client');
         $service->approveClientEmailByHash($hash);
         $systemService = $this->di['mod_service']('System');
-        $systemService->setPendingMessage(__('Email address was confirmed'));
+        $systemService->setPendingMessage(__trans('Email address was confirmed'));
         $app->redirect('/');
     }
 

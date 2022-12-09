@@ -295,7 +295,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
         $form .=  '</form>' . PHP_EOL . PHP_EOL;
 
         if(isset($this->config['auto_redirect']) && $this->config['auto_redirect']) {
-            $form .= sprintf('<h2>%s</h2>', __('Redirecting to PayPal.com'));
+            $form .= sprintf('<h2>%s</h2>', __trans('Redirecting to PayPal.com'));
             $form .= "<script type='text/javascript'>$(document).ready(function(){    document.getElementById('payment_button').style.display = 'none';    document.forms['payment_form'].submit();});</script>";
         }
 
@@ -338,7 +338,7 @@ class Payment_Adapter_PayPalEmail implements \Box\InjectionAwareInterface
             ':serie'=>$invoice['serie'],
             ':title'=>$invoice['lines'][0]['title']
         );
-        return __('Payment for invoice :serie:id [:title]', $p);
+        return __trans('Payment for invoice :serie:id [:title]', $p);
     }
 
     public function getSubscriptionFields(array $invoice)

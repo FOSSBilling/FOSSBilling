@@ -382,8 +382,8 @@ class Admin extends \Api_Abstract
     public function get_invoice_options($data)
     {
         return [
-            'issue-invoice' => __('Automatically issue renewal invoices'),
-            'no-invoice' => __('Issue invoices manually'),
+            'issue-invoice' => __trans('Automatically issue renewal invoices'),
+            'no-invoice' => __trans('Issue invoices manually'),
         ];
     }
 

@@ -325,7 +325,6 @@
         "src/library/Server/Manager/**",
         "src/library/Box/**",
         "src/library/Payment/Adapter/**",
-        "src/library/php-gettext/**",
         "src/locale/**",
         "src/modules/System/Service.php",
         "src/modules/Servicecentovacast/**",

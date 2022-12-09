@@ -85,13 +85,13 @@ class Box_Period
     public static function getPredefined($simple = true)
     {
         $periods = array(
-            self::PERIOD_WEEK       =>  array('rec_qty'=>1, 'title'=>__('Every week'), 'code'=>self::PERIOD_WEEK, 'rec_unit'=>self::UNIT_WEEK),
-            self::PERIOD_MONTH      =>  array('rec_qty'=>1, 'title'=>__('Every month'), 'code'=>self::PERIOD_MONTH, 'rec_unit'=>self::UNIT_MONTH),
-            self::PERIOD_QUARTER    =>  array('rec_qty'=>3, 'title'=>__('Every 3 months'), 'code'=>self::PERIOD_QUARTER, 'rec_unit'=>self::UNIT_MONTH),
-            self::PERIOD_BIANNUAL   =>  array('rec_qty'=>6, 'title'=>__('Every 6 months'), 'code'=>self::PERIOD_BIANNUAL, 'rec_unit'=>self::UNIT_MONTH),
-            self::PERIOD_ANNUAL     =>  array('rec_qty'=>1, 'title'=>__('Every year'), 'code'=>self::PERIOD_ANNUAL, 'rec_unit'=>self::UNIT_YEAR),
-            self::PERIOD_BIENNIAL	=>	array('rec_qty'=>2, 'title'=>__('Every 2 years'), 'code'=>self::PERIOD_BIENNIAL, 'rec_unit'=>self::UNIT_YEAR),
-            self::PERIOD_TRIENNIAL	=>	array('rec_qty'=>3, 'title'=>__('Every 3 years'), 'code'=>self::PERIOD_TRIENNIAL, 'rec_unit'=>self::UNIT_YEAR),
+            self::PERIOD_WEEK       =>  array('rec_qty'=>1, 'title'=>__trans('Every week'), 'code'=>self::PERIOD_WEEK, 'rec_unit'=>self::UNIT_WEEK),
+            self::PERIOD_MONTH      =>  array('rec_qty'=>1, 'title'=>__trans('Every month'), 'code'=>self::PERIOD_MONTH, 'rec_unit'=>self::UNIT_MONTH),
+            self::PERIOD_QUARTER    =>  array('rec_qty'=>3, 'title'=>__trans('Every 3 months'), 'code'=>self::PERIOD_QUARTER, 'rec_unit'=>self::UNIT_MONTH),
+            self::PERIOD_BIANNUAL   =>  array('rec_qty'=>6, 'title'=>__trans('Every 6 months'), 'code'=>self::PERIOD_BIANNUAL, 'rec_unit'=>self::UNIT_MONTH),
+            self::PERIOD_ANNUAL     =>  array('rec_qty'=>1, 'title'=>__trans('Every year'), 'code'=>self::PERIOD_ANNUAL, 'rec_unit'=>self::UNIT_YEAR),
+            self::PERIOD_BIENNIAL	=>	array('rec_qty'=>2, 'title'=>__trans('Every 2 years'), 'code'=>self::PERIOD_BIENNIAL, 'rec_unit'=>self::UNIT_YEAR),
+            self::PERIOD_TRIENNIAL	=>	array('rec_qty'=>3, 'title'=>__trans('Every 3 years'), 'code'=>self::PERIOD_TRIENNIAL, 'rec_unit'=>self::UNIT_YEAR),
         );
 
         if($simple) {
@@ -123,16 +123,16 @@ class Box_Period
     {
         switch ($this->unit) {
             case self::UNIT_DAY:
-                $shift = __('Every :number day', array(':number'=>$this->qty));
+                $shift = __trans('Every :number day', array(':number'=>$this->qty));
                 break;
             case self::UNIT_WEEK:
-                $shift = __('Every :number week(s)', array(':number'=>$this->qty));
+                $shift = __trans('Every :number week(s)', array(':number'=>$this->qty));
                 break;
             case self::UNIT_MONTH:
-                $shift = __('Every :number months', array(':number'=>$this->qty));
+                $shift = __trans('Every :number months', array(':number'=>$this->qty));
                 break;
             case self::UNIT_YEAR:
-                $shift = __('Every :number years', array(':number'=>$this->qty));
+                $shift = __trans('Every :number years', array(':number'=>$this->qty));
                 break;
             default:
                 throw new \Box_Exception('Unit not defined');

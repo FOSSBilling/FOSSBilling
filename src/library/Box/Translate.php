@@ -60,40 +60,35 @@ class Box_Translate implements \Box\InjectionAwareInterface
 
     public function setup()
     {
+        PhpMyAdmin\MoTranslator\Loader::loadFunctions();
+
         $locale = $this->getLocale();
         $codeset = "UTF-8";
-        if(!function_exists('gettext')) {
-            require_once PATH_LIBRARY . '/php-gettext/gettext.inc';
-            T_setlocale(LC_MESSAGES, $locale.'.'.$codeset);
-            T_setlocale(LC_TIME, $locale.'.'.$codeset);
-            T_bindtextdomain($this->domain, PATH_LANGS);
-            T_bind_textdomain_codeset($this->domain, $codeset);
-            T_textdomain($this->domain);
-        } else {
-            @putenv('LANG='.$locale.'.'.$codeset);
-            @putenv('LANGUAGE='.$locale.'.'.$codeset);
-            // set locale
-            if (!defined('LC_MESSAGES')) {
-                define('LC_MESSAGES', 5);
+        @putenv('LANG='.$locale.'.'.$codeset);
+        @putenv('LANGUAGE='.$locale.'.'.$codeset);
+        // set locale
+        if (!defined('LC_MESSAGES')) {
+            define('LC_MESSAGES', 5);
+        }
+        if (!defined('LC_TIME')) {
+            define('LC_TIME', 2);
+        }
+        _setlocale(LC_MESSAGES, $locale.'.'.$codeset);
+        _textdomain(LC_TIME, $locale.'.'.$codeset);
+        _bindtextdomain($this->domain, PATH_LANGS);
+        _bind_textdomain_codeset($this->domain, $codeset);
+        _textdomain($this->domain);
+        
+        function __trans($msgid, array $values = NULL)
+        {
+            if (empty($msgid) || is_null($msgid)) {
+                return null;
             }
-            if (!defined('LC_TIME')) {
-                define('LC_TIME', 2);
-            }
-            setlocale(LC_MESSAGES, $locale.'.'.$codeset);
-            setlocale(LC_TIME, $locale.'.'.$codeset);
-            bindtextdomain($this->domain, PATH_LANGS);
-            if(function_exists('bind_textdomain_codeset')) bind_textdomain_codeset($this->domain, $codeset);
-            textdomain($this->domain);
-
-            if (!function_exists('__')) {
-                function __($msgid, array $values = NULL)
-                {
-                    if (empty($msgid)) {
-                        return null;
-                    }
-                    $string = gettext($msgid);
-                    return empty($values) ? $string : strtr($string, $values);
-                }
+            if (is_null($values)){
+                return _gettext($msgid);
+            } else {
+                $string = strtr($msgid, $values);
+                return _gettext($string);
             }
         }
     }
@@ -118,6 +113,6 @@ class Box_Translate implements \Box\InjectionAwareInterface
 
     public function __($msgid, array $values = NULL)
     {
-        return __($msgid, $values);
+        return __trans($msgid, $values);
     }
 }

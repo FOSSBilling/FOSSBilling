@@ -7,13 +7,10 @@
     <exclude>
       <directory>src/data</directory>
       <directory>src/library/Registrar/includes</directory>
-      <directory>src/library/Security/CSRF-Protector-PHP</directory>
-      <directory>src/library/php-gettext</directory>
       <directory>src/modules/Servicecentovacast/ccapiclient</directory>
       <directory>src/themes</directory>
       <directory>src/vendor</directory>
       <directory>src/install</directory>
-      <file>src/library/Box/Zip.php</file>
       <file>src/library/PdoSessionHandler.php</file>
       <file>src/modules/Spamchecker/akismet.curl.class.php</file>
       <file>src/rb.php</file>

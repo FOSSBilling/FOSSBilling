@@ -32,8 +32,8 @@ class Box_Exception extends Exception
 			error_log( $this->stackTrace($stackLength) );
 		}
 
-		// Set the message
-		$message = __($message, $variables);
+		// Translate the exception
+		$message = __trans($message, $variables);
 
 		// Pass the message to the parent
 		parent::__construct($message, $code);

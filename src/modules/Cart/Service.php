@@ -572,7 +572,7 @@ class Service implements InjectionAwareInterface
 
             if ($order->discount > 0) {
                 $invoice_items[] = [
-                    'title' => __('Discount: :product', [':product' => $order->title]),
+                    'title' => __trans('Discount: :product', [':product' => $order->title]),
                     'price' => $order->discount * -1,
                     'quantity' => 1,
                     'unit' => 'discount',
@@ -584,7 +584,7 @@ class Service implements InjectionAwareInterface
             if ($item['setup_price'] > 0) {
                 $setup_price = ($item['setup_price'] * $currency->conversion_rate) - ($item['discount_setup'] * $currency->conversion_rate);
                 $invoice_items[] = [
-                    'title' => __(':product setup', [':product' => $order->title]),
+                    'title' => __trans(':product setup', [':product' => $order->title]),
                     'price' => $setup_price,
                     'quantity' => 1,
                     'unit' => 'service',
@@ -717,7 +717,7 @@ class Service implements InjectionAwareInterface
         if (method_exists($service, 'getCartProductTitle')) {
             return $service->getCartProductTitle($product, $config);
         } else {
-            return __(':product_title', [':product_title' => $product->title]);
+            return __trans(':product_title', [':product_title' => $product->title]);
         }
     }
 

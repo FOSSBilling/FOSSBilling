@@ -60,9 +60,8 @@ The following environment is highly recommended for running FOSSBilling. It *may
     - pdo_mysql
     - curl
     - zlib
-    - gettext
     - openssl
-    - mbstring
+    - mbstring (optional, but recomended)
     - intl
 
 ## Example Configurations

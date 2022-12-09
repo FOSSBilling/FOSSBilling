@@ -39,7 +39,6 @@ class Box_Requirements implements \Box\InjectionAwareInterface
                     'pdo_mysql',
                     'curl',
                     'zlib',
-                    'gettext',
                     'openssl',
                     'dom',
                  ),
@@ -96,7 +95,6 @@ class Box_Requirements implements \Box\InjectionAwareInterface
             'zlib'          => extension_loaded('zlib'),
             'mbstring'      => extension_loaded('mbstring'),
             'openssl'        => extension_loaded('openssl'),
-            'gettext'       => extension_loaded('gettext'),
         );
         
         //determine php username
