@@ -66,7 +66,7 @@
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Required fields'|trans }}</label>
                             <div class="col">
-                                <select class="form-select" name="required[]" multiple="multiple">
+                                <select class="form-select" name="required[]" multiple="true" size="13">
                                     <optgroup label="General">
                                         <option value="last_name" {% if 'last_name' in params.required %}selected{% endif %}>{{ 'Last Name'|trans }}</option>
                                         <option value="company" {% if 'company' in params.required %}selected{% endif %}>{{ 'Company'|trans }}</option>
