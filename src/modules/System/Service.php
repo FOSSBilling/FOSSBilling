@@ -343,7 +343,10 @@ class Service
                 // skip if admin is not logged in
             }
         }
-
+        if(is_null($tpl)){
+            $parsed = $this->createTemplateFromString("No template was provided, please contact the site administrator", $try_render, $vars);
+            return $parsed;
+        }        
         try {
             $template = $twig->load($tpl);
             $parsed = $template->render($vars);
