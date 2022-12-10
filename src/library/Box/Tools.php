@@ -485,6 +485,7 @@ class Box_Tools
         }
 
         $newConfig = [
+            'security_mode' => (isset($currentConfig['security_mode'])) ? $currentConfig['security_mode'] : 'regular',
             'debug' => (isset($currentConfig['debug'])) ? $currentConfig['debug'] : false,
             'update_branch' => (isset($currentConfig['update_branch'])) ? $currentConfig['update_branch'] : 'release',
             'log_stacktrace' => (isset($currentConfig['log_stacktrace'])) ? $currentConfig['log_stacktrace'] : true,
@@ -515,8 +516,7 @@ class Box_Tools
                 'password' => $currentConfig['db']['password'],
             ],
             'twig' => [
-                //'debug' => $currentConfig['twig']['debug'],
-                'debug' => false,
+                'debug' => $currentConfig['twig']['debug'],
                 'auto_reload' => $currentConfig['twig']['auto_reload'],
                 'cache' => $currentConfig['twig']['cache'],
             ],

@@ -15,7 +15,14 @@
 
 class Box_Session
 {
-    public function __construct($handler)
+    public function setRandomId()
+    {
+        $id = random_bytes(64);
+        session_id($id);
+    }
+
+
+    public function __construct($handler, $securityMode = 'regular')
     {
         session_set_save_handler(
             array($handler, 'open'),
@@ -29,13 +36,27 @@ class Box_Session
             $currentCookieParams = session_get_cookie_params();
             $currentCookieParams["httponly"] = true;
 
-            session_set_cookie_params(
-                $currentCookieParams["lifetime"],
-                $currentCookieParams["path"],
-                $currentCookieParams["domain"],
-                $currentCookieParams["secure"],
-                $currentCookieParams["httponly"]
-            );
+            if($securityMode == 'strict'){
+                session_set_cookie_params([
+                    'lifetime' => '7200',
+                    'path' => $currentCookieParams["path"],
+                    'domain' => $currentCookieParams["domain"],
+                    'secure' => true,
+                    'httponly' => $currentCookieParams["httponly"],
+                    'samesite' => 'Strict'
+                ]);
+                // TODO: Adjust the DB to support 64 character long session IDs
+                //$this->setRandomId();
+            } else {
+                session_set_cookie_params(
+                    $currentCookieParams["lifetime"],
+                    $currentCookieParams["path"],
+                    $currentCookieParams["domain"],
+                    $currentCookieParams["secure"],
+                    $currentCookieParams["httponly"]
+                );
+            }
+
             session_start();
         }
     }

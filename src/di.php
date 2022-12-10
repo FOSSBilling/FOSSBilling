@@ -150,8 +150,9 @@ $di['events_manager'] = function () use ($di) {
 
 $di['session'] = function () use ($di) {
     $handler = new PdoSessionHandler($di['pdo']);
+    $securityMode = (isset($di['config']['security_mode'])) ? $di['config']['security_mode'] : 'regular';
 
-    return new Box_Session($handler);
+    return new Box_Session($handler, $securityMode);
 };
 
 $di['cookie'] = function () use ($di) {

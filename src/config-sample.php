@@ -11,6 +11,13 @@
  */
 
 return [
+    /* 
+     * This configuration option defines how strict the security in FOSSBilling is enforced.
+     * Acceptable values are 'regular' or 'strict'.
+     * The recommended value is 'strict', but this requires a valid SSL sertificate on your server
+     */
+    'security_mode' => 'strict',
+
     'salt' => '',
 
     /*
