@@ -437,7 +437,11 @@ final class Box_Installer
 
         // TODO: Why not just take the defaults from the bb.config.example.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
         $data = [
-            'security_mode' => 'strict',
+            'security' => [
+                'mode' => 'strict',
+                'force_https' => true,
+                'cookie_lifespan' => 7200,
+            ],
             'debug' => false,
             'update_branch' => $updateBranch,
             'log_stacktrace' => true,

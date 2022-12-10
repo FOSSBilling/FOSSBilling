@@ -369,7 +369,7 @@ if ($isApache or (false !== stripos($serverSoftware, 'apache'))) {
 }
 
 // If the configured security mode is strict, redirect to HTTPS
-if (isset($config['security_mode']) && $config['security_mode'] == 'strict'){
+if (isset($config['security']['force_https']) && $config['security']['force_https']){
     $isHTTPS = false;
     
     if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {

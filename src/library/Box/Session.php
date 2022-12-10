@@ -22,7 +22,7 @@ class Box_Session
     }
 
 
-    public function __construct($handler, $securityMode = 'regular')
+    public function __construct($handler, $securityMode = 'regular', $cookieLifespan = 7200)
     {
         session_set_save_handler(
             array($handler, 'open'),
@@ -35,10 +35,11 @@ class Box_Session
         if(php_sapi_name() !== 'cli'){
             $currentCookieParams = session_get_cookie_params();
             $currentCookieParams["httponly"] = true;
+            $currentCookieParams["lifetime"] = $cookieLifespan;
 
             if($securityMode == 'strict'){
                 session_set_cookie_params([
-                    'lifetime' => '7200',
+                    'lifetime' => $currentCookieParams["lifetime"],
                     'path' => $currentCookieParams["path"],
                     'domain' => $currentCookieParams["domain"],
                     'secure' => true,
@@ -46,6 +47,7 @@ class Box_Session
                     'samesite' => 'Strict'
                 ]);
                 // TODO: Adjust the DB to support 64 character long session IDs
+                // Currently adjusting it causing issues within this file: https://github.com/FOSSBilling/FOSSBilling/blob/main/src/library/PdoSessionHandler.php
                 //$this->setRandomId();
             } else {
                 session_set_cookie_params(
