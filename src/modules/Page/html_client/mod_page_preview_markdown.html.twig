@@ -9,7 +9,9 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Markdown preview</title>
-    {{ theme_color | asset_url | stylesheet_tag}}</head>
+    {{ 'css/huraga-main.css' | asset_url | stylesheet_tag }}
+    {{ theme_color | asset_url | stylesheet_tag }}
+</head>
 <body style="background-color: white; padding:10px;">
     <div class="markdown">
         {{ post.content|bbmd }}
