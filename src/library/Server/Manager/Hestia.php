@@ -87,7 +87,9 @@ class Server_Manager_Hestia extends Server_Manager
         $host = 'https://'.$this->_config['host'].':'.$this->_getPort().'/api/';
 
         // Server credentials
-        if ('' != $this->_config['accesshash']) {
+        if ('' != $this->_config['accesshash'] && '' != $this->_config['username']) {
+            $params['hash'] = $this->_config['username'] . ":" . $this->_config['accesshash'];
+        } elseif ('' != $this->_config['accesshash']) {
             $params['hash'] = $this->_config['accesshash'];
         } else {
             $params['user'] = $this->_config['username'];
