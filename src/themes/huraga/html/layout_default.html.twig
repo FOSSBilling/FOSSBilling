@@ -22,7 +22,7 @@
     {% block opengraph %}{% endblock %}
 
     <link rel='stylesheet' type='text/css' href="{{ theme_color | asset_url }}">
-    <link rel='stylesheet' type='text/css' href="{{ 'css/plugins/jquery.growl.css' | asset_url }}">
+    <link rel='stylesheet' type='text/css' href="{{ 'css/plugins/jquery.jgrowl.min.css' | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ 'css/font-awesome.css' | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ 'css/logos.css' | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ 'css/flags16.css' | asset_url }}">
@@ -30,12 +30,10 @@
     <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}">
 
     <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
-    <script src="https://code.jquery.com/jquery-migrate-3.4.0.js"></script>
     <script src="{{ 'js/bb-jquery.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'js/libs/modernizr.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'js/bootstrap/bootstrap.min.js' | asset_url}}" defer="defer"></script>
-    <script src="{{ 'js/libs/selectivizr.js' | asset_url }}" defer="defer"></script>
-    <script src="{{ 'js/plugins/jGrowl/jquery.growl.js' | asset_url }}" defer="defer"></script>
+    <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.min.js' | asset_url }}" defer="defer"></script>
 
     {% block head %}{% endblock %}
     {% block js %}{% endblock %}
