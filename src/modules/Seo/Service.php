@@ -52,20 +52,13 @@ class Service implements InjectionAwareInterface
         $url = urldecode(BB_URL . 'sitemap.xml');
         if (isset($config['sitemap_google']) && $config['sitemap_google']) {
             try {
-                $link = 'http://www.google.com/ping?sitemap=' . $url;
+                $link = 'https://www.google.com/ping?sitemap=' . $url;
                 $this->di['guzzle_client']->get($link);
                 error_log('Submitted sitemap to Google');
             } catch (\Exception $e) {
                 error_log('Exception :(');
             }
-        }
-
-        if (isset($config['sitemap_bing']) && $config['sitemap_bing']) {
-            $link = 'http://www.bing.com/ping?sitemap=' . $url;
-            $this->di['guzzle_client']->get($link);
-            error_log('Submitted sitemap to Bing');
-        }
-
+        }+
         $systemService->updateParams([$key => date('Y-m-d H:i:s')]);
 
         return true;
