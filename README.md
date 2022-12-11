@@ -2,8 +2,8 @@
   <br>
   <a href="https://fossbilling.org/">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://fossbilling.org/img/wordmark-white.png">
-      <img alt="FOSSBilling logo" src="https://fossbilling.org/img/wordmark-black.png" height="100">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/FOSSBilling/fossbilling.org/main/public/img/wordmark-white.png">
+      <img alt="FOSSBilling logo" src="https://raw.githubusercontent.com/FOSSBilling/fossbilling.org/main/public/img/wordmark-black.png" height="100">
     </picture>
   </a>
   <br>
@@ -11,7 +11,7 @@
 
 <div align="center">
 
-<a href="https://fossbilling.org/downloads/"><img src="https://fossbilling.org/img/gh-download-button.png" alt="Download button" width="400"/></a>
+<a href="https://fossbilling.org/downloads/"><img src="https://raw.githubusercontent.com/FOSSBilling/fossbilling.org/main/public/img/gh-download-button.png" alt="Download button" width="400"/></a>
 
 [![PHP Composer](https://github.com/fossbilling/fossbilling/actions/workflows/php.yml/badge.svg)](https://github.com/fossbilling/fossbilling/actions/workflows/php.yml)
 [![Download Latest](https://img.shields.io/github/downloads/fossbilling/fossbilling/total)](https://github.com/fossbilling/fossbilling/releases/latest)
