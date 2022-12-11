@@ -260,7 +260,7 @@ if ((isset($_SERVER['HTTP_HOST']) && $_SERVER['HTTP_HOST']) || ('cli' === PHP_SA
         $host = $_SERVER['HTTP_HOST'];
     }
 
-    $predictConfigPath = PATH_ROOT . '/bb-config-' . $host . '.php';
+    $predictConfigPath = PATH_ROOT . '/config-' . $host . '.php';
     if (file_exists($predictConfigPath)) {
         $configPath = $predictConfigPath;
     }
@@ -365,5 +365,26 @@ $serverSoftware = (isset($_SERVER['SERVER_SOFTWARE'])) ? $_SERVER['SERVER_SOFTWA
 if ($isApache or (false !== stripos($serverSoftware, 'apache'))) {
     if (!file_exists(PATH_ROOT . '/.htaccess')) {
         throw new Exception('Error: You appear to be running an Apache server without a valid <b><em>.htaccess</em></b> file. You may need to rename <b><em>htaccess.txt</em></b> to <b><em>.htaccess</em></b>');
+    }
+}
+
+// If the configured security mode is strict, redirect to HTTPS
+if (isset($config['security']['force_https']) && $config['security']['force_https'] && 'cli' !== PHP_SAPI){
+    $isHTTPS = false;
+    
+    if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
+        $isHTTPS = true;
+    }
+    if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) == 'https') {
+        $isHTTPS = true;
+    }
+    if (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) == 'on') {
+        $isHTTPS = true;
+    }
+
+    if(!$isHTTPS){
+        $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        header('Location: ' . $url);
+        exit;
     }
 }

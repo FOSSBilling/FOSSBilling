@@ -485,6 +485,11 @@ class Box_Tools
         }
 
         $newConfig = [
+            'security' => [
+                'mode' => (isset($currentConfig['security']['mode'])) ? $currentConfig['security']['mode'] : 'strict',
+                'force_https' => (isset($currentConfig['security']['force_https'])) ? $currentConfig['security']['force_https'] : true,
+                'cookie_lifespan' => (isset($currentConfig['security']['cookie_lifespan'])) ? $currentConfig['security']['cookie_lifespan'] : '7200',
+            ],
             'debug' => (isset($currentConfig['debug'])) ? $currentConfig['debug'] : false,
             'update_branch' => (isset($currentConfig['update_branch'])) ? $currentConfig['update_branch'] : 'release',
             'log_stacktrace' => (isset($currentConfig['log_stacktrace'])) ? $currentConfig['log_stacktrace'] : true,
@@ -515,8 +520,7 @@ class Box_Tools
                 'password' => $currentConfig['db']['password'],
             ],
             'twig' => [
-                //'debug' => $currentConfig['twig']['debug'],
-                'debug' => false,
+                'debug' => $currentConfig['twig']['debug'],
                 'auto_reload' => $currentConfig['twig']['auto_reload'],
                 'cache' => $currentConfig['twig']['cache'],
             ],

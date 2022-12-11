@@ -11,6 +11,16 @@
  */
 
 return [
+    /* 
+     * These configuration options allow you to configure the security options inside of FOSSBilling.
+     * The default values are what we recommended running unless they are causing issues.
+     */
+    'security' => [
+        'mode' => 'strict',
+        'force_https' => true,
+        'cookie_lifespan' => 7200,
+    ],
+
     'salt' => '',
 
     /*

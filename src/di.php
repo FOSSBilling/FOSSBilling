@@ -150,8 +150,10 @@ $di['events_manager'] = function () use ($di) {
 
 $di['session'] = function () use ($di) {
     $handler = new PdoSessionHandler($di['pdo']);
+    $mode = (isset($di['config']['security']['mode'])) ? $di['config']['security']['mode'] : 'strict';
+    $lifespan =(isset($di['config']['security']['cookie_lifespan'])) ? $di['config']['security']['cookie_lifespan'] : 7200;
 
-    return new Box_Session($handler);
+    return new Box_Session($handler, $mode, $lifespan);
 };
 
 $di['cookie'] = function () use ($di) {
