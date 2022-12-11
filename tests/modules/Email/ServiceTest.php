@@ -12,6 +12,7 @@ class ServiceTest extends \BBTestCase
 
         $di['db'] = $db;
         $service->setDi($di);
+
         $result = $service->getDi();
         $this->assertEquals($di, $result);
     }
@@ -351,7 +352,7 @@ class ServiceTest extends \BBTestCase
             ->method('getParamValue')
             ->will($this->returnValue('value'));
 
-        
+
         $twig = $this->getMockBuilder('\Twig\Environment')->disableOriginalConstructor()->getMock();
 
         $di['api_admin'] = function () use ($di) {
@@ -453,7 +454,7 @@ class ServiceTest extends \BBTestCase
 
         $system->expects($this->atLeastOnce())
         ->method('renderString')
-        ->will($this->returnValue('value'));    
+        ->will($this->returnValue('value'));
 
 
         $staffServiceMock = $this->getMockBuilder('Box\Mod\Staff\Service')->getMock();
@@ -487,10 +488,10 @@ class ServiceTest extends \BBTestCase
         $clientServiceMock->expects($clientGetExpects)
             ->method('toApiArray')
             ->will($this->returnValue($clientApiArray));
-            
+
         $loader = new \Twig\Loader\ArrayLoader();
         $twig = $this->getMockBuilder('Twig\Environment')->setConstructorArgs([$loader,['debug' => false]])->getMock();
-        
+
 
         $cryptMock = $this->getMockBuilder('\Box_Crypt')
             ->disableOriginalConstructor()
@@ -555,10 +556,17 @@ class ServiceTest extends \BBTestCase
 
         $di['db']          = $db;
         $di['mail']        = $mailMock;
+        $extension = $this->getMockBuilder('Box\Mod\Extension\Service')->getMock();
+        $extension->expects($this->atLeastOnce())
+            ->method('isExtensionActive')
+            ->will($this->returnValue($isExtensionActiveReturn));
 
         $config = array();
         $di['mod_config']  = $di->protect(function ($modName) use($config){
             return $config;
+        });
+        $di['mod_service'] = $di->protect(function () use ($extension) {
+            return $extension;
         });
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
@@ -792,13 +800,13 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = $loggerMock;
         $di['tools']  = $toolsMock;
         $di['crypt']  = $cryptMock;
-        $di['twig']   = $twigMock;      
-       
+        $di['twig']   = $twigMock;
+
         $systemServiceMock = $this->getMockBuilder('Box\Mod\System\Service')->getMock();
-        
+
         $di['mod_service'] = $di->protect(function () use ($systemServiceMock) {
                 return $systemServiceMock;
-            });    
+            });
 
         $emailServiceMock->setDi($di);
 
@@ -1009,6 +1017,11 @@ class ServiceTest extends \BBTestCase
                 'cancel_after' => 1
             )));
 
+        $extension = $this->getMockBuilder('Box\Mod\Extension\Service')->getMock();
+        $extension->expects($this->atLeastOnce())
+            ->method('isExtensionActive')
+            ->will($this->returnValue($isExtensionActiveReturn));
+
 
           $mailMock = $this->getMockBuilder('\Box_Mail')->disableOriginalConstructor()->getMock();
        /* Will not work be called because APPLICATION_ENV != 'production'
@@ -1021,7 +1034,13 @@ class ServiceTest extends \BBTestCase
         $di['db']     = $db;
         $di['mail']     = $mailMock;
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
-        $di['mod_service'] = $di->protect(function ($name) use ($activityMock) {return $activityMock;});
+        $di['mod_service'] = $di->protect(function ($name) use ($extension,$activityMock) {
+            if ($name == 'logEmail' || $name == 'logemail' || $name == 'LogEmail') {
+                return $activityMock;
+            } elseif ($name == 'extension') {
+                return $extension;
+            }
+        });
         $di['mod'] = $di->protect(function () use ($modMock) {
            return $modMock;
         });
@@ -1069,9 +1088,9 @@ class ServiceTest extends \BBTestCase
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
         });
-        
+
         $systemService = $this->getMockBuilder('Box\Mod\System\Service')->getMock();
-        
+
         $di['mod_service'] = $di->protect(function () use ($systemService) {
             return $systemService;
         });
@@ -1122,7 +1141,10 @@ class ServiceTest extends \BBTestCase
             )));
 
         $mailMock = $this->getMockBuilder('\Box_Mail')->disableOriginalConstructor()->getMock();
-
+        $extension = $this->getMockBuilder('Box\Mod\Extension\Service')->getMock();
+        $extension->expects($this->atLeastOnce())
+            ->method('isExtensionActive')
+            ->will($this->returnValue($isExtensionActiveReturn));
 
         $di = new \Box_Di();
         $di['db'] = $dbMock;
@@ -1131,6 +1153,13 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
         $di['mod'] = $di->protect(function () use ($modMock) {
             return $modMock;
+        });
+        $di['mod_service'] = $di->protect(function ($name) use ($systemService, $extension) {
+            if ($name == 'system') {
+                $systemService
+            }else if($name == "extension"){
+                return $extension
+            }
         });
         $di['array_get'] = $di->protect(function (array $array, $key, $default = null) use ($di) {
             return isset ($array[$key]) ? $array[$key] : $default;
