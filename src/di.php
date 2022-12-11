@@ -153,7 +153,7 @@ $di['session'] = function () use ($di) {
     $mode = (isset($di['config']['security']['mode'])) ? $di['config']['security']['mode'] : 'strict';
     $lifespan =(isset($di['config']['security']['cookie_lifespan'])) ? $di['config']['security']['cookie_lifespan'] : 7200;
 
-    return new Box_Session($handler, $mode, $$lifespan);
+    return new Box_Session($handler, $mode, $lifespan);
 };
 
 $di['cookie'] = function () use ($di) {
