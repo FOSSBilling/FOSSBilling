@@ -42,15 +42,6 @@
                 <div class="fix"></div>
             </div>
             
-            <div class="rowElem">
-                <label>{{ 'Ping sitemap to Bing'|trans }}</label>
-                <div class="formRight">
-                    <input type="radio" name="sitemap_bing" value="1" {% if params.sitemap_bing == "1" %}checked="checked"{% endif %}/><label>{{ 'Yes'|trans }}</label>
-                    <input type="radio" name="sitemap_bing" value="0" {% if not params.sitemap_bing %}checked="checked"{% endif %}/><label>{{ 'No'|trans }}</label>
-                </div>
-                <div class="fix"></div>
-            </div>
-
             <input type="submit" value="{{ 'Update'|trans }}" class="greyishBtn submitForm" />
             <input type="hidden" name="ext" value="mod_seo" />
         </fieldset>
