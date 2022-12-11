@@ -1245,6 +1245,9 @@ class Service implements InjectionAwareInterface
         $options = $pdf->getOptions();
         $options->setChroot($_SERVER['DOCUMENT_ROOT']);
 
+        $sellerLines = 0;
+        $buyerLines = 0;
+
         $html = '<!DOCTYPE html>
                   <html>
                   <head>
@@ -1297,7 +1300,6 @@ class Service implements InjectionAwareInterface
                     div.Breakdown{
                         position: absolute;
                         width: 100%;
-                        top: 475px;
                     }
                     table {
                         border-collapse: collapse;
@@ -1344,24 +1346,41 @@ class Service implements InjectionAwareInterface
 
         $html .= '<h3 class="CompanyInfo">Company</h3>';
         $html .= '<div class="CompanyInfo">';
-        $html .= '<p>Name: ' . $invoice['seller']['company'] . '</p>';
-        $html .= '<p>Address: ' . $invoice['seller']['address'] . '</p>';
-        $html .= '<p>Company VAT: ' . $invoice['seller']['company_vat'] . '</p>';
-        $html .= '<p>Company number: ' . $invoice['seller']['company_number'] . '</p>';
-        $html .= '<p>Account: ' . $invoice['seller']['account_number'] . '</p>';
-        $html .= '<p>Phone: ' . $invoice['seller']['phone'] . '</p>';
-        $html .= '<p>Email: ' . $invoice['seller']['email'] . '</p>';
+        $sellerData = [
+            'Name' => $invoice['seller']['company'],
+            'Address' => $invoice['seller']['address'],
+            'Company Vat' => $invoice['seller']['company_vat'],
+            'Company Number' => $invoice['seller']['company_number'],
+            'Phone' => $invoice['seller']['phone'],
+            'Email' => $invoice['seller']['email'],
+        ];
+        foreach ($sellerData as $label => $data) {
+            $data = trim($data);
+            if (!empty($data)) {
+                $html .= "<p>$label: $data</p>";
+                $sellerLines ++;
+            }
+        }
         $html .= '</div>';
 
         $html .= '<h3 class="ClientInfo">Client</h3>';
         $html .= '<div class="ClientInfo">';
-        $html .= '<p>Name: ' . $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'] . '</p>';
-        $html .= '<p>Company: ' . $invoice['buyer']['company'] . '</p>';
-        $html .= '<p>Address: ' . $invoice['buyer']['address'] . '</p>';
-        $html .= '<p>Phone: ' . $invoice['buyer']['phone'] . '</p>';
+        $buyerData = [
+            'Name' => $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'],
+            'Company' => $invoice['buyer']['company'],
+            'Address' => $invoice['buyer']['address'],
+            'Phone' => $invoice['buyer']['phone'],
+        ];
+        foreach ($buyerData as $label => $data) {
+            $data = trim($data);
+            if (!empty($data)) {
+                $html .= "<p>$label: $data</p>";
+                $buyerLines ++;
+            }
+        }
+        $top = ($buyerLines >= $sellerLines) ? (325 + (25 * $buyerLines)) : (325 + (25 * $sellerLines));
         $html .= '</div>';
-
-        $html .= '<div class="Breakdown">
+        $html .= '<div class="Breakdown" style="top: '.$top.'px">
         <table style="width:100%">
         <tr>
             <th>#</th>
