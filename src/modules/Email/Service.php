@@ -315,7 +315,10 @@ class Service implements \Box\InjectionAwareInterface
     public function resend(\Model_ActivityClientEmail $email)
     {
         $di = $this->getDi();
-
+        $extensionService = $di['mod_service']('extension');
+        if ($extensionService->isExtensionActive('mod', 'demo')) {
+            throw new \Box_Exception('Disabled for security reasons (Demo mode enabled)');
+        }
         $mail = $di['mail'];
         $mail->setBodyHtml($email->content_html);
         $mail->setFrom($email->sender);
@@ -558,6 +561,10 @@ class Service implements \Box\InjectionAwareInterface
 
     private function _sendFromQueue(\Model_ModEmailQueue $queue)
     {
+        $extensionService = $this->di['mod_service']('extension');
+        if ($extensionService->isExtensionActive('mod', 'demo')) {
+            throw new \Box_Exception('Disabled for security reasons (Demo mode enabled)');
+        }
         $queue->status = 'sending';
         $this->di['db']->store($queue);
 
