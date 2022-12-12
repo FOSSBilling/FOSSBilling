@@ -21,7 +21,7 @@ Anybody is free to use the core FOSSBilling software within the terms of the [li
 
 We really appreciate user contributions but if you just want to download, install, and go, then you have the complete freedom to do that.
 
-Third-party extensions to FOSSBilling are also welcomed, it would be appreciated if these were discussed and informed by the community, but this is not mandatory. In these cases please do be aware of the restrictions attached to usage of the [FOSSBilling name and branding](https://github.com/FOSSBilling/branding#readme). 
+Third-party modules and integrations for FOSSBilling are welcomed. We would apprciate if your third-party work was announced to the community so that it can be added to the list of known working extensions, however this is not mandatory. In all cases, please be aware of the restrictions attached to usage of the [FOSSBilling name and branding](https://github.com/FOSSBilling/branding#readme), and approach us for permission if you wish to use the branding in any way other than explicitly listed. 
 
 If you do want to be more involved in the community then the project [GitHub](https://github.com/FOSSBilling/FOSSBilling) page, the [Contribution Guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md), and [Discord](https://fossbilling.org/discord) are great places to start. You can also sponsor the project on [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or with [Open Collective](https://opencollective.com/fossbilling).
 
@@ -86,6 +86,6 @@ In general, if nobody explicitly opposes a proposal, it is recognised as having 
 
 ## Changes to this governance policy
 
-Any community member is free to propose changes to this governance policy by submitting a proposed change to this document, via GH pull request. The steering committee will discuss any proposed changes and aim to reject or accept the changes by consensus.
+Any community member is free to propose changes to this governance policy by submitting a proposed change to this document, via GitHub pull request. The steering committee will discuss any proposed changes and aim to reject or accept the changes by consensus.
 
 If the committee is unable to agree on the proposal then the wider community will be asked to vote on the changes, with a clear majority vote needed for the governance changes to take effect.
