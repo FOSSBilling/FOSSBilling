@@ -106,7 +106,7 @@
 
             <div class="card-footer text-center">
                 <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
-                    href="{{ 'api/admin/currency/update_rates'|link }}"
+                    href="{{ 'api/admin/currency/update_rates'|link({ 'CSRFToken': CSRFToken }) }}"
                     data-api-redirect="{{ 'extension/settings/currency'|alink }}">
                     <svg class="mb-2 text-secondary" width="24" height="24">
                         <use xlink:href="#refresh" />
