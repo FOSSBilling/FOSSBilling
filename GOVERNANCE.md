@@ -21,7 +21,7 @@ Anybody is free to use the core FOSSBilling software within the terms of the [li
 
 We really appreciate user contributions but if you just want to download, install, and go, then you have the complete freedom to do that.
 
-Third-party modules and integrations for FOSSBilling are welcomed. We would apprciate if your third-party work was announced to the community so that it can be added to the list of known working extensions, however this is not mandatory. In all cases, please be aware of the restrictions attached to usage of the [FOSSBilling name and branding](https://github.com/FOSSBilling/branding#readme), and approach us for permission if you wish to use the branding in any way other than explicitly listed. 
+Third-party modules and integrations for FOSSBilling are welcomed. We would appreciate if your third-party work was announced to the community so that it can be added to the list of known working extensions, however this is not mandatory. In all cases, please be aware of the restrictions attached to usage of the [FOSSBilling name and branding](https://github.com/FOSSBilling/branding#readme), and approach us for permission if you wish to use the branding in any way other than explicitly listed. 
 
 If you do want to be more involved in the community then the project [GitHub](https://github.com/FOSSBilling/FOSSBilling) page, the [Contribution Guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md), and [Discord](https://fossbilling.org/discord) are great places to start. You can also sponsor the project on [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or with [Open Collective](https://opencollective.com/fossbilling).
 
