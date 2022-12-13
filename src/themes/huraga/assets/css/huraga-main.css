@@ -4438,8 +4438,8 @@ a.label:hover, a.label:focus, a.badge:hover, a.badge:focus {
     margin-bottom: 0;
 }
 .hero-unit {
-    padding: 60px;
-    margin-bottom: 30px;
+    padding: 25px;
+    margin-bottom: 25px;
     font-size: 18px;
     font-weight: 200;
     line-height: 27px;
@@ -4449,9 +4449,33 @@ a.label:hover, a.label:focus, a.badge:hover, a.badge:focus {
     -moz-border-radius: 6px;
     border-radius: 6px;
 }
+.hero-unit-smaller {
+    padding: calc(25px * 0.85);
+    font-size: calc(18px * 0.85);
+    line-height: calc(27px * 0.85);
+}
+.hero-unit-smallest {
+    padding: calc(25px * 0.50);
+    font-size: calc(18px * 0.75);
+    line-height: calc(27px * 0.50);
+}
 .hero-unit h1 {
     margin-bottom: 0;
-    font-size: 60px;
+    font-size: 2.75em;
+    line-height: 1;
+    color: #ffffff;
+    letter-spacing: -1px;
+}
+.hero-unit h2 {
+    margin-bottom: 0;
+    font-size: 2.25em;
+    line-height: 1;
+    color: #ffffff;
+    letter-spacing: -1px;
+}
+.hero-unit h3 {
+    margin-bottom: 0;
+    font-size: 1.75em;
     line-height: 1;
     color: #ffffff;
     letter-spacing: -1px;

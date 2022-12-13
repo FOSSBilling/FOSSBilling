@@ -138,15 +138,15 @@
 
 <fieldset>
     <legend>Dashboard</legend>
-    <h3>Showcase</h3>
-    <table>
-        <tr>
+	    <tr>
             <td><label>Enable Dashboard for Guests</label></td>
             <td>
                 <input type="radio" name="require_login" value="0" id="require_login_1" checked="checked"/> <label for="require_login_1">Yes</label>
                 <input type="radio" name="require_login" value="1" id="require_login_0"/> <label for="require_login_0">No</label>
             </td>
         </tr>
+    <h3>Showcase</h3>
+    <table>
         <tr>
             <td><label>Enable Showcase</label></td>
             <td>
@@ -155,8 +155,12 @@
             </td>
         </tr>
         <tr>
-            <td><label for="showcase_heading">Showcase heading</label></td>
-            <td><input type="text" name="showcase_heading" id="showcase_heading" value="" class="long"/></td>
+            <td><label>Showcase Size</label></td>
+            <td>
+                <input type="radio" name="showcase_size" value="1" id="showcase_size"/> <label for="showcase_size">Standard</label>
+                <input type="radio" name="showcase_size" value="2" id="showcase_size" checked="checked"/> <label for="showcase_size">Smaller</label>
+				<input type="radio" name="showcase_size" value="3" id="showcase_size" checked="checked"/> <label for="showcase_size">Smallest</label>
+            </td>
         </tr>
         <tr>
             <td><label for="showcase_text">Showcase text</label></td>
