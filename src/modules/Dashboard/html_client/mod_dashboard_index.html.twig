@@ -1,6 +1,14 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 
-{% block meta_title %}{{ 'Client Area'|trans }}{% endblock %}
+{% block meta_title %}
+{% if client %}
+    {{ 'Client Area'|trans }}
+{% else %}
+    {% set company = guest.system_company %}
+    {{ company.name |trans }}
+{% endif %}
+{% endblock %}
+
 {% block page_header %}{{ 'Dashboard'|trans }}{% endblock %}
 
 {% block breadcrumbs %}
