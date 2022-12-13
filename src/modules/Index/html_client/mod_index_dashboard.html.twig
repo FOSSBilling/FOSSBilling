@@ -16,10 +16,17 @@
 
 {% block content %}
     {% if settings.showcase_enabled %}
-    <div class="hero-unit">
-        <h1>{{ settings.showcase_heading }}</h1>
-        <p>{{ settings.showcase_text }}</p>
+        {% if settings.showcase_size == 1 %}
+            <div class="hero-unit">
+        {% elseif settings.showcase_size == 2 %}
+            <div class="hero-unit hero-unit-smaller">
+        {% else %}
+        <div class="hero-unit hero-unit-smallest">
+        {% endif %}
+        <p>{{ settings.showcase_text |markdown }}</p>
+        {% if (settings.showcase_button_url) and (settings.showcase_button_title) %}
         <p><a class="btn btn-alt btn-primary btn-large" href="{{ settings.showcase_button_url }}">{{ settings.showcase_button_title }}</a></p>
+        {% endif %}
     </div>
     {% endif %}
 
