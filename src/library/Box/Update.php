@@ -189,6 +189,11 @@ class Box_Update
         $this->di['tools']->emptyFolder(PATH_CACHE);
         $this->di['tools']->emptyFolder(PATH_ROOT.'/install');
         rmdir(PATH_ROOT.'/install');
+
+        // Log off the current user and destroy the session.
+        $this->di['cookie']->delete('BOXADMR');
+        $this->di['session']->delete('admin');
+        session_destroy();
         return true;
     }
 

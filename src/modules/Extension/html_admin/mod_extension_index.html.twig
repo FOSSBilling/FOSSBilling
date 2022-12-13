@@ -107,7 +107,7 @@
                 <p class="text-muted">{{ 'Automatic updater is a tool to update FOSSBilling to latest version in one click. Works on these hosting environments where PHP has permissions to overwrite files uploaded via FTP.'|trans }}</p>
 
                 {{ admin.system_release_notes|bbmd }}
-                <a href="{{ 'api/admin/extension/update_core'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="Make sure that you have made database and files backups before proceeding with automatic update. Click OK when you are ready to continue." data-api-msg="Update complete">
+                <a href="{{ 'api/admin/extension/update_core'|link({ 'CSRFToken': CSRFToken }) }}" class="btn btn-primary api-link" data-api-confirm="Make sure that you have made database and files backups before proceeding with automatic update. You will need to log back into your account. Click OK when you are ready to continue." data-api-msg="Update complete. Please refresh your page to login back in.">
                     <svg class="icon">
                         <use xlink:href="#refresh" />
                     </svg>
