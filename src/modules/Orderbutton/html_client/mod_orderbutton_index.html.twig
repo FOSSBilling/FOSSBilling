@@ -14,15 +14,15 @@
 
     <meta charset="utf-8">
     <title>Order</title>
-    {{ 'css/bootstrap.min.css' | asset_url | stylesheet_tag }}
+    {{ 'css/bootstrap.css' | asset_url | stylesheet_tag }}
     {{ 'css/font-awesome.css' | asset_url | stylesheet_tag }}
     {{ 'css/huraga-main.css' | asset_url | stylesheet_tag }}
     {{ theme_color | asset_url | stylesheet_tag }}
-    {{ 'css/plugins/jquery.jgrowl.min.css' | asset_url | stylesheet_tag }}
+    {{ 'css/plugins/jquery.jgrowl.css' | asset_url | stylesheet_tag }}
     <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
     <script src="{{ 'js/bb-jquery.js' | asset_url }}"></script>
     <script src="{{ 'js/bootstrap/bootstrap.min.js' | asset_url }}"></script>
-    <script src="{{ 'js/plugins/Growl/jquery.jgrowl.min.js' | asset_url }}"></script>
+    <script src="{{ 'js/plugins/jGrowl/jquery.jgrowl.js' | asset_url }}"></script>
     <style type="text/css">
         body{
             background:none transparent;
@@ -38,6 +38,7 @@
             -webkit-box-shadow: none;
             -moz-box-shadow: none;
             box-shadow: none;
+            background-color: #ffffff;
         }
     </style>
 
