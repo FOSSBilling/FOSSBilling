@@ -1,11 +1,11 @@
 # Project Governance
-*Last updated June 12, 2022*
+*Last updated December 12, 2022*
 
 ## Overview
 
 FOSSBilling is an open source project which builds and maintains a free, open source billing and client management solution. 
 
-Anybody with an interest can join the community, contribute to the project, and be a part of the decision-making process. 
+Anybody with an interest can join the community, contribute to the project, and be a part of the informal decision-making process. 
 
 If you have dev skills, opinions, or the ability to support the project financially, then please do contribute. There are no barriers to entry and there are many different ways to be a part of the future of FOSSBilling. See the [Contribution Guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md). 
 
@@ -17,9 +17,11 @@ __TLDR; Project decisions are made by a consensus of the projects steering commi
 
 The FOSSBilling community is made up of individuals, companies, or groups who use and/or contribute to the FOSSBilling software.
 
-Anybody is free to use the core FOSSBilling software within the terms of the [license](https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE). There are not and never will be any fees for usage, and no special requirements.
+Anybody is free to use the core FOSSBilling software within the terms of the [license](https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE). There are not and never will be any fees for usage, and no special requirements. 
 
 We really appreciate user contributions but if you just want to download, install, and go, then you have the complete freedom to do that.
+
+Third-party modules and integrations for FOSSBilling are welcomed. We would appreciate if your third-party work was announced to the community so that it can be added to the list of known working extensions, however this is not mandatory. In all cases, please be aware of the restrictions attached to usage of the [FOSSBilling name and branding](https://github.com/FOSSBilling/branding#readme), and approach us for permission if you wish to use the branding in any way other than explicitly listed. 
 
 If you do want to be more involved in the community then the project [GitHub](https://github.com/FOSSBilling/FOSSBilling) page, the [Contribution Guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/main/CONTRIBUTING.md), and [Discord](https://fossbilling.org/discord) are great places to start. You can also sponsor the project on [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or with [Open Collective](https://opencollective.com/fossbilling).
 
@@ -56,7 +58,7 @@ At this moment the Steering Committee includes seven members - identified here b
 
 Members of the steering committee may recommend and appoint new members from the community at any time. A nomination for a new member will result in a discussion and a vote by the existing committee members. 
 
-Members may be removed from the committee if they demonstrate disruptive behavior, if they resign, or if they do not participate in the community or contribute to the project for 6 months. In the case of disruptive behavior, removal will be decided on by discussion and majority consensus between the other committee members. 
+Members may be removed from the committee if they demonstrate disruptive behavior, if they resign, or if they do not participate in the community or contribute to the project for 6 months. In each of these cases except for resignation, removal can only be decided on after discussion and a clear majority consensus between the other committee members (committee members who are the subject of a removal vote are excluded from the right to vote). 
 
 ## Decision-making process
 
@@ -84,6 +86,6 @@ In general, if nobody explicitly opposes a proposal, it is recognised as having 
 
 ## Changes to this governance policy
 
-Any community member is free to propose changes to this governance policy by submitting a proposed change to this document. The steering committee will discuss any proposed changes and aim to reject or accept the changes by consensus.
+Any community member is free to propose changes to this governance policy by submitting a proposed change to this document, via a GitHub pull request. The steering committee will discuss any proposed changes and aim to reject or accept the changes by consensus.
 
 If the committee is unable to agree on the proposal then the wider community will be asked to vote on the changes, with a clear majority vote needed for the governance changes to take effect.
