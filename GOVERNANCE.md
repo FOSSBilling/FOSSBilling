@@ -86,6 +86,6 @@ In general, if nobody explicitly opposes a proposal, it is recognised as having 
 
 ## Changes to this governance policy
 
-Any community member is free to propose changes to this governance policy by submitting a proposed change to this document, via GitHub pull request. The steering committee will discuss any proposed changes and aim to reject or accept the changes by consensus.
+Any community member is free to propose changes to this governance policy by submitting a proposed change to this document, via a GitHub pull request. The steering committee will discuss any proposed changes and aim to reject or accept the changes by consensus.
 
 If the committee is unable to agree on the proposal then the wider community will be asked to vote on the changes, with a clear majority vote needed for the governance changes to take effect.
