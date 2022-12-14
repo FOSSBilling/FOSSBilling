@@ -32,4 +32,5 @@ npm-debug.log
 src/.php-cs-fixer.cache
 
 .vscode
+.nova
 .php-cs-fixer.cache
