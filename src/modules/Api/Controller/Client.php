@@ -280,6 +280,13 @@ class Client implements InjectionAwareInterface
             error_log($e->getMessage() . ' ' . $e->getCode());
             $code = $e->getCode() ? $e->getCode() : 9999;
             $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
+            $authFailed = array(201, 202, 206, 204, 205, 203, 403, 1004, 1002);
+
+            if(in_array($code, $authFailed)) {
+                header('HTTP/1.1 401 Unauthorized');
+            } elseif($code == 701 || $code == 879) {
+                header('HTTP/1.1 400 Bad Request');
+            }
         } else {
             $result = ['result' => $data, 'error' => null];
         }
