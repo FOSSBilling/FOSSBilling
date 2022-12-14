@@ -38,7 +38,7 @@ if(!isSSL()){
     ));
     $result = file_get_contents($_SERVER['HTTP_HOST'], false, $context);
     
-    if ($result === false) {
+    if ($result !== false) {
         $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
         header("Location: $url");
         exit();
