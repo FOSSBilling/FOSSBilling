@@ -152,8 +152,9 @@ $di['session'] = function () use ($di) {
     $handler = new PdoSessionHandler($di['pdo']);
     $mode = (isset($di['config']['security']['mode'])) ? $di['config']['security']['mode'] : 'strict';
     $lifespan =(isset($di['config']['security']['cookie_lifespan'])) ? $di['config']['security']['cookie_lifespan'] : 7200;
+    $secure = (isset($di['config']['security']['force_https'])) ? $di['config']['security']['force_https'] : true;
 
-    return new Box_Session($handler, $mode, $lifespan);
+    return new Box_Session($handler, $mode, $lifespan, $secure);
 };
 
 $di['cookie'] = function () use ($di) {

@@ -28,6 +28,23 @@ function isSSL(): bool
         || 443 === $_SERVER['SERVER_PORT'];
 }
 
+// If not connected via SSL, try and detect a valid SSL certificate on the server and then redirect to HTTPs.
+if(!isSSL()){
+    $context = stream_context_create(array(
+        'ssl' => array(
+            'verify_peer' => true,
+            'verify_peer_name' => true,
+        ),
+    ));
+    $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+    $result = file_get_contents($url, false, $context);
+    
+    if ($result !== false) {
+        header("Location: $url");
+        exit();
+    }
+}
+
 date_default_timezone_set('UTC');
 
 error_reporting(E_ALL);
@@ -439,7 +456,7 @@ final class Box_Installer
         $data = [
             'security' => [
                 'mode' => 'strict',
-                'force_https' => true,
+                'force_https' => isSSL() ? true : false,
                 'cookie_lifespan' => 7200,
             ],
             'debug' => false,
