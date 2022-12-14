@@ -36,9 +36,21 @@
                         <td>{{ page.title }}</td>
                         <td>{{ page.slug }}</td>
                         <td>
-                            <a class="btn14" href="{{ 'page'|link }}/{{ page.slug }}" title="{{ 'View'|trans }}"><img src="images/icons/dark/view.png" alt=""></a>
-                            <a class="btn14" href="{{ 'custompages'|alink }}/{{ page.id }}" title="{{ 'Edit'|trans }}"><img src="assets/icons/edit.svg" alt=""></a>
-                            <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/custompages/delete'|link({ 'id': page.id, 'CSRFToken': CSRFToken }) }}" title="{{ 'Delete'|trans }}" data-api-confirm="Are you sure?" data-api-reload="1"><img src="assets/icons/delete.svg" alt=""></a>
+                            <a class="btn14" href="{{ 'page'|link }}/{{ page.slug }}" title="{{ 'View'|trans }}">
+                                <svg class="icon">
+                                    <use xlink:href="#eye"/>
+                                </svg>
+                            </a>
+                            <a class="btn14" href="{{ 'custompages'|alink }}/{{ page.id }}" title="{{ 'Edit'|trans }}">
+                                <svg class="icon">
+                                    <use xlink:href="#edit"/>
+                                </svg>
+                            </a>
+                            <a class="btn14 bb-rm-tr api-link" href="{{ 'api/admin/custompages/delete'|link({ 'id': page.id, 'CSRFToken': CSRFToken }) }}" title="{{ 'Delete'|trans }}" data-api-confirm="Are you sure?" data-api-reload="1">
+                                <svg class="icon">
+                                    <use xlink:href="#delete"/>
+                                </svg>
+                            </a>
                         </td>
                     </tr>
                     {% else %}
@@ -88,7 +100,7 @@
                         </div>
                         <div class="fix"></div>
                     </div>
-                    <input type="submit" value="{{ 'Create'|trans }}" class="greyishBtn submitForm" />
+                    <input type="submit" value="{{ 'Create'|trans }}" class="btn btn-primary submitForm" />
                 </fieldset>
             </form>
         </div>
