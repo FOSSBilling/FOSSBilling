@@ -439,7 +439,7 @@ final class Box_Installer
         $data = [
             'security' => [
                 'mode' => 'strict',
-                'force_https' => true,
+                'force_https' => isSSL() ? true : false,
                 'cookie_lifespan' => 7200,
             ],
             'debug' => false,

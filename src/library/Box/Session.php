@@ -22,7 +22,7 @@ class Box_Session
     }
 
 
-    public function __construct($handler, $securityMode = 'regular', $cookieLifespan = 7200)
+    public function __construct($handler, $securityMode = 'regular', $cookieLifespan = 7200, $secure = true)
     {
         session_set_save_handler(
             array($handler, 'open'),
@@ -36,13 +36,14 @@ class Box_Session
             $currentCookieParams = session_get_cookie_params();
             $currentCookieParams["httponly"] = true;
             $currentCookieParams["lifetime"] = $cookieLifespan;
+            $currentCookieParams["secure"] = $secure;
 
             if($securityMode == 'strict'){
                 session_set_cookie_params([
                     'lifetime' => $currentCookieParams["lifetime"],
                     'path' => $currentCookieParams["path"],
                     'domain' => $currentCookieParams["domain"],
-                    'secure' => true,
+                    'secure' => $currentCookieParams["secure"],
                     'httponly' => $currentCookieParams["httponly"],
                     'samesite' => 'Strict'
                 ]);
