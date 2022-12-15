@@ -3,16 +3,16 @@
 ### Security
  - Added a new security mode and settings
    - These settings are located in the `config.php` file and allow you to fine tune some security related options.
-   - The default settings are what we recommend
+   - The default settings are what we recommend.
 
 ### Bug fixes 
  - We've replaced the old `gettext` back end for translations. Translations should now work correctly for everyone.
  - Fixed issue with HestiaCP.
  - Cleanly handle no template being passed to the `renderString` function in the system module.
- - Fixed some issues with the client lookup
+ - Fixed some issues with the client lookup.
  - The API should now return HTTP status codes depending on the result.
  - Fixed some missing icons with the custom pages module.
- - The auto updater will now destroy the current session, this should help prevent and odd issues after updates.
+ - The auto updater will now destroy the current session, this should help prevent any odd issues after updates.
  - Fixed the missing CSRF token on the EU tax sync button.
  - Removed the option to ping sitemaps top Bing as they do not accept them anymore.
  - PDF invoices will now hide company / client details that are not set, rather than an empty line.
@@ -23,7 +23,7 @@
  - We've added some new events to be used in our demo module. (with a FOSSBilling demo coming soon)
 
 ### Other
- - Updated some dependencies
+ - Updated some dependencies.
  - Significantly cleaned up the Huraga theme's dependencies, shrinking the overall theme size by about 5Mb.
 
 ## Version 0.2.3 (12-8-2022)
