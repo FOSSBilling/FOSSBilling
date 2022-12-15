@@ -21,6 +21,7 @@
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
 [![CodeFactor](https://www.codefactor.io/repository/github/fossbilling/fossbilling/badge)](https://www.codefactor.io/repository/github/fossbilling/fossbilling)
 [![Financial Contributors](https://opencollective.com/fossbilling/tiers/badge.svg?color=brightgreen)](https://opencollective.com/fossbilling)
+[![Crowdin](https://badges.crowdin.net/e/c70c78b4ab1e71424ce53dcf6bca9b12/localized.svg)](https://fossbilling.crowdin.com/fossbilling)
 </div>
 
 > **Warning**
