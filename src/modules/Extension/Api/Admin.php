@@ -120,8 +120,9 @@ class Admin extends \Api_Abstract
     public function update_config()
     {
         $updater = $this->di['updater'];
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateConfig']);
         $updater->performConfigUpdate();
-
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateConfig']);
         $this->di['logger']->info('Updated FOSSBilling config');
 
         return true;
