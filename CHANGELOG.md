@@ -1,10 +1,61 @@
-## Version 0.2.0 (upcoming)
+## Version 0.2.4 (12-16-2022)
 
 ### Security
- - Created a new CSRF token system to prevent CSRF attacks.
+ - Added a new security mode and settings
+   - These settings are located in the `config.php` file and allow you to fine tune some security related options.
+   - The default settings are what we recommend.
 
-## Other
- - Cleaned up old references
+### Bug fixes 
+ - We've replaced the old `gettext` back end for translations. Translations should now work correctly for everyone.
+ - Fixed issue with HestiaCP.
+ - Cleanly handle no template being passed to the `renderString` function in the system module.
+ - Fixed some issues with the client lookup.
+ - The API should now return HTTP status codes depending on the result.
+ - Fixed some missing icons with the custom pages module.
+ - The auto updater will now destroy the current session, this should help prevent any odd issues after updates.
+ - Fixed the missing CSRF token on the EU tax sync button.
+ - Removed the option to ping sitemaps top Bing as they do not accept them anymore.
+ - PDF invoices will now hide company / client details that are not set, rather than an empty line.
+
+### New Features
+ - Set the default currency during installation
+ - We've improved the "showcase" feature with Huraga, it now accepts markdown input and has multiple sizing options.
+ - We've added some new events to be used in our demo module. (with a FOSSBilling demo coming soon)
+
+### Other
+ - Updated some dependencies.
+ - Significantly cleaned up the Huraga theme's dependencies, shrinking the overall theme size by about 5Mb.
+
+## Version 0.2.3 (12-8-2022)
+
+### Bug fixes 
+ - Fixed some minor issues with the admin theme styling
+ - Hide the settings button for themes that don't have settings
+ - Another fix to the CSRF protection
+
+## Version 0.2.2 (12-7-2022)
+
+### Bug fixes 
+ - Fixed more issues relating to the CSRF protection, including the checkout screen.
+
+## Version 0.2.1 (12-7-2022)
+This is a hotfix to fix issues introduced by the new security features added in 0.2.0. (has changes from PR#545)
+
+## Version 0.2.0 (12-7-2022)
+This release adds protection against CSRF attacks. This change will break outdated modules.
+It's highly discouraged to disable this protection, but if needed you can edit the `CSRFPrevention` value in your `config.php` file and set it to false.
+
+### Breaking Changes / Security
+ - Implemented a token system to protect against CSRF attacks. outdated modules and themes will no longer work with this protection enabled.
+
+### Bug fixes 
+ - Fixed subscriptions with the PayPal payment adapter. 
+ - Properly fixed issues with the VestaCP and HestiaCP server managers.
+ - The localization files have been synced with the source code and we've pre-translated a few popular languages using machine learning.
+ - Fixed issues when trying to click the filter icon in the admin dashboard.
+
+### New Features
+ - Sever managers can now specify their own input fields, making the setup process a bit more intuitive. 
 
 ## Version 0.1.1 (12-3-2022)
 This release is a quick hotfix to resolve some minor issues reported with version [0.1.0](https://github.com/FOSSBilling/FOSSBilling/releases/tag/0.1.0)
