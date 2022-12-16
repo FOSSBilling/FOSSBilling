@@ -357,7 +357,7 @@ class Server_Manager_Hestia extends Server_Manager
             'returncode' => $vst_returncode,
             'cmd' => $vst_command,
             'arg1' => $a->getUsername(),
-            'arg2' => $this->create_tmp_file($new),
+            'arg2' => $new,
         ];
         // Make request and change password
         $result = $this->_makeRequest($postvars);
