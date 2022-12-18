@@ -300,8 +300,8 @@ function detectOldFiles(){
     $msg = '';
     $foundOld = false;
 
-    $oldFolderNames = ['bb-data','bb-library','bb-locale','bb-modules','bb-themes','bb-uploads','bb-cron.php','bb-di.php','bb-ipn.php','bb-load.php','bb-config.php'];
-    $newFolderNames = ['data','library','locale','modules','themes','uploads','cron.php','di.php','ipn.php','load.php','config.php'];
+    $oldFolderNames = ['bb-data','bb-library','bb-locale','bb-modules','bb-themes','bb-uploads','bb-cron.php','bb-di.php','bb-load.php','bb-config.php'];
+    $newFolderNames = ['data','library','locale','modules','themes','uploads','cron.php','di.php','load.php','config.php'];
 
     foreach ($oldFolderNames as $folder){
         $toCheck = PATH_ROOT . DIRECTORY_SEPARATOR . $folder;
