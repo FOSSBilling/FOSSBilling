@@ -127,9 +127,6 @@ const API = {
      * @param {function} [successHandler] The function to call if the request is successful
      * @param {function} [errorHandler] The function to call if the request is unsuccessful
      * 
-     * @example
-     * API.makeRequest("GET", "https://fossbilling.org/api/admin/clients", {limit: 10});
-     * 
      * @documentation https://fossbilling.org/docs/api/javascript
      */
     makeRequest: function (method, url, params, successHandler, errorHandler) {
@@ -160,9 +157,6 @@ const API = {
             // If it's an object, convert it to a JSON string. If it's a string, leave it as is.
             body = (typeof params === 'object') ? JSON.stringify(params) : params;
         }
-
-        // Add the CSRF token to the query string. Temporary workaround for https://github.com/FOSSBilling/FOSSBilling/issues/597
-        url.searchParams.append('CSRFToken', Tools.getCSRFToken());
 
         // Call the API and handle the response
         return fetch(url.toString(), {
