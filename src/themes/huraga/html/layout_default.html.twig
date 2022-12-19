@@ -12,6 +12,7 @@
 
     <meta property="bb:url" content="{{ constant('BB_URL') }}">
     <meta property="bb:client_area" content="{{ '/'|link }}">
+    <meta name="csrf-token" content="{{ CSRFToken }}">
 
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
     <meta name="robots" content="{{ settings.meta_robots }}">
@@ -21,7 +22,7 @@
 
     {% block opengraph %}{% endblock %}
 
-    <link rel='stylesheet' type='text/css' href={{ "css/huraga-main.css" | asset_url }}>
+    <link rel='stylesheet' type='text/css' href="{{ 'css/huraga-main.css' | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ theme_color | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ 'css/plugins/jquery.jgrowl.css' | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ 'css/font-awesome.css' | asset_url }}">
@@ -30,6 +31,7 @@
 
     <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}">
 
+    <script src="{{ ('Api/API.js') | library_url }}"></script>
     <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
     <script src="{{ 'js/bb-jquery.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'js/libs/modernizr.js' | asset_url }}" defer="defer"></script>
