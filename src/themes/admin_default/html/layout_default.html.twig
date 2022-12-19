@@ -44,7 +44,7 @@
                   <span class="navbar-toggler-icon"></span>
                   </button>
                   <div class="navbar-nav flex-row order-md-last">
-                    {% set languages = guest.extension_languages %}
+                    {% set languages = guest.extension_languages(true) %}
                     {% if languages|length > 1 %}
                     <div class="nav-item me-3">
                         <select name="lang" class="form-select js-language-selector">

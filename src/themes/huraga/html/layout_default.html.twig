@@ -65,7 +65,7 @@
             {% if settings.show_page_header %}
                 <nav>
                 <ul class="f16">
-                    {% set languages = guest.extension_languages %}
+                    {% set languages = guest.extension_languages(true) %}
                     {% if languages|length > 1 %}
                     {% set currentLang = guest.system_locale %}
                     {% set countryCode = currentLang | slice(3, 2) %}

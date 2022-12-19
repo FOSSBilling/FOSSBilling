@@ -202,6 +202,9 @@ class Service
             closedir($handle);
         }
         sort($locales);
+        if(!$deep){
+            return $locales;
+        }
         $array = include PATH_ROOT . '/locale/locales.php';
         $details = [];
         foreach($locales as $locale){
