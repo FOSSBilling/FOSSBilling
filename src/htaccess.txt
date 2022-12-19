@@ -44,6 +44,9 @@ RewriteRule ^.*$ - [NC,L]
 RewriteRule ^page/(.*)$ index.php?_url=/custompages/$1
 RewriteRule ^(.*)$ index.php?_url=/$1 [QSA,L]
 
+# Setup an alias from bb-ipn to ipn.php for those who have upgraded from BoxBilling.
+Alias /bb-ipn.php /ipn.php
+
 <IfModule mod_headers.c>
     # MONTH
     <FilesMatch "\.(flv|gif|jpg|jpeg|png|ico|swf)$">
