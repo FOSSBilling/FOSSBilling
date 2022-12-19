@@ -632,12 +632,7 @@ class xmlapi {
 		if ( (defined('XMLAPI_DEBUG')) && (XMLAPI_DEBUG == '1') ) {
 		 	$this->debug = true;
 		}
-
-		// Check if raw xml output must be enabled
-		if ( (defined('XMLAPI_RAW_XML')) && (XMLAPI_RAW_XML == '1') ) {
-		 	$this->raw_xml = true;
-		}
-		
+	
 		/**
 		* Authentication
 		* This can either be passed at this point or by using the set_hash or set_password functions
@@ -1907,7 +1902,7 @@ class xmlapi {
 	* @link http://docs.cpanel.net/twiki/bin/view/AllDocumentation/AutomationIntegration/EditPackage XML API Call documentation
 	*/
 	public function editpkg($pkg) {
-		if (!$isset($pkg['name'])) {
+		if (!isset($pkg['name'])) {
 			error_log("editpkg requires that name is defined in the array passed to it");
 			return false;
 		}

@@ -47,7 +47,6 @@ class Admin implements \Box\InjectionAwareInterface
      *
      * @param string $code - client area theme code
      *
-     * @return array
      */
     public function save_theme_settings(\Box_App $app, $theme)
     {

@@ -63,7 +63,7 @@
             $params = array();
             $params['type'] = $type;
             $params['id'] = $id;
-            return $this->_request('extension/' . $params['id'] . '/version');
+            return $this->_request('extension/' . $params['id'] . '/version', $params);
         }
 
         public function getLatest($type = null)

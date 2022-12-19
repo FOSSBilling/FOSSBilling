@@ -1,4 +1,4 @@
-name: PHP Composer
+name: PHP Composer & PHPStan
 
 on:
   push:
@@ -69,3 +69,7 @@ jobs:
     - name: Run test suite for library
       run: |
         php ./src/vendor/bin/phpunit ./tests/library/
+
+    - name: Run PHPStan analysis
+      uses: php-actions/phpstan@v3
+      configuration: phpstan.neon

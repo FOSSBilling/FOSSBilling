@@ -15,9 +15,9 @@
 
 class Box_DbLoggedPDOStatement extends PDOStatement
 {
-    public function execute ($input_parameters = null)
+    public function execute ($input_parameters = null): bool
     {
         error_log($this->queryString);
-        parent::execute($input_parameters);
+        return parent::execute($input_parameters);
     }
 }
