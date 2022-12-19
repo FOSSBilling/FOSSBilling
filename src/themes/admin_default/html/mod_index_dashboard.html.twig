@@ -557,6 +557,9 @@
                         show: false,
                     },
                     colors: ["#206bc4"],
+                    tooltip: {
+                        theme: (localStorage.getItem('theme') === 'dark') ? 'dark' : 'light'
+                    }
                 }).render();
             }
         </script>
