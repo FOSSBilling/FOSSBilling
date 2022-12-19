@@ -131,7 +131,7 @@
     </div>
 
     <div class="mainForm">
-        <form  id="update-form-options">
+        <form method="POST" action="{{ 'api/admin/formbuilder/update_form_settings'|link }}" class="api-form" data-api-msg="{{ 'Form options were updated'|trans }}">
             <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
             <div class="rowElem">
                 <label>
@@ -233,6 +233,7 @@
 
 {% block js %}
 <script type="text/javascript">
+    // The following code is a huge mess and needs to be refactored in the future.
     $(function () {
         $("form").submit( function () {
             $(':checkbox:not(:checked)').removeAttr('checked');
@@ -343,25 +344,30 @@
             return false;
         });
 
-        $('#update-form-options').bind('submit',function (event) {
-            bb.post('admin/formbuilder/update_form_settings', $(this).serialize(), function() {
-                bb.msg("{{ 'Form options were updated'|trans }}")
-            })
-            
-            return false;
-        });
+        const formElements = document.getElementsByClassName("update-field");
 
-        $('.update-field').bind('submit',function (event) {
-            var field_form = $(this);
-            
-            bb.post('admin/formbuilder/update_field', $(this).serialize(), function() {
-                $(field_form).fadeOut();
-                $('#background-loader').show();
-                bb.reload();
-            })
-            
-            return false;
-        });
+        if (formElements.length > 0) {
+            for (let i = 0; i < formElements.length; i++) {
+                const formElement = formElements[i];
+                
+                formElement.addEventListener("submit", function (event) {
+                    // Prevent the default form submit action. We will handle it ourselves.
+                    event.preventDefault();
+
+                    const formData = new FormData(formElement);
+                    const formDataObject = Object.fromEntries(formData.entries());
+                    const formDataInJSON = JSON.stringify(formDataObject);
+
+                    API.admin.post('formbuilder/update_field', formDataInJSON, function (result) {
+                        formElement.style.display = 'none';
+                        $('#background-loader').show();
+                        bb.reload();
+                    }, function (error) {
+                        FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+                    });
+                });
+            }
+        }
 
        $('#new-form').click(function () {
             jPrompt('Give your new form a title', 'My new form', 'Form title', function (title) {
