@@ -72,4 +72,5 @@ jobs:
 
     - name: Run PHPStan analysis
       uses: php-actions/phpstan@v3
-      configuration: phpstan.neon
+      with:
+        configuration: phpstan.neon
