@@ -306,7 +306,14 @@ class Client implements InjectionAwareInterface
      */
     public function _checkCSRFToken(){
         $this->_loadConfig();
-        $token= (!empty($_POST["CSRFToken"]) ? $_POST["CSRFToken"] : $_GET["CSRFToken"]);
+        $csrfPrevention = $this->_api_config['CSRFPrevention'] ?? true;
+        if(!$csrfPrevention || php_sapi_name() == 'cli'){
+            return true;
+        }
+
+        $data = json_decode(file_get_contents('php://input'));
+
+        $token = $data->CSRFToken ?? $_POST["CSRFToken"] ?? $_GET["CSRFToken"] ?? null;
         $expectedToken = (!is_null(session_id())) ? hash('md5', session_id()) : null;
 
         /* Due to the way the cart works, it creates a new session which causes issues with the CSRF token system.
@@ -316,11 +323,7 @@ class Client implements InjectionAwareInterface
             return true;
         }
 
-        if(isset($this->_api_config['CSRFPrevention']) && $this->_api_config['CSRFPrevention'] === false){
-            return true;
-        }
-
-        if(!is_null($expectedToken) && $expectedToken !== $token && php_sapi_name() !== 'cli'){
+        if(!is_null($expectedToken) && $expectedToken !== $token){
             throw new \Box_Exception('CSRF token invalid.', null, 403);
         }
     }
