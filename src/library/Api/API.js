@@ -96,7 +96,9 @@ const API = {
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
          * 
          * @example
-         * API.guest.get("system/version");
+         * API.guest.get("system/version", {}, function(response) {
+         *    console.log(response);
+         * });
          * 
          * @documentation https://fossbilling.org/docs/api/javascript
          */
