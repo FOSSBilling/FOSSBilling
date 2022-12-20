@@ -1,0 +1,24 @@
+includes:
+	- phpstan-baseline.neon
+
+parameters:
+	level: 0
+	paths:
+		- src
+	excludePaths:
+		analyse:
+		- src/vendor
+		- src/rb.php
+		- src/library/Registrar/Adapter/srsx.php
+		- src/library/Box/Request.php
+		- src/library/Server/Manager/Custom.php
+	ignoreErrors:
+		- '#^Function __trans not found\.$#'
+		- message: '#^Access to an undefined property FOSSPatchAbstract\:\:\$di\.$#'
+		  path: src/foss-update.php
+		- '#^Inner named functions are not supported by PHPStan\. Consider refactoring to an anonymous function, class method, or a top\-level\-defined function\. See issue \#165 \(https\://github\.com/phpstan/phpstan/issues/165\) for more details\.$#'
+		- message: '#^Result of function curl_close \(void\) is used\.$#'
+		  path: src/modules/Spamchecker/akismet.curl.class.php
+		- message: '#^Result of function header \(void\) is used\.$#'
+		  path: src/modules/Custompages/Controller/Client.php
+		- '#^Method Box\\Mod\\Currency\\Service\:\:_getRate\(\) should return float but return statement is missing\.$#'

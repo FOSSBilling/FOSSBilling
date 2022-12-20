@@ -364,7 +364,6 @@ class Service implements InjectionAwareInterface
      *
      * @since 4.22.0
      *
-     * @return string
      */
     public function updateKey($key)
     {
@@ -372,7 +371,7 @@ class Service implements InjectionAwareInterface
         $values = [':key' => $key];
 
         $db = $this->di['db'];
-        $currency = $db->exec($sql, $values);
+        $db->exec($sql, $values);
     }
 
     /**
@@ -380,7 +379,7 @@ class Service implements InjectionAwareInterface
      *
      * @since 4.22.0
      *
-     * @return string
+     * @return bool
      */
     public function isCronEnabled()
     {
@@ -403,7 +402,6 @@ class Service implements InjectionAwareInterface
      *
      * @var int
      *
-     * @return string
      */
     public function setCron($data)
     {
@@ -418,7 +416,7 @@ class Service implements InjectionAwareInterface
         $values = [':key' => $key];
 
         $db = $this->di['db'];
-        $currency = $db->exec($sql, $values);
+        $db->exec($sql, $values);
     }
 
     public function toApiArray(\Model_Currency $model)

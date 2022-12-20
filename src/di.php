@@ -389,12 +389,6 @@ $di['license_server'] = function () use ($di) {
     return $server;
 };
 
-$di['service_boxbilling'] = $di->protect(function ($config) {
-    $service = new \Box\Mod\Serviceboxbillinglicense\ServiceBoxbilling($config);
-
-    return $service;
-});
-
 $di['ftp'] = $di->protect(function ($params) { return new \Box_Ftp($params); });
 
 $di['geoip'] = function () { return new \GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb'); };
