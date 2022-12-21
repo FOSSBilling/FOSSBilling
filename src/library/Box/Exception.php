@@ -24,8 +24,8 @@ class Box_Exception extends Exception
 	{
 		$config = include PATH_ROOT.'/config.php';
 		$debug = (isset($config['debug'])) ? $config['debug'] : false;
-		$logStack = (isset($config['log_stacktrace'])) ? isset($config['log_stacktrace']) : true;
-		$stackLength = (isset($config['stacktrace_length'])) ? isset($config['stacktrace_length']) : 25;
+		$logStack = (isset($config['log_stacktrace'])) ? $config['log_stacktrace'] : true;
+		$stackLength = (isset($config['stacktrace_length'])) ? $config['stacktrace_length'] : 25;
 
 		if($debug && $logStack){
 			error_log('An exception has been thrown. Stacktrace:');
