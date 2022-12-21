@@ -1,3 +1,16 @@
+## Version 0.2.5 (12-21-2022)
+
+### Security
+ - Disable logging stack trace when debug mode is enabled (#618 #617)
+
+## Bugfixes
+ - Create a alias for bb-ipn.php to prevent recurring payments from failing after upgrading from BoxBilling or FOSSBilling 0.1.x release (#605) 
+ - Change ApexCharts colors when switching to darkmode (#610)
+ - Disable display errors before checking for a valid ssl certificate. (#604)
+
+### Other
+ - Updated some dependencies.
+ 
 ## Version 0.2.4 (12-16-2022)
 
 ### Security
