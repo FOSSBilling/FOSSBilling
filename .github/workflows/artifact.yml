@@ -37,7 +37,7 @@ jobs:
         run: php -v
 
       - name: Clone and update the locale submodule.
-        run: git submodule update --remote --recursive
+        run: git submodule update --init --remote --recursive
         working-directory: ./src/locale
 
       - name: Validate composer.json and composer.lock
