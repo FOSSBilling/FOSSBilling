@@ -40,6 +40,12 @@ jobs:
         run: git submodule update --init --remote --recursive
         working-directory: ./src/locale
 
+      - name: Remove .po files from the locale folder
+        run: |
+          # Remove all .po files from the locale folder
+          find -name '*.po' -delete
+        working-directory: ./src/locale
+
       - name: Validate composer.json and composer.lock
         run: composer validate
         working-directory: ./src
