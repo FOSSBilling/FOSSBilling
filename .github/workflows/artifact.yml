@@ -37,7 +37,14 @@ jobs:
         run: php -v
 
       - name: Clone and update the locale submodule.
-        run: git submodule update --init --recursive
+        run: git submodule update --init --remote --recursive
+        working-directory: ./src/locale
+
+      - name: Remove unneeded files from the locale folder
+        run: |
+          find -name '*.po' -delete
+          rm -rf .github
+          rm -f crowdin.yml messages.pot .git
         working-directory: ./src/locale
 
       - name: Validate composer.json and composer.lock
