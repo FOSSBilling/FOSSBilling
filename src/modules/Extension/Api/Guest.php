@@ -79,10 +79,10 @@ class Guest extends \Api_Abstract
      *
      * @return array
      */
-    public function languages()
+    public function languages($deep = false)
     {
         $service = $this->di['mod_service']('system');
 
-        return $service->getLanguages();
+        return $service->getLanguages($deep);
     }
 }

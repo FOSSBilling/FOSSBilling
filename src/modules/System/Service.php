@@ -202,29 +202,25 @@ class Service
             closedir($handle);
         }
         sort($locales);
-        if (!$deep) {
+        if(!$deep){
             return $locales;
         }
-
+        $array = include PATH_ROOT . '/locale/locales.php';
         $details = [];
-
-        foreach ($locales as $locale) {
-            $file = $path . '/' . $locale . '/LC_MESSAGES/messages.po';
-
-            if (file_exists($file)) {
-                $lNames = $this->getLocales();
-                if (isset($lNames[$locale]) && !empty($lNames[$locale])) {
-                    $title = $lNames[$locale];
-                } else {
-                    $title = null;
-                }
+        foreach($locales as $locale){
+            if (empty($array[$locale])){
+                //fall back on locale string
                 $details[] = [
                     'locale' => $locale,
-                    'title' => $title,
+                    'title' => $locale .' ('.$locale.')',
                 ];
+            }else{
+            $details[] = [
+                'locale' => $locale,
+                'title' => $array[$locale] .' ('.$locale.')',
+            ];
             }
         }
-
         return $details;
     }
 
@@ -346,7 +342,7 @@ class Service
         if(is_null($tpl)){
             $parsed = $this->createTemplateFromString("No template was provided, please contact the site administrator", $try_render, $vars);
             return $parsed;
-        }        
+        }
         try {
             $template = $twig->load($tpl);
             $parsed = $template->render($vars);

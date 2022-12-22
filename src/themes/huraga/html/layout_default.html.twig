@@ -65,7 +65,7 @@
             {% if settings.show_page_header %}
                 <nav>
                 <ul class="f16">
-                    {% set languages = guest.extension_languages %}
+                    {% set languages = guest.extension_languages(true) %}
                     {% if languages|length > 1 %}
                     {% set currentLang = guest.system_locale %}
                     {% set countryCode = currentLang | slice(3, 2) %}
@@ -73,14 +73,18 @@
                             <div class="btn-group">
                                 <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
                                     <span class="flag  {{ countryCode | lower }}"></span>
-                                    {{ countryCode }}
+                                    {% for lang in languages %}
+                                    {% if lang.locale == currentLang %}
+                                            {{ lang.title }}
+                                       {% endif %}
+                                    {% endfor %}
                                     <span class="caret"></span>
                                 </a>
                                 <ul class="dropdown-menu">
                                     {% for lang in languages %}
-                                    {% set countryCode = lang | slice(3, 2) %}
+                                    {% set countryCode = lang.locale | slice(3, 2) %}
                                     {% if lang != currentLang %}
-                                            <li class="language_selector" data-language-code="{{ lang }}"><a href="javascript:;"> <span class="flag {{ countryCode | lower }}"></span> {{ lang | trans }}</a></li>
+                                            <li class="language_selector" data-language-code="{{ lang.locale }}"><a href="javascript:;"> <span class="flag {{ countryCode | lower }}"></span> {{ lang.title }}</a></li>
                                         {% endif %}
                                     {% endfor %}
                                 </ul>
@@ -226,7 +230,7 @@
                         </section>
                     </div>
                 </article>
-                
+
                 <article class="span6 data-block decent">
                     <div class="data-container">
                         <header>

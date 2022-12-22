@@ -44,12 +44,12 @@
                   <span class="navbar-toggler-icon"></span>
                   </button>
                   <div class="navbar-nav flex-row order-md-last">
-                    {% set languages = guest.extension_languages %}
+                    {% set languages = guest.extension_languages(true) %}
                     {% if languages|length > 1 %}
                     <div class="nav-item me-3">
                         <select name="lang" class="form-select js-language-selector">
                             {% for lang in languages %}
-                                <option value="{{ lang }}" class="lang_{{ lang }}">{{ lang|trans }}</option>
+                                <option value="{{ lang.locale }}" class="lang_{{ lang.locale }}">{{ lang.title }}</option>
                             {% endfor %}
                         </select>
                     </div>
