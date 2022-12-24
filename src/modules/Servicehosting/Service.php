@@ -520,6 +520,8 @@ class Service implements InjectionAwareInterface
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data['domain']);
 
+        [$sld, $tld] = [null, null];
+
         if ('owndomain' == $data['domain']['action']) {
             $sld = $data['domain']['owndomain_sld'];
             $tld = $data['domain']['owndomain_tld'];

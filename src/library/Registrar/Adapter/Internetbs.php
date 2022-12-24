@@ -410,6 +410,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
     {
         $type = 'contacts_registrant_';
         $tel = explode('.', $result[$type . 'phonenumber']);
+        $name = '';
 
         // domain specific
         if (array_key_exists($type . 'firstname', $result))

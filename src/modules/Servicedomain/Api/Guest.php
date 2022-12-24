@@ -45,9 +45,7 @@ class Guest extends \Api_Abstract
             $where[] = 'allow_transfer = 1';
         }
 
-        if (!empty($where)) {
-            $query = implode(' AND ', $where);
-        }
+        $query = implode(' AND ', $where);
 
         $tlds = $this->di['db']->find('Tld', $query, []);
         $result = [];
