@@ -343,9 +343,7 @@ class Server_Manager_Whm extends Server_Manager
     private function _getPackageName(Server_Package $package)
     {
         $name = $package->getName();
-        if($this->_config['username'] != 'root') {
-            $name = $this->_config['username'].'_'.$name;
-        }
+        $name = $this->_config['username'].'_'.$name;
         
         return $name;
     }
