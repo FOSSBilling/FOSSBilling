@@ -52,9 +52,9 @@ jobs:
 
     # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
     # Docs: https://getcomposer.org/doc/articles/scripts.md
-    #- name: Run test suite for composer updates.
-    #  run: composer install --prefer-dist --no-progress --no-suggest
-    #  working-directory: ./src
+    - name: Run test suite for composer updates.
+      run: composer install --prefer-dist --no-progress --no-suggest
+      working-directory: ./src
 
     - name: Configure environment for Tests
       run: |
