@@ -1,0 +1,52 @@
+name: PHPStan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest]
+
+    name: PHPStan
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+        with: 
+        php-version: latest
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+
+    - name: Check PHP Version
+      run: php -v
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate
+      working-directory: ./src
+
+    - name: Cache Composer packages
+      id: composer-cache
+      uses: actions/cache@v3
+      with:
+        path: ./src/vendor
+        key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php-
+
+    - name: Install dependencies
+      if: steps.composer-cache.outputs.cache-hit != 'true'
+      run: composer install --prefer-dist --no-progress --no-suggest
+      working-directory: ./src
+
+    - Name: Run PHPStan
+      uses: php-actions/phpstan@v3
+      with:
+        configuration: phpstan.neon
+        memory_limit: 512M

@@ -1,4 +1,4 @@
-name: PHP Composer & PHPStan
+name: PHP Composer
 
 on:
   push:
@@ -19,6 +19,7 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+
     - name: Install PHP
       uses: shivammathur/setup-php@v2
       with:
@@ -43,15 +44,18 @@ jobs:
         key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
         restore-keys: |
           ${{ runner.os }}-php-
+
     - name: Install dependencies
       if: steps.composer-cache.outputs.cache-hit != 'true'
       run: composer install --prefer-dist --no-progress --no-suggest
       working-directory: ./src
+
     # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
     # Docs: https://getcomposer.org/doc/articles/scripts.md
-    - name: Run test suite for composer updates.
-      run: composer install --prefer-dist --no-progress --no-suggest
-      working-directory: ./src
+    #- name: Run test suite for composer updates.
+    #  run: composer install --prefer-dist --no-progress --no-suggest
+    #  working-directory: ./src
+
     - name: Configure environment for Tests
       run: |
         cp ./src/config-sample.php ./src/config.php
@@ -69,9 +73,3 @@ jobs:
     - name: Run test suite for library
       run: |
         php ./src/vendor/bin/phpunit ./tests/library/
-
-    - name: Run PHPStan analysis
-      uses: php-actions/phpstan@v3
-      with:
-        configuration: phpstan.neon
-        memory_limit: 512M
