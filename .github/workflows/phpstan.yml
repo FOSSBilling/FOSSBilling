@@ -51,7 +51,7 @@ jobs:
       run: composer install --prefer-dist --no-progress --no-suggest
       working-directory: ./src
 
-    - Name: Run PHPStan
+    - name: Run PHPStan
       uses: php-actions/phpstan@v3
       with:
         configuration: phpstan.neon
