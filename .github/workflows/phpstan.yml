@@ -21,7 +21,7 @@ jobs:
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2
-        with: 
+      with:
         php-version: latest
 
     - name: Check PHP Version
