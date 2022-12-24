@@ -51,6 +51,16 @@ jobs:
       run: composer install --prefer-dist --no-progress --no-suggest
       working-directory: ./src
 
+    - name: Configure environment for Tests
+      run: |
+        cp ./src/config-sample.php ./src/config.php
+        mkdir -p ./src/data/cache
+        mkdir -p ./src/data/log
+        echo > ./src/data/log/license.log
+        echo > ./src/data/log/application.log
+        echo > ./src/data/log/php_error.log
+        rm -rf ./src/install
+
     - name: Run PHPStan
       uses: php-actions/phpstan@v3
       with:
