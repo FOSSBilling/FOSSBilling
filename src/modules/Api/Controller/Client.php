@@ -311,7 +311,11 @@ class Client implements InjectionAwareInterface
             return true;
         }
 
-        $data = json_decode(file_get_contents('php://input'));
+        $input = file_get_contents('php://input') ?? '';
+        $data = json_decode($input);
+        if(!is_object($data)){
+            $data = new \stdClass();
+        }
 
         $token = $data->CSRFToken ?? $_POST["CSRFToken"] ?? $_GET["CSRFToken"] ?? null;
         $expectedToken = (!is_null(session_id())) ? hash('md5', session_id()) : null;
