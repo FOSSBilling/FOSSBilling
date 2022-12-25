@@ -8,16 +8,19 @@
 <html class="no-js" lang="en">
 <head>
     <meta charset="utf-8">
-    <title>{% block meta_title %}{% endblock %} {{ settings.meta_title }}</title>
+    <title>{% block meta_title %}{{ settings.meta_title }}{% endblock %}</title>
 
     <meta property="bb:url" content="{{ constant('BB_URL') }}">
     <meta property="bb:client_area" content="{{ '/'|link }}">
+    <meta name="csrf-token" content="{{ CSRFToken }}">
 
-    <meta name="description" content="{{ settings.meta_description }}">
+    <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
     <meta name="robots" content="{{ settings.meta_robots }}">
     <meta name="author" content="{{ settings.meta_author }}">
     <meta name="generator" content="FOSSBilling {{ guest.system_version }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {% block opengraph %}{% endblock %}
 
     <link rel='stylesheet' type='text/css' href="{{ 'css/huraga-main.css' | asset_url }}">
     <link rel='stylesheet' type='text/css' href="{{ theme_color | asset_url }}">
@@ -26,6 +29,7 @@
 
     <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}">
 
+    <script src="{{ ('Api/API.js') | library_url }}"></script>
     <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
     <script src="{{ 'js/bb-jquery.js' | asset_url }}"></script>
     <script src="{{ 'js/libs/modernizr.js' | asset_url }}"></script>

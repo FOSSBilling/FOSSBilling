@@ -76,6 +76,8 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             'mod_asset_url' => new TwigFilter('mod_asset_url', 'twig_mod_asset_url'),
             'asset_url' => new TwigFilter('asset_url', 'twig_asset_url', ['needs_environment' => true, 'is_safe' => ['html']]),
 
+            'library_url' => new TwigFilter('library_url', 'twig_library_url', ['needs_environment' => true, 'is_safe' => ['html']]),
+
             'money' => new TwigFilter('money', 'twig_money', ['needs_environment' => true, 'is_safe' => ['html']]),
             'money_without_currency' => new TwigFilter('money_without_currency', 'twig_money_without_currency', ['needs_environment' => true, 'is_safe' => ['html']]),
             'money_convert' => new TwigFilter('money_convert', 'twig_money_convert', ['needs_environment' => true, 'is_safe' => ['html']]),
@@ -198,6 +200,13 @@ function twig_asset_url(Twig\Environment $env, $asset)
     $globals = $env->getGlobals();
 
     return BB_URL.'themes/'.$globals['current_theme'].'/assets/'.$asset;
+}
+
+function twig_library_url(Twig\Environment $env, $path)
+{
+    $globals = $env->getGlobals();
+
+    return BB_URL.'library/'.$path;
 }
 
 function twig_img_tag($path, $alt = null)
