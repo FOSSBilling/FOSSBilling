@@ -22,12 +22,14 @@ namespace Box\Mod\Cart\Api;
 class Client extends \Api_Abstract
 {
     /**
-     * Checkout cart which has products.
-     *
-     * @optional int $gateway_id - payment gateway id. Which payment gateway will be used to make payment
-     *
-     * @return string array
-     */
+     * Checkout a shopping cart that has products in it.
+     * 
+     * @param array $data Checkout data
+     * 
+     * @param int $data['gateway_id'] ID of the payment gateway to use for the payment
+     * 
+     * @return mixed
+    */
     public function checkout($data)
     {
         $gateway_id = $this->di['array_get']($data, 'gateway_id');

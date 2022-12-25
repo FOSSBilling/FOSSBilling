@@ -23,8 +23,12 @@ namespace Box\Mod\Activity\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Get list of activity messages.
-     */
+     * Get a list of activity messages.
+     * 
+     * @param array $data Search parameters
+     * 
+     * @return array An array containing the list of activity messages and the pager information
+    */
     public function log_get_list($data)
     {
         $data['no_debug'] = true;
@@ -49,16 +53,17 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Add message to log.
-     *
-     * @param string $m - Message text
-     *
-     * @optional int $admin_id - admin id
-     * @optional int $client_id - client id
-     * @optional string $priority - log priority
-     *
+     * Add a message to the log.
+      * 
+     * @param array $data Message data
+     * 
+     * @param string $data['m'] Message text
+     * @param int $data['admin_id'] [optional] Admin ID
+     * @param int $data['client_id'] [optional] Client ID
+     * @param string $data['priority'] [optional] Log priority
+     * 
      * @return bool
-     */
+    */
     public function log($data)
     {
         if (!isset($data['m'])) {
@@ -81,8 +86,17 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Add email to log.
-     *
+     * Add an email to the log.
+     * 
+     * @param array $data Email data
+     * 
+     * @param string $data['subject'] Email subject
+     * @param int $data['client_id'] [optional] Client ID
+     * @param string $data['sender'] [optional] Email sender
+     * @param string $data['recipients'] [optional] Email recipients
+     * @param string $data['content_html'] [optional] Email content in HTML format
+     * @param string $data['content_text'] [optional] Email content in plain text format
+     * 
      * @return bool
      */
     public function log_email($data)
@@ -104,10 +118,14 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Remove activity message.
-     *
-     * @param int $id - Message ID
-     */
+     * Remove an activity message from the log.
+     * 
+     * @param array $data Message data
+     * 
+     * @param int $data['id'] ID of the message to delete
+     * 
+     * @return bool True if the message was deleted, false otherwise
+    */
     public function log_delete($data)
     {
         $required = [
@@ -123,11 +141,13 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Deletes logs with given IDs.
-     *
-     * @param array $ids - IDs for deletion
-     *
-     * @return bool
+     * Delete multiple activity messages from the log.
+     * 
+     * @param array $data Deletion data
+     * 
+     * @param int $data['ids'] IDs of the messages to delete
+     * 
+     * @return bool True if the messages were deleted, false otherwise
      */
     public function batch_delete($data)
     {
