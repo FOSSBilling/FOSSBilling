@@ -92,6 +92,14 @@ class ServicePayGateway implements InjectionAwareInterface
                 $adapters[] = $adapter;
             }
         }
+        $pattern = PATH_LIBRARY . '/Payment/Adapter/*/Adapter.php';
+        foreach (glob($pattern) as $path) {
+            $directory = explode('/',pathinfo($path, PATHINFO_DIRNAME));
+            $adapter = end($directory);
+            if (!array_key_exists($adapter, $exists)) {
+                $adapters[] = $adapter;
+            }
+        }
 
         return $adapters;
     }
@@ -265,7 +273,9 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $class = $this->getAdapterClassName($pg);
         if (!file_exists(PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '.php')) {
-            throw new \Box_Exception('Payment gateway :adapter was not found', [':adapter' => $pg->gateway]);
+            if(!file_exists(PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '/Adapter.php')){
+                throw new \Box_Exception('Payment gateway :adapter was not found', [':adapter' => $pg->gateway]);
+            }
         }
 
         if (!class_exists($class)) {
@@ -283,7 +293,12 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function getAdapterClassName(\Model_PayGateway $pg)
     {
-        return sprintf('Payment_Adapter_%s', $pg->gateway);
+        $class = sprintf('Payment_Adapter_%s', $pg->gateway);
+        if(!class_exists($class)){
+            return sprintf('Payment_Adapter_%s_Adapter', $pg->gateway);
+        }else{
+            return $class;
+        }
     }
 
     public function getAcceptedCurrencies(\Model_PayGateway $model)
