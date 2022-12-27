@@ -779,7 +779,7 @@ class Registrar_Adapter_NamecheapClouDns extends Registrar_AdapterAbstract
      * @return bool
      * @throws Registrar_Exception
      */
-    public function isDomainCanBeTransfered(Registrar_Domain $domain)
+    public function isDomaincanBeTransferred(Registrar_Domain $domain)
     {
         return in_array($domain->getTld(), array(
             '.biz', '.ca', '.cc', '.co', '.co.uk', '.com', '.com.es',
