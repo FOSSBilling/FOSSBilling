@@ -47,7 +47,7 @@ class Admin extends \Api_Abstract
      * Get the contents of a shopping cart by ID.
      * 
      * @param array $data Data array
-      * 
+     * 
      * @param int $data['id'] ID of the shopping cart
      * 
      * @return array Contents of the shopping cart

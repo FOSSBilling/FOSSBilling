@@ -56,7 +56,7 @@ class Box_Curl {
     }
 
     /**
-     * Constructs a new Curl object.
+    * Constructs a new Curl object.
     *
     * @param string $url The URL to send the request to.
     * @param int $timeOut [optional] The maximum time (in seconds) that the connection should remain open. Default is 30 seconds.

@@ -25,7 +25,7 @@ class Guest extends \Api_Abstract
      * Get the contents of the current shopping cart.
      * 
      * @return array Contents of the shopping cart
-    */
+     */
     public function get()
     {
         $cart = $this->getService()->getSessionCart();
@@ -159,7 +159,7 @@ class Guest extends \Api_Abstract
      * @param bool $data['multiple'] [optional] Allow multiple items in the cart. Default is `false`
      * 
      * @return bool
-    */
+     */
     public function add_item($data)
     {
         $required = [

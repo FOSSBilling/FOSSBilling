@@ -54,7 +54,7 @@ class Admin extends \Api_Abstract
 
     /**
      * Add a message to the log.
-      * 
+     * 
      * @param array $data Message data
      * 
      * @param string $data['m'] Message text
