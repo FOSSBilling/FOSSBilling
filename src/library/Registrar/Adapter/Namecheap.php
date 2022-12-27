@@ -585,11 +585,13 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * @return bool
+     * TODO: Implement this correctly.
+     * 
      * @throws Registrar_Exception
      */
     public function deleteDomain(Registrar_Domain $domain)
     {
+        throw new Registrar_Exception('Domain deletion is not implemented in the NameCheap adapter. Please contact your system administrator.');
     }
 
     /**
