@@ -12,7 +12,9 @@ abstract class Registrar_AdapterAbstract
 
     /**
      * Return array with configuration
+     * 
      * Must be overriden in adapter class
+     * 
      * @return array
      */
     public static function getConfig()
@@ -21,105 +23,174 @@ abstract class Registrar_AdapterAbstract
     }
 
     /**
-     * Return array of TLDs current Registar is capable to register
-     * If function returns empty array, this registrar can register any TLD
-     * @return array
+     * Returns an array of top-level domains (TLDs) that the registrar is capable of registering.
+     *
+     * If the function returns an empty array, the registrar can register any TLD.
+     *
+     * @return array Array of TLDs that the registrar is capable of registering.
      */
     abstract public function getTlds();
 
     /**
-     * @return bool
-     * @throws Registrar_Exception
+     * Checks if a domain is available for registration.
+     *
+     * @param Registrar_Domain $domain Domain object containing the details of the domain to check.
+     * 
+     * @return bool True if the domain is available, otherwise the adapter should throw an exception
+     * 
+     * @throws Registrar_Exception If there was an error while checking the domain availability.
      */
     abstract public function isDomainAvailable(Registrar_Domain $domain);
 
     /**
-     * @return bool
-     * @throws Registrar_Exception
+     * Checks if a domain can be transferred to the registrar.
+     *
+     * @param Registrar_Domain $domain Domain object containing the details of the domain to check.
+     * 
+     * @return bool True if the domain can be transferred, otherwise the adapter should throw an exception
+     * 
+     * @throws Registrar_Exception If there was an error while checking the domain transferability.
      */
     abstract public function isDomaincanBeTransferred(Registrar_Domain $domain);
 
     /**
-     * @return bool
-     * @throws Registrar_Exception
+     * Modifies the name servers for a domain.
+     *
+     * @param Registrar_Domain $domain Domain object containing the details of the domain to update, including the new name servers.
+     * 
+     * @return bool True if the name servers were modified successfully, otherwise the adapter should throw an exception
+     * 
+     * @throws Registrar_Exception If there was an error while modifying the name servers.
      */
     abstract public function modifyNs(Registrar_Domain $domain);
 
     /**
-     * @return bool
-     * @throws Registrar_Exception
+     * Modifies the contact information for a domain.
+     *
+     * @param Registrar_Domain $domain Domain object containing the details of the domain to update, including the new contact information.
+     * 
+     * @return bool True if the contact information was modified successfully, otherwise the adapter should throw an exception
+     * 
+     * @throws Registrar_Exception If there was an error while modifying the contact information.
      */
     abstract public function modifyContact(Registrar_Domain $domain);
 
     /**
-     * @return bool
-     * @throws Registrar_Exception
+     * Transfers a domain to the registrar.
+     *
+     * @param Registrar_Domain $domain Domain object containing the details of the domain to transfer, including the domain transfer code.
+     * 
+     * @return bool True if the domain was transferred successfully, otherwise the adapter should throw an exceptions
+     * 
+     * @throws Registrar_Exception If there was an error while transferring the domain.
      */
     abstract public function transferDomain(Registrar_Domain $domain);
 
     /**
-     * Should return details of registered domain
-     * If domain is not registered should throw Registrar_Exception
-     * @return Registrar_Domain
-     * @throws Registrar_Exception
+     * Returns the details of a registered domain.
+     *
+     * @param Registrar_Domain $domain Domain object containing the details of the domain to query.
+     * 
+     * @return Registrar_Domain Domain object containing the updated details of the registered domain.
+     * 
+     * @throws Registrar_Exception If the domain is not registered or there was an error while retrieving the domain details.
      */
     abstract public function getDomainDetails(Registrar_Domain $domain);
 
     /**
-     * Should return domain transfer code
+     * Returns the domain transfer code (also known as the EPP code or auth code) for a domain.
      *
-     * @return string
-     * @throws Registrar_Exception
+     * @param Registrar_Domain $domain Domain object containing the details of the domain.
+     * 
+     * @return string The domain transfer code.
+     * 
+     * @throws Registrar_Exception If there was an error while retrieving the domain transfer code.
      */
     abstract public function getEpp(Registrar_Domain $domain);
 
     /**
-     * @return bool
-     * @throws Registrar_Exception
+     * Registers a domain with the registrar.
+     *
+     * @param Registrar_Domain $domain Domain object containing the details of the domain to register.
+     * 
+     * @return bool True if the domain was registered successfully, otherwise the adapter should throw an exception
+     * 
+     * @throws Registrar_Exception If there was an error while registering the domain.
      */
     abstract public function registerDomain(Registrar_Domain $domain);
 
     /**
-     * @return bool
-     * @throws Registrar_Exception
+     * Renews a domain registration with the registrar.
+     *
+     * @param Registrar_Domain $domain Domain object containing the details of the domain to renew.
+     * 
+     * @return bool True if the domain was renewed successfully, otherwise the adapter should throw an exception
+     * 
+     * @throws Registrar_Exception If there was an error while renewing the domain.
      */
     abstract public function renewDomain(Registrar_Domain $domain);
 
     /**
-     * @return bool
-     * @throws Registrar_Exception
+     * Deletes a domain from the registrar.
+     *
+     * @param Registrar_Domain $domain Domain object containing the details of the domain to delete.
+     * 
+     * @return bool True if the domain was deleted successfully, otherwise the adapter should throw an exception
+     * 
+     * @throws Registrar_Exception If there was an error while deleting the domain.
      */
     abstract public function deleteDomain(Registrar_Domain $domain);
 
     /**
-     * @return bool
-     * @throws Registrar_Exception
+     * Enables privacy protection for a domain.
+     *
+     * @param Registrar_Domain $domain Domain object containing the details of the domain for which to enable privacy protection.
+     * 
+     * @return bool True if privacy protection was enabled successfully, otherwise the adapter should throw an exception
+     * 
+     * @throws Registrar_Exception If there was an error while enabling privacy protection.
      */
     abstract public function enablePrivacyProtection(Registrar_Domain $domain);
 
     /**
-     * @return bool
-     * @throws Registrar_Exception
+     * Disables privacy protection for a domain.
+     *
+     * @param Registrar_Domain $domain Domain object containing the details of the domain for which to disable privacy protection.
+     * 
+     * @return bool True if privacy protection was disabled successfully, otherwise the adapter should throw an exception
+     * 
+     * @throws Registrar_Exception If there was an error while disabling privacy protection.
      */
     abstract public function disablePrivacyProtection(Registrar_Domain $domain);
 
     /**
-     * @return bool
-     * @throws Registrar_Exception
+     * Locks a domain to prevent transfer to another registrar.
+     *
+     * @param Registrar_Domain $domain Domain object containing the details of the domain to lock.
+     * 
+     * @return bool True if the domain was locked successfully, otherwise the adapter should throw an exception
+     * 
+     * @throws Registrar_Exception If there was an error while locking the domain.
      */
     abstract public function lock(Registrar_Domain $domain);
 
     /**
-     * @return bool
-     * @throws Registrar_Exception
+     * Unlocks a domain to allow transfer to another registrar.
+     *
+     * @param Registrar_Domain $domain Domain object containing the details of the domain to unlock.
+     * 
+     * @return bool True if the domain was unlocked successfully, otherwise the adapter should throw an exception
+     * 
+     * @throws Registrar_Exception If there was an error while unlocking the domain.
      */
     abstract public function unlock(Registrar_Domain $domain);
 
     /**
-     * Set Log
+     * Sets the logger object to use for logging messages.
      *
-     * @param Box_Log $log
-     * @return Registrar_AdapterAbstract
+     * @param Box_Log $log The logger object to use.
+     * 
+     * @return Registrar_AdapterAbstract The current adapter object, for method chaining.
      */
     public function setLog(Box_Log $log)
     {
@@ -127,16 +198,26 @@ abstract class Registrar_AdapterAbstract
         return $this;
     }
 
+    /**
+     * Gets the logger object currently in use for logging messages.
+     *
+     * @return Box_Log The logger object.
+     */
     public function getLog()
     {
         $log = $this->_log;
-        if(!$log instanceof Box_Log) {
+        if (!$log instanceof Box_Log) {
             $log = new Box_Log();
             $log->addWriter(new Box_LogDb('Model_ActivitySystem'));
         }
         return $log;
     }
 
+    /**
+     * Enables test mode for the adapter.
+     *
+     * @return Registrar_AdapterAbstract The current adapter object, for method chaining.
+     */
     public function enableTestMode()
     {
         $this->_testMode = true;
