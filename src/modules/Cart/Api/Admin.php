@@ -22,9 +22,13 @@ namespace Box\Mod\Cart\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Get list of currently active carts.
-     * Carts are removed after checkout.
-     */
+     * 
+     * @param array $data
+     * 
+     * @param int $data['per_page'] [optional]
+     * 
+     * @return array
+    */
     public function get_list($data)
     {
         [$sql, $params] = $this->getService()->getSearchQuery($data);
@@ -40,12 +44,14 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get shopping cart contents by id.
-     *
-     * @param int $id - shopping cart id
-     *
-     * @return array - shopping cart contents
-     */
+     * Get the contents of a shopping cart by ID.
+     * 
+     * @param array $data Data array
+     * 
+     * @param int $data['id'] ID of the shopping cart
+     * 
+     * @return array Contents of the shopping cart
+    */
     public function get($data)
     {
         $required = [

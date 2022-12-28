@@ -23,12 +23,16 @@ namespace Box\Mod\Client\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Get list of clients.
-     *
-     * @optional string $status - Filters client by status. Available options: active, suspended, canceled
-     *
-     * @return array - list of clients in paginated manner
-     */
+     * Get a list of clients.
+     * 
+     * @param array $data Filtering options.
+     * 
+     * @param string $data['status'] [optional] Filter clients by status. Available options: 'active', 'suspended', 'canceled'.
+     * 
+     * @param int $data['per_page'] [optional] Number of clients to display per page.
+     * 
+     * @return array List of clients in a paginated manner.
+    */
     public function get_list($data)
     {
         $per_page = $this->di['array_get']($data, 'per_page', $this->di['pager']->getPer_page());
@@ -44,10 +48,14 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get clients index.
-     *
-     * @return array - list of clients in id => full name pair
-     */
+     * Get a list of clients.
+     * 
+     * @param array $data Filtering options
+     * 
+     * @param int $data['per_page'] [optional] Number of clients to display per page.
+     * 
+     * @return array List of clients in a paginated manner
+    */
     public function get_pairs($data)
     {
         $service = $this->di['mod_service']('client');
