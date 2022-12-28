@@ -100,7 +100,7 @@ class Service implements InjectionAwareInterface
             $email = [];
             $email['to_client'] = $params['id'];
             $email['code'] = 'mod_client_signup';
-            $email['password'] = $params['password'];
+            $email['password'] = __trans('The password you chose when creating your account.');
             $email['require_email_confirmation'] = false;
             if (isset($config['require_email_confirmation']) && $config['require_email_confirmation']) {
                 $clientService = $di['mod_service']('client');
