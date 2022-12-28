@@ -38,26 +38,30 @@ class Server_Manager_CWP extends Server_Manager
 			$this->_config['accesshash'] = preg_replace("'(\r|\n)'","",$this->_config['accesshash']);
 		}
 
-		if(!$this->_config['secure']){
-			/**
-			 * CWP will simply return an error if you try to connect via a HTTP connection
-			 */
-			throw new Server_Exception('Server manager "CWP" is not configured properly. CWP API will only accept a secure connection!');
-		}
-		/**
-		 * Default API port. Not sure if it can be overridden, but I've opted to leave the option anyways.
-		 */
 		if(empty($this->_config['port'])){
 			$this->_config['port'] = '2304';
 		}
 	}
 
-	public static function getForm()
-	{
-		return array(
-			'label'     =>  'CWP',
-		);
-	}
+    public static function getForm()
+    {
+        return [
+            'label' => 'CWP',
+            'form' => [
+                'credentials' => [
+                    'fields' => [
+                             [
+                            'name' => 'accesshash',
+                            'type' => 'text',
+                            'label' => 'API key',
+                            'placeholder' => 'API key you generated from within CWP.',
+                            'required' => true,
+                        ],
+                    ],
+                ],
+            ]
+        ];
+    }
 
     /**
      * We can actually generate a direct log-in link from CWP, but I'm not sure if that's a secure thing to do here.
@@ -98,7 +102,7 @@ class Server_Manager_CWP extends Server_Manager
 	}
     
     /**
-     * BoxBilling will only sync usernames and IP address, neither can be changed or synced from CWP
+     * FOSSBilling will only sync usernames and IP address, neither can be changed or synced from CWP
      * That makes this function useless, but we still set what we can incase they are ever used in the future
      */
 	public function synchronizeAccount(Server_Account $a)
@@ -241,11 +245,6 @@ class Server_Manager_CWP extends Server_Manager
         }
 	}
 
-	/**
-	 * Probably works, but my CWP instance doesn't even return an error to this function let along change the package
-	 * Ticket has been put in with CWP
-	 * I will update this comment when the issue is resolved
-	 */
 	public function changeAccountPackage(Server_Account $a, Server_Package $p)
 	{
 		$this->getLog()->info('Changing package on account '.$a->getUsername());
@@ -301,17 +300,17 @@ class Server_Manager_CWP extends Server_Manager
 	 */
 	public function changeAccountUsername(Server_Account $a, $new)
 	{
-		throw new Server_Exception('CWP Does not support username changes');
+		throw new Server_Exception('CWP does not support username changes');
 	}
 
 	public function changeAccountDomain(Server_Account $a, $new)
 	{
-		throw new Server_Exception('CWP Does not support changing the primary domain name');
+		throw new Server_Exception('CWP does not support changing the primary domain name');
 	}
 
 	public function changeAccountIp(Server_Account $a, $new)
 	{
-		throw new Server_Exception('CWP Does not support changing the IP');
+		throw new Server_Exception('CWP does not support changing the IP');
 	}
 }
 	/**
@@ -324,32 +323,21 @@ class Server_Manager_CWP extends Server_Manager
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-        curl_setopt ($ch, CURLOPT_SSL_VERIFYHOST, true);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-		curl_setopt ($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-		curl_setopt ($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+		curl_setopt($ch, CURLOPT_POST, 1);
 		$response = json_decode(curl_exec($ch), true);
 		curl_close($ch);
 
-		if(!empty($response['status'])){
-			$status = $response['status'];
-		} else {
-		    $status = 'Error';
-		}
+		$status = $response['status'] ?? 'Error';
+		$result = $response['result'] ?? null;		
 
-		if(!empty($response['result'])){
-			$result = $response['result'];
-		} else {
-		    $result = null;
-		}
-
-		if($status == 'OK' && $func != 'accountdetail'){
+		if ($status == 'OK' && $func != 'accountdetail') {
 			return true;
+		} elseif ($status == 'Error') {
+			return false;
 		} else {
-			if($status == 'Error'){
-		        return false;
-			} else {
-			    return $result;
-			}
+			return $result;
 		}
 	}
