@@ -1,3 +1,35 @@
+## Version 0.2.6 (12-28-2022)
+
+### Security
+ - Introduce API wrapper for custom themes and modules to facilitate easier CSRF tokens (#612)
+
+## Bugfixes
+ - Fixed an issue with alias under Apache2 (#626)
+ - Better handle php://input being empty when checking the CSRF token. (#626)
+ - Fixed an issue with WHM/Cpanel server manager where you where not able to reuse existing packages as root user (#607) 
+ - Refactor loading locales (#623)
+ - Update how we load available locale selection (#611)
+ 
+### Localization
+ - Sync up localization with Crowdin (Current status +/- 24% and 13 different languages)
+    - Arabic, Egypt
+    - Chinese Simplified)
+    - Chinese Traditional
+    - Dutch
+    - French
+    - Greek
+    - German
+    - Hebrew
+    - Romanian
+    - Spanish
+    - Portuguese
+    - Vietnamese
+ 
+ To help with the localization please join us on https://translate.fossbilling.org/ 
+  
+### Other
+ - Updated some dependencies.
+
 ## Version 0.2.5 (12-21-2022)
 
 ### Security
