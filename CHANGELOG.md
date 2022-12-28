@@ -5,14 +5,30 @@
 
 ## Bugfixes
  - Fixed an issue with alias under Apache2 (#626)
- - Add an additional check for CSFR when php://input is empty (#626)
- - Fixed an issue where you where not able to reuse existing packages as root user (#607) 
+ - Better handle php://input being empty when checking the CSRF token. (#626)
+ - Fixed an issue with WHM/Cpanel server manager where you where not able to reuse existing packages as root user (#607) 
  - Refactor loading locales (#623)
  - Update how we load available locale selection (#611)
  
+### Localization
+ - Sync up localization with Crowdin (Current status +/- 24% and 13 different languages
+    - Arabic, Egypt
+    - Chinese Simplified)
+    - Chinese Traditional
+    - Dutch
+    - French
+    - Greek
+    - German
+    - Hebrew
+    - Romanian
+    - Spanish
+    - Portuguese
+    - Vietnamese
+ 
+ To help with the localization please join us on https://translate.fossbilling.org/ 
+  
 ### Other
  - Updated some dependencies.
- - Sync up locales
 
 ## Version 0.2.5 (12-21-2022)
 
