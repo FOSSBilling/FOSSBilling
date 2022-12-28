@@ -1,3 +1,19 @@
+## Version 0.2.6 (12-28-2022)
+
+### Security
+ - Introduce api wrapper for custom themes and modules to facilitate easier CSRF tokens (#612)
+
+## Bugfixes
+ - Fixed an issue with Alias under Apache2 (#626)
+ - Add an additional check for CSFR when php://input is empty (#626)
+ - Fixed an issue where you where not able to reuse existing packages as root user (#607) 
+ - Refactor loading locales (#623)
+ - Update how we load available locale selection (#611)
+ 
+### Other
+ - Updated some dependencies.
+ - Sync up locales
+
 ## Version 0.2.5 (12-21-2022)
 
 ### Security
