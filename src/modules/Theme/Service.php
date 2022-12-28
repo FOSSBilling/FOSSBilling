@@ -306,6 +306,7 @@ class Service implements InjectionAwareInterface
     public function getThemeConfig($client = true, $mod = null)
     {
         if ($client) {
+            $default = 'huraga';
             $theme = $this->getCurrentClientAreaThemeCode();
         } else {
             $default = 'admin_default';

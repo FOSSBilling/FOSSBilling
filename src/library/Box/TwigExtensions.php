@@ -267,6 +267,7 @@ function twig_timeago_filter($iso8601)
     $dif = $cur_tm - strtotime($iso8601);
     $pds = [__trans('second'), __trans('minute'), __trans('hour'), __trans('day'), __trans('week'), __trans('month'), __trans('year'), __trans('decade')];
     $lngh = [1, 60, 3600, 86400, 604800, 2630880, 31570560, 315705600];
+    $no = 0;
     
     for ($v = sizeof($lngh) - 1; ($v >= 0) && (($no = $dif / $lngh[$v]) <= 1); --$v) {
     }

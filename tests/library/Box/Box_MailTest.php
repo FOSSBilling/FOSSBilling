@@ -14,8 +14,7 @@ class Box_MailTest extends PHPUnit\Framework\TestCase
             ->getMock();
 
         $mailMock->expects($this->once())
-            ->method('_sendMail')
-            ->with(array());
+            ->method('_sendMail');
 
         $mailMock->send($transport);
     }

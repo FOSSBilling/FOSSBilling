@@ -2,7 +2,7 @@ includes:
 	- phpstan-baseline.neon
 
 parameters:
-	level: 0
+	level: 1
 	paths:
 		- src
 	excludePaths:
@@ -11,7 +11,13 @@ parameters:
 		- src/rb.php
 		- src/library/Registrar/Adapter/srsx.php
 		- src/library/Box/Request.php
+		- src/library/Box/Response.php
+		- src/library/Model/Admin.php
+		- src/library/Model/Client.php
+		- src/library/Model/ServiceLicense.php
+		- src/library/Model/Product.php
 		- src/library/Server/Manager/Custom.php
+		- src/library/Server/Manager/Whm.php
 	ignoreErrors:
 		- '#^Function __trans not found\.$#'
 		- message: '#^Access to an undefined property FOSSPatchAbstract\:\:\$di\.$#'
@@ -22,3 +28,5 @@ parameters:
 		- message: '#^Result of function header \(void\) is used\.$#'
 		  path: src/modules/Custompages/Controller/Client.php
 		- '#^Method Box\\Mod\\Currency\\Service\:\:_getRate\(\) should return float but return statement is missing\.$#'
+		- message: '#^Variable \$ext_id on left side of \?\?\= is never defined\.$#'
+		  path: src/modules/Extension/Service.php

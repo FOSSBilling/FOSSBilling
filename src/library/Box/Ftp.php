@@ -524,10 +524,6 @@ class Box_Ftp
 		if ( ! $dirlist ) {
 			return false;
         }
-		if ( empty($dirlist) ) {
-			return array();
-        }
-
 		$ret = array();
 		foreach ( $dirlist as $struc ) {
 

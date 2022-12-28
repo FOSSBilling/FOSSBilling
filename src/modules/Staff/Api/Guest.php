@@ -87,7 +87,7 @@ class Guest extends \Api_Abstract
         // check ip
         if (isset($config['allowed_ips']) && isset($config['check_ip']) && $config['check_ip']) {
             $allowed_ips = explode(PHP_EOL, $config['allowed_ips']);
-            if (!empty($allowed_ips)) {
+            if ($allowed_ips) {
                 $allowed_ips = array_map('trim', $allowed_ips);
                 if (!in_array($this->getIp(), $allowed_ips)) {
                     throw new \Box_Exception('You are not allowed to login to admin area from :ip address', [':ip' => $this->getIp()], 403);

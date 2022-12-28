@@ -109,6 +109,10 @@ class Payment_Adapter_AliPay extends Payment_AdapterAbstract
                 break;
         }
 
+        if(!isset($service)){
+            throw new Payment_Exception("Error getting service for contract");
+        }
+
         $parameter = array(
             'service'           => $service,
             'partner'           => $this->getParam('partner'),
