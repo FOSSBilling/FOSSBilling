@@ -11,7 +11,7 @@
  - Update how we load available locale selection (#611)
  
 ### Localization
- - Sync up localization with Crowdin (Current status +/- 24% and 13 different languages
+ - Sync up localization with Crowdin (Current status +/- 24% and 13 different languages)
     - Arabic, Egypt
     - Chinese Simplified)
     - Chinese Traditional
