@@ -34,7 +34,7 @@ abstract class Payment_AdapterAbstract
     protected $output = NULL;
 
     /**
-     * Are we in test mode ?
+     * Are we in test mode?
      *
      * @var boolean
      */
@@ -48,8 +48,11 @@ abstract class Payment_AdapterAbstract
     private $_log = false;
 
     /**
-     *
-     * @param array $config
+     * Constructs a new Payment_Adapter object
+     * 
+     * @param array $config The configuration for the payment adapter as configured within the admin panel
+     * 
+     * @throws Payment_Exception
      */
     public function __construct($config)
     {
@@ -101,7 +104,8 @@ abstract class Payment_AdapterAbstract
     }
     
     /**
-     * Return payment gateway type
+     * Return payment gateway type (TYPE_HTML, TYPE_FORM, TYPE_API)
+     * 
      * @return string
      */
     public function getType()
@@ -156,7 +160,10 @@ abstract class Payment_AdapterAbstract
 
     /**
      * Get config parameter
-     * @param string $param
+     * 
+     * @param string $param the parameter name to retrieve from the config
+     * 
+     * @return mixed|null The associated config parameter or null if it's not defined
      */
     public function getParam($param)
     {
@@ -166,9 +173,11 @@ abstract class Payment_AdapterAbstract
     /**
      * Convert money amount to Gateway money format
      * 
-     * @param float
-     * @param string
-     * @return string
+     * @param float The ammount
+     * 
+     * @param string The currency (unused currently)
+     * 
+     * @return string The formatted money string
      */
     public function moneyFormat($amount, $currency = null)
     {
@@ -179,6 +188,7 @@ abstract class Payment_AdapterAbstract
      * Set test mode
      *
      * @param none
+     * 
      * @return Payment_AdapterAbstract
      */
     public function setTestMode($bool)
@@ -197,6 +207,7 @@ abstract class Payment_AdapterAbstract
      * Used only by payment gateways who care about notify_url response
      * 
      * @param string
+     * 
      * @param string $response
      */
     public function setOutput($response)
