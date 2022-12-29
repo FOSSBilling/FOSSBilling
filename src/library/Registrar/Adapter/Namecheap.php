@@ -609,9 +609,9 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         if (isset($result->CommandResponse->DomainGetInfoResult->Whoisguard)) {
             return array(
-                    'enabled' => $result->CommandResponse->DomainGetInfoResult->Whoisguard['Enabled'] == 'True', 
-                    'id' => (string)$result->CommandResponse->DomainGetInfoResult->Whoisguard->ID
-                );
+                'enabled' => $result->CommandResponse->DomainGetInfoResult->Whoisguard['Enabled'] == 'True',
+                'id' => (string)$result->CommandResponse->DomainGetInfoResult->Whoisguard->ID
+            );
         }
         throw new Registrar_Exception($message = 'Could not retrieve privacy info on this domain.');
     }
@@ -624,7 +624,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     {
         $privacyInfo = $this->getPrivacyInfo($domain);
 
-        if($privacyInfo['enabled']) {
+        if ($privacyInfo['enabled']) {
             return True;
         }
 
@@ -636,7 +636,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest($params);
 
-        return isset($result->CommandResponse->WhoisguardEnableResult['isSuccess']) 
+        return isset($result->CommandResponse->WhoisguardEnableResult['isSuccess'])
             && $result->CommandResponse->WhoisguardEnableResult['isSuccess'] == 'true';
     }
 
@@ -648,7 +648,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     {
         $privacyInfo = $this->getPrivacyInfo($domain);
 
-        if(!$privacyInfo['enabled']) {
+        if (!$privacyInfo['enabled']) {
             return True;
         }
 
@@ -659,7 +659,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest($params);
 
-        return isset($result->CommandResponse->WhoisguardDisableResult['isSuccess']) 
+        return isset($result->CommandResponse->WhoisguardDisableResult['isSuccess'])
             && $result->CommandResponse->WhoisguardDisableResult['isSuccess'] == 'true';
     }
 

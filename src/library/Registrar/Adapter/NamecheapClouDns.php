@@ -599,12 +599,11 @@ class Registrar_Adapter_NamecheapClouDns extends Registrar_AdapterAbstract
 
         error_log('REGISTER API RESULT: ' . $result);
 
-        if (isset($result->CommandResponse->DomainCreateResult['Registered']) && ($result->CommandResponse->DomainCreateResult['Registered'] == 'true')){ 
+        if (isset($result->CommandResponse->DomainCreateResult['Registered']) && ($result->CommandResponse->DomainCreateResult['Registered'] == 'true')) {
             return True;
         }
-        
+
         throw new Registrar_Exception('Could not register domain.');
-        
     }
 
     /**
@@ -830,7 +829,7 @@ class Registrar_Adapter_NamecheapClouDns extends Registrar_AdapterAbstract
 
         error_log('CLOUDNS RECORDS RESULT: ' . $result);
 
-        if(!isset($result->item)){
+        if (!isset($result->item)) {
             throw new Registrar_Exception('Could not retrieve records from ClouDns');
         }
 
