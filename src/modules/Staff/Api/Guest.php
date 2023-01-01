@@ -97,4 +97,39 @@ class Guest extends \Api_Abstract
 
         return $this->getService()->login($data['email'], $data['password'], $this->getIp());
     }
+
+    public function passwordreset($data){
+        $required = [
+            'email' => 'Email required',
+        ];
+        $validator = $this->di['validator'];
+        $validator->checkRequiredParamsForArray($required, $data);
+        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $c = $this->di['db']->findOne('Admin', 'email = ?', [$data['email']]);
+
+        if (!$c instanceof \Model_Admin) {
+            throw new \Box_Exception('Email not found in our database');
+        }
+        $hash = hash('sha256', time().random_bytes(13));
+
+        $c->pass = $hash;
+
+        $reset = $this->di['db']->dispense('ClientPasswordReset');
+        $reset->client_id = $c->id;
+        $reset->ip = $this->ip;
+        $reset->hash = $hash;
+        $reset->created_at = date('Y-m-d H:i:s');
+        $reset->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($reset);
+
+        // send email
+        $email = [];
+        $email['to_client'] = $reset->client_id;
+        $email['code'] = 'mod_staff_password_reset_request';
+        $email['hash'] = $hash;
+        $emailService = $this->di['mod_service']('email');
+        $emailService->sendTemplate($email);
+
+        $this->di['logger']->info('Admin user requested password reset. Sent to email %s', $c->email);
+    }
 }
