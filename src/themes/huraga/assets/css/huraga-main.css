@@ -2219,7 +2219,7 @@ button.close {
    /* IE7 inline-block hack */
     *zoom: 1;
     padding: 4px 12px;
-    margin-bottom: 0;
+    margin-bottom: 9px;
     font-size: 13px;
     line-height: 18px;
     text-align: center;
@@ -2469,6 +2469,7 @@ input[type="submit"].btn-block, input[type="reset"].btn-block, input[type="butto
 button.btn, input[type="submit"].btn {
     *padding-top: 3px;
     *padding-bottom: 3px;
+    *margin-bottom: 9px;
 }
 button.btn::-moz-focus-inner, input[type="submit"].btn::-moz-focus-inner {
     padding: 0;
