@@ -31,7 +31,7 @@
         echo $server[0].' '.$server[1]."\r\n";
         if(!$whois -> isAvailable()){
             echo $whois -> info();
-            echo "Not working"."\r\n"."\r\n";
+            echo 'Not working'."\r\n\r\n";
         }
     }
 
