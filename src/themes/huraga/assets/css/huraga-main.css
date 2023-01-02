@@ -2468,6 +2468,7 @@ input[type="submit"].btn-block, input[type="reset"].btn-block, input[type="butto
 button.btn, input[type="submit"].btn {
     *padding-top: 3px;
     *padding-bottom: 3px;
+    *margin-bottom: 9px;
 }
 button.btn::-moz-focus-inner, input[type="submit"].btn::-moz-focus-inner {
     padding: 0;
