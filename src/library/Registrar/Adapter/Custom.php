@@ -2,6 +2,9 @@
 /**
  * Custom domain registrar
  */
+
+use Iodev\Whois\Factory;
+
 class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
 {
     public $config = array(
