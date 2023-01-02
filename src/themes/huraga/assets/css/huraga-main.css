@@ -897,6 +897,7 @@ input::-webkit-input-placeholder, textarea::-webkit-input-placeholder {
     padding-left: 20px;
 }
 .radio input[type="radio"], .checkbox input[type="checkbox"] {
+    position: relative;
     float: left;
     margin-left: -20px;
 }
