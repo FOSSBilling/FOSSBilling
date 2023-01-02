@@ -122,7 +122,7 @@ class Service implements InjectionAwareInterface
         }
 
         $model->username = $username;
-        $model->pass = $pass;
+        $model->pass = '********';
         $this->di['db']->store($model);
 
         if (!isset($c['import']) || !$c['import']) {
