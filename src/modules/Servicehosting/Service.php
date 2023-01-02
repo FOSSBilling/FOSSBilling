@@ -122,13 +122,16 @@ class Service implements InjectionAwareInterface
         }
 
         $model->username = $username;
-        $model->pass = '********';
-        $this->di['db']->store($model);
+        $model->pass = $pass;
 
         if (!isset($c['import']) || !$c['import']) {
             [$adapter, $account] = $this->_getAM($model);
             $adapter->createAccount($account);
         }
+
+        $model->pass = '*******';
+
+        $this->di['db']->store($model);
 
         return [
             'username' => $username,
