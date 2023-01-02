@@ -15,7 +15,7 @@
 class Registrar_Adapter_Email extends Registrar_AdapterAbstract
 {
     protected $config;
-    
+
     public function __construct($options)
     {
         if(isset($options['email']) && !empty($options['email'])) {
@@ -30,17 +30,17 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         } else {
             $this->config['use_whois'] = false;
         }
-        
+
         $this->config['from'] = $this->config['email'];
     }
-    
+
     public static function getConfig()
     {
         return array(
             'label'     =>  'This registrar type sends notifications to the given email about domain management events. For example, when client registers a new domain an email with domain details will be sent to you. It is then your responsibility to register domain on real registrar.',
             'form'  => array(
                 'email' => array('text', array(
-                            'label' => 'Email address', 
+                            'label' => 'Email address',
                             'description'=>'Email to send domain change notifications'
                     ),
                  ),
@@ -52,7 +52,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
             ),
         );
     }
-    
+
     public function getTlds()
     {
         return array();
@@ -79,7 +79,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         $params =array();
         $params['subject'] = 'Modify Name Servers';
         $params['content'] = 'A request to change domain nameservers has been received.';
-        
+
         return $this->sendEmail($domain, $params);
     }
 
@@ -88,7 +88,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         $params =array();
         $params['subject'] = 'Transfer domain';
         $params['content'] = 'A request to transfer domain has been received.';
-        
+
         return $this->sendEmail($domain, $params);
     }
 
@@ -102,7 +102,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         $params =array();
         $params['subject'] = 'Delete domain';
         $params['content'] = 'A request to delete domain has been received.';
-        
+
         return $this->sendEmail($domain, $params);
     }
 
@@ -111,7 +111,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         $params =array();
         $params['subject'] = 'Register domain';
         $params['content'] = 'A request to register domain has been received.';
-        
+
         return $this->sendEmail($domain, $params);
     }
 
@@ -120,7 +120,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         $params =array();
         $params['subject'] = 'Renew domain';
         $params['content'] = 'A request to renew domain has been received.';
-        
+
         return $this->sendEmail($domain, $params);
     }
 
@@ -129,16 +129,16 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         $params =array();
         $params['subject'] = 'Modify Domain Contact';
         $params['content'] = 'A request to update domain contacts details has been received.';
-        
+
         return $this->sendEmail($domain, $params);
     }
-    
+
     public function enablePrivacyProtection(Registrar_Domain $domain)
     {
         $params =array();
         $params['subject'] = 'Turn On Domain privacy protection';
         $params['content'] = 'A request to change domain privacy protection has been received.';
-        
+
         return $this->sendEmail($domain, $params);
     }
 
@@ -187,7 +187,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         $c .= PHP_EOL;
         $c .= PHP_EOL;
         $c .= $domain->__toString();
-        
+
         $log = $this->getLog();
         if($this->_testMode) {
             $log->alert($params['subject'].PHP_EOL.PHP_EOL.$c);
@@ -257,7 +257,7 @@ class Whois2 {
                   array("cn","whois.cnnic.net.cn","No entries found"),
                   array("cng.br","whois.nic.br","No match"),
                   array("cnt.br","whois.nic.br","No match"),
-                array("com","whois.crsnic.net","No match"),
+                array("com","whois.verisign-grs.com","No match"),
                   array("com.au","whois.aunic.net","No Data Found"),
                   array("com.br","whois.nic.br","No match"),
                   array("com.cn","whois.cnnic.net.cn","No entries found"),
@@ -284,7 +284,7 @@ class Whois2 {
                   array("dz","whois.ripe.net","no entries found"),
                   array("ecn.br","whois.nic.br","No match"),
                   array("ee","whois.eenet.ee","NOT FOUND"),
-                  array("edu","whois.crsnic.net","No match"),
+                  array("edu","whois.educause.edu","No match"),
                   array("edu.au","whois.aunic.net","No Data Found"),
                   array("edu.br","whois.nic.br","No match"),
                   array("edu.tr","whois.nic.tr","Not found in database"),
@@ -398,7 +398,7 @@ class Whois2 {
                 array("name","whois.nic.name","No match"),
                   array("name.tr","whois.nic.tr","Not found in database"),
                   array("ne.jp","whois.nic.ad.jp","No match"),
-                array("net","whois.crsnic.net","No match"),
+                array("net","whois.verisign-grs.com","No match"),
                   array("net.au","whois.aunic.net","No Data Found"),
                   array("net.br","whois.nic.br","No match"),
                   array("net.cn","whois.cnnic.net.cn","No entries found"),

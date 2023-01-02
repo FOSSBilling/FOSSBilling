@@ -19,7 +19,7 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
     {
         return array();
     }
-    
+
     public static function getConfig()
     {
         return array(
@@ -33,7 +33,7 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
             ),
         );
     }
-    
+
     public function isDomaincanBeTransferred(Registrar_Domain $domain)
     {
         $this->getLog()->debug('Checking if domain can be transferred: ' . $domain->getName());
@@ -105,13 +105,13 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
         $this->getLog()->debug('Updating contact info: ' . $domain->getName());
         return true;
     }
-    
+
     public function enablePrivacyProtection(Registrar_Domain $domain)
     {
         $this->getLog()->debug('Enabling Privacy protection: ' . $domain->getName());
         return true;
     }
-    
+
     public function disablePrivacyProtection(Registrar_Domain $domain)
     {
         $this->getLog()->debug('Disabling Privacy protection: ' . $domain->getName());
@@ -194,7 +194,7 @@ class Whois {
                 array("cn","whois.cnnic.net.cn","No entries found"),
                 array("cng.br","whois.nic.br","No match"),
                 array("cnt.br","whois.nic.br","No match"),
-                array("com","whois.crsnic.net","No match"),
+                array("com","whois.verisign-grs.com","No match"),
                 array("com.au","whois.aunic.net","No Data Found"),
                 array("com.br","whois.nic.br","No match"),
                 array("com.cn","whois.cnnic.net.cn","No entries found"),
@@ -221,7 +221,7 @@ class Whois {
                 array("dz","whois.ripe.net","no entries found"),
                 array("ecn.br","whois.nic.br","No match"),
                 array("ee","whois.eenet.ee","NOT FOUND"),
-                array("edu","whois.crsnic.net","No match"),
+                array("edu","whois.educause.edu","No match"),
                 array("edu.au","whois.aunic.net","No Data Found"),
                 array("edu.br","whois.nic.br","No match"),
                 array("edu.tr","whois.nic.tr","Not found in database"),
@@ -340,7 +340,7 @@ class Whois {
                 array("name","whois.nic.name","No match"),
                 array("name.tr","whois.nic.tr","Not found in database"),
                 array("ne.jp","whois.nic.ad.jp","No match"),
-                array("net","whois.crsnic.net","No match"),
+                array("net","whois.verisign-grs.com","No match"),
                 array("net.au","whois.aunic.net","No Data Found"),
                 array("net.br","whois.nic.br","No match"),
                 array("net.cn","whois.cnnic.net.cn","No entries found"),
@@ -511,7 +511,7 @@ class Whois {
             if(!is_resource($fp)) {
                 throw new \Box_Exception('Could not connect to whois :server server', array(':server'=>$whois_server));
             }
-            
+
             $dom=$domainname.".".$tldname;
             fputs($fp, "$dom\r\n");
 
