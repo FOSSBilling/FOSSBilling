@@ -31,9 +31,9 @@ const Tools = {
     },
 
     /**
-     * Used to check if a string is valid JSON or not
-     * @param {string} jsonString The string whch to check if it's valid JSON or not
-     * @returns {bool}
+     * Check if a string is valid JSON or not.
+     * @param {string} jsonString The string to check if it's valid JSON or not
+     * @returns {boolean} Returns true if the string is valid JSON, or false if it is not
      */
     isJSON: function (jsonString) {
         try {
@@ -45,10 +45,10 @@ const Tools = {
     },
 
     /**
-     * Reformats JSON data to be correct for the FOSSBilling back-end. For more in-depth information, please see 
-     * @param {object} jsonString the object to reformat to proper JSON data for the FOSSBilling back-end
-     * @param {bool} returnObj Determines if the function returns a reformatted object or the stringified json
-     * @returns {mixed} Either the object or string for the reformatted JSON data.0
+     * Reformats malformed JSON data to conform to proper JSON format. 
+     * @param {object|string} jsonString The object to reformat to proper JSON data, correcting malformed data
+     * @param {boolean} [returnObj=false] Determines if the function returns a reformatted object or the stringified json
+     * @returns {object|string} The reformatted object or stringified version of the object.
      */
     reformatJson: function (jsonString, returnObj = false) {
         let obj = jsonString;
@@ -193,7 +193,9 @@ const API = {
             if (Tools.isJSON(params)) {
                 getParams = JSON.parse(params);
             }
-            Object.keys(getParams).forEach(key => url.searchParams.append(key, getParams[key]));
+            if (typeof getParams === "object") {
+                Object.keys(getParams).forEach(key => url.searchParams.append(key, getParams[key]));
+            }
             body = null
         } else if (method.toLowerCase() === "post") {
             var postParams = params;
@@ -201,7 +203,7 @@ const API = {
             if (Tools.isJSON(postParams)) {
                 postParams = JSON.parse(postParams);
             }
-            // Now we run the object through the reformatJson function, setting the body to the returned json string
+            // Now we run the object through the reformatJson function, setting the body to the returned JSON string
             if (typeof postParams === "object") {
                 postParams = Tools.reformatJson(postParams);
                 body = postParams;
