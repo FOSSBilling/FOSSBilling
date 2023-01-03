@@ -92,7 +92,7 @@ class ServicePayGateway implements InjectionAwareInterface
                 $adapters[] = $adapter;
             }
         }
-        $pattern = PATH_LIBRARY . '/Payment/Adapter/*/Adapter.php';
+        $pattern = PATH_LIBRARY . '/Payment/Adapter/*/*.php';
         foreach (glob($pattern) as $path) {
             $directory = explode('/',pathinfo($path, PATHINFO_DIRNAME));
             $adapter = end($directory);
@@ -273,7 +273,7 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $class = $this->getAdapterClassName($pg);
         if (!file_exists(PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '.php')) {
-            if(!file_exists(PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '/Adapter.php')){
+            if(!file_exists(PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '/'.$pg->gateway.'.php')){
                 throw new \Box_Exception('Payment gateway :adapter was not found', [':adapter' => $pg->gateway]);
             }
         }
@@ -295,7 +295,8 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $class = sprintf('Payment_Adapter_%s', $pg->gateway);
         if(!class_exists($class)){
-            return sprintf('Payment_Adapter_%s_Adapter', $pg->gateway);
+            include PATH_LIBRARY . '/Payment/Adapter/' . $pg->gateway . '/'.$pg->gateway.'.php';
+            return sprintf('Payment_Adapter_%s', $pg->gateway);
         }else{
             return $class;
         }
