@@ -31,7 +31,7 @@
 
     <link rel="shortcut icon" href="{{ 'favicon.ico' | asset_url }}">
 
-    <script src="{{ ('Api/API.js') | library_url }}"></script>
+    <script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
     <script src="{{ 'js/libs/jquery.js' | asset_url }}"></script>
     <script src="{{ 'js/bb-jquery.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'js/libs/modernizr.js' | asset_url }}" defer="defer"></script>

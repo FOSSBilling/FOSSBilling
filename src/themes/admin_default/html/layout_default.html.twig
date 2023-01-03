@@ -18,7 +18,7 @@
     {% include 'partial_bb_meta.html.twig' %}
 
     <link rel="stylesheet" href="build/css/fossbilling-bundle.min.css?v={{ guest.system_version }}">
-    <script src="{{ ('Api/API.js') | library_url }}"></script>
+    <script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
     <script src="build/js/fossbilling-bundle.min.js?v={{ guest.system_version }}"></script>
 
     {% block head %}{% endblock %}
