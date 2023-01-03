@@ -231,7 +231,7 @@ const API = {
                         errorHandler(response.error);
                     } else {
                         console.error(`${response.error.message} (Code: ${response.error.code})`);
-                        console.warn("No error handler was specified. The error was logged to the console. Documentation: https://fossbilling.org/docs/api/javascript   ");
+                        console.warn("No error handler was specified. The error was logged to the console. Documentation: https://fossbilling.org/docs/api/javascript");
                     }
                     return;
                 }
