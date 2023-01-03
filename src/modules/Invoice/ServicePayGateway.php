@@ -97,7 +97,9 @@ class ServicePayGateway implements InjectionAwareInterface
             $directory = explode('/',pathinfo($path, PATHINFO_DIRNAME));
             $adapter = end($directory);
             if (!array_key_exists($adapter, $exists)) {
+                if($path == PATH_LIBRARY . '/Payment/Adapter/'.$adapter.'/'.$adapter.'.php'){
                 $adapters[] = $adapter;
+                }
             }
         }
 
