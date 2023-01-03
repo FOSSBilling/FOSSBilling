@@ -29,6 +29,51 @@ const Tools = {
     getCSRFToken: function () {
         return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     },
+
+    /**
+     * Used to check if a string is valid JSON or not
+     * @param {string} jsonString The string whch to check if it's valid JSON or not
+     * @returns {bool}
+     */
+    isJSON: function (jsonString) {
+        try {
+            JSON.parse(jsonString);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    },
+
+    /**
+     * Reformats JSON data to be correct for the FOSSBilling back-end. For more in-depth information, please see 
+     * @param {object} jsonString the object to reformat to proper JSON data for the FOSSBilling back-end
+     * @param {bool} returnObj Determines if the function returns a reformatted object or the stringified json
+     * @returns {mixed} Either the object or string for the reformatted JSON data.0
+     */
+    reformatJson: function (jsonString, returnObj = false) {
+        let obj = jsonString;
+        let reformattedObj = {};
+        Object.keys(obj).forEach(function (key) {
+            let parts = key.split('[');
+            let current = reformattedObj;
+            for (let i = 0; i < parts.length; i++) {
+                let part = parts[i];
+                if (part.endsWith(']')) {
+                    part = part.slice(0, -1);
+                }
+                if (i === parts.length - 1) {
+                    current[part] = obj[key];
+                } else {
+                    if (!(part in current)) {
+                        current[part] = {};
+                    }
+                    current = current[part];
+                }
+            }
+        });
+        var result = (returnObj) ? reformattedObj : JSON.stringify(reformattedObj);
+        return result;
+    },
 }
 
 /**
@@ -51,7 +96,7 @@ const API = {
          * 
          * @documentation https://fossbilling.org/docs/api/javascript
          */
-        get: function(endpoint, params, successHandler, errorHandler) {
+        get: function (endpoint, params, successHandler, errorHandler) {
             API.makeRequest('GET', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
         },
         /**
@@ -63,25 +108,25 @@ const API = {
          * 
          * @documentation https://fossbilling.org/docs/api/javascript
          */
-        post: function(endpoint, params, successHandler, errorHandler) {
+        post: function (endpoint, params, successHandler, errorHandler) {
             API.makeRequest('POST', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
         }
     },
-    
+
     /**
      * Wrapper for the client API
      * @documentation https://fossbilling.org/docs/api/javascript
      */
     client: {
         baseURL: Tools.getBaseURL('client'),
-        get: function(endpoint, params, successHandler, errorHandler) {
+        get: function (endpoint, params, successHandler, errorHandler) {
             API.makeRequest('GET', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
         },
-        post: function(endpoint, params, successHandler, errorHandler) {
+        post: function (endpoint, params, successHandler, errorHandler) {
             API.makeRequest('POST', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
         }
     },
-    
+
     /**
      * Wrapper for the guest API
      * @documentation https://fossbilling.org/docs/api/javascript
@@ -102,7 +147,7 @@ const API = {
          * 
          * @documentation https://fossbilling.org/docs/api/javascript
          */
-        get: function(endpoint, params, successHandler, errorHandler) {
+        get: function (endpoint, params, successHandler, errorHandler) {
             API.makeRequest('GET', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
         },
         /**
@@ -114,7 +159,7 @@ const API = {
          * 
          * @documentation https://fossbilling.org/docs/api/javascript
          */
-        post: function(endpoint, params, successHandler, errorHandler) {
+        post: function (endpoint, params, successHandler, errorHandler) {
             API.makeRequest('POST', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
         }
     },
@@ -142,20 +187,27 @@ const API = {
 
         // Loop through the parameters and add them to the URL as a query string
         // GET requests should have their parameters in the query string and POST requests should have them in the body
-        if (method.toLowerCase() === "get"){
-            // If it's an object, use it as is. If it's a JSON string, parse it to an object and loop through it.
-            if (typeof params === 'object'){
-                Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-            } else {
-                if (typeof params === 'string') {
-                    var paramsInObj = JSON.parse(params);
-                    Object.keys(paramsInObj).forEach(key => url.searchParams.append(key, paramsInObj[key]));
-                }
+        if (method.toLowerCase() === "get") {
+            var getParams = params;
+            // Convert JSON strings to an Object
+            if (Tools.isJSON(params)) {
+                getParams = JSON.parse(params);
             }
+            Object.keys(getParams).forEach(key => url.searchParams.append(key, getParams[key]));
             body = null
         } else if (method.toLowerCase() === "post") {
-            // If it's an object, convert it to a JSON string. If it's a string, leave it as is.
-            body = (typeof params === 'object') ? JSON.stringify(params) : params;
+            var postParams = params;
+            // Convert the JSON to an object
+            if (Tools.isJSON(postParams)) {
+                postParams = JSON.parse(postParams);
+            }
+            // Now we run the object through the reformatJson function, setting the body to the returned json string
+            if (typeof postParams === "object") {
+                postParams = Tools.reformatJson(postParams);
+                body = postParams;
+            } else {
+                body = params;
+            }
         }
 
         // Call the API and handle the response
@@ -167,25 +219,25 @@ const API = {
             },
             body: body,
         })
-        .then((response) => {
-            return response.json();
-          })
-        .then((response) => {
-            // If the response is an error, call the error handler
-            if (response.error) {
-                if (typeof errorHandler === 'function') {
-                    errorHandler(response.error);
-                } else {
-                    console.error(`${response.error.message} (Code: ${response.error.code})`);
-                    console.warn("No error handler was specified. The error was logged to the console. Documentation: https://fossbilling.org/docs/api/javascript   ");
+            .then((response) => {
+                return response.json();
+            })
+            .then((response) => {
+                // If the response is an error, call the error handler
+                if (response.error) {
+                    if (typeof errorHandler === 'function') {
+                        errorHandler(response.error);
+                    } else {
+                        console.error(`${response.error.message} (Code: ${response.error.code})`);
+                        console.warn("No error handler was specified. The error was logged to the console. Documentation: https://fossbilling.org/docs/api/javascript   ");
+                    }
+                    return;
                 }
-                return;
-            }
 
-            // If the response is a success, call the success handler
-            if (typeof successHandler === 'function') {
-                successHandler(response.result);
-            }
-        })
+                // If the response is a success, call the success handler
+                if (typeof successHandler === 'function') {
+                    successHandler(response.result);
+                }
+            })
     },
 };
