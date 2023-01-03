@@ -1241,6 +1241,19 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('System');
         $company = $systemService->getCompany();
 
+        $CustomCSSPath  = __DIR__ . DIRECTORY_SEPARATOR . 'pdf_template' . DIRECTORY_SEPARATOR . 'custom-pdf.css';
+        $DefaultCSSPath = __DIR__ . DIRECTORY_SEPARATOR . 'pdf_template' . DIRECTORY_SEPARATOR . 'default-pdf.css';
+        
+        if(file_exists($CustomCSSPath)){
+          $CSS = file_get_contents($CustomCSSPath);
+        } else {
+          $CSS = file_get_contents($DefaultCSSPath);
+        }
+
+        if (empty($CSS)) {
+          $CSS = file_get_contents($DefaultCSSPath);
+        }        
+
         $pdf = new Dompdf();
         $options = $pdf->getOptions();
         $options->setChroot($_SERVER['DOCUMENT_ROOT']);
@@ -1253,70 +1266,11 @@ class Service implements InjectionAwareInterface
                   <head>
                   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>';
         $html .= '<title>' . $invoice['serie_nr'] . '</title>';
-        $html .= '<style>
-                     hr.Rounded {
-                        border-top: 8px solid #bbb;
-                        border-radius: 5px;
-                        position: relative;
-                        top: 35px;  
-                    }
-                    div.InvoiceInfo {
-                        position: absolute;
-                        right: 30px;
-                        top: 0px;
-                        line-height: 0.2;
-                    }
-                    img.CompanyLogo {
-                        position: relative;
-                        left: 40px;
-                        top: 7px;
-                    }
-                    h3.CompanyInfo{
-                        position: absolute;
-                        left: 25px;
-                        top: 110px;
-                    }
-                    div.CompanyInfo{
-                        position: absolute;
-                        left: 25px;
-                        top: 145px;
-                        white-space: normal;
-                        line-height: 15px;
-                        max-width: 300px;
-                    }
-                    h3.ClientInfo{
-                        position: absolute;
-                        top: 110px;
-                        left: 375px;
-                    }
-                    div.ClientInfo{
-                        position: absolute;
-                        top: 145px;
-                        left: 375px;
-                        white-space: normal;
-                        line-height: 15px;
-                        max-width: 45%;
-                    }
-                    div.Breakdown{
-                        position: absolute;
-                        width: 100%;
-                    }
-                    table {
-                        border-collapse: collapse;
-                    }
-                    p {
-                        font-size: 18px;
-                    }
-                    tr:nth-of-type(odd) {
-                        background-color:#ccc;
-                    }
-                    .right{
-                        text-align:right;
-                    }
-                    body { font-family: DejaVu Sans; }
-                    </style>
+        $html .= "<style>
+                  $CSS
+                  </style>
                 </head>
-                <body>';
+                <body>";
 
         if (isset($company['logo_url']) && !empty($company['logo_url'])) {
             $url = parse_url($company['logo_url'], PHP_URL_PATH);
