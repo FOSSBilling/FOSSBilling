@@ -50,7 +50,7 @@ const Tools = {
      * @param {boolean} [returnObj=false] Determines if the function returns a reformatted object or the stringified json
      * @returns {object|string} The reformatted object or stringified version of the object.
      */
-    reformatJson: function (jsonString, returnObj = false) {
+    reformatJSON: function (jsonString, returnObj = false) {
         let obj = jsonString;
         let reformattedObj = {};
         Object.keys(obj).forEach(function (key) {
@@ -203,9 +203,9 @@ const API = {
             if (Tools.isJSON(postParams)) {
                 postParams = JSON.parse(postParams);
             }
-            // Now we run the object through the reformatJson function, setting the body to the returned JSON string
+            // Now we run the object through the reformatJSON function, setting the body to the returned JSON string
             if (typeof postParams === "object") {
-                postParams = Tools.reformatJson(postParams);
+                postParams = Tools.reformatJSON(postParams);
                 body = postParams;
             } else {
                 body = params;
