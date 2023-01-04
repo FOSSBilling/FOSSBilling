@@ -1,60 +1,72 @@
-{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
 {% set active_menu = 'activity' %}
 
 {% block meta_title %}{{ email.subject }}{% endblock %}
 
 {% block breadcrumbs %}
-<ul>
-    <li class="firstB"><a href="{{ '/'|alink }}">{{ 'Home'|trans }}</a></li>
-    <li><a href="{{ 'email/history'|alink }}">{{ 'Email history'|trans }}</a></li>
-    <li class="lastB">{{ email.subject }}</li>
-</ul>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|alink }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'email/history'|alink }}">{{ 'Email history'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ email.subject }}</li>
+    </ol>
 {% endblock %}
 
 {% block content %}
-<div class="widget">
-    <div class="head">
-        <h5>{{email.subject}}</h5>
+<div class="card">
+    <div class="card-body">
+        <h5>{{ email.subject }}</h5>
     </div>
-    
-    <table class="tableStatic wide">
+
+    <table class="table card-table table-vcenter table-striped text-nowrap">
         <tbody>
-            <tr class="noborder">
-                <td>{{ 'From'|trans }}</td>
+            <tr>
+                <td class="w-50 text-end">{{ 'From'|trans }}:</td>
                 <td>{{ email.sender }}</td>
             </tr>
 
             <tr>
-                <td>{{ 'To'|trans }}</td>
+                <td class="text-end">{{ 'To'|trans }}:</td>
                 <td>{{ email.recipients }}</td>
             </tr>
 
             <tr>
-                <td>{{ 'Sent'|trans }}</td>
+                <td class="text-end">{{ 'Sent'|trans }}:</td>
                 <td>{{ email.created_at|date('l, d F Y') }}</td>
             </tr>
          </tbody>
-         <tfoot>
-             <tr>
-                 <td colspan="2">
-                    <div class="aligncenter">
-                        <a class="btn55 mr10 api-link" href="{{'api/admin/email/email_resend'|link({ 'id': email.id }) }}" data-api-msg="Email resent"><img src="images/icons/middlenav/refresh2.png" alt="">
-                            <span>{{ 'Resend'|trans }}</span>
-                        </a>
-                        <a class="btn55 mr10 api-link" href="{{'api/admin/email/email_delete'|link({ 'id': email.id }) }}" data-api-confirm="Are you sure?" data-api-redirect="{{'email/history'|alink}}"><img src="images/icons/middlenav/trash.png" alt="">
-                            <span>{{ 'Delete'|trans }}</span>
-                        </a>
-                    </div>
-                 </td>
-             </tr>
-         </tfoot>
     </table>
-    
-    <div class="body">
-        {{email.content_html|raw}}
-    </div>
-    
-</div>
 
+    <div class="card-footer text-center">
+        <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+            href="{{'api/admin/email/email_resend'|link({ 'id': email.id }) }}"
+            data-api-msg="{{ 'Email resent'|trans }}">
+            <svg class="mb-2 text-secondary" width="24" height="24">
+                <use xlink:href="#refresh" />
+            </svg>
+            <span class="d-block text-secondary">{{ 'Resend'|trans }}</span>
+        </a>
+        <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
+            href="{{'api/admin/email/email_delete'|link({ 'id': email.id }) }}"
+            data-api-confirm="{{ 'Are you sure?'|trans }}"
+            data-api-redirect="{{ 'email/history'|alink }}">
+            <svg class="mb-2 text-secondary" width="24" height="24">
+                <use xlink:href="#delete" />
+            </svg>
+            <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
+        </a>
+    </div>
+
+    <div class="card-body">
+        {{ email.content_html|raw }}
+    </div>
+</div>
 {% endblock %}
