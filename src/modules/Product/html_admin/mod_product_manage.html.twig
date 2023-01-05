@@ -231,6 +231,7 @@
                         <label class="form-label col-3 col-form-label">{{ 'Product Upgrades'|trans }}</label>
                         <div class="col">
                             {% set products = admin.product_get_pairs %}
+                            <input type="hidden" name="upgrades">
                             <select name="upgrades[]" multiple="multiple" class="form-select" size="{{ products|length }}">
                                 {% for id,ptitle in products %}
                                 <option value="{{ id }}"{% if product.upgrades[id] %} selected {% endif %}>{{ ptitle }}</option>
