@@ -56,19 +56,25 @@ const Tools = {
         Object.keys(obj).forEach(function (key) {
             let parts = key.split('[');
             let current = reformattedObj;
-            for (let i = 0; i < parts.length; i++) {
-                let part = parts[i];
-                if (part.endsWith(']')) {
-                    part = part.slice(0, -1);
-                }
-                if (i === parts.length - 1) {
-                    current[part] = obj[key];
-                } else {
-                    if (!(part in current)) {
-                        current[part] = {};
+            if (key.slice(-2) !== "[]") {
+                for (let i = 0; i < parts.length; i++) {
+                    let part = parts[i];
+                    if (part.endsWith(']')) {
+                        part = part.slice(0, -1);
                     }
-                    current = current[part];
+                    if (i === parts.length - 1) {
+                        current[part] = obj[key];
+                    } else {
+                        if (!(part in current)) {
+                            current[part] = {};
+                        }
+                        current = current[part];
+                    }
                 }
+            } else {
+                keyName = key.slice(0, -2);
+                keyValue = Array.from(obj[key]);
+                reformattedObj[keyName] = keyValue;
             }
         });
         var result = (returnObj) ? reformattedObj : JSON.stringify(reformattedObj);
