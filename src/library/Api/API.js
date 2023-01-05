@@ -73,7 +73,7 @@ const Tools = {
                 }
             } else {
                 keyName = key.slice(0, -2);
-                keyValue = Array.from(obj[key]);
+                keyValue = obj[key](",");
                 reformattedObj[keyName] = keyValue;
             }
         });
