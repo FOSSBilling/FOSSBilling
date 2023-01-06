@@ -27,7 +27,7 @@ class Box_PeriodTest extends PHPUnit\Framework\TestCase
         $this->assertEquals('M', $p->getUnit());
         $this->assertEquals(1, $p->getQty());
         $this->assertEquals('1M', $p->getCode());
-        $this->assertEquals('Every 1 months', $p->getTitle());
+        $this->assertEquals('Every 1 month(s)', $p->getTitle());
         $this->assertEquals(30, $p->getDays());
         $this->assertEquals(1, $p->getMonths());
         $this->assertEquals(strtotime('+1 month'), $p->getExpirationTime());
