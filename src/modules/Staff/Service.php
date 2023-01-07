@@ -698,18 +698,18 @@ class Service implements InjectionAwareInterface
 
     public function sendPasswordResetConfirmation($hash)
     {
-        $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$hash]);
-        if (!$reset instanceof \Model_ClientPasswordReset) {
+        $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$hash]);
+        if (!$reset instanceof \Model_AdminPasswordReset) {
             throw new \Box_Exception('The link have expired or you have already confirmed password reset.');
         }
         $new_pass = $this->di['tools']->generatePassword();
-        $c = $this->di['db']->getExistingModelById('Admin', $reset->client_id, 'Client not found');
+        $c = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
         $c->pass = $this->di['password']->hashIt($new_pass);
         $this->di['db']->store($c);
 
         // send email
         $email = [];
-        $email['to_client'] = $reset->client_id;
+        $email['to_client'] = $reset->admin_id;
         $email['code'] = 'mod_staff_password_reset_approve';
         $email['password'] = $new_pass;
         $emailService = $this->di['mod_service']('email');

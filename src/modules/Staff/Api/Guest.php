@@ -114,8 +114,8 @@ class Guest extends \Api_Abstract
 
         $c->pass = $hash;
 
-        $reset = $this->di['db']->dispense('ClientPasswordReset');
-        $reset->client_id = $c->id;
+        $reset = $this->di['db']->dispense('AdminPasswordReset');
+        $reset->admin_id = $c->id;
         $reset->ip = $this->ip;
         $reset->hash = $hash;
         $reset->created_at = date('Y-m-d H:i:s');
@@ -124,7 +124,7 @@ class Guest extends \Api_Abstract
 
         // send email
         $email = [];
-        $email['to_client'] = $reset->client_id;
+        $email['to_client'] = $reset->admin_id;
         $email['code'] = 'mod_staff_password_reset_request';
         $email['hash'] = $hash;
         $emailService = $this->di['mod_service']('email');
