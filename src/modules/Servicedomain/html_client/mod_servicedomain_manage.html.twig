@@ -133,7 +133,7 @@
                                 <div class="control-group">
                                     <label class="control-label" >{{ 'Company'|trans }}: </label>
                                     <div class="controls">
-                                        <input type="text" name="contact[company]" value="{{ request.company|default(service.contact.company) }}" required="required">
+                                        <input type="text" name="contact[company]" value="{{ request.company|default(service.contact.company) }}">
                                     </div>
                                 </div>
 
@@ -147,7 +147,7 @@
                                 <div class="control-group">
                                     <label class="control-label" >{{ 'Address Line 2'|trans }}: </label>
                                     <div class="controls">
-                                        <input type="text" name="contact[address2]" value="{{ request.address2|default(service.contact.address2) }}" required="required">
+                                        <input type="text" name="contact[address2]" value="{{ request.address2|default(service.contact.address2) }}">
                                     </div>
                                 </div>
 
