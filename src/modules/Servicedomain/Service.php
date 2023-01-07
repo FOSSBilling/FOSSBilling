@@ -626,6 +626,7 @@ class Service implements \Box\InjectionAwareInterface
     private function _getTuple($data)
     {
         $action = $data['action'];
+        [$sld, $tld] = [null, null];
 
         if ('owndomain' == $action) {
             $sld = $data['owndomain_sld'];
@@ -652,11 +653,16 @@ class Service implements \Box\InjectionAwareInterface
 
         $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
 
+        /*
+            TODO: registrarGetRegistrarAdapter Only accepts one parameter
         if ($order instanceof \Model_ClientOrder) {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar, $order);
         } else {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
         }
+        */
+
+        $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
         $d = new \Registrar_Domain();
 

@@ -550,7 +550,7 @@ class Whois {
             }
         }
 
-        if(!$found) {
+        if(!$found || !isset($server)) {
             throw new Exception(sprintf('Whois server for TLD %s not found', $tldname));
         }
         return $server;
@@ -618,7 +618,6 @@ class Whois {
      */
     private function get_notfound_string()
     {
-        $found=false;
         $tldname=$this->get_tld();
         $servers = self::getServers();
         $counted = count($servers);
@@ -626,6 +625,9 @@ class Whois {
             if($servers[$i][0]==$tldname) {
                 $notfound=$servers[$i][2];
             }
+        }
+        if(!isset($notfound)){
+            throw new \Box_Exception("Error getting TLD!");
         }
         return $notfound;
     }

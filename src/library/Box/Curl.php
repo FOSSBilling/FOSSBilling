@@ -56,8 +56,18 @@ class Box_Curl {
     }
 
     /**
-     * @param string $url
-     */
+    * Constructs a new Curl object.
+    *
+    * @param string $url The URL to send the request to.
+    * @param int $timeOut [optional] The maximum time (in seconds) that the connection should remain open. Default is 30 seconds.
+    * @param bool $followlocation [optional] Whether to follow redirects. Default is true.
+    * @param int $maxRedirecs [optional] The maximum number of redirects to follow. Default is 4.
+    * @param bool $binaryTransfer [optional] Whether to receive the response as a binary string. Default is false.
+    * @param bool $includeHeader [optional] Whether to include the response header in the output. Default is false.
+    * @param bool $noBody [optional] Whether to exclude the response body from the output. Default is false.
+    *
+    * @throws \Box_Exception If the CURL extension is not enabled.
+    */
     public function __construct($url, $timeOut = 30, $followlocation = true, $maxRedirecs = 4, $binaryTransfer = false, $includeHeader = false, $noBody = false) {
         if (!extension_loaded('curl')) {
             throw new \Box_Exception('CURL extension is not enabled');

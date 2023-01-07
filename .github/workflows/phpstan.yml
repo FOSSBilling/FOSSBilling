@@ -1,4 +1,4 @@
-name: PHP Composer
+name: PHPStan
 
 on:
   push:
@@ -13,9 +13,8 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ["8.0", "8.1", "8.2"]
 
-    name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
+    name: PHPStan
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -23,14 +22,10 @@ jobs:
     - name: Install PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: ${{ matrix.php-versions }}
+        php-version: latest
 
     - name: Check PHP Version
       run: php -v
-
-    - name: Clone and update the locale submodule.
-      run: git submodule update --init --recursive
-      working-directory: ./src/locale
 
     - name: Validate composer.json and composer.lock
       run: composer validate
@@ -66,10 +61,8 @@ jobs:
         echo > ./src/data/log/php_error.log
         rm -rf ./src/install
 
-    - name: Run test suite for modules
-      run: |
-        php ./src/vendor/bin/phpunit ./tests/modules/
-
-    - name: Run test suite for library
-      run: |
-        php ./src/vendor/bin/phpunit ./tests/library/
+    - name: Run PHPStan
+      uses: php-actions/phpstan@v3
+      with:
+        configuration: phpstan.neon
+        memory_limit: 512M

@@ -22,8 +22,11 @@ class Payment_Invoice_Item
     private $tax;
 
     /**
-     * Set id
-     * @param int $id
+     * Set the id of the item.
+     *
+     * @param int $id The id of the item.
+     *
+     * @return $this The current object, for method chaining.
      */
     public function setId($id)
     {
@@ -32,9 +35,9 @@ class Payment_Invoice_Item
     }
 
     /**
-     * Get id
+     * Get the id of the item.
      *
-     * @return integer
+     * @return int The id of the item.
      */
     public function getId()
     {
@@ -42,9 +45,11 @@ class Payment_Invoice_Item
     }
 
     /**
-     * Set title
+     * Set the title of the item.
      *
-     * @param string $title
+     * @param string $title The title of the item.
+     *
+     * @return $this The current object, for method chaining.
      */
     public function setTitle($title)
     {
@@ -53,9 +58,9 @@ class Payment_Invoice_Item
     }
 
     /**
-     * Get title
+     * Get the title of the item.
      *
-     * @return string
+     * @return string The title of the item.
      */
     public function getTitle()
     {
@@ -63,9 +68,11 @@ class Payment_Invoice_Item
     }
 
     /**
-     * Set description
+     * Set the description of the item.
      *
-     * @param text $description
+     * @param string $description The description of the item.
+     *
+     * @return $this The current object, for method chaining.
      */
     public function setDescription($description)
     {
@@ -74,56 +81,99 @@ class Payment_Invoice_Item
     }
 
     /**
-     * Get description
+     * Get the description of the item.
      *
-     * @return text
+     * @return string The description of the item.
      */
     public function getDescription()
     {
         return $this->description;
     }
 
+    /**
+     * Set the price of the item.
+     *
+     * @param float $price The price of the item.
+     *
+     * @return $this The current object, for method chaining.
+     */
     public function setPrice($price)
     {
         $this->price = $price;
         return $this;
     }
 
+    /**
+     * Get the price of the item.
+     *
+     * @return float The price of the item.
+     */
     public function getPrice()
     {
         return $this->price;
     }
 
+    /**
+     * Set the tax amount for the item.
+     *
+     * @param float $tax The tax amount for the item.
+     *
+     * @return $this The current object, for method chaining.
+     */
     public function setTax($tax)
     {
         $this->tax = $tax;
         return $this;
     }
 
+    /**
+     * Get the tax amount for the item.
+     *
+     * @return float The tax amount for the item.
+     */
     public function getTax()
     {
         return $this->tax;
     }
 
+    /**
+     * Set the quantity of the item.
+     *
+     * @param int $qty The quantity of the item.
+     *
+     * @return $this The current object, for method chaining.
+     */
     public function setQuantity($qty)
     {
         $this->qty = $qty;
         return $this;
     }
 
+    /**
+     * Get the quantity of the item.
+     *
+     * @return int The quantity of the item.
+     */
     public function getQuantity()
     {
         return $this->qty;
     }
 
     /**
-     * Return total price for this item
+     * Return the total price for this item.
+     *
+     * @return float The total price for this item.
      */
     public function getTotal()
     {
         return $this->getQuantity() * $this->getPrice();
     }
 
+    /**
+     * Return the total price for this item including tax.
+     *
+     * @return float The total price for this item including tax.
+     */
     public function getTotalWithTax()
     {
         return $this->getTotal() + $this->getTax();

@@ -1,65 +1,63 @@
 /*eslint no-unused-vars: ["error", { "varsIgnorePattern": "boxbilling" }]*/
 
 var bb = {
-  post: function (url, params, jsonp) {
-    $.ajax({
-      type: "POST",
-      url: bb.restUrl(url),
-      data: params,
-      dataType: 'json',
-      error: function (jqXHR, textStatus, e) {
-        FOSSBilling.message(e, 'error');
-      },
-      success: function (data) {
-        if (data.error) {
-          FOSSBilling.message(data.error.message, 'error');
-        } else {
-          if (typeof jsonp === 'function') {
-            return jsonp(data.result);
-          } else if (window.hasOwnProperty('console')) {
-            console.log(data.result);
-          }
-        }
-      }
+
+  /**
+  * @deprecated This method will be removed in a future release. Use the new API wrapper instead. Check the documentation for more information.
+  * @documentation https://fossbilling.org/docs/under-the-hood/api
+  * 
+  * Leaving this here for backwards compatibility with templates using this method.
+  */
+  post: function (url, params, successHandler) {
+
+    // We don't know which API is called (admin, client, guest), so we are directly using the makeRequest method and not specific methods like API.admin.post().
+    // Templates willing to use the new API wrapper should use the corresponding methods and avoid using the makeRequest method directly.
+    API.makeRequest("POST", bb.restUrl(url), params, successHandler, function (error) {
+      FOSSBilling.message(error.message, 'error');
     });
+    console.error("This theme or module is using a deprecated method. Please update it to use the new API wrapper instead. Documentation: https://fossbilling.org/docs/api/javascript");
+  
   },
-  get: function (url, params, jsonp) {
-    $.ajax({
-      type: "GET",
-      url: bb.restUrl(url),
-      data: params,
-      dataType: 'json',
-      error: function (jqXHR, textStatus, e) {
-        FOSSBilling.message(e, 'error');
-      },
-      success: function (data) {
-        if (data.error) {
-          FOSSBilling.message(data.error.message, 'error');
-        } else {
-          if (typeof jsonp === 'function') {
-            return jsonp(data.result);
-          } else if (window.hasOwnProperty('console')) {
-            console.log(data.result);
-          }
-        }
-      }
+
+  /**
+  * @deprecated This method will be removed in a future release. Use the new API wrapper instead. Check the documentation for more information.
+  * @documentation https://fossbilling.org/docs/under-the-hood/api
+  * 
+  * Leaving this here for backwards compatibility with templates using this method.
+  */
+  get: function (url, params, successHandler) {
+
+    // We don't know which API is called (admin, client, guest), so we are directly using the makeRequest method and not specific methods like API.admin.post().
+    // Templates willing to use the new API wrapper should use the corresponding methods and avoid using the makeRequest method directly.
+    API.makeRequest("GET", bb.restUrl(url), params, successHandler, function (error) {
+      FOSSBilling.message(error.message, 'error');
     });
+    console.error("This theme or module is using a deprecated method. Please update it to use the new API wrapper instead. Documentation: https://fossbilling.org/docs/api/javascript");
+
   },
+
   restUrl: function (url) {
     if (url.indexOf('http://') > -1 || url.indexOf('https://') > -1) {
       return url;
     }
     return $('meta[property="bb:url"]').attr("content") + 'index.php?_url=/api/' + url;
   },
-  error: function (txt, code) {
-    jAlert(txt, 'Error code: ' + code);
-  },
+
   /**
-   * @deprecated Will be removed after testing. Use FOSSBilling.message()
+   * @deprecated Will be removed in a future release. Use FOSSBilling.message() instead.
+   */
+  error: function (txt, code) {
+    FOSSBilling.message(`${txt} (${code})`, 'error');
+  },
+  
+  /**
+   * @deprecated Will be removed in a future release. Use FOSSBilling.message() instead.
    */
   msg: function (txt, type) {
     FOSSBilling.message(txt, type);
+    console.error("This theme or module is using a deprecated method. Please update it to use FOSSBilling.message() instead of bb.msg().");
   },
+  
   redirect: function (url) {
     if (url === undefined) {
       this.reload();
@@ -67,9 +65,11 @@ var bb = {
     }
     window.location = url;
   },
+  
   reload: function () {
     window.location.reload(true);
   },
+  
   load: function (url, params) {
     var r = '';
 
@@ -85,85 +85,114 @@ var bb = {
 
     return r;
   },
+  
   _afterComplete: function (obj, result) {
-    var jsonp = obj.attr('data-api-jsonp');
+    var jsonp = obj.getAttribute('data-api-jsonp');
 
-    if (jsonp !== undefined && window.hasOwnProperty(jsonp)) {
+    if (jsonp !== null && window.hasOwnProperty(jsonp)) {
       return window[jsonp](result);
     }
 
-    if (obj.hasClass('bb-rm-tr')) {
-      obj.closest('tr').addClass('highlight').fadeOut();
-
+    if (obj.classList.contains('bb-rm-tr')) {
+      obj.closest('tr').classList.add('highlight');
       return;
     }
 
-    if (obj.attr('data-api-reload') !== undefined) {
-      this.reload();
-
+    if (obj.hasAttribute('data-api-redirect')) {
+      window.location = obj.getAttribute('data-api-redirect');
       return;
     }
 
-    if (obj.attr('data-api-redirect') !== undefined) {
-      return this.redirect(obj.attr('data-api-redirect'));
+    if (obj.hasAttribute('data-api-reload')) {
+      window.location.reload();
+      return;
     }
 
-    if (obj.attr('data-api-msg') !== undefined) {
-      FOSSBilling.message(obj.attr('data-api-msg'), 'success');
-
+    if (obj.hasAttribute('data-api-msg')) {
+      FOSSBilling.message(obj.getAttribute('data-api-msg'), 'success');
       return;
     }
 
     if (result) {
       FOSSBilling.message('Form updated', 'success');
-
       return;
     }
   },
+  
   apiForm: function () {
-    $('form.api-form').bind('submit', function () {
-      var obj = $(this);
+    const formElements = document.getElementsByClassName("api-form");
 
-      bb.post(obj.attr('action'), obj.serialize(), function (result) {
-        return bb._afterComplete(obj, result);
-      });
+    if (formElements.length > 0) {
+      for (let i = 0; i < formElements.length; i++) {
+        const formElement = formElements[i];
+        
+        formElement.addEventListener("submit", function (event) {
+          // Prevent the default form submit action. We will handle it ourselves.
+          event.preventDefault();
 
-      return false;
-    });
-  },
-  apiLink: function () {
-    $("a.api-link").bind('click', function () {
-      var obj = $(this);
-      if (obj.attr('data-api-confirm') !== undefined) {
-        // jConfirm(obj.attr('data-api-confirm'), 'Confirm your action', function (r) {
-        //   if (r) bb.get(obj.attr('href'), {}, function (result) { return bb._afterComplete(obj, result); });
-        // });
-        if (confirm(obj.attr('data-api-confirm'))) {
-          bb.get(obj.attr('href'), {}, function (result) {
-            return bb._afterComplete(obj, result);
+          const formData = new FormData(formElement);
+          const formDataObject = Object.fromEntries(formData.entries());
+    	    const formDataInJSON = JSON.stringify(formDataObject);
+
+          API.makeRequest(formElement.getAttribute('method'), bb.restUrl(formElement.getAttribute('action')), formDataInJSON, function (result) {
+            return bb._afterComplete(formElement, result);
+          }, function (error) {
+            FOSSBilling.message(`${error.message} (${error.code})`, 'error');
           });
-        }
-      } else if (obj.attr('data-api-prompt') !== undefined) {
-        jPrompt(obj.attr('data-api-prompt-text'), obj.attr('data-api-prompt-default'), obj.attr('data-api-prompt-title'), function (r) {
-          if (r) {
-            var p = {};
-            var name = obj.attr('data-api-prompt-key');
-            p[name] = r;
-            bb.get(obj.attr('href'), p, function (result) { return bb._afterComplete(obj, result); });
-          }
         });
-      } else {
-        bb.get(obj.attr('href'), {}, function (result) { return bb._afterComplete(obj, result); });
       }
-      return false;
-    });
+    }
   },
+  
+  apiLink: function () {
+    const linkElements = document.getElementsByClassName("api-link");
+
+    if (linkElements.length > 0) {
+      for (let i = 0; i < linkElements.length; i++) {
+        const linkElement = linkElements[i];
+        
+        linkElement.addEventListener("click", function (event) {
+          // Prevent the default form click action. We will handle it ourselves.
+          event.preventDefault();
+
+          if (linkElement.hasAttribute('data-api-confirm')) {
+            if (confirm(linkElement.getAttribute('data-api-confirm'))) {
+              API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {}, function (result) {
+                return bb._afterComplete(linkElement, result)}, function (error) {
+                  FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+                });
+            }
+          } else if (linkElement.hasAttribute('data-api-prompt')) {
+            jPrompt(linkElement.getAttribute('data-api-prompt-text'), linkElement.getAttribute('data-api-prompt-default'), linkElement.getAttribute('data-api-prompt-title'), function (r) {
+              if (r) {
+                var p = {};
+                var name = linkElement.getAttribute('data-api-prompt-key');
+                p[name] = r;
+                API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), p, function (result) {
+                  return bb._afterComplete(linkElement, result)}, function (error) {
+                    FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+                  });
+              }
+            });
+          } else {
+            API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {}, function (result) {
+              return bb._afterComplete(linkElement, result)}, function (error) {
+                FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+              });
+          }
+          return false;
+        });
+      }
+    }
+  },
+  
   menuAutoActive: function () {
     var matches = $('ul#menu li a').filter(function () {
       return document.location.href == this.href;
     });
     matches.parents('li').addClass('active');
   },
+  
   cookieCreate: function (name, value, days) {
     if (days) {
       var date = new Date();
@@ -173,6 +202,7 @@ var bb = {
     else var expires = "";
     document.cookie = name + "=" + value + expires + "; path=/";
   },
+  
   cookieRead: function (name) {
     var nameEQ = name + "=";
     var ca = document.cookie.split(';');
@@ -183,6 +213,7 @@ var bb = {
     }
     return null;
   },
+  
   insertToTextarea: function (areaId, text) {
     var txtarea = document.getElementById(areaId);
     var scrollPos = txtarea.scrollTop;
@@ -297,7 +328,10 @@ const FOSSBilling = {
   }
 };
 
-// Fallback for modules that still use the old "boxbilling" object. It will display deprecation warnings in the console and will be removed entirely in the future.
+/**
+  * Fallback for modules that still use the old "boxbilling" object. It will display deprecation warnings in the console and will be removed entirely in the future.
+  * @deprecated Will be removed in a future release. Use FOSSBilling.message() instead.
+  */
 const boxbilling = {
   message: (message, type = 'info') => {
     console.warn('The "boxbilling" object is deprecated and will be removed in a future release. Use FOSSBilling.message() instead.');

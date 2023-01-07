@@ -428,7 +428,7 @@ final class Box_Installer
         $content .= 'Access client area at: ' . BB_URL . PHP_EOL;
         $content .= 'Access admin area at: ' . BB_URL_ADMIN . ' with login details:' . PHP_EOL;
         $content .= 'E-mail: ' . $admin_email . PHP_EOL;
-        $content .= 'Password: The password you choose during installation' . PHP_EOL . PHP_EOL;
+        $content .= 'Password: The password you chose during installation' . PHP_EOL . PHP_EOL;
 
         $content .= "Read FOSSBilling documentation to get started https://docs.fossbilling.org/" . PHP_EOL;
         $content .= "Thank You for using FOSSBilling." . PHP_EOL;

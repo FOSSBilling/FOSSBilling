@@ -29,7 +29,7 @@ class Box_Mail
     public function send($transport = 'sendmail', $options = array())
     {
         if($transport == 'sendmail') {
-            $this->_sendMail($options);
+            $this->_sendMail();
         } else if($transport == 'smtp') {
             $this->_sendSmtpMail($options);
         } else if($transport == 'sendgrid') {

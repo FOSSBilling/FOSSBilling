@@ -22,9 +22,9 @@ namespace Box\Mod\Cart\Api;
 class Guest extends \Api_Abstract
 {
     /**
-     * Get shopping cart contents.
-     *
-     * @return array - shopping cart contents
+     * Get the contents of the current shopping cart.
+     * 
+     * @return array Contents of the shopping cart
      */
     public function get()
     {
@@ -48,7 +48,7 @@ class Guest extends \Api_Abstract
     /**
      * Set shopping cart currency.
      *
-     * @param string $currency - New currency code to applied to shopping cart
+     * @param string $data['currency'] New currency code to applied to shopping cart
      *
      * @return bool
      */
@@ -72,7 +72,7 @@ class Guest extends \Api_Abstract
     /**
      * Retrieve information about currently selected shopping cart currency.
      *
-     * @return array - Currency details
+     * @return array Currency details
      */
     public function get_currency()
     {
@@ -90,7 +90,7 @@ class Guest extends \Api_Abstract
     /**
      * Apply Promo code to shopping cart.
      *
-     * @param string $promocode - Promo code string
+     * @param string $promocode Promo code to apply to shopping cart
      *
      * @return bool
      */
@@ -134,7 +134,7 @@ class Guest extends \Api_Abstract
     /**
      * Removes product from shopping cart.
      *
-     * @param int $id - Shopping cart item id
+     * @param int $data['id'] Shopping cart item id
      *
      * @return bool
      */
@@ -151,16 +151,13 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Adds product to shopping cart.
-     *
-     * @param int $id - Product ID
-     *
-     * @optional bool $multiple - Default false. Allow multiple items in cart
-     * @optional string $period - Billing period
-     * @optional int $quantity - Products quantity
-     * @optional array $config - Product configuration options
-     * @optional array $addons - List of addons ids
-     *
+     * Add a product to the shopping cart.
+     * 
+     * @param array $data Product data
+     * 
+     * @param int $data['id'] ID of the product to add
+     * @param bool $data['multiple'] [optional] Allow multiple items in the cart. Default is `false`
+     * 
      * @return bool
      */
     public function add_item($data)

@@ -74,7 +74,7 @@ class Box_Translate implements \Box\InjectionAwareInterface
             define('LC_TIME', 2);
         }
         _setlocale(LC_MESSAGES, $locale.'.'.$codeset);
-        _textdomain(LC_TIME, $locale.'.'.$codeset);
+        _setlocale(LC_TIME, $locale.'.'.$codeset);
         _bindtextdomain($this->domain, PATH_LANGS);
         _bind_textdomain_codeset($this->domain, $codeset);
         _textdomain($this->domain);

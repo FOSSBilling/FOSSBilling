@@ -735,6 +735,10 @@ class Server_Manager_Ispconfig3 extends Server_Manager
             throw new Server_Exception($e->getMessage(), $e->getCode(), $e);
         }
 
-        return $soap_result;
+        if(isset($soap_result)){
+            return $soap_result;
+        } else {
+            throw new Server_Exception("Error when making request to the server");
+        }
     }
 }
