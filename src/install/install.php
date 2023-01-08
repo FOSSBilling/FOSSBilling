@@ -81,8 +81,8 @@ const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 const PATH_HTACCESS = PATH_ROOT . DIRECTORY_SEPARATOR . '.htaccess';
 const PATH_HTACCESS_TEMPLATE = PATH_ROOT . DIRECTORY_SEPARATOR . 'htaccess.txt';
 
-const BB_HURAGA_CONFIG = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config'. . DIRECTORY_SEPARATOR . 'settings_data.json';
-const BB_HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config'. . DIRECTORY_SEPARATOR . 'settings_data.json.example';
+const BB_HURAGA_CONFIG = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json';
+const BB_HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'settings_data.json.example';
 
 // Ensure library/ is on include_path
 set_include_path(implode(PATH_SEPARATOR, [
