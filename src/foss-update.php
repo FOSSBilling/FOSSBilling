@@ -22,6 +22,17 @@
 /**
  * Migration steps from BoxBilling to FOSSBilling.
  */
+class FOSSPatch_26 extends FOSSPatchAbstract
+{
+    public function patch()
+    {
+        //Added favicon settings
+        $q= "INSERT INTO setting ('id', 'param', 'value', 'public', 'category', 'hash', 'created_at', 'updated_at') VALUES (29,'company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
+        $this->execSql($q);
+    }
+}
+
+
 class FOSSPatch_25 extends FOSSPatchAbstract
 {
     public function patch()
@@ -31,16 +42,6 @@ class FOSSPatch_25 extends FOSSPatchAbstract
         $this->execSql($q);
 
         $q= "UPDATE email_template SET content = REPLACE(content, '{% endfilter %}', '{% endapply %}')";
-        $this->execSql($q);
-    }
-}
-
-class FOSSPatch_Favicon extends FOSSPatchAbstract
-{
-    public function patch()
-    {
-        //Added favicon settings
-        $q= "INSERT INTO setting ('id', 'param', 'value', 'public', 'category', 'hash', 'created_at', 'updated_at') VALUES (29,'company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
         $this->execSql($q);
     }
 }
