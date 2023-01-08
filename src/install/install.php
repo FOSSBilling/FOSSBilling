@@ -46,7 +46,7 @@ if(!isSSL()){
     ));
     $url = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
     $result = file_get_contents($url, false, $context);
-    
+
     if ($result !== false) {
         header("Location: $url");
         exit();
@@ -63,26 +63,26 @@ const BB_URL_INSTALL = BB_URL . 'install/';
 const BB_URL_ADMIN = BB_URL . 'index.php?_url=/admin';
 
 define('PATH_ROOT', dirname(__DIR__));
-const PATH_LIBRARY = PATH_ROOT . '/library';
-const PATH_VENDOR = PATH_ROOT . '/vendor';
-const PATH_INSTALL_THEMES = PATH_ROOT . '/install';
-const PATH_THEMES = PATH_ROOT . '/themes';
-const PATH_LICENSE = PATH_ROOT . '/LICENSE';
-const PATH_SQL = PATH_ROOT . '/install/sql/structure.sql';
-const PATH_SQL_DATA = PATH_ROOT . '/install/sql/content.sql';
-const PATH_INSTALL = PATH_ROOT . '/install';
-const PATH_CONFIG = PATH_ROOT . '/config.php';
-const PATH_CRON = PATH_ROOT . '/cron.php';
-const PATH_LANGS = PATH_ROOT . '/locale';
+const PATH_LIBRARY = PATH_ROOT . DIRECTORY_SEPARATOR . 'library';
+const PATH_VENDOR = PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor';
+const PATH_INSTALL_THEMES = PATH_ROOT . DIRECTORY_SEPARATOR . 'install';
+const PATH_THEMES = PATH_ROOT . DIRECTORY_SEPARATOR . 'themes';
+const PATH_LICENSE = PATH_ROOT . DIRECTORY_SEPARATOR . 'LICENSE';
+const PATH_SQL = PATH_ROOT . DIRECTORY_SEPARATOR . 'install/sql/structure.sql';
+const PATH_SQL_DATA = PATH_ROOT . DIRECTORY_SEPARATOR . 'install/sql/content.sql';
+const PATH_INSTALL = PATH_ROOT . DIRECTORY_SEPARATOR . 'install';
+const PATH_CONFIG = PATH_ROOT . DIRECTORY_SEPARATOR . 'config.php';
+const PATH_CRON = PATH_ROOT . DIRECTORY_SEPARATOR . 'cron.php';
+const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR . 'locale';
 
 /*
   Config paths & templates
 */
-const PATH_HTACCESS = PATH_ROOT . '/.htaccess';
-const PATH_HTACCESS_TEMPLATE = PATH_ROOT . '/htaccess.txt';
+const PATH_HTACCESS = PATH_ROOT . DIRECTORY_SEPARATOR . '.htaccess';
+const PATH_HTACCESS_TEMPLATE = PATH_ROOT . DIRECTORY_SEPARATOR . 'htaccess.txt';
 
-const BB_HURAGA_CONFIG = PATH_THEMES . '/huraga/config/settings_data.json';
-const BB_HURAGA_CONFIG_TEMPLATE = PATH_THEMES . '/huraga/config/settings_data.json.example';
+const BB_HURAGA_CONFIG = = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config'. . DIRECTORY_SEPARATOR . 'settings_data.json';
+const BB_HURAGA_CONFIG_TEMPLATE = PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga' . DIRECTORY_SEPARATOR . 'config'. . DIRECTORY_SEPARATOR . 'settings_data.json.example';
 
 // Ensure library/ is on include_path
 set_include_path(implode(PATH_SEPARATOR, [
@@ -90,7 +90,7 @@ set_include_path(implode(PATH_SEPARATOR, [
     get_include_path(),
 ]));
 
-require PATH_VENDOR . '/autoload.php';
+require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
 
 final class Box_Installer
 {
@@ -175,10 +175,10 @@ final class Box_Installer
                             $contents = scandir($dir);
                             foreach ($contents as $content) {
                                 if ('.' !== $content && '..' !== $content) {
-                                    if ('dir' === filetype($dir . '/' . $content)) {
-                                        rmAllDir($dir . '/' . $content);
+                                    if ('dir' === filetype($dir . DIRECTORY_SEPARATOR . $content)) {
+                                        rmAllDir($dir . DIRECTORY_SEPARATOR . $content);
                                     } else {
-                                        unlink($dir . '/' . $content);
+                                        unlink($dir . DIRECTORY_SEPARATOR . $content);
                                     }
                                 }
                             }
@@ -187,7 +187,7 @@ final class Box_Installer
                         }
                     }
                     try {
-                        rmAllDir('../install');
+                        rmAllDir('..'.DIRECTORY_SEPARATOR.'install');
                     } catch (Exception) {
                         // do nothing
                     }
@@ -202,7 +202,7 @@ final class Box_Installer
                 $this->session->set('agree', true);
 
                 $se = new Box_Requirements();
-                $options = $se->getOptions(); 
+                $options = $se->getOptions();
                 $vars = [
                     'tos' => $this->getLicense(),
 
@@ -450,7 +450,7 @@ final class Box_Installer
     {
         $version = new Box_Requirements();
         $reg = '^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$^';
-        $updateBranch = (preg_match($reg, Box_Version::VERSION, $matches) !== 0) ? "release" : "preview"; 
+        $updateBranch = (preg_match($reg, Box_Version::VERSION, $matches) !== 0) ? "release" : "preview";
 
         // TODO: Why not just take the defaults from the bb.config.example.php file and modify accordingly? Also this method doesn't preserve the comments in the example config.
         $data = [
