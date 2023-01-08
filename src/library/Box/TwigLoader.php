@@ -24,6 +24,7 @@ class Box_TwigLoader extends Twig\Loader\FilesystemLoader
      */
     public function __construct(array $options)
     {
+        parent::__construct();
         if(!isset($options['mods'])) {
             throw new \Box_Exception('Missing mods param for Box_TwigLoader');
         }
