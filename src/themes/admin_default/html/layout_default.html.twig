@@ -151,8 +151,8 @@
                         {% endif %}
 
                         {% if admin.system_is_allowed({ 'mod': 'order' }) %}
-                            {% set count_orders = admin.order_get_statuses.failed_setup %}
-                            <a href="{{ 'order'|alink({ 'status': 'failed_setup' }) }}" class="btn position-relative">
+                            {% set count_orders = admin.order_get_statuses.pending_setup + admin.order_get_statuses.failed_setup + admin.order_get_statuses.failed_renew %}
+                            <a href="{{ 'order'|alink({ 'status': 'pending_action' }) }}" class="btn position-relative">
                                 <svg class="icon">
                                     <use xlink:href="#orders" />
                                 </svg>
