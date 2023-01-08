@@ -950,7 +950,17 @@ class Service implements InjectionAwareInterface
 
     public function renewFromOrder(\Model_ClientOrder $order)
     {
-        $this->_callOnService($order, \Model_ClientOrder::ACTION_RENEW);
+        // renew order, update order history if failure on renewal
+        try {
+            $result = $this->_callOnService($order, \Model_ClientOrder::ACTION_RENEW);
+        } catch (\Exception $e) {
+            $order->status = \Model_ClientOrder::STATUS_FAILED_RENEW;
+            $this->di['db']->store($order);
+
+            $this->saveStatusChange($order, $e->getMessage());
+
+            throw $e;
+        }
 
         // set automatic order expiration
         if (!empty($order->period)) {
