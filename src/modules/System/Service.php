@@ -144,6 +144,7 @@ class Service
             'company_signature',
             'company_logo',
             'company_logo_dark',
+            'company_favicon',
             'company_address_1',
             'company_address_2',
             'company_address_3',
@@ -169,6 +170,11 @@ class Service
         }
         $logoUrlDark = (null === $logoUrlDark) ? $logoUrl : $logoUrlDark;
 
+        $faviconUrl = $this->di['array_get']($results, 'company_favicon', null);
+        if (null !== $faviconUrl && false === strpos($faviconUrl, 'http')) {
+            $faviconUrl = $baseUrl . $faviconUrl;
+        }
+
         return [
             'www' => $baseUrl,
             'name' => $this->di['array_get']($results, 'company_name', null),
@@ -177,6 +183,7 @@ class Service
             'signature' => $this->di['array_get']($results, 'company_signature', null),
             'logo_url' => $logoUrl,
             'logo_url_dark' => $logoUrlDark,
+            'favicon_url' => $faviconUrl,
             'address_1' => $this->di['array_get']($results, 'company_address_1', null),
             'address_2' => $this->di['array_get']($results, 'company_address_2', null),
             'address_3' => $this->di['array_get']($results, 'company_address_3', null),
