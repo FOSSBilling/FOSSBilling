@@ -35,6 +35,16 @@ class FOSSPatch_25 extends FOSSPatchAbstract
     }
 }
 
+class FOSSPatch_Favicon extends FOSSPatchAbstract
+{
+    public function patch()
+    {
+        //Added favicon settings
+        $q= "INSERT INTO setting ('id', 'param', 'value', 'public', 'category', 'hash', 'created_at', 'updated_at') VALUES (29,'company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
+        $this->execSql($q);
+    }
+}
+
 abstract class FOSSPatchAbstract
 {
     protected mixed $pdo;
