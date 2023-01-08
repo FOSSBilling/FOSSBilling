@@ -100,19 +100,19 @@
                         <tr>
                             <td class="text-end">{{ 'Order status'|trans }}:</td>
                             <td>
-                                {% if order.status == 'pending_setup' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                {% endif %}
-                                {% if order.status == 'active' %}
-                                    <span class="badge bg-success me-1"></span>
-                                {% endif %}
-                                {% if order.status == 'suspended' %}
-                                    <span class="badge bg-danger me-1"></span>
-                                {% endif %}
-                                {% if order.status == 'canceled' %}
-                                    <span class="badge bg-secondary me-1"></span>
-                                {% endif %}
-                                {{ mf.status_name(order.status) }}
+                            {% if order.status == 'pending_setup' or order.status == 'failed_setup' or order.status == 'failed_renew' %}
+                                <span class="badge bg-warning me-1"></span>
+                            {% endif %}
+                            {% if order.status == 'active' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if order.status == 'suspended' %}
+                                <span class="badge bg-danger me-1"></span>
+                            {% endif %}
+                            {% if order.status == 'canceled' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(order.status) }}
                             </td>
                         </tr>
                         {% if order.notes %}
@@ -179,7 +179,7 @@
                     </a>
                     {% endif %}
 
-                    {% if order.status == 'active' %}
+                    {% if order.status == 'active' or order.status == 'failed_renew' %}
                     {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
                     <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link"
                         href="{{ 'api/admin/order/renew'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}"
@@ -457,7 +457,7 @@
                         <td>{{ mf.currency_format( addon.total, addon.currency) }}</td>
                         <td>{% if addon.expires_at %}{{ addon.expires_at|date('l, d F Y') }}{% else %}-{% endif %}</td>
                         <td>
-                            {% if addon.status == 'pending_setup' %}
+                            {% if order.status == 'pending_setup' or order.status == 'failed_setup' or order.status == 'failed_renew' %}
                                 <span class="badge bg-warning me-1"></span>
                             {% endif %}
                             {% if addon.status == 'active' %}
@@ -569,7 +569,7 @@
                     <tr>
                         <td>{{ sh.created_at|date('Y-m-d H:i') }}</td>
                         <td>
-                            {% if sh.status == 'pending_setup' %}
+                            {% if sh.status == 'pending_setup' or sh.status == 'failed_setup' or sh.status == 'failed_renew' %}
                                 <span class="badge bg-warning me-1"></span>
                             {% endif %}
                             {% if sh.status == 'active' %}
