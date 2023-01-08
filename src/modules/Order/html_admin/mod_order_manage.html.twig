@@ -457,7 +457,7 @@
                         <td>{{ mf.currency_format( addon.total, addon.currency) }}</td>
                         <td>{% if addon.expires_at %}{{ addon.expires_at|date('l, d F Y') }}{% else %}-{% endif %}</td>
                         <td>
-                            {% if order.status == 'pending_setup' or order.status == 'failed_setup' or order.status == 'failed_renew' %}
+                            {% if addon.status == 'pending_setup' or addon.status == 'failed_setup' or addon.status == 'failed_renew' %}
                                 <span class="badge bg-warning me-1"></span>
                             {% endif %}
                             {% if addon.status == 'active' %}
