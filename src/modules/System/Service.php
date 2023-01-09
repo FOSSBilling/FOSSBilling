@@ -213,11 +213,13 @@ class Service
                 $details[] = [
                     'locale' => $locale,
                     'title' => $locale .' ('.$locale.')',
+                    'name' => $locale,
                 ];
             }else{
             $details[] = [
                 'locale' => $locale,
                 'title' => $array[$locale] .' ('.$locale.')',
+                'name' => $array[$locale],
             ];
             }
         }
