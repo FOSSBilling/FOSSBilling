@@ -17,6 +17,7 @@ class Model_ClientOrder extends RedBean_SimpleModel
 {
 	const STATUS_PENDING_SETUP = "pending_setup";
 	const STATUS_FAILED_SETUP = "failed_setup";
+    const STATUS_FAILED_RENEW = "failed_renew";
 	const STATUS_ACTIVE = "active";
 	const STATUS_CANCELED = "canceled";
 	const STATUS_SUSPENDED = "suspended";

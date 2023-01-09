@@ -25,7 +25,7 @@ class Theme
         $this->name = $name;
 
         if (!file_exists($this->getPath())) {
-            throw new \Box_Exception('Theme ":name" does not exists', [':name' => $name]);
+            throw new \Box_Exception('Theme ":name" does not exist', [':name' => $name]);
         }
     }
 

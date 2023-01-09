@@ -93,7 +93,7 @@
                     <tfoot>
                         <tr>
                             <td colspan="2">
-                                {% if order.period %}
+                                {% if order.period and order.status != 'failed_renew' %}
                                     <button class="btn btn-primary btn-small" type="button" id="renewal-button">{{ 'Renew now'|trans }}</button>
                                 {% endif %}
 
