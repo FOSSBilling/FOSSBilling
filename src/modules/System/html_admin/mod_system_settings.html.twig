@@ -88,6 +88,12 @@
                         </div>
                     </div>
                     <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Favicon'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="company_favicon" value="{{ params.company_favicon }}">
+                        </div>
+                    </div>
+                    <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Company number, chamber of commerce number'|trans }}</label>
                         <div class="col">
                             <input class="form-control" type="text" name="company_number" value="{{ params.company_number }}">
@@ -482,7 +488,7 @@ ZW=Zimbabwe
               </div>
             </div>
         </div>
-        
+
     </div>
 </div>
 {% endblock %}
