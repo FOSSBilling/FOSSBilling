@@ -45,7 +45,7 @@ const Tools = {
     },
 
     /**
-     * Reformats malformed JSON data to conform to proper JSON format. 
+     * Reformats malformed JSON data to conform to proper JSON format.
      * @param {object|string} jsonString The object to reformat to proper JSON data, correcting malformed data
      * @param {boolean} [returnObj=false] Determines if the function returns a reformatted object or the stringified json
      * @returns {object|string} The reformatted object or stringified version of the object.
@@ -93,7 +93,7 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
-         * 
+         *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
         get: function (endpoint, params, successHandler, errorHandler) {
@@ -105,7 +105,7 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
-         * 
+         *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
         post: function (endpoint, params, successHandler, errorHandler) {
@@ -139,12 +139,12 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
-         * 
+         *
          * @example
          * API.guest.get("system/version", {}, function(response) {
          *    console.log(response);
          * });
-         * 
+         *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
         get: function (endpoint, params, successHandler, errorHandler) {
@@ -156,7 +156,7 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
-         * 
+         *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
         post: function (endpoint, params, successHandler, errorHandler) {
@@ -171,7 +171,7 @@ const API = {
      * @param {object} [params] The parameters to send
      * @param {function} [successHandler] The function to call if the request is successful
      * @param {function} [errorHandler] The function to call if the request is unsuccessful
-     * 
+     *
      * @documentation https://fossbilling.org/docs/api/javascript
      */
     makeRequest: function (method, url, params, successHandler, errorHandler) {
@@ -216,8 +216,8 @@ const API = {
         return fetch(url.toString(), {
             method: method,
             headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/x-www-form-urlencoded',
             },
             body: body,
         })

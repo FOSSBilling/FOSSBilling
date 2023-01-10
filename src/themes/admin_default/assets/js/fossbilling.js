@@ -5,7 +5,7 @@ var bb = {
   /**
   * @deprecated This method will be removed in a future release. Use the new API wrapper instead. Check the documentation for more information.
   * @documentation https://fossbilling.org/docs/under-the-hood/api
-  * 
+  *
   * Leaving this here for backwards compatibility with templates using this method.
   */
   post: function (url, params, successHandler) {
@@ -16,13 +16,13 @@ var bb = {
       FOSSBilling.message(error.message, 'error');
     });
     console.error("This theme or module is using a deprecated method. Please update it to use the new API wrapper instead. Documentation: https://fossbilling.org/docs/api/javascript");
-  
+
   },
 
   /**
   * @deprecated This method will be removed in a future release. Use the new API wrapper instead. Check the documentation for more information.
   * @documentation https://fossbilling.org/docs/under-the-hood/api
-  * 
+  *
   * Leaving this here for backwards compatibility with templates using this method.
   */
   get: function (url, params, successHandler) {
@@ -49,7 +49,7 @@ var bb = {
   error: function (txt, code) {
     FOSSBilling.message(`${txt} (${code})`, 'error');
   },
-  
+
   /**
    * @deprecated Will be removed in a future release. Use FOSSBilling.message() instead.
    */
@@ -57,7 +57,7 @@ var bb = {
     FOSSBilling.message(txt, type);
     console.error("This theme or module is using a deprecated method. Please update it to use FOSSBilling.message() instead of bb.msg().");
   },
-  
+
   redirect: function (url) {
     if (url === undefined) {
       this.reload();
@@ -65,11 +65,11 @@ var bb = {
     }
     window.location = url;
   },
-  
+
   reload: function () {
     window.location.reload(true);
   },
-  
+
   load: function (url, params) {
     var r = '';
 
@@ -85,7 +85,7 @@ var bb = {
 
     return r;
   },
-  
+
   _afterComplete: function (obj, result) {
     var jsonp = obj.getAttribute('data-api-jsonp');
 
@@ -118,23 +118,19 @@ var bb = {
       return;
     }
   },
-  
+
   apiForm: function () {
     const formElements = document.getElementsByClassName("api-form");
 
     if (formElements.length > 0) {
       for (let i = 0; i < formElements.length; i++) {
         const formElement = formElements[i];
-        
+
         formElement.addEventListener("submit", function (event) {
           // Prevent the default form submit action. We will handle it ourselves.
           event.preventDefault();
 
-          const formData = new FormData(formElement);
-          const formDataObject = Object.fromEntries(formData.entries());
-    	    const formDataInJSON = JSON.stringify(formDataObject);
-
-          API.makeRequest(formElement.getAttribute('method'), bb.restUrl(formElement.getAttribute('action')), formDataInJSON, function (result) {
+          API.makeRequest(formElement.getAttribute('method'), bb.restUrl(formElement.getAttribute('action')),new URLSearchParams(new FormData(formElement)).toString() , function (result) {
             return bb._afterComplete(formElement, result);
           }, function (error) {
             FOSSBilling.message(`${error.message} (${error.code})`, 'error');
@@ -143,14 +139,14 @@ var bb = {
       }
     }
   },
-  
+
   apiLink: function () {
     const linkElements = document.getElementsByClassName("api-link");
 
     if (linkElements.length > 0) {
       for (let i = 0; i < linkElements.length; i++) {
         const linkElement = linkElements[i];
-        
+
         linkElement.addEventListener("click", function (event) {
           // Prevent the default form click action. We will handle it ourselves.
           event.preventDefault();
@@ -185,14 +181,14 @@ var bb = {
       }
     }
   },
-  
+
   menuAutoActive: function () {
     var matches = $('ul#menu li a').filter(function () {
       return document.location.href == this.href;
     });
     matches.parents('li').addClass('active');
   },
-  
+
   cookieCreate: function (name, value, days) {
     if (days) {
       var date = new Date();
@@ -202,7 +198,7 @@ var bb = {
     else var expires = "";
     document.cookie = name + "=" + value + expires + "; path=/";
   },
-  
+
   cookieRead: function (name) {
     var nameEQ = name + "=";
     var ca = document.cookie.split(';');
@@ -213,7 +209,7 @@ var bb = {
     }
     return null;
   },
-  
+
   insertToTextarea: function (areaId, text) {
     var txtarea = document.getElementById(areaId);
     var scrollPos = txtarea.scrollTop;
@@ -384,7 +380,7 @@ $(function () {
   $("select.js-language-selector").bind('change', function () {
     bb.cookieCreate('BBLANG', $(this).val(), 7);
     bb.reload();
-    
+
     return false;
   }).val(bb.cookieRead('BBLANG'));
 });
