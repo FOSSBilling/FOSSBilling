@@ -6,6 +6,7 @@
 
 {% block meta_title %}{{ 'Proforma invoice'|trans }}{% endblock %}
 
+{% block body_class %}invoice-invoice{% endblock %}
 {% block breadcrumb %}
     <li><a href="{{ '/invoice'|link }}">{{ 'Invoices'|trans }}</a> <span class="divider">/</span></li>
     <li class="active">{% if invoice.status == 'paid' %} {{ 'Receipt'|trans }} {% else %}  {{ 'Invoice'|trans }} {% endif %}{{ nr }}</li>

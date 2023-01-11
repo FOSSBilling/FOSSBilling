@@ -1,6 +1,8 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 
 {% block meta_title %}{{ 'News'|trans }}{% endblock %}
+
+{% block body_class %}news-index{% endblock %}
 {% block breadcrumb %}{{ 'News'|trans }}{% endblock %}
 
 {% block content %}
