@@ -1,6 +1,8 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 
 {% block meta_title %}{{ 'Example module'|trans }}{% endblock %}
+
+{% block body_class %}example{% endblock %}
 {% block breadcrumb %} <li class="active">{{ 'Example module'|trans }}</li>{% endblock %}
 
 {% block page_header %}

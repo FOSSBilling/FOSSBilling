@@ -5,6 +5,7 @@
 
 {% set emails = client.email_get_list({"per_page":10, "page":request.page}) %}
 
+{% block body_class %}email-index{% endblock %}
 {% block content %}
 <div class="row">
     <article class="span12 data-block">
