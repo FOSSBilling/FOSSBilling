@@ -53,7 +53,7 @@ class Client implements \Box\InjectionAwareInterface
         $service = $this->di['mod_service']('redirect');
         $redirects = $service->getRedirects();
         foreach ($redirects as $redirect) {
-            $app->get('/' . $redirect['path'], 'do_redirect', [], get_class($this));
+            $app->get('/' . $redirect['path'], 'do_redirect', [], static::class);
         }
     }
 

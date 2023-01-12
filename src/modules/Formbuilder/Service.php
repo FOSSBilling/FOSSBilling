@@ -294,7 +294,7 @@ class Service implements InjectionAwareInterface
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $result, null, 2575);
 
-        if ('{' == substr($result['options'], 0, 1) || '[' == substr($result['options'], 0, 1)) {
+        if (str_starts_with($result['options'], '{') || str_starts_with($result['options'], '[')) {
             $result['options'] = json_decode($result['options']);
         }
 

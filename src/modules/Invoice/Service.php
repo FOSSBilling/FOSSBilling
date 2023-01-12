@@ -1283,7 +1283,7 @@ class Service implements InjectionAwareInterface
                 }
             }
             // Workaround to get SVG images to render. Please see https://github.com/dompdf/dompdf/issues/320
-            if ('.svg' === substr($url, -4)) {
+            if (str_ends_with($url, '.svg')) {
                 $html .= '<img src="data:image/svg+xml;base64,' . base64_encode(file_get_contents($url)) . '" height="50" class="CompanyLogo"></img>';
             } else {
                 $html .= '<img src="' . $url . '" height="50" class="CompanyLogo"></img>';
@@ -1405,7 +1405,6 @@ class Service implements InjectionAwareInterface
      * Return list of unpaid invoices which can be covered from client balance.
      * Deposit invoices are excluded as they cannot be covered from client balance.
      *
-     * @param array $filter
      *
      * @return array
      */

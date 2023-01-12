@@ -18,6 +18,7 @@ parameters:
 		- src/library/Model/Product.php
 		- src/library/Server/Manager/Custom.php
 		- src/library/Server/Manager/Whm.php
+		- src/rector.php
 	ignoreErrors:
 		- '#^Function __trans not found\.$#'
 		- message: '#^Access to an undefined property FOSSPatchAbstract\:\:\$di\.$#'

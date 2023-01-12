@@ -18,8 +18,6 @@ namespace Box\Mod\Servicelicense;
 
 class Server implements \Box\InjectionAwareInterface
 {
-    private $_log = null;
-
     private $_result = [
         'licensed_to' => null,
         'created_at' => null,
@@ -39,9 +37,8 @@ class Server implements \Box\InjectionAwareInterface
         return $this->di;
     }
 
-    public function __construct(\Box_Log $log)
+    public function __construct(private \Box_Log $_log)
     {
-        $this->_log = $log;
     }
 
     /**

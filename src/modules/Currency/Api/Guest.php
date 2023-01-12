@@ -80,28 +80,13 @@ class Guest extends \Api_Abstract
             $p = $price * $c['conversion_rate'];
         }
 
-        switch ($c['price_format']) {
-            case 2:
-                $p = number_format($p, 2, '.', ',');
-                break;
-
-            case 3:
-                $p = number_format($p, 2, ',', '.');
-                break;
-
-            case 4:
-                $p = number_format($p, 0, '', ',');
-                break;
-
-            case 5:
-                $p = number_format($p, 0, '', '');
-                break;
-
-            case 1:
-            default:
-                $p = number_format($p, 2, '.', '');
-                break;
-        }
+        $p = match ($c['price_format']) {
+            2 => number_format($p, 2, '.', ','),
+            3 => number_format($p, 2, ',', '.'),
+            4 => number_format($p, 0, '', ','),
+            5 => number_format($p, 0, '', ''),
+            default => number_format($p, 2, '.', ''),
+        };
 
         if ($without_currency) {
             return $p;

@@ -38,9 +38,9 @@ class Client implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/kb', 'get_kb', [], get_class($this));
-        $app->get('/kb/:category', 'get_kb_category', ['category' => '[a-z0-9-]+'], get_class($this));
-        $app->get('/kb/:category/:slug', 'get_kb_article', ['category' => '[a-z0-9-]+', 'slug' => '[a-z0-9-]+'], get_class($this));
+        $app->get('/kb', 'get_kb', [], static::class);
+        $app->get('/kb/:category', 'get_kb_category', ['category' => '[a-z0-9-]+'], static::class);
+        $app->get('/kb/:category/:slug', 'get_kb_article', ['category' => '[a-z0-9-]+', 'slug' => '[a-z0-9-]+'], static::class);
     }
 
     public function get_kb(\Box_App $app)

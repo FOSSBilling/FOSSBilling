@@ -604,7 +604,7 @@ class Service implements \Box\InjectionAwareInterface
             error_log($message);
 
             // Prevent mass retries of emails if one of them is "invalid"
-            if(strpos($message, 'Invalid address:') !== false) {
+            if(str_contains($message, 'Invalid address:')) {
                 try {
                     $this->di['db']->trash($queue);
                 } catch (\Exception $e) {

@@ -38,8 +38,8 @@ class Client implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/email', 'get_emails', [], get_class($this));
-        $app->get('/email/:id', 'get_email', ['id' => '[0-9]+'], get_class($this));
+        $app->get('/email', 'get_emails', [], static::class);
+        $app->get('/email/:id', 'get_email', ['id' => '[0-9]+'], static::class);
     }
 
     public function get_emails(\Box_App $app)

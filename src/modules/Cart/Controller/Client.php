@@ -38,7 +38,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/cart', 'get_cart', [], get_class($this));
+        $app->get('/cart', 'get_cart', [], static::class);
     }
 
     public function get_cart(\Box_App $app)

@@ -18,12 +18,8 @@ namespace Box\Mod\Theme\Model;
 
 class Theme
 {
-    private $name;
-
-    public function __construct($name)
+    public function __construct(private $name)
     {
-        $this->name = $name;
-
         if (!file_exists($this->getPath())) {
             throw new \Box_Exception('Theme ":name" does not exist', [':name' => $name]);
         }
@@ -36,7 +32,7 @@ class Theme
 
     public function isAdminAreaTheme()
     {
-        return false !== strpos($this->name, 'admin_');
+        return str_contains($this->name, 'admin_');
     }
 
     public function isAssetsPathWritable()

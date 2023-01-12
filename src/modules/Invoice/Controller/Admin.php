@@ -103,17 +103,17 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/invoice', 'get_index', [], get_class($this));
-        $app->get('/invoice/subscriptions', 'get_subscriptions', [], get_class($this));
-        $app->get('/invoice/transactions', 'get_transactions', [], get_class($this));
-        $app->get('/invoice/gateways', 'get_gateways', [], get_class($this));
-        $app->get('/invoice/gateway/:id', 'get_gateway', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/invoice/manage/:id', 'get_invoice', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/invoice/transaction/:id', 'get_transaction', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/invoice/subscription/:id', 'get_subscription', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/invoice/tax', 'get_taxes', [], get_class($this));
-        $app->get('/invoice/tax/:id', 'get_tax', [], get_class($this));
-        $app->get('/invoice/pdf/:hash', 'get_pdf', ['hash' => '[a-z0-9]+'], get_class($this));
+        $app->get('/invoice', 'get_index', [], static::class);
+        $app->get('/invoice/subscriptions', 'get_subscriptions', [], static::class);
+        $app->get('/invoice/transactions', 'get_transactions', [], static::class);
+        $app->get('/invoice/gateways', 'get_gateways', [], static::class);
+        $app->get('/invoice/gateway/:id', 'get_gateway', ['id' => '[0-9]+'], static::class);
+        $app->get('/invoice/manage/:id', 'get_invoice', ['id' => '[0-9]+'], static::class);
+        $app->get('/invoice/transaction/:id', 'get_transaction', ['id' => '[0-9]+'], static::class);
+        $app->get('/invoice/subscription/:id', 'get_subscription', ['id' => '[0-9]+'], static::class);
+        $app->get('/invoice/tax', 'get_taxes', [], static::class);
+        $app->get('/invoice/tax/:id', 'get_tax', [], static::class);
+        $app->get('/invoice/pdf/:hash', 'get_pdf', ['hash' => '[a-z0-9]+'], static::class);
     }
 
     public function get_taxes(\Box_App $app)

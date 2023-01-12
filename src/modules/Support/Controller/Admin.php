@@ -81,18 +81,18 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/support', 'get_index', [], get_class($this));
-        $app->get('/support/', 'get_index', [], get_class($this));
-        $app->get('/support/index', 'get_index', [], get_class($this));
-        $app->get('/support/ticket/:id', 'get_ticket', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/support/ticket/:id/message/:messageid', 'get_ticket', ['id' => '[0-9]+', 'messageid' => '[0-9]+'], get_class($this));
-        $app->get('/support/public-tickets', 'get_public_tickets', [], get_class($this));
-        $app->get('/support/public-ticket/:id', 'get_public_ticket', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/support/helpdesks', 'get_helpdesks', [], get_class($this));
-        $app->get('/support/helpdesk/:id', 'get_helpdesk', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/support/canned-responses', 'get_canned_list', [], get_class($this));
-        $app->get('/support/canned/:id', 'get_canned', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/support/canned-category/:id', 'get_canned_cat', ['id' => '[0-9]+'], get_class($this));
+        $app->get('/support', 'get_index', [], static::class);
+        $app->get('/support/', 'get_index', [], static::class);
+        $app->get('/support/index', 'get_index', [], static::class);
+        $app->get('/support/ticket/:id', 'get_ticket', ['id' => '[0-9]+'], static::class);
+        $app->get('/support/ticket/:id/message/:messageid', 'get_ticket', ['id' => '[0-9]+', 'messageid' => '[0-9]+'], static::class);
+        $app->get('/support/public-tickets', 'get_public_tickets', [], static::class);
+        $app->get('/support/public-ticket/:id', 'get_public_ticket', ['id' => '[0-9]+'], static::class);
+        $app->get('/support/helpdesks', 'get_helpdesks', [], static::class);
+        $app->get('/support/helpdesk/:id', 'get_helpdesk', ['id' => '[0-9]+'], static::class);
+        $app->get('/support/canned-responses', 'get_canned_list', [], static::class);
+        $app->get('/support/canned/:id', 'get_canned', ['id' => '[0-9]+'], static::class);
+        $app->get('/support/canned-category/:id', 'get_canned_cat', ['id' => '[0-9]+'], static::class);
     }
 
     public function get_index(\Box_App $app)

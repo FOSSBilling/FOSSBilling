@@ -75,14 +75,14 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/client', 'get_index', [], get_class($this));
-        $app->get('/client/', 'get_index', [], get_class($this));
-        $app->get('/client/index', 'get_index', [], get_class($this));
-        $app->get('/client/login/:id', 'get_login', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/client/manage/:id', 'get_manage', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/client/group/:id', 'get_group', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/client/create', 'get_create', [], get_class($this));
-        $app->get('/client/logins', 'get_history', [], get_class($this));
+        $app->get('/client', 'get_index', [], static::class);
+        $app->get('/client/', 'get_index', [], static::class);
+        $app->get('/client/index', 'get_index', [], static::class);
+        $app->get('/client/login/:id', 'get_login', ['id' => '[0-9]+'], static::class);
+        $app->get('/client/manage/:id', 'get_manage', ['id' => '[0-9]+'], static::class);
+        $app->get('/client/group/:id', 'get_group', ['id' => '[0-9]+'], static::class);
+        $app->get('/client/create', 'get_create', [], static::class);
+        $app->get('/client/logins', 'get_history', [], static::class);
     }
 
     public function get_index(\Box_App $app)
