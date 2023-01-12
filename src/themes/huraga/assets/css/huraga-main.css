@@ -9404,6 +9404,9 @@ div.jGrowl div.success a:hover {
     height: 37px;
     background-image: url("../img/template_logo.png");
 }
+.container.login h2 {
+    text-align: center;
+}
 .container.login form {
     margin: 0;
     border: none;
