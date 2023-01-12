@@ -53,7 +53,7 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/cookieconsent', 'get_index', [], get_class($this));
+        $app->get('/cookieconsent', 'get_index', [], static::class);
     }
 
     public function get_index(\Box_App $app)

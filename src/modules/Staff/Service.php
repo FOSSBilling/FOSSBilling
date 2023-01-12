@@ -482,7 +482,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $newId = $this->di['db']->store($model);
-        } catch (\RedBeanPHP\RedException $e) {
+        } catch (\RedBeanPHP\RedException) {
             throw new \Box_Exception('Staff member with email :email is already registered', [':email' => $data['email']], 788954);
         }
 

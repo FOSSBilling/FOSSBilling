@@ -79,10 +79,10 @@ class Admin implements \Box\InjectionAwareInterface
      */
     public function register(\Box_App &$app)
     {
-        $app->get('/example', 'get_index', [], get_class($this));
-        $app->get('/example/test', 'get_test', [], get_class($this));
-        $app->get('/example/user/:id', 'get_user', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/example/api', 'get_api', [], get_class($this));
+        $app->get('/example', 'get_index', [], static::class);
+        $app->get('/example/test', 'get_test', [], static::class);
+        $app->get('/example/user/:id', 'get_user', ['id' => '[0-9]+'], static::class);
+        $app->get('/example/api', 'get_api', [], static::class);
     }
 
     public function get_index(\Box_App $app)

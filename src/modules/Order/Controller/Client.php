@@ -38,11 +38,11 @@ class Client implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/order', 'get_products', [], get_class($this));
-        $app->get('/order/service', 'get_orders', [], get_class($this));
-        $app->get('/order/:id', 'get_configure_product', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/order/:slug', 'get_configure_product_by_slug', ['slug' => '[a-z0-9-]+'], get_class($this));
-        $app->get('/order/service/manage/:id', 'get_order', ['id' => '[0-9]+'], get_class($this));
+        $app->get('/order', 'get_products', [], static::class);
+        $app->get('/order/service', 'get_orders', [], static::class);
+        $app->get('/order/:id', 'get_configure_product', ['id' => '[0-9]+'], static::class);
+        $app->get('/order/:slug', 'get_configure_product_by_slug', ['slug' => '[a-z0-9-]+'], static::class);
+        $app->get('/order/service/manage/:id', 'get_order', ['id' => '[0-9]+'], static::class);
     }
 
     public function get_products(\Box_App $app)

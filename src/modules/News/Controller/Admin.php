@@ -53,11 +53,11 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/news', 'get_index', [], get_class($this));
-        $app->get('/news/', 'get_index', [], get_class($this));
-        $app->get('/news/index', 'get_index', [], get_class($this));
-        $app->get('/news/index/', 'get_index', [], get_class($this));
-        $app->get('/news/post/:id', 'get_post', ['id' => '[0-9]+'], get_class($this));
+        $app->get('/news', 'get_index', [], static::class);
+        $app->get('/news/', 'get_index', [], static::class);
+        $app->get('/news/index', 'get_index', [], static::class);
+        $app->get('/news/index/', 'get_index', [], static::class);
+        $app->get('/news/post/:id', 'get_post', ['id' => '[0-9]+'], static::class);
     }
 
     public function get_index(\Box_App $app)

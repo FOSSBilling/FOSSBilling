@@ -273,7 +273,7 @@ class Service implements InjectionAwareInterface
 
     public function getServiceOrder($service)
     {
-        $type = $this->di['tools']->from_camel_case(str_replace('Model_Service', '', get_class($service)));
+        $type = $this->di['tools']->from_camel_case(str_replace('Model_Service', '', $service::class));
 
         $bindings = [
             'service_type' => $type,

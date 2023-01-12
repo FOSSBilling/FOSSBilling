@@ -38,10 +38,10 @@ class Client implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/support', 'get_tickets', [], get_class($this));
-        $app->get('/support/ticket/:id', 'get_ticket', [], get_class($this));
-        $app->get('/support/contact-us', 'get_contact_us', [], get_class($this));
-        $app->get('/support/contact-us/conversation/:hash', 'get_contact_us_conversation', ['hash' => '[a-z0-9]+'], get_class($this));
+        $app->get('/support', 'get_tickets', [], static::class);
+        $app->get('/support/ticket/:id', 'get_ticket', [], static::class);
+        $app->get('/support/contact-us', 'get_contact_us', [], static::class);
+        $app->get('/support/contact-us/conversation/:hash', 'get_contact_us_conversation', ['hash' => '[a-z0-9]+'], static::class);
     }
 
     public function get_tickets(\Box_App $app)
