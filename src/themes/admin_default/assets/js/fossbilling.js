@@ -129,22 +129,8 @@ var bb = {
         formElement.addEventListener("submit", function (event) {
           // Prevent the default form submit action. We will handle it ourselves.
           event.preventDefault();
-
           const formData = new FormData(formElement);
-          const obj = {};
-          for (const pair of formData.entries()) {
-            var key=pair[0];
-            if(key.slice(-2) == '[]'){
-                nkey=key.slice(0,key.length-2);
-                if(!obj[nkey]){
-                    obj[nkey] = new Array();
-                }
-                obj[nkey].push(pair[1]);
-            }else{
-                obj[key]=pair[1];
-            }
-          }
-          API.makeRequest(formElement.getAttribute('method'), bb.restUrl(formElement.getAttribute('action')),  JSON.stringify(obj) , function (result) {
+          API.makeRequest(formElement.getAttribute('method'), bb.restUrl(formElement.getAttribute('action')),  formData.serializeJSON() , function (result) {
             return bb._afterComplete(formElement, result);
           }, function (error) {
             FOSSBilling.message(`${error.message} (${error.code})`, 'error');
