@@ -27,8 +27,11 @@ FormData.prototype.serializeObject = function(){
       }else{
           obj[key]=pair[1];
       }
+    }
+    let reformattedObj = {};
+    Object.keys(obj).forEach(function (key) {
       let parts = key.split('[');
-      let current = obj;
+      let current = reformattedObj;
       for (let i = 0; i < parts.length; i++) {
           let part = parts[i];
           if (part.endsWith(']')) {
@@ -43,8 +46,8 @@ FormData.prototype.serializeObject = function(){
               current = current[part];
           }
       }
-    }
-    return obj;
+    });
+    return reformattedObj;
 }
 /**
  * Converts a form element into a valid JSON string depends on serializeObject
