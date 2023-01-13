@@ -620,6 +620,10 @@ ul.inline > li, ol.inline > li {
     padding-left: 5px;
     padding-right: 5px;
 }
+ul.dl-horizontal {
+  list-style-type: none;
+  margin-left: 0;
+}
 dl {
     margin-bottom: 18px;
 }
