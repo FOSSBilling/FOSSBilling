@@ -9,6 +9,14 @@
  */
 
 /**
+  * Converts a form element in valid valid object that can become
+  * @param {object} FormData object
+  * @returns {string} Serialized string of the FormData
+ */
+FormData.prototype.serialize = function(){
+    return new URLSearchParams(this).toString();
+}
+/**
  * Converts a form element in valid valid object that can become
  * @param {object} FormData object
  * @returns {object} The reformatted object or stringified version of the object.
@@ -195,27 +203,11 @@ const API = {
      * @documentation https://fossbilling.org/docs/api/javascript
      */
     makeRequest: function (method, url, params, successHandler, errorHandler) {
-        // If the parameters are not set, set them to an empty object
-        params = (params) ? params : {};
-
-        // If the request didn't specify a CSRF token, use the one set in the page headers
-        params.CSRFToken = (params.CSRFToken) ? params.CSRFToken : Tools.getCSRFToken();
-
         url = new URL(url);
-
-        var body = params;
-
         // Loop through the parameters and add them to the URL as a query string
         // GET requests should have their parameters in the query string and POST requests should have them in the body
         if (method.toLowerCase() === "get") {
-            var getParams = params;
-            // Convert JSON strings to an Object
-            if (Tools.isJSON(params)) {
-                getParams = JSON.parse(params);
-            }
-            if (typeof getParams === "object") {
-                Object.keys(getParams).forEach(key => url.searchParams.append(key, getParams[key]));
-            }
+            url.search=params;
             body = null
         } else if (method.toLowerCase() === "post") {
             body = params;

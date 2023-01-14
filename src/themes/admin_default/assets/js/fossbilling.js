@@ -130,7 +130,12 @@ var bb = {
           // Prevent the default form submit action. We will handle it ourselves.
           event.preventDefault();
           const formData = new FormData(formElement);
-          API.makeRequest(formElement.getAttribute('method'), bb.restUrl(formElement.getAttribute('action')),  formData.serializeJSON() , function (result) {
+          if(formElement.getAttribute('method').toLowerCase() != 'get'){
+             data = formData.serializeJSON();
+          }else{
+            data =  formData.serialize();
+          }
+          API.makeRequest(formElement.getAttribute('method'), bb.restUrl(formElement.getAttribute('action')),  data , function (result) {
             return bb._afterComplete(formElement, result);
           }, function (error) {
             FOSSBilling.message(`${error.message} (${error.code})`, 'error');
