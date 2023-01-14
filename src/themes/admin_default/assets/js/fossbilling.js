@@ -12,7 +12,7 @@ var bb = {
 
     // We don't know which API is called (admin, client, guest), so we are directly using the makeRequest method and not specific methods like API.admin.post().
     // Templates willing to use the new API wrapper should use the corresponding methods and avoid using the makeRequest method directly.
-    API.makeRequest("POST", bb.restUrl(url), params, successHandler, function (error) {
+    API.makeRequest("POST", bb.restUrl(url), JSON.stringify(params), successHandler, function (error) {
       FOSSBilling.message(error.message, 'error');
     });
     console.error("This theme or module is using a deprecated method. Please update it to use the new API wrapper instead. Documentation: https://fossbilling.org/docs/api/javascript");
@@ -130,9 +130,6 @@ var bb = {
           // Prevent the default form submit action. We will handle it ourselves.
           event.preventDefault();
           const formData = new FormData(formElement);
-          if(!formData.get('CSRFToken')){
-            formData.append('CSRFToken', Tools.getCSRFToken());
-          }
           if(formElement.getAttribute('method').toLowerCase() != 'get'){
              data = formData.serializeJSON();
           }else{
@@ -161,7 +158,7 @@ var bb = {
 
           if (linkElement.hasAttribute('data-api-confirm')) {
             if (confirm(linkElement.getAttribute('data-api-confirm'))) {
-              API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {'CSRFToken' : Tools.getCSRFToken()}, function (result) {
+              API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {}, function (result) {
                 return bb._afterComplete(linkElement, result)}, function (error) {
                   FOSSBilling.message(`${error.message} (${error.code})`, 'error');
                 });
@@ -169,7 +166,7 @@ var bb = {
           } else if (linkElement.hasAttribute('data-api-prompt')) {
             jPrompt(linkElement.getAttribute('data-api-prompt-text'), linkElement.getAttribute('data-api-prompt-default'), linkElement.getAttribute('data-api-prompt-title'), function (r) {
               if (r) {
-                var p = {'CSRFToken' : Tools.getCSRFToken()};
+                var p = {};
                 var name = linkElement.getAttribute('data-api-prompt-key');
                 p[name] = r;
                 API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), p, function (result) {
@@ -179,7 +176,7 @@ var bb = {
               }
             });
           } else {
-            API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {'CSRFToken' : Tools.getCSRFToken()}, function (result) {
+            API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {}, function (result) {
               return bb._afterComplete(linkElement, result)}, function (error) {
                 FOSSBilling.message(`${error.message} (${error.code})`, 'error');
               });

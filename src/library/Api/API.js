@@ -14,6 +14,9 @@
   * @returns {string} Serialized string of the FormData
  */
 FormData.prototype.serialize = function(){
+    if(!this.get('CSRFToken')){
+      this.append('CSRFToken', Tools.getCSRFToken());
+    }
     return new URLSearchParams(this).toString();
 }
 /**
@@ -23,6 +26,9 @@ FormData.prototype.serialize = function(){
 */
 FormData.prototype.serializeObject = function(){
     const obj = {};
+    if(!this.get('CSRFToken')){
+      this.append('CSRFToken', Tools.getCSRFToken());
+    }
     // reformat input[] fields to arrays
     for (const pair of this.entries()) {
       key=pair[0];
@@ -196,7 +202,7 @@ const API = {
      * Make a request to the API
      * @param {string} method The HTTP method to use
      * @param {string} url The URL to call
-     * @param {object} [params] The parameters to send
+     * @param {object|string} [params] The parameters to send
      * @param {function} [successHandler] The function to call if the request is successful
      * @param {function} [errorHandler] The function to call if the request is unsuccessful
      *
@@ -204,19 +210,25 @@ const API = {
      */
     makeRequest: function (method, url, params, successHandler, errorHandler) {
         url = new URL(url);
+        if(typeof params === 'object'){
+          if(!params.CSRFToken){ params.CSRFToken=Tools.getCSRFToken()}
+        }
         // Loop through the parameters and add them to the URL as a query string
         // GET requests should have their parameters in the query string and POST requests should have them in the body
         if (method.toLowerCase() === "get") {
-            if(typeof params === 'object'){
-              Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-            }else{
-              if(params){
-                url.search=params;
-              }
+          if(typeof params === 'object'){
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+          }else{
+            if(params){
+              url.search=params;
             }
-            body = null
+          }
+          body = null
         } else if (method.toLowerCase() === "post") {
-            body = params;
+          if(!Tools.isJSON(params)){
+            body = JSON.stringify(params)
+          }
+          body = params;
         }
 
         // Call the API and handle the response
