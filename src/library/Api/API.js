@@ -207,7 +207,13 @@ const API = {
         // Loop through the parameters and add them to the URL as a query string
         // GET requests should have their parameters in the query string and POST requests should have them in the body
         if (method.toLowerCase() === "get") {
-            url.search=params;
+            if(typeof params === 'object'){
+              Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+            }else{
+              if(params){
+                url.search=params;
+              }
+            }
             body = null
         } else if (method.toLowerCase() === "post") {
             body = params;
