@@ -130,6 +130,9 @@ var bb = {
           // Prevent the default form submit action. We will handle it ourselves.
           event.preventDefault();
           const formData = new FormData(formElement);
+          if(!formData.get('CSRFToken')){
+            formData.append('CSRFToken', Tools.getCSRFToken());
+          }
           if(formElement.getAttribute('method').toLowerCase() != 'get'){
              data = formData.serializeJSON();
           }else{
@@ -158,7 +161,7 @@ var bb = {
 
           if (linkElement.hasAttribute('data-api-confirm')) {
             if (confirm(linkElement.getAttribute('data-api-confirm'))) {
-              API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {}, function (result) {
+              API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {'CSRFToken' : Tools.getCSRFToken()}, function (result) {
                 return bb._afterComplete(linkElement, result)}, function (error) {
                   FOSSBilling.message(`${error.message} (${error.code})`, 'error');
                 });
@@ -166,7 +169,7 @@ var bb = {
           } else if (linkElement.hasAttribute('data-api-prompt')) {
             jPrompt(linkElement.getAttribute('data-api-prompt-text'), linkElement.getAttribute('data-api-prompt-default'), linkElement.getAttribute('data-api-prompt-title'), function (r) {
               if (r) {
-                var p = {};
+                var p = {'CSRFToken' : Tools.getCSRFToken()};
                 var name = linkElement.getAttribute('data-api-prompt-key');
                 p[name] = r;
                 API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), p, function (result) {
@@ -176,7 +179,7 @@ var bb = {
               }
             });
           } else {
-            API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {}, function (result) {
+            API.makeRequest("GET", bb.restUrl(linkElement.getAttribute('href')), {'CSRFToken' : Tools.getCSRFToken()}, function (result) {
               return bb._afterComplete(linkElement, result)}, function (error) {
                 FOSSBilling.message(`${error.message} (${error.code})`, 'error');
               });
