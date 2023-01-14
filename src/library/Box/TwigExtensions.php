@@ -16,6 +16,7 @@
 use Box\InjectionAwareInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
+use League\CommonMark\GithubFlavoredMarkdownConverter;
 
 class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInterface
 {
@@ -107,7 +108,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
     {
         $locale_date_format = $this->di['config']['locale_date_format'];
         $locale_time_format = $this->di['config']['locale_time_format'];
-        $format = is_null($format) ? $locale_date_format.$locale_time_format : $format;
+        $format = is_null($format) ? $locale_date_format . $locale_time_format : $format;
 
         return date($format, strtotime($time));
     }
@@ -192,21 +193,21 @@ function twig_money_without_currency(Twig\Environment $env, $price, $currency = 
 
 function twig_mod_asset_url($asset, $mod)
 {
-    return BB_URL.'modules/'.ucfirst($mod).'/assets/'.$asset;
+    return BB_URL . 'modules/' . ucfirst($mod) . '/assets/' . $asset;
 }
 
 function twig_asset_url(Twig\Environment $env, $asset)
 {
     $globals = $env->getGlobals();
 
-    return BB_URL.'themes/'.$globals['current_theme'].'/assets/'.$asset;
+    return BB_URL . 'themes/' . $globals['current_theme'] . '/assets/' . $asset;
 }
 
 function twig_library_url(Twig\Environment $env, $path)
 {
     $globals = $env->getGlobals();
 
-    return BB_URL.'library/'.$path;
+    return BB_URL . 'library/' . $path;
 }
 
 function twig_img_tag($path, $alt = null)
@@ -240,7 +241,7 @@ function twig_autolink_filter($text)
         $url_parts = parse_url($url);
 
         if (!isset($url_parts['scheme'])) {
-            $url = 'http://'.$url;
+            $url = 'http://' . $url;
         }
 
         return sprintf('<a target="_blank" href="%s">%s</a>', $url, $url);
@@ -268,18 +269,18 @@ function twig_timeago_filter($iso8601)
     $pds = [__trans('second'), __trans('minute'), __trans('hour'), __trans('day'), __trans('week'), __trans('month'), __trans('year'), __trans('decade')];
     $lngh = [1, 60, 3600, 86400, 604800, 2630880, 31570560, 315705600];
     $no = 0;
-    
+
     for ($v = sizeof($lngh) - 1; ($v >= 0) && (($no = $dif / $lngh[$v]) <= 1); --$v) {
     }
-    
+
     if ($v < 0) {
         $v = 0;
     }
-    
+
     $_tm = $cur_tm - ($dif % $lngh[$v]);
 
     $no = floor($no);
-    
+
     if (1 != $no) {
         $pds[$v] .= 's';
     }
@@ -299,31 +300,19 @@ function twig_size_filter($value)
 
     $bytes /= pow(1024, $pow);
 
-    return round($bytes, $precision).' '.$units[$pow];
+    return round($bytes, $precision) . ' ' . $units[$pow];
 }
 
 function twig_markdown_filter(Twig\Environment $env, $value)
 {
-    $markdownParser = new \Michelf\MarkdownExtra();
-    // Michelf Markdown version 1.7.0 and up
-    $markdownParser->hard_wrap = true;
-    $result = $markdownParser->transform(htmlspecialchars($value, ENT_NOQUOTES));
-    $result = preg_replace_callback('/(?<=href=")(.*)(?=")/', function ($match) {
-        if (!filter_var($match[0], FILTER_VALIDATE_URL)) {
-            $match[0] = '#';
-        }
-
-        return $match[0];
-    }, $result);
-
-    $result = preg_replace('/(?:~~)([^~~]*)(?:~~)/', '<s>$1</s>', $result);
-    return $result;
+    $markdownParser = new GithubFlavoredMarkdownConverter(['html_input' => 'escape', 'allow_unsafe_links' => false, 'max_nesting_level' => 50]);
+    return $markdownParser->convert($value);
 }
 
 function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
 {
     mb_internal_encoding('UTF-8');
-    
+
     if (mb_strlen($value) > $length) {
         if ($preserve) {
             if (false !== ($breakpoint = mb_strpos($value, ' ', $length))) {
@@ -331,7 +320,7 @@ function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $pres
             }
         }
 
-        return mb_substr($value, 0, $length).$separator;
+        return mb_substr($value, 0, $length) . $separator;
     }
 
     return $value;

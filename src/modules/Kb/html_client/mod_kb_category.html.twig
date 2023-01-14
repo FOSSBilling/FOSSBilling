@@ -2,6 +2,7 @@
 
 {% block meta_title %}{{ category.title }}{% endblock %}
 
+{% block body_class %}kb-category{% endblock %}
 {% block breadcrumb %}
 <li><a href="{{ '/kb'|link }}">{{ 'Knowledge base'|trans }}</a> <span class="divider">/</span></li>
 <li class="active">{{ category.title }}</li>

@@ -3,6 +3,8 @@
 {% import "macro_functions.html.twig" as mf %}
 
 {% block meta_title %}{{ ticket.subject }}{% endblock %}
+
+{% block body_class %}support-ticket{% endblock %}
 {% block breadcrumb %}
 <li><a href="{{ 'support' | link}}">{{ 'Support tickets'|trans }}</a><span class="divider">/</span></li>
 {{ticket.subject}}

@@ -67,9 +67,9 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/extension', 'get_index', [], get_class($this));
-        $app->get('/extension/settings/:mod', 'get_settings', ['mod' => '[a-z0-9-]+'], get_class($this));
-        $app->get('/extension/languages', 'get_langs', [], get_class($this));
+        $app->get('/extension', 'get_index', [], static::class);
+        $app->get('/extension/settings/:mod', 'get_settings', ['mod' => '[a-z0-9-]+'], static::class);
+        $app->get('/extension/languages', 'get_langs', [], static::class);
     }
 
     public function get_index(\Box_App $app)

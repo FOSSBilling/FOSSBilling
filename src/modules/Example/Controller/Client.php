@@ -50,8 +50,8 @@ class Client implements \Box\InjectionAwareInterface
      */
     public function register(\Box_App &$app)
     {
-        $app->get('/example', 'get_index', [], get_class($this));
-        $app->get('/example/protected', 'get_protected', [], get_class($this));
+        $app->get('/example', 'get_index', [], static::class);
+        $app->get('/example/protected', 'get_protected', [], static::class);
     }
 
     public function get_index(\Box_App $app)

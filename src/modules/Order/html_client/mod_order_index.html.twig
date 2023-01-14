@@ -7,6 +7,7 @@
 {% set loader_nr = request.loader | default("8")%}
 {% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
 
+{% block body_class %}order-index{% endblock %}
 {% block content_before %}{% endblock %}
 
 {% block content %}

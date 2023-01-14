@@ -38,8 +38,8 @@ class Client implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/orderbutton', 'get_index', [], get_class($this));
-        $app->get('/orderbutton/js', 'get_js', [], get_class($this));
+        $app->get('/orderbutton', 'get_index', [], static::class);
+        $app->get('/orderbutton/js', 'get_js', [], static::class);
     }
 
     public function get_index(\Box_App $app)

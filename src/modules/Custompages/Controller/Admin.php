@@ -53,8 +53,8 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/custompages', 'get_index', [], get_class($this));
-        $app->get('/custompages/:id', 'get_page', ['id' => '[0-9]+'], get_class($this));
+        $app->get('/custompages', 'get_index', [], static::class);
+        $app->get('/custompages/:id', 'get_page', ['id' => '[0-9]+'], static::class);
     }
 
     public function get_index(\Box_App $app)

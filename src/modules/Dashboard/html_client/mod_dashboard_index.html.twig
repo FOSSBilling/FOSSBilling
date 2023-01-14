@@ -3,6 +3,8 @@
 {% block meta_title %}{{ 'Client Area'|trans }}{% endblock %}
 {% block page_header %}{{ 'Dashboard'|trans }}{% endblock %}
 
+{% block body_class %}dashboard{% endblock %}
+
 {% block breadcrumbs %}
     {% if not settings.hide_dashboard_breadcrumb %}
         <ul class="breadcrumb">

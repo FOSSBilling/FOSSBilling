@@ -38,8 +38,8 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/theme/:theme', 'get_theme', ['theme' => '[a-z0-9-_]+'], get_class($this));
-        $app->post('/theme/:theme', 'save_theme_settings', ['theme' => '[a-z0-9-_]+'], get_class($this));
+        $app->get('/theme/:theme', 'get_theme', ['theme' => '[a-z0-9-_]+'], static::class);
+        $app->post('/theme/:theme', 'save_theme_settings', ['theme' => '[a-z0-9-_]+'], static::class);
     }
 
     /**

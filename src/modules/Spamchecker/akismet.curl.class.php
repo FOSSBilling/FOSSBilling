@@ -161,10 +161,8 @@ class akismet
      *
      * @param string $request The data to be $_POST'ed
      * @param string $url     The URL to send it too
-     *
-     * @return bool|string
      */
-    private function send_data($request = null, $url = null)
+    private function send_data($request = null, $url = null): bool|string
     {
         // Set the url to send data too
         curl_setopt($this->connection_handle, CURLOPT_URL, $url);

@@ -53,8 +53,8 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/massmailer', 'get_index', [], get_class($this));
-        $app->get('/massmailer/message/:id', 'get_edit', ['id' => '[0-9]+'], get_class($this));
+        $app->get('/massmailer', 'get_index', [], static::class);
+        $app->get('/massmailer/message/:id', 'get_edit', ['id' => '[0-9]+'], static::class);
     }
 
     public function get_index(\Box_App $app)

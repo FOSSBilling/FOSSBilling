@@ -46,12 +46,12 @@ class Client implements InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->post('/api/:role/:class/:method', 'post_method', ['role', 'class', 'method'], get_class($this));
-        $app->get('/api/:role/:class/:method', 'get_method', ['role', 'class', 'method'], get_class($this));
+        $app->post('/api/:role/:class/:method', 'post_method', ['role', 'class', 'method'], static::class);
+        $app->get('/api/:role/:class/:method', 'get_method', ['role', 'class', 'method'], static::class);
 
         // all other requests are error requests
-        $app->get('/api/:page', 'show_error', ['page' => '(.?)+'], get_class($this));
-        $app->post('/api/:page', 'show_error', ['page' => '(.?)+'], get_class($this));
+        $app->get('/api/:page', 'show_error', ['page' => '(.?)+'], static::class);
+        $app->post('/api/:page', 'show_error', ['page' => '(.?)+'], static::class);
     }
 
     public function show_error(\Box_App $app, $page)
@@ -132,7 +132,7 @@ class Client implements InjectionAwareInterface
         if ($check_referer_header) {
             $url = strtolower(BB_URL);
             $referer = isset($_SERVER['HTTP_REFERER']) ? strtolower($_SERVER['HTTP_REFERER']) : null;
-            if (!$referer || $url != substr($referer, 0, strlen($url))) {
+            if (!$referer || !str_starts_with($referer, $url)) {
                 throw new \Box_Exception('Invalid request. Make sure request origin is :from', [':from' => BB_URL], 1004);
             }
         }
@@ -178,7 +178,7 @@ class Client implements InjectionAwareInterface
             if($role == 'client' || $role == 'admin'){
                 $this->_checkCSRFToken();
             }
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $this->_tryTokenLogin();
         }
 
@@ -323,7 +323,7 @@ class Client implements InjectionAwareInterface
         /* Due to the way the cart works, it creates a new session which causes issues with the CSRF token system.
          * Due to this, we whitelist the checkout URL. 
          */
-        if(strpos($_SERVER['REQUEST_URI'], "/api/client/cart/checkout") !== false){
+        if(str_contains($_SERVER['REQUEST_URI'], "/api/client/cart/checkout")){
             return true;
         }
 

@@ -38,7 +38,7 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/currency/manage/:code', 'get_manage', ['code' => '[a-zA-Z]+'], get_class($this));
+        $app->get('/currency/manage/:code', 'get_manage', ['code' => '[a-zA-Z]+'], static::class);
     }
 
     public function get_manage(\Box_App $app, $code)

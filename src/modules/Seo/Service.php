@@ -55,7 +55,7 @@ class Service implements InjectionAwareInterface
                 $link = 'https://www.google.com/ping?sitemap=' . $url;
                 $this->di['guzzle_client']->get($link);
                 error_log('Submitted sitemap to Google');
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 error_log('Exception :(');
             }
         }+

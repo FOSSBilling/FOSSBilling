@@ -56,7 +56,7 @@ abstract class FOSSPatchAbstract
     {
         $this->di = $di;
         $this->pdo = $di['pdo'];
-        $c = get_class($this);
+        $c = static::class;
         $this->version = (int) substr($c, strpos($c, '_') + 1);
     }
 

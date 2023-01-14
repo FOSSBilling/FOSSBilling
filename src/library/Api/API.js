@@ -8,6 +8,57 @@
  * with this source code in the file LICENSE
  */
 
+/**
+ * Converts a form element in valid valid object that can become
+ * @param {object} FormData object
+ * @returns {object} The reformatted object or stringified version of the object.
+*/
+FormData.prototype.serializeObject = function(){
+    const obj = {};
+    // reformat input[] fields to arrays
+    for (const pair of this.entries()) {
+      key=pair[0];
+      if(key.endsWith('[]')){
+          key=key.slice(0,-2);
+          if(!obj[key]){
+              obj[key] = [];
+          }
+          obj[key].push(pair[1]);
+      }else{
+          obj[key]=pair[1];
+      }
+    }
+    let reformattedObj = {};
+    Object.keys(obj).forEach(function (key) {
+      let parts = key.split('[');
+      let current = reformattedObj;
+      for (let i = 0; i < parts.length; i++) {
+          let part = parts[i];
+          if (part.endsWith(']')) {
+              part = part.slice(0, -1);
+          }
+          if (i === parts.length - 1) {
+              current[part] = obj[key];
+          } else {
+              if (!(part in current)) {
+                  current[part] = {};
+              }
+              current = current[part];
+          }
+      }
+    });
+    return reformattedObj;
+}
+/**
+ * Converts a form element into a valid JSON string depends on serializeObject
+ * @param {object} FormData object
+ * @returns {string} Returns JSON string of the FromData Object
+*/
+FormData.prototype.serializeJSON = function(){
+  return JSON.stringify(this.serializeObject());
+}
+
+
 const Tools = {
     /**
      * Get the full URL from a relative URL to the API
@@ -42,38 +93,7 @@ const Tools = {
         } catch (error) {
             return false;
         }
-    },
-
-    /**
-     * Reformats malformed JSON data to conform to proper JSON format. 
-     * @param {object|string} jsonString The object to reformat to proper JSON data, correcting malformed data
-     * @param {boolean} [returnObj=false] Determines if the function returns a reformatted object or the stringified json
-     * @returns {object|string} The reformatted object or stringified version of the object.
-     */
-    reformatJSON: function (jsonString, returnObj = false) {
-        let obj = jsonString;
-        let reformattedObj = {};
-        Object.keys(obj).forEach(function (key) {
-            let parts = key.split('[');
-            let current = reformattedObj;
-            for (let i = 0; i < parts.length; i++) {
-                let part = parts[i];
-                if (part.endsWith(']')) {
-                    part = part.slice(0, -1);
-                }
-                if (i === parts.length - 1) {
-                    current[part] = obj[key];
-                } else {
-                    if (!(part in current)) {
-                        current[part] = {};
-                    }
-                    current = current[part];
-                }
-            }
-        });
-        var result = (returnObj) ? reformattedObj : JSON.stringify(reformattedObj);
-        return result;
-    },
+    }
 }
 
 /**
@@ -93,7 +113,7 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
-         * 
+         *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
         get: function (endpoint, params, successHandler, errorHandler) {
@@ -105,7 +125,7 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
-         * 
+         *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
         post: function (endpoint, params, successHandler, errorHandler) {
@@ -139,12 +159,12 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
-         * 
+         *
          * @example
          * API.guest.get("system/version", {}, function(response) {
          *    console.log(response);
          * });
-         * 
+         *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
         get: function (endpoint, params, successHandler, errorHandler) {
@@ -156,7 +176,7 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
-         * 
+         *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
         post: function (endpoint, params, successHandler, errorHandler) {
@@ -171,7 +191,7 @@ const API = {
      * @param {object} [params] The parameters to send
      * @param {function} [successHandler] The function to call if the request is successful
      * @param {function} [errorHandler] The function to call if the request is unsuccessful
-     * 
+     *
      * @documentation https://fossbilling.org/docs/api/javascript
      */
     makeRequest: function (method, url, params, successHandler, errorHandler) {
@@ -198,18 +218,7 @@ const API = {
             }
             body = null
         } else if (method.toLowerCase() === "post") {
-            var postParams = params;
-            // Convert the JSON to an object
-            if (Tools.isJSON(postParams)) {
-                postParams = JSON.parse(postParams);
-            }
-            // Now we run the object through the reformatJSON function, setting the body to the returned JSON string
-            if (typeof postParams === "object") {
-                postParams = Tools.reformatJSON(postParams);
-                body = postParams;
-            } else {
-                body = params;
-            }
+            body = params;
         }
 
         // Call the API and handle the response

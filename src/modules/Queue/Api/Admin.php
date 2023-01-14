@@ -104,7 +104,7 @@ class Admin extends \Api_Abstract
         $service = $mod->getService();
         $handler = $data['handler'] ?? $data['queue'];
         if (!method_exists($service, $handler)) {
-            throw new \Box_Exception('Message handler function :method does not exists', [':ext' => $data['mod'], ':method' => get_class($service) . ':' . $handler]);
+            throw new \Box_Exception('Message handler function :method does not exists', [':ext' => $data['mod'], ':method' => $service::class . ':' . $handler]);
         }
 
         $interval = isset($data['interval']) ? (int) $data['interval'] : 30;
@@ -222,7 +222,7 @@ class Admin extends \Api_Abstract
         $result = [];
         foreach ($msgs as $msg) {
             try {
-                $this->di['logger']->info(sprintf('Executing %s queue message #%s with handler %s(%s)', $q->name, $msg['id'], get_class($service) . ':' . $msg['handler'], $msg['json']));
+                $this->di['logger']->info(sprintf('Executing %s queue message #%s with handler %s(%s)', $q->name, $msg['id'], $service::class . ':' . $msg['handler'], $msg['json']));
                 call_user_func([$service, $msg['handler']], $msg['params']);
                 $this->di['db']->exec($dsql, ['id' => $msg['id']]);
                 $result[$msg['id']] = ['status' => 'executed', 'error' => null];

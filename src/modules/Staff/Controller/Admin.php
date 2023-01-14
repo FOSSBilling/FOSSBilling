@@ -55,11 +55,11 @@ class Admin implements InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/staff/login', 'get_login', [], get_class($this));
-        $app->get('/staff/manage/:id', 'get_manage', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/staff/group/:id', 'get_group', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/staff/profile', 'get_profile', [], get_class($this));
-        $app->get('/staff/logins', 'get_history', [], get_class($this));
+        $app->get('/staff/login', 'get_login', [], static::class);
+        $app->get('/staff/manage/:id', 'get_manage', ['id' => '[0-9]+'], static::class);
+        $app->get('/staff/group/:id', 'get_group', ['id' => '[0-9]+'], static::class);
+        $app->get('/staff/profile', 'get_profile', [], static::class);
+        $app->get('/staff/logins', 'get_history', [], static::class);
     }
 
     public function get_login(\Box_App $app)

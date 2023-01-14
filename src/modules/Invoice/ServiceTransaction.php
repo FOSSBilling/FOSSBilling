@@ -417,26 +417,13 @@ class ServiceTransaction implements InjectionAwareInterface
         try {
             $this->_parseIpnAndApprove($transaction);
 
-            switch ($transaction->type) {
-                case \Payment_Transaction::TXTYPE_PAYMENT:
-                    $this->_debit($transaction);
-                    break;
-
-                case \Payment_Transaction::TXTYPE_REFUND:
-                    $this->_refund($transaction);
-                    break;
-
-                case \Payment_Transaction::TXTYPE_SUBSCR_CREATE:
-                    $this->_subscribe($transaction);
-                    break;
-
-                case \Payment_Transaction::TXTYPE_SUBSCR_CANCEL:
-                    $this->_unsubscribe($transaction);
-                    break;
-
-                default:
-                    throw new \Box_Exception('Unknown transaction #:id type: :type', [':id' => $transaction->id, ':type' => $transaction->type], 632);
-            }
+            match ($transaction->type) {
+                \Payment_Transaction::TXTYPE_PAYMENT => $this->_debit($transaction),
+                \Payment_Transaction::TXTYPE_REFUND => $this->_refund($transaction),
+                \Payment_Transaction::TXTYPE_SUBSCR_CREATE => $this->_subscribe($transaction),
+                \Payment_Transaction::TXTYPE_SUBSCR_CANCEL => $this->_unsubscribe($transaction),
+                default => throw new \Box_Exception('Unknown transaction #:id type: :type', [':id' => $transaction->id, ':type' => $transaction->type], 632),
+            };
         } catch (\Exception $e) {
             $transaction->status = \Model_Transaction::STATUS_ERROR;
             $transaction->error = $e->getMessage();

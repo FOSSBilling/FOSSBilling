@@ -53,9 +53,9 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/servicehosting', 'get_index', null, get_class($this));
-        $app->get('/servicehosting/plan/:id', 'get_plan', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/servicehosting/server/:id', 'get_server', ['id' => '[0-9]+'], get_class($this));
+        $app->get('/servicehosting', 'get_index', null, static::class);
+        $app->get('/servicehosting/plan/:id', 'get_plan', ['id' => '[0-9]+'], static::class);
+        $app->get('/servicehosting/server/:id', 'get_server', ['id' => '[0-9]+'], static::class);
     }
 
     public function get_index(\Box_App $app)

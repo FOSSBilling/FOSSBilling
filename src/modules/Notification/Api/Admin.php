@@ -71,7 +71,7 @@ class Admin extends \Api_Abstract
      *
      * @return int|false - new message id
      */
-    public function add($data)
+    public function add($data): int|false
     {
         if (!isset($data['message'])) {
             return false;
