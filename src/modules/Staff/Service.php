@@ -709,7 +709,7 @@ class Service implements InjectionAwareInterface
 
         // send email
         $email = [];
-        $email['to_client'] = $reset->admin_id;
+        $email['to_admin'] = $c->id;
         $email['code'] = 'mod_staff_password_reset_approve';
         $email['password'] = $new_pass;
         $emailService = $this->di['mod_service']('email');

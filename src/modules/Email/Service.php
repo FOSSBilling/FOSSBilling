@@ -32,12 +32,12 @@ class Service implements \Box\InjectionAwareInterface
 
     public function getSettingsRoutes()
     {
-        return array(
-            'history' => array(
+        return [
+            'history' => [
                 'path' => 'email/history',
                 'label' => 'Email history',
-            ),
-        );
+            ],
+        ];
     }
 
     public function getSearchQuery($data)
@@ -145,11 +145,11 @@ class Service implements \Box\InjectionAwareInterface
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
-            throw new \Box_Exception('Receiver is not defined. Define to or to_client or to_staff parameter');
+        if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client']) && !isset($data['to_admin'])) {
+            throw new \Box_Exception('Receiver is not defined. Define to or to_client or to_staff or to_admin parameter');
         }
         $vars = $data;
-        unset($vars['to'], $vars['to_client'], $vars['to_staff'], $vars['to_name'], $vars['from'], $vars['from_name']);
+        unset($vars['to'], $vars['to_client'], $vars['to_staff'], $vars['to_name'], $vars['from'], $vars['from_name'], $vars['to_admin']);
         unset($vars['default_description'], $vars['default_subject'], $vars['default_template'], $vars['code']);
 
         // add additional variables to template
@@ -165,6 +165,12 @@ class Service implements \Box\InjectionAwareInterface
             $customer = $clientService->get(['id' => $data['to_client']]);
             $customer = $clientService->toApiArray($customer);
             $vars['c'] = $customer;
+        }
+
+        // send email to admins
+        if (isset($data['to_admin']) && $data['to_admin'] > 0) {
+            $oneStaff = $this->di['db']->findOne('Admin', 'id=?', [$data['to_admin']]);
+            $vars['c'] = $oneStaff;
         }
 
         $db = $this->di['db'];
@@ -206,6 +212,10 @@ class Service implements \Box\InjectionAwareInterface
                 $to_name = $staff['name'];
                 $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id']);
             }
+        } elseif (isset($oneStaff)) {
+            $to = $oneStaff->email;
+            $to_name = $oneStaff->name;
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff->id);
         } elseif (isset($customer)) {
             $to = $customer['email'];
             $to_name = $customer['first_name'] . ' ' . $customer['last_name'];
@@ -604,12 +614,13 @@ class Service implements \Box\InjectionAwareInterface
             error_log($message);
 
             // Prevent mass retries of emails if one of them is "invalid"
-            if(strpos($message, 'Invalid address:') !== false) {
+            if (false !== strpos($message, 'Invalid address:')) {
                 try {
                     $this->di['db']->trash($queue);
                 } catch (\Exception $e) {
                     error_log($e->getMessage());
                 }
+
                 return true;
             }
 
@@ -620,7 +631,7 @@ class Service implements \Box\InjectionAwareInterface
             ++$queue->tries;
             $queue->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($queue);
-            $maxTries = ( isset($settings['cancel_after']) ) ? $settings['cancel_after'] : 5;
+            $maxTries = (isset($settings['cancel_after'])) ? $settings['cancel_after'] : 5;
             if ($queue->tries > $maxTries) {
                 $this->di['db']->trash($queue);
             }

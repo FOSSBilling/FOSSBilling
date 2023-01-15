@@ -124,7 +124,7 @@ class Guest extends \Api_Abstract
 
         // send email
         $email = [];
-        $email['to_client'] = $reset->admin_id;
+        $email['to_admin'] = $c->id;
         $email['code'] = 'mod_staff_password_reset_request';
         $email['hash'] = $hash;
         $emailService = $this->di['mod_service']('email');
