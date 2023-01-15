@@ -33,7 +33,7 @@ class Box_Ftp
 
 		//Check if possible to use ftp functions.
 		if (!extension_loaded('ftp')) {
-			throw new \Box_Exception('The ftp PHP extension is not available');
+			throw new \Box_Exception('The FTP PHP extension is not available');
 		}
 
 		// Set defaults:
@@ -81,11 +81,11 @@ class Box_Ftp
         }
 
 		if ( ! $this->link ) {
-			throw new \Box_Exception('Failed to connect to FTP Server :host : :port',array(':host'=>$this->options['hostname'], ':port'=>$this->options['port']));
+			throw new \Box_Exception('Failed to connect to FTP server :host : :port',array(':host'=>$this->options['hostname'], ':port'=>$this->options['port']));
 		}
 
 		if ( ! @ftp_login($this->link,$this->options['username'], $this->options['password']) ) {
-            throw new \Box_Exception('FTP Username/Password incorrect for :usernmae', array(':username'=>$this->options['username']));
+            throw new \Box_Exception('FTP username or password incorrect for :username', array(':username'=>$this->options['username']));
 		}
 
 		//Set the Connection to use Passive FTP
