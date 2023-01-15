@@ -12,7 +12,7 @@ var bb = {
 
     // We don't know which API is called (admin, client, guest), so we are directly using the makeRequest method and not specific methods like API.admin.post().
     // Templates willing to use the new API wrapper should use the corresponding methods and avoid using the makeRequest method directly.
-    API.makeRequest("POST", bb.restUrl(url), params, successHandler, function (error) {
+    API.makeRequest("POST", bb.restUrl(url), JSON.stringify(params), successHandler, function (error) {
       FOSSBilling.message(error.message, 'error');
     });
     console.error("This theme or module is using a deprecated method. Please update it to use the new API wrapper instead. Documentation: https://fossbilling.org/docs/api/javascript");
@@ -130,7 +130,12 @@ var bb = {
           // Prevent the default form submit action. We will handle it ourselves.
           event.preventDefault();
           const formData = new FormData(formElement);
-          API.makeRequest(formElement.getAttribute('method'), bb.restUrl(formElement.getAttribute('action')),  formData.serializeJSON() , function (result) {
+          if(formElement.getAttribute('method').toLowerCase() != 'get'){
+             data = formData.serializeJSON();
+          }else{
+            data =  formData.serialize();
+          }
+          API.makeRequest(formElement.getAttribute('method'), bb.restUrl(formElement.getAttribute('action')),  data , function (result) {
             return bb._afterComplete(formElement, result);
           }, function (error) {
             FOSSBilling.message(`${error.message} (${error.code})`, 'error');
