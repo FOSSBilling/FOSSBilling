@@ -9,12 +9,26 @@
  */
 
 /**
- * Converts a form element in valid valid object that can become
+  * Converts a form element into a url encoded string
+  * @param {object} FormData object
+  * @returns {string} Serialized string of the FormData
+ */
+FormData.prototype.serialize = function(){
+    if(!this.get('CSRFToken')){
+      this.append('CSRFToken', Tools.getCSRFToken());
+    }
+    return new URLSearchParams(this).toString();
+}
+/**
+ * Converts a form element in valid valid object that can be used for JSON
  * @param {object} FormData object
  * @returns {object} The reformatted object or stringified version of the object.
 */
 FormData.prototype.serializeObject = function(){
     const obj = {};
+    if(!this.get('CSRFToken')){
+      this.append('CSRFToken', Tools.getCSRFToken());
+    }
     // reformat input[] fields to arrays
     for (const pair of this.entries()) {
       key=pair[0];
@@ -188,37 +202,33 @@ const API = {
      * Make a request to the API
      * @param {string} method The HTTP method to use
      * @param {string} url The URL to call
-     * @param {object} [params] The parameters to send
+     * @param {object|string} [params] The parameters to send
      * @param {function} [successHandler] The function to call if the request is successful
      * @param {function} [errorHandler] The function to call if the request is unsuccessful
      *
      * @documentation https://fossbilling.org/docs/api/javascript
      */
     makeRequest: function (method, url, params, successHandler, errorHandler) {
-        // If the parameters are not set, set them to an empty object
-        params = (params) ? params : {};
-
-        // If the request didn't specify a CSRF token, use the one set in the page headers
-        params.CSRFToken = (params.CSRFToken) ? params.CSRFToken : Tools.getCSRFToken();
-
         url = new URL(url);
-
-        var body = params;
-
+        if(typeof params === 'object'){
+          if(!params.CSRFToken){ params.CSRFToken=Tools.getCSRFToken()}
+        }
         // Loop through the parameters and add them to the URL as a query string
         // GET requests should have their parameters in the query string and POST requests should have them in the body
         if (method.toLowerCase() === "get") {
-            var getParams = params;
-            // Convert JSON strings to an Object
-            if (Tools.isJSON(params)) {
-                getParams = JSON.parse(params);
+          if(typeof params === 'object'){
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+          }else{
+            if(params){
+              url.search=params;
             }
-            if (typeof getParams === "object") {
-                Object.keys(getParams).forEach(key => url.searchParams.append(key, getParams[key]));
-            }
-            body = null
+          }
+          body = null
         } else if (method.toLowerCase() === "post") {
-            body = params;
+          if(!Tools.isJSON(params)){
+            body = JSON.stringify(params)
+          }
+          body = params;
         }
 
         // Call the API and handle the response
