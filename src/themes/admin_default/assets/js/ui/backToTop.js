@@ -19,6 +19,7 @@
 
         var settings = {...defaults, ...options};
 
+        if(document.getElementById(settings.buttonID)){
         let toTopButton = document.getElementById(settings.buttonID);
 
         toTopButton.addEventListener("click", toTop);
@@ -36,5 +37,6 @@
                 toTopButton.classList.replace(settings.visibleClass, settings.hiddenClass);
             }
         };
+      }
     };
 })();
