@@ -9,7 +9,7 @@
  */
 
 /**
-  * Converts a form element in valid valid object that can become
+  * Converts a form element into a url encoded string
   * @param {object} FormData object
   * @returns {string} Serialized string of the FormData
  */
@@ -20,7 +20,7 @@ FormData.prototype.serialize = function(){
     return new URLSearchParams(this).toString();
 }
 /**
- * Converts a form element in valid valid object that can become
+ * Converts a form element in valid valid object that can be used for JSON
  * @param {object} FormData object
  * @returns {object} The reformatted object or stringified version of the object.
 */
