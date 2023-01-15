@@ -60,10 +60,10 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/system', 'get_index', [], get_class($this));
-        $app->get('/system/', 'get_index', [], get_class($this));
-        $app->get('/system/index', 'get_index', [], get_class($this));
-        $app->get('/system/activity', 'get_activity', [], get_class($this));
+        $app->get('/system', 'get_index', [], static::class);
+        $app->get('/system/', 'get_index', [], static::class);
+        $app->get('/system/index', 'get_index', [], static::class);
+        $app->get('/system/activity', 'get_activity', [], static::class);
     }
 
     public function get_index(\Box_App $app)

@@ -151,7 +151,7 @@ class Service implements InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $list = $extensionService->getInstalledMods();
         foreach ($list as $mod) {
-            if ('service' == substr($mod, 0, strlen('service'))) {
+            if (str_starts_with($mod, 'service')) {
                 $n = substr($mod, strlen('service'));
                 $data[$n] = ucfirst($n);
             }
@@ -201,7 +201,7 @@ class Service implements InjectionAwareInterface
         // try save with slug
         try {
             $productId = $this->di['db']->store($model);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $model->slug = $this->di['tools']->slug($title) . '-' . random_int(1, 9999);
         }
         $productId = $this->di['db']->store($model);
@@ -416,7 +416,7 @@ class Service implements InjectionAwareInterface
         // try save with slug
         try {
             $productId = $this->di['db']->store($model);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $model->slug = $this->di['tools']->slug($title) . '-' . random_int(1, 9999);
             $productId = $this->di['db']->store($model);
         }

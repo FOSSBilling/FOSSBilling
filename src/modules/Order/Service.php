@@ -75,6 +75,7 @@ class Service implements InjectionAwareInterface
             'total' => array_sum($data),
             \Model_ClientOrder::STATUS_PENDING_SETUP => $this->di['array_get']($data, \Model_ClientOrder::STATUS_PENDING_SETUP, 0),
             \Model_ClientOrder::STATUS_FAILED_SETUP => $this->di['array_get']($data, \Model_ClientOrder::STATUS_FAILED_SETUP, 0),
+            \Model_ClientOrder::STATUS_FAILED_RENEW => $this->di['array_get']($data, \Model_ClientOrder::STATUS_FAILED_RENEW, 0),
             \Model_ClientOrder::STATUS_ACTIVE => $this->di['array_get']($data, \Model_ClientOrder::STATUS_ACTIVE, 0),
             \Model_ClientOrder::STATUS_SUSPENDED => $this->di['array_get']($data, \Model_ClientOrder::STATUS_SUSPENDED, 0),
             \Model_ClientOrder::STATUS_CANCELED => $this->di['array_get']($data, \Model_ClientOrder::STATUS_CANCELED, 0),
@@ -272,7 +273,7 @@ class Service implements InjectionAwareInterface
 
     public function getServiceOrder($service)
     {
-        $type = $this->di['tools']->from_camel_case(str_replace('Model_Service', '', get_class($service)));
+        $type = $this->di['tools']->from_camel_case(str_replace('Model_Service', '', $service::class));
 
         $bindings = [
             'service_type' => $type,
@@ -398,6 +399,7 @@ class Service implements InjectionAwareInterface
 
         $search = $this->di['array_get']($data, 'search', false);
         $hide_addons = $this->di['array_get']($data, 'hide_addons', null);
+        $show_action_required = $this->di['array_get']($data, 'show_action_required', null);
         $id = $this->di['array_get']($data, 'id', null);
         $product_id = $this->di['array_get']($data, 'product_id', null);
         $status = $this->di['array_get']($data, 'status', null);
@@ -429,6 +431,10 @@ class Service implements InjectionAwareInterface
         if ($id) {
             $where[] = 'co.id = :id';
             $bindings[':id'] = $id;
+        }
+
+        if ($show_action_required) {
+            $where[] = 'co.status = \'pending_setup\' OR co.status = \'failed_setup\' OR co.status =\'failed_renew\'';
         }
 
         if ($status) {
@@ -950,7 +956,17 @@ class Service implements InjectionAwareInterface
 
     public function renewFromOrder(\Model_ClientOrder $order)
     {
-        $this->_callOnService($order, \Model_ClientOrder::ACTION_RENEW);
+        // renew order, update order history if failure on renewal
+        try {
+            $result = $this->_callOnService($order, \Model_ClientOrder::ACTION_RENEW);
+        } catch (\Exception $e) {
+            $order->status = \Model_ClientOrder::STATUS_FAILED_RENEW;
+            $this->di['db']->store($order);
+
+            $this->saveStatusChange($order, $e->getMessage());
+
+            throw $e;
+        }
 
         // set automatic order expiration
         if (!empty($order->period)) {

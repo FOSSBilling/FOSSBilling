@@ -13,12 +13,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ CSRFToken }}">
 
-    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="shortcut icon" href="{{ company.favicon_url }}">
 
     {% include 'partial_bb_meta.html.twig' %}
 
     <link rel="stylesheet" href="build/css/fossbilling-bundle.min.css?v={{ guest.system_version }}">
-    <script src="{{ ('Api/API.js') | library_url }}"></script>
+    <script src="{{ "Api/API.js?v=#{guest.system_version}" | library_url }}"></script>
     <script src="build/js/fossbilling-bundle.min.js?v={{ guest.system_version }}"></script>
 
     {% block head %}{% endblock %}
@@ -151,8 +151,8 @@
                         {% endif %}
 
                         {% if admin.system_is_allowed({ 'mod': 'order' }) %}
-                            {% set count_orders = admin.order_get_statuses.failed_setup %}
-                            <a href="{{ 'order'|alink({ 'status': 'failed_setup' }) }}" class="btn position-relative">
+                            {% set count_orders = admin.order_get_statuses.pending_setup + admin.order_get_statuses.failed_setup + admin.order_get_statuses.failed_renew %}
+                            <a href="{{ 'order'|alink({ 'show_action_required': 'true' }) }}" class="btn position-relative">
                                 <svg class="icon">
                                     <use xlink:href="#orders" />
                                 </svg>

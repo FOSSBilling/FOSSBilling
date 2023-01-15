@@ -38,8 +38,8 @@ class Client implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/news', 'get_news', [], get_class($this));
-        $app->get('/news/:slug', 'get_news_item', ['slug' => '[a-z0-9-]+'], get_class($this));
+        $app->get('/news', 'get_news', [], static::class);
+        $app->get('/news/:slug', 'get_news_item', ['slug' => '[a-z0-9-]+'], static::class);
     }
 
     public function get_news(\Box_App $app)

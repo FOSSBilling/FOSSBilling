@@ -202,7 +202,6 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
                     var handler = StripeCheckout.configure({
                         key: \':key\',
                         image: ":image",
-                        label: ":label",
                         allowRememberMe: false,
                         token: handleStripeToken
                     });
@@ -221,7 +220,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
                         handler.open({
                                name: ":name",
                                description: ":description" ,
-                               amount: ":amount" ,
+                               amount: parseInt(":amount") ,
                                email: ":email" ,
                                currency: ":currency"
                         });
@@ -248,7 +247,6 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             ':description' => $title,
             ':image' => $company['logo_url'],
             ':email' => $invoice->buyer_email,
-            ':label' => __trans('Pay now'),
             ':callbackUrl' => $payGatewayService->getCallbackUrl($payGateway, $invoice),
             ':redirectUrl' => $this->di['tools']->url('invoice/'.$invoice->hash)
         );

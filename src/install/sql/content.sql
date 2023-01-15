@@ -343,7 +343,8 @@ VALUES
 	(25,'nameserver_3',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(26,'nameserver_4',NULL,0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(27,'funds_min_amount','10',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(28,'funds_max_amount','200',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00');
+	(28,'funds_max_amount','200',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(29,'company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');
 
 /*!40000 ALTER TABLE `setting` ENABLE KEYS */;
 UNLOCK TABLES;

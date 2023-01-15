@@ -123,16 +123,16 @@ class Box_Period
     {
         switch ($this->unit) {
             case self::UNIT_DAY:
-                $shift = __trans('Every :number day', array(':number'=>$this->qty));
+                $shift = __trans('Every :number day(s)', array(':number'=>$this->qty));
                 break;
             case self::UNIT_WEEK:
                 $shift = __trans('Every :number week(s)', array(':number'=>$this->qty));
                 break;
             case self::UNIT_MONTH:
-                $shift = __trans('Every :number months', array(':number'=>$this->qty));
+                $shift = __trans('Every :number month(s)', array(':number'=>$this->qty));
                 break;
             case self::UNIT_YEAR:
-                $shift = __trans('Every :number years', array(':number'=>$this->qty));
+                $shift = __trans('Every :number year(s)', array(':number'=>$this->qty));
                 break;
             default:
                 throw new \Box_Exception('Unit not defined');

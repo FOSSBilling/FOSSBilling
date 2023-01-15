@@ -22,6 +22,17 @@
 /**
  * Migration steps from BoxBilling to FOSSBilling.
  */
+class FOSSPatch_26 extends FOSSPatchAbstract
+{
+    public function patch()
+    {
+        //Added favicon settings
+        $q= "INSERT INTO setting ('id', 'param', 'value', 'public', 'category', 'hash', 'created_at', 'updated_at') VALUES (29,'company_favicon','themes/huraga/assets/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00');";
+        $this->execSql($q);
+    }
+}
+
+
 class FOSSPatch_25 extends FOSSPatchAbstract
 {
     public function patch()
@@ -57,7 +68,7 @@ abstract class FOSSPatchAbstract
     {
         $this->di = $di;
         $this->pdo = $di['pdo'];
-        $c = get_class($this);
+        $c = static::class;
         $this->version = (int) substr($c, strpos($c, '_') + 1);
     }
 

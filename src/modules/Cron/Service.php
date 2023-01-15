@@ -20,10 +20,7 @@ class Service
 {
     protected $di;
 
-    /**
-     * @param mixed $di
-     */
-    public function setDi($di)
+    public function setDi(mixed $di)
     {
         $this->di = $di;
     }

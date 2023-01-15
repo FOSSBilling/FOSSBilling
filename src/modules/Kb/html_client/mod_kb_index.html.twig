@@ -1,6 +1,8 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 
 {% block meta_title %}{{ 'Knowledge base'|trans }}{% endblock %}
+
+{% block body_class %}kb-index{% endblock %}
 {% block breadcrumb %}{{ 'Knowledge base'|trans }}{% endblock %}
 
 {% block content %}

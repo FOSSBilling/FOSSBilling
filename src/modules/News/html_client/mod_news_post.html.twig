@@ -3,6 +3,7 @@
 {% block meta_title %}{{ post.title }}{% endblock %}
 {% block meta_description %}{{ post.description }}{% endblock %}
 
+{% block body_class %}news-post{% endblock %}
 {% block breadcrumb %}
 <li><a href="{{ 'news' | link}}">{{ 'News'|trans }}</a><span class="divider">/</span></li>
 <li class="active">{{post.title}}</li>

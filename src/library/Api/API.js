@@ -8,6 +8,71 @@
  * with this source code in the file LICENSE
  */
 
+/**
+  * Converts a form element into a url encoded string
+  * @param {object} FormData object
+  * @returns {string} Serialized string of the FormData
+ */
+FormData.prototype.serialize = function(){
+    if(!this.get('CSRFToken')){
+      this.append('CSRFToken', Tools.getCSRFToken());
+    }
+    return new URLSearchParams(this).toString();
+}
+/**
+ * Converts a form element in valid valid object that can be used for JSON
+ * @param {object} FormData object
+ * @returns {object} The reformatted object or stringified version of the object.
+*/
+FormData.prototype.serializeObject = function(){
+    const obj = {};
+    if(!this.get('CSRFToken')){
+      this.append('CSRFToken', Tools.getCSRFToken());
+    }
+    // reformat input[] fields to arrays
+    for (const pair of this.entries()) {
+      key=pair[0];
+      if(key.endsWith('[]')){
+          key=key.slice(0,-2);
+          if(!obj[key]){
+              obj[key] = [];
+          }
+          obj[key].push(pair[1]);
+      }else{
+          obj[key]=pair[1];
+      }
+    }
+    let reformattedObj = {};
+    Object.keys(obj).forEach(function (key) {
+      let parts = key.split('[');
+      let current = reformattedObj;
+      for (let i = 0; i < parts.length; i++) {
+          let part = parts[i];
+          if (part.endsWith(']')) {
+              part = part.slice(0, -1);
+          }
+          if (i === parts.length - 1) {
+              current[part] = obj[key];
+          } else {
+              if (!(part in current)) {
+                  current[part] = {};
+              }
+              current = current[part];
+          }
+      }
+    });
+    return reformattedObj;
+}
+/**
+ * Converts a form element into a valid JSON string depends on serializeObject
+ * @param {object} FormData object
+ * @returns {string} Returns JSON string of the FromData Object
+*/
+FormData.prototype.serializeJSON = function(){
+  return JSON.stringify(this.serializeObject());
+}
+
+
 const Tools = {
     /**
      * Get the full URL from a relative URL to the API
@@ -29,6 +94,20 @@ const Tools = {
     getCSRFToken: function () {
         return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     },
+
+    /**
+     * Check if a string is valid JSON or not.
+     * @param {string} jsonString The string to check if it's valid JSON or not
+     * @returns {boolean} Returns true if the string is valid JSON, or false if it is not
+     */
+    isJSON: function (jsonString) {
+        try {
+            JSON.parse(jsonString);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
 }
 
 /**
@@ -48,10 +127,10 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
-         * 
+         *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
-        get: function(endpoint, params, successHandler, errorHandler) {
+        get: function (endpoint, params, successHandler, errorHandler) {
             API.makeRequest('GET', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
         },
         /**
@@ -60,28 +139,28 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
-         * 
+         *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
-        post: function(endpoint, params, successHandler, errorHandler) {
+        post: function (endpoint, params, successHandler, errorHandler) {
             API.makeRequest('POST', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
         }
     },
-    
+
     /**
      * Wrapper for the client API
      * @documentation https://fossbilling.org/docs/api/javascript
      */
     client: {
         baseURL: Tools.getBaseURL('client'),
-        get: function(endpoint, params, successHandler, errorHandler) {
+        get: function (endpoint, params, successHandler, errorHandler) {
             API.makeRequest('GET', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
         },
-        post: function(endpoint, params, successHandler, errorHandler) {
+        post: function (endpoint, params, successHandler, errorHandler) {
             API.makeRequest('POST', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
         }
     },
-    
+
     /**
      * Wrapper for the guest API
      * @documentation https://fossbilling.org/docs/api/javascript
@@ -94,15 +173,15 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
-         * 
+         *
          * @example
          * API.guest.get("system/version", {}, function(response) {
          *    console.log(response);
          * });
-         * 
+         *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
-        get: function(endpoint, params, successHandler, errorHandler) {
+        get: function (endpoint, params, successHandler, errorHandler) {
             API.makeRequest('GET', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
         },
         /**
@@ -111,10 +190,10 @@ const API = {
          * @param {object} [params] The parameters to send
          * @param {function} [successHandler] The function to call if the request is successful
          * @param {function} [errorHandler] The function to call if the request is unsuccessful
-         * 
+         *
          * @documentation https://fossbilling.org/docs/api/javascript
          */
-        post: function(endpoint, params, successHandler, errorHandler) {
+        post: function (endpoint, params, successHandler, errorHandler) {
             API.makeRequest('POST', `${this.baseURL}/${endpoint}`, params, successHandler, errorHandler)
         }
     },
@@ -123,39 +202,33 @@ const API = {
      * Make a request to the API
      * @param {string} method The HTTP method to use
      * @param {string} url The URL to call
-     * @param {object} [params] The parameters to send
+     * @param {object|string} [params] The parameters to send
      * @param {function} [successHandler] The function to call if the request is successful
      * @param {function} [errorHandler] The function to call if the request is unsuccessful
-     * 
+     *
      * @documentation https://fossbilling.org/docs/api/javascript
      */
     makeRequest: function (method, url, params, successHandler, errorHandler) {
-        // If the parameters are not set, set them to an empty object
-        params = (params) ? params : {};
-
-        // If the request didn't specify a CSRF token, use the one set in the page headers
-        params.CSRFToken = (params.CSRFToken) ? params.CSRFToken : Tools.getCSRFToken();
-
         url = new URL(url);
-
-        var body = params;
-
+        if(typeof params === 'object'){
+          if(!params.CSRFToken){ params.CSRFToken=Tools.getCSRFToken()}
+        }
         // Loop through the parameters and add them to the URL as a query string
         // GET requests should have their parameters in the query string and POST requests should have them in the body
-        if (method.toLowerCase() === "get"){
-            // If it's an object, use it as is. If it's a JSON string, parse it to an object and loop through it.
-            if (typeof params === 'object'){
-                Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-            } else {
-                if (typeof params === 'string') {
-                    var paramsInObj = JSON.parse(params);
-                    Object.keys(paramsInObj).forEach(key => url.searchParams.append(key, paramsInObj[key]));
-                }
+        if (method.toLowerCase() === "get") {
+          if(typeof params === 'object'){
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+          }else{
+            if(params){
+              url.search=params;
             }
-            body = null
+          }
+          body = null
         } else if (method.toLowerCase() === "post") {
-            // If it's an object, convert it to a JSON string. If it's a string, leave it as is.
-            body = (typeof params === 'object') ? JSON.stringify(params) : params;
+          if(!Tools.isJSON(params)){
+            body = JSON.stringify(params)
+          }
+          body = params;
         }
 
         // Call the API and handle the response
@@ -167,25 +240,25 @@ const API = {
             },
             body: body,
         })
-        .then((response) => {
-            return response.json();
-          })
-        .then((response) => {
-            // If the response is an error, call the error handler
-            if (response.error) {
-                if (typeof errorHandler === 'function') {
-                    errorHandler(response.error);
-                } else {
-                    console.error(`${response.error.message} (Code: ${response.error.code})`);
-                    console.warn("No error handler was specified. The error was logged to the console. Documentation: https://fossbilling.org/docs/api/javascript   ");
+            .then((response) => {
+                return response.json();
+            })
+            .then((response) => {
+                // If the response is an error, call the error handler
+                if (response.error) {
+                    if (typeof errorHandler === 'function') {
+                        errorHandler(response.error);
+                    } else {
+                        console.error(`${response.error.message} (Code: ${response.error.code})`);
+                        console.warn("No error handler was specified. The error was logged to the console. Documentation: https://fossbilling.org/docs/api/javascript");
+                    }
+                    return;
                 }
-                return;
-            }
 
-            // If the response is a success, call the success handler
-            if (typeof successHandler === 'function') {
-                successHandler(response.result);
-            }
-        })
+                // If the response is a success, call the success handler
+                if (typeof successHandler === 'function') {
+                    successHandler(response.result);
+                }
+            })
     },
 };

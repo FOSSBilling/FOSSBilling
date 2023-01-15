@@ -53,11 +53,11 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/email/history/', 'get_history', [], get_class($this));
-        $app->get('/email/history', 'get_history', [], get_class($this));
-        $app->get('/email/templates', 'get_index', [], get_class($this));
-        $app->get('/email/template/:id', 'get_template', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/email/:id', 'get_email', ['id' => '[0-9]+'], get_class($this));
+        $app->get('/email/history/', 'get_history', [], static::class);
+        $app->get('/email/history', 'get_history', [], static::class);
+        $app->get('/email/templates', 'get_index', [], static::class);
+        $app->get('/email/template/:id', 'get_template', ['id' => '[0-9]+'], static::class);
+        $app->get('/email/:id', 'get_email', ['id' => '[0-9]+'], static::class);
     }
 
     public function get_history(\Box_App $app)

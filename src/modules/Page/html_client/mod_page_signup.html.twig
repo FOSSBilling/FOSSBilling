@@ -4,6 +4,7 @@
 
 {% block meta_title %}{{ 'Sign up'|trans }}{% endblock %}
 
+{% block body_class %}page-signup{% endblock %}
 {% block body %}
 <section class="container login" role="main">
     {% if settings.login_page_show_logo %}
@@ -14,6 +15,7 @@
         {% endif %}
     </h1>
     {% endif %}
+    <h2>{{ 'Signup'|trans }}</h2>
     <div class="data-block">
         <div class="data-container">
 

@@ -20,10 +20,7 @@ class Service
 {
     protected $di;
 
-    /**
-     * @param mixed $di
-     */
-    public function setDi($di)
+    public function setDi(mixed $di)
     {
         $this->di = $di;
     }
@@ -144,6 +141,7 @@ class Service
             'company_signature',
             'company_logo',
             'company_logo_dark',
+            'company_favicon',
             'company_address_1',
             'company_address_2',
             'company_address_3',
@@ -159,15 +157,20 @@ class Service
 
         $baseUrl = $this->di['config']['url'];
         $logoUrl = $this->di['array_get']($results, 'company_logo', null);
-        if (null !== $logoUrl && false === strpos($logoUrl, 'http')) {
+        if (null !== $logoUrl && !str_contains($logoUrl, 'http')) {
             $logoUrl = $baseUrl . $logoUrl;
         }
 
         $logoUrlDark = $this->di['array_get']($results, 'company_logo_dark', null);
-        if (null !== $logoUrlDark && false === strpos($logoUrlDark, 'http')) {
+        if (null !== $logoUrlDark && !str_contains($logoUrlDark, 'http')) {
             $logoUrlDark = $baseUrl . $logoUrlDark;
         }
         $logoUrlDark = (null === $logoUrlDark) ? $logoUrl : $logoUrlDark;
+
+        $faviconUrl = $this->di['array_get']($results, 'company_favicon', null);
+        if (null !== $faviconUrl && !str_contains($faviconUrl, 'http')) {
+            $faviconUrl = $baseUrl . $faviconUrl;
+        }
 
         return [
             'www' => $baseUrl,
@@ -177,6 +180,7 @@ class Service
             'signature' => $this->di['array_get']($results, 'company_signature', null),
             'logo_url' => $logoUrl,
             'logo_url_dark' => $logoUrlDark,
+            'favicon_url' => $faviconUrl,
             'address_1' => $this->di['array_get']($results, 'company_address_1', null),
             'address_2' => $this->di['array_get']($results, 'company_address_2', null),
             'address_3' => $this->di['array_get']($results, 'company_address_3', null),
@@ -213,11 +217,13 @@ class Service
                 $details[] = [
                     'locale' => $locale,
                     'title' => $locale .' ('.$locale.')',
+                    'name' => $locale,
                 ];
             }else{
             $details[] = [
                 'locale' => $locale,
                 'title' => $array[$locale] .' ('.$locale.')',
+                'name' => $array[$locale],
             ];
             }
         }
@@ -335,7 +341,7 @@ class Service
             // attempt adding admin api to twig
             try {
                 $twig->addGlobal('admin', $this->di['api_admin']);
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 // skip if admin is not logged in
             }
         }
@@ -346,7 +352,7 @@ class Service
         try {
             $template = $twig->load($tpl);
             $parsed = $template->render($vars);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             // $twig->load throws error when $tpl is string
             $parsed = $this->createTemplateFromString($tpl, $try_render, $vars);
         }
@@ -382,7 +388,7 @@ class Service
         if (isset($ip)) {
             try {
                 return $this->di['tools']->get_url('https://api.ipify.org', 2);
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 return '';
             }
         }
@@ -412,7 +418,7 @@ class Service
         }
 
         $this_page = $request->getURI();
-        if (false !== strpos($this_page, '?')) {
+        if (str_contains($this_page, '?')) {
             $a = explode('?', $this_page);
             $this_page = reset($a);
         }

@@ -75,13 +75,13 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/product', 'get_index', [], get_class($this));
-        $app->get('/product/promos', 'get_promos', [], get_class($this));
-        $app->get('/product/promo/:id', 'get_promo', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/product/manage/:id', 'get_manage', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/product/addons', 'get_addons', [], get_class($this));
-        $app->get('/product/addon/:id', 'get_addon_manage', ['id' => '[0-9]+'], get_class($this));
-        $app->get('/product/category/:id', 'get_cat_manage', ['id' => '[0-9]+'], get_class($this));
+        $app->get('/product', 'get_index', [], static::class);
+        $app->get('/product/promos', 'get_promos', [], static::class);
+        $app->get('/product/promo/:id', 'get_promo', ['id' => '[0-9]+'], static::class);
+        $app->get('/product/manage/:id', 'get_manage', ['id' => '[0-9]+'], static::class);
+        $app->get('/product/addons', 'get_addons', [], static::class);
+        $app->get('/product/addon/:id', 'get_addon_manage', ['id' => '[0-9]+'], static::class);
+        $app->get('/product/category/:id', 'get_cat_manage', ['id' => '[0-9]+'], static::class);
     }
 
     public function get_index(\Box_App $app)

@@ -68,11 +68,11 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/order', 'get_index', [], get_class($this));
-        $app->get('/order/', 'get_index', [], get_class($this));
-        $app->get('/order/index', 'get_index', [], get_class($this));
-        $app->get('/order/manage/:id', 'get_order', ['id' => '[0-9]+'], get_class($this));
-        $app->post('/order/new', 'get_new', [], get_class($this));
+        $app->get('/order', 'get_index', [], static::class);
+        $app->get('/order/', 'get_index', [], static::class);
+        $app->get('/order/index', 'get_index', [], static::class);
+        $app->get('/order/manage/:id', 'get_order', ['id' => '[0-9]+'], static::class);
+        $app->post('/order/new', 'get_new', [], static::class);
     }
 
     public function get_index(\Box_App $app)

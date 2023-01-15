@@ -6,7 +6,7 @@
 <li><a href="{{ 'email' | link}}">{{ 'Emails'|trans }}</a><span class="divider">/</span></li>
 {{ email.subject }}
 {% endblock %}
-
+{% block body_class %}email-email{% endblock %}
 {% block content %}
 <div class="row">
     <article class="span12 data-block">

@@ -252,20 +252,6 @@
     })("docReady", window);
 
     docReady(function() {
-        if (typeof jQuery === "undefined") {
-            (function(d, script) {
-                script = d.createElement('script');
-                script.type = 'text/javascript';
-                script.async = true;
-                script.onload = function(){
-                    ob = new orderbutton();
-                    ob.attachEvents();
-                };
-                script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js';
-                d.getElementsByTagName('head')[0].appendChild(script);
-            }(document));
-        }else{
-            ob = new orderbutton();
-            ob.attachEvents();
-        }
+        ob = new orderbutton();
+        ob.attachEvents();
     });

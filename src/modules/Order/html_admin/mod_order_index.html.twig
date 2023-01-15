@@ -198,6 +198,12 @@
                                     {% if order.status == 'pending_setup' %}
                                         <span class="badge bg-warning me-1"></span>
                                     {% endif %}
+                                    {% if order.status == 'failed_setup' %}
+                                    <span class="badge bg-warning me-1"></span>
+                                    {% endif %}
+                                    {% if order.status == 'failed_renew' %}
+                                    <span class="badge bg-warning me-1"></span>
+                                    {% endif %}
                                     {% if order.status == 'active' %}
                                         <span class="badge bg-success me-1"></span>
                                     {% endif %}

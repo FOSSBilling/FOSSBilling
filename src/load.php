@@ -19,13 +19,13 @@ use Whoops\Run;
 
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV') ?: 'production');
 const PATH_ROOT = __DIR__;
-const PATH_VENDOR = PATH_ROOT . '/vendor';
-const PATH_LIBRARY = PATH_ROOT . '/library';
-const PATH_THEMES = PATH_ROOT . '/themes';
-const PATH_MODS = PATH_ROOT . '/modules';
-const PATH_LANGS = PATH_ROOT . '/locale';
-const PATH_UPLOADS = PATH_ROOT . '/uploads';
-const PATH_DATA = PATH_ROOT . '/data';
+const PATH_VENDOR = PATH_ROOT . DIRECTORY_SEPARATOR. 'vendor';
+const PATH_LIBRARY = PATH_ROOT . DIRECTORY_SEPARATOR. 'library';
+const PATH_THEMES = PATH_ROOT . DIRECTORY_SEPARATOR. 'themes';
+const PATH_MODS = PATH_ROOT . DIRECTORY_SEPARATOR. 'modules';
+const PATH_LANGS = PATH_ROOT . DIRECTORY_SEPARATOR. 'locale';
+const PATH_UPLOADS = PATH_ROOT . DIRECTORY_SEPARATOR. 'uploads';
+const PATH_DATA = PATH_ROOT . DIRECTORY_SEPARATOR. 'data';
 const isCLI = 'cli' === PHP_SAPI;
 
 // Deprecated aliases

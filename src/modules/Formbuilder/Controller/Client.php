@@ -38,7 +38,7 @@ class Client implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/formbuilder/:id', 'get_form', ['id' => '[0-9]+'], get_class($this));
+        $app->get('/formbuilder/:id', 'get_form', ['id' => '[0-9]+'], static::class);
     }
 
     public function get_form(\Box_App $app, $id)

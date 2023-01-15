@@ -53,7 +53,7 @@ class Admin implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        $app->get('/embed', 'get_index', [], get_class($this));
+        $app->get('/embed', 'get_index', [], static::class);
     }
 
     public function get_index(\Box_App $app)

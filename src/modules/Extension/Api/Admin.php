@@ -49,7 +49,7 @@ class Admin extends \Api_Abstract
         $type = $this->di['array_get']($data, 'type', null);
         try {
             $list = $this->di['extension']->getLatest($type);
-        } catch(\Exception $e) {
+        } catch(\Exception) {
             $list = array();
         }
         return $list;

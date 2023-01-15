@@ -50,7 +50,7 @@ class Client implements \Box\InjectionAwareInterface
      */
     public function register(\Box_App &$app)
     {
-        $app->get('/custompages/:slug', 'get_page', ['slug' => '[a-z0-9-]+'], get_class($this));
+        $app->get('/custompages/:slug', 'get_page', ['slug' => '[a-z0-9-]+'], static::class);
     }
 
     public function get_page(\Box_App $app, $slug)

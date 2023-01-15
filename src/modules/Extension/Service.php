@@ -80,7 +80,7 @@ class Service implements InjectionAwareInterface
             try {
                 $mod = $this->di['mod']($ext->name);
                 $mod->getManifest();
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 $this->di['db']->trash($ext);
                 ++$removedItems;
             }
@@ -193,7 +193,7 @@ class Service implements InjectionAwareInterface
 
         if (!empty($search)) {
             foreach ($result as $idx => $mod) {
-                if (false === strpos(strtolower($mod['name']), $search)) {
+                if (!str_contains(strtolower($mod['name']), $search)) {
                     unset($result[$idx]);
                 }
             }

@@ -398,7 +398,7 @@ $di['loggedin_client'] = function () use ($di) {
  * @throws \Box_Exception If the script is running in CLI or CGI mode and there is no cron admin available.
  */
 $di['loggedin_admin'] = function () use ($di) {
-    if ('cli' === php_sapi_name() || 'cgi' === substr(php_sapi_name(), 0, 3)) {
+    if ('cli' === php_sapi_name() || str_starts_with(php_sapi_name(), 'cgi')) {
         return $di['mod_service']('staff')->getCronAdmin();
     }
 
@@ -418,26 +418,13 @@ $di['loggedin_admin'] = function () use ($di) {
  * @throws \Exception If the specified role is not recognized.
  */
 $di['api'] = $di->protect(function ($role) use ($di) {
-    switch ($role) {
-        case 'guest':
-            $identity = new \Model_Guest();
-            break;
-
-        case 'client':
-            $identity = $di['loggedin_client'];
-            break;
-
-        case 'admin':
-            $identity = $di['loggedin_admin'];
-            break;
-
-        case 'system':
-            $identity = $di['mod_service']('staff')->getCronAdmin();
-            break;
-
-        default:
-            throw new Exception('Unrecognized Handler type: ' . $role);
-    }
+    $identity = match ($role) {
+        'guest' => new \Model_Guest(),
+        'client' => $di['loggedin_client'],
+        'admin' => $di['loggedin_admin'],
+        'system' => $di['mod_service']('staff')->getCronAdmin(),
+        default => throw new Exception('Unrecognized Handler type: ' . $role),
+    };
 
     $api = new Api_Handler($identity);
     $api->setDi($di);
