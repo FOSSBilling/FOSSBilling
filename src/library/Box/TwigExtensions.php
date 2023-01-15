@@ -305,8 +305,9 @@ function twig_size_filter($value)
 
 function twig_markdown_filter(Twig\Environment $env, $value)
 {
+    $content = $value ?? '';
     $markdownParser = new GithubFlavoredMarkdownConverter(['html_input' => 'escape', 'allow_unsafe_links' => false, 'max_nesting_level' => 50]);
-    return $markdownParser->convert($value);
+    return $markdownParser->convert($content);
 }
 
 function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
