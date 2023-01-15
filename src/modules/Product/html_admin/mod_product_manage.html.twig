@@ -230,13 +230,25 @@
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Product Upgrades'|trans }}</label>
                         <div class="col">
+                        <input type="hidden" name="upgrades[]" value=""/>
                             {% set products = admin.product_get_pairs %}
-                            <input type="hidden" name="upgrades">
-                            <select name="upgrades[]" multiple="multiple" class="form-select" size="{{ products|length }}">
-                                {% for id,ptitle in products %}
-                                <option value="{{ id }}"{% if product.upgrades[id] %} selected{% endif %}>{{ ptitle }}</option>
-                                {% endfor %}
-                            </select>
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                                <tbody>
+                                    {% set products = admin.product_get_pairs %}
+                                    {% for id,ptitle in products %}
+                                    {% if id != product.id %}
+                                    <tr>
+                                        <td class="w-1">
+                                            <input class="form-check-input" type="checkbox" name="upgrades[]" value="{{id}}" id="upgrades{{ id }}" {% if product.upgrades[id] %} checked{% endif %}>
+                                        </td>
+                                        <td>
+                                            <label for="upgrades[{{ id }}]">{{ ptitle }}</label>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 

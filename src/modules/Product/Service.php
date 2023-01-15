@@ -292,12 +292,20 @@ class Service implements InjectionAwareInterface
         $model->hidden = (int) $this->di['array_get']($data, 'hidden', $model->hidden);
         $model->slug = $this->di['array_get']($data, 'slug', $model->slug);
         $model->setup = $this->di['array_get']($data, 'setup', $model->setup);
+        //remove empty value in data['upgrades];
         if (isset($data['upgrades']) && is_array($data['upgrades'])) {
-            $model->upgrades = json_encode($data['upgrades']);
-        } elseif (isset($data['upgrades']) && empty($data['upgrades'])) {
-            $model->upgrades = null;
+            $upgrades = [];
+            foreach($data['upgrades'] as $upgrade => $value){
+                if(!empty($value)){
+                    $upgrades[] = $value;
+                }
+            }
+            if(!empty($upgrades)){
+                $model->upgrades = json_encode($upgrades);
+            }else{
+                $model->upgrades = null;
+            }
         }
-
         if (isset($data['addons']) && is_array($data['addons'])) {
             $addons = [];
             foreach ($data['addons'] as $addon => $on) {
@@ -751,24 +759,24 @@ class Service implements InjectionAwareInterface
 
     public function getProductCategorySearchQuery($data)
     {
-        $sql = 'SELECT m.id, 
-                       m.title, 
-                       m.description, 
-                       m.icon_url, 
-                       m.created_at, 
-                       m.updated_at, 
+        $sql = 'SELECT m.id,
+                       m.title,
+                       m.description,
+                       m.icon_url,
+                       m.created_at,
+                       m.updated_at,
                        Max(p.priority) AS MaxPrio
-                FROM   product_category AS m 
-                       LEFT JOIN product p 
-                              ON p.product_category_id = m.id 
-                WHERE  p.status = \'enabled\' 
-                       AND p.hidden = 0 
-                GROUP  BY m.id, 
-                          m.title, 
-                          m.description, 
-                          m.icon_url, 
-                          m.created_at, 
-                          m.updated_at 
+                FROM   product_category AS m
+                       LEFT JOIN product p
+                              ON p.product_category_id = m.id
+                WHERE  p.status = \'enabled\'
+                       AND p.hidden = 0
+                GROUP  BY m.id,
+                          m.title,
+                          m.description,
+                          m.icon_url,
+                          m.created_at,
+                          m.updated_at
                 ORDER  BY MaxPrio ASC;';
 
         $params = [];
