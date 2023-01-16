@@ -1,1 +1,0 @@
-* * * * * php /var/www/html/src/cron.php >> /var/www/html/src/data/log/cron.log 2>&1
