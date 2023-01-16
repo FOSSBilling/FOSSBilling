@@ -132,28 +132,9 @@ Now, you have everything ready to start the installation of FOSSBilling,. Naviga
 ### Installing with Docker
 <a href="https://www.docker.com/"><img align="right" src="https://www.docker.com/wp-content/uploads/2022/03/horizontal-logo-monochromatic-white.png" alt="Docker logo" width="125"></a>
 
-This guide assumes you already have [Docker](https://docs.docker.com/get-docker/), [Git](https://git-scm.com) and [GNU make](https://www.gnu.org/software/make/) installed.
+We have developed an official Docker image, however, it should be noted that both the image and FOSSBilling are currently undergoing significant development and should not be considered production ready.
 
-To clone the repository, first, run these commands in your command line:
-
-```bash
-# Clone this repository
-$ git clone https://github.com/fossbilling/fossbilling
-
-# Navigate to the local repository
-$ cd fossbilling
-
-# If you would like to run Dockerized FOSSBilling on a different port,
-# Please note that FOSSBilling won't support SSL unless you use a proxy in front of it!
-# In that case, make sure to update ./src/config.php and replace http://localhost/ with https://domain.com/
-# Also update docker-compose.yaml - line 9
-# -3000:80 (For example, map port 80 to the port 3000)
-
-# Run the app with some help from Docker
-$ ./bin/install.sh
-```
-
-Now, you can navigate to your web server in your browser. If you're using a PC, or directly a server without a server manager like Plesk, this address will probably be [localhost](http://localhost).
+The image and install instructions can be found **[here](https://github.com/FOSSBilling/Docker)**.
 
 ## Contributing
 🖥️ Welcome, fellow developer! 🙂
