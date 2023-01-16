@@ -20,6 +20,18 @@
 
 
 /**
+ * Migration steps to create table to allow admin users to do password reset
+ */
+class FOSSPatch_27 extends FOSSPatchAbstract
+{
+    public function patch(){
+        // create admin password reset table
+        $q = "CREATE TABLE `admin_password_reset` ( `id` bigint(20) NOT NULL AUTO_INCREMENT, `admin_id` bigint(20) DEFAULT NULL, `hash` varchar(100) DEFAULT NULL, `ip` varchar(45) DEFAULT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `admin_id_idx` (`admin_id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+        $this->execSql($q);
+    }
+}
+
+/**
  * Migration steps from BoxBilling to FOSSBilling.
  */
 class FOSSPatch_26 extends FOSSPatchAbstract
@@ -46,17 +58,6 @@ class FOSSPatch_25 extends FOSSPatchAbstract
     }
 }
 
-/**
- * Migration steps to create table to allow admin users to do password reset
- */
-class FOSSPatch_26 extends FOSSPatchAbstract
-{
-    public function patch(){
-        // create admin password reset table
-        $q = "CREATE TABLE `admin_password_reset` ( `id` bigint(20) NOT NULL AUTO_INCREMENT, `admin_id` bigint(20) DEFAULT NULL, `hash` varchar(100) DEFAULT NULL, `ip` varchar(45) DEFAULT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `admin_id_idx` (`admin_id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
-        $this->execSql($q);
-    }
-}
 
 abstract class FOSSPatchAbstract
 {
