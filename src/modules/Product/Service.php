@@ -633,19 +633,47 @@ class Service implements InjectionAwareInterface
         if (empty($products) && !is_null($products)) {
             $model->products = null;
         } else {
-            $model->products = json_encode($products);
+            $products = [];
+            foreach($data['products'] as $product => $value){
+                if(!empty($value)){
+                    $products[] = $value;
+                }
+            }
+            if(!empty($products)){
+                $model->products = json_encode($products);
+            }else{
+                $model->products = null
+            }
         }
 
         $client_groups = $this->di['array_get']($data, 'client_groups');
         if (empty($client_groups) && !is_null($client_groups)) {
             $model->client_groups = null;
         } else {
-            $model->client_groups = json_encode($client_groups);
+            $client_groups = [];
+            foreach($data['client_groups'] as $client_group => $value){
+                if(!empty($value)){
+                    $client_groups[] = $value;
+                }
+            }
+            if(!empty($client_groups)){
+                $model->client_groups = json_encode($client_groups);
+            }else{
+                $model->client_groups = null
+            }
         }
 
         $periods = $this->di['array_get']($data, 'periods');
-        if (isset($periods) && is_array($periods)) {
-            $model->periods = json_encode($periods);
+        if (!empty($periods) && is_null($periods)) {
+            $periods = [];
+            foreach($data['periods'] as $period => $value){
+                if(!empty($value)){
+                    $periods[] = $value;
+                }
+            }
+            if(!empty($periods)){
+                $model->periods = json_encode($periods);
+            }
         }
 
         $model->updated_at = date('Y-m-d H:i:s');
