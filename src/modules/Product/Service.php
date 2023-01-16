@@ -633,46 +633,49 @@ class Service implements InjectionAwareInterface
         if (empty($products) && !is_null($products)) {
             $model->products = null;
         } else {
-            $products = [];
-            foreach($data['products'] as $product => $value){
-                if(!empty($value)){
-                    $products[] = $value;
+            $array = [];
+            foreach($products as $product => $value){
+                if($value != ''){
+                    $array[] = $value;
                 }
             }
-            if(!empty($products)){
-                $model->products = json_encode($products);
+            if(!empty($array)){
+                $model->products = json_encode($array);
             }else{
-                $model->products = null
+                $model->products = null;
             }
         }
-
         $client_groups = $this->di['array_get']($data, 'client_groups');
         if (empty($client_groups) && !is_null($client_groups)) {
             $model->client_groups = null;
         } else {
-            $client_groups = [];
+            $array = [];
             foreach($data['client_groups'] as $client_group => $value){
-                if(!empty($value)){
-                    $client_groups[] = $value;
+                if($value != ''){
+                    $array[] = $value;
                 }
             }
             if(!empty($client_groups)){
-                $model->client_groups = json_encode($client_groups);
+                $model->client_groups = json_encode($array);
             }else{
-                $model->client_groups = null
+                $model->client_groups = null;
             }
         }
 
         $periods = $this->di['array_get']($data, 'periods');
-        if (!empty($periods) && is_null($periods)) {
-            $periods = [];
+        if (empty($periods) && !is_null($periods)) {
+            $model->periods = null;
+        } else {
+            $array = [];
             foreach($data['periods'] as $period => $value){
-                if(!empty($value)){
-                    $periods[] = $value;
+                if($value != ''){
+                    $array[] = $value;
                 }
             }
             if(!empty($periods)){
-                $model->periods = json_encode($periods);
+                $model->periods = json_encode($array);
+            }else{
+                $model->periods = null;
             }
         }
 
