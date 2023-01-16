@@ -178,14 +178,14 @@
             freeTldsRow.fadeIn('slow');
             freePerdsRow.fadeIn('slow');
             $('input[name="config[free_domain_periods][]"]').prop('required', true);
-            $('input[name="config[free_tlds][]"]').prop('required', this);
+            $('input[name="config[free_tlds][]"]').prop('required', true);
         }
 
         if ($(this).val() == 0){
             $('input[name="config[free_domain_periods][]"]').prop('required', false);
             $('input[name="config[free_tlds][]"]').prop('required', false);
-            $('input[name="config[free_tlds][]"]').prop( 'checked', false );
-            $('input[name="config[free_domain_periods][]"]').prop( "checked", false )
+            $('input[name="config[free_tlds][]"]').prop( 'checked', false);
+            $('input[name="config[free_domain_periods][]"]').prop( "checked", false);
             freeTldsRow.fadeOut('slow');
             freePerdsRow.fadeOut('slow');
         }
