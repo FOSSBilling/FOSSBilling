@@ -132,7 +132,7 @@ Now, you have everything ready to start the installation of FOSSBilling,. Naviga
 ### Installing with Docker
 <a href="https://www.docker.com/"><img align="right" src="https://www.docker.com/wp-content/uploads/2022/03/horizontal-logo-monochromatic-white.png" alt="Docker logo" width="125"></a>
 
-We've created an official docker image, however, just as FOSSbilling is still under heavy development and testing, so is the docker image.
+We have developed an official Docker image, however, it should be noted that both the image and FOSSBilling are currently undergoing significant development and should not be considered production ready.
 
 The image and install instructions can be found **[here](https://github.com/FOSSBilling/Docker)**.
 
