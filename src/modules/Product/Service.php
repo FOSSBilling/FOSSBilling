@@ -295,7 +295,6 @@ class Service implements InjectionAwareInterface
         //remove empty value in data['upgrades];
         if(is_array($data['upgrades'])){
             $upgrades = array_values(array_filter($data['upgrades']));
-            var_dump($upgrades);
             if (empty($upgrades)){
                 $model->upgrades = null;
             } else{
