@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -32,16 +33,16 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
     {
         $this->config = $config;
 
-        if(!isset($this->config['api_key'])) {
+        if (!isset($this->config['api_key'])) {
             throw new Payment_Exception('Payment gateway "Stripe" is not configured properly. Please update configuration parameter "api_key" at "Configuration -> Payments".');
         }
 
-        if(!isset($this->config['pub_key'])) {
+        if (!isset($this->config['pub_key'])) {
             throw new Payment_Exception('Payment gateway "Stripe" is not configured properly. Please update configuration parameter "pub_key" at "Configuration -> Payments".');
         }
 
         $api_key = $this->config['test_mode'] ? $this->get_test_api_key() : $this->config['api_key'];
-        
+
         $this->stripe = new \Stripe\StripeClient($api_key);
     }
 
@@ -51,23 +52,27 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             'supports_one_time_payments'   =>  true,
             'description'     =>  ' You authenticate to the Stripe API by providing one of your API keys in the request. You can manage your API keys from your account.',
             'form'  => array(
-                'test_api_key' => array('text', array(
-                    'label' => 'Test Secret key:',
-                    'required' => false,
+                'test_api_key' => array(
+                    'text', array(
+                        'label' => 'Test Secret key:',
+                        'required' => false,
+                    ),
                 ),
+                'test_pub_key' => array(
+                    'text', array(
+                        'label' => 'Test Publishable key:',
+                        'required' => false,
+                    ),
                 ),
-               'test_pub_key' => array('text', array(
-                   'label' => 'Test Publishable key:',
-                   'required' => false,
-               ),
-               ),
-                'api_key' => array('text', array(
-                    'label' => 'Live Secret key:',
+                'api_key' => array(
+                    'text', array(
+                        'label' => 'Live Secret key:',
+                    ),
                 ),
-                ),
-               'pub_key' => array('text', array(
-                    'label' => 'Live publishable key:',
-                ),
+                'pub_key' => array(
+                    'text', array(
+                        'label' => 'Live publishable key:',
+                    ),
                 ),
             ),
         );
@@ -91,11 +96,12 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
         $invoiceItems = $this->di['db']->getAll('SELECT title from invoice_item WHERE invoice_id = :invoice_id', array(':invoice_id' => $invoice->id));
 
         $params = array(
-            ':id'=>sprintf('%05s', $invoice->nr),
-            ':serie'=>$invoice->serie,
-            ':title'=>$invoiceItems[0]['title']);
+            ':id' => sprintf('%05s', $invoice->nr),
+            ':serie' => $invoice->serie,
+            ':title' => $invoiceItems[0]['title']
+        );
         $title = __trans('Payment for invoice :serie:id [:title]', $params);
-        if(count($invoiceItems) > 1) {
+        if (count($invoiceItems) > 1) {
             $title = __trans('Payment for invoice :serie:id', $params);
         }
         return $title;
@@ -105,14 +111,14 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
     {
         $body           = $e->getJsonBody();
         $err            = $body['error'];
-        $tx->txn_status = $err ['type'];
+        $tx->txn_status = $err['type'];
         $tx->error      = $err['message'];
         $tx->status     = 'processed';
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
 
-        if ($this->di['config']['debug']){
+        if ($this->di['config']['debug']) {
             error_log(json_encode($e->getJsonBody()));
         }
         throw new Exception($tx->error);
@@ -140,7 +146,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
 
             $bd = array(
                 'amount'        =>  $tx->amount,
-                'description'   =>  'Stripe transaction '.$charge->id,
+                'description'   =>  'Stripe transaction ' . $charge->id,
                 'type'          =>  'transaction',
                 'rel_id'        =>  $tx->id,
             );
@@ -150,12 +156,11 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
             $invoiceService = $this->di['mod_service']('Invoice');
-            if($tx->invoice_id) {
+            if ($tx->invoice_id) {
                 $invoiceService->payInvoiceWithCredits($invoice);
             }
-            $invoiceService->doBatchPayWithCredits(array('client_id'=>$client->id));
-
-        } catch(\Stripe\Error\Card $e) {
+            $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
+        } catch (\Stripe\Error\Card $e) {
             $this->logError($e, $tx);
         } catch (\Stripe\Error\InvalidRequest $e) {
             $this->logError($e, $tx);
@@ -182,9 +187,9 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             'automatic_payment_methods' => ['enabled' => true],
             "receipt_email" => $invoice->buyer_email
         ]);
-          
+
         $pubKey = $this->config['pub_key'];
-        if ($this->config['test_mode']){
+        if ($this->config['test_mode']) {
             $pubKey = $this->get_test_pub_key();
         }
 
@@ -257,7 +262,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             ':description' => $title,
             ':email' => $invoice->buyer_email,
             ':callbackUrl' => $payGatewayService->getCallbackUrl($payGateway, $invoice),
-            ':redirectUrl' => $this->di['tools']->url('invoice/'.$invoice->hash),
+            ':redirectUrl' => $this->di['tools']->url('invoice/' . $invoice->hash),
             ':invoice_hash' => $invoice->hash
         );
         return strtr($form, $bindings);
@@ -265,7 +270,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
 
     public function get_test_pub_key()
     {
-        if(!isset($this->config['test_pub_key'])) {
+        if (!isset($this->config['test_pub_key'])) {
             throw new Payment_Exception('Payment gateway "Stripe" is not configured properly. Please update configuration parameter "test_pub_key" at "Configuration -> Payments".');
         }
         return $this->config['test_pub_key'];
@@ -273,7 +278,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
 
     public function get_test_api_key()
     {
-        if(!isset($this->config['test_api_key'])) {
+        if (!isset($this->config['test_api_key'])) {
             throw new Payment_Exception('Payment gateway "Stripe" is not configured properly. Please update configuration parameter "test_api_key" at "Configuration -> Payments".');
         }
         return $this->config['test_api_key'];
