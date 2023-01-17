@@ -23,7 +23,7 @@
         "twig/twig": "^3.3.9",
         "geoip2/geoip2": "^2.10.0",
         "phpmailer/phpmailer": "^6.6.5",
-        "stripe/stripe-php": "^7.92.0",
+        "stripe/stripe-php": "^10.3.0",
         "guzzlehttp/guzzle": "^7.4.2",
         "filp/whoops": "^2.14",
         "psr/log": "^3.0.0",
