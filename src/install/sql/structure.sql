@@ -133,6 +133,25 @@ CREATE TABLE `admin_group` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+
+--
+-- Table structure for table `admin_password_reset`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `admin_password_reset` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+    `admin_id` bigint(20) DEFAULT NULL,
+    `hash` varchar(100) DEFAULT NULL,
+    `ip` varchar(45) DEFAULT NULL,
+    `created_at` datetime DEFAULT NULL,
+    `updated_at` datetime DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY `admin_id_idx` (`admin_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
 --
 -- Table structure for table `api_request`
 --
@@ -1438,3 +1457,4 @@ CREATE TABLE `transaction` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2014-09-19 15:00:47
+

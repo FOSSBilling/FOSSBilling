@@ -60,6 +60,9 @@ class Admin implements InjectionAwareInterface
         $app->get('/staff/group/:id', 'get_group', ['id' => '[0-9]+'], static::class);
         $app->get('/staff/profile', 'get_profile', [], static::class);
         $app->get('/staff/logins', 'get_history', [], static::class);
+        // staff password reset
+        $app->get('/staff/passwordreset', 'get_passwordreset', [], get_class($this));
+        $app->get('/staff/email/:hash', 'get_confirmation', ['hash' => '[a-zA-Z0-9]+'], get_class($this));
     }
 
     public function get_login(\Box_App $app)
@@ -107,5 +110,22 @@ class Admin implements InjectionAwareInterface
         $this->di['is_admin_logged'];
 
         return $app->render('mod_staff_login_history');
+    }
+
+    public function get_passwordreset(\Box_App $app)
+    {
+        return $app->render('mod_staff_password_reset');
+    }
+
+    public function get_confirmation(\Box_App $app, $hash)
+    {
+        $service = $this->di['mod_service']('staff');
+
+        // send confirmation email
+        $service->sendPasswordResetConfirmation($hash);
+        $this->di['logger']->info('Admin password reset request was approved');
+
+        // redirect to login page
+        return $app->redirect('/');
     }
 }
