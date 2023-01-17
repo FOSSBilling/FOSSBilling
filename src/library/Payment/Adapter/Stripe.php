@@ -19,6 +19,8 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
 
     protected $di;
 
+    private $stripe;
+
     public function setDi($di)
     {
         $this->di = $di;
@@ -160,13 +162,13 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
                 $invoiceService->payInvoiceWithCredits($invoice);
             }
             $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
-        } catch (\Stripe\Error\Card $e) {
+        } catch (\Stripe\Exception\CardException $e) {
             $this->logError($e, $tx);
-        } catch (\Stripe\Error\InvalidRequest $e) {
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
             $this->logError($e, $tx);
-        } catch (\Stripe\Error\Authentication $e) {
+        } catch (\Stripe\Exception\AuthenticationException $e) {
             $this->logError($e, $tx);
-        } catch (\Stripe\Error\ApiConnection $e) {
+        } catch (\Stripe\Exception\ApiConnectionException $e) {
             $this->logError($e, $tx);
         }
 
