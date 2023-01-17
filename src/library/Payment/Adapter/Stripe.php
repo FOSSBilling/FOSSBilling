@@ -141,6 +141,10 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
                 []
             );
 
+            if (!isset($charge)) {
+                throw new \Exception("Failed to get the charge item from Stripe.");
+            }
+
             $tx->txn_status = $charge->status;
             $tx->txn_id = $charge->id;
             $tx->amount = $charge->amount / 100;
@@ -172,7 +176,13 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             $this->logError($e, $tx);
         }
 
-        $tx->status = 'processed';
+        $paymentStatus = match ($charge->status) {
+            'succeeded' => 'processed',
+            'pending' => 'received',
+            'failed' => 'error',
+        };
+
+        $tx->status = $paymentStatus;
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
     }
