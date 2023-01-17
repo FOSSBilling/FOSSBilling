@@ -293,27 +293,18 @@ class Service implements InjectionAwareInterface
         $model->slug = $this->di['array_get']($data, 'slug', $model->slug);
         $model->setup = $this->di['array_get']($data, 'setup', $model->setup);
         //remove empty value in data['upgrades];
-        if (isset($data['upgrades']) && is_array($data['upgrades'])) {
-            $upgrades = [];
-            foreach($data['upgrades'] as $upgrade => $value){
-                if(!empty($value)){
-                    $upgrades[] = $value;
-                }
-            }
-            if(!empty($upgrades)){
-                $model->upgrades = json_encode($upgrades);
-            }else{
+        if(is_array($data['upgrades'])){
+            $upgrades = array_values(array_filter($data['upgrades']));
+            var_dump($upgrades);
+            if (empty($upgrades)){
                 $model->upgrades = null;
+            } else{
+                $model->upgrades = json_encode($upgrades);
             }
         }
-        if (isset($data['addons']) && is_array($data['addons'])) {
-            $addons = [];
-            foreach ($data['addons'] as $addon => $on) {
-                if ($on) {
-                    $addons[] = $addon;
-                }
-            }
-            if (empty($addons)) {
+        if(is_array($data['addons'])){
+            $addons =  array_values(array_filter($data['addons']));
+            if (is_null($addons)) {
                 $model->addons = null;
             } else {
                 $model->addons = json_encode($addons);
@@ -629,53 +620,35 @@ class Service implements InjectionAwareInterface
             $model->end_at = date('Y-m-d H:i:s', strtotime($end_at));
         }
 
-        $products = $this->di['array_get']($data, 'products');
-        if (empty($products) && !is_null($products)) {
+        if(!is_array($this->di['array_get']($data, 'products'))){
             $model->products = null;
-        } else {
-            $array = [];
-            foreach($products as $product => $value){
-                if($value != ''){
-                    $array[] = $value;
-                }
-            }
-            if(!empty($array)){
-                $model->products = json_encode($array);
-            }else{
+        }else{
+            $products =  array_values(array_filter($this->di['array_get']($data, 'products')));
+            if (empty($products)) {
                 $model->products = null;
+            }else{
+                $model->products = json_encode($products);
             }
         }
-        $client_groups = $this->di['array_get']($data, 'client_groups');
-        if (empty($client_groups) && !is_null($client_groups)) {
+        if(!is_array($this->di['array_get']($data, 'client_groups'))){
             $model->client_groups = null;
-        } else {
-            $array = [];
-            foreach($data['client_groups'] as $client_group => $value){
-                if($value != ''){
-                    $array[] = $value;
-                }
-            }
-            if(!empty($client_groups)){
-                $model->client_groups = json_encode($array);
-            }else{
+        }else{
+            $client_groups = array_values(array_filter($this->di['array_get']($data, 'client_groups')));
+            if (empty($client_groups)) {
                 $model->client_groups = null;
+            }else{
+                $model->client_groups = json_encode($client_groups);
             }
         }
 
-        $periods = $this->di['array_get']($data, 'periods');
-        if (empty($periods) && !is_null($periods)) {
+        if(!is_array($this->di['array_get']($data, 'periods'))){
             $model->periods = null;
-        } else {
-            $array = [];
-            foreach($data['periods'] as $period => $value){
-                if($value != ''){
-                    $array[] = $value;
-                }
-            }
-            if(!empty($periods)){
-                $model->periods = json_encode($array);
-            }else{
+        }else{
+            $periods = array_values(array_filter($this->di['array_get']($data, 'periods')));
+            if (empty($periods)) {
                 $model->periods = null;
+            }else{
+                $model->periods = json_encode($periods);
             }
         }
 
