@@ -14,8 +14,14 @@
 {% endif %}
 
 {% if bb_editor == 'ckeditor' %}
-{{ 'ckeditor/ckeditor.js' | mod_asset_url('wysiwyg') | script_tag }}
-<script type="text/javascript" >
-    CKEDITOR.replaceClass = '{{class}}';
-</script>
+    {{ 'ckeditor/ckeditor.js' | mod_asset_url('wysiwyg') | script_tag }}
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function () {
+            ClassicEditor
+                .create(document.querySelector('.{{ class }}'))
+                .catch(error => {
+                    console.error(error);
+                });
+        });
+    </script>
 {% endif %}
