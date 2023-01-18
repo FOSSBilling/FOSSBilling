@@ -31,7 +31,7 @@ export const buildWysiwyg = function buildWysiwyg() {
 }
 buildWysiwyg.description = 'Build Wysiwyg assets.';
 
-export const build = gulp.parallel(buildThemeAdmin);
+export const build = gulp.parallel(buildThemeAdmin, buildWysiwyg);
 build.description = 'Build assets.';
 
 gulp.task('admin_default', buildThemeAdmin);
