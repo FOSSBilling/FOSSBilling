@@ -12,8 +12,10 @@
     "url": "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
   "dependencies": {
+    "@ckeditor/ckeditor5-build-classic": "^35.4.0",
     "@tabler/core": "1.0.0-beta16",
     "autoprefixer": "^10.4.13",
+    "gulp-clean": "^0.4.0",
     "postcss": "^8.4.21",
     "sass": "^1.57.1"
   },
