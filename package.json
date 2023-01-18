@@ -15,7 +15,6 @@
     "@ckeditor/ckeditor5-build-classic": "^35.4.0",
     "@tabler/core": "1.0.0-beta16",
     "autoprefixer": "^10.4.13",
-    "gulp-clean": "^0.4.0",
     "postcss": "^8.4.21",
     "sass": "^1.57.1"
   },
@@ -32,6 +31,7 @@
     "gulp-autoprefixer": "^8.0.0",
     "gulp-cheerio": "^1.0.0",
     "gulp-chug": "^0.5.1",
+    "gulp-clean": "^0.4.0",
     "gulp-concat": "^2.6.1",
     "gulp-postcss": "^9.0.1",
     "gulp-sass": "^5.1.0",
