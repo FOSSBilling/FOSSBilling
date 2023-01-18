@@ -50,34 +50,34 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
 
     public static function getConfig()
     {
-        return array(
+        return [
             'supports_one_time_payments'   =>  true,
-            'description'     =>  ' You authenticate to the Stripe API by providing one of your API keys in the request. You can manage your API keys from your account.',
-            'form'  => array(
-                'test_api_key' => array(
-                    'text', array(
+            'description'     =>  'You authenticate to the Stripe API by providing one of your API keys in the request. You can manage your API keys from your account.',
+            'form'  => [
+                'test_api_key' => [
+                    'text', [
                         'label' => 'Test Secret key:',
                         'required' => false,
-                    ),
-                ),
-                'test_pub_key' => array(
-                    'text', array(
+                    ],
+                ],
+                'test_pub_key' => [
+                    'text', [
                         'label' => 'Test Publishable key:',
                         'required' => false,
-                    ),
-                ),
-                'api_key' => array(
-                    'text', array(
+                    ],
+                ],
+                'api_key' => [
+                    'text', [
                         'label' => 'Live Secret key:',
-                    ),
-                ),
-                'pub_key' => array(
-                    'text', array(
+                    ],
+                ],
+                'pub_key' => [
+                    'text', [
                         'label' => 'Live publishable key:',
-                    ),
-                ),
-            ),
-        );
+                    ],
+                ],
+            ],
+        ];
     }
 
     public function getHtml($api_admin, $invoice_id, $subscription)
@@ -97,11 +97,11 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
     {
         $invoiceItems = $this->di['db']->getAll('SELECT title from invoice_item WHERE invoice_id = :invoice_id', array(':invoice_id' => $invoice->id));
 
-        $params = array(
+        $params = [
             ':id' => sprintf('%05s', $invoice->nr),
             ':serie' => $invoice->serie,
             ':title' => $invoiceItems[0]['title']
-        );
+        ];
         $title = __trans('Payment for invoice :serie:id [:title]', $params);
         if (count($invoiceItems) > 1) {
             $title = __trans('Payment for invoice :serie:id', $params);
@@ -109,7 +109,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
         return $title;
     }
 
-    public function logError(Exception $e, Model_Transaction $tx)
+    public function logError($e, Model_Transaction $tx)
     {
         $body           = $e->getJsonBody();
         $err            = $body['error'];
@@ -118,7 +118,6 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
         $tx->status     = 'processed';
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
-
 
         if ($this->di['config']['debug']) {
             error_log(json_encode($e->getJsonBody()));
@@ -150,21 +149,23 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             $tx->amount = $charge->amount / 100;
             $tx->currency = $charge->currency;
 
-            $bd = array(
+            $bd = [
                 'amount'        =>  $tx->amount,
                 'description'   =>  'Stripe transaction ' . $charge->id,
                 'type'          =>  'transaction',
                 'rel_id'        =>  $tx->id,
-            );
+            ];
 
             $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id);
             $clientService = $this->di['mod_service']('client');
             $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
             $invoiceService = $this->di['mod_service']('Invoice');
+
             if ($tx->invoice_id) {
                 $invoiceService->payInvoiceWithCredits($invoice);
             }
+
             $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
         } catch (\Stripe\Exception\CardException $e) {
             $this->logError($e, $tx);
@@ -200,10 +201,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             "receipt_email" => $invoice->buyer_email
         ]);
 
-        $pubKey = $this->config['pub_key'];
-        if ($this->config['test_mode']) {
-            $pubKey = $this->get_test_pub_key();
-        }
+        $pubKey = ($this->config['test_mode']) ? $this->get_test_pub_key() : $this->config['pub_key'];
 
         $dataAmount = $this->getAmountInCents($invoice);
 
@@ -266,7 +264,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
 
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         $payGateway = $this->di['db']->findOne('PayGateway', 'gateway = "Stripe"');
-        $bindings = array(
+        $bindings = [
             ':pub_key' => $pubKey,
             ':intent_secret' => $intent->client_secret,
             ':amount' => $dataAmount,
@@ -276,7 +274,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             ':callbackUrl' => $payGatewayService->getCallbackUrl($payGateway, $invoice),
             ':redirectUrl' => $this->di['tools']->url('invoice/' . $invoice->hash),
             ':invoice_hash' => $invoice->hash
-        );
+        ];
         return strtr($form, $bindings);
     }
 
