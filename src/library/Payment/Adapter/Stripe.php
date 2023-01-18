@@ -158,15 +158,18 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
 
             $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id);
             $clientService = $this->di['mod_service']('client');
-            $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
-            $invoiceService = $this->di['mod_service']('Invoice');
+            //Only pay the invoice if the transaction is specifically set as 'succeeded'
+            if ($charge->status == 'succeeded') {
+                $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
+                $invoiceService = $this->di['mod_service']('Invoice');
 
-            if ($tx->invoice_id) {
-                $invoiceService->payInvoiceWithCredits($invoice);
+                if ($tx->invoice_id) {
+                    $invoiceService->payInvoiceWithCredits($invoice);
+                }
+                $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
             }
 
-            $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
         } catch (\Stripe\Exception\CardException $e) {
             $this->logError($e, $tx);
         } catch (\Stripe\Exception\InvalidRequestException $e) {
