@@ -123,12 +123,15 @@ class Service implements InjectionAwareInterface
 
         $model->username = $username;
         $model->pass = $pass;
-        $this->di['db']->store($model);
 
         if (!isset($c['import']) || !$c['import']) {
             [$adapter, $account] = $this->_getAM($model);
             $adapter->createAccount($account);
         }
+
+        $model->pass = '*******';
+
+        $this->di['db']->store($model);
 
         return [
             'username' => $username,
@@ -341,7 +344,7 @@ class Service implements InjectionAwareInterface
             $adapter->changeAccountPassword($account, $p);
         }
 
-        $model->pass = $p;
+        $model->pass = "******";
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Changed hosting account %s password', $model->id);
