@@ -17,7 +17,7 @@ const {argv} = yargs
 
 const nodeModulesPath = upath.normalizeSafe(argv.nodeModulesPath);
 export const copyCKEditorBuild = function copyCKEditorBuild() {
-  return gulp.src(upath.joinSafe(nodeModulesPath, '@ckeditor/ckeditor5-build-classic/build/*'))
+  return gulp.src(upath.joinSafe(nodeModulesPath, '@ckeditor/ckeditor5-build-classic/build/**/*'))
     .pipe(gulp.dest('./assets/ckeditor'));
 }
 copyCKEditorBuild.description = 'copying built files to assets.';
