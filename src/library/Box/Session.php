@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -24,21 +25,23 @@ class Box_Session
 
     public function __construct($handler, $securityMode = 'regular', $cookieLifespan = 7200, $secure = true)
     {
-        session_set_save_handler(
-            array($handler, 'open'),
-            array($handler, 'close'),
-            array($handler, 'read'),
-            array($handler, 'write'),
-            array($handler, 'destroy'),
-            array($handler, 'gc')
-        );
-        if(php_sapi_name() !== 'cli'){
+        if (!headers_sent()) {
+            session_set_save_handler(
+                array($handler, 'open'),
+                array($handler, 'close'),
+                array($handler, 'read'),
+                array($handler, 'write'),
+                array($handler, 'destroy'),
+                array($handler, 'gc')
+            );
+        }
+        if (php_sapi_name() !== 'cli') {
             $currentCookieParams = session_get_cookie_params();
             $currentCookieParams["httponly"] = true;
             $currentCookieParams["lifetime"] = $cookieLifespan;
             $currentCookieParams["secure"] = $secure;
 
-            if($securityMode == 'strict'){
+            if ($securityMode == 'strict') {
                 session_set_cookie_params([
                     'lifetime' => $currentCookieParams["lifetime"],
                     'path' => $currentCookieParams["path"],
@@ -78,7 +81,7 @@ class Box_Session
     {
         return isset($_SESSION[$key]) ? $_SESSION[$key] : null;
     }
-    
+
     public function set($key, $value)
     {
         $_SESSION[$key] = $value;

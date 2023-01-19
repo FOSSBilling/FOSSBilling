@@ -677,16 +677,16 @@
         },
         {
             "name": "io-developer/php-whois",
-            "version": "4.1.7",
+            "version": "4.1.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/io-developer/php-whois.git",
-                "reference": "6c6cd1d7392d76ba18752cf37227433b50b0bac9"
+                "reference": "5ec4fd770d008ea8480c0af69712c34f38786fa1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/io-developer/php-whois/zipball/6c6cd1d7392d76ba18752cf37227433b50b0bac9",
-                "reference": "6c6cd1d7392d76ba18752cf37227433b50b0bac9",
+                "url": "https://api.github.com/repos/io-developer/php-whois/zipball/5ec4fd770d008ea8480c0af69712c34f38786fa1",
+                "reference": "5ec4fd770d008ea8480c0af69712c34f38786fa1",
                 "shasum": ""
             },
             "require": {
@@ -694,7 +694,7 @@
                 "ext-json": "*",
                 "ext-mbstring": "*",
                 "php": ">=7.2",
-                "true/punycode": "^2.1"
+                "symfony/polyfill-intl-idn": "^1.27"
             },
             "require-dev": {
                 "phpunit/phpunit": "^8.0"
@@ -733,9 +733,9 @@
             ],
             "support": {
                 "issues": "https://github.com/io-developer/php-whois/issues",
-                "source": "https://github.com/io-developer/php-whois/tree/4.1.7"
+                "source": "https://github.com/io-developer/php-whois/tree/4.1.8"
             },
-            "time": "2022-06-14T10:29:24+00:00"
+            "time": "2023-01-17T12:34:27+00:00"
         },
         {
             "name": "league/commonmark",
@@ -3493,57 +3493,6 @@
             "time": "2022-12-22T17:53:58+00:00"
         },
         {
-            "name": "true/punycode",
-            "version": "v2.1.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/true/php-punycode.git",
-                "reference": "a4d0c11a36dd7f4e7cd7096076cab6d3378a071e"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/true/php-punycode/zipball/a4d0c11a36dd7f4e7cd7096076cab6d3378a071e",
-                "reference": "a4d0c11a36dd7f4e7cd7096076cab6d3378a071e",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.0",
-                "symfony/polyfill-mbstring": "^1.3"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~4.7",
-                "squizlabs/php_codesniffer": "~2.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "TrueBV\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Renan Gonçalves",
-                    "email": "renan.saddam@gmail.com"
-                }
-            ],
-            "description": "A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)",
-            "homepage": "https://github.com/true/php-punycode",
-            "keywords": [
-                "idna",
-                "punycode"
-            ],
-            "support": {
-                "issues": "https://github.com/true/php-punycode/issues",
-                "source": "https://github.com/true/php-punycode/tree/master"
-            },
-            "abandoned": true,
-            "time": "2016-11-16T10:37:54+00:00"
-        },
-        {
             "name": "twig/twig",
             "version": "v3.5.0",
             "source": {
@@ -4800,20 +4749,20 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "9.5.27",
+            "version": "9.5.28",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "a2bc7ffdca99f92d959b3f2270529334030bba38"
+                "reference": "954ca3113a03bf780d22f07bf055d883ee04b65e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/a2bc7ffdca99f92d959b3f2270529334030bba38",
-                "reference": "a2bc7ffdca99f92d959b3f2270529334030bba38",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/954ca3113a03bf780d22f07bf055d883ee04b65e",
+                "reference": "954ca3113a03bf780d22f07bf055d883ee04b65e",
                 "shasum": ""
             },
             "require": {
-                "doctrine/instantiator": "^1.3.1",
+                "doctrine/instantiator": "^1.3.1 || ^2",
                 "ext-dom": "*",
                 "ext-json": "*",
                 "ext-libxml": "*",
@@ -4882,7 +4831,7 @@
             ],
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/9.5.27"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/9.5.28"
             },
             "funding": [
                 {
@@ -4898,7 +4847,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-12-09T07:31:23+00:00"
+            "time": "2023-01-14T12:32:24+00:00"
         },
         {
             "name": "rector/rector",
