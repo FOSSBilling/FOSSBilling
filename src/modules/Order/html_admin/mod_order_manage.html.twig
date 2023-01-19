@@ -260,9 +260,11 @@
                     {% endif %}
 
                     {% if order.status == 'canceled' %}
-                    <a href="{{ 'api/admin/order/uncancel'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" class="btn55 mr10 api-link" data-api-reload="Order activated">
-                        <img src="images/icons/middlenav/play2.png" alt="">
-                        <span>{{ 'Activate'|trans }}</span>
+                    <a class="d-inline-block mx-1 btn bg-light bg-gradient api-link" href="{{ 'api/admin/order/uncancel'|link({ 'id': order.id, 'CSRFToken': CSRFToken }) }}" data-api-confirm="{{ 'Are you sure?'|trans }}" class="btn55 mr10 api-link" data-api-reload="Order activated">
+                        <svg class="mb-2 text-secondary" width="24" height="24">
+                            <use xlink:href="#play" />
+                        </svg>
+                        <span class="d-block text-secondary">{{ 'Activate'|trans }}</span>
                     </a>
                     {% endif %}
 
