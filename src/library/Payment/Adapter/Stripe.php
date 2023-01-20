@@ -159,8 +159,8 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
             $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id);
             $clientService = $this->di['mod_service']('client');
 
-            //Only pay the invoice if the transaction is specifically set as 'succeeded'
-            if ($charge->status == 'succeeded') {
+            //Only pay the invoice if the transaction has 'succeeded' on Stripe's end & the associated FOSSBilling transaction hasn't been processed.
+            if ($charge->status == 'succeeded' && $tx->status !== 'processed') {
                 $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
                 $invoiceService = $this->di['mod_service']('Invoice');
 
