@@ -96,15 +96,21 @@
 
             <div class="card-footer text-center">
                 <a href="{{ 'api/admin/email/batch_template_generate'|link({ 'CSRFToken': CSRFToken }) }}" class="btn55 mr10 api-link" data-api-reload="1">
-                    <img src="images/icons/middlenav/power.png" alt="">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
+                        <use xlink:href="#mail" />
+                    </svg>
                     <span>Generate templates</span>
                 </a>
                 <a href="{{ 'api/admin/email/batch_template_enable'|link({ 'CSRFToken': CSRFToken }) }}" class="btn55 mr10 api-link" data-api-msg="All email templates enabled">
-                    <img src="images/icons/middlenav/play2.png" alt="">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
+                        <use xlink:href="#play" />
+                    </svg>
                     <span>Enable all</span>
                 </a>
                 <a href="{{ 'api/admin/email/batch_template_disable'|link({ 'CSRFToken': CSRFToken }) }}" class="btn55 mr10 api-link" data-api-msg="All email templates disabled">
-                    <img src="images/icons/middlenav/stop.png" alt="">
+                    <svg class="mb-2 text-secondary" width="24" height="24">
+                        <use xlink:href="#close" />
+                    </svg>
                     <span>Disable all</span>
                 </a>
             </div>
