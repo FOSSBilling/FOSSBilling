@@ -77,7 +77,7 @@
                     </select>
                 </div>
             </div>
-            
+
             <div id="credentials"></div>
 
             <div class="mb-3 row">
@@ -138,15 +138,26 @@
 {% block js%}
 <script>
     $(function() {
-        $('#test-connection').click(function(){
-            $('#server-update').submit();
-            bb.post('admin/servicehosting/server_test_connection',
-                { id: {{ server.id }}, CSRFToken: "{{ CSRFToken }}" },
-                function(result) {
-                    FOSSBilling.message("{{ 'Successfully connected to server'|trans }}");
-                }
-            );
+        $('#test-connection').click(function(event){
+            event.preventDefault();
+              formElement = document.getElementById('server-update');
+              const formData = new FormData(formElement);
+              if(formElement.getAttribute('method').toLowerCase() != 'get'){
+                 data = formData.serializeJSON();
+              }else{
+                data =  formData.serialize();
+              }
+              API.makeRequest(formElement.getAttribute('method'), bb.restUrl(formElement.getAttribute('action')),  data , function (result) {
+                return bb._afterComplete(formElement, result);
+              }, function (error) {
+                FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+              });
 
+              API.makeRequest(formElement.getAttribute('method'), bb.restUrl('admin/servicehosting/server_test_connection'),  { id: {{ server.id }}, CSRFToken: "{{ CSRFToken }}" }, function (result) {
+                  FOSSBilling.message(`{{ 'Server connected'|trans }}`, 'message');
+                }, function (error) {
+                  FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+                });
             return false;
         });
     });
@@ -183,14 +194,12 @@
 
         credentials.innerHTML = ''; // Clear the form fields.
 
-        console.log(values);
-
         if (pairs[manager].form && pairs[manager].form.credentials && pairs[manager].form.credentials.fields) {
             var data = pairs[manager].form.credentials.fields;
         } else {
             var data = defaults.form.credentials.fields;
         }
-        
+
         for (var i = 0; i < data.length; i++) {
             // Create a new form field and append it to the credentials element.
             var field = data[i];
