@@ -226,7 +226,7 @@ const API = {
           body = null
         } else if (method.toLowerCase() === "post") {
           if(!Tools.isJSON(params)){
-            body = JSON.stringify(params)
+            params = JSON.stringify(params)
           }
           body = params;
         }
