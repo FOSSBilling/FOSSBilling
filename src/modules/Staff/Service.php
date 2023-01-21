@@ -78,6 +78,7 @@ class Service implements InjectionAwareInterface
 
     public function setPermissions($member_id, $array)
     {
+        $array = array_filter($array);
         $sql = 'UPDATE admin SET permissions = :p WHERE id = :id';
         $pdo = $this->di['pdo'];
         $stmt = $pdo->prepare($sql);

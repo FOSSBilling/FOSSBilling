@@ -108,6 +108,7 @@
             {% set prms = admin.staff_permissions_get({ 'id': staff.id }) %}
             <form method="post" action="admin/staff/permissions_update" class="api-form" data-api-msg="{{ 'Permissions updated'|trans }}">
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <input type="hidden" name="permissions[default]" value="">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
@@ -132,7 +133,6 @@
                 </table>
 
                 <input type="hidden" name="id" value="{{ staff.id }}">
-                <input type="hidden" name="permissions[]" value="">
 
                 <div class="card-footer">
                     <input type="submit" value="{{ 'Save'|trans }}" class="btn btn-primary w-100">
