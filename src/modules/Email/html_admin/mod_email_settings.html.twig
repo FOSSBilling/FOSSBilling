@@ -296,7 +296,7 @@
 <script>
 $(function() {
     $('#emailTest').click(function() {
-        API.admin.post('email/send_test', {CFSRToken : '{{CSRFToken}}'}, function(result) {
+        API.admin.post('email/send_test', {CSRFToken : '{{CSRFToken}}'}, function(result) {
             FOSSBilling.message("{{ 'Email was successfully sent'|trans }}");
         });
 
