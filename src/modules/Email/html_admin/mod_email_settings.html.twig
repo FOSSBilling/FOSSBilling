@@ -278,7 +278,7 @@
 
                 <div class="card-footer d-flex gap-2">
                     <input type="hidden" name="ext" value="mod_email">
-                    <button class="btn btn-secondary w-25" id="emailTest">
+                    <button class="btn btn-secondary w-50" id="emailTest">
                         <svg class="icon">
                             <use xlink:href="#wifi" />
                         </svg>
@@ -296,7 +296,7 @@
 <script>
 $(function() {
     $('#emailTest').click(function() {
-        API.admin.post('email/send_test', {}, function(result) {
+        API.admin.post('email/send_test', {CFSRToken : '{{CSRFToken}}'}, function(result) {
             FOSSBilling.message("{{ 'Email was successfully sent'|trans }}");
         });
 
