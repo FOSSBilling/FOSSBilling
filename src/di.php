@@ -22,9 +22,9 @@ $di = new Box_Di();
 
 /**
  * Returns the current FOSSBilling config from config.php
- * 
+ *
  * @param void
- * 
+ *
  * @return Box_Config
  */
 $di['config'] = function () {
@@ -35,9 +35,9 @@ $di['config'] = function () {
 
 /**
  * Create a new logger instance and configures it based on the settings in the configuration file.
- * 
+ *
  * @param void
- * 
+ *
  * @return Box_Log A new logger instance
  */
 $di['logger'] = function () use ($di) {
@@ -69,9 +69,9 @@ $di['logger'] = function () use ($di) {
 };
 
 /**
- * 
+ *
  * @param void
- * 
+ *
  * @return \Box_Crypt
  */
 $di['crypt'] = function () use ($di) {
@@ -85,7 +85,7 @@ $di['crypt'] = function () use ($di) {
  * Creates a new PDO object for database connections
  *
  * @param void
- * 
+ *
  * @return PDO The PDO object used for database connections
  */
 $di['pdo'] = function () use ($di) {
@@ -119,9 +119,9 @@ $di['pdo'] = function () use ($di) {
 };
 
 /**
- * 
+ *
  * @param void
- * 
+ *
  * @return \Box_Database The new Box_Database object that was just created.
  */
 $di['db'] = function () use ($di) {
@@ -145,7 +145,7 @@ $di['db'] = function () use ($di) {
 };
 
 /**
- * 
+ *
  * @param void
  *
  * @return Box_Pagination
@@ -158,7 +158,7 @@ $di['pager'] = function () use ($di) {
 };
 
 /**
- * 
+ *
  * @param void
  *
  * @return Box_Url
@@ -173,9 +173,9 @@ $di['url'] = function () use ($di) {
 
 /**
  * Returns a new Box_Mod object, created with the provided module name.
- * 
+ *
  * @param string $name The name of the module to create the object with.
- * 
+ *
  * @return \Box_Mod The new Box_Mod object that was just created.
  */
 $di['mod'] = $di->protect(function ($name) use ($di) {
@@ -186,7 +186,7 @@ $di['mod'] = $di->protect(function ($name) use ($di) {
 });
 
 /**
- * 
+ *
  * @param string $mod the name of the module to get
  *
  * @return mixed the service of the asociated module
@@ -196,7 +196,7 @@ $di['mod_service'] = $di->protect(function ($mod, $sub = '') use ($di) {
 });
 
 /**
- * 
+ *
  * @param string $name the name of the module to get the configuration of
  *
  * @return mixed the configuration of the asociated module
@@ -206,7 +206,7 @@ $di['mod_config'] = $di->protect(function ($name) use ($di) {
 });
 
 /**
- * 
+ *
  * @param void
  *
  * @return \Box_EventManager
@@ -220,7 +220,7 @@ $di['events_manager'] = function () use ($di) {
 
 /**
  * Creates a new session, applying specified security rules depending on the config.php settings.
- * 
+ *
  * @param void
  *
  * @return \Box_Session
@@ -235,7 +235,7 @@ $di['session'] = function () use ($di) {
 };
 
 /**
- * 
+ *
  * @param void
  *
  * @return \Box_Cookie
@@ -248,7 +248,7 @@ $di['cookie'] = function () use ($di) {
 };
 
 /**
- * 
+ *
  * @param void
  *
  * @return \Box_Request
@@ -261,7 +261,7 @@ $di['request'] = function () use ($di) {
 };
 
 /**
- * 
+ *
  * @param void
  *
  * @return \FileCache
@@ -269,7 +269,7 @@ $di['request'] = function () use ($di) {
 $di['cache'] = function () { return new FileCache(); };
 
 /**
- * 
+ *
  * @param void
  *
  * @return \Box_Authorization
@@ -360,7 +360,7 @@ $di['is_client_logged'] = function () use ($di) {
 $di['is_admin_logged'] = function () use ($di) {
     if (!$di['auth']->isAdminLoggedIn()) {
         $api_str = '/api/';
-        $url = $di['request']->getQuery('_url');
+        $url = $di['request']->getQuery('_url',null,'');
         if (0 === strncasecmp($url, $api_str, strlen($api_str))) {
             // Throw Exception if api request
             throw new Exception('Admin is not logged in');
@@ -559,21 +559,21 @@ $di['curl'] = function ($url) use ($di) {
 
 /**
  * @param void
- * 
+ *
  * @return Server_Package
  */
 $di['server_package'] = function () {return new Server_Package(); };
 
 /**
  * @param void
- * 
+ *
  * @return Server_Client
  */
 $di['server_client'] = function () {return new Server_Client(); };
 
 /**
  * @param void
- * 
+ *
  * @return Server_Account
  */
 $di['server_account'] = function () {return new Server_Account(); };
@@ -594,7 +594,7 @@ $di['server_manager'] = $di->protect(function ($manager, $config) {
 
 /**
  * @param void
- * 
+ *
  * @return Box_Requirements
  */
 $di['requirements'] = function () use ($di) {
@@ -628,9 +628,9 @@ $di['theme'] = function () use ($di) {
 
 /**
  * Loads an existing cart session or creates a new one if there is no session.
- * 
+ *
  * @param void
- * 
+ *
  * @return mixed The either existing or new cart.
  */
 $di['cart'] = function () use ($di) {
@@ -657,7 +657,7 @@ $di['table'] = $di->protect(function ($name) use ($di) {
 
 /**
  * @param void
- * 
+ *
  * @return \Box\Mod\Servicelicense\Server
  */
 $di['license_server'] = function () use ($di) {
@@ -669,21 +669,21 @@ $di['license_server'] = function () use ($di) {
 
 /**
  * @param mixed $params The parameters for the new FTP object.
- * 
+ *
  * @return \Box_Ftp The new FTP object that was just created.
  */
 $di['ftp'] = $di->protect(function ($params) { return new \Box_Ftp($params); });
 
 /**
  * @param void
- * 
+ *
  * @return \GeoIp2\Database\Reader
  */
 $di['geoip'] = function () { return new \GeoIp2\Database\Reader(PATH_LIBRARY . '/GeoLite2-Country.mmdb'); };
 
 /**
  * @param void
- * 
+ *
  * @return \Box_Password
  */
 $di['password'] = function () { return new Box_Password(); };
