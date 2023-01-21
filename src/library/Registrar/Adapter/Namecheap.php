@@ -257,7 +257,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         error_log('AFTER NS MODIFY: ' . $domain->__toString());
 
         // TODO
-        // problem here: fossbilling doesn't display our error and will display 'nameservers updates' evern when this fails
+        // problem here: FOSSBilling doesn't display our error and will display 'nameservers updates' evern when this fails
 
         if (!isset($result->CommandResponse->DomainDNSSetCustomResult['Updated']) && $result->CommandResponse->DomainDNSSetCustomResult['Updated'] != 'true') {
             throw new Registrar_Exception($message = 'Could not update NameServers');
