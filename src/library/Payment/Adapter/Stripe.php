@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -18,6 +19,8 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
 
     protected $di;
 
+    private $stripe;
+
     public function setDi($di)
     {
         $this->di = $di;
@@ -32,41 +35,49 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
     {
         $this->config = $config;
 
-        if(!isset($this->config['api_key'])) {
+        if (!isset($this->config['api_key'])) {
             throw new Payment_Exception('Payment gateway "Stripe" is not configured properly. Please update configuration parameter "api_key" at "Configuration -> Payments".');
         }
 
-        if(!isset($this->config['pub_key'])) {
+        if (!isset($this->config['pub_key'])) {
             throw new Payment_Exception('Payment gateway "Stripe" is not configured properly. Please update configuration parameter "pub_key" at "Configuration -> Payments".');
         }
+
+        $api_key = $this->config['test_mode'] ? $this->get_test_api_key() : $this->config['api_key'];
+
+        $this->stripe = new \Stripe\StripeClient($api_key);
     }
 
     public static function getConfig()
     {
-        return array(
+        return [
             'supports_one_time_payments'   =>  true,
-            'description'     =>  ' You authenticate to the Stripe API by providing one of your API keys in the request. You can manage your API keys from your account.',
-            'form'  => array(
-                'test_api_key' => array('text', array(
-                    'label' => 'Test Secret key:',
-                    'required' => false,
-                ),
-                ),
-               'test_pub_key' => array('text', array(
-                   'label' => 'Test Publishable key:',
-                   'required' => false,
-               ),
-               ),
-                'api_key' => array('text', array(
-                    'label' => 'Live Secret key:',
-                ),
-                ),
-               'pub_key' => array('text', array(
-                    'label' => 'Live publishable key:',
-                ),
-                ),
-            ),
-        );
+            'description'     =>  'You authenticate to the Stripe API by providing one of your API keys in the request. You can manage your API keys from your account.',
+            'form'  => [
+                'test_api_key' => [
+                    'text', [
+                        'label' => 'Test Secret key:',
+                        'required' => false,
+                    ],
+                ],
+                'test_pub_key' => [
+                    'text', [
+                        'label' => 'Test Publishable key:',
+                        'required' => false,
+                    ],
+                ],
+                'api_key' => [
+                    'text', [
+                        'label' => 'Live Secret key:',
+                    ],
+                ],
+                'pub_key' => [
+                    'text', [
+                        'label' => 'Live publishable key:',
+                    ],
+                ],
+            ],
+        ];
     }
 
     public function getHtml($api_admin, $invoice_id, $subscription)
@@ -86,29 +97,29 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
     {
         $invoiceItems = $this->di['db']->getAll('SELECT title from invoice_item WHERE invoice_id = :invoice_id', array(':invoice_id' => $invoice->id));
 
-        $params = array(
-            ':id'=>sprintf('%05s', $invoice->nr),
-            ':serie'=>$invoice->serie,
-            ':title'=>$invoiceItems[0]['title']);
+        $params = [
+            ':id' => sprintf('%05s', $invoice->nr),
+            ':serie' => $invoice->serie,
+            ':title' => $invoiceItems[0]['title']
+        ];
         $title = __trans('Payment for invoice :serie:id [:title]', $params);
-        if(count($invoiceItems) > 1) {
+        if (count($invoiceItems) > 1) {
             $title = __trans('Payment for invoice :serie:id', $params);
         }
         return $title;
     }
 
-    public function logError(Exception $e, Model_Transaction $tx)
+    public function logError($e, Model_Transaction $tx)
     {
         $body           = $e->getJsonBody();
         $err            = $body['error'];
-        $tx->txn_status = $err ['type'];
+        $tx->txn_status = $err['type'];
         $tx->error      = $err['message'];
         $tx->status     = 'processed';
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
-
-        if ($this->di['config']['debug']){
+        if ($this->di['config']['debug']) {
             error_log(json_encode($e->getJsonBody()));
         }
         throw new Exception($tx->error);
@@ -120,60 +131,62 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
         $invoice = $this->di['db']->getExistingModelById('Invoice', $data['get']['bb_invoice_id']);
         $tx      = $this->di['db']->getExistingModelById('Transaction', $id);
 
-        $invoiceAmountInCents = $this->getAmountInCents($invoice);
-
-        $api_key = $this->config['api_key'];
-        if ($this->config['test_mode']){
-            $api_key = $this->get_test_api_key();
-        }
-        $title = $this->getInvoiceTitle($invoice);
-
         $tx->invoice_id = $invoice->id;
         $tx->type = $data['post']['stripeTokenType'];
 
-        \Stripe\Stripe::setApiKey($api_key);
-
-        // Get the credit card details submitted by the form
-        $token = $data['post']['stripeToken'];
         try {
-            $charge = \Stripe\Charge::create(array(
-                    "amount" => $invoiceAmountInCents,
-                    "currency" => $invoice->currency,
-                    "source" => $token,
-                    "description" => $title)
+            $charge = $this->stripe->paymentIntents->retrieve(
+                $data['get']['payment_intent'],
+                []
             );
+
+            if (!isset($charge)) {
+                throw new \Exception("Failed to get the charge item from Stripe.");
+            }
+
             $tx->txn_status = $charge->status;
             $tx->txn_id = $charge->id;
             $tx->amount = $charge->amount / 100;
             $tx->currency = $charge->currency;
 
-            $bd = array(
+            $bd = [
                 'amount'        =>  $tx->amount,
-                'description'   =>  'Stripe transaction '.$charge->id,
+                'description'   =>  'Stripe transaction ' . $charge->id,
                 'type'          =>  'transaction',
                 'rel_id'        =>  $tx->id,
-            );
+            ];
+
             $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id);
             $clientService = $this->di['mod_service']('client');
-            $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
-            $invoiceService = $this->di['mod_service']('Invoice');
-            if($tx->invoice_id) {
-                $invoiceService->payInvoiceWithCredits($invoice);
+            //Only pay the invoice if the transaction has 'succeeded' on Stripe's end & the associated FOSSBilling transaction hasn't been processed.
+            if ($charge->status == 'succeeded' && $tx->status !== 'processed') {
+                $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
+                $invoiceService = $this->di['mod_service']('Invoice');
+
+                if ($tx->invoice_id) {
+                    $invoiceService->payInvoiceWithCredits($invoice);
+                }
+                $invoiceService->doBatchPayWithCredits(array('client_id' => $client->id));
             }
-            $invoiceService->doBatchPayWithCredits(array('client_id'=>$client->id));
 
-        } catch(\Stripe\Error\Card $e) {
+        } catch (\Stripe\Exception\CardException $e) {
             $this->logError($e, $tx);
-        } catch (\Stripe\Error\InvalidRequest $e) {
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
             $this->logError($e, $tx);
-        } catch (\Stripe\Error\Authentication $e) {
+        } catch (\Stripe\Exception\AuthenticationException $e) {
             $this->logError($e, $tx);
-        } catch (\Stripe\Error\ApiConnection $e) {
+        } catch (\Stripe\Exception\ApiConnectionException $e) {
             $this->logError($e, $tx);
         }
 
-        $tx->status = 'processed';
+        $paymentStatus = match ($charge->status) {
+            'succeeded' => 'processed',
+            'pending' => 'received',
+            'failed' => 'error',
+        };
+
+        $tx->status = $paymentStatus;
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
     }
@@ -183,10 +196,15 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
      */
     protected function _generateForm(Model_Invoice $invoice)
     {
-        $pubKey = $this->config['pub_key'];
-        if ($this->config['test_mode']){
-            $pubKey = $this->get_test_pub_key();
-        }
+        $intent = $this->stripe->paymentIntents->create([
+            'amount' => $this->getAmountInCents($invoice),
+            'currency' => $invoice->currency,
+            "description" => $this->getInvoiceTitle($invoice),
+            'automatic_payment_methods' => ['enabled' => true],
+            "receipt_email" => $invoice->buyer_email
+        ]);
+
+        $pubKey = ($this->config['test_mode']) ? $this->get_test_pub_key() : $this->config['pub_key'];
 
         $dataAmount = $this->getAmountInCents($invoice);
 
@@ -195,67 +213,77 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
 
         $title = $this->getInvoiceTitle($invoice);
 
-        $form = '<form action=":callbackUrl" method="POST" class="api_form" data-api-redirect=":redirectUrl">
+        $form = '<form id="payment-form" data-secret=":intent_secret">
                 <div class="loading" style="display:none;"><span>{% trans \'Loading ...\' %}</span></div>
-                 <script src="https://checkout.stripe.com/checkout.js"></script>
-                  <script>
-                    var handler = StripeCheckout.configure({
-                        key: \':key\',
-                        image: ":image",
-                        allowRememberMe: false,
-                        token: handleStripeToken
+                <script src="https://js.stripe.com/v3/"></script>
+  
+                    <div id="error-message">
+                        <!-- Error messages will be displayed here -->
+                    </div>
+                    <div id="payment-element">
+                        <!-- Stripe Elements will create form elements here -->
+                    </div>
+                  
+                    <button id="submit" class="btn btn-primary mt-2" style="margin-top: 0.5em;">Submit</button>
+                
+                <script>
+                    const stripe = Stripe(\':pub_key\');
+
+                    var elements = stripe.elements({
+                        clientSecret: \':intent_secret\',
+                      });
+
+                    var paymentElement = elements.create(\'payment\', {
+                        billingDetails: {
+                            email: \':email\',
+                        },
+                        business: {
+                            name: \':name\',
+                        }
                     });
 
-                    function handleStripeToken(token, args){
-                        form = $(".api_form");
-                        form.append($(\'<input type="hidden" name="stripeToken" />\').val(token.id));
-                        form.append($(\'<input type="hidden" name="stripeTokenType" />\').val("card"));
-                        form.submit();
+                    paymentElement.mount(\'#payment-element\');
 
+                    const form = document.getElementById(\'payment-form\');
+
+                    form.addEventListener(\'submit\', async (event) => {
+                    event.preventDefault();
+
+                    const {error} = await stripe.confirmPayment({
+                        elements,
+                        confirmParams: {
+                            return_url: \':callbackUrl&bb_redirect=true&bb_invoice_hash=:invoice_hash\',
+                        },
+                    });
+
+                    if (error) {
+                        const messageContainer = document.querySelector(\'#error-message\');
+                        messageContainer.innerHTML = `<p class="alert alert-danger">${error.message}</p>`;
                     }
-                  </script>
-                  <script>
-
-                    function openHandler(){
-                        handler.open({
-                               name: ":name",
-                               description: ":description" ,
-                               amount: parseInt(":amount") ,
-                               email: ":email" ,
-                               currency: ":currency"
-                        });
-                    };
-                    $(document).ready ( function(){
-                        openHandler();
                     });
-
-                    document.addEventListener("bb_ajax_post_message_error", function(e) {
-                        openHandler();
-                    });
-
 
                   </script>
                 </form>';
 
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         $payGateway = $this->di['db']->findOne('PayGateway', 'gateway = "Stripe"');
-        $bindings = array(
-            ':key' => $pubKey,
+        $bindings = [
+            ':pub_key' => $pubKey,
+            ':intent_secret' => $intent->client_secret,
             ':amount' => $dataAmount,
             ':currency' => $invoice->currency,
-            ':name' => $company['name'],
             ':description' => $title,
-            ':image' => $company['logo_url'],
             ':email' => $invoice->buyer_email,
             ':callbackUrl' => $payGatewayService->getCallbackUrl($payGateway, $invoice),
-            ':redirectUrl' => $this->di['tools']->url('invoice/'.$invoice->hash)
-        );
+            ':redirectUrl' => $this->di['tools']->url('invoice/' . $invoice->hash),
+            ':invoice_hash' => $invoice->hash
+        ];
         return strtr($form, $bindings);
     }
 
     public function get_test_pub_key()
     {
-        if(!isset($this->config['test_pub_key'])) {
+        if (!isset($this->config['test_pub_key'])) {
             throw new Payment_Exception('Payment gateway "Stripe" is not configured properly. Please update configuration parameter "test_pub_key" at "Configuration -> Payments".');
         }
         return $this->config['test_pub_key'];
@@ -263,7 +291,7 @@ class Payment_Adapter_Stripe implements \Box\InjectionAwareInterface
 
     public function get_test_api_key()
     {
-        if(!isset($this->config['test_api_key'])) {
+        if (!isset($this->config['test_api_key'])) {
             throw new Payment_Exception('Payment gateway "Stripe" is not configured properly. Please update configuration parameter "test_api_key" at "Configuration -> Payments".');
         }
         return $this->config['test_api_key'];
