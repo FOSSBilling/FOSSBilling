@@ -42,7 +42,7 @@ class Admin implements \Box\InjectionAwareInterface
             'group' => [
                 'index' => 300,
                 'location' => 'order',
-                'label' => 'Orders',
+                'label' => __trans('Orders'),
                 'uri' => $this->di['url']->adminLink('order'),
                 'class' => 'orders',
                 'sprite_class' => 'dark-sprite-icon sprite-basket',
@@ -51,14 +51,14 @@ class Admin implements \Box\InjectionAwareInterface
                 [
                     'location' => 'order',
                     'index' => 100,
-                    'label' => 'Overview',
+                    'label' => __trans('Overview'),
                     'uri' => $this->di['url']->adminLink('order'),
                     'class' => '',
                 ],
                 [
                     'location' => 'order',
                     'index' => 200,
-                    'label' => 'Advanced search',
+                    'label' => __trans('Advanced search'),
                     'uri' => $this->di['url']->adminLink('order', ['show_filter' => 1]),
                     'class' => '',
                 ],

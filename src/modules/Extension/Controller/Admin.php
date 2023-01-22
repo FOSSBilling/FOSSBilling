@@ -42,21 +42,21 @@ class Admin implements \Box\InjectionAwareInterface
             'group' => [
                 'location' => 'extensions',
                 'index' => 1000,
-                'label' => 'Extensions',
+                'label' => __trans('Extensions'),
                 'class' => 'iPlugin',
                 'sprite_class' => 'dark-sprite-icon sprite-electroPlug',
             ],
             'subpages' => [
                 [
                     'location' => 'extensions',
-                    'label' => 'Overview',
+                    'label' => __trans('Overview'),
                     'uri' => $this->di['url']->adminLink('extension'),
                     'index' => 100,
                     'class' => '',
                 ],
                 [
                     'location' => 'extensions',
-                    'label' => 'Languages',
+                    'label' => __trans('Languages'),
                     'index' => 200,
                     'uri' => $this->di['url']->adminLink('extension/languages'),
                     'class' => '',
