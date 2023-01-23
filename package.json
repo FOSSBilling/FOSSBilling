@@ -11,6 +11,9 @@
   "issues": {
     "url": "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
+  "workspaces": [
+    "src/modules/Wysiwyg"
+  ],
   "dependencies": {
     "@tabler/core": "1.0.0-beta16",
     "autoprefixer": "^10.4.13",
