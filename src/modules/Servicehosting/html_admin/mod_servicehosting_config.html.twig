@@ -45,26 +45,30 @@
         <div class="mb-3 row free-tlds-row">
             <label class="form-label col-3 col-form-label">{{ 'Select free tlds'|trans }}</label>
             <div class="col">
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <tbody>
                 {% set tlds = guest.serviceDomain_tlds({ 'allow_register': 1 }) %}
-                <select class="form-select" name="config[free_tlds][]" multiple="multiple" size="{{ tlds|length }}"{% if product.config.free_domain %} required{% endif %}>
-                    {% for id,tld in tlds %}
-                    <option value="{{ tld.tld }}"{% if tld.tld in product.config.free_tlds %} selected{% endif %}>{{ tld.tld }}</option>
+                {% for id,tld in tlds %}
+                    <tr><td class="w-1"><input type="checkbox" name="config[free_tlds][]" value="{{ tld.tld }}"{% if tld.tld in product.config.free_tlds %} checked{% endif %}/></td><td >{{ tld.tld }}</td></tr>
                     {% endfor %}
-                </select>
+                    </tbody>
+                </table>
             </div>
         </div>
             <!-- Select periods to offer free domains -->
             <div class="mb-3 row free-periods-row">
             <label class="form-label col-3 col-form-label">{{ 'Select free periods'|trans }}</label>
             <div class="col">
-                <select class="form-select" name="config[free_domain_periods][]" multiple="multiple" size="6"{% if product.config.free_domain %} required{% endif %}>
-                    <option value="1M"{% if "1M" in product.config.free_domain_periods %} selected{% endif %}>1 {{ 'Month'|trans }}</option>
-                    <option value="3M"{% if "3M" in product.config.free_domain_periods %} selected{% endif %}>3 {{ 'Month'|trans }}</option>
-                    <option value="6M"{% if "6M" in product.config.free_domain_periods %} selected{% endif %}>6 {{ 'Month'|trans }}</option>
-                    <option value="1Y"{% if "1Y" in product.config.free_domain_periods %} selected{% endif %}>1 {{ 'Year'|trans }}</option>
-                    <option value="2Y"{% if "2Y" in product.config.free_domain_periods %} selected{% endif %}>2 {{ 'Years'|trans }}</option>
-                    <option value="3Y"{% if "3Y" in product.config.free_domain_periods %} selected{% endif %}>3 {{ 'Years'|trans }}</option>
-                </select>
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <tbody>
+                        <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="1M" {% if "1M" in product.config.free_domain_periods %} checked{% endif %}/></td><td>1 {{ 'Month'|trans }}</td></tr>
+                        <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="2M" {% if "2M" in product.config.free_domain_periods %} checked{% endif %}/></td><td>2 {{ 'Months'|trans }}</td></tr>
+                        <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="3M" {% if "3M" in product.config.free_domain_periods %} checked{% endif %}/></td><td>3 {{ 'Months'|trans }}</td></tr>
+                        <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="1Y" {% if "1Y" in product.config.free_domain_periods %} checked{% endif %}/></td><td>1 {{ 'Year'|trans }}</td></tr>
+                        <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="2Y" {% if "2Y" in product.config.free_domain_periods %} checked{% endif %}/></td><td>2 {{ 'Years'|trans }}</td></tr>
+                        <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="3Y" {% if "3Y" in product.config.free_domain_periods %} checked{% endif %}/></td><td>3 {{ 'Years'|trans }}</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
         <div class="mb-3 row">
@@ -173,17 +177,36 @@
         if ($(this).val() == 1){
             freeTldsRow.fadeIn('slow');
             freePerdsRow.fadeIn('slow');
-            $('select[name="config[free_tlds][]"]').prop('required', true);
-            $('select[name="config[free_domain_periods][]"]').prop('required', true);
+            $('input[name="config[free_domain_periods][]"]').prop('required', true);
+            $('input[name="config[free_tlds][]"]').prop('required', true);
         }
 
         if ($(this).val() == 0){
-            $('select[name="config[free_domain_periods][]"]').prop('required', false);
-            $('select[name="config[free_tlds][]"]').prop('required', false);
-            $('select[name="config[free_tlds][]"] option:selected').prop('selected', false);
-            $('select[name="config[free_domain_periods][]"] option:selected').prop('selected', false);
+            $('input[name="config[free_domain_periods][]"]').prop('required', false);
+            $('input[name="config[free_tlds][]"]').prop('required', false);
+            $('input[name="config[free_tlds][]"]').prop( 'checked', false);
+            $('input[name="config[free_domain_periods][]"]').prop( "checked", false);
             freeTldsRow.fadeOut('slow');
             freePerdsRow.fadeOut('slow');
+        }
+    });
+
+    $('input[name="config[free_tlds][]"]').on('change', function(){
+        var check = false;
+        $('input[name="config[free_tlds][]"]').each(function (){ if($(this).prop('checked')==true){ check= true;} });
+        if(check == true){
+            $('input[name="config[free_tlds][]"]').prop('required', false);
+        }else{
+            $('input[name="config[free_tlds][]"]').prop('required', true);
+        }
+    });
+    $('input[name="config[free_domain_periods][]"]').on('change', function(){
+        var check = false;
+        $('input[name="config[free_domain_periods][]"]').each(function (){ if($(this).prop('checked')==true){ check= true;} });
+        if(check == true){
+            $('input[name="config[free_domain_periods][]"]').prop('required', false);
+        }else{
+            $('input[name="config[free_domain_periods][]"]').prop('required', true);
         }
     });
 
