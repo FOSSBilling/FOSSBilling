@@ -132,9 +132,11 @@ var bb = {
           const formData = new FormData(formElement);
 
           // Get all CKEditor instances and replace the original textarea values with the updated content.
-          Object.keys(editors).forEach(function (name) {
-            formData.set(name, editors[name].getData());
-          });
+          if (typeof editors !== 'undefined' && Array.isArray(editors)) {
+            Object.keys(editors).forEach(function (name) {
+              formData.set(name, editors[name].getData());
+            });
+          }
 
           if(formElement.getAttribute('method').toLowerCase() != 'get'){
              data = formData.serializeJSON();
