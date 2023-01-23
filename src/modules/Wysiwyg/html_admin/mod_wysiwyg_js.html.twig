@@ -16,10 +16,16 @@
 {% if bb_editor == 'ckeditor' %}
     {{ 'ckeditor/ckeditor.js' | mod_asset_url('wysiwyg') | script_tag }}
     <script type="text/javascript">
+        var editors = [];
         document.addEventListener("DOMContentLoaded", function () {
-            CKEditor
-                .create(document.querySelector('.{{ class }}'))
+            document.querySelectorAll('.{{ class }}').forEach(function (element) {
+                CKEditor
+                .create(element)
+                .then(editor => {
+                    editors[element.name] = editor;
+                })
                 .catch(error => {console.error(error)});
+            });
         });
     </script>
 {% endif %}

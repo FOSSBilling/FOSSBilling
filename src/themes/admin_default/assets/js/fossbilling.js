@@ -130,6 +130,12 @@ var bb = {
           // Prevent the default form submit action. We will handle it ourselves.
           event.preventDefault();
           const formData = new FormData(formElement);
+
+          // Get all CKEditor instances and replace the original textarea values with the updated content.
+          Object.keys(editors).forEach(function (name) {
+            formData.set(name, editors[name].getData());
+          });
+
           if(formElement.getAttribute('method').toLowerCase() != 'get'){
              data = formData.serializeJSON();
           }else{
