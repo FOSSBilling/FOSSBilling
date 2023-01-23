@@ -1,36 +1,27 @@
 'use strict';
 
 import gulp from 'gulp';
-import clean from 'gulp-clean';
-import yargs from 'yargs';
-import upath from "upath";
+import webpack from 'webpack';
+import webpackConfig from './webpack.config.js';
 
-const {argv} = yargs
-  .options({
-    nodeModulesPath: {
-      'description': '<path> path to node_modules directory',
-      type: 'string',
-      requiresArgs: true,
-      required: false,
-    }
-  });
-
-const nodeModulesPath = upath.normalizeSafe(argv.nodeModulesPath);
-export const copyCKEditorBuild = function copyCKEditorBuild() {
-  return gulp.src(upath.joinSafe(nodeModulesPath, '@ckeditor/ckeditor5-build-classic/build/**/*'))
-    .pipe(gulp.dest('./assets/ckeditor'));
+export const buildCKEditor = () => {
+  return new Promise((resolve, reject) => {
+    webpack(webpackConfig, (err, stats) => {
+      if (err) {
+        return reject(err)
+      }
+      if (stats.hasErrors()) {
+        return reject(new Error(stats.compilation.errors.join('\n')))
+      }
+      resolve()
+    })
+  })
 }
-copyCKEditorBuild.description = 'copying built files to assets.';
+buildCKEditor.description = 'Build ckeditor';
 
-const cleanBuild = function cleanBuild() {
-  return gulp.src('./assets/ckeditor/*', {read: false})
-    .pipe(clean());
-}
+export const build = gulp.series([buildCKEditor]);
+build.description = 'Build editor';
 
-export const build = gulp.series(cleanBuild, copyCKEditorBuild);
-build.description = 'Build assets.';
-
-gulp.task('clean-build', cleanBuild);
-gulp.task('ckeditor', copyCKEditorBuild);
+gulp.task('ckeditor', buildCKEditor);
 
 export default build;
