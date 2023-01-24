@@ -1,12 +1,13 @@
-import Autoformat from '@ckeditor/ckeditor5-autoformat/src/autoformat.js';
+import AutoFormat from '@ckeditor/ckeditor5-autoformat/src/autoformat.js';
+import AutoImage  from '@ckeditor/ckeditor5-image/src/autoimage';
 import BlockQuote from '@ckeditor/ckeditor5-block-quote/src/blockquote.js';
 import Bold from '@ckeditor/ckeditor5-basic-styles/src/bold.js';
 import ClassicEditorBase from '@ckeditor/ckeditor5-editor-classic/src/classiceditor.js';
 import Essentials from '@ckeditor/ckeditor5-essentials/src/essentials.js';
 import Heading from '@ckeditor/ckeditor5-heading/src/heading.js';
 import Image from '@ckeditor/ckeditor5-image/src/image';
+import ImageInsert from '@ckeditor/ckeditor5-image/src/imageinsert';
 import ImageToolbar from '@ckeditor/ckeditor5-image/src/imagetoolbar';
-import ImageUpload from '@ckeditor/ckeditor5-image/src/imageupload';
 import Italic from '@ckeditor/ckeditor5-basic-styles/src/italic.js';
 import Link from '@ckeditor/ckeditor5-link/src/link.js';
 import List from '@ckeditor/ckeditor5-list/src/list.js';
@@ -21,14 +22,15 @@ import TextTransformation from '@ckeditor/ckeditor5-typing/src/texttransformatio
 class CKEditor extends ClassicEditorBase {}
 
 CKEditor.builtinPlugins = [
-  Autoformat,
+  AutoFormat,
+  AutoImage,
   BlockQuote,
   Bold,
   Essentials,
   Heading,
   Image,
+  ImageInsert,
   ImageToolbar,
-  ImageUpload,
   Italic,
   Link,
   List,
@@ -54,7 +56,7 @@ CKEditor.defaultConfig = {
       '|',
       'bulletedList', 'numberedList',
       '|',
-      'link', 'insertTable', 'blockQuote', 'uploadImage'
+      'link', 'insertTable', 'blockQuote', 'insertImage'
     ],
   },
   table: {
