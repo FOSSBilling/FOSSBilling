@@ -52,6 +52,7 @@ CKEditor.defaultConfig = {
     ],
   },
   table: {
+    defaultHeadings: {rows: 1},
     contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells'],
   },
 };
