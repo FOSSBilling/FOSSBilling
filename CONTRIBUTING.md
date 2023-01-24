@@ -25,7 +25,7 @@ We've tried to keep this document as short as possible but there is a lot of inf
  * [Translating FOSSBilling](#translating-fossbilling)
  * [Sponsor the project](#sponsoring-the-project)
 
-[style Guides](#styleguides)
+[Style Guides](#styleguides)
 
 [But, I still have a question!](#but-i=stil-have-a-question)
 
@@ -75,7 +75,7 @@ There are a lot of different ways that you can get involved in the FOSSBilling p
 
 ### Reporting bugs
 
-If you find a bug in FOSSBilling, please report it. Following these guidelines helps maintainers and the community understand your report :pencil:, reproduce the behavior:computer:, and find related reports :mag_right:.
+If you find a bug in FOSSBilling, please report it. Following these guidelines helps maintainers and the community understand your report :pencil:, reproduce the behavior :computer:, and find related reports :mag_right:.
 
 #### Before submitting a bug report
 
@@ -144,9 +144,8 @@ The process described here has several goals:
 
 Please follow these steps to have your contribution considered by the maintainers:
 
-1. Follow all instructions in [the template](https://github.com/FOSSBilling/.github/blob/master/.github/PULL_REQUEST_TEMPLATE/bug_fix.md)
-2. Follow the [style guides](#styleguides)
-3. After you submit your pull request, verify that all [status checks](https://help.github.com/articles/about-status-checks/) are passing <details><summary>What if the status checks are failing?</summary>If a status check is failing, and you believe that the failure is unrelated to your change, please leave a comment on the pull request explaining why you believe the failure is unrelated. A maintainer will re-run the status check for you. If we conclude that the failure was a false positive, then we will open an issue to track that problem with our status check suite.</details>
+1. Follow the [style guides](#styleguides)
+2. After you submit your pull request, verify that all [status checks](https://help.github.com/articles/about-status-checks/) are passing <details><summary>What if the status checks are failing?</summary>If a status check is failing, and you believe that the failure is unrelated to your change, please leave a comment on the pull request explaining why you believe the failure is unrelated. A maintainer will re-run the status check for you. If we conclude that the failure was a false positive, then we will open an issue to track that problem with our status check suite.</details>
 
 Before a PR can be merged it must pass all of the automated tests and also be reviewed by two maintainers. All of the above requirements must be met before your pull request will be reviewed. Please be aware that the reviewers may ask you to complete additional design work, tests, or other changes before your pull request can be ultimately accepted.
 
@@ -154,9 +153,9 @@ Before a PR can be merged it must pass all of the automated tests and also be re
 
 Great code is only one-half of any successful project, and great documentation is just as important. The reality is that open source projects can stand or fall based on the quality of their documentation.
 
-The documentation for FOSSBilling is hosted here: [FOSSBilling Docs](https://docs.fossbilling.org/)
+The documentation for FOSSBilling is hosted here: [FOSSBilling Docs](https://fossbilling.org/docs)
 
-Documentation is built using [docusaurus](https://docusaurus.io/) from this [GitHub repository](https://github.com/FOSSBilling/docs). You can contribute directly to the repo on GitHub or using the *Edit this page* links on each page of the docs site.
+Documentation is built using [Nextra](https://nextra.site/) from this [GitHub repository](https://github.com/FOSSBilling/docs). You can contribute directly to the repo on GitHub or using the *Edit this page* links on each page of the docs site.
 
 Please try to be thorough and clear when writing directions. Something might seem obvious to you, but do not assume that it is to everybody else. 
 
@@ -172,7 +171,7 @@ We use Crowdin to manage translations. You can take a look at the [getting start
 
 If you do not have the time or necessary skills to actively take part in the development or documentation of the project then you can still play a part by making a financial contribution to the project. This could be a one-time contribution or a recurring monthly donation.
 
-You can do this using [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or on [Open Collective](https://opencollective.com/fossbilling). 
+You can do this using [GitHub Sponsors](https://github.com/sponsors/FOSSBilling) or on [Open Collective](https://opencollective.com/FOSSBilling). 
 
 
 ## Style Guides
@@ -205,7 +204,7 @@ The lara branch is a work in progress and is being built in Laravel. If you are 
 
 We don't have a formal documentation style guide yet, but we will be developing one soon. In the meantime please take a look at the existing documentation and follow the tone and writing style so that everything stays coherent. 
 
-Docusaurus uses Markdown and MDX. Please [see their guides](https://docusaurus.io/docs/markdown-features) for how to use them if you are not sure. 
+Nextra uses Markdown and MDX. Please [see their guides](https://nextra.site/docs/guide/markdown) for how to use them if you are not sure. 
 
 ## But, I still have a question!
 

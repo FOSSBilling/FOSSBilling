@@ -3,7 +3,7 @@
     "description": "Free and Open Source Billing System",
     "version": "4.22.0-beta.5",
     "support": {
-        "docs": "https://docs.fossbilling.org",
+        "docs": "https://fossbilling.org/docs",
         "source": "https://github.com/FOSSBilling/FOSSBilling",
         "issues": "https://github.com/FOSSBilling/FOSSBilling/issues",
         "chat": "https://fossbilling.org/discord"
