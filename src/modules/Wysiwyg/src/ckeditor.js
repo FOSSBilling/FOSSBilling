@@ -4,6 +4,9 @@ import Bold from '@ckeditor/ckeditor5-basic-styles/src/bold.js';
 import ClassicEditorBase from '@ckeditor/ckeditor5-editor-classic/src/classiceditor.js';
 import Essentials from '@ckeditor/ckeditor5-essentials/src/essentials.js';
 import Heading from '@ckeditor/ckeditor5-heading/src/heading.js';
+import Image from '@ckeditor/ckeditor5-image/src/image';
+import ImageToolbar from '@ckeditor/ckeditor5-image/src/imagetoolbar';
+import ImageUpload from '@ckeditor/ckeditor5-image/src/imageupload';
 import Italic from '@ckeditor/ckeditor5-basic-styles/src/italic.js';
 import Link from '@ckeditor/ckeditor5-link/src/link.js';
 import List from '@ckeditor/ckeditor5-list/src/list.js';
@@ -23,6 +26,9 @@ CKEditor.builtinPlugins = [
   Bold,
   Essentials,
   Heading,
+  Image,
+  ImageToolbar,
+  ImageUpload,
   Italic,
   Link,
   List,
@@ -48,7 +54,7 @@ CKEditor.defaultConfig = {
       '|',
       'bulletedList', 'numberedList',
       '|',
-      'link', 'insertTable', 'blockQuote'
+      'link', 'insertTable', 'blockQuote', 'uploadImage'
     ],
   },
   table: {

@@ -15,6 +15,7 @@
     "@ckeditor/ckeditor5-editor-classic": "^35.4.0",
     "@ckeditor/ckeditor5-essentials": "^35.4.0",
     "@ckeditor/ckeditor5-heading": "^35.4.0",
+    "@ckeditor/ckeditor5-image": "^35.4.0",
     "@ckeditor/ckeditor5-link": "^35.4.0",
     "@ckeditor/ckeditor5-list": "^35.4.0",
     "@ckeditor/ckeditor5-markdown-gfm": "^35.4.0",
