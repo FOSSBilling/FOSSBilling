@@ -68,6 +68,9 @@ CKEditor.defaultConfig = {
       'imageStyle:inline', 'imageStyle:wrapText', 'imageStyle:breakText'
     ],
   },
+  image: {
+    toolbar: ['imageTextAlternative']
+  },
   table: {
     defaultHeadings: {rows: 1},
     contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells'],
