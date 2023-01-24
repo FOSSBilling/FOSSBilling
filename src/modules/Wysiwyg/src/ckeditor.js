@@ -7,6 +7,7 @@ import Code from '@ckeditor/ckeditor5-basic-styles/src/code';
 import Essentials from '@ckeditor/ckeditor5-essentials/src/essentials.js';
 import Heading from '@ckeditor/ckeditor5-heading/src/heading.js';
 import Image from '@ckeditor/ckeditor5-image/src/image';
+import ImageStyle from '@ckeditor/ckeditor5-image/src/imagestyle';
 import ImageInsertViaUrl from '@ckeditor/ckeditor5-image/src/imageinsertviaurl';
 import ImageToolbar from '@ckeditor/ckeditor5-image/src/imagetoolbar';
 import Italic from '@ckeditor/ckeditor5-basic-styles/src/italic.js';
@@ -33,6 +34,7 @@ CKEditor.builtinPlugins = [
   Essentials,
   Heading,
   Image,
+  ImageStyle,
   ImageInsertViaUrl,
   ImageToolbar,
   Italic,
@@ -62,7 +64,8 @@ CKEditor.defaultConfig = {
       '|',
       'bulletedList', 'numberedList',
       '|',
-      'link', 'insertTable', 'blockQuote', 'insertImage'
+      'link', 'insertTable', 'blockQuote', 'insertImage','|',
+      'imageStyle:inline', 'imageStyle:wrapText', 'imageStyle:breakText'
     ],
   },
   table: {
