@@ -64,8 +64,9 @@ CKEditor.defaultConfig = {
       '|',
       'bulletedList', 'numberedList',
       '|',
-      'link', 'insertTable', 'blockQuote', 'insertImage','|',
-      'imageStyle:inline', 'imageStyle:wrapText', 'imageStyle:breakText'
+      'link', 'insertTable', 'blockQuote',
+      '|',
+      'insertImage', 'imageStyle:inline', 'imageStyle:wrapText', 'imageStyle:breakText'
     ],
   },
   image: {
