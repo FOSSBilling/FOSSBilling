@@ -47,19 +47,19 @@ class Service implements InjectionAwareInterface
         return array(
             'unpaid' => array(
                 'path' => '/invoice?status=unpaid',
-                'label' => 'Unpaid invoices',
+                'label' => __trans('Unpaid invoices'),
             ),
             'paid' => array(
                 'path' => '/invoice?status=paid',
-                'label' => 'Paid invoices',
+                'label' => __trans('Paid invoices'),
             ),
             'refunded' => array(
                 'path' => '/invoice?status=refunded',
-                'label' => 'Refunded invoices',
+                'label' => __trans('Refunded invoices'),
             ),
             'all' => array(
                 'path' => '/invoice',
-                'label' => 'All invoices',
+                'label' => __trans('All invoices'),
             ),
         );
     }

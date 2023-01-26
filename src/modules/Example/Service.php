@@ -42,11 +42,11 @@ class Service
         return array(
             'source' => array(
                 'path' => 'https://github.com/FOSSBilling/example', // An example external link
-                'label' => 'View source code',
+                'label' => __trans('View source code'),
             ),
             'example' => array(
                 'path' => 'extension/settings/example', // An example internal link. Internal links are relative to the custom admin panel path.
-                'label' => 'This is an example!',
+                'label' => __trans('This is an example!'),
             ),
         );
     }

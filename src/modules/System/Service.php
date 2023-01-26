@@ -30,15 +30,15 @@ class Service
         return array(
             'report_bug' => array(
                 'path' => 'https://github.com/FOSSBilling/FOSSBilling/issues/',
-                'label' => 'Report a bug',
+                'label' => __trans('Report a bug'),
             ),
             'activity' => array(
                 'path' => 'activity',
-                'label' => 'Event history',
+                'label' => __trans('Event history'),
             ),
             'languages' => array(
                 'path' => 'extension/languages',
-                'label' => 'Languages',
+                'label' => __trans('Languages'),
             ),
         );
     }
@@ -206,25 +206,25 @@ class Service
             closedir($handle);
         }
         sort($locales);
-        if(!$deep){
+        if (!$deep) {
             return $locales;
         }
         $array = include PATH_ROOT . '/locale/locales.php';
         $details = [];
-        foreach($locales as $locale){
-            if (empty($array[$locale])){
+        foreach ($locales as $locale) {
+            if (empty($array[$locale])) {
                 //fall back on locale string
                 $details[] = [
                     'locale' => $locale,
-                    'title' => $locale .' ('.$locale.')',
+                    'title' => $locale . ' (' . $locale . ')',
                     'name' => $locale,
                 ];
-            }else{
-            $details[] = [
-                'locale' => $locale,
-                'title' => $array[$locale] .' ('.$locale.')',
-                'name' => $array[$locale],
-            ];
+            } else {
+                $details[] = [
+                    'locale' => $locale,
+                    'title' => $array[$locale] . ' (' . $locale . ')',
+                    'name' => $array[$locale],
+                ];
             }
         }
         return $details;
@@ -345,7 +345,7 @@ class Service
                 // skip if admin is not logged in
             }
         }
-        if(is_null($tpl)){
+        if (is_null($tpl)) {
             $parsed = $this->createTemplateFromString("No template was provided, please contact the site administrator", $try_render, $vars);
             return $parsed;
         }
@@ -992,7 +992,8 @@ class Service
         $list = [
             'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI',
             'FR', 'GR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL',
-            'PL', 'PT', 'RO', 'SE', 'SI', 'SK', ];
+            'PL', 'PT', 'RO', 'SE', 'SI', 'SK',
+        ];
         $c = $this->getCountries();
         $res = [];
         foreach ($list as $code) {
