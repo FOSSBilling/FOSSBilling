@@ -127,16 +127,16 @@ class Box_Period
 
         switch ($this->unit) {
             case self::UNIT_DAY:
-                $shift = __pluralTrans('Every :number day', 'Every :number days', $qty, $placeholders);
+                $shift = __pluralTrans('Every day', 'Every :number days', $qty, $placeholders);
                 break;
             case self::UNIT_WEEK:
-                $shift = __pluralTrans('Every :number week', 'Every :number weeks', $qty, $placeholders);
+                $shift = __pluralTrans('Every week', 'Every :number weeks', $qty, $placeholders);
                 break;
             case self::UNIT_MONTH:
-                $shift = __pluralTrans('Every :number month', 'Every :number months', $qty, $placeholders);
+                $shift = __pluralTrans('Every month', 'Every :number months', $qty, $placeholders);
                 break;
             case self::UNIT_YEAR:
-                $shift = __pluralTrans('Every :number year', 'Every :number years', $qty, $placeholders);
+                $shift = __pluralTrans('Every year', 'Every :number years', $qty, $placeholders);
                 break;
             default:
                 throw new \Box_Exception('Unit not defined');
