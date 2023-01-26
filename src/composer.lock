@@ -677,16 +677,16 @@
         },
         {
             "name": "io-developer/php-whois",
-            "version": "4.1.9",
+            "version": "4.1.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/io-developer/php-whois.git",
-                "reference": "da224558cc50efc133d394c94556828f64884c24"
+                "reference": "ea4cf52832fe8ff56fc4937138467819aa2829c1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/io-developer/php-whois/zipball/da224558cc50efc133d394c94556828f64884c24",
-                "reference": "da224558cc50efc133d394c94556828f64884c24",
+                "url": "https://api.github.com/repos/io-developer/php-whois/zipball/ea4cf52832fe8ff56fc4937138467819aa2829c1",
+                "reference": "ea4cf52832fe8ff56fc4937138467819aa2829c1",
                 "shasum": ""
             },
             "require": {
@@ -733,9 +733,9 @@
             ],
             "support": {
                 "issues": "https://github.com/io-developer/php-whois/issues",
-                "source": "https://github.com/io-developer/php-whois/tree/4.1.9"
+                "source": "https://github.com/io-developer/php-whois/tree/4.1.10"
             },
-            "time": "2023-01-20T21:35:31+00:00"
+            "time": "2023-01-25T14:42:45+00:00"
         },
         {
             "name": "league/commonmark",
