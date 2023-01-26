@@ -12,20 +12,18 @@
  * with this source code in the file LICENSE
  */
 
-class Payment_Exception extends Exception
+class Payment_Exception extends Box_Exception
 {
-    /**
-     * Creates a new translated exception.
-     *
-     * @param   string   error message
-     * @param   array    translation variables
-     */
-    public function __construct($message, array $variables = NULL, $code = 0)
+	/**
+	 * Creates a new translated exception, using the Box_Exception class.
+	 *
+	 * @param   string   error message
+	 * @param   array|null    translation variables
+	 * @param   int 	 The exception code.
+	 * @param 	bool 	 If the varibles in this should be considered protect, if so, disable stacktracing abilities.
+	 */
+    public function __construct(string $message, array $variables = NULL, int $code = 0)
     {
-        // Set the message
-        $message = __trans($message, $variables);
-
-        // Pass the message to the parent
-        parent::__construct($message, $code);
+        parent:: __construct($message, $variables, $code, true);
     }
 }
