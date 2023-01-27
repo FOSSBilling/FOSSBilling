@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -18,18 +19,20 @@ class Box_Exception extends Exception
 	 * Creates a new translated exception.
 	 *
 	 * @param   string   error message
-	 * @param   array    translation variables
+	 * @param   array|null    translation variables
+	 * @param   int 	 The exception code.
+	 * @param 	bool 	 If the varibles in this should be considered protect, if so, hide them from the stack trace. 
 	 */
-	public function __construct($message, array $variables = NULL, $code = 0)
+	public function __construct(string $message, array|null $variables = null, int $code = 0, bool $protected = false)
 	{
-		$config = include PATH_ROOT.'/config.php';
-		$debug = (isset($config['debug'])) ? $config['debug'] : false;
-		$logStack = (isset($config['log_stacktrace'])) ? $config['log_stacktrace'] : true;
-		$stackLength = (isset($config['stacktrace_length'])) ? $config['stacktrace_length'] : 25;
+		$config = include PATH_ROOT . '/config.php';
+		$debug = $config['debug'] ?? false;
+		$logStack = $config['log_stacktrace'] ?? true;
+		$stackLength = $config['stacktrace_length'] ?? 25;
 
-		if($debug && $logStack){
+		if ($debug && $logStack) {
 			error_log('An exception has been thrown. Stacktrace:');
-			error_log( $this->stackTrace($stackLength) );
+			error_log($this->stackTrace($stackLength, $protected));
 		}
 
 		// Translate the exception
@@ -39,12 +42,14 @@ class Box_Exception extends Exception
 		parent::__construct($message, $code);
 	}
 
+
 	/**
 	 * Big thank you to jhurliman and jambroseclarke on Stack Overflow for this backtrace formatter.
 	 * We have slightly modified it for our purposes
 	 * https://stackoverflow.com/a/32365961
 	 */
-	private function stackTrace($Length = 25) {
+	private function stackTrace($Length = 25, $protected = false)
+	{
 		$stack = debug_backtrace($Length);
 		$output = '';
 
@@ -53,11 +58,13 @@ class Box_Exception extends Exception
 			$entry = $stack[$i];
 
 			$func = $entry['function'] . '(';
-			if(isset($entry['args'])){
+			if (isset($entry['args'])) {
 				$argsLen = count($entry['args']);
 				for ($j = 0; $j < $argsLen; $j++) {
 					$my_entry = $entry['args'][$j];
-					if (is_string($my_entry)) {
+					if ($protected) {
+						$func .= "***";
+					} else if (is_string($my_entry)) {
 						$func .= $my_entry;
 					}
 					if ($j < $argsLen - 1) $func .= ', ';
@@ -67,7 +74,7 @@ class Box_Exception extends Exception
 
 			$entry_file = 'NO_FILE';
 			if (array_key_exists('file', $entry)) {
-				$entry_file = str_replace(PATH_ROOT, '' , $entry['file']);
+				$entry_file = str_replace(PATH_ROOT, '', $entry['file']);
 			}
 			$entry_line = 'NO_LINE';
 			if (array_key_exists('line', $entry)) {

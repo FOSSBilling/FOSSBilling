@@ -35,7 +35,7 @@ class Service
         return array(
             'exec' => array(
                 'path' => BB_URL . 'cron.php',
-                'label' => 'Execute now',
+                'label' => __trans('Execute now'),
             ),
         );
     }

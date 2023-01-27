@@ -43,19 +43,19 @@ class Service implements InjectionAwareInterface
         return array(
             'pending_setup' => array(
                 'path' => '/order?status=pending_setup',
-                'label' => 'Orders pending setup',
+                'label' => __trans('Orders pending setup'),
             ),
             'active' => array(
                 'path' => '/order?status=active',
-                'label' => 'Active orders',
+                'label' => __trans('Active orders'),
             ),
             'suspended' => array(
                 'path' => '/order?status=suspended',
-                'label' => 'Suspended orders',
+                'label' => __trans('Suspended orders'),
             ),
             'all' => array(
                 'path' => '/order',
-                'label' => 'All orders',
+                'label' => __trans('All orders'),
             ),
         );
     }

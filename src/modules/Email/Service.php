@@ -35,7 +35,7 @@ class Service implements \Box\InjectionAwareInterface
         return [
             'history' => [
                 'path' => 'email/history',
-                'label' => 'Email history',
+                'label' => __trans('Email history'),
             ],
         ];
     }

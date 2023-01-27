@@ -21,6 +21,7 @@ parameters:
 		- src/rector.php
 	ignoreErrors:
 		- '#^Function __trans not found\.$#'
+		- '#^Function __pluralTrans not found\.$#'
 		- message: '#^Access to an undefined property FOSSPatchAbstract\:\:\$di\.$#'
 		  path: src/foss-update.php
 		- '#^Inner named functions are not supported by PHPStan\. Consider refactoring to an anonymous function, class method, or a top\-level\-defined function\. See issue \#165 \(https\://github\.com/phpstan/phpstan/issues/165\) for more details\.$#'
