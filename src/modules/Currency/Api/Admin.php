@@ -214,7 +214,7 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Remove currency. Default currency can not be removed.
+     * disables currency. Default currency can not be removed.
      *
      * @param string $code - currency ISO 4217 code
      *
@@ -230,6 +230,25 @@ class Admin extends \Api_Abstract
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         return $this->getService()->deleteCurrencyByCode($data['code']);
+    }
+
+    /**
+     * Enables currency.
+     *
+     * @param string $code - currency ISO 4217 code
+     *
+     * @return bool
+     *
+     * @throws Exception
+     */
+    public function enable($data)
+    {
+        $required = [
+            'code' => 'Currency code is missing',
+        ];
+        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+        return $this->getService()->enableCurrencyByCode($data['code']);
     }
 
     /**

@@ -7,48 +7,57 @@
 {% block meta_title %}{{ 'Currency settings'|trans }}{% endblock %}
 
 {% block breadcrumbs %}
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
-                <svg class="icon">
-                    <use xlink:href="#home" />
-                </svg>
-            </a>
-        </li>
-        <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
-        </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ 'Currency settings'|trans }}</li>
-    </ol>
+<ol class="breadcrumb">
+    <li class="breadcrumb-item">
+        <a href="{{ '/'|alink }}">
+            <svg class="icon">
+                <use xlink:href="#home" />
+            </svg>
+        </a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">{{ 'Currency settings'|trans }}</li>
+</ol>
 {% endblock %}
 
 {% block content %}
-    <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <a class="nav-link active" href="#tab-currencies" data-bs-toggle="tab" role="tab">{{ 'Currencies'|trans }}</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-new-currency" data-bs-toggle="tab" role="tab">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'Add new currency'|trans }}
-            </a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-api-settings" data-bs-toggle="tab" role="tab">{{ 'Settings'|trans }}</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-converter" data-bs-toggle="tab" role="tab">{{ 'Converter'|trans }}</a>
-        </li>
-    </ul>
+<ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <a class="nav-link active" href="#tab-currencies" data-bs-toggle="tab" role="tab">{{ 'Currencies'|trans }}</a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" href="#tab-new-currency" data-bs-toggle="tab" role="tab">
+            <svg class="icon me-2">
+                <use xlink:href="#plus" />
+            </svg>
+            {{ 'Add new currency'|trans }}
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" href="#tab-api-settings" data-bs-toggle="tab" role="tab">{{ 'Settings'|trans }}</a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" href="#tab-converter" data-bs-toggle="tab" role="tab">{{ 'Converter'|trans }}</a>
+    </li>
+</ul>
 
 <div class="card">
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-currencies" role="tabpanel">
             <div class="card-body">
                 <h3>{{ 'Manage currencies'|trans }}</h3>
-                <p class="text-muted">{{ 'Default currency is the one you manage all your prices in admin area. If your client in client area chooses other than default currency, prices will be recalculated according to conversion rate. You can have only one default currency. You can not add same currency once again. Changing default currency is not recommended when active orders are available. Nothing is recalculated on default currency change. Your income is calculated in default currency. Changing default currency after you have paid invoices will distort income statistics. Currency rates are taken from European Central Bank and currencylayer.'|trans }}</p>
+                <p class="text-muted">{{ 'Default currency is the one you manage all your prices in admin area. If your
+                    client in client area chooses other than default currency, prices will be recalculated according to
+                    conversion rate. You can have only one default currency. You can not add same currency once again.
+                    Changing default currency is not recommended when active orders are available. Nothing is
+                    recalculated on default currency change. Your income is calculated in default currency. Changing
+                    default currency after you have paid invoices will distort income statistics. Currency rates are
+                    taken from European Central Bank and currencylayer.'|trans }}</p>
+                <br>
+                <p class="text-muted"><b>{{ 'Note: Disabling or deleting a currency can cause unexpected issues for
+                        users, please use caution when doing so.'| trans }}</b></p>
             </div>
 
             <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -62,9 +71,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for currency in admin.currency_get_list.list %}
+                    {% for currency in admin.currency_get_list.list %}
                     <tr>
-                        <td>{% if currency.default %}<strong>{{ currency.code }}</strong>{% else %}{{ currency.code }}{% endif %}</td>
+                        <td>{% if currency.default %}<strong>{{ currency.code }}</strong>{% else %}{{ currency.code }}{%
+                            endif %}</td>
                         <td>
                             <a href="{{ '/currency/manage'|alink }}/{{ currency.code }}">{{ currency.title }}</a>
                         </td>
@@ -76,14 +86,24 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
+                            {% if currency.is_enabled %}
                             <a class="btn btn-icon api-link"
                                 href="{{ 'api/admin/currency/delete'|link({ 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
                                 data-api-redirect="{{ 'extension/settings/currency'|alink }}"
-                                data-api-confirm="{{ 'Are you sure?'|trans }}">
+                                data-api-confirm="{{ 'Are you sure? Disabling this currency may have unintended side effects.'|trans }}">
                                 <svg class="icon">
-                                    <use xlink:href="#delete" />
+                                    <use xlink:href="#close" />
                                 </svg>
                             </a>
+                            {% else %}
+                            <a class="btn btn-icon api-link"
+                                href="{{ 'api/admin/currency/enable'|link({ 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
+                                data-api-redirect="{{ 'extension/settings/currency'|alink }}"
+                                <svg class="icon">
+                                    <use xlink:href="#play" />
+                                </svg>
+                            </a>
+                            {% endif %}
                             {% if not currency.default %}
                             <a class="btn btn-icon api-link"
                                 data-api-redirect="{{ 'extension/settings/currency'|alink }}"
@@ -96,11 +116,11 @@
                             {% endif %}
                         </td>
                     </tr>
-                {% else %}
-                  <tr>
-                      <td colspan="5" class="texgt-muted">{{ 'The list is empty'|trans }}</td>
-                  </tr>
-                {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="texgt-muted">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
 
@@ -118,8 +138,9 @@
 
         <div class="tab-pane fade" id="tab-new-currency" role="tabpanel">
             <div class="card-body">
-                <form method="post" action="{{ 'api/admin/currency/create'|link }}" class="api-form" data-api-redirect="{{ 'extension/settings/currency'|alink }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/currency/create'|link }}" class="api-form"
+                    data-api-redirect="{{ 'extension/settings/currency'|alink }}">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Code'|trans }}:</label>
                         <div class="col">
@@ -153,29 +174,46 @@
         <div class="tab-pane fade" id="tab-api-settings" role="tabpanel">
             <div class="card-body">
                 <h3>{{ 'Adjust settings for currency rate updater'|trans }}</h3>
-                <p class="text-muted">FOSSBilling uses data grabbed from <a href="https://www.ecb.europa.eu/home/html/index.en.html" target="_blank">European Central Bank</a> for conversions from Euro to other currencies, and <a href="https://currencylayer.com/" target="_blank">currencylayer</a> for conversations from US Dollar to other currencies.<br />If you choose Euro as your default currency, data from European Central Bank will be used, if you choose US Dollar, data from currencylayer will be used.<br />While European Central Bank decided to keep it's API free to everyone, you won't need an authorization key to use ECB's data. However, you'll need an API key to use currencylayer.<br />You can <a href="https://currencylayer.com/product" target="_blank">grab your API key</a> from currencylayer's website. FOSSBilling doesn't make any profits from your purchases on currencylayer.com</p>
-                <p><b>FOSSBilling does not take any responsibilities for data grabbed from 3rd party sources, including European Central Bank and currencylayer.</b></p>
+                <p class="text-muted">FOSSBilling uses data grabbed from <a
+                        href="https://www.ecb.europa.eu/home/html/index.en.html" target="_blank">European Central
+                        Bank</a> for conversions from Euro to other currencies, and <a href="https://currencylayer.com/"
+                        target="_blank">currencylayer</a> for conversations from US Dollar to other currencies.<br />If
+                    you choose Euro as your default currency, data from European Central Bank will be used, if you
+                    choose US Dollar, data from currencylayer will be used.<br />While European Central Bank decided to
+                    keep it's API free to everyone, you won't need an authorization key to use ECB's data. However,
+                    you'll need an API key to use currencylayer.<br />You can <a
+                        href="https://currencylayer.com/product" target="_blank">grab your API key</a> from
+                    currencylayer's website. FOSSBilling doesn't make any profits from your purchases on
+                    currencylayer.com</p>
+                <p><b>FOSSBilling does not take any responsibilities for data grabbed from 3rd party sources, including
+                        European Central Bank and currencylayer.</b></p>
 
-                <form method="post" action="{{ 'api/admin/currency/update_rate_settings'|link }}" class="api-form" data-api-msg="{{ 'Successfully updated settings'|trans }}">
-                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <form method="post" action="{{ 'api/admin/currency/update_rate_settings'|link }}" class="api-form"
+                    data-api-msg="{{ 'Successfully updated settings'|trans }}">
+                    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'API key for currencylayer'|trans }}:</label>
                         <div class="col">
-                            <input class="form-control" type="text" name="currencylayer_key" value="{{ admin.currency_get_key }}">
+                            <input class="form-control" type="text" name="currencylayer_key"
+                                value="{{ admin.currency_get_key }}">
                         </div>
                     </div>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Enable CRON jobs'|trans }}:</label>
                         <div class="col">
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioCronsEnabled" type="radio" name="crons_enabled" value="1"{% if admin.currency_is_cron_enabled == 1 %} checked{% endif %}>
+                                <input class="form-check-input" id="radioCronsEnabled" type="radio" name="crons_enabled"
+                                    value="1" {% if admin.currency_is_cron_enabled==1 %} checked{% endif %}>
                                 <label class="form-check-label" for="radioCronsEnabled">{{ 'Enabled'|trans }}</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioCronsDisabled" type="radio" name="crons_enabled" value="0"{% if admin.currency_is_cron_enabled == 0 %} checked{% endif %}>
+                                <input class="form-check-input" id="radioCronsDisabled" type="radio"
+                                    name="crons_enabled" value="0" {% if admin.currency_is_cron_enabled==0 %} checked{%
+                                    endif %}>
                                 <label class="form-check-label" for="radioCronsDisabled">{{ 'Disabled'|trans }}</label>
                             </div>
-                            <small class="form-hint">{{ 'If you enable this, conversion rates will be automatically updated whenever the CRON job fires up.'|trans }}</small>
+                            <small class="form-hint">{{ 'If you enable this, conversion rates will be automatically
+                                updated whenever the CRON job fires up.'|trans }}</small>
                         </div>
                     </div>
 
@@ -186,14 +224,16 @@
 
         <div class="tab-pane fade" id="tab-converter" role="tabpanel">
             <form method="post" action="">
-                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
+                <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}" />
                 <div class="card-body">
                     <div class="input-group">
-                            <span class="input-group-text">{{ guest.currency_get.code }}</span>
-                            <input class="form-control" type="text" name="amount" value="" required placeholder="{{ 'Amount'|trans }}" onkeyup="doConvert();">
-                            <span class="input-group-text">=</span>
-                            <input class="form-control" type="text" id="converted_result" value="" placeholder="{{ 'Result'|trans }}" readonly>
-                            <div>{{ mf.selectbox('to', guest.currency_get_pairs) }}</div>
+                        <span class="input-group-text">{{ guest.currency_get.code }}</span>
+                        <input class="form-control" type="text" name="amount" value="" required
+                            placeholder="{{ 'Amount'|trans }}" onkeyup="doConvert();">
+                        <span class="input-group-text">=</span>
+                        <input class="form-control" type="text" id="converted_result" value=""
+                            placeholder="{{ 'Result'|trans }}" readonly>
+                        <div>{{ mf.selectbox('to', guest.currency_get_pairs) }}</div>
                         </ul>
                     </div>
                 </div>
@@ -209,7 +249,7 @@
         var price = $('input[name="amount"]').val();
         var code = $('select[name="to"]').val();
 
-        bb.post('guest/currency/format', { price: price, code: code, CSRFToken: "{{ CSRFToken }}" }, function(result) {
+        bb.post('guest/currency/format', { price: price, code: code, CSRFToken: "{{ CSRFToken }}" }, function (result) {
             $('#converted_result').val(result);
         });
 

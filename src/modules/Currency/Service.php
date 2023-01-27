@@ -574,6 +574,10 @@ class Service implements InjectionAwareInterface
 
         $code = $model->code;
 
+        if ($model->is_default) {
+            throw new \Box_Exception("Cannot disable default currency");
+        }
+
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminDeleteCurrency', 'params' => ['code' => $code]]);
 
         $model->updated_at = date('Y-m-d H:i:s');
@@ -583,6 +587,26 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onAfterAdminDeleteCurrency', 'params' => ['code' => $code]]);
 
         $this->di['logger']->info('Disabled currency %s', $code);
+
+        return true;
+    }
+
+    public function enableCurrencyByCode($code)
+    {
+        $db = $this->di['db'];
+        $model = $this->getByCode($code);
+
+        if (!$model instanceof \Model_currency) {
+            throw new \Box_Exception('Currency not found');
+        }
+
+        $code = $model->code;
+
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->is_enabled = 1;
+        $db->store($model);
+
+        $this->di['logger']->info('Enabled currency %s', $code);
 
         return true;
     }
