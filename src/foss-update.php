@@ -18,6 +18,17 @@
  * main.
  */
 
+/**
+ * Migration steps to create table to allow admin users to do password reset
+ */
+class FOSSPatch_28 extends FOSSPatchAbstract
+{
+    public function patch(){
+        // Add the new 'is_enabled' column to the currency table.
+        $q = "ALTER TABLE Currency ADD COLUMN is_enabled tinyint(1) SET DEFAULT 1";
+        $this->execSql($q);
+    }
+}
 
 /**
  * Migration steps to create table to allow admin users to do password reset

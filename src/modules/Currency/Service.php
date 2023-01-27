@@ -459,7 +459,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function updateCurrency($code, $format = null, $title = null, $priceFormat = null, $conversionRate = null)
+    public function updateCurrency($code, $format = null, $title = null, $priceFormat = null, $conversionRate = null, int $enabled = null)
     {
         $db = $this->di['db'];
 
@@ -486,6 +486,10 @@ class Service implements InjectionAwareInterface
                 throw new \Box_Exception('Currency rate is not valid', null, 151);
             }
             $model->conversion_rate = $conversionRate;
+        }
+
+        if (isset($enabled) && is_int($enabled)) {
+            $model->is_enabled = $enabled;
         }
 
         $model->updated_at = date('Y-m-d H:i:s');
@@ -558,22 +562,27 @@ class Service implements InjectionAwareInterface
         }
     }
 
+    // No longer deletes a currency, but instead marks it as disabled.
     public function deleteCurrencyByCode($code)
     {
+        $db = $this->di['db'];
         $model = $this->getByCode($code);
 
         if (!$model instanceof \Model_currency) {
             throw new \Box_Exception('Currency not found');
         }
+
         $code = $model->code;
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminDeleteCurrency', 'params' => ['code' => $code]]);
 
-        $this->rm($model);
+        $model->updated_at = date('Y-m-d H:i:s');
+        $model->is_enabled = 0;
+        $db->store($model);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminDeleteCurrency', 'params' => ['code' => $code]]);
 
-        $this->di['logger']->info('Removed currency %s', $code);
+        $this->di['logger']->info('Disabled currency %s', $code);
 
         return true;
     }
