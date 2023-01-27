@@ -86,7 +86,7 @@
                                     <use xlink:href="#edit" />
                                 </svg>
                             </a>
-                            {% if currency.is_enabled %}
+                            {% if currency.enabled %}
                             <a class="btn btn-icon api-link"
                                 href="{{ 'api/admin/currency/delete'|link({ 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
                                 data-api-redirect="{{ 'extension/settings/currency'|alink }}"
@@ -98,9 +98,9 @@
                             {% else %}
                             <a class="btn btn-icon api-link"
                                 href="{{ 'api/admin/currency/enable'|link({ 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
-                                data-api-redirect="{{ 'extension/settings/currency'|alink }}"
+                                data-api-redirect="{{ 'extension/settings/currency'|alink }}">
                                 <svg class="icon">
-                                    <use xlink:href="#play" />
+                                    <use xlink:href="#check" />
                                 </svg>
                             </a>
                             {% endif %}

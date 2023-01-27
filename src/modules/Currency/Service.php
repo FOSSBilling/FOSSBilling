@@ -428,6 +428,7 @@ class Service implements InjectionAwareInterface
             'format' => $model->format,
             'price_format' => $model->price_format,
             'default' => $model->is_default,
+            'enabled' => $model->is_enabled,
         ];
     }
 
