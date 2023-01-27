@@ -81,7 +81,7 @@
                         <td>{{ currency.conversion_rate }}</td>
                         <td>{{ mf.currency_format(1) }} = {{ mf.currency(1, currency.code) }}</td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/currency/manage'|alink }}/{{ currency.code }}">
+                            <a class="btn btn-icon" href="{{ '/currency/manage'|alink }}/{{ currency.code }}" title="{{ 'Edit currency'|trans }}">
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
@@ -90,7 +90,8 @@
                             <a class="btn btn-icon api-link"
                                 href="{{ 'api/admin/currency/delete'|link({ 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
                                 data-api-redirect="{{ 'extension/settings/currency'|alink }}"
-                                data-api-confirm="{{ 'Are you sure? Disabling this currency may have unintended side effects.'|trans }}">
+                                data-api-confirm="{{ 'Are you sure? Disabling this currency may have unintended side effects.'|trans }}"
+                                title="{{ 'Disable currency'|trans }}">
                                 <svg class="icon">
                                     <use xlink:href="#close" />
                                 </svg>
@@ -98,7 +99,8 @@
                             {% else %}
                             <a class="btn btn-icon api-link"
                                 href="{{ 'api/admin/currency/enable'|link({ 'code': currency.code, 'CSRFToken': CSRFToken }) }}"
-                                data-api-redirect="{{ 'extension/settings/currency'|alink }}">
+                                data-api-redirect="{{ 'extension/settings/currency'|alink }}"
+                                title="{{ 'Enable currency'|trans }}">
                                 <svg class="icon">
                                     <use xlink:href="#check" />
                                 </svg>

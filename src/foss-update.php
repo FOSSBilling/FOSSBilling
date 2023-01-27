@@ -25,7 +25,7 @@ class FOSSPatch_28 extends FOSSPatchAbstract
 {
     public function patch(){
         // Add the new 'is_enabled' column to the currency table.
-        $q = "ALTER TABLE Currency ADD COLUMN is_enabled tinyint(1) SET DEFAULT 1";
+        $q = "ALTER TABLE currency ADD is_enabled tinyint(1) NOT NULL DEFAULT(1)";
         $this->execSql($q);
     }
 }
