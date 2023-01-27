@@ -486,7 +486,7 @@ class Service implements InjectionAwareInterface
         $currency = $this->di['db']->getExistingModelById('Currency', $cart->currency_id, 'Currency not found.');
 
         if (!$currency->is_enabled) {
-            throw new \Box_Exception("The :currency currency associated with your cart has been diabled by the system administrator, please contact them for further assitance.", [' :currency' => $currency->code]);
+            throw new \Box_Exception("The :currency currency associated with your cart has been diabled by the system administrator, please contact them for further assitance.", [':currency' => $currency->code]);
         }
 
         // set default client currency
