@@ -24,7 +24,7 @@
                     <p>{{ 'Article views'|trans }}: {{ article.views }}</p>
                 </header>
                 <section>
-                    {{ article.content|bbmd }}
+                    {{ article.content|markdown }}
                     <hr/>
                     <p><a class="btn btn-small" href="{{ 'kb'|link }}">{{ 'Back to list'|trans }}</a></p>
                 </section>

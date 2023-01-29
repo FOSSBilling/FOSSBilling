@@ -11,7 +11,7 @@
             {% set product_details %}
             <div class="well">
                 <strong>{{ product.title }}</strong>
-                {{ product.description | bbmd }}
+                {{ product.description | markdown }}
 
                 {% if product.pricing.type == 'recurrent' %}
                 {% set periods = guest.system_periods %}
