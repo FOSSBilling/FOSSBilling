@@ -22,6 +22,10 @@
                 CKEditor
                 .create(element)
                 .then(editor => {
+                    if (element.hasAttribute('required')) {
+                        element.removeAttribute('required');
+                        element.reportValidity();
+                    }
                     editors[element.name] = editor;
                 })
                 .catch(error => {console.error(error)});
