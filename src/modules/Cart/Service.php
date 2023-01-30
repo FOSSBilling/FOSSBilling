@@ -148,11 +148,6 @@ class Service implements InjectionAwareInterface
 
             $productServiceFromList = $productFromList->getService();
 
-            // @deprecated logic
-            if (method_exists($productServiceFromList, 'prependOrderConfig')) {
-                $productFromListConfig = $productServiceFromList->prependOrderConfig($productFromList, $productFromListConfig);
-            }
-
             if (method_exists($productServiceFromList, 'attachOrderConfig')) {
                 $model = $this->di['db']->load('Product', $productFromList->id);
                 $productFromListConfig = $productServiceFromList->attachOrderConfig($model, $productFromListConfig);
@@ -438,7 +433,8 @@ class Service implements InjectionAwareInterface
                 'params' => [
                     'ip' => $this->di['request']->getClientAddress(),
                     'client_id' => $client->id,
-                    'cart_id' => $cart->id, ],
+                    'cart_id' => $cart->id,
+                ],
             ]
         );
 

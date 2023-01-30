@@ -90,28 +90,4 @@ class Service implements \Box\InjectionAwareInterface
 
         return (int) $this->di['db']->getCell($sql, $values);
     }
-
-    /**
-     * @deprecated use DI
-     */
-    public function getApiGuest()
-    {
-        return $this->di['api_guest'];
-    }
-
-    /**
-     * @deprecated use DI
-     */
-    public function getApiClient($id)
-    {
-        return $this->di['api_client'];
-    }
-
-    /**
-     * @deprecated use DI
-     */
-    public function getApiAdmin($id = null)
-    {
-        return $this->di['api_admin'];
-    }
 }
