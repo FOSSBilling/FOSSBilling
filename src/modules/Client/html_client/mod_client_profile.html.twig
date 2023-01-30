@@ -268,7 +268,7 @@
 $(function() {
     $('#change-password').bind('submit', function(event) {
         bb.post(
-            'client/client/change_password',
+            'client/profile/change_password',
             $(this).serialize(),
             function(result) {
                 bb.msg('Password was changed');
