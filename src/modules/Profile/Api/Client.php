@@ -38,7 +38,7 @@ class Client extends \Api_Abstract
      * @optional string $email - new client email. Must not exist on system
      * @optional string $last_name - last name
      * @optional string $aid - Alternative id. Usually used by import tools.
-     * @optional string $gender - Gender - values: male|female
+     * @optional string $gender - Gender - values: male|female|nonbinary|other
      * @optional string $country - Country
      * @optional string $city - city
      * @optional string $birthday - Birthday
