@@ -23,25 +23,6 @@ namespace Box\Mod\System\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Return system setting param.
-     *
-     * @deprecated
-     *
-     * @param string $key - parameter key name
-     *
-     * @return string
-     */
-    public function param($data)
-    {
-        $required = [
-            'key' => 'Parameter key is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-
-        return $this->getService()->getParamValue($data['key']);
-    }
-
-    /**
      * Get all defined system params.
      *
      * @return array
