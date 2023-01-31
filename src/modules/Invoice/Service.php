@@ -1128,8 +1128,8 @@ class Service implements InjectionAwareInterface
 
         $systemService = $this->di['mod_service']('system');
 
-        $min_amount = $systemService->getParamValue('minimum_funds_limit', null);
-        $max_amount = $systemService->getParamValue('maximum_funds_limit', null);
+        $min_amount = $systemService->getParamValue('funds_min_amount', null);
+        $max_amount = $systemService->getParamValue('funds_max_amount', null);
 
         if ($min_amount && $amount < $min_amount) {
             throw new \Box_Exception('Amount must be at least :min_amount', [':min_amount' => $min_amount], 981);
