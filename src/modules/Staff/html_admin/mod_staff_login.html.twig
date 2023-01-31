@@ -49,7 +49,12 @@
                                 autofocus>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" for="inputPassword">{{ 'Password'|trans }}</label>
+                            <label class="form-label" for="inputPassword">
+                                {{ 'Password'|trans }}
+                                <span class="form-label-description">
+                                    <a href="{{ 'staff/passwordreset'|alink }}">Forgot your password?</a>
+                                </span>
+                            </label>
                             <input class="form-control"
                                 id="inputPassword"
                                 type="password"
