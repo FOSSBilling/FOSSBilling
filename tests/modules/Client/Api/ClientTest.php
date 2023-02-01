@@ -20,7 +20,7 @@ class ClientTest extends \BBTestCase {
         $data = array();
 
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Client\ServiceBalance')->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -39,7 +39,7 @@ class ClientTest extends \BBTestCase {
             ->will($this->returnValue($simpleResultArr));
 
         $model = new \Model_ClientBalance();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -127,7 +127,7 @@ class ClientTest extends \BBTestCase {
         );
 
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -177,7 +177,7 @@ class ClientTest extends \BBTestCase {
     {
         $balanceAmount = 0.00;
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Client\ServiceBalance')->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -208,7 +208,7 @@ class ClientTest extends \BBTestCase {
             ->willReturn($clientIsTaxable);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $api = new \Box\Mod\Client\Api\Client();
         $api->setService($serviceMock);

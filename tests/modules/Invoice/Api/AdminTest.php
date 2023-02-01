@@ -61,7 +61,7 @@ class AdminTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -97,7 +97,7 @@ class AdminTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -121,7 +121,7 @@ class AdminTest extends \BBTestCase {
         $newInvoiceId = 1;
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $invoiceModel->id = $newInvoiceId;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
@@ -135,7 +135,7 @@ class AdminTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -169,7 +169,7 @@ class AdminTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -203,7 +203,7 @@ class AdminTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -240,7 +240,7 @@ class AdminTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -275,7 +275,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_InvoiceItem();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -310,7 +310,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -345,7 +345,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_ClientOrder();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->price = 10;
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -375,7 +375,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_ClientOrder();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = 1;
         $model->price = 0;
         $dbMock->expects($this->atLeastOnce())
@@ -425,7 +425,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -517,7 +517,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -581,7 +581,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_Transaction();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -622,7 +622,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_Transaction();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -674,7 +674,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_Transaction();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -709,7 +709,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_Transaction();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -926,7 +926,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_PayGateway();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -960,7 +960,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_PayGateway();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -995,7 +995,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_PayGateway();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -1030,7 +1030,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_PayGateway();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -1089,9 +1089,9 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_PayGateway();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->currency = 'EU';
 
         $dbMock->expects($this->atLeastOnce())
@@ -1126,9 +1126,9 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_PayGateway();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -1163,7 +1163,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_Subscription();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -1194,7 +1194,7 @@ class AdminTest extends \BBTestCase {
        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_Subscription();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->will($this->returnValue($model));
@@ -1227,7 +1227,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_Subscription();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -1262,7 +1262,7 @@ class AdminTest extends \BBTestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $model = new \Model_Tax();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -1434,7 +1434,7 @@ class AdminTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model  = new \Model_Tax();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));
@@ -1467,7 +1467,7 @@ class AdminTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model  = new \Model_Tax();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($model));

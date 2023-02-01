@@ -78,7 +78,7 @@ class ServiceTest extends \BBTestCase
     public function testToBaseCurrency($defaultCode, $foreignCode, $amount, $rate, $expected)
     {
         $model      = new \Model_Currency();
-        $bean       = new \RedBeanPHP\OODBBean();
+        $bean       = new \DummyBean();
         $bean->code = $defaultCode;
         $model->loadBean($bean);
 
@@ -102,7 +102,7 @@ class ServiceTest extends \BBTestCase
     public function getCurrencyByClientIdProvider()
     {
         $model = new \Model_Currency();
-        $bean  = new \RedBeanPHP\OODBBean();
+        $bean  = new \DummyBean();
         $model->loadBean($bean);
 
         return array(
@@ -183,7 +183,7 @@ class ServiceTest extends \BBTestCase
     {
         $di         = new \Box_Di();
         $service    = new \Box\Mod\Currency\Service();
-        $bean       = new \RedBeanPHP\OODBBean();
+        $bean       = new \DummyBean();
         $bean->code = 'EUR';
         $model      = new \Model_Currency();
         $model->loadBean($bean);
@@ -238,7 +238,7 @@ class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Currency\Service();
 
-        $bean  = new \RedBeanPHP\OODBBean();
+        $bean  = new \DummyBean();
         $model = new \Model_Currency();
         $model->loadBean($bean);
 
@@ -261,11 +261,11 @@ class ServiceTest extends \BBTestCase
     public function setAsDefaultProvider()
     {
         $firstModel              = new \Model_Currency();
-        $firstModel->loadBean(new \RedBeanPHP\OODBBean());
+        $firstModel->loadBean(new \DummyBean());
         $firstModel->code        = 'USD';
         $firstModel->is_default  = 0;
         $secondModel             = new \Model_Currency();
-        $secondModel->loadBean(new \RedBeanPHP\OODBBean());
+        $secondModel->loadBean(new \DummyBean());
         $secondModel->code       = 'USD';
         $secondModel->is_default = 1;
 
@@ -308,7 +308,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $model             = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->is_default = 0;
         $model->code       = null;
 
@@ -516,7 +516,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $model             = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->code       = 'EUR';
         $model->is_default = 1;
 
@@ -538,7 +538,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $model             = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->code       = 'EUR';
         $model->is_default = 0;
 
@@ -560,7 +560,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $model             = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->is_default = 0;
         $model->code       = null;
 
@@ -575,7 +575,7 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
 
         $model = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $model->code            = 'EUR';
         $model->title           = 'Euro';
@@ -611,7 +611,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $currencyModel = new \Model_Tld();
-        $currencyModel->loadBean(new \RedBeanPHP\OODBBean());
+        $currencyModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -647,7 +647,7 @@ class ServiceTest extends \BBTestCase
         $conversion_rate = 0.6;
 
         $model       = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
 
         $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->setMethods(array('getByCode'))->getMock();
@@ -693,7 +693,7 @@ class ServiceTest extends \BBTestCase
         $conversion_rate = 0;
 
         $model       = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->setMethods(array('getByCode'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('getByCode')
@@ -706,7 +706,7 @@ class ServiceTest extends \BBTestCase
     public function testUpdateCurrencyRates()
     {
         $model       = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
 
         $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->setMethods(array('getDefault', '_getRate'))->getMock();
@@ -717,11 +717,11 @@ class ServiceTest extends \BBTestCase
             ->method('_getRate')
             ->will($this->returnValue(rand(1, 50) / 10));
 
-        $bean             = new \RedBeanPHP\OODBBean();
+        $bean             = new \DummyBean();
         $bean->is_default = 1;
         $bean->code       = 'EUR';
 
-        $bean2             = new \RedBeanPHP\OODBBean();
+        $bean2             = new \DummyBean();
         $bean2->is_default = 0;
         $bean2->code       = 'USD';
 
@@ -750,7 +750,7 @@ class ServiceTest extends \BBTestCase
     public function testUpdateCurrencyRatesRateNotNumeric()
     {
         $model       = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
 
         $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->setMethods(array('getDefault', '_getRate'))->getMock();
@@ -761,7 +761,7 @@ class ServiceTest extends \BBTestCase
             ->method('_getRate')
             ->will($this->returnValue(null));
 
-        $bean             = new \RedBeanPHP\OODBBean();
+        $bean             = new \DummyBean();
         $bean->is_default = 0;
         $bean->code       = 'EUR';
 
@@ -789,7 +789,7 @@ class ServiceTest extends \BBTestCase
     public function testDelete()
     {
         $model       = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
 
 

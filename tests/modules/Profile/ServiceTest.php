@@ -18,7 +18,7 @@ class ServiceTest extends \BBTestCase
     public function testgetAdminIdentityArray()
     {
         $model = new \Model_Admin();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $service = new Service();
         $result  = $service->getAdminIdentityArray($model);
@@ -48,7 +48,7 @@ class ServiceTest extends \BBTestCase
         });
 
         $model = new \Model_Admin();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $data = array(
             'signature' => 'new signature',
@@ -83,7 +83,7 @@ class ServiceTest extends \BBTestCase
         $di['tools']          = new \Box_Tools();
 
         $model = new \Model_Admin();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $service = new Service();
         $service->setDi($di);
@@ -120,7 +120,7 @@ class ServiceTest extends \BBTestCase
         $di['password']       = $passwordMock;
 
         $model = new \Model_Admin();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $service = new Service();
         $service->setDi($di);
@@ -170,7 +170,7 @@ class ServiceTest extends \BBTestCase
         });
 
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $data            = array(
             'email'          => 'email@example.com',
@@ -256,7 +256,7 @@ class ServiceTest extends \BBTestCase
         });
 
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $data            = array(
             'email' => 'email@example.com',
@@ -313,7 +313,7 @@ class ServiceTest extends \BBTestCase
         });
 
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $data            = array(
             'email' => 'email@example.com',
@@ -343,7 +343,7 @@ class ServiceTest extends \BBTestCase
         $di['db']     = $dbMock;
         $di['tools']  = new \Box_Tools();
         $model        = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $service = new Service();
         $service->setDi($di);
@@ -385,7 +385,7 @@ class ServiceTest extends \BBTestCase
         $di['password']       = $passwordMock;
 
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $service = new Service();
         $service->setDi($di);
@@ -412,7 +412,7 @@ class ServiceTest extends \BBTestCase
         $di['cookie']  = $cookieMock;
 
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $service = new Service();
         $service->setDi($di);

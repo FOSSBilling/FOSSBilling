@@ -84,7 +84,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $model = new \Model_Form();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -116,7 +116,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $model = new \Model_FormField();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = 2;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -173,7 +173,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $model = new \Model_FormField();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $modelArray = array(
             'id' => $updateFIeldId,
@@ -347,7 +347,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $model = new \Model_Form();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
@@ -433,7 +433,7 @@ class ServiceTest extends \BBTestCase {
         $expectedArray['options'] = json_decode($expectedArray['options']);
 
         $model = new \Model_FormField();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -478,7 +478,7 @@ class ServiceTest extends \BBTestCase {
         $data = array('id' => 1);
 
         $model = new \Model_FormField();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

@@ -169,7 +169,7 @@ class GuestTest extends \BBTestCase {
             ->will($this->returnValue($pager));
 
         $modelProductCategory = new \Model_ProductCategory();
-        $modelProductCategory->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProductCategory->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -223,7 +223,7 @@ class GuestTest extends \BBTestCase {
     public function testget_slider()
     {
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
@@ -256,7 +256,7 @@ class GuestTest extends \BBTestCase {
     public function testget_sliderJsonFormat()
     {
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')

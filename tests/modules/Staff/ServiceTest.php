@@ -22,7 +22,7 @@ class ServiceTest extends \BBTestCase
         $ip       = '127.0.0.1';
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
         $admin->id    = 1;
         $admin->email = $email;
         $admin->name  = 'Admin';
@@ -131,7 +131,7 @@ class ServiceTest extends \BBTestCase
     public function testhasPermissionRoleAdmin()
     {
         $member = new \Model_Client();
-        $member->loadBean(new \RedBeanPHP\OODBBean());
+        $member->loadBean(new \DummyBean());
         $member->role = 'admin';
 
         $service = new \Box\Mod\Staff\Service();
@@ -143,7 +143,7 @@ class ServiceTest extends \BBTestCase
     public function testhasPermissionRoleStaffWithEmptyPerms()
     {
         $member = new \Model_Client();
-        $member->loadBean(new \RedBeanPHP\OODBBean());
+        $member->loadBean(new \DummyBean());
         $member->role = 'staff';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
@@ -160,7 +160,7 @@ class ServiceTest extends \BBTestCase
     public function testhasPermissionRoleStaffWithNoPerm()
     {
         $member = new \Model_Client();
-        $member->loadBean(new \RedBeanPHP\OODBBean());
+        $member->loadBean(new \DummyBean());
         $member->role = 'staff';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
@@ -179,7 +179,7 @@ class ServiceTest extends \BBTestCase
     public function testhasPermissionRoleStaffWithNoMethodPerm()
     {
         $member = new \Model_Client();
-        $member->loadBean(new \RedBeanPHP\OODBBean());
+        $member->loadBean(new \DummyBean());
         $member->role = 'staff';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
@@ -198,7 +198,7 @@ class ServiceTest extends \BBTestCase
     public function testhasPermissionRoleStaffWithGoodPerms()
     {
         $member = new \Model_Client();
-        $member->loadBean(new \RedBeanPHP\OODBBean());
+        $member->loadBean(new \DummyBean());
         $member->role = 'staff';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')
@@ -662,7 +662,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Box_Di();
 
         $ticketModel = new \Model_SupportTicket();
-        $ticketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $ticketModel->loadBean(new \DummyBean());
 
         $supportServiceMock = $this->getMockBuilder('\Box\Mod\Support\Service')->getMock();
         $supportServiceMock->expects($this->atLeastOnce())
@@ -722,7 +722,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Box_Di();
 
         $ticketModel = new \Model_SupportTicket();
-        $ticketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $ticketModel->loadBean(new \DummyBean());
 
         $supportServiceMock = $this->getMockBuilder('\Box\Mod\Support\Service')->getMock();
         $supportServiceMock->expects($this->atLeastOnce())
@@ -735,7 +735,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn($supportTicketArray);
 
         $helpdeskModel = new \Model_SupportHelpdesk();
-        $helpdeskModel->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdeskModel->loadBean(new \DummyBean());
         $helpdeskModel->email = 'helpdesk@support.com';
 
         $emailServiceMock = $this->getMockBuilder('\Box\Mod\Email\Service')->getMock();
@@ -844,7 +844,7 @@ class ServiceTest extends \BBTestCase
     public function testgetCronAdminAlreadyExists()
     {
         $adminModel = new \Model_Admin();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder(('\Box_Database'))->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -865,7 +865,7 @@ class ServiceTest extends \BBTestCase
     public function testgetCronAdminCreateCronAdminAndReturn()
     {
         $adminModel = new \Model_Admin();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder(('\Box_Database'))->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -899,10 +899,10 @@ class ServiceTest extends \BBTestCase
     public function testtoModel_AdminApiArray()
     {
         $adminModel = new \Model_Admin();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
 
         $adminGroupModel = new \Model_Admin();
-        $adminGroupModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminGroupModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder(('\Box_Database'))->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -947,7 +947,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $adminModel = new \Model_Admin();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
 
         $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventsMock->expects($this->atLeastOnce())
@@ -977,7 +977,7 @@ class ServiceTest extends \BBTestCase
     public function testdelete()
     {
         $adminModel = new \Model_Admin();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
 
         $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventsMock->expects($this->atLeastOnce())
@@ -1004,7 +1004,7 @@ class ServiceTest extends \BBTestCase
     public function testdeleteProtectedAccount()
     {
         $adminModel = new \Model_Admin();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
         $adminModel->protected = 1;
 
         $service = new \Box\Mod\Staff\Service();
@@ -1018,7 +1018,7 @@ class ServiceTest extends \BBTestCase
     {
         $plainTextPassword = 'password';
         $adminModel        = new \Model_Admin();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
 
         $eventsMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventsMock->expects($this->atLeastOnce())
@@ -1061,7 +1061,7 @@ class ServiceTest extends \BBTestCase
         $newId = 1;
 
         $adminModel = new \Model_Admin();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
 
         $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
@@ -1117,7 +1117,7 @@ class ServiceTest extends \BBTestCase
         $newId = 1;
 
         $adminModel = new \Model_Admin();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
 
         $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
@@ -1174,7 +1174,7 @@ class ServiceTest extends \BBTestCase
         $newId = 1;
 
         $adminModel = new \Model_Admin();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder(('\Box_Database'))->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1278,7 +1278,7 @@ class ServiceTest extends \BBTestCase
     public function testcreateGroup()
     {
         $adminGroupModel = new \Model_AdminGroup();
-        $adminGroupModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminGroupModel->loadBean(new \DummyBean());
         $newGroupId = 1;
 
         $systemServiceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
@@ -1309,7 +1309,7 @@ class ServiceTest extends \BBTestCase
     public function testtoAdminGroupApiArray()
     {
         $adminGroupModel = new \Model_AdminGroup();
-        $adminGroupModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminGroupModel->loadBean(new \DummyBean());
 
         $expected =
             array(
@@ -1330,7 +1330,7 @@ class ServiceTest extends \BBTestCase
     public function testdeleteGroup()
     {
         $adminGroupModel = new \Model_AdminGroup();
-        $adminGroupModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminGroupModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder(('\Box_Database'))->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1354,7 +1354,7 @@ class ServiceTest extends \BBTestCase
     public function testdeleteGroupDeleteAdminGroup()
     {
         $adminGroupModel = new \Model_AdminGroup();
-        $adminGroupModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminGroupModel->loadBean(new \DummyBean());
         $adminGroupModel->id = 1;
 
         $service = new \Box\Mod\Staff\Service();
@@ -1367,7 +1367,7 @@ class ServiceTest extends \BBTestCase
     public function testdeleteGroupGroupHasMembers()
     {
         $adminGroupModel = new \Model_AdminGroup();
-        $adminGroupModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminGroupModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder(('\Box_Database'))->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1388,7 +1388,7 @@ class ServiceTest extends \BBTestCase
     public function testupdateGroup()
     {
         $adminGroupModel = new \Model_AdminGroup();
-        $adminGroupModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminGroupModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder(('\Box_Database'))->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1448,7 +1448,7 @@ class ServiceTest extends \BBTestCase
     public function testtoActivityAdminHistoryApiArray()
     {
         $adminHistoryModel = new \Model_ActivityAdminHistory();
-        $adminHistoryModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminHistoryModel->loadBean(new \DummyBean());
         $adminHistoryModel->admin_id = 2;
 
         $expected = array(
@@ -1464,7 +1464,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $adminModel = new \Model_Admin();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
         $adminModel->id = 2;
 
         $dbMock = $this->getMockBuilder(('\Box_Database'))->getMock();
@@ -1487,7 +1487,7 @@ class ServiceTest extends \BBTestCase
     public function testdeleteLoginHistory()
     {
         $adminHistoryModel = new \Model_ActivityAdminHistory();
-        $adminHistoryModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminHistoryModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder(('\Box_Database'))->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1610,7 +1610,7 @@ class ServiceTest extends \BBTestCase
         $password = '123456';
 
         $model = new \Model_Admin();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

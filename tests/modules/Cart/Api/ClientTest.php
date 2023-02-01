@@ -16,7 +16,7 @@ class ClientTest extends \BBTestCase {
     public function testCheckout()
     {
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
 
        $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
             ->setMethods(array('getSessionCart', 'checkoutCart'))
@@ -37,7 +37,7 @@ class ClientTest extends \BBTestCase {
         $this->clientApi->setService($serviceMock);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $this->clientApi->setIdentity($client);
 

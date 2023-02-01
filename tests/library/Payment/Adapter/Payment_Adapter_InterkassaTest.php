@@ -368,13 +368,13 @@ class Payment_Adapter_InterkassaTest extends PHPUnit\Framework\TestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
 
         $invoiceModel= new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $clientModel = new \Model_Client();
-        $clientModel ->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel ->loadBean(new \DummyBean());
 
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
@@ -449,13 +449,13 @@ class Payment_Adapter_InterkassaTest extends PHPUnit\Framework\TestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
 
         $invoiceModel= new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $clientModel = new \Model_Client();
-        $clientModel ->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel ->loadBean(new \DummyBean());
 
         $dbMock->expects($this->atLeastOnce())
             ->method('load')

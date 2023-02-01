@@ -112,7 +112,7 @@ class ServicePayGatewayTest extends \BBTestCase {
             ->will($this->returnValue(array($code)));
 
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
@@ -150,7 +150,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testtoApiArray()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
             ->setMethods(array(
@@ -200,7 +200,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testcopy()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
@@ -225,7 +225,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testupdate()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
@@ -255,7 +255,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testdelete()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -274,7 +274,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetActive()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -296,7 +296,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testcanPerformRecurrentPayment()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
 
         $expected = true;
         $payGatewayModel->allow_recurrent = $expected;
@@ -309,9 +309,9 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetPaymentAdapter()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $expected = 'Payment_Adapter_Custom';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
@@ -346,9 +346,9 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetPaymentAdapter_PaymentGatewayNotFound()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
             ->setMethods(array('getConfig', 'getAdapterClassName'))
@@ -380,7 +380,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetAdapterConfig()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $payGatewayModel->gateway = 'Custom';
 
         $expected = '\Payment_Adapter_Custom';
@@ -398,7 +398,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetAdapterConfigClassDoesNotExists()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $payGatewayModel->gateway = 'Custom';
 
         $expected = 'Payment_Adapter_ClassDoesNotExists';
@@ -417,7 +417,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetAdapterConfigAdapterDoesNotExists()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $payGatewayModel->gateway = 'Unknown';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
@@ -434,7 +434,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetAdapterClassName()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $payGatewayModel->gateway = 'Custom';
 
         $expected = 'Payment_Adapter_Custom';
@@ -447,7 +447,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetAcceptedCurrencies()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $payGatewayModel->accepted_currencies = '{}';
 
         $result = $this->service->getAcceptedCurrencies($payGatewayModel);
@@ -457,7 +457,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetFormElements()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
             ->setMethods(array('getAdapterConfig'))
@@ -474,7 +474,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetFormElementsEmptyFormConfig()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
             ->setMethods(array('getAdapterConfig'))
@@ -493,7 +493,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetDescription()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
             ->setMethods(array('getAdapterConfig'))
@@ -510,7 +510,7 @@ class ServicePayGatewayTest extends \BBTestCase {
     public function testgetDescriptionEmptyDescription()
     {
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServicePayGateway')
             ->setMethods(array('getAdapterConfig'))

@@ -27,7 +27,7 @@ class ServiceTest extends \BBTestCase
     public function testattachOrderConfigEmptyProductConig()
     {
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->config = '{}';
         $data                 = array();
 
@@ -39,7 +39,7 @@ class ServiceTest extends \BBTestCase
     public function testattachOrderConfig()
     {
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->config = '["hello", "world"]';
         $data                 = array('testing' => 'phase');
         $expected             = array_merge(json_decode($productModel->config, 1), $data);
@@ -58,10 +58,10 @@ class ServiceTest extends \BBTestCase
     public function testaction_create()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
 
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -88,10 +88,10 @@ class ServiceTest extends \BBTestCase
     public function testaction_activate()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
 
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
@@ -122,10 +122,10 @@ class ServiceTest extends \BBTestCase
     public function testaction_activateLicenseCollision()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
 
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
@@ -158,10 +158,10 @@ class ServiceTest extends \BBTestCase
     public function testaction_activateLicenseCollisionMaxIterationsException()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
 
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
@@ -195,10 +195,10 @@ class ServiceTest extends \BBTestCase
     public function testaction_activatePluginNotFound()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
 
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'TestPlugin';
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
@@ -224,7 +224,7 @@ class ServiceTest extends \BBTestCase
     public function testaction_activateOrderActivationException()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
@@ -249,10 +249,10 @@ class ServiceTest extends \BBTestCase
     public function testaction_delete()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
 
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
@@ -274,7 +274,7 @@ class ServiceTest extends \BBTestCase
     public function testreset()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())->
@@ -297,11 +297,11 @@ class ServiceTest extends \BBTestCase
     public function testisLicenseActive()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->status = \Model_ClientOrder::STATUS_ACTIVE;
 
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
 
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
@@ -320,7 +320,7 @@ class ServiceTest extends \BBTestCase
     public function testisLicenseNotActive()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
@@ -338,7 +338,7 @@ class ServiceTest extends \BBTestCase
     public function testisValidIp()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->ips = '{}';
         $value                    = '1.1.1.1';
 
@@ -358,7 +358,7 @@ class ServiceTest extends \BBTestCase
     public function testisValidIp_test2()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->ips = '["2.2.2.2"]';
         $value                    = '1.1.1.1';
 
@@ -378,7 +378,7 @@ class ServiceTest extends \BBTestCase
     public function testisValidIp_test3()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->ips         = '["2.2.2.2"]';
         $serviceLicenseModel->validate_ip = '3.3.3.3';
         $value                            = '1.1.1.1';
@@ -390,7 +390,7 @@ class ServiceTest extends \BBTestCase
     public function testisValidVersion()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->versions = '{}';
         $value                         = '1.0';
 
@@ -410,7 +410,7 @@ class ServiceTest extends \BBTestCase
     public function testisValidVersion_test2()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->versions = '["2.0"]';
         $value                         = '1.0';
 
@@ -430,7 +430,7 @@ class ServiceTest extends \BBTestCase
     public function testisValidVersion_test3()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->versions         = '["2.0"]';
         $serviceLicenseModel->validate_version = '3.3.3.3';
         $value                                 = '1.0';
@@ -442,7 +442,7 @@ class ServiceTest extends \BBTestCase
     public function testisValidPath()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->paths = '{}';
         $value                      = '/var';
 
@@ -462,7 +462,7 @@ class ServiceTest extends \BBTestCase
     public function testisValidPath_test2()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->paths = '["/"]';
         $value                      = '/var';
 
@@ -482,7 +482,7 @@ class ServiceTest extends \BBTestCase
     public function testisValidPath_test3()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->paths         = '["/"]';
         $serviceLicenseModel->validate_path = '/user';
         $value                              = '/var';
@@ -494,7 +494,7 @@ class ServiceTest extends \BBTestCase
     public function testisValidHost()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->hosts = '{}';
         $value                      = 'site.com';
 
@@ -514,7 +514,7 @@ class ServiceTest extends \BBTestCase
     public function testisValidHost_test2()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->hosts = '["fossbilling.org"]';
         $value                      = 'site.com';
 
@@ -534,7 +534,7 @@ class ServiceTest extends \BBTestCase
     public function testisValidHost_test3()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->hosts         = '["fossbilling.org"]';
         $serviceLicenseModel->validate_host = 'example.com';
         $value                              = 'site.com';
@@ -546,7 +546,7 @@ class ServiceTest extends \BBTestCase
     public function testgetAdditionalParams()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
         $serviceLicenseModel->plugin = 'Simple';
 
         $result = $this->service->getAdditionalParams($serviceLicenseModel);
@@ -556,12 +556,12 @@ class ServiceTest extends \BBTestCase
     public function testgetOwnerName()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $clientModel->first_name = 'John';
         $clientModel->last_name  = 'Smith';
 
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
 
         $expected = $clientModel->first_name . ' ' . $clientModel->last_name;
 
@@ -584,11 +584,11 @@ class ServiceTest extends \BBTestCase
     {
         $expected         = '2004-02-12 15:19:21';
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->expires_at = $expected;
 
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
@@ -608,7 +608,7 @@ class ServiceTest extends \BBTestCase
     public function testtoApiArray()
     {
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
 
         $expected = array(
             'license_key'      => '',
@@ -642,7 +642,7 @@ class ServiceTest extends \BBTestCase
             'plugin'           => 'Simple',
         );
         $serviceLicenseModel = new \Model_ServiceLicense();
-        $serviceLicenseModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceLicenseModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

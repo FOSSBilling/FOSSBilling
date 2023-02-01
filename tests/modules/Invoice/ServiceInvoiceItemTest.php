@@ -27,7 +27,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
     public function testmarkAsPaid()
     {
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
             ->setMethods(array('creditInvoiceItem', 'getOrderId'))
@@ -39,7 +39,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
             ->willReturn(1);
 
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
             ->getMock();
@@ -65,7 +65,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
     public function testexecuteTaskItemAlreadyExecuted()
     {
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->status = \Model_InvoiceItem::STATUS_EXECUTED;
 
         $result = $this->service->executeTask($invoiceItemModel);
@@ -75,7 +75,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
     public function testexecuteTaskTypeOrderClientOrderNotFound()
     {
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->type = \Model_InvoiceItem::TYPE_ORDER;
         $orderId                = 22;
 
@@ -103,7 +103,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
     public function testexecuteTaskTypeHookCall()
     {
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->type   = \Model_InvoiceItem::TYPE_HOOK_CALL;
         $invoiceItemModel->rel_id = '{}';
 
@@ -127,14 +127,14 @@ class ServiceInvoiceItemTest extends \BBTestCase
     public function testexecuteTaskTypeDeposit()
     {
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->type = \Model_InvoiceItem::TYPE_DEPOSIT;
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $di = new \Box_Di();
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -160,7 +160,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
     public function testexecuteTaskTypeCustom()
     {
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->type = \Model_InvoiceItem::TYPE_CUSTOM;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
@@ -179,7 +179,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
 
         );
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
         $newId = 1;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -202,7 +202,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $this->service->setDi($di);
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $result = $this->service->addNew($invoiceModel, $data);
         $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
@@ -213,7 +213,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $price            = 5;
         $quantity         = 3;
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->price    = $price;
         $invoiceItemModel->quantity = $quantity;
 
@@ -229,7 +229,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $rate             = 0.21;
         $price            = 12;
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->invoice_id = 2;
         $invoiceItemModel->taxed      = true;
         $invoiceItemModel->price      = $price;
@@ -252,7 +252,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
     public function testupdate()
     {
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
 
         $data = array(
             'title' => 'New Engine',
@@ -277,7 +277,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
     public function testremove()
     {
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
 
         $data = array(
             'title' => 'New Engine',
@@ -301,7 +301,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
     public function testgenerateForAddFunds()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $amount = 11;
 
 
@@ -329,13 +329,13 @@ class ServiceInvoiceItemTest extends \BBTestCase
             ->will($this->returnValue(11.2));
 
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $clientBalanceModel = new \Model_Client();
-        $clientBalanceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientBalanceModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -367,7 +367,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
         $tax      = 0.5;
         $quantity = 3;
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->quantity = $quantity;
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')
@@ -390,7 +390,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
     {
         $orderId          = 2;
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->rel_id = $orderId;
         $invoiceItemModel->type   = \Model_InvoiceItem::TYPE_ORDER;
 
@@ -402,7 +402,7 @@ class ServiceInvoiceItemTest extends \BBTestCase
     public function testgetOrderIdInvoiceItemTypeIsNotOrder()
     {
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
 
         $result = $this->service->getOrderId($invoiceItemModel);
         $this->assertIsInt($result);

@@ -69,7 +69,7 @@ class AdminTest extends \BBTestCase {
         $data = array('id' => 1);
 
         $model = new \Model_Product();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -210,7 +210,7 @@ class AdminTest extends \BBTestCase {
     {
         $data = array('id' => 1);
         $model = new \Model_Product();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -268,7 +268,7 @@ class AdminTest extends \BBTestCase {
     {
         $data = array('id' => 1);
         $model = new \Model_Product();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -341,7 +341,7 @@ class AdminTest extends \BBTestCase {
         $data = array('id' => 1);
 
         $model = new \Model_Product();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->is_addon = true;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -382,7 +382,7 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue(array()));
 
         $model = new \Model_Product();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->is_addon = true;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -425,7 +425,7 @@ class AdminTest extends \BBTestCase {
         $data = array('id' => 1);
 
         $model = new \Model_Product();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -471,7 +471,7 @@ class AdminTest extends \BBTestCase {
         $data = array('id' => 1);
 
         $model = new \Model_ProductCategory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -507,7 +507,7 @@ class AdminTest extends \BBTestCase {
         $data = array('id' => 1);
 
         $model = new \Model_ProductCategory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -566,7 +566,7 @@ class AdminTest extends \BBTestCase {
         $data = array('id' => 1);
 
         $model = new \Model_ProductCategory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -664,7 +664,7 @@ class AdminTest extends \BBTestCase {
         $data = array('id' => 1);
 
         $model = new \Model_Promo();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -696,7 +696,7 @@ class AdminTest extends \BBTestCase {
         $data = array('id' => 1);
 
         $model = new \Model_Promo();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -727,7 +727,7 @@ class AdminTest extends \BBTestCase {
     {
         $data = array('id' => 1);
         $model = new \Model_Promo();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

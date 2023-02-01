@@ -170,7 +170,7 @@ class Api_AdminTest extends \BBTestCase
         );
 
         $model = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -218,7 +218,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
         $model    = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $service = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
         $service->expects($this->atLeastOnce())
@@ -248,7 +248,7 @@ class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
         $model    = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->code            = 'EUR';
         $model->title           = 'Euro';
         $model->conversion_rate = '3.4528';
@@ -293,7 +293,7 @@ class Api_AdminTest extends \BBTestCase
     public function CreateExceptionProvider()
     {
         $model = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
 
         return array(
@@ -458,7 +458,7 @@ class Api_AdminTest extends \BBTestCase
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
         $model = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
 
         $data = array(
@@ -490,7 +490,7 @@ class Api_AdminTest extends \BBTestCase
     public function SetDefaultExceptionProvider()
     {
         $model = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
 
         return array(
@@ -536,7 +536,7 @@ class Api_AdminTest extends \BBTestCase
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
         $model = new \Model_Currency();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->code = 'EUR';
 
         $data = array(

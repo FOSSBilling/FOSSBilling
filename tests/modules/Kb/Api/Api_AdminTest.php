@@ -44,7 +44,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(new \Model_KbArticle()));
 
         $admin     = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $admin->id = 5;
 

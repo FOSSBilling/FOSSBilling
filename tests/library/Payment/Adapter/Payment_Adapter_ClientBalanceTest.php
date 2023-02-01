@@ -34,7 +34,7 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit\Framework\TestCase {
     public function testgetHtml_NotEnoughInBalance()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $di = new \Box_Di();
         $dbMock = $this->getMockBuilder('\Box_Database')
@@ -65,7 +65,7 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit\Framework\TestCase {
     public function testgetHtml_InvoiceTypeDeposit()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $di = new \Box_Di();
         $dbMock = $this->getMockBuilder('\Box_Database')
@@ -107,7 +107,7 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit\Framework\TestCase {
     public function testgetHtml()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $di = new \Box_Di();
         $dbMock = $this->getMockBuilder('\Box_Database')
@@ -161,7 +161,7 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit\Framework\TestCase {
     public function testprocessTransaction_IpnIsInValid()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $adapterMock = $this->getMockBuilder('Payment_Adapter_ClientBalance')
             ->disableOriginalConstructor()
@@ -196,9 +196,9 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit\Framework\TestCase {
         $di = new \Box_Di();
 
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -244,9 +244,9 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit\Framework\TestCase {
         $di = new \Box_Di();
 
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -300,9 +300,9 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit\Framework\TestCase {
         $di = new \Box_Di();
 
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -356,7 +356,7 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit\Framework\TestCase {
             ->getMock();
 
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('PayGateway')
@@ -382,13 +382,13 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit\Framework\TestCase {
             ->getMock();
 
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('PayGateway')
             ->willReturn($payGatewayModel);
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->with('Invoice')
@@ -440,7 +440,7 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit\Framework\TestCase {
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $clientModel = new Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->with('Client')
@@ -456,7 +456,7 @@ class Payment_Adapter_ClientBalanceTest extends PHPUnit\Framework\TestCase {
             ->willReturn($inBalance);
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $invoiceServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
         $invoiceServiceMock->expects($this->atLeastOnce())
             ->method('getTotalWithTax')

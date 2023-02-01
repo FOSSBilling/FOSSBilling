@@ -72,7 +72,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($params));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -99,7 +99,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($orderArr));
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $di                   = new \Box_Di();
         $di['db']             = $dbMock;
@@ -134,7 +134,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($params));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -161,7 +161,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($orderArr));
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $di                   = new \Box_Di();
         $di['db']             = $dbMock;
@@ -196,7 +196,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($params));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedbeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -223,7 +223,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($orderArr));
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedbeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $di                   = new \Box_Di();
         $di['db']             = $dbMock;
@@ -256,7 +256,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($params));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -283,7 +283,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($orderArr));
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $di                   = new \Box_Di();
         $di['db']             = $dbMock;
@@ -316,7 +316,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($params));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedbeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -343,7 +343,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($orderArr));
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedbeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $di                   = new \Box_Di();
         $di['db']             = $dbMock;
@@ -376,7 +376,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($params));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -403,7 +403,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($orderArr));
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $di                   = new \Box_Di();
         $di['db']             = $dbMock;
@@ -439,7 +439,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($params));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedbeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -466,7 +466,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($orderArr));
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedbeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $di                   = new \Box_Di();
         $di['db']             = $dbMock;
@@ -499,7 +499,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($params));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -526,7 +526,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($orderArr));
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $di                   = new \Box_Di();
         $di['db']             = $dbMock;
@@ -559,7 +559,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($params));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedbeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -584,7 +584,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($orderArr));
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedbeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $di                   = new \Box_Di();
         $di['db']             = $dbMock;
@@ -617,7 +617,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($params));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -642,7 +642,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($orderArr));
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $di                   = new \Box_Di();
         $di['db']             = $dbMock;
@@ -675,7 +675,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($params));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -702,7 +702,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($orderArr));
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $di                   = new \Box_Di();
         $di['db']             = $dbMock;
@@ -735,7 +735,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($params));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -762,7 +762,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($orderArr));
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedbeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $di                   = new \Box_Di();
         $di['db']             = $dbMock;
@@ -804,7 +804,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedbeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->service_id   = rand(1, 100);
         $order->service_type = \Model_ProductTable::CUSTOM;
 
@@ -829,7 +829,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedbeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->service_id = rand(1, 100);
 
         $result = $this->service->getOrderService($order);
@@ -853,7 +853,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedbeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $result = $this->service->getOrderService($order);
         $this->assertNull($result);
@@ -862,7 +862,7 @@ class ServiceTest extends \BBTestCase
     public function testGetServiceOrder()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -879,7 +879,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $service = new \Model_ServiceCustom();
-        $service->loadBean(new \RedBeanPHP\OODBBean());
+        $service->loadBean(new \DummyBean());
         $service->id = rand(1, 100);
 
         $result = $this->service->getServiceOrder($service);
@@ -900,7 +900,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $result = $this->service->getConfig($order);
         $this->assertIsArray($result);
@@ -909,7 +909,7 @@ class ServiceTest extends \BBTestCase
     public function productHasOrdersProvider()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         return array(
             array($order, true),
@@ -932,7 +932,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $product = new \Model_Product();
-        $product->loadBean(new \RedBeanPHP\OODBBean());
+        $product->loadBean(new \DummyBean());
         $product->id = rand(1, 100);
 
         $result = $this->service->productHasOrders($product);
@@ -943,7 +943,7 @@ class ServiceTest extends \BBTestCase
     public function testSaveStatusChange()
     {
         $orderStatus = new \Model_ClientOrderStatus();
-        $orderStatus->loadBean(new \RedBeanPHP\OODBBean());
+        $orderStatus->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -958,7 +958,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $result = $this->service->saveStatusChange($order);
 
@@ -968,7 +968,7 @@ class ServiceTest extends \BBTestCase
     public function testGetSoonExpiringActiveOrders()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -991,7 +991,7 @@ class ServiceTest extends \BBTestCase
         $randId = rand(1, 100);
 
         $orderStatus = new \Model_ClientOrderStatus();
-        $orderStatus->loadBean(new \RedBeanPHP\OODBBean());
+        $orderStatus->loadBean(new \DummyBean());
 
         $systemService = $this->getMockBuilder('\Box\Mod\System\Service')
             ->setMethods(array('getParamValue'))->getMock();
@@ -1008,7 +1008,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $data   = array(
             'client_id' => $randId
@@ -1042,7 +1042,7 @@ class ServiceTest extends \BBTestCase
     {
         $id    = 1;
         $model = new \Model_ClientOrder();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = $id;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -1064,7 +1064,7 @@ class ServiceTest extends \BBTestCase
     {
         $id    = 1;
         $model = new \Model_ClientOrder();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = $id;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -1084,7 +1084,7 @@ class ServiceTest extends \BBTestCase
     public function testgetLogger()
     {
         $model = new \Model_ClientOrder();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $loggerMock = $this->getMockBuilder('\Box_Log')->disableOriginalConstructor()->getMock();
         $loggerMock->expects($this->atLeastOnce())
@@ -1107,7 +1107,7 @@ class ServiceTest extends \BBTestCase
     public function testtoApiArray()
     {
         $model = new \Model_ClientOrder();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->config   = '{}';
         $model->price    = 10;
         $model->quantity = 1;
@@ -1132,9 +1132,9 @@ class ServiceTest extends \BBTestCase
             ->willReturn(array());
 
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->withConsecutive(array('Product'))
@@ -1291,10 +1291,10 @@ class ServiceTest extends \BBTestCase
     public function testcreateOrder_MissingOrderCurrency()
     {
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
 
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
 
         $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())
@@ -1317,15 +1317,15 @@ class ServiceTest extends \BBTestCase
     public function testcreateOrder_OutOfStock()
     {
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
         $modelClient->currency = 'USD';
 
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
         $modelProduct->id = 1;
 
         $currencyModel = new \Model_Currency();
-        $currencyModel->loadBean(new \RedBeanPHP\OODBBean());
+        $currencyModel->loadBean(new \DummyBean());
 
         $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())
@@ -1366,16 +1366,16 @@ class ServiceTest extends \BBTestCase
     public function testcreateOrder_GroupIdMissing()
     {
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
         $modelClient->currency = 'USD';
 
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
         $modelProduct->id       = 1;
         $modelProduct->is_addon = 1;
 
         $currencyModel = new \Model_Currency();
-        $currencyModel->loadBean(new \RedBeanPHP\OODBBean());
+        $currencyModel->loadBean(new \DummyBean());
 
         $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())
@@ -1416,15 +1416,15 @@ class ServiceTest extends \BBTestCase
     public function testcreateOrder_ParentOrderNotFound()
     {
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
         $modelClient->currency = 'USD';
 
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
         $modelProduct->id = 1;
 
         $currencyModel = new \Model_Currency();
-        $currencyModel->loadBean(new \RedBeanPHP\OODBBean());
+        $currencyModel->loadBean(new \DummyBean());
 
         $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())
@@ -1471,16 +1471,16 @@ class ServiceTest extends \BBTestCase
     public function testcreateOrder()
     {
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
         $modelClient->currency = 'USD';
 
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
         $modelProduct->id   = 1;
         $modelProduct->type = 'custom';
 
         $currencyModel = new \Model_Currency();
-        $currencyModel->loadBean(new \RedBeanPHP\OODBBean());
+        $currencyModel->loadBean(new \DummyBean());
         $currencyServiceMock = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())
             ->method('getByCode')
@@ -1498,7 +1498,7 @@ class ServiceTest extends \BBTestCase
         $productServiceMock = $this->getMockBuilder('\Box\Mod\Servicecustom')->getMock();
 
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1544,10 +1544,10 @@ class ServiceTest extends \BBTestCase
     public function testgetMasterOrderForClient()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1565,7 +1565,7 @@ class ServiceTest extends \BBTestCase
     public function testactivateOrder_ExceptionPendingOrFailedOrders()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->status = \Model_ClientOrder::STATUS_CANCELED;
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionMessage('Only pending setup or failed orders can be activated');
@@ -1575,7 +1575,7 @@ class ServiceTest extends \BBTestCase
     public function testactivateOrder()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->status       = \Model_ClientOrder::STATUS_PENDING_SETUP;
         $clientOrderModel->group_master = 1;
 
@@ -1604,7 +1604,7 @@ class ServiceTest extends \BBTestCase
     public function testactivateOrderAddons()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
             ->setMethods(array('createFromOrder', 'getOrderAddonsList'))
@@ -1615,7 +1615,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn(array());
 
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->status       = \Model_ClientOrder::STATUS_PENDING_SETUP;
         $clientOrderModel->group_master = 1;
         $serviceMock->expects($this->atLeastOnce())
@@ -1638,7 +1638,7 @@ class ServiceTest extends \BBTestCase
     public function testgetOrderAddonsList()
     {
         $modelClientOrder = new \Model_ClientOrder();
-        $modelClientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClientOrder->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1658,7 +1658,7 @@ class ServiceTest extends \BBTestCase
     public function teststockSale()
     {
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->stock_control = 1;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -1677,7 +1677,7 @@ class ServiceTest extends \BBTestCase
     public function testupdateOrder()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventMock->expects($this->atLeastOnce())
@@ -1729,7 +1729,7 @@ class ServiceTest extends \BBTestCase
     public function testrenewOrder()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->group_master = 1;
         $clientOrderModel->status       = \Model_ClientOrder::STATUS_PENDING_SETUP;
 
@@ -1766,7 +1766,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('saveStatusChange');
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->period = '1Y';
 
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
@@ -1793,7 +1793,7 @@ class ServiceTest extends \BBTestCase
     public function testsuspendFromOrder_ExceptionNotActiveOrder()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->status = \Model_ClientOrder::STATUS_SUSPENDED;
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
@@ -1812,7 +1812,7 @@ class ServiceTest extends \BBTestCase
     public function testsuspendFromOrder()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->status = \Model_ClientOrder::STATUS_ACTIVE;
 
         $eventMock = $this->getMockBuilder('\Box_EventManager')->getMock();
@@ -1846,7 +1846,7 @@ class ServiceTest extends \BBTestCase
     public function testrmByClient()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $pdoStatment = $this->getMockBuilder('\Box\Mod\Order\PdoStatmentsMock')->getMock();
         $pdoStatment->expects($this->atLeastOnce())
@@ -1879,7 +1879,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
         $result = $this->service->updatePeriod($clientOrder, $period);
         $this->assertEquals(1, $result);
     }
@@ -1897,7 +1897,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
         $result = $this->service->updatePeriod($clientOrder, $period);
         $this->assertEquals(2, $result);
     }
@@ -1915,7 +1915,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
         $result = $this->service->updatePeriod($clientOrder, $period);
         $this->assertEquals(0, $result);
     }
@@ -1924,7 +1924,7 @@ class ServiceTest extends \BBTestCase
     {
         $meta        = null;
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
         $result = $this->service->updateOrderMeta($clientOrder, $meta);
         $this->assertEquals(0, $result);
     }
@@ -1941,7 +1941,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
         $result = $this->service->updateOrderMeta($clientOrder, $meta);
         $this->assertEquals(1, $result);
     }
@@ -1960,7 +1960,7 @@ class ServiceTest extends \BBTestCase
             ->willReturn(null);
 
         $clientOrderMetaModel = new \Model_ClientOrderMeta();
-        $clientOrderMetaModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderMetaModel->loadBean(new \DummyBean());
         $dBMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->with('ClientOrderMeta')
@@ -1971,7 +1971,7 @@ class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
         $result = $this->service->updateOrderMeta($clientOrder, $meta);
         $this->assertEquals(2, $result);
     }

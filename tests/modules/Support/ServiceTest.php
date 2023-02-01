@@ -33,7 +33,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock        = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getTicketById', 'toApiArray'))->getMock();
         $supportTicketModel = new \Model_SupportTicket();
-        $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getTicketById')
             ->will($this->returnValue($supportTicketModel));
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
@@ -76,7 +76,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock        = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getTicketById', 'toApiArray'))->getMock();
         $supportTicketModel = new \Model_SupportTicket();
-        $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getTicketById')
             ->will($this->returnValue($supportTicketModel));
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
@@ -119,7 +119,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock        = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getTicketById', 'toApiArray'))->getMock();
         $supportTicketModel = new \Model_SupportTicket();
-        $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getTicketById')
             ->will($this->returnValue($supportTicketModel));
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
@@ -162,7 +162,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock        = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getTicketById', 'toApiArray'))->getMock();
         $supportTicketModel = new \Model_SupportTicket();
-        $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getTicketById')
             ->will($this->returnValue($supportTicketModel));
         $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
@@ -204,7 +204,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock         = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
-        $supportPTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportPTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
             ->will($this->returnValue($supportPTicketModel));
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
@@ -245,7 +245,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock         = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
-        $supportPTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportPTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
             ->will($this->returnValue($supportPTicketModel));
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
@@ -287,7 +287,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock         = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
-        $supportPTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportPTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
             ->will($this->returnValue($supportPTicketModel));
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
@@ -330,7 +330,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock         = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('getPublicTicketById', 'publicToApiArray'))->getMock();
         $supportPTicketModel = new \Model_SupportPTicket();
-        $supportPTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportPTicketModel->loadBean(new \DummyBean());
         $serviceMock->expects($this->atLeastOnce())->method('getPublicTicketById')
             ->will($this->returnValue($supportPTicketModel));
         $serviceMock->expects($this->atLeastOnce())->method('publicToApiArray')
@@ -382,7 +382,7 @@ class ServiceTest extends \BBTestCase
     {
         $dbMock             = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $supportTicketModel = new \Model_SupportTicket();
-        $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportTicketModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($supportTicketModel));
@@ -405,7 +405,7 @@ class ServiceTest extends \BBTestCase
     {
         $dbMock             = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $supportTicketModel = new \Model_SupportTicket();
-        $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportTicketModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue($supportTicketModel));
@@ -415,7 +415,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $result = $this->service->findOneByClient($client, rand(1, 100));
@@ -434,7 +434,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $this->expectException(\Box_Exception::class);
@@ -524,7 +524,7 @@ class ServiceTest extends \BBTestCase
     public function testGetLatest()
     {
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
@@ -542,7 +542,7 @@ class ServiceTest extends \BBTestCase
     public function testGetExpired()
     {
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
@@ -584,7 +584,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $result = $this->service->getActiveTicketsCountForOrder($order);
         $this->assertIsInt($result);
@@ -594,7 +594,7 @@ class ServiceTest extends \BBTestCase
     {
         $dbMock             = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $supportTicketModel = new \Model_SupportTicket();
-        $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportTicketModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue($supportTicketModel));
@@ -604,7 +604,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $result = $this->service->checkIfTaskAlreadyExists($client, rand(1, 100), rand(1, 100), rand(1, 100));
         $this->assertTrue($result);
@@ -622,7 +622,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $result = $this->service->checkIfTaskAlreadyExists($client, rand(1, 100), rand(1, 100), 'Task');
         $this->assertFalse($result);
@@ -657,7 +657,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $result = $this->service->closeTicket($ticket, $identity);
         $this->assertTrue($result);
@@ -676,7 +676,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $result = $this->service->autoClose($ticket);
         $this->assertTrue($result);
@@ -685,7 +685,7 @@ class ServiceTest extends \BBTestCase
     public function testCanBeReopenedNotClosed()
     {
         $helpdesk = New \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdesk->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->never())
             ->method('getExistingModelById')
@@ -697,7 +697,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $result = $this->service->canBeReopened($ticket);
         $this->assertTrue($result);
@@ -706,7 +706,7 @@ class ServiceTest extends \BBTestCase
     public function testCanBeReopened()
     {
         $helpdesk = New \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdesk->loadBean(new \DummyBean());
         $helpdesk->support_helpdesk_id = rand(1, 100);
         $helpdesk->can_reopen          = true;
 
@@ -721,7 +721,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
         $ticket->status = \Model_SupportTicket::CLOSED;
 
         $result = $this->service->canBeReopened($ticket);
@@ -731,7 +731,7 @@ class ServiceTest extends \BBTestCase
     public function testRmByClient()
     {
         $model = new \Model_SupportTicket();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = rand(1, 100);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -748,7 +748,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
 
         $result = $this->service->rmByClient($client);
@@ -776,7 +776,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $result = $this->service->rm($ticket);
         $this->assertTrue($result);
@@ -785,9 +785,9 @@ class ServiceTest extends \BBTestCase
     public function testToApiArray()
     {
         $supportTicketMessageModel = new \Model_SupportTicketMessage();
-        $supportTicketMessageModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportTicketMessageModel->loadBean(new \DummyBean());
         $helpdesk = New \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdesk->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -824,7 +824,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $result = $serviceMock->toApiArray($ticket, true, new \Model_Admin());
         $this->assertIsArray($result);
@@ -872,7 +872,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
         $ticket->rel_id   = rand(1, 100);
         $ticket->rel_type = 'Type';
 
@@ -906,7 +906,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $result = $this->service->getClientApiArrayForTicket($ticket);
 
@@ -934,7 +934,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $result = $this->service->getClientApiArrayForTicket($ticket);
 
@@ -944,7 +944,7 @@ class ServiceTest extends \BBTestCase
     public function testNoteGetAuthorDetails()
     {
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
         $admin->name = 'AdminName';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -957,7 +957,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $note = new \Model_SupportTicketNote();
-        $note->loadBean(new \RedBeanPHP\OODBBean());
+        $note->loadBean(new \DummyBean());
 
         $this->service->noteGetAuthorDetails($note);
     }
@@ -975,7 +975,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $note = new \Model_SupportTicketNote();
-        $note->loadBean(new \RedBeanPHP\OODBBean());
+        $note->loadBean(new \DummyBean());
 
         $result = $this->service->noteRm($note);
         $this->assertTrue($result);
@@ -1000,7 +1000,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $note = new \Model_SupportTicketNote();
-        $note->loadBean(new \RedBeanPHP\OODBBean());
+        $note->loadBean(new \DummyBean());
 
         $result = $serviceMock->noteToApiArray($note);
         $this->assertArrayHasKey('author', $result);
@@ -1047,7 +1047,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $note = new \Model_SupportTicketNote();
-        $note->loadBean(new \RedBeanPHP\OODBBean());
+        $note->loadBean(new \DummyBean());
 
         $result = $this->service->helpdeskGetPairs();
         $this->assertIsArray($result);
@@ -1070,7 +1070,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdesk->loadBean(new \DummyBean());
         $helpdesk->id = rand(1, 100);
         $result       = $this->service->helpdeskRm($helpdesk);
         $this->assertTrue($result);
@@ -1093,7 +1093,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdesk->loadBean(new \DummyBean());
         $helpdesk->id = rand(1, 100);
         $this->expectException(\Box_Exception::class);
         $result       = $this->service->helpdeskRm($helpdesk);
@@ -1112,7 +1112,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdesk->loadBean(new \DummyBean());
         $helpdesk->id = rand(1, 100);
         $result       = $this->service->helpdeskToApiArray($helpdesk);
         $this->assertIsArray($result);
@@ -1130,7 +1130,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
         $ticket->id = rand(1, 100);
 
         $result = $this->service->messageGetTicketMessages($ticket);
@@ -1149,7 +1149,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
         $ticket->id = rand(1, 100);
 
         $result = $this->service->messageGetRepliesCount($ticket);
@@ -1159,7 +1159,7 @@ class ServiceTest extends \BBTestCase
     public function testMessageGetAuthorDetailsAdmin()
     {
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
         $admin->id = rand(1, 100);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -1172,7 +1172,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticketMsg = new \Model_SupportTicketMessage();
-        $ticketMsg->loadBean(new \RedBeanPHP\OODBBean());
+        $ticketMsg->loadBean(new \DummyBean());
         $ticketMsg->admin_id = rand(1, 100);
 
         $result = $this->service->messageGetAuthorDetails($ticketMsg);
@@ -1184,7 +1184,7 @@ class ServiceTest extends \BBTestCase
     public function testMessageGetAuthorDetailsClient()
     {
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -1197,7 +1197,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticketMsg = new \Model_SupportTicketMessage();
-        $ticketMsg->loadBean(new \RedBeanPHP\OODBBean());
+        $ticketMsg->loadBean(new \DummyBean());
         $ticketMsg->client_id = rand(1, 100);
 
         $result = $this->service->messageGetAuthorDetails($ticketMsg);
@@ -1223,7 +1223,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $ticketMsg = new \Model_SupportTicketMessage();
-        $ticketMsg->loadBean(new \RedBeanPHP\OODBBean());
+        $ticketMsg->loadBean(new \DummyBean());
         $ticketMsg->id = rand(1, 100);
 
         $result = $serviceMock->messageToApiArray($ticketMsg);
@@ -1247,7 +1247,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $data = array(
             'support_helpdesk_id' => rand(1, 100),
@@ -1273,7 +1273,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $message = new \Model_SupportTicketMessage();
-        $message->loadBean(new \RedBeanPHP\OODBBean());
+        $message->loadBean(new \DummyBean());
 
         $data = array(
             'support_helpdesk_id' => rand(1, 100),
@@ -1289,11 +1289,11 @@ class ServiceTest extends \BBTestCase
     public function ticketReplyProvider()
     {
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
         $admin->id = rand(1, 100);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         return array(
@@ -1308,7 +1308,7 @@ class ServiceTest extends \BBTestCase
     public function testTicketReply($identity)
     {
         $message = new \Model_SupportTicketMessage();
-        $message->loadBean(new \RedBeanPHP\OODBBean());
+        $message->loadBean(new \DummyBean());
 
         $randId = rand(1, 100);
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -1331,7 +1331,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
 
         $result = $this->service->ticketReply($ticket, $identity, 'Content');
@@ -1342,7 +1342,7 @@ class ServiceTest extends \BBTestCase
     public function testTicketCreateForAdmin()
     {
         $message = new \Model_SupportTicketMessage();
-        $message->loadBean(new \RedBeanPHP\OODBBean());
+        $message->loadBean(new \DummyBean());
 
         $randId = rand(1, 100);
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -1368,14 +1368,14 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdesk->loadBean(new \DummyBean());
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
         $admin->id = rand(1, 100);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $data = array(
@@ -1391,7 +1391,7 @@ class ServiceTest extends \BBTestCase
     public function testTicketCreateForGuest()
     {
         $message = new \Model_SupportTicketMessage();
-        $message->loadBean(new \RedBeanPHP\OODBBean());
+        $message->loadBean(new \DummyBean());
 
         $randId = rand(1, 100);
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -1422,7 +1422,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdesk->loadBean(new \DummyBean());
 
         $data = array(
             'name'    => 'Name',
@@ -1439,7 +1439,7 @@ class ServiceTest extends \BBTestCase
     public function testTicketCreateForClient()
     {
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $randId = rand(1, 100);
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -1497,7 +1497,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdesk->loadBean(new \DummyBean());
 
         $guest     = new \Model_Guest();
         $guest->id = rand(1, 100);
@@ -1510,10 +1510,10 @@ class ServiceTest extends \BBTestCase
         );
 
         $helpdesk = new \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdesk->loadBean(new \DummyBean());
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $result = $serviceMock->ticketCreateForClient($client, $helpdesk, $data);
@@ -1524,7 +1524,7 @@ class ServiceTest extends \BBTestCase
     public function testTicketCreateForClientTaskAlreadyExistsException()
     {
         $message = new \Model_SupportTicketMessage();
-        $message->loadBean(new \RedBeanPHP\OODBBean());
+        $message->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
             ->setMethods(array('checkIfTaskAlreadyExists'))->getMock();
@@ -1532,7 +1532,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $helpdesk = new \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdesk->loadBean(new \DummyBean());
 
         $guest     = new \Model_Guest();
         $guest->id = rand(1, 100);
@@ -1545,10 +1545,10 @@ class ServiceTest extends \BBTestCase
         );
 
         $helpdesk = new \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdesk->loadBean(new \DummyBean());
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $di              = new \Box_Di();
@@ -1564,11 +1564,11 @@ class ServiceTest extends \BBTestCase
     public function messageCreateForTicketProvider()
     {
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
         $admin->id = rand(1, 100);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         return array(
@@ -1588,7 +1588,7 @@ class ServiceTest extends \BBTestCase
     {
         $randId               = rand(1, 100);
         $supportTicketMessage = new \Model_SupportTicketMessage();
-        $supportTicketMessage->loadBean(new \RedBeanPHP\OODBBean());
+        $supportTicketMessage->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
@@ -1604,7 +1604,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $result = $this->service->messageCreateForTicket($ticket, $identity, 'Content');
         $this->assertIsInt($result);
@@ -1615,7 +1615,7 @@ class ServiceTest extends \BBTestCase
     {
         $randId               = rand(1, 100);
         $supportTicketMessage = new \Model_SupportTicketMessage();
-        $supportTicketMessage->loadBean(new \RedBeanPHP\OODBBean());
+        $supportTicketMessage->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
@@ -1631,7 +1631,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $this->expectException(\Box_Exception::class);
         $result = $this->service->messageCreateForTicket($ticket, null, 'Content');
@@ -1657,7 +1657,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $result = $this->service->publicFindOneByHash(sha1(uniqid()));
@@ -1676,7 +1676,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $this->expectException(\Box_Exception::class);
@@ -1830,7 +1830,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportPTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $result = $this->service->publicCloseTicket($ticket, $identity);
         $this->assertTrue($result);
@@ -1849,7 +1849,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportPTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $result = $this->service->publicAutoClose($ticket);
         $this->assertTrue($result);
@@ -1871,7 +1871,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $canned = new \Model_SupportPTicket();
-        $canned->loadBean(new \RedBeanPHP\OODBBean());
+        $canned->loadBean(new \DummyBean());
 
         $result = $this->service->publicRm($canned);
         $this->assertTrue($result);
@@ -1922,7 +1922,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $ticket = new \Model_SupportPTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $result = $serviceMock->publicToApiArray($ticket, true);
         $this->assertIsArray($result);
@@ -1935,7 +1935,7 @@ class ServiceTest extends \BBTestCase
     public function testPublicMessageGetAuthorDetailsAdmin()
     {
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
         $admin->id = rand(1, 100);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -1949,7 +1949,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticketMsg = new \Model_SupportPTicketMessage();
-        $ticketMsg->loadBean(new \RedBeanPHP\OODBBean());
+        $ticketMsg->loadBean(new \DummyBean());
         $ticketMsg->admin_id = rand(1, 100);
 
         $result = $this->service->publicMessageGetAuthorDetails($ticketMsg);
@@ -1961,7 +1961,7 @@ class ServiceTest extends \BBTestCase
     public function testPublicMessageGetAuthorDetailsNotAdmin()
     {
         $ticket = new \Model_SupportPTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
         $ticket->author_name  = "Name";
         $ticket->author_email = "Email@example.com";
 
@@ -1975,7 +1975,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticketMsg = new \Model_SupportPTicketMessage();
-        $ticketMsg->loadBean(new \RedBeanPHP\OODBBean());
+        $ticketMsg->loadBean(new \DummyBean());
         $ticketMsg->admin_id = null;
 
         $result = $this->service->publicMessageGetAuthorDetails($ticketMsg);
@@ -2001,7 +2001,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $ticketMsg = new \Model_SupportPTicketMessage();
-        $ticketMsg->loadBean(new \RedBeanPHP\OODBBean());
+        $ticketMsg->loadBean(new \DummyBean());
         $ticketMsg->id = rand(1, 100);
 
         $result = $serviceMock->publicMessageToApiArray($ticketMsg);
@@ -2012,7 +2012,7 @@ class ServiceTest extends \BBTestCase
     public function testPublicTicketCreate()
     {
         $message = new \Model_SupportTicketMessage();
-        $message->loadBean(new \RedBeanPHP\OODBBean());
+        $message->loadBean(new \DummyBean());
 
         $randId = rand(1, 100);
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -2039,7 +2039,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
         $admin->id = rand(1, 100);
 
         $data = array(
@@ -2071,7 +2071,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportPTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $data = array(
             'support_helpdesk_id' => rand(1, 100),
@@ -2087,7 +2087,7 @@ class ServiceTest extends \BBTestCase
     public function testPublicTicketReply()
     {
         $message = new \Model_SupportTicketMessage();
-        $message->loadBean(new \RedBeanPHP\OODBBean());
+        $message->loadBean(new \DummyBean());
 
         $randId = rand(1, 100);
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -2110,10 +2110,10 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportPTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $result = $this->service->publicTicketReply($ticket, $admin, 'Content');
         $this->assertIsInt($result);
@@ -2123,7 +2123,7 @@ class ServiceTest extends \BBTestCase
     public function testPublicTicketReplyForGuest()
     {
         $message = new \Model_SupportTicketMessage();
-        $message->loadBean(new \RedBeanPHP\OODBBean());
+        $message->loadBean(new \DummyBean());
 
         $randId = rand(1, 100);
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -2145,11 +2145,11 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportPTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
         $ticket->hash = sha1(uniqid());
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $result = $this->service->publicTicketReplyForGuest($ticket, 'Message');
         $this->assertIsString($result);
@@ -2172,7 +2172,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $helpdesk = new \Model_SupportHelpdesk();
-        $helpdesk->loadBean(new \RedBeanPHP\OODBBean());
+        $helpdesk->loadBean(new \DummyBean());
 
         $data = array(
             'name'        => 'Name',
@@ -2190,7 +2190,7 @@ class ServiceTest extends \BBTestCase
     {
         $randId        = rand(1, 100);
         $helpDeskModel = new \Model_SupportHelpdesk();
-        $helpDeskModel->loadBean(new \RedBeanPHP\OODBBean());
+        $helpDeskModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
@@ -2208,7 +2208,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportHelpdesk();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $data = array(
             'name'        => 'Name',
@@ -2286,7 +2286,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $canned = new \Model_SupportPr();
-        $canned->loadBean(new \RedBeanPHP\OODBBean());
+        $canned->loadBean(new \DummyBean());
 
         $result = $this->service->cannedRm($canned);
         $this->assertTrue($result);
@@ -2295,7 +2295,7 @@ class ServiceTest extends \BBTestCase
     public function testCannedToApiArray()
     {
         $category = new \Model_SupportPrCategory();
-        $category->loadBean(new \RedBeanPHP\OODBBean());
+        $category->loadBean(new \DummyBean());
         $category->id    = rand(1, 100);
         $category->title = 'General';
 
@@ -2313,7 +2313,7 @@ class ServiceTest extends \BBTestCase
 
 
         $canned = new \Model_SupportPr();
-        $canned->loadBean(new \RedBeanPHP\OODBBean());
+        $canned->loadBean(new \DummyBean());
 
         $result = $this->service->cannedToApiArray($canned);
         $this->assertIsArray($result);
@@ -2339,7 +2339,7 @@ class ServiceTest extends \BBTestCase
 
 
         $canned = new \Model_SupportPr();
-        $canned->loadBean(new \RedBeanPHP\OODBBean());
+        $canned->loadBean(new \DummyBean());
 
         $result = $this->service->cannedToApiArray($canned);
         $this->assertIsArray($result);
@@ -2362,7 +2362,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $note = new \Model_SupportTicketNote();
-        $note->loadBean(new \RedBeanPHP\OODBBean());
+        $note->loadBean(new \DummyBean());
 
         $result = $this->service->cannedCategoryGetPairs();
         $this->assertIsArray($result);
@@ -2381,7 +2381,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $canned = new \Model_SupportPrCategory();
-        $canned->loadBean(new \RedBeanPHP\OODBBean());
+        $canned->loadBean(new \DummyBean());
 
         $result = $this->service->cannedCategoryRm($canned);
         $this->assertTrue($result);
@@ -2400,7 +2400,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $canned = new \Model_SupportPrCategory();
-        $canned->loadBean(new \RedBeanPHP\OODBBean());
+        $canned->loadBean(new \DummyBean());
 
         $result = $this->service->cannedCategoryToApiArray($canned);
         $this->assertIsArray($result);
@@ -2410,7 +2410,7 @@ class ServiceTest extends \BBTestCase
     {
         $randId        = rand(1, 100);
         $helpDeskModel = new \Model_SupportHelpdesk();
-        $helpDeskModel->loadBean(new \RedBeanPHP\OODBBean());
+        $helpDeskModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
@@ -2433,7 +2433,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $ticket = new \Model_SupportHelpdesk();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $data = array(
             'name'        => 'Name',
@@ -2464,7 +2464,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $model = new \Model_SupportPr();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $data = array(
             'category_id' => rand(1, 100),
@@ -2480,7 +2480,7 @@ class ServiceTest extends \BBTestCase
     {
         $randId                 = rand(1, 100);
         $supportPrCategoryModel = new \Model_SupportPrCategory();
-        $supportPrCategoryModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportPrCategoryModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -2522,7 +2522,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $model = new \Model_SupportPrCategory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $result = $this->service->cannedCategoryUpdate($model, 'Title');
         $this->assertTrue($result);
@@ -2532,7 +2532,7 @@ class ServiceTest extends \BBTestCase
     {
         $randId                 = rand(1, 100);
         $supportPrCategoryModel = new \Model_SupportPrCategory();
-        $supportPrCategoryModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportPrCategoryModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -2556,10 +2556,10 @@ class ServiceTest extends \BBTestCase
         );
 
         $admin = new \Model_Admin();
-        $admin->loadBean(new \RedBeanPHP\OODBBean());
+        $admin->loadBean(new \DummyBean());
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $result = $this->service->noteCreate($ticket, $admin, 'Note');
         $this->assertIsInt($result);
@@ -2580,7 +2580,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $model = new \Model_SupportTicket();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $result = $this->service->ticketTaskComplete($model);
         $this->assertTrue($result);
@@ -2590,12 +2590,12 @@ class ServiceTest extends \BBTestCase
     {
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
         $ticket->client_id  = 5;
         $ticket->created_at = date('Y-m-d H:i:s');
 
         $ticket2 = new \Model_SupportTicket();
-        $ticket2->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket2->loadBean(new \DummyBean());
         $ticket2->client_id  = 5;
         $ticket2->created_at = date('Y-m-d H:i:s', strtotime("-2 days"));;
 
@@ -2623,7 +2623,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $this->service->setDi($di);
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = 5;
 
         $config = array('wait_hours' => $hours);

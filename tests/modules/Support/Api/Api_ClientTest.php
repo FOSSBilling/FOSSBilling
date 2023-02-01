@@ -35,7 +35,7 @@ class Api_ClientTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $model = new \Model_SupportTicket();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -50,7 +50,7 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $this->clientApi->setService($serviceMock);
@@ -81,7 +81,7 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $this->clientApi->setService($serviceMock);
@@ -132,7 +132,7 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $this->clientApi->setService($serviceMock);
@@ -173,7 +173,7 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $this->clientApi->setService($serviceMock);
@@ -214,7 +214,7 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $this->clientApi->setService($serviceMock);
@@ -250,7 +250,7 @@ class Api_ClientTest extends \BBTestCase
         $this->clientApi->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $this->clientApi->setService($serviceMock);

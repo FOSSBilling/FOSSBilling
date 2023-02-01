@@ -59,7 +59,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue($eventParams));
 
         $model = new \Model_Extension();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = 1;
         $model->type = 'mod';
 
@@ -148,7 +148,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue(false));
 
         $extensionModel = new \Model_ExtensionMeta();
-        $extensionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $extensionModel->loadBean(new \DummyBean());
 
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
