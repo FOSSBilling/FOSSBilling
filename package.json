@@ -15,7 +15,7 @@
     "@tabler/core": "1.0.0-beta17",
     "autoprefixer": "^10.4.13",
     "postcss": "^8.4.21",
-    "sass": "^1.57.1"
+    "sass": "^1.58.0"
   },
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^6.2.1",
