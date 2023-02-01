@@ -107,30 +107,6 @@ class GuestTest extends \BBTestCase {
         $this->assertIsArray($result);
     }
 
-    public function testparam()
-    {
-        $data = array('key' => 'keyValue');
-
-        $servuceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $servuceMock->expects($this->atLeastOnce())
-            ->method('getPublicParamValue')
-            ->will($this->returnValue('paramValue'));
-
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-
-        $di = new \Box_Di();
-        $di['validator'] = $validatorMock;
-        $this->api->setDi($di);
-
-        $this->api->setService($servuceMock);
-
-        $result = $this->api->param($data);
-        $this->assertIsString($result);
-    }
-
     public function testPeriods()
     {
         $result = $this->api->periods();

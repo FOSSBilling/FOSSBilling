@@ -477,25 +477,6 @@ class Service implements InjectionAwareInterface
             return $result;
         }
 
-        /*
-         * Old style api format return.
-         *
-         * @deprecated
-         */
-        if (isset($data['legacy']) && $data['legacy']) {
-            $server = $this->di['license_server'];
-            $array = $server->handle_deprecated($data);
-            if (APPLICATION_ENV == 'testing') {
-                return $array;
-            }
-
-            header('Cache-Control: no-cache, must-revalidate');
-            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-            header('Content-type: application/json; charset=utf-8');
-            echo json_encode($array);
-            exit;
-        }
-
         $server = $this->di['license_server'];
 
         return $server->process($data);

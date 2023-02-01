@@ -38,30 +38,11 @@ class Client implements \Box\InjectionAwareInterface
 
     public function register(\Box_App &$app)
     {
-        // @deprecated
-        $app->get('/client/me', 'get_profile', [], static::class);
-
         $app->get('/client/reset-password-confirm/:hash', 'get_reset_password_confirm', ['hash' => '[a-z0-9]+'], static::class);
         $app->get('/client', 'get_client_index', [], static::class);
         $app->get('/client/logout', 'get_client_logout', [], static::class);
         $app->get('/client/:page', 'get_client_page', ['page' => '[a-z0-9-]+'], static::class);
         $app->get('/client/confirm-email/:hash', 'get_client_confirmation', ['page' => '[a-z0-9-]+'], static::class);
-    }
-
-    /**
-     * @deprecated
-     */
-    public function get_profile(\Box_App $app)
-    {
-        return $app->redirect('/client/profile');
-    }
-
-    /**
-     * @deprecated
-     */
-    public function get_balance(\Box_App $app)
-    {
-        return $app->redirect('/client/balance');
     }
 
     public function get_client_index(\Box_App $app)

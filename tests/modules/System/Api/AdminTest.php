@@ -23,30 +23,6 @@ class AdminTest extends \BBTestCase {
         $this->assertEquals($di, $getDi);
     }
 
-    public function testparam()
-    {
-        $data = array(
-            'key' => 'key_parameter',
-        );
-        $serviceMock = $this->getMockBuilder('\Box\Mod\System\Service')->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getParamValue')
-            ->will($this->returnValue('paramValue'));
-
-        $validatorMock = $this->getMockBuilder('\Box_Validate')->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->atLeastOnce())
-            ->method('checkRequiredParamsForArray')
-            ->will($this->returnValue(null));
-
-        $di = new \Box_Di();
-        $di['validator'] = $validatorMock;
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-
-        $result = $this->api->param($data);
-        $this->assertIsString($result);
-    }
-
     public function testget_params()
     {
         $data = array(

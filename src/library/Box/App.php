@@ -385,28 +385,4 @@ class Box_App
 
         return $this->show404($e);
     }
-
-    /**
-     * @deprecated
-     */
-    public function getApiAdmin()
-    {
-        return $this->di['api_admin'];
-    }
-
-    /**
-     * @deprecated
-     */
-    public function getApiClient()
-    {
-        return $this->di['api_client'];
-    }
-
-    /**
-     * @deprecated
-     */
-    public function getApiGuest()
-    {
-        return $this->di['api_guest'];
-    }
 }

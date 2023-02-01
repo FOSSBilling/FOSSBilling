@@ -739,29 +739,6 @@ class Service implements InjectionAwareInterface
                 $result = (int) $new->id;
                 break;
 
-                // @todo undocumented
-                // @deprecated
-            case 'same_invoice':
-                $amount = $this->getTotalWithTax($invoice);
-                $invoice->refund = empty($amount) ? null : $amount;
-                $invoice->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($invoice);
-
-                if (!empty($note)) {
-                    $this->addNote($invoice, $note);
-                }
-
-                // mark invoice as refunded if refund amount is equal or greater
-                // than refund amount
-                $total = $this->getTotalWithTax($invoice);
-                if ($invoice->refund >= $total) {
-                    $invoice->status = \Model_Invoice::STATUS_REFUNDED;
-                    $this->di['db']->store($invoice);
-                }
-
-                $this->countIncome($invoice);
-                break;
-
             case 'manual':
                 if ($this->di['config']['debug']) {
                     error_log('Refunds are managed manually. No actions performed');

@@ -123,31 +123,4 @@ class Api_Abstract implements InjectionAwareInterface
     {
         return $this->ip;
     }
-
-    /**
-     * @deprecated use DI
-     */
-    public function getApiAdmin()
-    {
-        if($this->identity instanceof \Model_Admin) {
-            return $this->di['api_admin'];
-        }
-        return $this->di['api_system'];
-    }
-
-    /**
-     * @deprecated use DI
-     */
-    public function getApiGuest()
-    {
-        return $this->di['api_guest'];
-    }
-
-    /**
-     * @deprecated use DI
-     */
-    public function getApiClient()
-    {
-        return $this->di['api_client'];
-    }
 }

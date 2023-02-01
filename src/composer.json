@@ -41,7 +41,9 @@
         "phpunit/phpunit": "^9.0",
         "friendsofphp/php-cs-fixer": "^3.8",
         "symfony/deprecation-contracts": "^3.0.0",
-        "rector/rector": "^0.15.4"
+        "rector/rector": "^0.15.4",
+        "phpstan/extension-installer": "^1.2",
+        "phpstan/phpstan-deprecation-rules": "^1.1"
     },
     "suggest": {
         "ext-gettext": "*",
@@ -53,5 +55,10 @@
     },
     "autoload-dev": {
         "psr-0": { "": "../tests/library" }
+    },
+    "config": {
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
     }
 }

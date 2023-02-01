@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -52,50 +53,37 @@ class Model_ProductTable implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @deprecated in order of Box_Period appear
      * @param Box_Period $period
      * @return string
      */
     private function _getPeriodKey(Box_Period $period)
     {
         $code = $period->getCode();
-        switch ($code) {
-            case '1W':
-                return 'w';
-
-            case '1M':
-                return 'm';
-
-            case '3M':
-                return 'q';
-
-            case '6M':
-                return 'b';
-
-            case '12M':
-            case '1Y':
-                return 'a';
-
-            case '2Y':
-                return 'bia';
-
-            case '3Y':
-                return 'tria';
-
-            default:
-                throw new Box_Exception('Unknown period selected ' . $code);
+        try {
+            return match ($$code) {
+                '1W'  => 'w',
+                '1M'  => 'm',
+                '3M'  => 'q',
+                '6M'  => 'b',
+                '12M' => 'a',
+                '1Y'  => 'a',
+                '2Y'  => 'bia',
+                '3Y'  => 'tria'
+            };
+        } catch (\UnhandledMatchError) {
+            throw new Box_Exception('Unknown period selected ' . $code);
         }
     }
 
     public function getPricingArray(Model_Product $model)
     {
-        if($model->product_payment_id) {
+        if ($model->product_payment_id) {
             $service = $this->di['mod_service']('product');
             $productPayment = $this->di['db']->load('ProductPayment', $model->product_payment_id);
             return $service->toProductPaymentApiArray($productPayment);
         }
 
-        throw new \Box_Exception('Product pricing could not be determined. '.get_class($this));
+        throw new \Box_Exception('Product pricing could not be determined. ' . get_class($this));
     }
 
     /**
@@ -109,21 +97,21 @@ class Model_ProductTable implements \Box\InjectionAwareInterface
     {
         $pp = $this->di['db']->load('ProductPayment', $product->product_payment_id);
 
-        if($pp->type == Model_ProductPayment::FREE) {
+        if ($pp->type == Model_ProductPayment::FREE) {
             $price = 0;
         }
 
-        if($pp->type == Model_ProductPayment::ONCE) {
+        if ($pp->type == Model_ProductPayment::ONCE) {
             $price = (float)$pp->once_setup_price;
         }
 
-        if($pp->type == Model_ProductPayment::RECURRENT) {
+        if ($pp->type == Model_ProductPayment::RECURRENT) {
             $period = new Box_Period($config['period']);
             $key = $this->_getPeriodKey($period);
-            $price = (float)$pp->{$key.'_setup_price'};
+            $price = (float)$pp->{$key . '_setup_price'};
         }
 
-        if(isset($price)) {
+        if (isset($price)) {
             return $price;
         }
 
@@ -141,25 +129,25 @@ class Model_ProductTable implements \Box\InjectionAwareInterface
     {
         $pp = $this->di['db']->load('ProductPayment', $product->product_payment_id);
 
-        if($pp->type == Model_ProductPayment::FREE) {
+        if ($pp->type == Model_ProductPayment::FREE) {
             $price = 0;
         }
 
-        if($pp->type == Model_ProductPayment::ONCE) {
+        if ($pp->type == Model_ProductPayment::ONCE) {
             $price = $pp->once_price;
         }
 
-        if($pp->type == Model_ProductPayment::RECURRENT) {
-            if(!isset($config['period'])) {
-                throw new \Box_Exception('Product :id payment type is recurrent, but period was not selected', array(':id'=>$product->id));
+        if ($pp->type == Model_ProductPayment::RECURRENT) {
+            if (!isset($config['period'])) {
+                throw new \Box_Exception('Product :id payment type is recurrent, but period was not selected', array(':id' => $product->id));
             }
 
             $period = new Box_Period($config['period']);
             $key = $this->_getPeriodKey($period);
-            $price =$pp->{$key.'_price'};
+            $price = $pp->{$key . '_price'};
         }
 
-        if(isset($price)) {
+        if (isset($price)) {
             return $price;
         }
 
