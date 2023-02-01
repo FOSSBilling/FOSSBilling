@@ -1132,11 +1132,11 @@ class Service implements InjectionAwareInterface
         $max_amount = $systemService->getParamValue('funds_max_amount', null);
 
         if ($min_amount && $amount < $min_amount) {
-            throw new \Box_Exception('Amount is not valid', null, 981);
+            throw new \Box_Exception('Amount must be at least :min_amount', [':min_amount' => $min_amount], 981);
         }
 
         if ($max_amount && $amount > $max_amount) {
-            throw new \Box_Exception('Amount is not valid', null, 982);
+            throw new \Box_Exception('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
         }
 
         $proforma = $this->di['db']->dispense('Invoice');
@@ -1243,16 +1243,16 @@ class Service implements InjectionAwareInterface
 
         $CustomCSSPath  = __DIR__ . DIRECTORY_SEPARATOR . 'pdf_template' . DIRECTORY_SEPARATOR . 'custom-pdf.css';
         $DefaultCSSPath = __DIR__ . DIRECTORY_SEPARATOR . 'pdf_template' . DIRECTORY_SEPARATOR . 'default-pdf.css';
-        
-        if(file_exists($CustomCSSPath)){
-          $CSS = file_get_contents($CustomCSSPath);
+
+        if (file_exists($CustomCSSPath)) {
+            $CSS = file_get_contents($CustomCSSPath);
         } else {
-          $CSS = file_get_contents($DefaultCSSPath);
+            $CSS = file_get_contents($DefaultCSSPath);
         }
 
         if (empty($CSS)) {
-          $CSS = file_get_contents($DefaultCSSPath);
-        }        
+            $CSS = file_get_contents($DefaultCSSPath);
+        }
 
         $pdf = new Dompdf();
         $options = $pdf->getOptions();
@@ -1312,7 +1312,7 @@ class Service implements InjectionAwareInterface
             $data = trim($data);
             if (!empty($data)) {
                 $html .= "<p>$label: $data</p>";
-                $sellerLines ++;
+                $sellerLines++;
             }
         }
         $html .= '</div>';
@@ -1329,12 +1329,12 @@ class Service implements InjectionAwareInterface
             $data = trim($data);
             if (!empty($data)) {
                 $html .= "<p>$label: $data</p>";
-                $buyerLines ++;
+                $buyerLines++;
             }
         }
         $top = ($buyerLines >= $sellerLines) ? (325 + (25 * $buyerLines)) : (325 + (25 * $sellerLines));
         $html .= '</div>';
-        $html .= '<div class="Breakdown" style="top: '.$top.'px">
+        $html .= '<div class="Breakdown" style="top: ' . $top . 'px">
         <table style="width:100%">
         <tr>
             <th>#</th>
@@ -1503,7 +1503,8 @@ class Service implements InjectionAwareInterface
         $params = [
             ':id' => sprintf('%05s', $proforma['nr']),
             ':serie' => $proforma['serie'],
-            ':title' => $first_title, ];
+            ':title' => $first_title,
+        ];
         if ($first_title) {
             $title = __trans('Payment for invoice :serie:id [:title]', $params);
         } else {
