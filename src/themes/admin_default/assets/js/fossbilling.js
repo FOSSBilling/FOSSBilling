@@ -133,9 +133,14 @@ var bb = {
 
           // Get all CKEditor instances and replace the original textarea values with the updated content.
           if (typeof editors !== 'undefined' && Array.isArray(editors)) {
+            let editorContentOnRequiredAttr = false;
             Object.keys(editors).forEach(function (name) {
-              formData.set(name, editors[name].getData());
+              editorContentOnRequiredAttr = editors[name].required ? editors[name].editor.getData() !== '' : true;
+              formData.set(name, editors[name].editor.getData());
             });
+            if (!editorContentOnRequiredAttr) {
+              return FOSSBilling.message('Please provide the content', 'error');
+            }
           }
 
           if(formElement.getAttribute('method').toLowerCase() != 'get'){

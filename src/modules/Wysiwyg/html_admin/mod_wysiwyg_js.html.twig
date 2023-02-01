@@ -16,19 +16,20 @@
 {% if bb_editor == 'ckeditor' %}
     {{ 'ckeditor/ckeditor.js' | mod_asset_url('wysiwyg') | script_tag }}
     <script type="text/javascript">
-        var editors = [];
+        const editors = [];
         document.addEventListener("DOMContentLoaded", function () {
             document.querySelectorAll('.{{ class }}').forEach(function (element) {
+                let required = false;
                 CKEditor
-                .create(element)
-                .then(editor => {
-                    if (element.hasAttribute('required')) {
-                        element.removeAttribute('required');
-                        element.reportValidity();
-                    }
-                    editors[element.name] = editor;
-                })
-                .catch(error => {console.error(error)});
+                    .create(element)
+                    .then(editor => {
+                        if (element.hasAttribute('required')) {
+                            element.removeAttribute('required');
+                            required = true;
+                        }
+                        editors[element.name] = {editor, 'required': required};
+                    })
+                    .catch(error => {console.error(error)});
             });
         });
     </script>
