@@ -13,7 +13,6 @@
       <directory>src/install</directory>
       <file>src/library/PdoSessionHandler.php</file>
       <file>src/modules/Spamchecker/akismet.curl.class.php</file>
-      <file>src/rb.php</file>
     </exclude>
   </coverage>
   <testsuites>

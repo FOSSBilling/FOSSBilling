@@ -105,7 +105,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBean_SimpleModel) {
+        if (!$model instanceof \FOSSBilling_Model) {
             throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
@@ -149,7 +149,7 @@ class Service implements InjectionAwareInterface
         // move expiration period to future
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBean_SimpleModel) {
+        if (!$model instanceof \FOSSBilling_Model) {
             throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
         }
         // @todo ?
@@ -167,7 +167,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBean_SimpleModel) {
+        if (!$model instanceof \FOSSBilling_Model) {
             throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
@@ -186,7 +186,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBean_SimpleModel) {
+        if (!$model instanceof \FOSSBilling_Model) {
             throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
@@ -205,7 +205,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBean_SimpleModel) {
+        if (!$model instanceof \FOSSBilling_Model) {
             throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);

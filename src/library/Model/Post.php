@@ -13,7 +13,7 @@
  */
 
 
-class Model_Post extends \RedBean_SimpleModel
+class Model_Post extends \FOSSBilling_Model
 {
 
 }

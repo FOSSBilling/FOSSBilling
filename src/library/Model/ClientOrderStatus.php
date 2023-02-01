@@ -13,7 +13,7 @@
  */
 
 
-class Model_ClientOrderStatus extends RedBean_SimpleModel
+class Model_ClientOrderStatus extends FOSSBilling_Model
 {
 
 }
