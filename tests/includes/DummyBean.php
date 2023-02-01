@@ -4,7 +4,8 @@ class DummyBean extends \RedBeanPHP\OODBBean
 {
     function __construct()
     {
-        parent::__construct();
-        $this->initializeForDispense('dummybean');
+        $bean = new \RedBeanPHP\OODBBean();
+        $bean->initializeForDispense('dummybean');
+        return $bean;
     }
 }
