@@ -54,7 +54,7 @@ class Admin implements \Box\InjectionAwareInterface
     public function register(\Box_App &$app)
     {
         $app->get('/servicedomain', 'get_index', null, static::class);
-        $app->get('/servicedomain/tld/:tld', 'get_tld', ['tld' => '[/.a-z0-9]+'], static::class);
+        $app->get('/servicedomain/tld/:tld', 'get_tld', ['tld' => '[/.\pL0-9]+'], static::class);
         $app->get('/servicedomain/registrar/:id', 'get_registrar', ['id' => '[0-9]+'], static::class);
     }
 

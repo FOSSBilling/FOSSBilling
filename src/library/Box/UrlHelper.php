@@ -35,8 +35,8 @@ class Box_UrlHelper {
 
             preg_match_all('@:([a-zA-Z]+)@', $url, $paramNames, PREG_PATTERN_ORDER);                    // get param names
             $paramNames = $paramNames[1];                                                               // we want the set of matches
-            $regexedUrl = preg_replace_callback('@:[a-zA-Z_\-]+@', array($this, 'regexValue'), $url);   // replace param with regex capture
-            if (preg_match('@^' . $regexedUrl . '$@', $requestUri, $paramValues)) {                            // determine match and get param values
+            $regexedUrl = preg_replace_callback('@:[a-zA-Z_\-]+@', array($this, 'regexValue'), $url);
+            if (preg_match('/^' . addcslashes($regexedUrl,'/') . '$/u', $requestUri, $paramValues)) {   // determine match and get param values
                 array_shift($paramValues);                                                              // remove the complete text match
                 $counted = count($paramNames);
                 for ($i=0; $i < $counted; $i++) {
