@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -40,7 +41,7 @@ class Box_Database implements InjectionAwareInterface
     {
         $type = $this->_getTypeFromModelName($modelName);
         $bean = $this->orm->dispense($type);
-        if($type == $modelName){
+        if ($type == $modelName) {
             return $bean;
         }
         return $bean->box();
@@ -48,7 +49,7 @@ class Box_Database implements InjectionAwareInterface
 
     public function store($modelOrBean)
     {
-        if($modelOrBean instanceof \RedBean_SimpleModel) {
+        if ($modelOrBean instanceof \RedBean_SimpleModel) {
             $bean = $modelOrBean->unbox();
         } else {
             $bean = $modelOrBean;
@@ -56,34 +57,34 @@ class Box_Database implements InjectionAwareInterface
         return $this->orm->store($bean);
     }
 
-    public function getAll($sql, $values=array() )
+    public function getAll($sql, $values = array())
     {
         return $this->orm->getAll($sql, $values);
     }
 
-    public function getCell($sql, $values=array() )
+    public function getCell($sql, $values = array())
     {
         return $this->orm->getCell($sql, $values);
     }
 
-    public function getRow($sql, $values=array() )
+    public function getRow($sql, $values = array())
     {
         return $this->orm->getRow($sql, $values);
     }
 
-    public function getAssoc( $sql, $values = array())
+    public function getAssoc($sql, $values = array())
     {
         return $this->orm->getAssoc($sql, $values);
     }
 
-    public function findOne($modelName, $sql=null, $values=array())
+    public function findOne($modelName, $sql = null, $values = array())
     {
         $type = $this->_getTypeFromModelName($modelName);
         $bean = $this->orm->findOne($type, $sql, $values);
-        if($type == $modelName) {
+        if ($type == $modelName) {
             return $bean;
         }
-        if($bean && $bean->id) {
+        if ($bean && $bean->id) {
             return $bean->box();
         }
         return null;
@@ -93,7 +94,7 @@ class Box_Database implements InjectionAwareInterface
     {
         $type = $this->_getTypeFromModelName($modelName);
         $beans = $this->orm->find($type, $sql, $values);
-        if($type == $modelName){
+        if ($type == $modelName) {
             return $beans;
         }
         foreach ($beans as &$bean) {
@@ -118,7 +119,7 @@ class Box_Database implements InjectionAwareInterface
 
         $type = $this->_getTypeFromModelName($modelName);
         $bean = $this->orm->load($type, $id);
-        if ($type == $modelName){
+        if ($type == $modelName) {
             return $bean;
         }
         if ($bean && $bean->id) {
@@ -133,14 +134,14 @@ class Box_Database implements InjectionAwareInterface
      * @param array $values
      * @return int - affected rows
      */
-    public function exec($sql, $values=array())
+    public function exec($sql, $values = array())
     {
         return $this->orm->exec($sql, $values);
     }
 
     public function trash($modelOrBean)
     {
-        if($modelOrBean instanceof \RedBean_SimpleModel) {
+        if ($modelOrBean instanceof \RedBean_SimpleModel) {
             $bean = $modelOrBean->unbox();
         } else {
             $bean = $modelOrBean;
@@ -160,7 +161,7 @@ class Box_Database implements InjectionAwareInterface
 
     public function toArray($modelOrBean)
     {
-        if($modelOrBean instanceof \RedBean_SimpleModel) {
+        if ($modelOrBean instanceof \RedBean_SimpleModel) {
             $bean = $modelOrBean->unbox();
         } else {
             $bean = $modelOrBean;
@@ -175,11 +176,11 @@ class Box_Database implements InjectionAwareInterface
      * @return \RedBean_SimpleModel
      * @throws Box_Exception
      */
-    public function getExistingModelById($modelName, $id, $message = "Model not found")
+    public function getExistingModelById($modelName, $id, $message = "Model :name not found in the database")
     {
         $model = $this->load($modelName, (int)$id);
         if (null === $model) {
-            throw new \Box_Exception($message);
+            throw new \Box_Exception($message, [':name' => $modelName]);
         }
 
         return $model;
@@ -187,7 +188,7 @@ class Box_Database implements InjectionAwareInterface
 
     private function _getTypeFromModelName($modelName)
     {
-        if($modelName == strtolower($modelName)) {
+        if ($modelName == strtolower($modelName)) {
             return $modelName;
         }
 
