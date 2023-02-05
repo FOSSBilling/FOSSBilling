@@ -2,7 +2,7 @@
 
 {% import "macro_functions.html.twig" as mf %}
 
-{% block meta_title %}{{ 'Sign up'|trans }}{% endblock %}
+{% block meta_title %}{{ guest.system_company.name }}{{ ' - Sign up'|trans }}{% endblock %}
 
 {% block body_class %}page-signup{% endblock %}
 {% block body %}
@@ -82,8 +82,6 @@
                             <select name="gender" id="gender">
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
-                                <option value="nonbinary">Non-binary</option>
-                                <option value="other">Other</option>
                             </select>
                             <p class="help-block"></p>
                         </div>
@@ -201,6 +199,7 @@
 
                     <div class="form-actions">
                         <button class="btn btn-block btn-large btn-inverse btn-alt" type="submit">{{ 'Sign up'|trans }}</button>
+                        <a class="btn btn-block btn-large btn-inverse btn-alt" href="{{ 'login'|link }}">{{ 'Login'|trans }}</a>
                     </div>
 
                 </fieldset>
@@ -208,10 +207,6 @@
             </form>
         </div>
     </div>
-
-    <ul class="login-footer">
-        <li><a href="{{ 'login'|link }}"><small>{{ 'Login'|trans }}</small></a></li>
-    </ul>
 </section>
 {% endblock %}
 
