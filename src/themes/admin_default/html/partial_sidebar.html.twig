@@ -8,45 +8,43 @@
 
         {% block left_top %}{% endblock %}
 
-        <section class="collapse navbar-collapse">
-            <ul class="navbar-nav pt-lg-3" id="menu">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <section class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav" id="menu">
                 {% set navigation = admin.extension_get_navigation({ 'url': guest.system_current_url }) %}
                 {% for location, group in navigation %}
-                    {% if group.subpages %}
-                    <li class="nav-item dropdown {{ group.class }}" data-nav-index="{{ group.index }}" data-nav-location="{{ location }}">
-                        <a class="nav-link dropdown-toggle"
-                            {% if group.active or active_menu == location %} id="current" {%endif %}
-                            href="#"
-                            data-bs-toggle="dropdown"
-                            data-bs-auto-close="false"
-                            role="button"
-                            aria-expanded="false">
-                            <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                <svg class="icon">
-                                    <use xlink:href="#{{ group.class }}" />
-                                </svg>
-                            </span>
-                            <span class="nav-link-title">{{ group.label|trans }}</span>
-                        </a>
-                        <div class="dropdown-menu" data-bs-popper="none">
-                            <div class="dropdown-menu-columns">
-                                <div class="dropdown-menu-column">
-                                    {% for subpage in group.subpages %}
-                                    <a class="dropdown-item" href="{{ subpage.uri }}">{{ subpage.label|trans }}</a>
-                                    {% endfor %}
-                                </div>
+                {% if group.subpages %}
+                <li class="nav-item dropdown {{ group.class }}" data-nav-index="{{ group.index }}"
+                    data-nav-location="{{ location }}">
+                    <a class="nav-link dropdown-toggle" {% if group.active or active_menu==location %} id="current"
+                        {%endif %} href="#" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button"
+                        aria-expanded="false">
+                        <span class="nav-link-icon d-md-none d-lg-inline-block">
+                            <svg class="icon">
+                                <use xlink:href="#{{ group.class }}" />
+                            </svg>
+                        </span>
+                        <span class="nav-link-title">{{ group.label|trans }}</span>
+                    </a>
+                    <div class="dropdown-menu" data-bs-popper="none">
+                        <div class="dropdown-menu-columns">
+                            <div class="dropdown-menu-column">
+                                {% for subpage in group.subpages %}
+                                <a class="dropdown-item" href="{{ subpage.uri }}">{{ subpage.label|trans }}</a>
+                                {% endfor %}
                             </div>
                         </div>
-                    </li>
-                    {% endif %}
+                    </div>
+                </li>
+                {% endif %}
                 {% endfor %}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle"
-                        href="#navbar-help"
-                        data-bs-toggle="dropdown"
-                        data-bs-auto-close="false"
-                        role="button"
-                        aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown"
+                        data-bs-auto-close="false" role="button" aria-expanded="false">
                         <span class="nav-link-icon d-md-none d-lg-inline-block">
                             <svg class="icon">
                                 <use xlink:href="#help" />
@@ -55,12 +53,12 @@
                         <span class="nav-link-title">{{ 'Help'|trans }}</span>
                     </a>
                     <div class="dropdown-menu" data-bs-popper="none">
-                        <a class="dropdown-item" href="https://fossbilling.org/docs" target="_blank"
-                            rel="noopener">{{ 'Documentation'|trans }}</a>
+                        <a class="dropdown-item" href="https://fossbilling.org/docs" target="_blank" rel="noopener">{{
+                            'Documentation'|trans }}</a>
                         <a class="dropdown-item" href="https://github.com/FOSSBilling/FOSSBilling" target="_blank"
                             rel="noopener">{{ 'Source code'|trans }}</a>
-                        <a class="dropdown-item" href="https://github.com/FOSSBilling/FOSSBilling/issues" target="_blank"
-                            rel="noopener">{{ 'Report a bug'|trans }}</a>
+                        <a class="dropdown-item" href="https://github.com/FOSSBilling/FOSSBilling/issues"
+                            target="_blank" rel="noopener">{{ 'Report a bug'|trans }}</a>
                     </div>
                 </li>
             </ul>
