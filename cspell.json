@@ -306,7 +306,6 @@
         "src/themes/*/assets/**",
         "src/install/assets/**",
         "src/install/sql/**",
-        "src/rb.php",
         "src/modules/*/assets/**",
         "src/composer.json",
         "src/composer.lock",

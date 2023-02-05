@@ -13,7 +13,7 @@
  */
 
 
-class Model_ProductPayment extends RedBean_SimpleModel
+class Model_ProductPayment extends FOSSBilling_Model
 {
     const FREE      = 'free';
     const ONCE      = 'once';

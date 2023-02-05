@@ -94,7 +94,7 @@ class ServiceTest extends \BBTestCase
         $client_id = 1;
 
         $activityEmail            = new \Model_ActivityClientEmail();
-        $activityEmail->loadBean(new \RedBeanPHP\OODBBean());
+        $activityEmail->loadBean(new \DummyBean());
         $activityEmail->client_id = $client_id;
         $activityEmail->id        = $id;
 
@@ -107,7 +107,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $client     = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = $client_id;
 
 
@@ -126,7 +126,7 @@ class ServiceTest extends \BBTestCase
 
 
         $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
@@ -141,7 +141,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $client     = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = 1;
 
 
@@ -163,7 +163,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $email     = new \Model_ActivityClientEmail();
-        $email->loadBean(new \RedBeanPHP\OODBBean());
+        $email->loadBean(new \DummyBean());
         $email->id = 1;
 
         $result = $service->rm($email);
@@ -185,7 +185,7 @@ class ServiceTest extends \BBTestCase
         $updated      = date('Y-m-d H:i:s');
 
         $model               = new \Model_ActivityClientEmail();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id           = $id;
         $model->client_id    = $client_id;
         $model->sender       = $sender;
@@ -281,7 +281,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $emailTemplate = new \Model_EmailTemplate();
-        $emailTemplate->loadBean(new \RedBeanPHP\OODBBean());
+        $emailTemplate->loadBean(new \DummyBean());
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
@@ -337,7 +337,7 @@ class ServiceTest extends \BBTestCase
         $di      = new \Box_Di();
 
         $emailTemplate = new \Model_EmailTemplate();
-        $emailTemplate->loadBean(new \RedBeanPHP\OODBBean());
+        $emailTemplate->loadBean(new \DummyBean());
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
@@ -437,7 +437,7 @@ class ServiceTest extends \BBTestCase
         $di      = new \Box_Di();
 
         $emailTemplate = new \Model_EmailTemplate();
-        $emailTemplate->loadBean(new \RedBeanPHP\OODBBean());
+        $emailTemplate->loadBean(new \DummyBean());
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
@@ -475,7 +475,7 @@ class ServiceTest extends \BBTestCase
         $clientServiceMock = $this->getMockBuilder('Box\Mod\Client\Service')->getMock();
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $clientServiceMock->expects($clientGetExpects)
             ->method('get')
             ->will($this->returnValue($clientModel));
@@ -575,7 +575,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $model               = new \Model_ActivityClientEmail();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->client_id    = 1;
         $model->sender       = 'sender@exemple.com';
         $model->recipients   = 'recipient@example.com';
@@ -665,7 +665,7 @@ class ServiceTest extends \BBTestCase
         $content     = 'content';
 
         $model              = new \Model_EmailTemplate();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id          = $id;
         $model->action_code = $action_code;
         $model->category    = $category;
@@ -703,7 +703,7 @@ class ServiceTest extends \BBTestCase
         $content     = 'content';
 
         $model              = new \Model_EmailTemplate();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id          = $id;
         $model->action_code = $action_code;
         $model->category    = $category;
@@ -774,7 +774,7 @@ class ServiceTest extends \BBTestCase
     {
         $id        = rand(1, 100);
         $model     = new \Model_EmailTemplate();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = $id;
 
         $emailServiceMock = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('template_render'))->getMock();
@@ -811,7 +811,7 @@ class ServiceTest extends \BBTestCase
         $emailServiceMock->setDi($di);
 
         $templateModel = new \Model_EmailTemplate();
-        $templateModel->loadBean(new \RedBeanPHP\OODBBean());
+        $templateModel->loadBean(new \DummyBean());
 
         $result = $emailServiceMock->updateTemplate($templateModel, $data['enabled'], $data['category'], $data['subject'], @$data['content']);
         $this->assertEquals($result, true);
@@ -822,7 +822,7 @@ class ServiceTest extends \BBTestCase
 
         $id = rand(1, 100);
         $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = $id;
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -862,7 +862,7 @@ class ServiceTest extends \BBTestCase
 
         $id = rand(1, 100);
         $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = $id;
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -870,7 +870,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($id));
         $emailTemplateModel = new \Model_EmailTemplate();
-        $emailTemplateModel->loadBean(new \RedBeanPHP\OODBBean());
+        $emailTemplateModel->loadBean(new \DummyBean());
         $db->expects($this->atLeastOnce())
             ->method('dispense')
             ->will($this->returnValue($emailTemplateModel));
@@ -913,7 +913,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($findOneReturn));
 
         $emailTemplateModel = new \Model_EmailTemplate();
-        $emailTemplateModel->loadBean(new \RedBeanPHP\OODBBean());
+        $emailTemplateModel->loadBean(new \DummyBean());
         $db->expects($dispenseExpects)
             ->method('dispense')
             ->will($this->returnValue($emailTemplateModel));
@@ -984,7 +984,7 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Email\Service();
 
         $queueModel = new \Model_ModEmailQueue();
-        $queueModel->loadBean(new \RedBeanPHP\OODBBean());
+        $queueModel->loadBean(new \DummyBean());
         $queueModel->priority = 10;
         $queueModel->tries = 10;
         $queueModel->subject = 'subject';
@@ -1060,7 +1060,7 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Email\Service();
 
         $templateModel = new \Model_EmailTemplate();
-        $templateModel->loadBean(new \RedBeanPHP\OODBBean());
+        $templateModel->loadBean(new \DummyBean());
         $templateModel->id = rand(1,100);
         $templateModel->action_code = 'mod_email_test';
 
@@ -1124,7 +1124,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
 
         $queueEmail = new \Model_ModEmailQueue();
-        $queueEmail->loadBean(new \RedBeanPHP\OODBBean());
+        $queueEmail->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->with('ModEmailQueue')

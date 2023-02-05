@@ -31,7 +31,7 @@ class Api_ClientTest extends \BBTestCase
         $clientApi->setService($service);
 
         $client     = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
         $clientApi->setIdentity($client);
 
@@ -48,7 +48,7 @@ class Api_ClientTest extends \BBTestCase
 
 
         $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById', 'toApiArray'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
@@ -66,7 +66,7 @@ class Api_ClientTest extends \BBTestCase
         $clientApi->setDi($di);
 
         $client     = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
         $clientApi->setIdentity($client);
 
@@ -85,7 +85,7 @@ class Api_ClientTest extends \BBTestCase
             ->will($this->returnValue(false));
 
         $client     = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = 5;
         $clientApi->setIdentity($client);
 
@@ -109,7 +109,7 @@ class Api_ClientTest extends \BBTestCase
         $clientApi = new \Box\Mod\Email\Api\Client();
 
         $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById', 'resend'))->getMock();
         $service->expects($this->atLeastOnce())
@@ -120,7 +120,7 @@ class Api_ClientTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $client     = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = 5;
         $clientApi->setIdentity($client);
 
@@ -148,7 +148,7 @@ class Api_ClientTest extends \BBTestCase
             ->will($this->returnValue(false));
 
         $client     = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = 5;
 
         $clientApi->setIdentity($client);
@@ -175,7 +175,7 @@ class Api_ClientTest extends \BBTestCase
         $di = new \Box_Di();
 
         $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $service = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('findOneForClientById', 'rm'))->getMock();
         $service->expects($this->atLeastOnce())
             ->method('findOneForClientById')
@@ -185,7 +185,7 @@ class Api_ClientTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $client     = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = 5;
         $clientApi->setIdentity($client);
 
@@ -213,7 +213,7 @@ class Api_ClientTest extends \BBTestCase
             ->will($this->returnValue(false));
 
         $client     = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = 5;
 
         $clientApi->setIdentity($client);

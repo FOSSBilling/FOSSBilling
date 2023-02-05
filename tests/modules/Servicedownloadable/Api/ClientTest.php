@@ -39,7 +39,7 @@ class ClientTest extends \BBTestCase {
         );
 
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -63,7 +63,7 @@ class ClientTest extends \BBTestCase {
         );
 
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
 
         $orderServiceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->getMock();
         $orderServiceMock->expects($this->atLeastOnce())
@@ -93,7 +93,7 @@ class ClientTest extends \BBTestCase {
         );
 
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Servicedownloadable\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())

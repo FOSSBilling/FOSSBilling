@@ -24,7 +24,7 @@ class ClientTest extends \BBTestCase {
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
 
         $clientService = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $clientService->expects($this->atLeastOnce())

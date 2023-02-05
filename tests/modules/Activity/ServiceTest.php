@@ -52,7 +52,7 @@ class ServiceTest extends \BBTestCase
     public function testonAfterClientLogin()
     {
         $model = new \Model_ActivityClientHistory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $databaseMock = $this->getMockBuilder('Box_Database')->getMock();
         $databaseMock->expects($this->atLeastOnce())->
             method('dispense')->
@@ -93,7 +93,7 @@ class ServiceTest extends \BBTestCase
     public function testonAfterAdminLogin()
     {
         $model = new \Model_ActivityClientHistory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $databaseMock = $this->getMockBuilder('Box_Database')->getMock();
         $databaseMock->expects($this->atLeastOnce())->
             method('dispense')->
@@ -139,7 +139,7 @@ class ServiceTest extends \BBTestCase
         $db = $this->getMockBuilder('Box_Database')->getMock();
 
         $model = new \Model_ActivitySystem();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $db->expects($this->atLeastOnce())
             ->method('dispense')
             ->will($this->returnValue($model));
@@ -180,7 +180,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $di = new \Box_Di();
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -201,11 +201,11 @@ class ServiceTest extends \BBTestCase
     public function testtoApiArray()
     {
         $clientHistoryModel = new \Model_ActivityClientHistory();
-        $clientHistoryModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientHistoryModel->loadBean(new \DummyBean());
         $clientHistoryModel->client_id = 1;
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $expectionError = 'Client not found';
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -236,11 +236,11 @@ class ServiceTest extends \BBTestCase
     public function testrmByClient()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $clientModel->id = 1;
 
         $activitySystemModel = new \Model_ActivitySystem();
-        $activitySystemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $activitySystemModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

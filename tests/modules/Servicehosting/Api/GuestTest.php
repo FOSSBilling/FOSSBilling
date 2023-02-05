@@ -28,7 +28,7 @@ class GuestTest extends \BBTestCase
         });
 
         $model = new \Model_Product();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->type = \Model_Product::HOSTING;
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -64,7 +64,7 @@ class GuestTest extends \BBTestCase
         });
 
         $model = new \Model_Product();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')

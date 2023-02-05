@@ -36,7 +36,7 @@ class ClientTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue($model));
@@ -62,7 +62,7 @@ class ClientTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue(null));
@@ -93,7 +93,7 @@ class ClientTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue($model));
@@ -122,7 +122,7 @@ class ClientTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue(null));
@@ -148,7 +148,7 @@ class ClientTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->status = 'paid';
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
@@ -174,7 +174,7 @@ class ClientTest extends \BBTestCase {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
 
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->hash = $generatedHash;
         $serviceMock->expects($this->atLeastOnce())
             ->method('generateForOrder')
@@ -188,7 +188,7 @@ class ClientTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
         $clientOrder->price = 10;
 
         $dbMock->expects($this->atLeastOnce())
@@ -203,7 +203,7 @@ class ClientTest extends \BBTestCase {
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $identity = new \Model_Admin();
-        $identity->loadBean(new \RedBeanPHP\OODBBean());
+        $identity->loadBean(new \DummyBean());
         $this->api->setIdentity($identity);
 
         $data['order_id'] = 1;
@@ -220,7 +220,7 @@ class ClientTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
         $clientOrder->id = 1;
         $clientOrder->price = 0;
 
@@ -235,7 +235,7 @@ class ClientTest extends \BBTestCase {
 
         $this->api->setDi($di);
         $identity = new \Model_Admin();
-        $identity->loadBean(new \RedBeanPHP\OODBBean());
+        $identity->loadBean(new \DummyBean());
         $this->api->setIdentity($identity);
 
         $data['order_id'] = 1;
@@ -254,7 +254,7 @@ class ClientTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
         $clientOrder->price = 10;
 
         $dbMock->expects($this->atLeastOnce())
@@ -267,7 +267,7 @@ class ClientTest extends \BBTestCase {
 
         $this->api->setDi($di);
         $identity = new \Model_Admin();
-        $identity->loadBean(new \RedBeanPHP\OODBBean());
+        $identity->loadBean(new \DummyBean());
         $this->api->setIdentity($identity);
 
         $data['order_id'] = 1;
@@ -288,7 +288,7 @@ class ClientTest extends \BBTestCase {
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')->getMock();
 
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->hash = $generatedHash;
         $serviceMock->expects($this->atLeastOnce())
             ->method('generateFundsInvoice')
@@ -303,7 +303,7 @@ class ClientTest extends \BBTestCase {
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $identity = new \Model_Client();
-        $identity->loadBean(new \RedBeanPHP\OODBBean());
+        $identity->loadBean(new \DummyBean());
         $this->api->setIdentity($identity);
 
         $data['amount'] = 10;
@@ -325,7 +325,7 @@ class ClientTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
@@ -340,7 +340,7 @@ class ClientTest extends \BBTestCase {
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $identity = new \Model_Client();
-        $identity->loadBean(new \RedBeanPHP\OODBBean());
+        $identity->loadBean(new \DummyBean());
         $this->api->setIdentity($identity);
 
         $data['hash'] = md5(1);
@@ -371,7 +371,7 @@ class ClientTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $identity = new \Model_Client();
-        $identity->loadBean(new \RedBeanPHP\OODBBean());
+        $identity->loadBean(new \DummyBean());
         $this->api->setIdentity($identity);
         $result = $this->api->transaction_get_list(array());
         $this->assertIsArray($result);
@@ -380,7 +380,7 @@ class ClientTest extends \BBTestCase {
     public function testget_tax_rate()
     {
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $taxRate = 20;
 

@@ -46,7 +46,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->will($this->returnValue($resultSet));
 
         $clientOrderMock = new \Model_ClientOrder();
-        $clientOrderMock->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderMock->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -63,7 +63,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->api->setDi($di);
 
         $client = new Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $this->api->setIdentity($client);
@@ -94,7 +94,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
         $this->api->setDi($di);
 
         $client = new Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id = rand(1, 100);
 
         $this->api->setIdentity($client);
@@ -111,7 +111,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
     public function testGet()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -143,7 +143,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->will($this->returnValue(array()));
 
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -164,7 +164,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
     public function testService()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -177,7 +177,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->will($this->returnValue(array()));
 
         $client = new Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $apiMock->setService($serviceMock);
         $apiMock->setIdentity($client);
@@ -193,7 +193,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
     public function testUpgradables()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -228,7 +228,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
     public function testDelete()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
@@ -254,7 +254,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
     public function testDeleteNotPendingException()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Client')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -286,7 +286,7 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->will($this->returnValue(null));
 
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')
             ->setMethods(array('findForClientById', 'toApiArray'))->getMock();
@@ -296,10 +296,10 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->will($this->returnValue(array()));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $client = new Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $di              = new Box_Di();
         $di['validator'] = $validatorMock;
@@ -329,10 +329,10 @@ class Api_ClientTest extends PHPUnit\Framework\TestCase
             ->will($this->returnValue(array()));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $client = new Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $di              = new Box_Di();
         $di['validator'] = $validatorMock;

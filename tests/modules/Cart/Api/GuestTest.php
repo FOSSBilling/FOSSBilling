@@ -125,7 +125,7 @@ class GuestTest extends \BBTestCase
     public function testGet_currency()
     {
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
@@ -166,7 +166,7 @@ class GuestTest extends \BBTestCase
     public function testGet_currencyNotFound()
     {
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
@@ -207,7 +207,7 @@ class GuestTest extends \BBTestCase
     public function testApply_promo()
     {
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
@@ -245,7 +245,7 @@ class GuestTest extends \BBTestCase
     public function testApply_promoNotFoundException()
     {
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
@@ -284,7 +284,7 @@ class GuestTest extends \BBTestCase
     public function testApply_promoCanNotBeApplied()
     {
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
@@ -324,7 +324,7 @@ class GuestTest extends \BBTestCase
     public function testApply_promoCanNotBeAppliedForUser()
     {
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
@@ -363,7 +363,7 @@ class GuestTest extends \BBTestCase
     public function testRemove_promo()
     {
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
@@ -383,7 +383,7 @@ class GuestTest extends \BBTestCase
     public function testRemove_item()
     {
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
@@ -416,7 +416,7 @@ class GuestTest extends \BBTestCase
     public function testAdd_item()
     {
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
@@ -459,7 +459,7 @@ class GuestTest extends \BBTestCase
     public function testAdd_itemSingle()
     {
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->currency_id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')

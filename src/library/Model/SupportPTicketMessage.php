@@ -13,7 +13,7 @@
  */
 
 
-class Model_SupportPTicketMessage extends RedBean_SimpleModel
+class Model_SupportPTicketMessage extends FOSSBilling_Model
 {
 
 }

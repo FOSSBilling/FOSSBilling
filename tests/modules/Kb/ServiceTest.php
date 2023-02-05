@@ -24,7 +24,7 @@ class ServiceTest extends \BBTestCase
 
 
         $client      = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->id  = 5;
         $di['pager'] = $pager;
         $service->setDi($di);
@@ -46,7 +46,7 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Kb\Service();
 
         $model = new \Model_KbArticle();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $db    = $this->getMockBuilder('Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
             ->method('findOne')
@@ -110,7 +110,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $modelKb        = new \Model_KbArticle();
-        $modelKb->loadBean(new \RedBeanPHP\OODBBean());
+        $modelKb->loadBean(new \DummyBean());
         $modelKb->views = 10;
 
         $result = $service->hitView($modelKb);
@@ -132,7 +132,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $modelKb        = new \Model_KbArticle();
-        $modelKb->loadBean(new \RedBeanPHP\OODBBean());
+        $modelKb->loadBean(new \DummyBean());
         $modelKb->id    = 1;
         $modelKb->views = 10;
 
@@ -144,7 +144,7 @@ class ServiceTest extends \BBTestCase
     public function toApiArrayProvider()
     {
         $model                         = new \Model_KbArticle();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id                     = rand(1, 100);
         $model->slug                   = 'article-slug';
         $model->title                  = "Title";
@@ -156,7 +156,7 @@ class ServiceTest extends \BBTestCase
         $model->kb_article_category_id = rand(1, 100);
 
         $category        = new \Model_KbArticleCategory();
-        $category->loadBean(new \RedBeanPHP\OODBBean());
+        $category->loadBean(new \DummyBean());
         $category->id    = rand(1, 100);
         $category->slug  = 'category-slug';
         $category->title = 'category-title';
@@ -257,7 +257,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($randId));
         $model = new \Model_KbArticle();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $db->expects($this->atLeastOnce())
             ->method('dispense')
             ->will($this->returnValue($model));
@@ -284,7 +284,7 @@ class ServiceTest extends \BBTestCase
         $randId  = rand(1, 100);
 
         $model = new \Model_KbArticle();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $kb_article_category_id = rand(1, 100);
         $title                  = 'Title';
@@ -470,10 +470,10 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $model            = new \Model_KbArticleCategory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id        = rand(1, 100);
         $model->KbArticle = new \Model_KbArticleCategory();
-        $model->KbArticle->loadBean(new \RedBeanPHP\OODBBean());
+        $model->KbArticle->loadBean(new \DummyBean());
 
         $result = $service->categoryRm($model);
         $this->assertTrue($result);
@@ -494,10 +494,10 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $model            = new \Model_KbArticleCategory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id        = rand(1, 100);
         $model->KbArticle = new \Model_KbArticle();
-        $model->KbArticle->loadBean(new \RedBeanPHP\OODBBean());
+        $model->KbArticle->loadBean(new \DummyBean());
 
         $this->expectException(\Box_Exception::class);
         $result = $service->categoryRm($model);
@@ -507,7 +507,7 @@ class ServiceTest extends \BBTestCase
     public function testCategoryToApiArray()
     {
         $article        = new \Model_KbArticle();
-        $article->loadBean(new \RedBeanPHP\OODBBean());
+        $article->loadBean(new \DummyBean());
         $article->id    = rand(1, 100);
         $article->slug  = 'category-slug';
         $article->title = 'category-title';
@@ -530,7 +530,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $model            = new \Model_KbArticleCategory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = rand(1, 100);
 
         $result = $serviceMock->categoryToApiArray($model);
@@ -548,7 +548,7 @@ class ServiceTest extends \BBTestCase
             ->method('store')
             ->will($this->returnValue($randId));
         $articleCategoryModel = new \Model_KbArticleCategory();
-        $articleCategoryModel->loadBean(new \RedBeanPHP\OODBBean());
+        $articleCategoryModel->loadBean(new \DummyBean());
 
         $db->expects($this->atLeastOnce())
             ->method('dispense')
@@ -595,7 +595,7 @@ class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $model     = new \Model_KbArticleCategory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = rand(1, 100);
 
         $result = $service->updateCategory($model, 'New Title', 'new-title', 'Description');

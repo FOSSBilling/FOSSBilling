@@ -9,7 +9,7 @@ class AdminTest extends \BBTestCase
         $service = new \Box\Mod\Profile\Service();
 
         $model = new \Model_Admin();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = 1;
         $model->role = 'admin';
         $model->admin_group_id = 1;

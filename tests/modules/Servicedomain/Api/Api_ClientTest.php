@@ -16,7 +16,7 @@ class Api_ClientTest extends \BBTestCase
     public function testUpdate_nameservers()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
             ->setMethods(array('_getService'))->getMock();
@@ -47,7 +47,7 @@ class Api_ClientTest extends \BBTestCase
     public function testUpdate_contacts()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
             ->setMethods(array('_getService'))->getMock();
@@ -70,7 +70,7 @@ class Api_ClientTest extends \BBTestCase
     public function testEnable_privacy_protection()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
             ->setMethods(array('_getService'))->getMock();
@@ -93,7 +93,7 @@ class Api_ClientTest extends \BBTestCase
     public function testDisable_privacy_protection()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
             ->setMethods(array('_getService'))->getMock();
@@ -116,7 +116,7 @@ class Api_ClientTest extends \BBTestCase
     public function testGet_transfer_code()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
             ->setMethods(array('_getService'))->getMock();
@@ -139,7 +139,7 @@ class Api_ClientTest extends \BBTestCase
     public function testLock()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
             ->setMethods(array('_getService'))->getMock();
@@ -162,7 +162,7 @@ class Api_ClientTest extends \BBTestCase
     public function testUnlock()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $clientApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Client')
             ->setMethods(array('_getService'))->getMock();

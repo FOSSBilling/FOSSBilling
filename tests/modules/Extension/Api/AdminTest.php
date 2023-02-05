@@ -285,7 +285,7 @@ class AdminTest extends \BBTestCase {
         );
 
         $model = new \Model_Extension();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -324,7 +324,7 @@ class AdminTest extends \BBTestCase {
         );
 
         $model = new \Model_Extension();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -368,7 +368,7 @@ class AdminTest extends \BBTestCase {
         );
 
         $model = new \Model_Extension();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -410,7 +410,7 @@ class AdminTest extends \BBTestCase {
         );
 
         $model = new \Model_Extension();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())

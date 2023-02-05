@@ -26,7 +26,7 @@ class ServiceTest extends \BBTestCase {
     public function testenoughInBalanceToOpenTicket()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $clientTotalAmount = 25;
 
@@ -61,7 +61,7 @@ class ServiceTest extends \BBTestCase {
     public function test_NotenoughInBalanceToOpenTicket()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $clientTotalAmount = 0;
 
@@ -100,7 +100,7 @@ class ServiceTest extends \BBTestCase {
     public function test_enoughInBalanceToOpenTicket_TicketPriceEqualsTotalAmount()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $clientTotalAmount = 4;
 
@@ -135,7 +135,7 @@ class ServiceTest extends \BBTestCase {
     public function test_enoughInBalanceToOpenTicket_TicketPriceIsNotSet()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $clientTotalAmount = 4;
 
@@ -169,7 +169,7 @@ class ServiceTest extends \BBTestCase {
         $di = new \Box_Di();
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -213,7 +213,7 @@ class ServiceTest extends \BBTestCase {
         $di = new \Box_Di();
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -333,10 +333,10 @@ class ServiceTest extends \BBTestCase {
         $di = new \Box_Di();
 
         $supportTicketModel = new \Model_SupportTicket();
-        $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportTicketModel->loadBean(new \DummyBean());
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -388,10 +388,10 @@ class ServiceTest extends \BBTestCase {
         $di = new \Box_Di();
 
         $supportTicketModel = new \Model_SupportTicket();
-        $supportTicketModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportTicketModel->loadBean(new \DummyBean());
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

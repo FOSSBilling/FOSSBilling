@@ -125,8 +125,7 @@ $di['pdo'] = function () use ($di) {
  * @return \Box_Database The new Box_Database object that was just created.
  */
 $di['db'] = function () use ($di) {
-    require_once __DIR__ . DIRECTORY_SEPARATOR . 'rb.php';
-    R::setup($di['pdo']);
+    \RedBeanPHP\R::setup($di['pdo']);
     \RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
 
     $helper = new Box_BeanHelper();

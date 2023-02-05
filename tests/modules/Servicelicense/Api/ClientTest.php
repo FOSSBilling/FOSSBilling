@@ -75,7 +75,7 @@ class ClientTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $this->api->setIdentity($clientModel);
 
         $result = $this->api->_getService($data);
@@ -109,7 +109,7 @@ class ClientTest extends \BBTestCase {
         $this->api->setDi($di);
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $this->api->setIdentity($clientModel);
 
         $this->expectException(\Box_Exception::class);

@@ -24,7 +24,7 @@ class Api_AdminTest extends \BBTestCase
     public function testGet()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -113,7 +113,7 @@ class Api_AdminTest extends \BBTestCase
     public function testUpdate()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -139,7 +139,7 @@ class Api_AdminTest extends \BBTestCase
     public function testActivate()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -165,7 +165,7 @@ class Api_AdminTest extends \BBTestCase
     public function testRenew()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -188,7 +188,7 @@ class Api_AdminTest extends \BBTestCase
     public function testRenewPendingSetup()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder', 'activate'))->disableOriginalConstructor()->getMock();
@@ -208,7 +208,7 @@ class Api_AdminTest extends \BBTestCase
     public function testSuspend()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -237,7 +237,7 @@ class Api_AdminTest extends \BBTestCase
     public function testUnsuspend()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->status = Model_ClientOrder::STATUS_SUSPENDED;
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
@@ -261,7 +261,7 @@ class Api_AdminTest extends \BBTestCase
     public function testUnsuspendNotSuspendedException()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
@@ -286,7 +286,7 @@ class Api_AdminTest extends \BBTestCase
     public function testCancel()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -314,7 +314,7 @@ class Api_AdminTest extends \BBTestCase
     public function testUncancel()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->status = Model_ClientOrder::STATUS_CANCELED;
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
@@ -338,7 +338,7 @@ class Api_AdminTest extends \BBTestCase
     public function testUncancelNotCanceledException()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
@@ -363,7 +363,7 @@ class Api_AdminTest extends \BBTestCase
     public function testDelete()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -386,7 +386,7 @@ class Api_AdminTest extends \BBTestCase
     public function testDeleteWithAddons()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -443,7 +443,7 @@ class Api_AdminTest extends \BBTestCase
     public function testUpdate_config()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -469,7 +469,7 @@ class Api_AdminTest extends \BBTestCase
     public function testUpdate_configNotSetConfigException()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -494,7 +494,7 @@ class Api_AdminTest extends \BBTestCase
     public function testService()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -525,7 +525,7 @@ class Api_AdminTest extends \BBTestCase
     public function testStatus_history_get_list()
     {
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -571,7 +571,7 @@ class Api_AdminTest extends \BBTestCase
 
 
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -607,7 +607,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $di              = new \Box_Di();
         $di['validator'] = $validatorMock;
@@ -657,7 +657,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $order = new Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $apiMock = $this->getMockBuilder('\\Box\Mod\Order\Api\Admin')->setMethods(array('_getOrder'))->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -688,7 +688,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())

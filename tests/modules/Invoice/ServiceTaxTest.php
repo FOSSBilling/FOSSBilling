@@ -28,7 +28,7 @@ class ServiceTaxTest extends \BBTestCase
     {
         $taxRateExpected = 0.21;
         $clientModel     = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
             ->getMock();
@@ -37,7 +37,7 @@ class ServiceTaxTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $taxModel = new \Model_Tax();
-        $taxModel->loadBean(new \RedBeanPHP\OODBBean());
+        $taxModel->loadBean(new \DummyBean());
         $taxModel->taxrate = $taxRateExpected;
 
         $dbMock = $this->getMockBuilder('\Box_Database')
@@ -62,7 +62,7 @@ class ServiceTaxTest extends \BBTestCase
     {
         $taxRateExpected = 0.21;
         $clientModel     = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
             ->getMock();
@@ -71,7 +71,7 @@ class ServiceTaxTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $taxModel = new \Model_Tax();
-        $taxModel->loadBean(new \RedBeanPHP\OODBBean());
+        $taxModel->loadBean(new \DummyBean());
         $taxModel->taxrate = $taxRateExpected;
 
         $dbMock = $this->getMockBuilder('\Box_Database')
@@ -96,7 +96,7 @@ class ServiceTaxTest extends \BBTestCase
     {
         $taxRateExpected = 0.21;
         $clientModel     = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
             ->getMock();
@@ -105,7 +105,7 @@ class ServiceTaxTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $taxModel = new \Model_Tax();
-        $taxModel->loadBean(new \RedBeanPHP\OODBBean());
+        $taxModel->loadBean(new \DummyBean());
         $taxModel->taxrate = $taxRateExpected;
 
         $dbMock = $this->getMockBuilder('\Box_Database')
@@ -129,7 +129,7 @@ class ServiceTaxTest extends \BBTestCase
     public function testgetTaxRateForClient_TaxWasNotFound()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
             ->getMock();
@@ -159,7 +159,7 @@ class ServiceTaxTest extends \BBTestCase
     public function testgetTaxRateForClient_ClientIsNotTaxable()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $clientServiceMock = $this->getMockBuilder('\Box\Mod\Client\Service')
             ->getMock();
@@ -168,7 +168,7 @@ class ServiceTaxTest extends \BBTestCase
             ->will($this->returnValue(false));
 
         $taxModel = new \Model_Tax();
-        $taxModel->loadBean(new \RedBeanPHP\OODBBean());
+        $taxModel->loadBean(new \DummyBean());
 
         $di                = new \Box_Di();
         $di['mod_service'] = $di->protect(function () use ($clientServiceMock) {
@@ -185,7 +185,7 @@ class ServiceTaxTest extends \BBTestCase
     public function testgetTaxWhenTaxRateIsZero()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $invoiceModel->taxrate = 0;
 
         $result = $this->service->getTax($invoiceModel);
@@ -196,11 +196,11 @@ class ServiceTaxTest extends \BBTestCase
     public function testgetTax()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $invoiceModel->taxrate = 15;
 
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->quantity = 1;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -225,7 +225,7 @@ class ServiceTaxTest extends \BBTestCase
     public function testdelete()
     {
         $taxModel = new \Model_Tax();
-        $taxModel->loadBean(new \RedBeanPHP\OODBBean());
+        $taxModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -249,7 +249,7 @@ class ServiceTaxTest extends \BBTestCase
             ->method('checkLimits');
 
         $taxModel = new \Model_Tax();
-        $taxModel->loadBean(new \RedBeanPHP\OODBBean());
+        $taxModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -280,7 +280,7 @@ class ServiceTaxTest extends \BBTestCase
     public function testUpdate()
     {
         $taxModel = new \Model_Tax();
-        $taxModel->loadBean(new \RedBeanPHP\OODBBean());
+        $taxModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
 
@@ -356,7 +356,7 @@ class ServiceTaxTest extends \BBTestCase
     public function testtoApiArray()
     {
         $taxModel = new \Model_Tax();
-        $taxModel->loadBean(new \RedBeanPHP\OODBBean());
+        $taxModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();

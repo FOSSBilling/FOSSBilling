@@ -55,7 +55,7 @@ class ServiceTest extends \BBTestCase
     public function testGetCartProductTitle($data, $expected)
     {
         $product = new \Model_CartProduct();
-        $product->loadBean(new \RedBeanPHP\OODBBean());
+        $product->loadBean(new \DummyBean());
         $product->title = "Example.com Registration";
 
         $result = $this->service->getCartProductTitle($product, $data);
@@ -110,7 +110,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $tld = new \Model_Tld();
-        $tld->loadBean(new \RedBeanPHP\OODBBean());
+        $tld->loadBean(new \DummyBean());
         $tld->tld       = '.com';
         $tld->min_years = 2;
 
@@ -208,7 +208,7 @@ class ServiceTest extends \BBTestCase
     public function validateOrderDateTransferExceptionsProvider()
     {
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $tldModel->tld = '.com';
 
         return array(
@@ -283,7 +283,7 @@ class ServiceTest extends \BBTestCase
     public function validateOrderDateRegisterExceptionsProvider()
     {
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $tldModel->tld       = '.com';
         $tldModel->min_years = 2;
 
@@ -381,7 +381,7 @@ class ServiceTest extends \BBTestCase
     public function testActionCreate()
     {
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $tldModel->tld_registrar_id = rand(1, 100);
 
         $data = array(
@@ -415,7 +415,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->first_name = 'first_name';
         $client->last_name  = 'last_name';
         $client->email      = 'email';
@@ -430,7 +430,7 @@ class ServiceTest extends \BBTestCase
         $client->phone      = 'phone';
 
         $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDomainModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -456,7 +456,7 @@ class ServiceTest extends \BBTestCase
 
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
 
         $result = $serviceMock->action_create($order);
@@ -466,7 +466,7 @@ class ServiceTest extends \BBTestCase
     public function testActionCreateNameserversException()
     {
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $tldModel->tld_registrar_id = rand(1, 100);
 
         $data = array(
@@ -502,7 +502,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         $this->expectException(\Box_Exception::class);
         $serviceMock->action_create($order);
@@ -530,11 +530,11 @@ class ServiceTest extends \BBTestCase
     public function testActionActivate($action, $registerDomainCalled, $transferDomainCalled)
     {
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $tldModel->tld_registrar_id = rand(1, 100);
 
         $domainModel = new \Model_ServiceDomain();
-        $domainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $domainModel->loadBean(new \DummyBean());
         $domainModel->tld_registrar_id = rand(1, 100);
         $domainModel->action           = $action;
 
@@ -570,7 +570,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         $result           = $serviceMock->action_activate($order);
         $this->assertInstanceOf('Model_ServiceDomain', $result);
@@ -590,7 +590,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         
         $this->expectException(\Box_Exception::class);
@@ -600,11 +600,11 @@ class ServiceTest extends \BBTestCase
     public function testActionRenew()
     {
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $tldModel->tld_registrar_id = rand(1, 100);
 
         $domainModel = new \Model_ServiceDomain();
-        $domainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $domainModel->loadBean(new \DummyBean());
         $domainModel->tld_registrar_id = rand(1, 100);
         $domainModel->action           = 'register';
 
@@ -646,7 +646,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         $result           = $serviceMock->action_renew($order);
 
@@ -667,7 +667,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->id        = rand(1, 100);
         $order->client_id = rand(1, 100);
         
@@ -680,7 +680,7 @@ class ServiceTest extends \BBTestCase
     public function testActionSuspend()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $result = $this->service->action_suspend($order);
         $this->assertTrue($result);
     }
@@ -688,7 +688,7 @@ class ServiceTest extends \BBTestCase
     public function testActionUnsuspend()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $result = $this->service->action_unsuspend($order);
         $this->assertTrue($result);
     }
@@ -696,11 +696,11 @@ class ServiceTest extends \BBTestCase
     public function testActionCancel()
     {
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $tldModel->tld_registrar_id = rand(1, 100);
 
         $domainModel = new \Model_ServiceDomain();
-        $domainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $domainModel->loadBean(new \DummyBean());
         $domainModel->tld_registrar_id = rand(1, 100);
         $domainModel->action           = 'register';
 
@@ -727,7 +727,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         $result           = $serviceMock->action_cancel($order);
 
@@ -748,7 +748,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->id        = rand(1, 100);
         $order->client_id = rand(1, 100);
         
@@ -766,7 +766,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         $result           = $serviceMock->action_uncancel($order);
 
@@ -776,11 +776,11 @@ class ServiceTest extends \BBTestCase
     public function testActionDelete()
     {
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $tldModel->tld_registrar_id = rand(1, 100);
 
         $domainModel = new \Model_ServiceDomain();
-        $domainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $domainModel->loadBean(new \DummyBean());
         $domainModel->tld_registrar_id = rand(1, 100);
         $domainModel->action           = 'register';
 
@@ -813,7 +813,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->status = \Model_ClientOrder::STATUS_ACTIVE;
         $result        = $serviceMock->action_delete($order);
 
@@ -851,7 +851,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->updateNameservers($serviceDomainModel, $data);
 
         $this->assertTrue($result);
@@ -875,7 +875,7 @@ class ServiceTest extends \BBTestCase
     public function testUpdateNameserversException($data)
     {
         $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDomainModel->loadBean(new \DummyBean());
         
         $this->expectException(\Box_Exception::class);
         $this->service->updateNameservers($serviceDomainModel, $data);
@@ -926,7 +926,7 @@ class ServiceTest extends \BBTestCase
             )
         );
         $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->updateContacts($serviceDomainModel, $data);
 
         $this->assertTrue($result);
@@ -947,7 +947,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array(new \Registrar_Domain(), $registrarAdapterMock)));
 
         $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->getTransferCode($serviceDomainModel);
 
         $this->assertIsString($epp);
@@ -977,7 +977,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->lock($serviceDomainModel);
 
         $this->assertTrue($result);
@@ -1007,7 +1007,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->unlock($serviceDomainModel);
 
         $this->assertTrue($result);
@@ -1036,7 +1036,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->enablePrivacyProtection($serviceDomainModel);
 
         $this->assertTrue($result);
@@ -1065,7 +1065,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDomainModel->loadBean(new \DummyBean());
         $result = $serviceMock->disablePrivacyProtection($serviceDomainModel);
 
         $this->assertTrue($result);
@@ -1084,7 +1084,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($registrarAdapterMock));
 
         $tldRegistrar = new \Model_TldRegistrar();
-        $tldRegistrar->loadBean(new \RedBeanPHP\OODBBean());
+        $tldRegistrar->loadBean(new \DummyBean());
         $tldRegistrar->tld_registrar_id = rand(1, 100);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -1097,7 +1097,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $tld = new \Model_Tld();
-        $tld->loadBean(new \RedBeanPHP\OODBBean());
+        $tld->loadBean(new \DummyBean());
         $tld->allow_transfer   = true;
         $tld->tld              = '.com';
         $tld->tld_registrar_id = rand(1, 100);
@@ -1116,7 +1116,7 @@ class ServiceTest extends \BBTestCase
     public function testcanBeTransferredNotAllowedException()
     {
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $tldModel->allow_transfer = false;
 
         $this->expectException(\Box_Exception::class);
@@ -1136,7 +1136,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($registrarAdapterMock));
 
         $tldRegistrar = new \Model_TldRegistrar();
-        $tldRegistrar->loadBean(new \RedBeanPHP\OODBBean());
+        $tldRegistrar->loadBean(new \DummyBean());
         $tldRegistrar->tld_registrar_id = rand(1, 100);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -1154,7 +1154,7 @@ class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $tld = new \Model_Tld();
-        $tld->loadBean(new \RedBeanPHP\OODBBean());
+        $tld->loadBean(new \DummyBean());
         $tld->allow_register   = true;
         $tld->tld              = '.com';
         $tld->tld_registrar_id = rand(1, 100);
@@ -1167,7 +1167,7 @@ class ServiceTest extends \BBTestCase
     public function testIsDomainAvailableEmptySldException()
     {
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $this->expectException(\Box_Exception::class);
         $this->service->isDomainAvailable($tldModel, '');
     }
@@ -1183,7 +1183,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $this->expectException(\Box_Exception::class);
         $this->service->isDomainAvailable($tldModel, 'example');
     }
@@ -1199,7 +1199,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $model = new \Model_Tld();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->allow_register = false;
 
         $this->expectException(\Box_Exception::class);
@@ -1209,7 +1209,7 @@ class ServiceTest extends \BBTestCase
     public function testSyncExpirationDate()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $result = $this->service->syncExpirationDate($model);
 
         $this->assertNull($result);
@@ -1218,7 +1218,7 @@ class ServiceTest extends \BBTestCase
     public function toApiArrayProvider()
     {
         $model = new \Model_Admin();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         return array(
             array(
@@ -1238,7 +1238,7 @@ class ServiceTest extends \BBTestCase
     public function testToApiArray($identity, $dbLoadCalled)
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $model->sld           = 'sld';
         $model->tld           = 'tld';
@@ -1268,7 +1268,7 @@ class ServiceTest extends \BBTestCase
         $model->tld_registrar_id   = rand(1, 100);
 
         $tldRegistrar = new \Model_TldRegistrar();
-        $tldRegistrar->loadBean(new \RedBeanPHP\OODBBean());
+        $tldRegistrar->loadBean(new \DummyBean());
         $tldRegistrar->name = 'ResellerClub';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -1516,7 +1516,7 @@ class ServiceTest extends \BBTestCase
     public function testTldFindOneActiveById()
     {
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
@@ -1554,7 +1554,7 @@ class ServiceTest extends \BBTestCase
     public function testTldAlreadyRegisteredExists()
     {
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
@@ -1598,7 +1598,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $model = new \Model_Tld();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = rand(1, 100);
 
         $result = $this->service->tldRm($model);
@@ -1609,7 +1609,7 @@ class ServiceTest extends \BBTestCase
     public function testTldToApiArray()
     {
         $tldRegistrar = new \Model_TldRegistrar();
-        $tldRegistrar->loadBean(new \RedBeanPHP\OODBBean());
+        $tldRegistrar->loadBean(new \DummyBean());
         $tldRegistrar->name = 'ResellerClub';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -1622,7 +1622,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $model = new \Model_Tld();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->tld                = '.com';
         $model->price_registration = rand(1, 100);
         $model->price_renew        = rand(1, 100);
@@ -1669,7 +1669,7 @@ class ServiceTest extends \BBTestCase
     public function testTldFindOneByTld()
     {
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
@@ -1739,7 +1739,7 @@ class ServiceTest extends \BBTestCase
     public function testRegistrarGetActiveRegistrar()
     {
         $tldRegistrarModel = new \Model_TldRegistrar();
-        $tldRegistrarModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldRegistrarModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1772,7 +1772,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $model = new \Model_TldRegistrar();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->config = json_encode($config);
 
         $result = $this->service->registrarGetConfiguration($model);
@@ -1784,7 +1784,7 @@ class ServiceTest extends \BBTestCase
     public function testRegistrarGetRegistrarAdapterConfig()
     {
         $model = new \Model_TldRegistrar();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->registrar = 'Custom';
 
         $result = $this->service->registrarGetRegistrarAdapterConfig($model);
@@ -1794,7 +1794,7 @@ class ServiceTest extends \BBTestCase
     public function testRegistrarGetRegistrarAdapterConfigClassNotExistsException()
     {
         $model = new \Model_TldRegistrar();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->registrar = 'Non-Existing';
 
         $this->expectException(\Box_Exception::class);
@@ -1805,7 +1805,7 @@ class ServiceTest extends \BBTestCase
     public function testRegistrarGetRegistrarAdapterConfigRegistrarNotExistException()
     {
         $model = new \Model_TldRegistrar();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->registrar = 'Non-Existing';
 
         $this->expectException(\Box_Exception::class);
@@ -1822,7 +1822,7 @@ class ServiceTest extends \BBTestCase
         $di['logger'] = $this->getMockBuilder(\Box_Log::class)->getMock();
         $serviceMock->setDi($di);
         $model = new \Model_TldRegistrar();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->registrar = 'Custom';
 
         $result = $serviceMock->registrarGetRegistrarAdapter($model);
@@ -1838,7 +1838,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $model = new \Model_TldRegistrar();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->registrar = 'Non-Existing';
 
         $this->expectException(\Box_Exception::class);
@@ -1862,7 +1862,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $model = new \Model_TldRegistrar();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id   = rand(1, 100);
         $model->name = 'ResellerClub';
 
@@ -1874,7 +1874,7 @@ class ServiceTest extends \BBTestCase
     public function testRegistrarRmHasDomainsException()
     {
         $serviceDomainModel = new \Model_ServiceDomain();
-        $serviceDomainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDomainModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
@@ -1888,7 +1888,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $model = new \Model_TldRegistrar();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = rand(1, 100);
 
         $this->expectException(\Box_Exception::class);
@@ -1912,7 +1912,7 @@ class ServiceTest extends \BBTestCase
 
 
         $model = new \Model_TldRegistrar();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id        = rand(1, 100);
         $model->name      = 'ResellerClub';
         $model->test_mode = true;
@@ -1937,7 +1937,7 @@ class ServiceTest extends \BBTestCase
         $randId = rand(1, 100);
 
         $tldModel = new \Model_Tld();
-        $tldModel->loadBean(new \RedBeanPHP\OODBBean());
+        $tldModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1990,7 +1990,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $model = new \Model_Tld();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->tld = '.com';
 
         $result = $this->service->tldUpdate($model, $data);
@@ -2007,7 +2007,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(rand(1, 100)));
 
         $model = new \Model_TldRegistrar();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->will($this->returnValue($model));
@@ -2031,7 +2031,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($newId));
 
         $model = new \Model_TldRegistrar();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->will($this->returnValue($model));
@@ -2042,7 +2042,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $model = new \Model_TldRegistrar();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->name      = 'ResellerClub';
         $model->registrar = 'ResellerClub';
         $model->test_mode = 1;
@@ -2078,7 +2078,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $model = new \Model_TldRegistrar();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->registrar = 'Custom';
 
         $result = $this->service->registrarUpdate($model, $data);
@@ -2113,7 +2113,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = rand(1, 100);
 
         $result = $this->service->updateDomain($model, $data);

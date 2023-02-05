@@ -16,7 +16,7 @@ class Api_AdminTest extends \BBTestCase
     public function testUpdate()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
             ->setMethods(array('_getService'))->getMock();
@@ -39,7 +39,7 @@ class Api_AdminTest extends \BBTestCase
     public function testUpdate_nameservers()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
             ->setMethods(array('_getService'))->getMock();
@@ -62,7 +62,7 @@ class Api_AdminTest extends \BBTestCase
     public function testUpdate_contacts()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
             ->setMethods(array('_getService'))->getMock();
@@ -85,7 +85,7 @@ class Api_AdminTest extends \BBTestCase
     public function testEnable_privacy_protection()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
             ->setMethods(array('_getService'))->getMock();
@@ -108,7 +108,7 @@ class Api_AdminTest extends \BBTestCase
     public function testDisable_privacy_protection()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
             ->setMethods(array('_getService'))->getMock();
@@ -131,7 +131,7 @@ class Api_AdminTest extends \BBTestCase
     public function testGet_transfer_code()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
             ->setMethods(array('_getService'))->getMock();
@@ -154,7 +154,7 @@ class Api_AdminTest extends \BBTestCase
     public function testLock()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
             ->setMethods(array('_getService'))->getMock();
@@ -177,7 +177,7 @@ class Api_AdminTest extends \BBTestCase
     public function testUnlock()
     {
         $model = new \Model_ServiceDomain();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $adminApiMock = $this->getMockBuilder('\Box\Mod\Servicedomain\Api\Admin')
             ->setMethods(array('_getService'))->getMock();
@@ -552,7 +552,7 @@ class Api_AdminTest extends \BBTestCase
     public function testRegistrar_delete()
     {
         $registrar = new \Model_TldRegistrar();
-        $registrar->loadBean(new \RedBeanPHP\OODBBean());
+        $registrar->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -585,7 +585,7 @@ class Api_AdminTest extends \BBTestCase
     public function testRegistrar_deleteIdNotSetException()
     {
         $registrar = new \Model_TldRegistrar();
-        $registrar->loadBean(new \RedBeanPHP\OODBBean());
+        $registrar->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->never())
@@ -618,7 +618,7 @@ class Api_AdminTest extends \BBTestCase
     public function testRegistrar_copy()
     {
         $registrar = new \Model_TldRegistrar();
-        $registrar->loadBean(new \RedBeanPHP\OODBBean());
+        $registrar->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -651,7 +651,7 @@ class Api_AdminTest extends \BBTestCase
     public function testRegistrar_copyIdNotSetException()
     {
         $registrar = new \Model_TldRegistrar();
-        $registrar->loadBean(new \RedBeanPHP\OODBBean());
+        $registrar->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->never())
@@ -684,7 +684,7 @@ class Api_AdminTest extends \BBTestCase
     public function testRegistrar_get()
     {
         $registrar = new \Model_TldRegistrar();
-        $registrar->loadBean(new \RedBeanPHP\OODBBean());
+        $registrar->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -717,7 +717,7 @@ class Api_AdminTest extends \BBTestCase
     public function testRegistrar_getIdNotSetException()
     {
         $registrar = new \Model_TldRegistrar();
-        $registrar->loadBean(new \RedBeanPHP\OODBBean());
+        $registrar->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->never())
@@ -763,7 +763,7 @@ class Api_AdminTest extends \BBTestCase
     public function testRegistrar_update()
     {
         $registrar = new \Model_TldRegistrar();
-        $registrar->loadBean(new \RedBeanPHP\OODBBean());
+        $registrar->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -796,7 +796,7 @@ class Api_AdminTest extends \BBTestCase
     public function testRegistrar_updateIdNotSetException()
     {
         $registrar = new \Model_TldRegistrar();
-        $registrar->loadBean(new \RedBeanPHP\OODBBean());
+        $registrar->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->never())

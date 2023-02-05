@@ -49,7 +49,7 @@ class Box_Database implements InjectionAwareInterface
 
     public function store($modelOrBean)
     {
-        if ($modelOrBean instanceof \RedBean_SimpleModel) {
+        if ($modelOrBean instanceof \FOSSBilling_Model) {
             $bean = $modelOrBean->unbox();
         } else {
             $bean = $modelOrBean;
@@ -141,7 +141,7 @@ class Box_Database implements InjectionAwareInterface
 
     public function trash($modelOrBean)
     {
-        if ($modelOrBean instanceof \RedBean_SimpleModel) {
+        if ($modelOrBean instanceof \FOSSBilling_Model) {
             $bean = $modelOrBean->unbox();
         } else {
             $bean = $modelOrBean;
@@ -161,7 +161,7 @@ class Box_Database implements InjectionAwareInterface
 
     public function toArray($modelOrBean)
     {
-        if ($modelOrBean instanceof \RedBean_SimpleModel) {
+        if ($modelOrBean instanceof \FOSSBilling_Model) {
             $bean = $modelOrBean->unbox();
         } else {
             $bean = $modelOrBean;
@@ -173,7 +173,7 @@ class Box_Database implements InjectionAwareInterface
      * @param string $modelName
      * @param int $id
      * @param string $message
-     * @return \RedBean_SimpleModel
+     * @return \FOSSBilling_Model
      * @throws Box_Exception
      */
     public function getExistingModelById($modelName, $id, $message = "Model :name not found in the database")

@@ -51,7 +51,7 @@ class ClientTest extends \BBTestCase
     public function testApi_key_get()
     {
         $client            = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->api_token = '16047a3e69f5245756d73b419348f0c7';
         $this->clientApi->setIdentity($client);
 

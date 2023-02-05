@@ -13,7 +13,7 @@
  */
 
 
-class Model_Product extends \RedBean_SimpleModel implements \Box\InjectionAwareInterface
+class Model_Product extends \FOSSBilling_Model implements \Box\InjectionAwareInterface
 {
     const STATUS_ENABLED    = 'enabled';
     const STATUS_DISABLED   = 'disabled';

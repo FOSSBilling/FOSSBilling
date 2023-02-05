@@ -36,7 +36,7 @@ class AdminTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $model = new \Model_Cart();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')

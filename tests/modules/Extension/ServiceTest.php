@@ -98,7 +98,7 @@ class ServiceTest extends \BBTestCase {
     public function testremoveNotExistingModules()
     {
         $model = new \Model_Extension();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->name = 'extensionName';
 
         $modMock = $this->getMockBuilder('\Box_Mod')->disableOriginalConstructor()->getMock();
@@ -164,7 +164,7 @@ class ServiceTest extends \BBTestCase {
         $model['version'] = '1';
 
         $modelFind = new \Model_Extension();
-        $modelFind->loadBean(new \RedBeanPHP\OODBBean());
+        $modelFind->loadBean(new \DummyBean());
         $modelFind->name = 'extensionName';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -214,7 +214,7 @@ class ServiceTest extends \BBTestCase {
         $model['version'] = '1';
 
         $modelFind = new \Model_Extension();
-        $modelFind->loadBean(new \RedBeanPHP\OODBBean());
+        $modelFind->loadBean(new \DummyBean());
         $modelFind->name = 'extensionName';
 
 
@@ -313,7 +313,7 @@ class ServiceTest extends \BBTestCase {
     public function testupdate()
     {
         $model = new \Model_Extension();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->type = 'mod';
         $model->name = 'testExtension';
         $model->version = '2';
@@ -341,7 +341,7 @@ class ServiceTest extends \BBTestCase {
     public function testupdateExtensionInformationException()
     {
         $model = new \Model_Extension();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->type = 'mod';
         $model->name = 'testExtension';
         $model->version = '2';
@@ -369,7 +369,7 @@ class ServiceTest extends \BBTestCase {
     public function testupdateNoNeedToUpdateException()
     {
         $model = new \Model_Extension();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->type = 'mod';
         $model->name = 'testExtension';
         $model->version = '1';
@@ -392,7 +392,7 @@ class ServiceTest extends \BBTestCase {
     public function testupdateLastestVersionException()
     {
         $model = new \Model_Extension();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->type = 'mod';
         $model->name = 'testExtension';
 
@@ -415,7 +415,7 @@ class ServiceTest extends \BBTestCase {
     public function testupdateInvalidType()
     {
         $model = new \Model_Extension();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $result = $this->service->update($model);
         $this->assertEquals(array(), $result);
@@ -424,7 +424,7 @@ class ServiceTest extends \BBTestCase {
     public function testactivate()
     {
         $ext = new \Model_Extension();
-        $ext->loadBean(new \RedBeanPHP\OODBBean());
+        $ext->loadBean(new \DummyBean());
         $ext->type = 'mod';
         $ext->name = 'testExtension';
 
@@ -466,7 +466,7 @@ class ServiceTest extends \BBTestCase {
     public function testdeactivate()
     {
         $ext = new \Model_Extension();
-        $ext->loadBean(new \RedBeanPHP\OODBBean());
+        $ext->loadBean(new \DummyBean());
         $ext->type = 'mod';
         $ext->name = 'extensionTest';
 
@@ -496,7 +496,7 @@ class ServiceTest extends \BBTestCase {
     public function testdeactivateCoreModuleException()
     {
         $ext = new \Model_Extension();
-        $ext->loadBean(new \RedBeanPHP\OODBBean());
+        $ext->loadBean(new \DummyBean());
         $ext->type = 'mod';
         $ext->name = 'extensionTest';
 
@@ -518,7 +518,7 @@ class ServiceTest extends \BBTestCase {
     public function testdeactivateUninstallException()
     {
         $ext = new \Model_Extension();
-        $ext->loadBean(new \RedBeanPHP\OODBBean());
+        $ext->loadBean(new \DummyBean());
         $ext->type = 'mod';
         $ext->name = 'extensionTest';
 
@@ -546,7 +546,7 @@ class ServiceTest extends \BBTestCase {
     public function testdeactivateExtensionHook()
     {
         $ext = new \Model_Extension();
-        $ext->loadBean(new \RedBeanPHP\OODBBean());
+        $ext->loadBean(new \DummyBean());
         $ext->type = 'hook';
         $ext->name = 'extensionTest';
 
@@ -565,7 +565,7 @@ class ServiceTest extends \BBTestCase {
     public function testuninstall()
     {
         $ext = new \Model_Extension();
-        $ext->loadBean(new \RedBeanPHP\OODBBean());
+        $ext->loadBean(new \DummyBean());
         $ext->type = 'mod';
         $ext->name = 'extensionTest';
 
@@ -824,7 +824,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $model = new \Model_Extension();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')
             ->setMethods(array('findExtension', 'activate'))
@@ -867,7 +867,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $model = new \Model_Extension();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Extension\Service')
             ->setMethods(array('findExtension', 'activate'))
@@ -899,7 +899,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $model = new \Model_ExtensionMeta();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -934,7 +934,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $model = new \Model_ExtensionMeta();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -976,7 +976,7 @@ class ServiceTest extends \BBTestCase {
             ->will($this->returnValue('encryptedConfig'));
 
         $model = new \Model_ExtensionMeta();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder(\Box_Database::class)->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('exec')

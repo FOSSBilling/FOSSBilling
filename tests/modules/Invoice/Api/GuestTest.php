@@ -36,7 +36,7 @@ class GuestTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue($model));
@@ -62,7 +62,7 @@ class GuestTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue(null));
@@ -93,7 +93,7 @@ class GuestTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue($model));
@@ -122,7 +122,7 @@ class GuestTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->will($this->returnValue(null));
@@ -148,7 +148,7 @@ class GuestTest extends \BBTestCase {
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $model = new \Model_Invoice();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->status = 'paid';
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')

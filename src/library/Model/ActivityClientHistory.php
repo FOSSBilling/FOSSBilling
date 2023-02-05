@@ -13,7 +13,7 @@
  */
 
 
-class Model_ActivityClientHistory extends RedBean_SimpleModel
+class Model_ActivityClientHistory extends FOSSBilling_Model
 {
 
 }

@@ -34,7 +34,7 @@ class ServiceTest extends \BBTestCase {
     public function testonAfterClientCalledExampleModule()
     {
         $extensionMetaModel = new \Model_ExtensionMeta();
-        $extensionMetaModel->loadBean(new \RedBeanPHP\OODBBean());
+        $extensionMetaModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

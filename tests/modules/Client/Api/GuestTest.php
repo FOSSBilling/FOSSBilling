@@ -35,7 +35,7 @@ class GuestTest extends \BBTestCase {
             ->will($this->returnValue(false));
 
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = 1;
 
         $serviceMock->expects($this->atLeastOnce())
@@ -96,7 +96,7 @@ class GuestTest extends \BBTestCase {
             ->method('checkCustomFields');
 
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())->method('isPasswordStrong');
@@ -180,7 +180,7 @@ class GuestTest extends \BBTestCase {
         );
 
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Client\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -239,10 +239,10 @@ class GuestTest extends \BBTestCase {
             method('fire');
 
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
 
         $modelPasswordReset = new \Model_ClientPasswordReset();
-        $modelPasswordReset->loadBean(new \RedBeanPHP\OODBBean());
+        $modelPasswordReset->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -319,10 +319,10 @@ class GuestTest extends \BBTestCase {
         );
 
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
 
         $modelPasswordReset = new \Model_ClientPasswordReset();
-        $modelPasswordReset->loadBean(new \RedBeanPHP\OODBBean());
+        $modelPasswordReset->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

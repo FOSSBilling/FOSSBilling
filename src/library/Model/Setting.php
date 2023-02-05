@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Model_Setting extends \RedBean_SimpleModel
+class Model_Setting extends \FOSSBilling_Model
 {
 
 }
