@@ -1,6 +1,6 @@
 {% extends "layout_public.html.twig" %}
 
-{% block meta_title %}{{ 'Log in'|trans }}{% endblock %}
+{% block meta_title %}{{ guest.system_company.name }}{{ ' - Log in'|trans }}{% endblock %}
 
 {% block body_class %}page-login{% endblock %}
 {% block body %}
