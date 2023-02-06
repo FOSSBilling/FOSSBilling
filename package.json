@@ -26,6 +26,7 @@
     "babel-register": "^6.26.0",
     "bootstrap": "^5.2.3",
     "bootstrap-markdown": "^2.10.0",
+    "cypress": "^12.5.1",
     "gulp": "^4.0.2",
     "gulp-autoprefixer": "^8.0.0",
     "gulp-cheerio": "^1.0.0",
