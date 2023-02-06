@@ -1,4 +1,4 @@
-describe('The Home Page', () => {
+describe('Huraga:Index', () => {
 
   it('successfully loads', function() {
     cy.visit('/');

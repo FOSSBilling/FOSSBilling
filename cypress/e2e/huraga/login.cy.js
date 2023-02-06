@@ -1,4 +1,4 @@
-describe('The Login Page', () => {
+describe('Huraga:Login', () => {
 
   it('successfully loads', function() {
     cy.visit('/login');

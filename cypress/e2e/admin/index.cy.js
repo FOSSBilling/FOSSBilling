@@ -1,4 +1,4 @@
-describe('The Index Page', () => {
+describe('Admin:Index', () => {
 
   it('redirects unauthorized users to the login page', function() {
     cy.visit('/admin/index');

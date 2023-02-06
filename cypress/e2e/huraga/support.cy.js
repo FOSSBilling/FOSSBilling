@@ -1,4 +1,4 @@
-describe('The Support Page', () => {
+describe('Huraga:Support', () => {
 
   it('redirects to the login page when unauthorized', function() {
     cy.visit('/support');

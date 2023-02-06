@@ -1,4 +1,4 @@
-describe('The Login Page', () => {
+describe('Admin:Login', () => {
 
   it('successfully loads', function() {
     cy.visit('/admin');
