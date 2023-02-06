@@ -13,7 +13,7 @@ Cypress.Commands.add('staffLogin', (username, password) => {
 
         cy.get('.btn').click();
 
-        cy.url().should('include', '/admin/index')
+        cy.url().should('eq', `${Cypress.config().baseUrl}/admin/index`)
       },
       {
         validate: () => {
@@ -38,7 +38,7 @@ Cypress.Commands.add('clientLogin', (username, password) => {
 
         cy.get('.btn').click();
 
-        cy.url().should('include', '/')
+        cy.url().should('eq', `${Cypress.config().baseUrl}/`)
       },
       {
         validate: () => {

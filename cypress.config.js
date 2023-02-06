@@ -4,14 +4,15 @@ module.exports = defineConfig({
   e2e: {
     baseUrl: 'http://localhost',
     experimentalStudio: true,
+    experimentalRunAllSpecs: true,
     credentials: {
       staff: {
-        email: "bb@bb.com",
-        password: "Bb123123+"
+        email: "admin@fossbilling.org",
+        password: "Admin123+"
       },
       client: {
-        email: "bb@bb.com",
-        password: "Bb123123+"
+        email: "client@fossbilling.org",
+        password: "Client123+"
       }
     }
   },
