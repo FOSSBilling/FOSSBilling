@@ -1,9 +1,14 @@
 {
   "name": "fossbilling",
-  "version": "0.1.0",
+  "version": "0.2.10",
   "author": "FOSSBilling Team",
   "homepage": "https://fossbilling.org",
   "license": "Apache License 2.0",
+  "scripts": {
+    "build": "gulp build",
+    "watch": "gulp watch",
+    "cypress:open": "cypress open"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/FOSSBilling/FOSSBilling.git"
@@ -40,10 +45,6 @@
     "jquery": "^3.6.3",
     "upath": "^2.0.1",
     "yargs": "^17.6.2"
-  },
-  "scripts": {
-    "build": "gulp build",
-    "watch": "gulp watch"
   },
   "config": {
     "platform": {
