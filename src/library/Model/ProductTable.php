@@ -60,7 +60,7 @@ class Model_ProductTable implements \Box\InjectionAwareInterface
     {
         $code = $period->getCode();
         try {
-            return match ($$code) {
+            return match ($code) {
                 '1W'  => 'w',
                 '1M'  => 'm',
                 '3M'  => 'q',
