@@ -44,7 +44,7 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue($resultSet));
 
         $adminModel = new \Model_Admin();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -247,7 +247,7 @@ class AdminTest extends \BBTestCase {
         $data['id'] = 1;
 
         $staffModel = new \Model_Admin();
-        $staffModel->loadBean(new \RedBeanPHP\OODBBean());
+        $staffModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Staff\Service')->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -287,7 +287,7 @@ class AdminTest extends \BBTestCase {
 
 
         $staffModel = new \Model_Admin();
-        $staffModel->loadBean(new \RedBeanPHP\OODBBean());
+        $staffModel->loadBean(new \DummyBean());
 
         $validatorMock = $this->getMockBuilder('\Box_Validate')->getMock();
         $validatorMock->expects($this->atLeastOnce())
@@ -485,7 +485,7 @@ class AdminTest extends \BBTestCase {
             ->will($this->returnValue($resultSet));
 
         $model = new \Model_ActivityAdminHistory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')

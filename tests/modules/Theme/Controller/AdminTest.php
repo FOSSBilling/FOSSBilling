@@ -134,7 +134,7 @@ class AdminTest extends \BBTestCase {
         });
 	    $di['events_manager'] = $eventMock;
         $adminModel = new \Model_Client();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
         $di['api_admin'] = new \Api_Handler($adminModel);
 
         $controller = new \Box\Mod\Theme\Controller\Admin();
@@ -191,7 +191,7 @@ class AdminTest extends \BBTestCase {
         });
 	    $di['events_manager'] = $eventMock;
         $adminModel = new \Model_Client();
-        $adminModel->loadBean(new \RedBeanPHP\OODBBean());
+        $adminModel->loadBean(new \DummyBean());
         $di['api_admin'] = new \Api_Handler($adminModel);
 
         $controller = new \Box\Mod\Theme\Controller\Admin();

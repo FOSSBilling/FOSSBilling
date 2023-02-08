@@ -42,7 +42,7 @@ class Admin implements \Box\InjectionAwareInterface
             'group' => [
                 'index' => 200,
                 'location' => 'client',
-                'label' => 'Clients',
+                'label' => __trans('Clients'),
                 'uri' => $this->di['url']->adminLink('client'),
                 'class' => 'contacts',
                 'sprite_class' => 'dark-sprite-icon sprite-users',
@@ -50,14 +50,14 @@ class Admin implements \Box\InjectionAwareInterface
             'subpages' => [
                 [
                     'location' => 'client',
-                    'label' => 'Overview',
+                    'label' => __trans('Overview'),
                     'uri' => $this->di['url']->adminLink('client'),
                     'index' => 100,
                     'class' => '',
                 ],
                 [
                     'location' => 'client',
-                    'label' => 'Advanced search',
+                    'label' => __trans('Advanced search'),
                     'uri' => $this->di['url']->adminLink('client', ['show_filter' => 1]),
                     'index' => 200,
                     'class' => '',
@@ -65,7 +65,7 @@ class Admin implements \Box\InjectionAwareInterface
                 [
                     'location' => 'activity',
                     'index' => 900,
-                    'label' => 'Client login history',
+                    'label' => __trans('Client login history'),
                     'uri' => $this->di['url']->adminLink('client/logins'),
                     'class' => '',
                 ],

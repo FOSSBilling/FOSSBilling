@@ -57,7 +57,6 @@ return (new PhpCsFixer\Config())
                 'modules/Spamchecker'
             ])
             ->notPath(
-                'rb.php',
                 'config-sample.php'
             )
     )

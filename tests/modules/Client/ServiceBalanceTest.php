@@ -20,7 +20,7 @@ class ServiceBalanceTest extends \BBTestCase
         $di = new \Box_Di();
 
         $clientBalance = new \Model_ClientBalance();
-        $clientBalance->loadBean(new \RedBeanPHP\OODBBean());
+        $clientBalance->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -39,7 +39,7 @@ class ServiceBalanceTest extends \BBTestCase
         $service->setDi($di);
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $description = 'Charged for product';
         $amount = 5.55;
@@ -62,7 +62,7 @@ class ServiceBalanceTest extends \BBTestCase
         $service = new \Box\Mod\Client\ServiceBalance();
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $description = '    ';
         $amount = 5.55;
@@ -81,7 +81,7 @@ class ServiceBalanceTest extends \BBTestCase
         $service = new \Box\Mod\Client\ServiceBalance();
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $description = 'Charged';
         $amount = "5.5adadzxc";

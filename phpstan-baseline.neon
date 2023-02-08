@@ -1,26 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Caught class Stripe\\\\Error\\\\ApiConnection not found\\.$#"
-			count: 1
-			path: src/library/Payment/Adapter/Stripe.php
-
-		-
-			message: "#^Caught class Stripe\\\\Error\\\\Authentication not found\\.$#"
-			count: 1
-			path: src/library/Payment/Adapter/Stripe.php
-
-		-
-			message: "#^Caught class Stripe\\\\Error\\\\Card not found\\.$#"
-			count: 1
-			path: src/library/Payment/Adapter/Stripe.php
-
-		-
-			message: "#^Caught class Stripe\\\\Error\\\\InvalidRequest not found\\.$#"
-			count: 1
-			path: src/library/Payment/Adapter/Stripe.php
-
-		-
 			message: "#^Call to an undefined method Payment_AdapterAbstract\\:\\:init\\(\\)\\.$#"
 			count: 1
 			path: src/library/Payment/AdapterAbstract.php

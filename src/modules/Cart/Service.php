@@ -438,7 +438,8 @@ class Service implements InjectionAwareInterface
                 'params' => [
                     'ip' => $this->di['request']->getClientAddress(),
                     'client_id' => $client->id,
-                    'cart_id' => $cart->id, ],
+                    'cart_id' => $cart->id,
+                ],
             ]
         );
 

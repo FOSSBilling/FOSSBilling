@@ -43,7 +43,7 @@ class Admin implements \Box\InjectionAwareInterface
                 [
                     'location' => 'system',
                     'index' => 150,
-                    'label' => 'Domain registration',
+                    'label' => __trans('Domain registration'),
                     'uri' => $this->di['url']->adminLink('servicedomain'),
                     'class' => '',
                 ],

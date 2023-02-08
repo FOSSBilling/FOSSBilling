@@ -88,13 +88,13 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($productPaymentArray));
 
         $model = new \Model_Product();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->product_category_id = 1;
         $model->product_payment_id  = 2;
         $model->config              = '{}';
 
         $modelProductCategory = new \Model_ProductCategory();
-        $modelProductCategory->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProductCategory->loadBean(new \DummyBean());
         $modelProductCategory->type = 'free';
 
         $modelProductPayment = new \Model_ProductPayment();
@@ -191,10 +191,10 @@ class ServiceTest extends \BBTestCase
             ->method('checkLimits');
 
         $modelPayment = new \Model_ProductPayment();
-        $modelPayment->loadBean(new \RedBeanPHP\OODBBean());
+        $modelPayment->loadBean(new \DummyBean());
 
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
 
         $newProductId = 1;
 
@@ -248,7 +248,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
 
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionMessage('Pricing type is required');
@@ -258,7 +258,7 @@ class ServiceTest extends \BBTestCase
     public function testupdateProduct()
     {
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Product\Service')
             ->setMethods(array('getPaymentTypes'))
@@ -305,7 +305,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $modelProductPayment = new \Model_ProductPayment();
-        $modelProductPayment->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProductPayment->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -345,7 +345,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -369,7 +369,7 @@ class ServiceTest extends \BBTestCase
     public function testupdateConfig()
     {
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
         $modelProduct->config = '{"settings":5,"max":"10"}';
 
 
@@ -433,10 +433,10 @@ class ServiceTest extends \BBTestCase
         $newProductId = 1;
 
         $modelPayment = new \Model_ProductPayment();
-        $modelPayment->loadBean(new \RedBeanPHP\OODBBean());
+        $modelPayment->loadBean(new \DummyBean());
 
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -511,7 +511,7 @@ class ServiceTest extends \BBTestCase
     public function testupdateCategory()
     {
         $model = new \Model_ProductCategory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -542,7 +542,7 @@ class ServiceTest extends \BBTestCase
             ->method('checkLimits');
 
         $model = new \Model_ProductCategory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -569,10 +569,10 @@ class ServiceTest extends \BBTestCase
     public function testremoveProductCategoryCategoryHasProductsException()
     {
         $modelProductCategory = new \Model_ProductCategory();
-        $modelProductCategory->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProductCategory->loadBean(new \DummyBean());
 
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -593,7 +593,7 @@ class ServiceTest extends \BBTestCase
     public function testremoveProductCategory()
     {
         $modelProductCategory = new \Model_ProductCategory();
-        $modelProductCategory->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProductCategory->loadBean(new \DummyBean());
 
         $modelProduct = null;
 
@@ -643,7 +643,7 @@ class ServiceTest extends \BBTestCase
             ->method('checkLimits');
 
         $model = new \Model_Promo();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $newPromoId = 1;
 
@@ -672,7 +672,7 @@ class ServiceTest extends \BBTestCase
     public function testtoPromoApiArray()
     {
         $model = new \Model_Promo();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->products = '{}';
         $model->periods  = '{}';
 
@@ -694,7 +694,7 @@ class ServiceTest extends \BBTestCase
     public function testupdatePromo()
     {
         $model = new \Model_Promo();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $data = array(
             'code'            => 'GO',
@@ -732,7 +732,7 @@ class ServiceTest extends \BBTestCase
     public function testdeletePromo()
     {
         $model = new \Model_Promo();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -774,10 +774,10 @@ class ServiceTest extends \BBTestCase
     public function testtoProductCategoryApiArray()
     {
         $model = new \Model_ProductCategory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
         $modelProduct->type  = 'custom';
         $categoryProductsArr = array(
             $modelProduct
@@ -818,10 +818,10 @@ class ServiceTest extends \BBTestCase
     public function testtoProductCategoryApiArray_StartingFromValue_NotZero()
     {
         $model = new \Model_ProductCategory();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $modelProduct->loadBean(new \DummyBean());
         $modelProduct->type  = 'custom';
         $categoryProductsArr = array(
             $modelProduct,
@@ -921,11 +921,11 @@ class ServiceTest extends \BBTestCase
     public function testgetStartingFromPriceTypeFree()
     {
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->product_payment_id = 1;
 
         $productPaymentModel = new \Model_ProductPayment();
-        $productPaymentModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productPaymentModel->loadBean(new \DummyBean());
         $productPaymentModel->type = 'free';
 
 
@@ -947,7 +947,7 @@ class ServiceTest extends \BBTestCase
     public function testgetStartingFromPricePaymentNotDefined()
     {
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
 
         $result = $this->service->getStartingFromPrice($productModel);
 
@@ -957,7 +957,7 @@ class ServiceTest extends \BBTestCase
     public function testgetStartingFromPrice_DomainType()
     {
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->type = Service::DOMAIN;
         $productModel->product_payment_id = 1;
 
@@ -979,7 +979,7 @@ class ServiceTest extends \BBTestCase
     public function testgetUpgradablePairs()
     {
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->upgrades = '{}';
 
         $expected = array();
@@ -1026,10 +1026,10 @@ class ServiceTest extends \BBTestCase
     public function testgetCategoryProducts()
     {
         $productCategoryModel = new \Model_ProductCategory();
-        $productCategoryModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productCategoryModel->loadBean(new \DummyBean());
 
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1047,7 +1047,7 @@ class ServiceTest extends \BBTestCase
     public function testtoProductPaymentApiArray()
     {
         $productPaymentModel = new \Model_ProductPayment();
-        $productPaymentModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productPaymentModel->loadBean(new \DummyBean());
 
         $result = $this->service->toProductPaymentApiArray($productPaymentModel);
         $this->assertIsArray($result);
@@ -1056,7 +1056,7 @@ class ServiceTest extends \BBTestCase
     public function testgetStartingPrice()
     {
         $productPaymentModel = new \Model_ProductPayment();
-        $productPaymentModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productPaymentModel->loadBean(new \DummyBean());
         $productPaymentModel->type = 'recurrent';
 
         $minPrice = 1;
@@ -1147,11 +1147,11 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array('2' => 'Hossting')));
 
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->id = 1;
 
         $newProductModel = new \Model_Product();
-        $newProductModel->loadBean(new \RedBeanPHP\OODBBean());
+        $newProductModel->loadBean(new \DummyBean());
         $newProductModel->id = 2;
 
         $result = $serviceMock->canUpgradeTo($productModel, $newProductModel);
@@ -1168,11 +1168,11 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array('4' => 'Domain')));
 
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->id = 1;
 
         $newProductModel = new \Model_Product();
-        $newProductModel->loadBean(new \RedBeanPHP\OODBBean());
+        $newProductModel->loadBean(new \DummyBean());
         $newProductModel->id = 2;
 
         $result = $serviceMock->canUpgradeTo($productModel, $newProductModel);
@@ -1182,11 +1182,11 @@ class ServiceTest extends \BBTestCase
     public function testcanUpgradeTo_SameProducts()
     {
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->id = 1;
 
         $newProductModel = new \Model_Product();
-        $newProductModel->loadBean(new \RedBeanPHP\OODBBean());
+        $newProductModel->loadBean(new \DummyBean());
         $newProductModel->id = 1;
 
         $result = $this->service->canUpgradeTo($productModel, $newProductModel);

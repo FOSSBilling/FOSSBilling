@@ -42,14 +42,14 @@ class Admin implements \Box\InjectionAwareInterface
             'group' => [
                 'index' => 600,
                 'location' => 'system',
-                'label' => 'Configuration',
+                'label' => __trans('Configuration'),
                 'class' => 'settings',
                 'sprite_class' => 'dark-sprite-icon sprite-cog3',
             ],
             'subpages' => [
                 [
                     'location' => 'system',
-                    'label' => 'Settings',
+                    'label' => __trans('Settings'),
                     'index' => 100,
                     'uri' => $this->di['url']->adminLink('system'),
                     'class' => '',

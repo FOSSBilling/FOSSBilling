@@ -13,7 +13,7 @@
  */
 
 
-class Model_ServiceMembership extends RedBean_SimpleModel
+class Model_ServiceMembership extends FOSSBilling_Model
 {
 
 }

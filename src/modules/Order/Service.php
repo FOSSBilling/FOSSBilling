@@ -43,19 +43,19 @@ class Service implements InjectionAwareInterface
         return array(
             'pending_setup' => array(
                 'path' => '/order?status=pending_setup',
-                'label' => 'Orders pending setup',
+                'label' => __trans('Orders pending setup'),
             ),
             'active' => array(
                 'path' => '/order?status=active',
-                'label' => 'Active orders',
+                'label' => __trans('Active orders'),
             ),
             'suspended' => array(
                 'path' => '/order?status=suspended',
-                'label' => 'Suspended orders',
+                'label' => __trans('Suspended orders'),
             ),
             'all' => array(
                 'path' => '/order',
-                'label' => 'All orders',
+                'label' => __trans('All orders'),
             ),
         );
     }
@@ -238,37 +238,16 @@ class Service implements InjectionAwareInterface
     public function getOrderService(\Model_ClientOrder $order)
     {
         if (null !== $order->service_id) {
-            // @deprecated
-            // @todo remove this when doctrine is removed
-            $core_services = [
-                \Model_ProductTable::CUSTOM,
-                \Model_ProductTable::LICENSE,
-                \Model_ProductTable::DOWNLOADABLE,
-                \Model_ProductTable::HOSTING,
-                \Model_ProductTable::MEMBERSHIP,
-                \Model_ProductTable::DOMAIN,
-            ];
-            if (in_array($order->service_type, $core_services)) {
-                $repo_class = $this->_getServiceClassName($order);
+            $service = $this->di['db']->findOne(
+                'service_' . $order->service_type,
+                'id = :id',
+                [':id' => $order->service_id]
+            );
 
-                return $this->di['db']->load($repo_class, $order->service_id);
-            } else {
-                $service = $this->di['db']->findOne('service_' . $order->service_type,
-                    'id = :id',
-                    [':id' => $order->service_id]);
-
-                return $service;
-            }
+            return $service;
         }
 
         return null;
-    }
-
-    protected function _getServiceClassName(\Model_ClientOrder $order)
-    {
-        $s = $this->di['tools']->to_camel_case($order->service_type, true);
-
-        return 'Service' . ucfirst($s);
     }
 
     public function getServiceOrder($service)
@@ -788,38 +767,21 @@ class Service implements InjectionAwareInterface
     protected function _callOnService(\Model_ClientOrder $order, $action)
     {
         $repo = $this->di['mod_service']('service' . $order->service_type);
-        // @deprecated
-        // @todo remove this when doctrine is removed
-        $core_services = [
-            \Model_ProductTable::CUSTOM,
-            \Model_ProductTable::LICENSE,
-            \Model_ProductTable::DOWNLOADABLE,
-            \Model_ProductTable::HOSTING,
-            \Model_ProductTable::MEMBERSHIP,
-            \Model_ProductTable::DOMAIN,
-        ];
-
-        if (in_array($order->service_type, $core_services)) {
-            $m = 'action_' . $action;
-            if (!method_exists($repo, $m) || !is_callable([$repo, $m])) {
-                throw new \Box_Exception('Service ' . $order->service_type . ' do not support ' . $m);
-            }
-
-            return $repo->$m($order);
-        } else {
-            // @new logic for services
-            $o = $this->di['db']->findOne('client_order',
-                'id = :id',
-                [':id' => $order->id]);
-            $service = null;
-            $sdbname = 'service_' . $order->service_type;
-            if ($order->service_id) {
-                $service = $this->di['db']->load($sdbname, $order->service_id);
-            }
-            if (method_exists($repo, $action) && is_callable([$repo, $action])) {
-                return $repo->$action($o, $service);
-            }
+        // @new logic for services
+        $o = $this->di['db']->findOne(
+            'client_order',
+            'id = :id',
+            [':id' => $order->id]
+        );
+        $service = null;
+        $sdbname = 'service_' . $order->service_type;
+        if ($order->service_id) {
+            $service = $this->di['db']->load($sdbname, $order->service_id);
         }
+        if (method_exists($repo, $action) && is_callable([$repo, $action])) {
+            return $repo->$action($o, $service);
+        }
+
         error_log(sprintf('Service %s does not support action %s', $order->service_type, $action));
 
         return null;

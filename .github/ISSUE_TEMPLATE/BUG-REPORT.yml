@@ -1,0 +1,91 @@
+name: Bug report
+description: Create a report to help us improve FOSSBilling
+title: "[Bug]"
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please ensure that there is no existing issue for your bug, and fill out the title before continuing.
+        **Important: DO NOT include any private/sensitive information such as email addresses, passwords, IP addresses, or hostnames.**
+
+  - type: textarea
+    id: describe
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what you're facing! Include as much detail as possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: What steps did you take when the bug occured? Help us reproduce it!
+      placeholder: |
+        Steps to reproduce the behavior:
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+      placeholder: What is the expected behavior of the action you took? Help us understand!
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain your problem.
+      placeholder: Use the "Attach an image or video" button or link your images manually using the Markdown syntax, if you're familiar with it.
+
+  - type: input
+    id: version
+    attributes:
+      label: FOSSBilling version
+      description: Please fill out the version of FOSSBilling you encountered this in.
+      placeholder: x.x.x (the latest stable release) / preview (the latest preview)
+    validations:
+      required: true
+
+  - type: input
+    id: module
+    attributes:
+      label: Module version
+      description: If the bug is related to a module, fill out the version of the module you encountered this in.
+
+  - type: dropdown
+    id: device
+    attributes:
+      label: Device
+      description: Please select the type of device you encountered the issue in.
+      multiple: true
+      options:
+        - Desktop
+        - Smartphone
+
+  - type: textarea
+    id: info
+    attributes:
+      label: Information
+      description: Please complete the following information.
+      placeholder: |
+        - Device: [e.g. iPhone 6] (only applicable for smartphones)
+        - OS: [e.g. Fedora 37]
+        - Browser [e.g. chrome, safari]
+        - Version [e.g. 22]
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add any other context about the problem here.

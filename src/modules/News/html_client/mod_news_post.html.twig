@@ -35,7 +35,7 @@
             </header>
             <section>
                 {% if post.image %}<img src="{{ post.image }}" alt="{{ post.title }}">{% endif %}
-                {{ post.content|bbmd }}
+                {{ post.content|markdown }}
                 {# if post.tags %}Tags: {{ post.tags|join(', ') }}{% endif #}
 
                 {% if guest.extension_is_on({ "mod": "comment" }) %}{% include "mod_comment_block.html.twig" %}{% endif %}

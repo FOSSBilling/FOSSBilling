@@ -180,14 +180,13 @@
                 <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}"/>
                 <div class="card-body">
                     <h5>{{ 'Choose which addons you would like to offer with'|trans }} {{ product.title }}</h5>
-                </div>
+                </div><input type="hidden" name="addons[]" value="">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <tbody>
                         {% for addon_id, addon_title in admin.product_addon_get_pairs %}
                         <tr>
                             <td class="w-1">
-                                <input type="hidden" name="addons[{{ addon_id }}]" value="0">
-                                <input class="form-check-input" type="checkbox" name="addons[{{ addon_id }}]" value="1" id="addon_{{ addon_id }}"{% if addon_id in assigned_addons %} checked{% endif %}>
+                                <input class="form-check-input" type="checkbox" name="addons[]" value="{{ addon_id }}" id="addon_{{ addon_id }}"{% if addon_id in assigned_addons %} checked{% endif %}>
                             </td>
                             <td>
                                 <label for="addon_{{ addon_id }}">{{ addon_title }}</label>
@@ -230,13 +229,25 @@
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Product Upgrades'|trans }}</label>
                         <div class="col">
+                        <input type="hidden" name="upgrades[]" value=""/>
                             {% set products = admin.product_get_pairs %}
-                            <input type="hidden" name="upgrades">
-                            <select name="upgrades[]" multiple="multiple" class="form-select" size="{{ products|length }}">
-                                {% for id,ptitle in products %}
-                                <option value="{{ id }}"{% if product.upgrades[id] %} selected{% endif %}>{{ ptitle }}</option>
-                                {% endfor %}
-                            </select>
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                                <tbody>
+                                    {% set products = admin.product_get_pairs %}
+                                    {% for id,ptitle in products %}
+                                    {% if id != product.id %}
+                                    <tr>
+                                        <td class="w-1">
+                                            <input class="form-check-input" type="checkbox" name="upgrades[]" value="{{id}}" id="upgrades{{ id }}" {% if product.upgrades[id] %} checked{% endif %}>
+                                        </td>
+                                        <td>
+                                            <label for="upgrades[{{ id }}]">{{ ptitle }}</label>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 

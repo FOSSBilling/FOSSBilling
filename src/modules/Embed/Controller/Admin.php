@@ -42,7 +42,7 @@ class Admin implements \Box\InjectionAwareInterface
             'subpages' => [
                 [
                     'location' => 'extensions',
-                    'label' => 'Embed and integrate',
+                    'label' => __trans('Embed and integrate'),
                     'index' => 1500,
                     'uri' => $this->di['url']->adminLink('embed'),
                     'class' => '',

@@ -43,7 +43,7 @@ class ServiceTest extends \BBTestCase
         $session_id = 'rrcpqo7tkjh14d2vmf0car64k7';
 
         $model = new \Model_Cart();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->session_id = $session_id;
 
         $dbMock = $this->getMockBuilder('Box_Database')->getMock();
@@ -93,7 +93,7 @@ class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Cart\Service();
 
         $curencyModel = new \Model_Currency();
-        $curencyModel->loadBean(new \RedBeanPHP\OODBBean());
+        $curencyModel->loadBean(new \DummyBean());
         $curencyModel->id = rand(0, 1000);
 
         $session_id = 'rrcpqo7tkjh14d2vmf0car64k7';
@@ -103,7 +103,7 @@ class ServiceTest extends \BBTestCase
             ->method('findOne')
             ->will($this->returnValue($model));
         $modelCart = new \Model_Cart();
-        $modelCart->loadBean(new \RedBeanPHP\OODBBean());
+        $modelCart->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->will($this->returnValue($modelCart));
@@ -147,7 +147,7 @@ class ServiceTest extends \BBTestCase
     public function testIsStockAvailable()
     {
         $product = new \Model_Product();
-        $product->loadBean(new \RedBeanPHP\OODBBean());
+        $product->loadBean(new \DummyBean());
         $product->stock_control     = true;
         $product->quantity_in_stock = 5;
 
@@ -158,7 +158,7 @@ class ServiceTest extends \BBTestCase
     public function testIsStockAvailableNoStockControl()
     {
         $product = new \Model_Product();
-        $product->loadBean(new \RedBeanPHP\OODBBean());
+        $product->loadBean(new \DummyBean());
         $product->stock_control     = false;
         $product->quantity_in_stock = 5;
 
@@ -240,7 +240,7 @@ class ServiceTest extends \BBTestCase
     public function testRemoveProduct()
     {
         $cartProduct = new \Model_CartProduct();
-        $cartProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $cartProduct->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -259,7 +259,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $result = $this->service->removeProduct($cart, rand(1, 100));
         $this->assertTrue($result);
     }
@@ -280,7 +280,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $this->expectException(\Box_Exception::class);
         $result = $this->service->removeProduct($cart, rand(1, 100));
         $this->assertTrue($result);
@@ -294,10 +294,10 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(rand(1, 100)));
 
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
 
         $currency = new \Model_Currency();
-        $currency->loadBean(new \RedBeanPHP\OODBBean());
+        $currency->loadBean(new \DummyBean());
 
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
@@ -322,7 +322,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(rand(1, 100)));
 
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
 
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
@@ -342,7 +342,7 @@ class ServiceTest extends \BBTestCase
 
 
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
 
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
@@ -364,11 +364,11 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(array(new \Model_CartProduct(), new \Model_CartProduct())));
 
         $promo = new \Model_Promo();
-        $promo->loadBean(new \RedBeanPHP\OODBBean());
+        $promo->loadBean(new \DummyBean());
         $promo->id = 2;
 
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->promo_id = 1;
 
         $di           = new \Box_Di();
@@ -394,11 +394,11 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(false));
 
         $promo = new \Model_Promo();
-        $promo->loadBean(new \RedBeanPHP\OODBBean());
+        $promo->loadBean(new \DummyBean());
         $promo->id = 5;
 
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->promo_id = 5;
 
         $di           = new \Box_Di();
@@ -423,11 +423,11 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $promo = new \Model_Promo();
-        $promo->loadBean(new \RedBeanPHP\OODBBean());
+        $promo->loadBean(new \DummyBean());
         $promo->id = 2;
 
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->promo_id = 1;
 
         $di           = new \Box_Di();
@@ -451,7 +451,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
 
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
@@ -472,11 +472,11 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $promo = new \Model_Promo();
-        $promo->loadBean(new \RedBeanPHP\OODBBean());
+        $promo->loadBean(new \DummyBean());
         $promo->once_per_client = true;
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $di           = new \Box_Di();
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
@@ -499,11 +499,11 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(rand(1, 100)));
 
         $promo = new \Model_Promo();
-        $promo->loadBean(new \RedBeanPHP\OODBBean());
+        $promo->loadBean(new \DummyBean());
         $promo->once_per_client = true;
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $di           = new \Box_Di();
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
@@ -525,10 +525,10 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $promo = new \Model_Promo();
-        $promo->loadBean(new \RedBeanPHP\OODBBean());
+        $promo->loadBean(new \DummyBean());
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $di           = new \Box_Di();
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
@@ -548,10 +548,10 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $promo = new \Model_Promo();
-        $promo->loadBean(new \RedBeanPHP\OODBBean());
+        $promo->loadBean(new \DummyBean());
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $di           = new \Box_Di();
         $di['logger'] = $this->getMockBuilder('Box_Log')->getMock();
@@ -564,24 +564,24 @@ class ServiceTest extends \BBTestCase
     public function promoCanBeAppliedProvider()
     {
         $promo1 = new \Model_Promo();
-        $promo1->loadBean(new \RedBeanPHP\OODBBean());
+        $promo1->loadBean(new \DummyBean());
         $promo1->active = false;
 
         $promo2 = new \Model_Promo();
-        $promo2->loadBean(new \RedBeanPHP\OODBBean());
+        $promo2->loadBean(new \DummyBean());
         $promo2->active  = true;
         $promo2->maxuses = 5;
         $promo2->used    = 5;
 
         $promo3 = new \Model_Promo();
-        $promo3->loadBean(new \RedBeanPHP\OODBBean());
+        $promo3->loadBean(new \DummyBean());
         $promo3->active   = true;
         $promo3->maxuses  = 10;
         $promo3->used     = 5;
         $promo3->start_at = date("c", strtotime("tomorrow"));
 
         $promo4 = new \Model_Promo();
-        $promo4->loadBean(new \RedBeanPHP\OODBBean());
+        $promo4->loadBean(new \DummyBean());
         $promo4->active   = true;
         $promo4->maxuses  = 10;
         $promo4->used     = 5;
@@ -589,7 +589,7 @@ class ServiceTest extends \BBTestCase
         $promo4->end_at   = date("c", strtotime("yesterday"));
 
         $promo5 = new \Model_Promo();
-        $promo5->loadBean(new \RedBeanPHP\OODBBean());
+        $promo5->loadBean(new \DummyBean());
         $promo5->active   = true;
         $promo5->maxuses  = 10;
         $promo5->used     = 5;
@@ -637,7 +637,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
 
         $result = $this->service->getCartProducts($cart);
         $this->assertIsArray($result);
@@ -647,11 +647,11 @@ class ServiceTest extends \BBTestCase
     public function testCheckoutCart()
     {
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->promo_id = rand(1, 100);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
             ->setMethods(array('createFromCart', 'isClientAbleToUsePromo', 'rm'))->getMock();
@@ -673,11 +673,11 @@ class ServiceTest extends \BBTestCase
 
 
         $invoice = new \Model_Invoice();
-        $invoice->loadBean(new \RedBeanPHP\OODBBean());
+        $invoice->loadBean(new \DummyBean());
         $invoice->hash = sha1('str');
 
         $promo = new \Model_Promo();
-        $promo->loadBean(new \RedBeanPHP\OODBBean());
+        $promo->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -685,7 +685,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($promo));
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $di                   = new \Box_Di();
         $di['events_manager'] = $eventMock;
@@ -709,11 +709,11 @@ class ServiceTest extends \BBTestCase
     public function testCheckoutCartClientIsNotAbleToUsePromoException()
     {
         $cart = new \Model_Cart();
-        $cart->loadBean(new \RedBeanPHP\OODBBean());
+        $cart->loadBean(new \DummyBean());
         $cart->promo_id = rand(1, 100);
 
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
             ->setMethods(array('isClientAbleToUsePromo'))->getMock();
@@ -727,7 +727,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue(new \Model_Promo()));
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
 
         $di           = new \Box_Di();
         $di['db']     = $dbMock;
@@ -747,7 +747,7 @@ class ServiceTest extends \BBTestCase
     public function testUsePromo()
     {
         $promo = new \Model_Promo();
-        $promo->loadBean(new \RedBeanPHP\OODBBean());
+        $promo->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -766,7 +766,7 @@ class ServiceTest extends \BBTestCase
     public function testFindActivePromoByCode()
     {
         $promo = new \Model_Promo();
-        $promo->loadBean(new \RedBeanPHP\OODBBean());
+        $promo->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -785,10 +785,10 @@ class ServiceTest extends \BBTestCase
     public function testaddItemm_RecurringPaymentPeriodParamMissing()
     {
         $cartModel = new \Model_Cart();
-        $cartModel->loadBean(new \RedBeanPHP\OODBBean());
+        $cartModel->loadBean(new \DummyBean());
 
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->type = 'Custom';
 
         $data = array();
@@ -824,10 +824,10 @@ class ServiceTest extends \BBTestCase
     public function testaddItemm_RecurringPaymentPeriodIsNotEnabled()
     {
         $cartModel = new \Model_Cart();
-        $cartModel->loadBean(new \RedBeanPHP\OODBBean());
+        $cartModel->loadBean(new \DummyBean());
 
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->type = 'hosting';
 
         $data = array('period' => '1W');
@@ -867,10 +867,10 @@ class ServiceTest extends \BBTestCase
     public function testaddItemm_OutOfStock()
     {
         $cartModel = new \Model_Cart();
-        $cartModel->loadBean(new \RedBeanPHP\OODBBean());
+        $cartModel->loadBean(new \DummyBean());
 
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->type = 'hosting';
 
         $data = array();
@@ -908,10 +908,10 @@ class ServiceTest extends \BBTestCase
     public function testaddItemm_TypeHosting()
     {
         $cartModel = new \Model_Cart();
-        $cartModel->loadBean(new \RedBeanPHP\OODBBean());
+        $cartModel->loadBean(new \DummyBean());
 
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->type = 'hosting';
 
         $data = array();
@@ -921,7 +921,7 @@ class ServiceTest extends \BBTestCase
             ->method('fire');
 
         $productDomainModel = new \Model_ProductDomain();
-        $productDomainModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productDomainModel->loadBean(new \DummyBean());
         $domainProduct = array('config' => array(), 'product' => $productDomainModel );
 
         $serviceHostingServiceMock = $this->getMockBuilder('\Box\Mod\Servicehosting\Service')->getMock();
@@ -962,10 +962,10 @@ class ServiceTest extends \BBTestCase
     public function testaddItemm_TypeLicense()
     {
         $cartModel = new \Model_Cart();
-        $cartModel->loadBean(new \RedBeanPHP\OODBBean());
+        $cartModel->loadBean(new \DummyBean());
 
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->type = 'license';
 
         $data = array();
@@ -1018,10 +1018,10 @@ class ServiceTest extends \BBTestCase
     public function testaddItemm_TypeCustom()
     {
         $cartModel = new \Model_Cart();
-        $cartModel->loadBean(new \RedBeanPHP\OODBBean());
+        $cartModel->loadBean(new \DummyBean());
 
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->type = 'custom';
 
         $data = array();
@@ -1050,7 +1050,7 @@ class ServiceTest extends \BBTestCase
             ->method('toArray')
             ->will($this->returnValue(array()));
         $cartProduct = new \Model_CartProduct();
-        $cartProduct->loadBean(new \RedBeanPHP\OODBBean());
+        $cartProduct->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->will($this->returnValue($cartProduct));
@@ -1075,10 +1075,10 @@ class ServiceTest extends \BBTestCase
     public function testtoApiArray()
     {
         $cartModel = new \Model_Cart();
-        $cartModel->loadBean(new \RedBeanPHP\OODBBean());
+        $cartModel->loadBean(new \DummyBean());
 
         $cartProductModel = new \Model_CartProduct();
-        $cartProductModel->loadBean(new \RedBeanPHP\OODBBean());
+        $cartProductModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Cart\Service')
             ->setMethods(array('getCartProducts', 'cartProductToApiArray'))
@@ -1097,7 +1097,7 @@ class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $currencyModel = new \Model_Currency();
-        $currencyModel->loadBean(new \RedBeanPHP\OODBBean());
+        $currencyModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
             ->will($this->returnValue($currencyModel));
@@ -1133,20 +1133,20 @@ class ServiceTest extends \BBTestCase
          * @TODO Need to transfer functions from CartProductTable;
          */
         $cartProductModel = new \Model_CartProduct();
-        $cartProductModel->loadBean(new \RedBeanPHP\OODBBean());
+        $cartProductModel->loadBean(new \DummyBean());
     }
 
     public function testgetProductDiscount()
     {
         $cartProductModel = new \Model_CartProduct();
-        $cartProductModel->loadBean(new \RedBeanPHP\OODBBean());
+        $cartProductModel->loadBean(new \DummyBean());
 
         $modelCart = new \Model_Cart();
-        $modelCart->loadBean(new \RedBeanPHP\OODBBean());
+        $modelCart->loadBean(new \DummyBean());
         $modelCart->promo_id = 1;
 
         $promoModel = new \Model_Promo();
-        $promoModel->loadBean(new \RedBeanPHP\OODBBean());
+        $promoModel->loadBean(new \DummyBean());
 
         $discountPrice = 25;
 
@@ -1187,13 +1187,13 @@ class ServiceTest extends \BBTestCase
     public function testgetProductDiscount_NoPromo()
     {
         $cartProductModel = new \Model_CartProduct();
-        $cartProductModel->loadBean(new \RedBeanPHP\OODBBean());
+        $cartProductModel->loadBean(new \DummyBean());
 
         $modelCart = new \Model_Cart();
-        $modelCart->loadBean(new \RedBeanPHP\OODBBean());
+        $modelCart->loadBean(new \DummyBean());
 
         $promoModel = new \Model_Promo();
-        $promoModel->loadBean(new \RedBeanPHP\OODBBean());
+        $promoModel->loadBean(new \DummyBean());
 
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -1224,14 +1224,14 @@ class ServiceTest extends \BBTestCase
     public function testgetProductDiscount_ProductQtyIsSetAndFreeSetup()
     {
         $cartProductModel = new \Model_CartProduct();
-        $cartProductModel->loadBean(new \RedBeanPHP\OODBBean());
+        $cartProductModel->loadBean(new \DummyBean());
 
         $modelCart = new \Model_Cart();
-        $modelCart->loadBean(new \RedBeanPHP\OODBBean());
+        $modelCart->loadBean(new \DummyBean());
         $modelCart->promo_id = 1;
 
         $promoModel = new \Model_Promo();
-        $promoModel->loadBean(new \RedBeanPHP\OODBBean());
+        $promoModel->loadBean(new \DummyBean());
         $promoModel->freesetup = 1;
 
         $discountPrice = 25;
@@ -1272,49 +1272,49 @@ class ServiceTest extends \BBTestCase
     public function isPromoAvailableForClientGroupProvider()
     {
         $promo1 = new \Model_Promo();
-        $promo1->loadBean(new \RedBeanPHP\OODBBean());
+        $promo1->loadBean(new \DummyBean());
         $promo1->client_groups = json_encode(array());
 
         $client1 = new \Model_Client();
-        $client1->loadBean(new \RedBeanPHP\OODBBean());
+        $client1->loadBean(new \DummyBean());
 
 
         $promo2 = new \Model_Promo();
-        $promo2->loadBean(new \RedBeanPHP\OODBBean());
+        $promo2->loadBean(new \DummyBean());
         $promo2->client_groups = json_encode(array(1, 2));
 
         $client2 = new \Model_Client();
-        $client2->loadBean(new \RedBeanPHP\OODBBean());
+        $client2->loadBean(new \DummyBean());
         $client2->client_group_id = null;
 
 
         $promo3 = new \Model_Promo();
-        $promo3->loadBean(new \RedBeanPHP\OODBBean());
+        $promo3->loadBean(new \DummyBean());
         $promo3->client_groups = json_encode(array(1, 2));
 
         $client3 = new \Model_Client();
-        $client3->loadBean(new \RedBeanPHP\OODBBean());
+        $client3->loadBean(new \DummyBean());
         $client3->client_group_id = 3;
 
 
         $promo4 = new \Model_Promo();
-        $promo4->loadBean(new \RedBeanPHP\OODBBean());
+        $promo4->loadBean(new \DummyBean());
         $promo4->client_groups = json_encode(array(1, 2));
 
         $client4 = new \Model_Client();
-        $client4->loadBean(new \RedBeanPHP\OODBBean());
+        $client4->loadBean(new \DummyBean());
         $client4->client_group_id = 2;
 
 
         $promo5 = new \Model_Promo();
-        $promo5->loadBean(new \RedBeanPHP\OODBBean());
+        $promo5->loadBean(new \DummyBean());
         $promo5->client_groups = json_encode(array());
 
         $client5 = null;
 
 
         $promo6 = new \Model_Promo();
-        $promo6->loadBean(new \RedBeanPHP\OODBBean());
+        $promo6->loadBean(new \DummyBean());
         $promo6->client_groups = json_encode(array(1, 2));
 
         $client6 = null;

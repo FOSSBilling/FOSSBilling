@@ -43,7 +43,7 @@ class Admin implements \Box\InjectionAwareInterface
                 [
                     'location' => 'support',
                     'index' => 900,
-                    'label' => 'Announcements',
+                    'label' => __trans('Announcements'),
                     'uri' => $this->di['url']->adminLink('news'),
                     'class' => '',
                 ],

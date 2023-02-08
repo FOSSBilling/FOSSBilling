@@ -27,7 +27,7 @@ class ServiceSubscriptionTest extends \BBTestCase
     public function testcreate()
     {
         $subscriptionModel = new \Model_Subscription();
-        $subscriptionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $subscriptionModel->loadBean(new \DummyBean());
         $newId = 10;
 
         $dbMock = $this->getMockBuilder('\Box_Database')
@@ -66,7 +66,7 @@ class ServiceSubscriptionTest extends \BBTestCase
     public function testupdate()
     {
         $subscriptionModel = new \Model_Subscription();
-        $subscriptionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $subscriptionModel->loadBean(new \DummyBean());
         $data = array(
             'status'   => '',
             'sid'      => '',
@@ -95,13 +95,13 @@ class ServiceSubscriptionTest extends \BBTestCase
     public function testtoApiArray()
     {
         $subscriptionModel = new \Model_Subscription();
-        $subscriptionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $subscriptionModel->loadBean(new \DummyBean());
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $gatewayModel = new \Model_PayGateway();
-        $gatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $gatewayModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -155,7 +155,7 @@ class ServiceSubscriptionTest extends \BBTestCase
     public function testdelete()
     {
         $subscriptionModel = new \Model_Subscription();
-        $subscriptionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $subscriptionModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -297,7 +297,7 @@ class ServiceSubscriptionTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $result = $serviceMock->getSubscriptionPeriod($invoiceModel);
         $this->assertIsString($result);
@@ -307,7 +307,7 @@ class ServiceSubscriptionTest extends \BBTestCase
     public function testunsubscribe()
     {
         $subscribtionModel = new \Model_Subscription();
-        $subscribtionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $subscribtionModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('store');

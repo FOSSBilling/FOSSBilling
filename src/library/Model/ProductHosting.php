@@ -13,7 +13,7 @@
  */
 
 
-class Model_ProductHosting extends \RedBean_SimpleModel
+class Model_ProductHosting extends \FOSSBilling_Model
 {
 
 }

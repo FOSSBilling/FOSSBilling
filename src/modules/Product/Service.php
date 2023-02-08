@@ -292,20 +292,18 @@ class Service implements InjectionAwareInterface
         $model->hidden = (int) $this->di['array_get']($data, 'hidden', $model->hidden);
         $model->slug = $this->di['array_get']($data, 'slug', $model->slug);
         $model->setup = $this->di['array_get']($data, 'setup', $model->setup);
-        if (isset($data['upgrades']) && is_array($data['upgrades'])) {
-            $model->upgrades = json_encode($data['upgrades']);
-        } elseif (isset($data['upgrades']) && empty($data['upgrades'])) {
-            $model->upgrades = null;
-        }
-
-        if (isset($data['addons']) && is_array($data['addons'])) {
-            $addons = [];
-            foreach ($data['addons'] as $addon => $on) {
-                if ($on) {
-                    $addons[] = $addon;
-                }
+        //remove empty value in data['upgrades];
+        if(is_array($data['upgrades'])){
+            $upgrades = array_values(array_filter($data['upgrades']));
+            if (empty($upgrades)){
+                $model->upgrades = null;
+            } else{
+                $model->upgrades = json_encode($upgrades);
             }
-            if (empty($addons)) {
+        }
+        if(is_array($data['addons'])){
+            $addons =  array_values(array_filter($data['addons']));
+            if (is_null($addons)) {
                 $model->addons = null;
             } else {
                 $model->addons = json_encode($addons);
@@ -621,23 +619,36 @@ class Service implements InjectionAwareInterface
             $model->end_at = date('Y-m-d H:i:s', strtotime($end_at));
         }
 
-        $products = $this->di['array_get']($data, 'products');
-        if (empty($products) && !is_null($products)) {
+        if(!is_array($this->di['array_get']($data, 'products'))){
             $model->products = null;
-        } else {
-            $model->products = json_encode($products);
+        }else{
+            $products =  array_values(array_filter($this->di['array_get']($data, 'products')));
+            if (empty($products)) {
+                $model->products = null;
+            }else{
+                $model->products = json_encode($products);
+            }
         }
-
-        $client_groups = $this->di['array_get']($data, 'client_groups');
-        if (empty($client_groups) && !is_null($client_groups)) {
+        if(!is_array($this->di['array_get']($data, 'client_groups'))){
             $model->client_groups = null;
-        } else {
-            $model->client_groups = json_encode($client_groups);
+        }else{
+            $client_groups = array_values(array_filter($this->di['array_get']($data, 'client_groups')));
+            if (empty($client_groups)) {
+                $model->client_groups = null;
+            }else{
+                $model->client_groups = json_encode($client_groups);
+            }
         }
 
-        $periods = $this->di['array_get']($data, 'periods');
-        if (isset($periods) && is_array($periods)) {
-            $model->periods = json_encode($periods);
+        if(!is_array($this->di['array_get']($data, 'periods'))){
+            $model->periods = null;
+        }else{
+            $periods = array_values(array_filter($this->di['array_get']($data, 'periods')));
+            if (empty($periods)) {
+                $model->periods = null;
+            }else{
+                $model->periods = json_encode($periods);
+            }
         }
 
         $model->updated_at = date('Y-m-d H:i:s');
@@ -751,24 +762,24 @@ class Service implements InjectionAwareInterface
 
     public function getProductCategorySearchQuery($data)
     {
-        $sql = 'SELECT m.id, 
-                       m.title, 
-                       m.description, 
-                       m.icon_url, 
-                       m.created_at, 
-                       m.updated_at, 
+        $sql = 'SELECT m.id,
+                       m.title,
+                       m.description,
+                       m.icon_url,
+                       m.created_at,
+                       m.updated_at,
                        Max(p.priority) AS MaxPrio
-                FROM   product_category AS m 
-                       LEFT JOIN product p 
-                              ON p.product_category_id = m.id 
-                WHERE  p.status = \'enabled\' 
-                       AND p.hidden = 0 
-                GROUP  BY m.id, 
-                          m.title, 
-                          m.description, 
-                          m.icon_url, 
-                          m.created_at, 
-                          m.updated_at 
+                FROM   product_category AS m
+                       LEFT JOIN product p
+                              ON p.product_category_id = m.id
+                WHERE  p.status = \'enabled\'
+                       AND p.hidden = 0
+                GROUP  BY m.id,
+                          m.title,
+                          m.description,
+                          m.icon_url,
+                          m.created_at,
+                          m.updated_at
                 ORDER  BY MaxPrio ASC;';
 
         $params = [];

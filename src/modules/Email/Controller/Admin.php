@@ -43,7 +43,7 @@ class Admin implements \Box\InjectionAwareInterface
                 [
                     'location' => 'activity',
                     'index' => 200,
-                    'label' => 'Email history',
+                    'label' => __trans('Email history'),
                     'uri' => $this->di['url']->adminLink('email/history'),
                     'class' => '',
                 ],

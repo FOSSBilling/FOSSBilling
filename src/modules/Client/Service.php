@@ -43,19 +43,19 @@ class Service implements InjectionAwareInterface
         return array(
             'active' => array(
                 'path' => '/client?status=active',
-                'label' => 'Active clients',
+                'label' => __trans('Active clients'),
             ),
             'suspended' => array(
                 'path' => '/client?status=suspended',
-                'label' => 'Suspended clients',
+                'label' => __trans('Suspended clients'),
             ),
             'canceled' => array(
                 'path' => '/client?status=canceled',
-                'label' => 'Canceled clients',
+                'label' => __trans('Canceled clients'),
             ),
             'all' => array(
                 'path' => '/client',
-                'label' => 'All clients',
+                'label' => __trans('All clients'),
             ),
         );
     }

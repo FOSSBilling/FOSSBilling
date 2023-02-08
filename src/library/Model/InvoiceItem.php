@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Model_InvoiceItem extends RedBean_SimpleModel
+class Model_InvoiceItem extends FOSSBilling_Model
 {
     const TYPE_DEPOSIT  = 'deposit'; // this type of item can not be charged with credits
     const TYPE_CUSTOM   = 'custom';

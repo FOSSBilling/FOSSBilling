@@ -13,7 +13,7 @@
  */
 
 
-class Model_Extension extends RedBean_SimpleModel
+class Model_Extension extends FOSSBilling_Model
 {
 
 }

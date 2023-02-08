@@ -177,7 +177,7 @@ class ServiceTest extends \BBTestCase {
     public function testgetThemeSettings()
     {
         $extensionMetaModel = new \Model_ExtensionMeta();
-        $extensionMetaModel->loadBean(new \RedBeanPHP\OODBBean());
+        $extensionMetaModel->loadBean(new \DummyBean());
         $extensionMetaModel->meta_value = '{}';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -234,7 +234,7 @@ class ServiceTest extends \BBTestCase {
     public function testupdateSettings()
     {
         $extensionMetaModel = new \Model_ExtensionMeta();
-        $extensionMetaModel->loadBean(new \RedBeanPHP\OODBBean());
+        $extensionMetaModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

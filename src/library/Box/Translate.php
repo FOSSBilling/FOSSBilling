@@ -1,4 +1,5 @@
 <?php
+
 /**
  * FOSSBilling
  *
@@ -64,8 +65,8 @@ class Box_Translate implements \Box\InjectionAwareInterface
 
         $locale = $this->getLocale();
         $codeset = "UTF-8";
-        @putenv('LANG='.$locale.'.'.$codeset);
-        @putenv('LANGUAGE='.$locale.'.'.$codeset);
+        @putenv('LANG=' . $locale . '.' . $codeset);
+        @putenv('LANGUAGE=' . $locale . '.' . $codeset);
         // set locale
         if (!defined('LC_MESSAGES')) {
             define('LC_MESSAGES', 5);
@@ -73,23 +74,32 @@ class Box_Translate implements \Box\InjectionAwareInterface
         if (!defined('LC_TIME')) {
             define('LC_TIME', 2);
         }
-        _setlocale(LC_MESSAGES, $locale.'.'.$codeset);
-        _setlocale(LC_TIME, $locale.'.'.$codeset);
+        _setlocale(LC_MESSAGES, $locale . '.' . $codeset);
+        _setlocale(LC_TIME, $locale . '.' . $codeset);
         _bindtextdomain($this->domain, PATH_LANGS);
         _bind_textdomain_codeset($this->domain, $codeset);
         _textdomain($this->domain);
-        
-        function __trans($msgid, array $values = NULL)
+
+        function __trans(string $msgid, array $values = NULL)
         {
-            if (empty($msgid) || is_null($msgid)) {
-                return null;
+            $translated = _gettext($msgid);
+
+            if (is_array($values)) {
+                $translated = strtr($translated, $values);
             }
-            if (is_null($values)){
-                return _gettext($msgid);
-            } else {
-                $string = strtr($msgid, $values);
-                return _gettext($string);
+
+            return $translated;
+        }
+
+        function __pluralTrans(string $msgid, string $msgidPlural, int $number, array $values = NULL)
+        {
+            $translated = _ngettext($msgid, $msgidPlural, $number);
+
+            if (is_array($values)) {
+                $translated = strtr($translated, $values);
             }
+
+            return $translated;
         }
     }
 

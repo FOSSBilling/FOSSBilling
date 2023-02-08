@@ -157,10 +157,10 @@ class ServiceTest extends \BBTestCase
     public function testtoApiArray()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
 
         $itemInvoiceServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')->getMock();
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
@@ -278,7 +278,7 @@ class ServiceTest extends \BBTestCase
             ->method('sendTemplate');
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
@@ -331,7 +331,7 @@ class ServiceTest extends \BBTestCase
             ->method('sendTemplate');
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
@@ -419,7 +419,7 @@ class ServiceTest extends \BBTestCase
             ->method('sendTemplate');
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
@@ -455,11 +455,11 @@ class ServiceTest extends \BBTestCase
             ->method('getNextInvoiceNumber');
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $invoiceModel->status = \Model_Invoice::STATUS_UNPAID;
 
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
 
         $itemInvoiceServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')->getMock();
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
@@ -511,7 +511,7 @@ class ServiceTest extends \BBTestCase
     public function testgetNextInvoiceNumber()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $invoiceModel->id = 2;
         $invoiceModel->nr = 2;
 
@@ -548,7 +548,7 @@ class ServiceTest extends \BBTestCase
             ->getMock();
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $currencyService = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
         $currencyService->expects($this->atLeastOnce())
             ->method('toBaseCurrency');
@@ -590,13 +590,13 @@ class ServiceTest extends \BBTestCase
         );
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $currencyModel = new \Model_Currency();
-        $currencyModel->loadBean(new \RedBeanPHP\OODBBean());
+        $currencyModel->loadBean(new \DummyBean());
 
         $currencyService = $this->getMockBuilder('\Box\Mod\Currency\Service')->getMock();
         $currencyService->expects($this->atLeastOnce())
@@ -640,10 +640,10 @@ class ServiceTest extends \BBTestCase
     public function testsetInvoiceDefaults()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $buyer         = array(
             'first_name'     => '',
@@ -726,7 +726,7 @@ class ServiceTest extends \BBTestCase
         $data['use_credits'] = true;
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
@@ -764,7 +764,7 @@ class ServiceTest extends \BBTestCase
             ->will($this->returnValue($tax));
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $result = $serviceMock->getTotalWithTax($invoiceModel);
         $this->assertIsFloat($result);
@@ -774,10 +774,10 @@ class ServiceTest extends \BBTestCase
     public function testgetTotal()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -824,11 +824,11 @@ class ServiceTest extends \BBTestCase
             ->method('getNextInvoiceNumber');
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $invoiceModel->id = $newId;
 
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
 
         $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
@@ -897,10 +897,10 @@ class ServiceTest extends \BBTestCase
             'new_item'              => array('title' => 'new Item'),
         );
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
 
         $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
@@ -937,10 +937,10 @@ class ServiceTest extends \BBTestCase
     public function testrmInvoice()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
 
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -970,7 +970,7 @@ class ServiceTest extends \BBTestCase
             ->method('rmInvoice');
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
@@ -989,7 +989,7 @@ class ServiceTest extends \BBTestCase
     public function testdeleteInvoiceByClient()
     {
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
             ->setMethods(array('rmInvoice'))
@@ -998,7 +998,7 @@ class ServiceTest extends \BBTestCase
             ->method('rmInvoice');
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
@@ -1023,13 +1023,13 @@ class ServiceTest extends \BBTestCase
     public function testdeleteInvoiceByClientInvoiceIsRelatedToOrder()
     {
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
         $invoiceItemModel->type   = \Model_InvoiceItem::TYPE_ORDER;
         $rel_id                   = 1;
         $invoiceItemModel->rel_id = $rel_id;
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
@@ -1055,11 +1055,11 @@ class ServiceTest extends \BBTestCase
     {
         $newId        = 2;
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $invoiceModel->id = $newId;
 
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
             ->setMethods(array('generateForOrder', 'approveInvoice'))
@@ -1087,7 +1087,7 @@ class ServiceTest extends \BBTestCase
     public function testdoBatchPayWithCredits()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
             ->setMethods(array('findAllUnpaid', 'tryPayWithCredits'))
@@ -1116,7 +1116,7 @@ class ServiceTest extends \BBTestCase
     public function testpayInvoiceWithCredits()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
             ->setMethods(array('tryPayWithCredits'))
@@ -1136,11 +1136,11 @@ class ServiceTest extends \BBTestCase
     public function testgenerateForOrderInvoiceIsCreatedAlready()
     {
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
         $clientOrder->unpaid_invoice_id = 2;
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1164,15 +1164,15 @@ class ServiceTest extends \BBTestCase
             ->method('setInvoiceDefaults');
 
         $orderModel = new \Model_ClientOrder();
-        $orderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $orderModel->loadBean(new \DummyBean());
         $orderModel->price           = 10;
         $orderModel->promo_recurring = true;
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1203,7 +1203,7 @@ class ServiceTest extends \BBTestCase
     public function testsgenerateForOrderAmountIsZero()
     {
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
         $clientOrder->price = 0;
 
         $this->expectException(\Box_Exception::class);
@@ -1230,10 +1230,10 @@ class ServiceTest extends \BBTestCase
     public function testgenerateInvoicesForExpiringOrders()
     {
         $clientOrder = new \Model_ClientOrder();
-        $clientOrder->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrder->loadBean(new \DummyBean());
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $newId            = 4;
         $invoiceModel->id = $newId;
@@ -1271,7 +1271,7 @@ class ServiceTest extends \BBTestCase
     public function testdoBatchPaidInvoiceActivation()
     {
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
 
         $itemInvoiceServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')->getMock();
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
@@ -1300,7 +1300,7 @@ class ServiceTest extends \BBTestCase
     public function testdoBatchPaidInvoiceActivationException()
     {
         $invoiceItemModel = new \Model_InvoiceItem();
-        $invoiceItemModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceItemModel->loadBean(new \DummyBean());
 
         $itemInvoiceServiceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceInvoiceItem')->getMock();
         $itemInvoiceServiceMock->expects($this->atLeastOnce())
@@ -1330,7 +1330,7 @@ class ServiceTest extends \BBTestCase
     public function testdoBatchRemindersSend()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\Service')
             ->setMethods(array('getUnpaidInvoicesLateFor', 'sendInvoiceReminder'))
@@ -1389,7 +1389,7 @@ class ServiceTest extends \BBTestCase
     public function testsendInvoiceReminderProtectionFromAccidentalReminders()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $invoiceModel->status = \Model_Invoice::STATUS_PAID;
 
         $result = $this->service->sendInvoiceReminder($invoiceModel);
@@ -1400,7 +1400,7 @@ class ServiceTest extends \BBTestCase
     public function testsendInvoiceReminder()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
@@ -1444,7 +1444,7 @@ class ServiceTest extends \BBTestCase
     public function testgenerateFundsInvoiceNoActiveOrder()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionMessage('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
@@ -1454,7 +1454,7 @@ class ServiceTest extends \BBTestCase
     public function testgenerateFundsInvoiceMinAmountLimit()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $clientModel->currency = 'EUR';
         $fundsAmount           = 2;
 
@@ -1479,7 +1479,7 @@ class ServiceTest extends \BBTestCase
     public function testgenerateFundsInvoiceMaxAmountLimit()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $clientModel->currency = 'EUR';
         $fundsAmount           = 200;
 
@@ -1504,10 +1504,10 @@ class ServiceTest extends \BBTestCase
     public function testgenerateFundsInvoice()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $clientModel->currency = 'EUR';
         $fundsAmount           = 20;
 
@@ -1584,7 +1584,7 @@ class ServiceTest extends \BBTestCase
         );
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1613,10 +1613,10 @@ class ServiceTest extends \BBTestCase
         );
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1651,11 +1651,11 @@ class ServiceTest extends \BBTestCase
         );
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
 
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $payGatewayModel->enabled = true;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -1719,7 +1719,7 @@ class ServiceTest extends \BBTestCase
         $note = 'test Note';
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1736,7 +1736,7 @@ class ServiceTest extends \BBTestCase
     public function testfindAllUnpaid()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $dbMock       = $this->getMockBuilder('\Box_Database')->getMock();
         $getAllResult = array(
@@ -1762,7 +1762,7 @@ class ServiceTest extends \BBTestCase
     public function testfindAllPaid()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1782,7 +1782,7 @@ class ServiceTest extends \BBTestCase
     public function testgetUnpaidInvoicesLateFor()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1801,7 +1801,7 @@ class ServiceTest extends \BBTestCase
     public function testgetBuyer()
     {
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $expected = array(
             'first_name' => '',
@@ -1827,7 +1827,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Box_Di();
 
         $modelInvoiceItem = new \Model_InvoiceItem();
-        $modelInvoiceItem->loadBean(new \RedBeanPHP\OODBBean());
+        $modelInvoiceItem->loadBean(new \DummyBean());
         $modelInvoiceItem->type = \Model_InvoiceItem::TYPE_DEPOSIT;
 
         $invoiceItems = array($modelInvoiceItem);
@@ -1841,7 +1841,7 @@ class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
 
         $modelInvoice = new \Model_Invoice();
-        $modelInvoice->loadBean(new \RedBeanPHP\OODBBean());
+        $modelInvoice->loadBean(new \DummyBean());
 
         $this->service->setDi($di);
         $result = $this->service->isInvoiceTypeDeposit($modelInvoice);
@@ -1853,7 +1853,7 @@ class ServiceTest extends \BBTestCase
         $di = new \Box_Di();
 
         $modelInvoiceItem = new \Model_InvoiceItem();
-        $modelInvoiceItem->loadBean(new \RedBeanPHP\OODBBean());
+        $modelInvoiceItem->loadBean(new \DummyBean());
         $modelInvoiceItem->type = \Model_InvoiceItem::TYPE_ORDER;
 
         $invoiceItems = array($modelInvoiceItem);
@@ -1868,7 +1868,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $modelInvoice = new \Model_Invoice();
-        $modelInvoice->loadBean(new \RedBeanPHP\OODBBean());
+        $modelInvoice->loadBean(new \DummyBean());
 
         $result = $this->service->isInvoiceTypeDeposit($modelInvoice);
         $this->assertFalse($result);
@@ -1890,7 +1890,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $modelInvoice = new \Model_Invoice();
-        $modelInvoice->loadBean(new \RedBeanPHP\OODBBean());
+        $modelInvoice->loadBean(new \DummyBean());
 
         $result = $this->service->isInvoiceTypeDeposit($modelInvoice);
         $this->assertFalse($result);

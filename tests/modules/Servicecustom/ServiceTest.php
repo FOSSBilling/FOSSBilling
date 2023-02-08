@@ -137,13 +137,13 @@ class ServiceTest extends \BBTestCase
     public function testActionCreate()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->product_id = rand(1, 100);
         $order->client_id  = rand(1, 100);
         $order->config     = 'config';
 
         $product = new \Model_Product();
-        $product->loadBean(new \RedBeanPHP\OODBBean());
+        $product->loadBean(new \DummyBean());
         $product->plugin        = 'plugin';
         $product->plugin_config = 'plugin_config';
 
@@ -155,7 +155,7 @@ class ServiceTest extends \BBTestCase
             ->method('getExistingModelById')
             ->will($this->returnValue($product));
         $serviceCustomModel = new \Model_ServiceCustom();
-        $serviceCustomModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceCustomModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->will($this->returnValue($serviceCustomModel));
@@ -171,12 +171,12 @@ class ServiceTest extends \BBTestCase
     public function testActionActivate()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         $order->config    = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
-        $serviceCustomModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
@@ -197,7 +197,7 @@ class ServiceTest extends \BBTestCase
     public function testActionActivateOrderServiceNotCreatedException()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         $order->config    = 'config';
 
@@ -218,12 +218,12 @@ class ServiceTest extends \BBTestCase
     public function testActionRenew()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         $order->config    = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
-        $serviceCustomModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
@@ -250,7 +250,7 @@ class ServiceTest extends \BBTestCase
     public function testActiveServiceNotFoundException()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->id        = rand(1, 100);
         $order->client_id = rand(1, 100);
         $order->config    = 'config';
@@ -273,12 +273,12 @@ class ServiceTest extends \BBTestCase
     public function testActionSuspend()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         $order->config    = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
-        $serviceCustomModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
@@ -305,12 +305,12 @@ class ServiceTest extends \BBTestCase
     public function testActionUnsuspend()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         $order->config    = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
-        $serviceCustomModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
@@ -337,12 +337,12 @@ class ServiceTest extends \BBTestCase
     public function testActionCancel()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         $order->config    = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
-        $serviceCustomModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
@@ -369,12 +369,12 @@ class ServiceTest extends \BBTestCase
     public function testActionUncancel()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         $order->config    = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
-        $serviceCustomModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceCustomModel->loadBean(new \DummyBean());
         $serviceCustomModel->plugin = '';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
@@ -401,12 +401,12 @@ class ServiceTest extends \BBTestCase
     public function testActionDelete()
     {
         $order = new \Model_ClientOrder();
-        $order->loadBean(new \RedBeanPHP\OODBBean());
+        $order->loadBean(new \DummyBean());
         $order->client_id = rand(1, 100);
         $order->config    = 'config';
 
         $serviceCustomModel = new \Model_ServiceCustom();
-        $serviceCustomModel->loadBean(new \RedBeanPHP\OODBBean());;
+        $serviceCustomModel->loadBean(new \DummyBean());;
         $serviceCustomModel->plugin = '';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Order\Service')->setMethods(array('getOrderService'))->getMock();
@@ -446,7 +446,7 @@ class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $model = new \Model_ServiceCustom();
-        $model->loadBean(new \RedBeanPHP\OODBBean());;
+        $model->loadBean(new \DummyBean());;
         $model->config = json_encode($decoded);
 
         $result = $this->service->getConfig($model);
@@ -468,7 +468,7 @@ class ServiceTest extends \BBTestCase
 
 
         $model = new \Model_ServiceCustom();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id         = rand(1, 100);
         $model->client_id  = rand(1, 100);
         $model->plugin     = 'plugin';
@@ -488,7 +488,7 @@ class ServiceTest extends \BBTestCase
     public function testCustomCall()
     {
         $model = new \Model_ServiceCustom();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->plugin = '';
         $this->service->customCall($model, 'custom_call');
     }
@@ -548,7 +548,7 @@ class ServiceTest extends \BBTestCase
     public function testUpdateConfig()
     {
         $model = new \Model_ServiceCustom();
-        $model->loadBean(new \RedBeanPHP\OODBBean());;
+        $model->loadBean(new \DummyBean());;
         $model->id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->setMethods(array('getServiceCustomByOrderId'))->getMock();
@@ -575,7 +575,7 @@ class ServiceTest extends \BBTestCase
     public function testUpdateConfigNotArrayException()
     {
         $model = new \Model_ServiceCustom();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('Box\Mod\Servicecustom\Service')->setMethods(array('getServiceCustomByOrderId'))->getMock();

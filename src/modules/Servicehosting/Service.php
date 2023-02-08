@@ -105,7 +105,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBean_SimpleModel) {
+        if (!$model instanceof \FOSSBilling_Model) {
             throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
@@ -123,12 +123,15 @@ class Service implements InjectionAwareInterface
 
         $model->username = $username;
         $model->pass = $pass;
-        $this->di['db']->store($model);
 
         if (!isset($c['import']) || !$c['import']) {
             [$adapter, $account] = $this->_getAM($model);
             $adapter->createAccount($account);
         }
+
+        $model->pass = '*******';
+
+        $this->di['db']->store($model);
 
         return [
             'username' => $username,
@@ -146,7 +149,7 @@ class Service implements InjectionAwareInterface
         // move expiration period to future
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBean_SimpleModel) {
+        if (!$model instanceof \FOSSBilling_Model) {
             throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
         }
         // @todo ?
@@ -164,7 +167,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBean_SimpleModel) {
+        if (!$model instanceof \FOSSBilling_Model) {
             throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
@@ -183,7 +186,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBean_SimpleModel) {
+        if (!$model instanceof \FOSSBilling_Model) {
             throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
@@ -202,7 +205,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBean_SimpleModel) {
+        if (!$model instanceof \FOSSBilling_Model) {
             throw new \Box_Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
@@ -341,7 +344,7 @@ class Service implements InjectionAwareInterface
             $adapter->changeAccountPassword($account, $p);
         }
 
-        $model->pass = $p;
+        $model->pass = "******";
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
         $this->di['logger']->info('Changed hosting account %s password', $model->id);

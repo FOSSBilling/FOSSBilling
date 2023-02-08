@@ -27,7 +27,7 @@ class AdminTest extends \BBTestCase {
                 ->will($this->returnValue('String'));
 
         $model = new \Model_ActivitySystem();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $di = new \Box_Di();
         $di['pager'] = $paginatorMock;
@@ -69,7 +69,7 @@ class AdminTest extends \BBTestCase {
                 ->will($this->returnValue('String'));
 
         $model = new \Model_ActivitySystem();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $di = new \Box_Di();
         $di['pager'] = $paginatorMock;

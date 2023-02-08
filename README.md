@@ -13,15 +13,15 @@
 
 <a href="https://fossbilling.org/downloads/"><img src="https://raw.githubusercontent.com/FOSSBilling/fossbilling.org/main/public/img/gh-download-button.png" alt="Download button" width="400"/></a>
 
-[![PHP Composer](https://github.com/fossbilling/fossbilling/actions/workflows/php.yml/badge.svg)](https://github.com/fossbilling/fossbilling/actions/workflows/php.yml)
-[![Download Latest](https://img.shields.io/github/downloads/fossbilling/fossbilling/total)](https://github.com/fossbilling/fossbilling/releases/latest)
+[![PHP Composer](https://github.com/FOSSBilling/FOSSBilling/actions/workflows/php.yml/badge.svg)](https://github.com/FOSSBilling/FOSSBilling/actions/workflows/php.yml)
+[![Download Latest](https://img.shields.io/github/downloads/FOSSBilling/FOSSBilling/total)](https://github.com/FOSSBilling/FOSSBilling/releases/latest)
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
 [![Discord](https://img.shields.io/discord/747432407757488179?color=%237289FA&logo=discord&logoColor=%23FFF)](https://fossbilling.org/discord)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
-[![CodeFactor](https://www.codefactor.io/repository/github/fossbilling/fossbilling/badge)](https://www.codefactor.io/repository/github/fossbilling/fossbilling)
-[![Financial Contributors](https://opencollective.com/fossbilling/tiers/badge.svg?color=brightgreen)](https://opencollective.com/fossbilling)
-[![Crowdin](https://badges.crowdin.net/e/c70c78b4ab1e71424ce53dcf6bca9b12/localized.svg)](https://fossbilling.crowdin.com/fossbilling)
+[![CodeFactor](https://www.codefactor.io/repository/github/FOSSBilling/FOSSBilling/badge)](https://www.codefactor.io/repository/github/fossbilling/fossbilling)
+[![Financial Contributors](https://opencollective.com/FOSSBilling/tiers/badge.svg?color=brightgreen)](https://opencollective.com/fossbilling)
+[![Crowdin](https://badges.crowdin.net/e/c70c78b4ab1e71424ce53dcf6bca9b12/localized.svg)](https://fossbilling.crowdin.com/FOSSBilling)
 </div>
 
 > **Warning**
@@ -66,8 +66,8 @@ The following environment is highly recommended for running FOSSBilling. It *may
     - zlib
 
 ## Example Configurations
-- [nginx](https://github.com/fossbilling/fossbilling/blob/master/data/nginx.conf)
-- [Lighttpd](https://github.com/fossbilling/fossbilling/blob/master/data/lighttpd.conf)
+- [nginx](https://github.com/FOSSBilling/FOSSBilling/blob/master/data/nginx.conf)
+- [Lighttpd](https://github.com/FOSSBilling/FOSSBilling/blob/master/data/lighttpd.conf)
 
 ## Installation
 Installing FOSSBilling is pretty easy. Depending on how you plan to use it there are three different ways to install it:
@@ -95,7 +95,7 @@ Next, you will also need to create a new empty MySQL database using the command 
 Now, you have everything ready to start the installation of FOSSBilling, navigate to your domain using a web browser, and simply follow the on-screen instructions to complete the installation using the web installer. Ta-da, you've done it! 🎉
 
 ### Install from latest source code
-To install the latest development version of FOSSBilling, you will need to get the [latest up-to-date ZIP archive](https://github.com/fossbilling/fossbilling/archive/master.zip) from the Github repository.
+To install the latest development version of FOSSBilling, you will need to get the [latest up-to-date ZIP archive](https://github.com/FOSSBilling/FOSSBilling/archive/master.zip) from the Github repository.
 
 You can either download the .zip file to your local computer and then upload it to your server using FTP, or download it directly to your web server using wget or git clone. In either case, you will need to unzip it and make sure that the files contained in the archive are in the public folder of your site (usually, that's called **"htdocs"** or **"public_html"**).
 
@@ -143,9 +143,9 @@ First of all, thank you for your interest, and for taking your time to contribut
 
 FOSSBilling is undergoing a revival and major code update. We are making steps forward day by day but there is still a lot of work to do, and we are happy to welcome new contributors. 
 
-We have a set of guidelines for those wishing to contribute to FOSSBilling, and we encourage you to take a look at them here: **[contributors' guidelines](https://github.com/fossbilling/fossbilling/blob/master/CONTRIBUTING.md)**.
+We have a set of guidelines for those wishing to contribute to FOSSBilling, and we encourage you to take a look at them here: **[contributors' guidelines](https://github.com/FOSSBilling/FOSSBilling/blob/master/CONTRIBUTING.md)**.
 
-Your [pull requests](https://github.com/fossbilling/fossbilling/pulls) will be highly welcomed. If you're looking for something to start with, you can check the [open issues](https://github.com/fossbilling/fossbilling/issues) on our GitHub repository.
+Your [pull requests](https://github.com/FOSSBilling/FOSSBilling/pulls) will be highly welcomed. If you're looking for something to start with, you can check the [open issues](https://github.com/FOSSBilling/FOSSBilling/issues) on our GitHub repository.
 
 ## Star History
 
@@ -154,19 +154,19 @@ Your [pull requests](https://github.com/fossbilling/fossbilling/pulls) will be h
 
 **Got questions? Found a bug? Ideas for improvements?**
 
-Don't hesitate to create an [issue](https://github.com/fossbilling/fossbilling/issues), or join us on [Discord](https://fossbilling.org/discord) to say hi.
+Don't hesitate to create an [issue](https://github.com/FOSSBilling/FOSSBilling/issues), or join us on [Discord](https://fossbilling.org/discord) to say hi.
 
 ⭐ Not a developer? Feel free to help by starring the repository. It helps us catch the attention of new developers who'd like to contribute. 
 
 ## Licensing
 
-FOSSBilling is open source software and is released under the Apache v2.0 license. See [LICENSE](https://github.com/fossbilling/fossbilling/blob/master/LICENSE) for the full license terms.
+FOSSBilling is open source software and is released under the Apache v2.0 license. See [LICENSE](https://github.com/FOSSBilling/FOSSBilling/blob/master/LICENSE) for the full license terms.
 
 This product includes GeoLite2 data created by MaxMind, available from [https://www.maxmind.com](https://www.maxmind.com).
 
 ## Links
 
 * [Website](https://www.fossbilling.org/)
-* [Documentation](https://docs.fossbilling.org/)
-* [Twitter](https://twitter.com/fossbilling/)
+* [Documentation](https://fossbilling.org/docs)
+* [Twitter](https://twitter.com/FOSSBilling)
 * [Discord](https://fossbilling.org/discord)

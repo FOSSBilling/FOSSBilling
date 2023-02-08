@@ -35,7 +35,7 @@ class Service implements \Box\InjectionAwareInterface
         return [
             'history' => [
                 'path' => 'email/history',
-                'label' => 'Email history',
+                'label' => __trans('Email history'),
             ],
         ];
     }
@@ -327,7 +327,7 @@ class Service implements \Box\InjectionAwareInterface
         $di = $this->getDi();
         $extensionService = $di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
-            throw new \Box_Exception('Disabled for security reasons (Demo mode enabled)');
+            return false;
         }
         $mail = $di['mail'];
         $mail->setBodyHtml($email->content_html);
@@ -573,7 +573,7 @@ class Service implements \Box\InjectionAwareInterface
     {
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
-            throw new \Box_Exception('Disabled for security reasons (Demo mode enabled)');
+            return false;
         }
         $queue->status = 'sending';
         $this->di['db']->store($queue);

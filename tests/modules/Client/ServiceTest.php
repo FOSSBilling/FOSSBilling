@@ -55,7 +55,7 @@ class ServiceTest extends \BBTestCase {
     public function testgenerateEmailConfirmationLink()
     {
         $model = new \Model_ExtensionMeta();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->atLeastOnce())
@@ -314,7 +314,7 @@ class ServiceTest extends \BBTestCase {
         );
 
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $clientService = new \Box\Mod\Client\Service();
         $result = $clientService->toSessionArray($model);
 
@@ -326,7 +326,7 @@ class ServiceTest extends \BBTestCase {
     {
         $email = 'test@example.com';
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->atLeastOnce())->method('findOne')
             ->will($this->returnValue($model));
@@ -345,7 +345,7 @@ class ServiceTest extends \BBTestCase {
     {
         $email = 'test@example.com';
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->email = $email;
 
         $clientService = new \Box\Mod\Client\Service();
@@ -359,7 +359,7 @@ class ServiceTest extends \BBTestCase {
     {
         $currency = 'EUR';
         $model    = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->currency = 'USD';
 
         $database = $this->getMockBuilder('\Box_Database')->getMock();
@@ -380,7 +380,7 @@ class ServiceTest extends \BBTestCase {
     {
         $currency = 'EUR';
         $model    = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->never())->method('findOne');
@@ -396,7 +396,7 @@ class ServiceTest extends \BBTestCase {
     {
         $currency = 'EUR';
         $model    = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->currency = $currency;
 
         $database = $this->getMockBuilder('\Box_Database')->getMock();
@@ -413,12 +413,12 @@ class ServiceTest extends \BBTestCase {
     {
         $currency = 'EUR';
         $model    = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id       = rand(1, 100);
         $model->currency = 'USD';
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->once())
@@ -440,12 +440,12 @@ class ServiceTest extends \BBTestCase {
     {
         $currency = 'EUR';
         $model    = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id       = rand(1, 100);
         $model->currency = 'USD';
 
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
 
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->exactly(2))->method('findOne')
@@ -513,11 +513,11 @@ class ServiceTest extends \BBTestCase {
     public function testaddFunds()
     {
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
         $modelClient->currency = 'USD';
 
         $model = new \Model_ClientBalance();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $amount = '2.22';
         $description = 'test description';
@@ -543,7 +543,7 @@ class ServiceTest extends \BBTestCase {
     public function testaddFundsCurrencyNotDefined()
     {
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
 
         $amount = '2.22';
         $description = 'test description';
@@ -560,7 +560,7 @@ class ServiceTest extends \BBTestCase {
     public function testaddFundsAmountMissing()
     {
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
         $modelClient->currency = 'USD';
 
         $amount = null;
@@ -577,7 +577,7 @@ class ServiceTest extends \BBTestCase {
     public function testaddFundsInvalidDescription()
     {
         $modelClient = new \Model_Client();
-        $modelClient->loadBean(new \RedBeanPHP\OODBBean());
+        $modelClient->loadBean(new \DummyBean());
         $modelClient->currency = 'USD';
 
         $amount = '2.22';
@@ -690,7 +690,7 @@ class ServiceTest extends \BBTestCase {
     public function testclientAlreadyExists()
     {
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->atLeastOnce())->method('findOne')
             ->will($this->returnValue($model));
@@ -708,7 +708,7 @@ class ServiceTest extends \BBTestCase {
     public function testgetByLoginDetails()
     {
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $database = $this->getMockBuilder('\Box_Database')->getMock();
         $database->expects($this->atLeastOnce())->method('findOne')
             ->will($this->returnValue($model));
@@ -738,7 +738,7 @@ class ServiceTest extends \BBTestCase {
     {
 
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -776,7 +776,7 @@ class ServiceTest extends \BBTestCase {
     public function testgetClientBalance()
     {
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -796,11 +796,11 @@ class ServiceTest extends \BBTestCase {
     public function testtoApiArray()
     {
         $model = new \Model_Client();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->custom_1 = 'custom field';
 
         $clientGroup = new \Model_ClientGroup();
-        $clientGroup->loadBean(new \RedBeanPHP\OODBBean());
+        $clientGroup->loadBean(new \DummyBean());
         $clientGroup->title = 'Group Title';
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -866,7 +866,7 @@ class ServiceTest extends \BBTestCase {
         $service->setDi($di);
 
         $client = new \Model_Client();
-        $client->loadBean(new \RedBeanPHP\OODBBean());
+        $client->loadBean(new \DummyBean());
         $client->tax_exempt = $tax_exempt;
 
         $result = $service->isClientTaxable($client);
@@ -877,7 +877,7 @@ class ServiceTest extends \BBTestCase {
     public function testadminCreateClient()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $clientModel->id = 1;
 
         $data = array(
@@ -921,7 +921,7 @@ class ServiceTest extends \BBTestCase {
     public function testguestCreateClient()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $clientModel->id = 1;
 
         $data = array(
@@ -988,7 +988,7 @@ class ServiceTest extends \BBTestCase {
         $service->setDi($di);
 
         $model = new \Model_ClientGroup();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $result = $service->deleteGroup($model);
         $this->assertTrue($result);
     }
@@ -1008,7 +1008,7 @@ class ServiceTest extends \BBTestCase {
         $service->setDi($di);
 
         $model = new \Model_ClientGroup();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $this->expectException(\Box_Exception::class);
         $this->expectExceptionMessage('Can not remove group with clients');
         $service->deleteGroup($model);
@@ -1041,7 +1041,7 @@ class ServiceTest extends \BBTestCase {
         $password = '123456';
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1074,10 +1074,10 @@ class ServiceTest extends \BBTestCase {
         $password = '123456';
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $extensionMetaModel = new \Model_ExtensionMeta();
-        $extensionMetaModel->loadBean(new \RedBeanPHP\OODBBean());
+        $extensionMetaModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->exactly(2))
@@ -1112,7 +1112,7 @@ class ServiceTest extends \BBTestCase {
         $password = '123456';
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $clientModel->email_approved = 1;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -1143,7 +1143,7 @@ class ServiceTest extends \BBTestCase {
     public function testcanChangeEmail()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $email = 'client@fossbilling.org';
 
         $config = array(
@@ -1164,7 +1164,7 @@ class ServiceTest extends \BBTestCase {
     public function testcanChangeEmail_EmailAreTheSame()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $email = 'client@fossbilling.org';
 
         $clientModel->email = $email;
@@ -1187,7 +1187,7 @@ class ServiceTest extends \BBTestCase {
     public function testcanChangeEmail_EmptyConfig()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $email = 'client@fossbilling.org';
 
         $config = array();
@@ -1206,7 +1206,7 @@ class ServiceTest extends \BBTestCase {
     public function testcanChangeEmail_CanntChangeEmail()
     {
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
         $email = 'client@fossbilling.org';
 
         $config = array(

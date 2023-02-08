@@ -13,6 +13,6 @@
  * with this source code in the file LICENSE
  */
 
-class Model_ServiceHosting extends RedBean_SimpleModel
+class Model_ServiceHosting extends FOSSBilling_Model
 {
 }

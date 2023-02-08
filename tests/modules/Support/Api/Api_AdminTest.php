@@ -34,7 +34,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $model = new \Model_SupportTicket();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -226,7 +226,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -261,7 +261,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
         $ticket->status = \Model_SupportTicket::CLOSED;
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
@@ -297,10 +297,10 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $clientModel = new \Model_Client();
-        $clientModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModel->loadBean(new \DummyBean());
 
         $supportHelpdeskModel = new \Model_SupportHelpdesk();
-        $supportHelpdeskModel->loadBean(new \RedBeanPHP\OODBBean());
+        $supportHelpdeskModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -342,7 +342,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(true));
 
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
         $ticket->id = rand(1, 100);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -365,7 +365,7 @@ class Api_AdminTest extends \BBTestCase
     public function testBatch_ticket_auto_closeNotClosed()
     {
         $ticket = new \Model_SupportTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
         $ticket->id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
@@ -410,7 +410,7 @@ class Api_AdminTest extends \BBTestCase
     public function testBatch_public_ticket_auto_closeNotClosed()
     {
         $ticket = new \Model_SupportPTicket();
-        $ticket->loadBean(new \RedBeanPHP\OODBBean());
+        $ticket->loadBean(new \DummyBean());
         $ticket->id = rand(1, 100);
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Support\Service')
@@ -494,7 +494,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(array('query', array())));
 
         $model = new \Model_SupportPTicket();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_DAtabase')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -946,7 +946,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(array()));
 
         $model = new \Model_SupportPr();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_DAtabase')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -1179,7 +1179,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $supportCategory = new \Model_SupportPrCategory();
-        $supportCategory->loadBean(new \RedBeanPHP\OODBBean());
+        $supportCategory->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -1218,7 +1218,7 @@ class Api_AdminTest extends \BBTestCase
             ->will($this->returnValue(null));
 
         $supportCategory = new \Model_SupportPrCategory();
-        $supportCategory->loadBean(new \RedBeanPHP\OODBBean());
+        $supportCategory->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())

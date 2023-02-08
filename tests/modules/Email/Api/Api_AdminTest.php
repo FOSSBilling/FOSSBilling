@@ -59,7 +59,7 @@ class Api_AdminTest extends \BBTestCase
         $updated      = date('Y-m-d H:i:s');
 
         $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id           = $id;
         $model->client_id    = $client_id;
         $model->sender       = $sender;
@@ -120,7 +120,7 @@ class Api_AdminTest extends \BBTestCase
         );
 
         $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = 1;
 
         $emailService = $this->getMockBuilder('Box\Mod\Email\Service')->setMethods(array('sendMail'))->getMock();
@@ -153,7 +153,7 @@ class Api_AdminTest extends \BBTestCase
         );
 
         $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = 1;
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -250,7 +250,7 @@ class Api_AdminTest extends \BBTestCase
         );
 
         $model = new \Model_ActivityClientEmail();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = 1;
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -328,7 +328,7 @@ class Api_AdminTest extends \BBTestCase
         );
 
         $model = new \Model_EmailTemplate();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $db = $this->getMockBuilder('\Box_Database')->getMock();
         $db->expects($this->atLeastOnce())
@@ -363,7 +363,7 @@ class Api_AdminTest extends \BBTestCase
         );
 
         $model = new \Model_EmailTemplate();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
         $model->id = 1;
 
         $db = $this->getMockBuilder('Box_Database')->getMock();
@@ -422,7 +422,7 @@ class Api_AdminTest extends \BBTestCase
         $modelId = rand(1, 100);
 
         $templateModel = new \Model_EmailTemplate();
-        $templateModel->loadBean(new \RedBeanPHP\OODBBean());
+        $templateModel->loadBean(new \DummyBean());
         $templateModel->id = $modelId;
 
         $data = array(
@@ -482,7 +482,7 @@ class Api_AdminTest extends \BBTestCase
         );
 
         $emailTemplateModel = new \Model_EmailTemplate();
-        $emailTemplateModel->loadBean(new \RedBeanPHP\OODBBean());
+        $emailTemplateModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')

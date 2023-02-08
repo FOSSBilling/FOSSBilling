@@ -233,7 +233,7 @@ function handler_exception($e)
             }
             echo sprintf('<p>%s</p>', $e->getMessage());
 
-            echo sprintf('<center><p><a href="https://docs.fossbilling.org/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p></center>', urlencode($e->getMessage()));
+            echo sprintf('<center><p><a href="https://fossbilling.org/docs/en/latest/search.html?q=%s&check_keywords=yes&area=default" target="_blank">Look for detailed error explanation</a></p></center>', urlencode($e->getMessage()));
             echo '<center><hr><p>Powered by <a href="https://fossbilling.org">FOSSBilling</a></p></center>
       </body>
 

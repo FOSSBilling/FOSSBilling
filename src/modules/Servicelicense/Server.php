@@ -42,31 +42,6 @@ class Server implements \Box\InjectionAwareInterface
     }
 
     /**
-     * @deprecated
-     *
-     * @param type $data
-     *
-     * @return type
-     */
-    public function handle_deprecated($data)
-    {
-        try {
-            $this->process($data);
-        } catch (\LogicException $e) {
-            $this->_log->info($e->getMessage() . ' ' . $e->getCode());
-            $this->_result['error'] = $e->getMessage();
-            $this->_result['error_code'] = $e->getCode();
-        } catch (\Exception $e) {
-            error_log($e);
-            $this->_log->info($e->getMessage() . ' ' . $e->getCode());
-            $this->_result['error'] = 'Licensing server is temporary unavailable';
-            $this->_result['error_code'] = $e->getCode();
-        }
-
-        return $this->_result;
-    }
-
-    /**
      * @param string $key
      */
     private function getServer($key = null, $default = null)

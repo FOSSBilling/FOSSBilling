@@ -157,7 +157,7 @@
                 <span class="ms-auto text-muted">{{ message.created_at|bb_datetime }}</span>
             </div>
             <div class="card-body">
-                {{ message.content|bbmd }}
+                {{ message.content|markdown }}
             </div>
         </div>
     {% endfor %}

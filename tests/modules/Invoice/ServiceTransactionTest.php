@@ -27,7 +27,7 @@ class ServiceTransactionTest extends \BBTestCase
     public function testproccessReceivedATransactions()
     {
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
             ->setMethods(array('getReceived', 'preProcessTransaction'))
@@ -60,7 +60,7 @@ class ServiceTransactionTest extends \BBTestCase
             ->method('fire');
 
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
@@ -99,13 +99,13 @@ class ServiceTransactionTest extends \BBTestCase
             ->method('fire');
 
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
 
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
 
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -199,7 +199,7 @@ class ServiceTransactionTest extends \BBTestCase
         $this->service->setDi($di);
 
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
 
         $result = $this->service->delete($transactionModel);
         $this->assertTrue($result);
@@ -210,7 +210,7 @@ class ServiceTransactionTest extends \BBTestCase
         $dbMock          = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->will($this->returnValue($payGatewayModel));
@@ -239,7 +239,7 @@ class ServiceTransactionTest extends \BBTestCase
             'ipn'          => null,
         );
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
         $transactionModel->gateway_id = 1;
 
         $result = $this->service->toApiArray($transactionModel, true);
@@ -390,7 +390,7 @@ class ServiceTransactionTest extends \BBTestCase
     public function testoldProcessLogic()
     {
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
         $transactionModel->output = 'output String';
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
@@ -407,7 +407,7 @@ class ServiceTransactionTest extends \BBTestCase
     public function testpreProcessTransaction()
     {
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
             ->setMethods(array('processTransaction'))
@@ -433,7 +433,7 @@ class ServiceTransactionTest extends \BBTestCase
     public function testpreProcessTransaction_supportOldLogic()
     {
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->getMockBuilder('\Box\Mod\Invoice\ServiceTransaction')
             ->setMethods(array('processTransaction', 'oldProcessLogic'))
@@ -462,7 +462,7 @@ class ServiceTransactionTest extends \BBTestCase
     public function testpreProcessTransaction_registerException()
     {
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
 
         $exceptionMessage = 'Exception created with PHPUnit Test';
 
@@ -504,12 +504,12 @@ class ServiceTransactionTest extends \BBTestCase
     {
         $id               = 1;
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
         $transactionModel->gateway_id = 2;
         $transactionModel->ipn        = '{}';
 
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
         $payGatewayModel->name = substr($adapter, strpos($adapter, '\Payment_Adapter_') + 1);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
@@ -553,12 +553,12 @@ class ServiceTransactionTest extends \BBTestCase
     {
         $id               = 1;
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
         $transactionModel->gateway_id = 2;
         $transactionModel->ipn        = '{}';
 
         $payGatewayModel = new \Model_PayGateway();
-        $payGatewayModel->loadBean(new \RedBeanPHP\OODBBean());
+        $payGatewayModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -607,7 +607,7 @@ class ServiceTransactionTest extends \BBTestCase
             ->will($this->returnValue($assoc));
 
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
             ->will($this->returnValue(array(array())));
@@ -624,19 +624,19 @@ class ServiceTransactionTest extends \BBTestCase
     {
         $currency     = 'EUR';
         $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $invoiceModel->loadBean(new \DummyBean());
         $invoiceModel->currency = $currency;
 
         $clientModdel = new \Model_Client();
-        $clientModdel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientModdel->loadBean(new \DummyBean());
         $clientModdel->currency = $currency;
 
         $transactionModel = new \Model_Transaction();
-        $transactionModel->loadBean(new \RedBeanPHP\OODBBean());
+        $transactionModel->loadBean(new \DummyBean());
         $transactionModel->amount = 11;
 
         $clientBalanceModel = new \Model_ClientBalance();
-        $clientBalanceModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientBalanceModel->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())

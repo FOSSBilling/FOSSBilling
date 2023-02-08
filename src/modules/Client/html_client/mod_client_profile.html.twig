@@ -73,6 +73,19 @@
                        </div>
 
                        <div class="control-group">
+                        <label class="control-label" for="input">{{ 'Gender'|trans }}</label>
+                        <div class="controls">
+                            <select name="gender" id="gender">
+                                <option value="male" {{ profile.gender == 'male' ? 'selected' : '' }}>Male</option>
+                                <option value="female" {{ profile.gender == 'female' ? 'selected' : '' }}>Female</option>
+                                <option value="nonbinary" {{ profile.gender == 'nonbinary' ? 'selected' : '' }}>Non-binary</option>
+                                <option value="other" {% if profile.gender not in ['male', 'female', 'nonbinary'] %} selected {% endif %}>Other</option>
+                            </select>                            
+                            <p class="help-block"></p>
+                        </div>
+                    </div>
+
+                       <div class="control-group">
                            <label class="control-label" for="input">{{ 'Company Name'|trans }}</label>
                            <div class="controls">
                                 <input type="text" name="company" value="{{ profile.company }}">
@@ -255,7 +268,7 @@
 $(function() {
     $('#change-password').bind('submit', function(event) {
         bb.post(
-            'client/client/change_password',
+            'client/profile/change_password',
             $(this).serialize(),
             function(result) {
                 bb.msg('Password was changed');

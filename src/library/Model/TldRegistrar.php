@@ -12,7 +12,7 @@
  * with this source code in the file LICENSE
  */
 
-class Model_TldRegistrar extends RedBean_SimpleModel
+class Model_TldRegistrar extends FOSSBilling_Model
 {
 
 }

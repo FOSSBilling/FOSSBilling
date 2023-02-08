@@ -329,10 +329,10 @@ function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $pres
 
 /**
  * BoxBilling markdown.
+ * @deprecated
  */
 function twig_bbmd_filter(Twig\Environment $env, $value)
 {
-    $value = twig_markdown_filter($env, $value);
-
-    return $value;
+    error_log('Usage for deprected bbmd filter, please use the markdown filter instead for twig templates.');
+    return twig_markdown_filter($env, $value);
 }

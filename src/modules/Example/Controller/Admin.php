@@ -54,13 +54,13 @@ class Admin implements \Box\InjectionAwareInterface
             'group' => [
                 'index' => 1500,                // menu sort order
                 'location' => 'example',          // menu group identifier for subitems
-                'label' => 'Example module',    // menu group title
+                'label' => __trans('Example module'),    // menu group title
                 'class' => 'example',           // used for css styling menu item
             ],
             'subpages' => [
                 [
                     'location' => 'example', // place this module in extensions group
-                    'label' => 'Example module submenu',
+                    'label' => __trans('Example module submenu'),
                     'index' => 1500,
                     'uri' => $this->di['url']->adminLink('example'),
                     'class' => '',

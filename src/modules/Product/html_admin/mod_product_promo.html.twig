@@ -128,37 +128,43 @@
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Products'|trans }}</label>
                 <div class="col">
-                    {% set products = admin.product_get_pairs %}
-                    <input type="hidden" name="products" value="">
-                    <select class="form-select" name="products[]" multiple="multiple" size="{{ products|length }}">
-                        {% for id,product in products %}
-                        <option value="{{ id }}"{% if id in promo.products %} selected{% endif %}>{{ product }}</option>
-                        {% endfor %}
-                    </select>
+                    <input type="hidden" name="products[]" value=""/>
+                    <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <tbody>
+                            {% set products = admin.product_get_pairs %}
+                            {% for id,product in products %}
+                            <tr><td class="w-1"><input type="checkbox" name="products[]" value="{{ id }}" {% if id in promo.products %} checked{% endif %} /></td><td>{{ product }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Periods (Select none to apply to all periods)'|trans }}</label>
                 <div class="col">
-                    {% set periods = guest.system_periods %}
-                    <input type="hidden" name="periods" value="">
-                    <select class="form-select" name="periods[]" multiple="multiple" size="{{ periods|length }}">
-                        {% for id,period in periods %}
-                        <option value="{{ id }}"{% if id in promo.periods %} selected{% endif %}>{{ period }}</option>
-                        {% endfor %}
-                    </select>
+                    <input type="hidden" name="periods[]" value=""/>
+                    <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <tbody>
+                            {% set periods = guest.system_periods %}
+                            {% for id, period in periods %}
+                            <tr><td class="w-1"><input type="checkbox" name="periods[]" value="{{ id }}" {% if id in promo.periods %} checked{% endif %} /></td><td>{{ period }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Client Groups (Select none to apply to all client groups)'|trans }}</label>
                 <div class="col">
-                    {% set client_groups = admin.client_group_get_pairs %}
-                    <input type="hidden" name="client_groups" value="">
-                    <select class="form-select" name="client_groups[]" multiple="multiple" size="{{ groups|length }}">
-                        {% for id, client_group in client_groups %}
-                        <option value="{{ id }}"{% if id in promo.client_groups %} selected{% endif %}>{{ client_group }}</option>
-                        {% endfor %}
-                    </select>
+                    <input type="hidden" name="client_groups[]" value="{{ id }}"/>
+                    <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <tbody>
+                            {% set client_groups = admin.client_group_get_pairs %}
+                            {% for id, client_group in client_groups %}
+                            <tr><td class="w-1"><input type="checkbox" name="client_groups[]" value="{{ id }}" {% if id in promo.client_groups %} checked{% endif %} /></td><td>{{ client_group }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 

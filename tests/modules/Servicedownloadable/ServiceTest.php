@@ -27,7 +27,7 @@ class ServiceTest extends \BBTestCase
     public function testattachOrderConfig()
     {
         $productModel = new \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $productModel->config = '{"filename" : "temp/asdcxTest.txt"}';
 
         $data = array();
@@ -50,11 +50,11 @@ class ServiceTest extends \BBTestCase
     public function testaction_create()
     {
         $clientOrderModel = new \Model_ClientOrder();
-        $clientOrderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->config = '{"filename" : "temp/asdcxTest.txt"}';
 
         $model = new \Model_ServiceDownloadable();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -102,7 +102,7 @@ class ServiceTest extends \BBTestCase
     public function testhitDownload()
     {
         $model = new \Model_ServiceDownloadable();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -119,7 +119,7 @@ class ServiceTest extends \BBTestCase
     public function testtoApiArray()
     {
         $model = new \Model_ServiceDownloadable();
-        $model->loadBean(new \RedBeanPHP\OODBBean());
+        $model->loadBean(new \DummyBean());
 
         $model->filename  = 'config.cfg';
         $model->downloads = 1;
@@ -149,7 +149,7 @@ class ServiceTest extends \BBTestCase
     public function testuploadProductFileErrorUploadingFile()
     {
         $productModel = new  \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $successfullyUploadedFileCount = 0;
         $requestMock                   = $this->getMockBuilder('\Box_Request')->getMock();
         $requestMock->expects($this->atLeastOnce())
@@ -168,7 +168,7 @@ class ServiceTest extends \BBTestCase
     public function testuploadProductFile()
     {
         $productModel = new  \Model_Product();
-        $productModel->loadBean(new \RedBeanPHP\OODBBean());
+        $productModel->loadBean(new \DummyBean());
         $successfullyUploadedFileCount = 1;
 
         $file     = array(
@@ -210,10 +210,10 @@ class ServiceTest extends \BBTestCase
     public function testupdateProductFile()
     {
         $orderModel = new \Model_ClientOrder();
-        $orderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $orderModel->loadBean(new \DummyBean());
 
         $serviceDownloadableModel = new \Model_ServiceDownloadable();
-        $serviceDownloadableModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDownloadableModel->loadBean(new \DummyBean());
 
         $successfullyUploadedFileCount = 1;
 
@@ -254,10 +254,10 @@ class ServiceTest extends \BBTestCase
     public function testupdateProductFileFileNotUploaded()
     {
         $orderModel = new \Model_ClientOrder();
-        $orderModel->loadBean(new \RedBeanPHP\OODBBean());
+        $orderModel->loadBean(new \DummyBean());
 
         $serviceDownloadableModel = new \Model_ServiceDownloadable();
-        $serviceDownloadableModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDownloadableModel->loadBean(new \DummyBean());
 
         $successfullyUploadedFileCount = 0;
         $requestMock                   = $this->getMockBuilder('\Box_Request')->getMock();
@@ -276,7 +276,7 @@ class ServiceTest extends \BBTestCase
     public function testsendFile()
     {
         $serviceDownloadableModel = new \Model_ServiceDownloadable();
-        $serviceDownloadableModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDownloadableModel->loadBean(new \DummyBean());
         $serviceDownloadableModel->filename  = 'config.cfg';
         $serviceDownloadableModel->downloads = 1;
 
@@ -312,7 +312,7 @@ class ServiceTest extends \BBTestCase
     public function testsendFileFileDoesNotExists()
     {
         $serviceDownloadableModel = new \Model_ServiceDownloadable();
-        $serviceDownloadableModel->loadBean(new \RedBeanPHP\OODBBean());
+        $serviceDownloadableModel->loadBean(new \DummyBean());
         $serviceDownloadableModel->filename  = 'config.cfg';
         $serviceDownloadableModel->downloads = 1;
 

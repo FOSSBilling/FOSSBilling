@@ -5,7 +5,7 @@
 {% block meta_title %}{{ 'Payment history'|trans }}{% endblock %}
 {% block breadcrumb %} <li class="active">{{ 'Payment history'|trans }}</li>{% endblock %}
 
-{% set profile = client.client_get %}
+{% set profile = client.profile_get %}
 
 {% block body_class %}client-balance{% endblock %}
 {% block content %}
