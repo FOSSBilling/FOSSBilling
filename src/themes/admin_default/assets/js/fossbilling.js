@@ -139,7 +139,7 @@ var bb = {
               formData.set(name, editors[name].editor.getData());
             });
             if (!editorContentOnRequiredAttr) {
-              return FOSSBilling.message('Please provide the content', 'error');
+              return FOSSBilling.message('At least one of the required fields are empty', 'error');
             }
           }
 
