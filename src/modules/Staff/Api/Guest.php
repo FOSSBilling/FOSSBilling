@@ -99,6 +99,7 @@ class Guest extends \Api_Abstract
     }
 
     public function passwordreset($data){
+        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
         $required = [
             'email' => 'Email required',
         ];

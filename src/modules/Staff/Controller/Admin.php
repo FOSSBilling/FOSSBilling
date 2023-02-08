@@ -120,7 +120,7 @@ class Admin implements InjectionAwareInterface
     public function get_confirmation(\Box_App $app, $hash)
     {
         $service = $this->di['mod_service']('staff');
-
+        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
         // send confirmation email
         $service->sendPasswordResetConfirmation($hash);
         $this->di['logger']->info('Admin password reset request was approved');
