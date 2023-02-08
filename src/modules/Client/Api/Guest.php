@@ -171,6 +171,7 @@ class Guest extends \Api_Abstract
      */
     public function reset_password($data)
     {
+        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
         $required = [
             'email' => 'Email required',
         ];
@@ -221,6 +222,7 @@ class Guest extends \Api_Abstract
         $required = [
             'hash' => 'Hash required',
         ];
+        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
